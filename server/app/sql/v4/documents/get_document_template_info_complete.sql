@@ -30,17 +30,18 @@ STABLE
 AS $$
 SELECT 
     u.file_path,
-    ds.schema_id,
+    da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
     (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
     (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
 FROM document_artifact d
-INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+INNER JOIN document_args_outputs dao ON dao.document_id = d.id
+INNER JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
 INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
 INNER JOIN html_resource h ON h.id = dh.html_id
 INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
 INNER JOIN uploads u ON u.id = hu.upload_id
-LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
+LEFT JOIN document_args da ON da.document_id = d.id
 WHERE d.id = parent_document_id
-ORDER BY dt.created_at DESC
+ORDER BY dao.created_at DESC
 LIMIT 1
 $$;

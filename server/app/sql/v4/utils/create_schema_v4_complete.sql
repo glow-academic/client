@@ -1,4 +1,6 @@
--- Create schema record
+-- DEPRECATED: Create schema record
+-- This function is deprecated - schemas_resource table has been dropped
+-- Schemas are now just collections of args_resource entries (no separate schema table)
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -14,7 +16,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function as no-op (deprecated)
+-- Note: schemas_resource table has been dropped
+-- Schemas are now just collections of args_resource entries linked via tool_args or document_args
 CREATE OR REPLACE FUNCTION utils_create_schema_v4(
     schema_id uuid
 )
@@ -22,6 +26,8 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO schemas_resource (id, created_at, updated_at)
-    VALUES ($1, NOW(), NOW())
+    -- DEPRECATED: This function no longer creates schemas
+    -- schemas_resource table has been dropped
+    -- Schemas are now just collections of args_resource entries
+    SELECT NULL::void
 $$;

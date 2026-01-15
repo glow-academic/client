@@ -308,7 +308,7 @@ system_tool_call AS (
     SELECT 
         'log_run_system_' || nsm.system_message_id::text, 
         gpt.tool_id, 
-        (SELECT template_id FROM tool_templates WHERE tool_id = gpt.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gpt.tool_id LIMIT 1),
         '',
         true, 
         nsm.created_at, 
@@ -447,7 +447,7 @@ developer_calls_with_rn AS (
     SELECT 
         'log_run_developer_' || ndm.message_id::text, 
         git.tool_id, 
-        (SELECT template_id FROM tool_templates WHERE tool_id = git.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = git.tool_id LIMIT 1),
         '',
         true, 
         ndm.created_at, 

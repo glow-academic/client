@@ -50,31 +50,75 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH deactivate_previous AS (
-    -- Mark all previous templates as inactive if new one is active
-    UPDATE document_templates
+    -- Mark all previous args_outputs as inactive if new one is active (via args_outputs_resource.active)
+    UPDATE args_outputs_resource ao
     SET active = false, updated_at = NOW()
-    WHERE document_templates.document_id = $1
-      AND document_templates.active = true
+    FROM document_args_outputs dao
+    WHERE dao.document_id = $1
+      AND dao.args_outputs_id = ao.id
+      AND ao.active = true
       AND $5 = true
 ),
 existing_template AS (
-    -- Check if template already exists (same html_id and schema_id via document_html and document_schemas)
-    SELECT DISTINCT dt.template_id
-    FROM document_templates dt
-    JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = $2 AND dh.active = true
-    JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = $4 AND ds.active = true
-    WHERE dt.active = true
+    -- Check if args_outputs_resource already exists (same name and args_id via document_args_outputs and document_args)
+    SELECT DISTINCT dao.args_outputs_id as template_id
+    FROM document_args_outputs dao
+    JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
+    JOIN document_html dh ON dh.document_id = dao.document_id AND dh.html_id = $2 AND dh.active = true
+    JOIN document_args da ON da.document_id = dao.document_id AND da.args_id = $4
+    WHERE ao.name = $3 AND ao.args_id = $4
     LIMIT 1
 ),
-create_template AS (
-    -- Create template (just values, no schema/HTML refs)
-    INSERT INTO templates_resource (name, created_at, updated_at)
+dummy_call AS (
+    -- Create dummy call if run_id not provided (call_id is required for args_outputs_resource)
+    -- Note: calls requires tool_id and template_id (both NOT NULL)
+    INSERT INTO calls (id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
+        uuidv7(),
+        'create_template_and_link_' || gen_random_uuid()::text,
+        COALESCE(
+            (SELECT id FROM tool_artifact LIMIT 1),
+            (SELECT tool_id FROM calls LIMIT 1)
+        ),  -- Get any tool_id for dummy call
+        COALESCE(
+            (SELECT id FROM args_outputs_resource LIMIT 1),
+            (SELECT template_id FROM calls LIMIT 1)
+        ),  -- Get any template_id for dummy call
+        '{}',
+        true,
+        NOW(),
+        NOW()
+    WHERE $6 IS NULL
+      AND NOT EXISTS (SELECT 1 FROM calls WHERE external_call_id LIKE 'create_template_and_link_%' LIMIT 1)
+    ON CONFLICT DO NOTHING
+    RETURNING id as call_id
+),
+get_call_id AS (
+    -- Get call_id from run if provided, otherwise use dummy call or existing
+    SELECT COALESCE(
+        (SELECT c.id FROM calls c JOIN message_runs mr ON mr.run_id = $6 JOIN message_calls mc ON mc.message_id = mr.message_id WHERE mc.call_id = c.id LIMIT 1),
+        (SELECT call_id FROM dummy_call),
+        (SELECT id FROM calls WHERE external_call_id LIKE 'create_template_and_link_%' LIMIT 1),
+        (SELECT id FROM calls LIMIT 1)  -- Fallback to any call
+    ) as call_id
+),
+create_template AS (
+    -- Create args_outputs_resource (with name and args_id linking to schema)
+    INSERT INTO args_outputs_resource (id, name, template, args_id, active, generated, mcp, call_id, created_at, updated_at)
+    SELECT 
+        uuidv7(),
         $3,
+        '',  -- template field - can be empty initially
+        $4,  -- args_id links to the schema (args_resource.id)
+        $5,
+        true,
+        false,
+        (SELECT call_id FROM get_call_id),
         NOW(),
         NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_template)
-    RETURNING templates_resource.id as template_id
+      AND $4 IS NOT NULL  -- schema_id (args_resource.id) must be provided
+    RETURNING id as template_id
 ),
 template_id AS (
     SELECT template_id FROM existing_template
@@ -82,33 +126,21 @@ template_id AS (
     SELECT template_id FROM create_template
     LIMIT 1
 ),
-link_schema AS (
-    -- Link template to schema via schema_templates junction table
-    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
-    SELECT 
-        $4,
-        ti.template_id,
-        NOW(),
-        NOW()
-    FROM template_id ti
-    WHERE $4 IS NOT NULL
-    ON CONFLICT (schema_id, template_id) DO UPDATE SET
-        updated_at = NOW()
-),
 link_to_document AS (
-    -- Link template to document (without html_id and schema_id)
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Link args_outputs_resource to document via document_args_outputs
+    INSERT INTO document_args_outputs (document_id, args_outputs_id, created_at, updated_at, generated, mcp)
     SELECT 
         $1,
         ti.template_id,
-        $5,
         NOW(),
-        NOW()
+        NOW(),
+        true,
+        false
     FROM template_id ti
-    ON CONFLICT (document_id, template_id) DO UPDATE SET
-        active = EXCLUDED.active,
+    WHERE ti.template_id IS NOT NULL
+    ON CONFLICT (document_id, args_outputs_id) DO UPDATE SET
         updated_at = NOW()
-    RETURNING template_id
+    RETURNING args_outputs_id as template_id
 ),
 link_html_to_document AS (
     -- Link HTML to document via document_html junction
@@ -126,18 +158,18 @@ link_html_to_document AS (
         updated_at = NOW()
 ),
 link_schema_to_document AS (
-    -- Link schema to document via document_schemas junction
-    INSERT INTO document_schemas (document_id, schema_id, active, created_at, updated_at)
+    -- Link args_resource (schema) to document via document_args junction
+    INSERT INTO document_args (document_id, args_id, created_at, updated_at, generated, mcp)
     SELECT 
         $1,
-        $4,
-        $5,
+        $4,  -- schema_id is actually args_resource.id
         NOW(),
-        NOW()
+        NOW(),
+        true,
+        false
     FROM template_id ti
     WHERE $4 IS NOT NULL
-    ON CONFLICT (document_id, schema_id) DO UPDATE SET
-        active = EXCLUDED.active,
+    ON CONFLICT (document_id, args_id) DO UPDATE SET
         updated_at = NOW()
 ),
 link_to_run AS (

@@ -1,4 +1,5 @@
--- Get template array items
+-- DEPRECATED: Get template array items
+-- This function is deprecated - template_array_items_resource table has been dropped
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -14,7 +15,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function as no-op (deprecated)
+-- Note: template_array_items_resource table has been dropped
+-- This function is kept for backward compatibility but returns empty result
 CREATE OR REPLACE FUNCTION utils_get_template_array_items_v4(
     template_id uuid
 )
@@ -26,9 +29,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT sf.name, tai.item_template_id, tai."position"
-    FROM template_array_items_resource tai
-    JOIN schema_fields_resource sf ON sf.id = tai.schema_field_id
-    WHERE tai.template_id = $1
-    ORDER BY sf."position", tai."position"
+    -- DEPRECATED: This function no longer returns template array items
+    -- template_array_items_resource table has been dropped
+    SELECT NULL::text, NULL::uuid, NULL::integer
+    WHERE false
 $$;

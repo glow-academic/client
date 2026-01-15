@@ -1,4 +1,5 @@
--- Create template array item link
+-- DEPRECATED: Create template array item link
+-- This function is deprecated - template_array_items_resource table has been dropped
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -14,7 +15,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function as no-op (deprecated)
+-- Note: template_array_items_resource table has been dropped
+-- This function is kept for backward compatibility but does nothing
 CREATE OR REPLACE FUNCTION utils_create_template_array_item_v4(
     template_id uuid,
     schema_field_id uuid,
@@ -25,10 +28,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO template_array_items_resource (
-        template_id, schema_field_id, item_template_id, "position",
-        created_at, updated_at
-    )
-    VALUES ($1, $2, $3, $4, NOW(), NOW())
-    ON CONFLICT (template_id, schema_field_id, item_template_id) DO NOTHING
+    -- DEPRECATED: This function no longer creates template array items
+    -- template_array_items_resource table has been dropped
+    SELECT NULL::void
 $$;

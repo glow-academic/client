@@ -1,5 +1,5 @@
--- Get schema for a template via schema_templates junction
--- Returns schema_id for a given template_id
+-- Get schema for a template via args_outputs_resource.args_id
+-- Returns schema_id (args_resource.id) for a given template_id (args_outputs_resource.id)
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -16,6 +16,7 @@ BEGIN
 END $$;
 
 -- Recreate function
+-- Note: schema_templates table has been dropped - linking now via args_outputs_resource.args_id
 CREATE OR REPLACE FUNCTION api_get_template_schema_v4(
     template_id uuid
 )
@@ -26,9 +27,10 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT
-    st.schema_id
-FROM schema_templates st
-WHERE st.template_id = template_id
+    ao.args_id as schema_id
+FROM args_outputs_resource ao
+WHERE ao.id = template_id
+  AND ao.active = true
 LIMIT 1
 $$;
 

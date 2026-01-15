@@ -1322,8 +1322,9 @@ document_details_array AS (
         CASE 
             WHEN EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = dd.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
             WHEN EXISTS(
-                SELECT 1 FROM document_templates dt2 
-                WHERE dt2.document_id = dd.id AND dt2.active = true
+                SELECT 1 FROM document_args_outputs dao2 
+                JOIN args_outputs_resource ao2 ON ao2.id = dao2.args_outputs_id AND ao2.active = true
+                WHERE dao2.document_id = dd.id
             ) THEN true
             ELSE false
         END as is_template,

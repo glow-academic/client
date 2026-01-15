@@ -159,30 +159,61 @@ update_document_template_flag AS (
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
-create_template AS (
-    -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
-    INSERT INTO templates_resource (name, created_at, updated_at)
+-- Get dummy call_id for args_outputs_resource creation
+dummy_call_for_template AS (
+    INSERT INTO calls (id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
+        uuidv7(),
+        'update_document_template_' || gen_random_uuid()::text,
+        (SELECT id FROM tool_artifact LIMIT 1),
+        (SELECT id FROM args_outputs_resource LIMIT 1),
+        '{}',
+        true,
+        NOW(),
+        NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM calls WHERE external_call_id LIKE 'update_document_template_%' LIMIT 1)
+    ON CONFLICT DO NOTHING
+    RETURNING id as call_id
+),
+get_call_id_for_template AS (
+    SELECT COALESCE(
+        (SELECT id FROM calls WHERE external_call_id LIKE 'update_document_template_%' LIMIT 1),
+        (SELECT call_id FROM dummy_call_for_template),
+        (SELECT id FROM calls LIMIT 1)
+    ) as call_id
+),
+create_template AS (
+    -- Create args_outputs_resource (template) if html_id and schema_id are provided
+    INSERT INTO args_outputs_resource (id, name, template, args_id, active, generated, mcp, call_id, created_at, updated_at)
+    SELECT 
+        uuidv7(),
         COALESCE((SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = (SELECT document_id FROM params) LIMIT 1), 'Template'),
+        '',  -- template field - empty initially
+        p.schema_id,  -- args_id links to the schema (args_resource.id)
+        true,
+        true,
+        false,
+        (SELECT call_id FROM get_call_id_for_template),
         NOW(),
         NOW()
     FROM params p
     WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM document_templates dt
-          JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = p.html_id AND dh.active = true
-          JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = p.schema_id AND ds.active = true
-          WHERE dt.active = true
+          SELECT 1 FROM document_args_outputs dao
+          JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
+          JOIN document_html dh ON dh.document_id = dao.document_id AND dh.html_id = p.html_id AND dh.active = true
+          JOIN document_args da ON da.document_id = dao.document_id AND da.args_id = p.schema_id
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching html_id and schema_id via document_html and document_schemas)
-    SELECT DISTINCT dt.template_id
+    -- Get existing args_outputs_resource if it exists (matching html_id and schema_id via document_html and document_args)
+    SELECT DISTINCT dao.args_outputs_id as template_id
     FROM params p
-    JOIN document_templates dt ON dt.active = true
-    JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = p.html_id AND dh.active = true
-    JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = p.schema_id AND ds.active = true
+    JOIN document_args_outputs dao ON dao.document_id IS NOT NULL
+    JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
+    JOIN document_html dh ON dh.document_id = dao.document_id AND dh.html_id = p.html_id AND dh.active = true
+    JOIN document_args da ON da.document_id = dao.document_id AND da.args_id = p.schema_id
     WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
     LIMIT 1
 ),
@@ -193,42 +224,28 @@ template_id AS (
     WHERE EXISTS (SELECT 1 FROM params WHERE html_id IS NOT NULL AND schema_id IS NOT NULL)
     LIMIT 1
 ),
-link_template_schema AS (
-    -- Link template to schema via schema_templates junction table
-    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
-    SELECT 
-        p.schema_id,
-        ti.template_id,
-        NOW(),
-        NOW()
-    FROM template_id ti
-    CROSS JOIN params p
-    WHERE p.schema_id IS NOT NULL
-    ON CONFLICT (schema_id, template_id) DO UPDATE SET
-        updated_at = NOW()
-),
 deactivate_previous_templates AS (
     -- Deactivate all previous templates if new one is provided
-    UPDATE document_templates
-    SET active = false, updated_at = NOW()
+    UPDATE document_args_outputs
+    SET updated_at = NOW()
     WHERE document_id = (SELECT document_id FROM params)
-      AND active = true
       AND (SELECT html_id FROM params) IS NOT NULL
 ),
 update_template_link AS (
-    -- Update or insert template link (without html_id and schema_id)
-    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+    -- Update or insert template link via document_args_outputs
+    INSERT INTO document_args_outputs (document_id, args_outputs_id, created_at, updated_at, generated, mcp)
     SELECT 
         p.document_id,
         ti.template_id,
-        true,
         NOW(),
-        NOW()
+        NOW(),
+        true,
+        false
     FROM template_id ti
     CROSS JOIN params p
     WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
-    ON CONFLICT (document_id, template_id) DO UPDATE SET
-        active = true,
+      AND ti.template_id IS NOT NULL
+    ON CONFLICT (document_id, args_outputs_id) DO UPDATE SET
         updated_at = NOW()
 ),
 update_html_link AS (
@@ -247,18 +264,18 @@ update_html_link AS (
         updated_at = NOW()
 ),
 update_schema_link AS (
-    -- Update or insert schema link via document_schemas junction
-    INSERT INTO document_schemas (document_id, schema_id, active, created_at, updated_at)
+    -- Update or insert schema link via document_args junction
+    INSERT INTO document_args (document_id, args_id, created_at, updated_at, generated, mcp)
     SELECT 
         p.document_id,
         p.schema_id,
-        true,
         NOW(),
-        NOW()
+        NOW(),
+        true,
+        false
     FROM params p
     WHERE p.schema_id IS NOT NULL
-    ON CONFLICT (document_id, schema_id) DO UPDATE SET
-        active = true,
+    ON CONFLICT (document_id, args_id) DO UPDATE SET
         updated_at = NOW()
 ),
 delete_html_link AS (
@@ -270,14 +287,14 @@ delete_html_link AS (
 ),
 delete_schema_link AS (
     -- Deactivate schema link if schema_id is NULL (removing template)
-    UPDATE document_schemas 
-    SET active = false, updated_at = NOW()
+    UPDATE document_args 
+    SET updated_at = NOW()
     WHERE document_id = (SELECT document_id FROM params)
     AND (SELECT schema_id FROM params) IS NULL
 ),
 delete_template_link AS (
     -- Delete template link if html_id is NULL (removing template)
-    DELETE FROM document_templates 
+    DELETE FROM document_args_outputs 
     WHERE document_id = (SELECT document_id FROM params)
     AND (SELECT html_id FROM params) IS NULL
 ),

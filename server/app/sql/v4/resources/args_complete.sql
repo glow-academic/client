@@ -39,15 +39,12 @@ DECLARE
     v_resource_id uuid;
     v_call_id uuid;
     v_tool_id uuid;
-    v_template_id uuid;
     v_arguments_raw text;
-    v_schema_id uuid;
-    v_arg_key text;
-    v_arg_value text;
     v_args_jsonb jsonb := '{}'::jsonb;
     v_params_jsonb jsonb;
     v_message_id uuid;
     v_run_id uuid;
+    v_arg_rec RECORD;
 BEGIN
     -- Lookup tool_id from agent_tools + resource_tools
     -- Note: No longer need template_id or schema_id since we use tool_args directly
@@ -93,22 +90,18 @@ BEGIN
     -- For each args_resource entry linked to the tool, extract variable names from template or use field name directly
     -- Only if tool_id exists
     IF v_tool_id IS NOT NULL THEN
-        FOR v_arg_key, v_arg_value IN
+        FOR v_arg_rec IN
             SELECT 
-                CASE 
-                    -- If template is empty, use field name as argument name
-                    -- Note: args_resource doesn't have template field, so always use name
-                    ar.name as arg_key,
-                    -- Look up value from function parameters using args_resource name
-                    v_params_jsonb->>ar.name as arg_value
+                ar.name,
+                v_params_jsonb->>ar.name as arg_value
             FROM tool_args ta
             JOIN args_resource ar ON ar.id = ta.args_id
             WHERE ta.tool_id = v_tool_id
               AND ar.active = true
             ORDER BY ar.position NULLS LAST, ar.created_at
         LOOP
-            IF v_arg_value IS NOT NULL THEN
-                v_args_jsonb := v_args_jsonb || jsonb_build_object(v_arg_key, v_arg_value);
+            IF v_arg_rec.arg_value IS NOT NULL THEN
+                v_args_jsonb := v_args_jsonb || jsonb_build_object(v_arg_rec.name, v_arg_rec.arg_value);
             END IF;
         END LOOP;
     END IF;

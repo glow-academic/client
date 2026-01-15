@@ -1,4 +1,6 @@
--- Link template to schema
+-- DEPRECATED: Link template to schema
+-- This function is deprecated - schema_templates table has been dropped
+-- Linking now happens via args_outputs_resource.args_id when creating args_outputs_resource
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -14,7 +16,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function as no-op (deprecated)
+-- Note: schema_templates table has been dropped
+-- Linking now happens via args_outputs_resource.args_id when creating args_outputs_resource entries
 CREATE OR REPLACE FUNCTION utils_link_schema_template_v4(
     schema_id uuid,
     template_id uuid
@@ -23,7 +27,8 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
-    VALUES ($1, $2, NOW(), NOW())
-    ON CONFLICT (schema_id, template_id) DO UPDATE SET updated_at = NOW()
+    -- DEPRECATED: This function no longer links schemas to templates
+    -- schema_templates table has been dropped
+    -- Linking now happens via args_outputs_resource.args_id when creating args_outputs_resource entries
+    SELECT NULL::void
 $$;

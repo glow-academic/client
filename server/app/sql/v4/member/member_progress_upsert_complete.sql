@@ -176,7 +176,7 @@ user_tool_call AS (
     SELECT 
         'member_progress_user_' || cm.message_id::text, 
         gst.tool_id, 
-        (SELECT template_id FROM tool_templates WHERE tool_id = gst.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gst.tool_id LIMIT 1),
         '',
         true, 
         cm.created_at, 

@@ -1,4 +1,5 @@
--- Get template values (scalar values)
+-- DEPRECATED: Get template values (scalar values)
+-- This function is deprecated - template_values_resource table has been dropped
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -14,7 +15,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function as no-op (deprecated)
+-- Note: template_values_resource table has been dropped
+-- This function is kept for backward compatibility but returns empty result
 CREATE OR REPLACE FUNCTION utils_get_template_values_v4(
     template_id uuid
 )
@@ -28,9 +31,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT sf.name, tv.string_value, tv.number_value, tv.boolean_value, sf.field_type
-    FROM template_values_resource tv
-    JOIN schema_fields_resource sf ON sf.id = tv.schema_field_id
-    WHERE tv.template_id = $1
-    ORDER BY sf.position
+    -- DEPRECATED: This function no longer returns template values
+    -- template_values_resource table has been dropped
+    SELECT NULL::text, NULL::text, NULL::numeric, NULL::boolean, NULL::text
+    WHERE false
 $$;

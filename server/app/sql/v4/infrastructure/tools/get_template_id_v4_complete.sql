@@ -24,8 +24,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT tt.template_id
-    FROM tool_templates tt
-    WHERE tt.tool_id = $1
+    SELECT tao.args_outputs_id as template_id
+    FROM tool_args_outputs tao
+    WHERE tao.tool_id = $1
     LIMIT 1
 $$;

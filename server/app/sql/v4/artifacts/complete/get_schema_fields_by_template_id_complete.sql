@@ -27,13 +27,13 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+    -- template_id is now args_outputs_resource.id, get args_resource entries via args_id
     SELECT 
-        sf.id,
-        sf.name::text as name,
-        sf.field_type::text as field_type
-    FROM schema_fields_resource sf
-    JOIN schemas_resource s ON s.id = sf.schema_id
-    JOIN schema_templates st ON st.schema_id = s.id
-    WHERE st.template_id = template_id
-    ORDER BY sf.position;
+        ar.id,
+        ar.name::text as name,
+        ar.field_type::text as field_type
+    FROM args_outputs_resource ao
+    JOIN args_resource ar ON ar.id = ao.args_id
+    WHERE ao.id = template_id
+    ORDER BY ar.position;
 $$;

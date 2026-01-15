@@ -286,15 +286,15 @@ tool_data AS (
     WHERE x.tool_id IS NOT NULL
     LIMIT 1
 ),
--- Schema IDs (selected schema IDs for tool)
+-- Schema IDs (selected schema IDs for tool) - now maps to args_resource IDs
 schema_ids_data AS (
     SELECT 
         CASE 
             WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(ts.schema_id ORDER BY ts.created_at)
-                 FROM tool_schemas ts
-                 WHERE ts.tool_id = (SELECT tool_id FROM params)),
+                (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at)
+                 FROM tool_args ta
+                 WHERE ta.tool_id = (SELECT tool_id FROM params)),
                 ARRAY[]::uuid[]
             )
         END as schema_ids
@@ -302,15 +302,15 @@ schema_ids_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Template IDs (selected template IDs for tool)
+-- Template IDs (selected template IDs for tool) - now maps to args_outputs_resource IDs
 template_ids_data AS (
     SELECT 
         CASE 
             WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(tt.template_id ORDER BY tt.created_at)
-                 FROM tool_templates tt
-                 WHERE tt.tool_id = (SELECT tool_id FROM params)),
+                (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at)
+                 FROM tool_args_outputs tao
+                 WHERE tao.tool_id = (SELECT tool_id FROM params)),
                 ARRAY[]::uuid[]
             )
         END as template_ids
@@ -318,115 +318,111 @@ template_ids_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Schema suggestions: linked to tools OR same group with generated=true
+-- Schema suggestions: linked to tools OR same group with generated=true - now uses args_resource
 schema_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(ts.schema_id ORDER BY ts.created_at DESC)
+            (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at DESC)
              FROM (
-                 SELECT DISTINCT ts.schema_id, MAX(ts.created_at) as created_at
-                 FROM tool_schemas ts
-                 JOIN schemas_resource s ON s.id = ts.schema_id
+                 SELECT DISTINCT ta.args_id, MAX(ta.created_at) as created_at
+                 FROM tool_args ta
+                 JOIN args_resource ar ON ar.id = ta.args_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE ts.schema_id IS NOT NULL
-                   AND s.active = true
+                 WHERE ta.args_id IS NOT NULL
+                   AND ar.active = true
                    AND (
-                       -- Option 1: Linked to tools (tool_schemas junction table means it's validated/used)
+                       -- Option 1: Linked to tools (tool_args junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       ts.generated = false
+                       ta.generated = false
                        OR
                        (
-                           ts.generated = true
-                           AND s.generated = true
+                           ta.generated = true
+                           AND ar.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
                                JOIN message_calls mc ON mc.call_id = c.id
                                JOIN message_runs mr ON mr.message_id = mc.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = s.call_id
+                               WHERE c.id = ar.call_id
                                  AND gr.group_id = dgd.group_id
                            )
                        )
                    )
-                 GROUP BY ts.schema_id
-                 ORDER BY MAX(ts.created_at) DESC
+                 GROUP BY ta.args_id
+                 ORDER BY MAX(ta.created_at) DESC
                  LIMIT 20
-             ) ts),
+             ) ta),
             ARRAY[]::uuid[]
         ) as schema_suggestions
     FROM params
     -- Always return at least one row
     LIMIT 1
 ),
--- Template suggestions: linked to tools OR same group with generated=true
+-- Template suggestions: linked to tools OR same group with generated=true - now uses args_outputs_resource
 template_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(tt.template_id ORDER BY tt.created_at DESC)
+            (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at DESC)
              FROM (
-                 SELECT DISTINCT tt.template_id, MAX(tt.created_at) as created_at
-                 FROM tool_templates tt
-                 JOIN templates_resource t ON t.id = tt.template_id
+                 SELECT DISTINCT tao.args_outputs_id, MAX(tao.created_at) as created_at
+                 FROM tool_args_outputs tao
+                 JOIN args_outputs_resource ao ON ao.id = tao.args_outputs_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE tt.template_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+                 WHERE tao.args_outputs_id IS NOT NULL
+                   AND ao.active = true
                    AND (
-                       -- Option 1: Linked to tools (tool_templates junction table means it's validated/used)
+                       -- Option 1: Linked to tools (tool_args_outputs junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       tt.generated = false
+                       tao.generated = false
                        OR
                        (
-                           tt.generated = true
-                           AND t.generated = true
-                           AND t.call_id IS NOT NULL
+                           tao.generated = true
+                           AND ao.generated = true
+                           AND ao.call_id IS NOT NULL
                            AND EXISTS (
                                SELECT 1 FROM calls c
                                JOIN message_calls mc ON mc.call_id = c.id
                                JOIN message_runs mr ON mr.message_id = mc.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = t.call_id
+                               WHERE c.id = ao.call_id
                                  AND gr.group_id = dgd.group_id
                            )
                        )
                    )
-                 GROUP BY tt.template_id
-                 ORDER BY MAX(tt.created_at) DESC
+                 GROUP BY tao.args_outputs_id
+                 ORDER BY MAX(tao.created_at) DESC
                  LIMIT 20
-             ) tt),
+             ) tao),
             ARRAY[]::uuid[]
         ) as template_suggestions
     FROM params
     -- Always return at least one row
     LIMIT 1
 ),
--- Schema mapping (for schemas array - all available schemas)
+-- Schema mapping (for schemas array - all available schemas) - now uses args_resource
+-- Note: field_count is always 1 since each args_resource is a single field
 schema_mapping_data AS (
     SELECT 
-        s.id as schema_id,
-        COALESCE(
-            (SELECT COUNT(*)::integer 
-             FROM schema_fields_resource sf 
-             WHERE sf.schema_id = s.id AND sf.active = true),
-            0
-        ) as field_count,
-        COALESCE(ts.generated, false) as generated
+        ar.id as schema_id,
+        1 as field_count,  -- Each args_resource represents one field
+        COALESCE(ta.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
-    JOIN schemas_resource s ON s.active = true
-    LEFT JOIN tool_schemas ts ON ts.schema_id = s.id AND ts.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all schemas for new tools
+    JOIN args_resource ar ON ar.active = true
+    LEFT JOIN tool_args ta ON ta.args_id = ar.id AND ta.tool_id = x.tool_id
+    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
--- Template mapping (for templates array - all available templates)
+-- Template mapping (for templates array - all available templates) - now uses args_outputs_resource
 template_mapping_data AS (
     SELECT 
-        t.id as template_id,
-        t.name,
-        COALESCE(tt.generated, false) as generated
+        ao.id as template_id,
+        ao.name,
+        COALESCE(tao.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
-    JOIN templates_resource t ON EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-    LEFT JOIN tool_templates tt ON tt.template_id = t.id AND tt.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all templates for new tools
+    JOIN args_outputs_resource ao ON ao.active = true
+    LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
+    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),
 -- Name ID (selected name ID for tool)
 name_id_data AS (
@@ -561,275 +557,70 @@ description_mapping_data AS (
     WHERE d.description IS NOT NULL AND d.description != ''
 ),
 -- Schema field IDs (selected schema field IDs for tool)
+-- DEPRECATED: Schema field IDs - tool_schema_fields table has been dropped
 schema_field_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(tsf.schema_field_id ORDER BY tsf.created_at)
-                 FROM tool_schema_fields tsf
-                 WHERE tsf.tool_id = (SELECT tool_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as schema_field_ids
+    SELECT ARRAY[]::uuid[] as schema_field_ids
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Schema field suggestions: linked to tools OR same group with generated=true
+-- DEPRECATED: Schema field suggestions - tool_schema_fields table has been dropped
 schema_field_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(tsf.schema_field_id ORDER BY tsf.created_at DESC)
-             FROM (
-                 SELECT DISTINCT tsf.schema_field_id, MAX(tsf.created_at) as created_at
-                 FROM tool_schema_fields tsf
-                 JOIN schema_fields_resource sf ON sf.id = tsf.schema_field_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE tsf.schema_field_id IS NOT NULL
-                   AND sf.active = true
-                   AND (
-                       -- Option 1: Linked to tools (tool_schema_fields junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       tsf.generated = false
-                       OR
-                       (
-                           tsf.generated = true
-                           AND sf.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = sf.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY tsf.schema_field_id
-                 ORDER BY MAX(tsf.created_at) DESC
-                 LIMIT 20
-             ) tsf),
-            ARRAY[]::uuid[]
-        ) as schema_field_suggestions
+    SELECT ARRAY[]::uuid[] as schema_field_suggestions
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Schema field mapping (for schema_fields array - all available schema_fields)
+-- DEPRECATED: Schema field mapping - schema_fields_resource table has been dropped
 schema_field_mapping_data AS (
-    SELECT 
-        sf.id as schema_field_id,
-        sf.name,
-        sf.description,
-        COALESCE(tsf.generated, false) as generated
+    SELECT NULL::uuid as schema_field_id, NULL::text as name, NULL::text as description, false as generated
     FROM params x
-    CROSS JOIN draft_group_data dgd
-    JOIN schema_fields_resource sf ON sf.active = true
-    LEFT JOIN tool_schema_fields tsf ON tsf.schema_field_id = sf.id AND tsf.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all schema_fields for new tools
+    WHERE false  -- Return empty result set
 ),
--- Schema field item IDs (selected schema field item IDs for tool)
+-- DEPRECATED: Schema field item IDs - tool_schema_field_items table has been dropped
 schema_field_item_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(tsfi.schema_field_item_id ORDER BY tsfi.created_at)
-                 FROM tool_schema_field_items tsfi
-                 WHERE tsfi.tool_id = (SELECT tool_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as schema_field_item_ids
+    SELECT ARRAY[]::uuid[] as schema_field_item_ids
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Schema field item suggestions: linked to tools OR same group with generated=true
+-- DEPRECATED: Schema field item suggestions - tool_schema_field_items table has been dropped
 schema_field_item_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(tsfi.schema_field_item_id ORDER BY tsfi.created_at DESC)
-             FROM (
-                 SELECT DISTINCT tsfi.schema_field_item_id, MAX(tsfi.created_at) as created_at
-                 FROM tool_schema_field_items tsfi
-                 JOIN schema_field_items_resource sfi ON sfi.id = tsfi.schema_field_item_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE tsfi.schema_field_item_id IS NOT NULL
-                   AND sfi.active = true
-                   AND (
-                       -- Option 1: Linked to tools (tool_schema_field_items junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       tsfi.generated = false
-                       OR
-                       (
-                           tsfi.generated = true
-                           AND sfi.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = sfi.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY tsfi.schema_field_item_id
-                 ORDER BY MAX(tsfi.created_at) DESC
-                 LIMIT 20
-             ) tsfi),
-            ARRAY[]::uuid[]
-        ) as schema_field_item_suggestions
+    SELECT ARRAY[]::uuid[] as schema_field_item_suggestions
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Schema field item mapping (for schema_field_items array - all available schema_field_items)
+-- DEPRECATED: Schema field item mapping - schema_field_items_resource table has been dropped
 schema_field_item_mapping_data AS (
-    SELECT 
-        sfi.id as schema_field_item_id,
-        sfi.schema_field_id,
-        COALESCE(sf.name, '') as schema_field_name,
-        sfi.item_schema_id,
-        COALESCE(tsfi.generated, false) as generated
+    SELECT NULL::uuid as schema_field_item_id, NULL::uuid as schema_field_id, ''::text as schema_field_name, NULL::uuid as item_schema_id, false as generated
     FROM params x
-    CROSS JOIN draft_group_data dgd
-    JOIN schema_field_items_resource sfi ON sfi.active = true
-    LEFT JOIN schema_fields_resource sf ON sf.id = sfi.schema_field_id AND sf.active = true
-    LEFT JOIN tool_schema_field_items tsfi ON tsfi.schema_field_item_id = sfi.id AND tsfi.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all schema_field_items for new tools
+    WHERE false  -- Return empty result set
 ),
--- Template array item IDs (selected template array item IDs for tool)
+-- DEPRECATED: Template array item IDs - tool_template_array_items table has been dropped
 template_array_item_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(ttai.template_array_item_id ORDER BY ttai.created_at)
-                 FROM tool_template_array_items ttai
-                 WHERE ttai.tool_id = (SELECT tool_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as template_array_item_ids
+    SELECT ARRAY[]::uuid[] as template_array_item_ids
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Template array item suggestions: linked to tools OR same group with generated=true
+-- DEPRECATED: Template array item suggestions - tool_template_array_items table has been dropped
 template_array_item_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(ttai.template_array_item_id ORDER BY ttai.created_at DESC)
-             FROM (
-                 SELECT DISTINCT ttai.template_array_item_id, MAX(ttai.created_at) as created_at
-                 FROM tool_template_array_items ttai
-                 JOIN template_array_items_resource tai ON tai.id = ttai.template_array_item_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE ttai.template_array_item_id IS NOT NULL
-                   AND tai.active = true
-                   AND (
-                       -- Option 1: Linked to tools (tool_template_array_items junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       ttai.generated = false
-                       OR
-                       (
-                           ttai.generated = true
-                           AND tai.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = tai.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY ttai.template_array_item_id
-                 ORDER BY MAX(ttai.created_at) DESC
-                 LIMIT 20
-             ) ttai),
-            ARRAY[]::uuid[]
-        ) as template_array_item_suggestions
+    SELECT ARRAY[]::uuid[] as template_array_item_suggestions
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Template array item mapping (for template_array_items array - all available template_array_items)
+-- DEPRECATED: Template array item mapping - template_array_items_resource table has been dropped
 template_array_item_mapping_data AS (
-    SELECT 
-        tai.id as template_array_item_id,
-        tai.template_id,
-        COALESCE(t.name, '') as template_name,
-        tai.schema_field_id,
-        COALESCE(sf.name, '') as schema_field_name,
-        tai.item_template_id,
-        COALESCE(it.name, '') as item_template_name,
-        COALESCE(ttai.generated, false) as generated
+    SELECT NULL::uuid as template_array_item_id, NULL::uuid as template_id, ''::text as template_name, NULL::uuid as schema_field_id, ''::text as schema_field_name, NULL::uuid as item_template_id, ''::text as item_template_name, false as generated
     FROM params x
-    CROSS JOIN draft_group_data dgd
-    JOIN template_array_items_resource tai ON tai.active = true
-    LEFT JOIN templates_resource t ON t.id = tai.template_id
-    LEFT JOIN schema_fields_resource sf ON sf.id = tai.schema_field_id AND sf.active = true
-    LEFT JOIN templates_resource it ON it.id = tai.item_template_id
-    LEFT JOIN tool_template_array_items ttai ON ttai.template_array_item_id = tai.id AND ttai.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all template_array_items for new tools
+    WHERE false  -- Return empty result set
 ),
--- Template value IDs (selected template value IDs for tool)
+-- DEPRECATED: Template value IDs - tool_template_values table has been dropped
 template_value_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(ttv.template_value_id ORDER BY ttv.created_at)
-                 FROM tool_template_values ttv
-                 WHERE ttv.tool_id = (SELECT tool_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as template_value_ids
+    SELECT ARRAY[]::uuid[] as template_value_ids
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
--- Template value suggestions: linked to tools OR same group with generated=true
+-- DEPRECATED: Template value suggestions - template_values_resource table has been dropped
 template_value_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(ttv.template_value_id ORDER BY ttv.created_at DESC)
-             FROM (
-                 SELECT DISTINCT ttv.template_value_id, MAX(ttv.created_at) as created_at
-                 FROM tool_template_values ttv
-                 JOIN template_values_resource tv ON tv.id = ttv.template_value_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE ttv.template_value_id IS NOT NULL
-                   AND tv.active = true
-                   AND (
-                       -- Option 1: Linked to tools (tool_template_values junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       ttv.generated = false
-                       OR
-                       (
-                           ttv.generated = true
-                           AND tv.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = tv.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY ttv.template_value_id
-                 ORDER BY MAX(ttv.created_at) DESC
-                 LIMIT 20
-             ) ttv),
-            ARRAY[]::uuid[]
-        ) as template_value_suggestions
+    SELECT ARRAY[]::uuid[] as template_value_suggestions
     FROM params
-    -- Always return at least one row
     LIMIT 1
 ),
 -- Domain IDs (selected domain IDs for tool)
@@ -861,16 +652,18 @@ domain_mapping_data AS (
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all domains for new tools
 ),
 -- Input schema fields detail (for SchemaInput component - fields from selected schemas)
+-- Input schema fields detail (for SchemaInput component - fields from selected schema_ids) - now uses args_resource
+-- Note: schema_ids_data now returns args_resource IDs, so we query args_resource directly
 input_schema_fields_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (sf.id, sf.schema_id, sf.name, sf.field_type::text, sf.required, COALESCE(sf.description, ''), COALESCE(sf.template, ''), sf.position, COALESCE(sf.default_value, ''), COALESCE(sf.generated, false))::types.q_get_tool_v4_schema_field_detail
-                ORDER BY sf.position, sf.name
+                (ar.id, ar.id, ar.name, ar.field_type::text, ar.required, COALESCE(ar.description, ''), ''::text, ar.position, COALESCE(ar.default_value, ''), COALESCE(ar.generated, false))::types.q_get_tool_v4_schema_field_detail
+                ORDER BY ar.position, ar.name
             )
             FROM params x
             CROSS JOIN schema_ids_data sid
-            JOIN schema_fields_resource sf ON sf.schema_id = ANY(sid.schema_ids) AND sf.active = true
+            JOIN args_resource ar ON ar.id = ANY(sid.schema_ids) AND ar.active = true
             WHERE COALESCE(array_length(sid.schema_ids, 1), 0) > 0),
             ARRAY[]::types.q_get_tool_v4_schema_field_detail[]
         ) as input_schema_fields
@@ -878,19 +671,18 @@ input_schema_fields_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Output templates detail (for SchemaOutput component - templates from selected template_ids)
+-- Output templates detail (for SchemaOutput component - templates from selected template_ids) - now uses args_outputs_resource
 output_templates_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (t.id, t.name, COALESCE(st.schema_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(tt.generated, false))::types.q_get_tool_v4_template_detail
-                ORDER BY t.name
+                (ao.id, ao.name, COALESCE(ao.args_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(tao.generated, false))::types.q_get_tool_v4_template_detail
+                ORDER BY ao.name
             )
             FROM params x
             CROSS JOIN template_ids_data tid
-            JOIN templates_resource t ON t.id = ANY(tid.template_ids) AND t.active = true
-            LEFT JOIN schema_templates st ON st.template_id = t.id AND st.active = true
-            LEFT JOIN tool_templates tt ON tt.template_id = t.id AND tt.tool_id = x.tool_id
+            JOIN args_outputs_resource ao ON ao.id = ANY(tid.template_ids) AND ao.active = true
+            LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
             WHERE COALESCE(array_length(tid.template_ids, 1), 0) > 0),
             ARRAY[]::types.q_get_tool_v4_template_detail[]
         ) as output_templates
@@ -898,18 +690,18 @@ output_templates_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Output schema fields detail (for SchemaOutput component - fields from schemas linked to selected templates)
+-- Output schema fields detail (for SchemaOutput component - fields from schemas linked to selected templates) - now uses args_outputs_resource.args_id → args_resource
 output_schema_fields_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (sf.id, sf.schema_id, sf.name, sf.field_type::text, sf.required, COALESCE(sf.description, ''), COALESCE(sf.template, ''), sf.position, COALESCE(sf.default_value, ''), COALESCE(sf.generated, false))::types.q_get_tool_v4_schema_field_detail
-                ORDER BY sf.position, sf.name
+                (ar.id, ar.id, ar.name, ar.field_type::text, ar.required, COALESCE(ar.description, ''), ''::text, ar.position, COALESCE(ar.default_value, ''), COALESCE(ar.generated, false))::types.q_get_tool_v4_schema_field_detail
+                ORDER BY ar.position, ar.name
             )
             FROM params x
             CROSS JOIN template_ids_data tid
-            JOIN schema_templates st ON st.template_id = ANY(tid.template_ids) AND st.active = true
-            JOIN schema_fields_resource sf ON sf.schema_id = st.schema_id AND sf.active = true
+            JOIN args_outputs_resource ao ON ao.id = ANY(tid.template_ids) AND ao.active = true
+            JOIN args_resource ar ON ar.id = ao.args_id AND ar.active = true
             WHERE COALESCE(array_length(tid.template_ids, 1), 0) > 0),
             ARRAY[]::types.q_get_tool_v4_schema_field_detail[]
         ) as output_schema_fields
@@ -917,28 +709,11 @@ output_schema_fields_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Template value mapping (for template_values array - all available template_values)
+-- DEPRECATED: Template value mapping - template_values_resource table has been dropped
 template_value_mapping_data AS (
-    SELECT 
-        tv.id as template_value_id,
-        tv.template_id,
-        COALESCE(t.name, '') as template_name,
-        tv.schema_field_id,
-        COALESCE(sf.name, '') as schema_field_name,
-        COALESCE(
-            tv.string_value::text,
-            tv.number_value::text,
-            tv.boolean_value::text,
-            ''
-        ) as value,
-        COALESCE(ttv.generated, false) as generated
+    SELECT NULL::uuid as template_value_id, NULL::uuid as template_id, ''::text as template_name, NULL::uuid as schema_field_id, ''::text as schema_field_name, ''::text as value, false as generated
     FROM params x
-    CROSS JOIN draft_group_data dgd
-    JOIN template_values_resource tv ON tv.active = true
-    LEFT JOIN templates_resource t ON t.id = tv.template_id
-    LEFT JOIN schema_fields_resource sf ON sf.id = tv.schema_field_id AND sf.active = true
-    LEFT JOIN tool_template_values ttv ON ttv.template_value_id = tv.id AND ttv.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all template_values for new tools
+    WHERE false  -- Return empty result set
 ),
 -- Args IDs (selected args IDs for tool)
 args_ids_data AS (

@@ -77,7 +77,7 @@ create_tool_call AS (
     SELECT 
         COALESCE(p.call_id, 'prompt_' || p.tool_call_id),
         gt.tool_id,
-        (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gt.tool_id LIMIT 1),
         COALESCE(p.arguments_raw, ''),
         false,
         NOW(),

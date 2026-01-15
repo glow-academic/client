@@ -105,7 +105,7 @@ SELECT
     (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)::text as document_name,
     ap.actor_name::text as actor_name,
     u.file_path::text as file_path,
-    ds.schema_id,
+    da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
     -- Settings fields
     COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'primary'::type_setting_colors LIMIT 1), '#171717')::text as settings_primary_color,
     COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'accent'::type_setting_colors LIMIT 1), '#f5f5f5')::text as settings_accent,
@@ -123,14 +123,15 @@ SELECT
     COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'chart5'::type_setting_colors LIMIT 1), '#c2185b')::text as settings_chart5
 FROM params x
 JOIN documents_resource d ON d.id = x.document_id
-INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+INNER JOIN document_args_outputs dao ON dao.document_id = d.id
+INNER JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
 INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
 INNER JOIN html_resource h ON h.id = dh.html_id
 INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
 INNER JOIN uploads u ON u.id = hu.upload_id
-LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
+LEFT JOIN document_args da ON da.document_id = d.id
 CROSS JOIN actor_profile ap
 CROSS JOIN selected_settings ss
-ORDER BY dt.created_at DESC
+ORDER BY dao.created_at DESC
 LIMIT 1
 $$;

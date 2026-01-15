@@ -31,18 +31,19 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+-- schema_id is now args_resource.id - but since each args_resource is a single field,
+-- we return just that one field (no aggregation needed)
+-- Note: schema_field_items_resource has been dropped, so item_schema_id is always NULL
 SELECT
-    s.id as schema_id,
-    sf.id as field_id,
-    sf.name as field_name,
-    sf.field_type,
-    sf.required,
-    sf."position",
-    sfi.item_schema_id
-FROM schemas_resource s
-JOIN schema_fields_resource sf ON sf.schema_id = s.id
-LEFT JOIN schema_field_items_resource sfi ON sfi.schema_field_id = sf.id
-WHERE s.id = $1
-ORDER BY sf."position", sf.name
+    ar.id as schema_id,
+    ar.id as field_id,  -- Same as schema_id since each args_resource is one field
+    ar.name as field_name,
+    ar.field_type::schema_field_type,  -- Cast to maintain return type
+    ar.required,
+    ar.position,
+    NULL::uuid as item_schema_id  -- schema_field_items_resource dropped
+FROM args_resource ar
+WHERE ar.id = $1
+ORDER BY ar.position, ar.name
 $$;
 

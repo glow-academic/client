@@ -62,11 +62,11 @@ regular_document_upload AS (
     SELECT 
         du.document_id,
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
-        (SELECT ds.schema_id 
-         FROM document_schemas ds 
-         WHERE ds.document_id = d.id AND ds.active = true 
-         ORDER BY ds.created_at DESC 
-         LIMIT 1) as schema_id
+        (SELECT da.args_id 
+         FROM document_args da 
+         WHERE da.document_id = d.id 
+         ORDER BY da.created_at DESC 
+         LIMIT 1) as schema_id  -- Using args_id as schema_id for backward compatibility
     FROM document_uploads du
     JOIN documents_resource d ON d.id = du.document_id
     WHERE du.upload_id = (SELECT upload_id FROM params)
@@ -78,12 +78,12 @@ template_upload AS (
     SELECT 
         dh.document_id,
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
-        ds.schema_id
+        da.args_id as schema_id  -- Using args_id as schema_id for backward compatibility
     FROM html_uploads hu
     JOIN html_resource h ON h.id = hu.html_id
     JOIN document_html dh ON dh.html_id = h.id AND dh.active = true
     JOIN documents_resource d ON d.id = dh.document_id
-    LEFT JOIN document_schemas ds ON ds.document_id = dh.document_id AND ds.active = true
+    LEFT JOIN document_args da ON da.document_id = dh.document_id
     WHERE hu.upload_id = (SELECT upload_id FROM params)
       AND hu.active = true
     ORDER BY dh.created_at DESC

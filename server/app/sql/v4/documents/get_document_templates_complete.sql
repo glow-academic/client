@@ -32,14 +32,15 @@ STABLE
 AS $$
 SELECT
     dh.html_id,
-    dt.template_id,
-    ds.schema_id,
-    dt.active,
-    dt.created_at,
-    dt.updated_at
-FROM document_templates dt
-LEFT JOIN document_html dh ON dh.document_id = dt.document_id AND dh.active = dt.active
-LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = dt.active
-WHERE dt.document_id = api_get_document_templates_v4.document_id
-ORDER BY dt.created_at DESC
+    dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
+    da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
+    ao.active,  -- Get active status from args_outputs_resource
+    dao.created_at,
+    dao.updated_at
+FROM document_args_outputs dao
+LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id
+LEFT JOIN document_html dh ON dh.document_id = dao.document_id
+LEFT JOIN document_args da ON da.document_id = dao.document_id
+WHERE dao.document_id = api_get_document_templates_v4.document_id
+ORDER BY dao.created_at DESC
 $$;

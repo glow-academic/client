@@ -1,4 +1,6 @@
--- Create schema field
+-- DEPRECATED: Create schema field
+-- This function is deprecated - schema_fields_resource table has been dropped
+-- Use api_create_args_v4 instead to create args_resource entries
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -14,7 +16,9 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function as no-op (deprecated)
+-- Note: schema_fields_resource table has been dropped in favor of args_resource
+-- This function is kept for backward compatibility but does nothing
 CREATE OR REPLACE FUNCTION utils_create_schema_field_v4(
     field_id uuid,
     schema_id uuid,
@@ -29,9 +33,8 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO schema_fields_resource (
-        id, schema_id, name, field_type, required, "position", description,
-        created_at, updated_at
-    )
-    VALUES ($1, $2, $3, $4::schema_field_type, $5, $6, $7, NOW(), NOW())
+    -- DEPRECATED: This function no longer creates schema fields
+    -- schema_fields_resource table has been dropped
+    -- Use api_create_args_v4 instead to create args_resource entries
+    SELECT NULL::void
 $$;

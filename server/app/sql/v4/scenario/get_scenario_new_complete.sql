@@ -913,7 +913,8 @@ all_documents_array AS (
     FROM document_data d
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+    LEFT JOIN document_args_outputs dao ON dao.document_id = d.id
+    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
     LEFT JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
     LEFT JOIN html_resource h ON h.id = dh.html_id
     LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
@@ -1336,8 +1337,9 @@ all_document_details_array AS (
         CASE 
             WHEN EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
             WHEN EXISTS(
-                SELECT 1 FROM document_templates dt2 
-                WHERE dt2.document_id = d.id AND dt2.active = true
+                SELECT 1 FROM document_args_outputs dao2 
+                JOIN args_outputs_resource ao2 ON ao2.id = dao2.args_outputs_id AND ao2.active = true
+                WHERE dao2.document_id = d.id
             ) THEN true
             ELSE false
         END as is_template,
@@ -1345,7 +1347,8 @@ all_document_details_array AS (
     FROM document_artifact d
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+    LEFT JOIN document_args_outputs dao ON dao.document_id = d.id
+    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
     LEFT JOIN document_html dh2 ON dh2.document_id = d.id AND dh2.active = true
     LEFT JOIN html_resource h ON h.id = dh2.html_id
     LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true

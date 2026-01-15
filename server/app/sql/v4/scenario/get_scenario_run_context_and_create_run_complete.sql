@@ -282,18 +282,19 @@ context_data AS (
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE), ds.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE), da.args_id)::types.i_get_scenario_run_context_and_create_run_v4_document
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document[]
             FROM document_artifact d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
-            LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+            LEFT JOIN document_args_outputs dao ON dao.document_id = d.id
+            LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
             LEFT JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
             LEFT JOIN html_resource h ON h.id = dh.html_id
             LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
             LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
-            LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
+            LEFT JOIN document_args da ON da.document_id = d.id
             WHERE d.id = ANY(p.document_ids)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_document[]
@@ -303,16 +304,17 @@ context_data AS (
         -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), ds.schema_id, h.id::text, COALESCE(u.file_path, ''))::types.i_get_scenario_run_context_and_create_run_v4_document_template
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), da.args_id, h.id::text, COALESCE(u.file_path, ''))::types.i_get_scenario_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
             FROM document_artifact d
-            INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+            INNER JOIN document_args_outputs dao ON dao.document_id = d.id
+            INNER JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
             INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
             INNER JOIN html_resource h ON h.id = dh.html_id
             INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
             INNER JOIN uploads u ON u.id = hu.upload_id
-            LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
+            LEFT JOIN document_args da ON da.document_id = d.id
             WHERE d.id = ANY(p.document_ids)
               AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE)
             ),

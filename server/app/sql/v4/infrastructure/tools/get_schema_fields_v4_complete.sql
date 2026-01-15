@@ -27,8 +27,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id, name, field_type, template
-    FROM schema_fields_resource
-    WHERE schema_fields_resource.schema_id = $1
+    -- schema_id is now args_resource.id
+    SELECT id, name, field_type, ''::text as template  -- args_resource doesn't have template field
+    FROM args_resource
+    WHERE args_resource.id = $1
     ORDER BY position
 $$;

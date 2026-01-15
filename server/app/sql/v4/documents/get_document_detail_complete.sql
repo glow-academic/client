@@ -151,7 +151,7 @@ document_data AS (
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT dh.html_id FROM document_html dh WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as html_id,
-        (SELECT ds.schema_id FROM document_schemas ds WHERE ds.document_id = d.id AND ds.active = true ORDER BY ds.created_at DESC LIMIT 1) as schema_id,
+        (SELECT da.args_id FROM document_args da WHERE da.document_id = d.id ORDER BY da.created_at DESC LIMIT 1) as schema_id,  -- Using args_id as schema_id for backward compatibility
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
@@ -171,28 +171,30 @@ document_data AS (
 ),
 document_active_template AS (
     SELECT 
-        dt.document_id,
-        dt.template_id,
-        ds.schema_id,
-        dt.created_at as template_created_at,
-        dt.updated_at as template_updated_at
+        dao.document_id,
+        dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
+        da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
+        dao.created_at as template_created_at,
+        dao.updated_at as template_updated_at
     FROM params x
-    JOIN document_templates dt ON dt.document_id = x.document_id AND dt.active = true
-    LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = true
-    ORDER BY dt.created_at DESC
+    JOIN document_args_outputs dao ON dao.document_id = x.document_id
+    JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
+    LEFT JOIN document_args da ON da.document_id = dao.document_id
+    ORDER BY dao.created_at DESC
     LIMIT 1
 ),
 document_all_templates AS (
     SELECT 
-        dt.document_id,
-        dt.template_id,
-        ds.schema_id,
-        dt.active as template_active,
-        dt.created_at as template_created_at,
-        dt.updated_at as template_updated_at
+        dao.document_id,
+        dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
+        da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
+        ao.active as template_active,  -- Get active status from args_outputs_resource
+        dao.created_at as template_created_at,
+        dao.updated_at as template_updated_at
     FROM params x
-    JOIN document_templates dt ON dt.document_id = x.document_id
-    LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = dt.active
+    JOIN document_args_outputs dao ON dao.document_id = x.document_id
+    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id
+    LEFT JOIN document_args da ON da.document_id = dao.document_id
 ),
 user_profile AS (
     SELECT 
