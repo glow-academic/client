@@ -3424,6 +3424,54 @@ class GetAgentNewApiResponse(BaseModel):
 
 
 
+# Generated from: get_agent_resource_ids_by_group_id
+
+class GetAgentResourceIdsByGroupIdSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class GetAgentResourceIdsByGroupIdSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    model_id: UUID | None = None
+    prompt_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+
+class GetAgentResourceIdsByGroupIdApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class GetAgentResourceIdsByGroupIdApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    model_id: UUID | None = None
+    prompt_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+
+
+
 # Generated from: get_agent_tools
 
 class GetAgentToolsSqlParams(BaseModel):
@@ -3848,6 +3896,75 @@ class UpdateAgentApiResponse(BaseModel):
 
     agent_id: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: validate_agent_resource_error
+
+class ValidateAgentResourceErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.resource_types,
+            self.artifact_type,
+        )
+
+class ValidateAgentResourceErrorSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateAgentResourceErrorApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+class ValidateAgentResourceErrorApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
+# Generated from: validate_agent_resource_progress
+
+class ValidateAgentResourceProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class ValidateAgentResourceProgressSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateAgentResourceProgressApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class ValidateAgentResourceProgressApiResponse(BaseModel):
+
+    is_valid: bool | None = None
 
 
 
@@ -36698,6 +36815,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentNewApiRequest",
         "GetAgentNewApiResponse",
     ),
+    "app/sql/v4/agents/get_agent_resource_ids_by_group_id_complete.sql": (
+        "GetAgentResourceIdsByGroupIdSqlParams",
+        "GetAgentResourceIdsByGroupIdSqlRow",
+        "GetAgentResourceIdsByGroupIdApiRequest",
+        "GetAgentResourceIdsByGroupIdApiResponse",
+    ),
     "app/sql/v4/agents/get_agent_tools_complete.sql": (
         "GetAgentToolsSqlParams",
         "GetAgentToolsSqlRow",
@@ -36751,6 +36874,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateAgentSqlRow",
         "UpdateAgentApiRequest",
         "UpdateAgentApiResponse",
+    ),
+    "app/sql/v4/agents/validate_agent_resource_error_complete.sql": (
+        "ValidateAgentResourceErrorSqlParams",
+        "ValidateAgentResourceErrorSqlRow",
+        "ValidateAgentResourceErrorApiRequest",
+        "ValidateAgentResourceErrorApiResponse",
+    ),
+    "app/sql/v4/agents/validate_agent_resource_progress_complete.sql": (
+        "ValidateAgentResourceProgressSqlParams",
+        "ValidateAgentResourceProgressSqlRow",
+        "ValidateAgentResourceProgressApiRequest",
+        "ValidateAgentResourceProgressApiResponse",
     ),
     "app/sql/v4/analysis/create_analysis_complete.sql": (
         "CreateAnalysisSqlParams",
@@ -40381,6 +40516,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/agents/get_agent_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/agents/get_agent_tools_complete.sql"]
     ) -> SqlString: ...
 
@@ -40422,6 +40562,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/agents/update_agent_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/agents/validate_agent_resource_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/agents/validate_agent_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload

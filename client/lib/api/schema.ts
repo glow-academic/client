@@ -245,6 +245,11 @@ export interface paths {
         /**
          * Get Simulation
          * @description Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
         post: operations["get_simulation_api_v4_simulations_get_post"];
         delete?: never;
@@ -2987,6 +2992,26 @@ export interface paths {
          * @description Create runs_rubric_grade_agents resource (always INSERT).
          */
         post: operations["create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/ranges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Ranges
+         * @description Create ranges resource (always INSERT).
+         */
+        post: operations["create_ranges_api_v4_resources_ranges_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10146,6 +10171,60 @@ export interface components {
             problem_statement_suggestions?: string[] | null;
             /** Problem Statements */
             problem_statements?: components["schemas"]["QGetScenarioV4ProblemStatementResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            active_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Active Flag */
+            show_active_flag?: boolean | null;
+            /** Active Flag Agent Id */
+            active_flag_agent_id?: string | null;
+            /** Active Flag Required */
+            active_flag_required?: boolean | null;
+            /** Objectives Enabled Flag Id */
+            objectives_enabled_flag_id?: string | null;
+            objectives_enabled_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Objectives Enabled Flag */
+            show_objectives_enabled_flag?: boolean | null;
+            /** Objectives Enabled Flag Agent Id */
+            objectives_enabled_flag_agent_id?: string | null;
+            /** Objectives Enabled Flag Required */
+            objectives_enabled_flag_required?: boolean | null;
+            /** Images Enabled Flag Id */
+            images_enabled_flag_id?: string | null;
+            images_enabled_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Images Enabled Flag */
+            show_images_enabled_flag?: boolean | null;
+            /** Images Enabled Flag Agent Id */
+            images_enabled_flag_agent_id?: string | null;
+            /** Images Enabled Flag Required */
+            images_enabled_flag_required?: boolean | null;
+            /** Video Enabled Flag Id */
+            video_enabled_flag_id?: string | null;
+            video_enabled_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Video Enabled Flag */
+            show_video_enabled_flag?: boolean | null;
+            /** Video Enabled Flag Agent Id */
+            video_enabled_flag_agent_id?: string | null;
+            /** Video Enabled Flag Required */
+            video_enabled_flag_required?: boolean | null;
+            /** Questions Enabled Flag Id */
+            questions_enabled_flag_id?: string | null;
+            questions_enabled_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Questions Enabled Flag */
+            show_questions_enabled_flag?: boolean | null;
+            /** Questions Enabled Flag Agent Id */
+            questions_enabled_flag_agent_id?: string | null;
+            /** Questions Enabled Flag Required */
+            questions_enabled_flag_required?: boolean | null;
+            /** Problem Statement Enabled Flag Id */
+            problem_statement_enabled_flag_id?: string | null;
+            problem_statement_enabled_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Problem Statement Enabled Flag */
+            show_problem_statement_enabled_flag?: boolean | null;
+            /** Problem Statement Enabled Flag Agent Id */
+            problem_statement_enabled_flag_agent_id?: string | null;
+            /** Problem Statement Enabled Flag Required */
+            problem_statement_enabled_flag_required?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */
@@ -10286,6 +10365,59 @@ export interface components {
             parameter_suggestions?: string[] | null;
             /** Parameters */
             parameters?: components["schemas"]["QGetScenarioV4Parameter"][] | null;
+            /** Persona Range Id */
+            persona_range_id?: string | null;
+            persona_range_resource?: components["schemas"]["QGetScenarioV4RangeResource"] | null;
+            /** Show Persona Range */
+            show_persona_range?: boolean | null;
+            /** Persona Range Agent Id */
+            persona_range_agent_id?: string | null;
+            /** Persona Range Required */
+            persona_range_required?: boolean | null;
+            /** Persona Range Suggestions */
+            persona_range_suggestions?: string[] | null;
+            /** Persona Ranges */
+            persona_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
+            /** Document Range Id */
+            document_range_id?: string | null;
+            document_range_resource?: components["schemas"]["QGetScenarioV4RangeResource"] | null;
+            /** Show Document Range */
+            show_document_range?: boolean | null;
+            /** Document Range Agent Id */
+            document_range_agent_id?: string | null;
+            /** Document Range Required */
+            document_range_required?: boolean | null;
+            /** Document Range Suggestions */
+            document_range_suggestions?: string[] | null;
+            /** Document Ranges */
+            document_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
+            /** Parameter Range Id */
+            parameter_range_id?: string | null;
+            parameter_range_resource?: components["schemas"]["QGetScenarioV4RangeResource"] | null;
+            /** Show Parameter Range */
+            show_parameter_range?: boolean | null;
+            /** Parameter Range Agent Id */
+            parameter_range_agent_id?: string | null;
+            /** Parameter Range Required */
+            parameter_range_required?: boolean | null;
+            /** Parameter Range Suggestions */
+            parameter_range_suggestions?: string[] | null;
+            /** Parameter Ranges */
+            parameter_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
+            /** Field Range Ids */
+            field_range_ids?: string[] | null;
+            /** Field Range Resources */
+            field_range_resources?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
+            /** Show Field Ranges */
+            show_field_ranges?: boolean | null;
+            /** Field Ranges Agent Id */
+            field_ranges_agent_id?: string | null;
+            /** Field Ranges Required */
+            field_ranges_required?: boolean | null;
+            /** Field Range Suggestions */
+            field_range_suggestions?: string[] | null;
+            /** Field Ranges */
+            field_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** Content Agent Id */
@@ -10326,18 +10458,6 @@ export interface components {
             valid_parameter_ids?: string[] | null;
             /** Valid Field Ids */
             valid_field_ids?: string[] | null;
-            /** Persona Range Min */
-            persona_range_min?: number | null;
-            /** Persona Range Max */
-            persona_range_max?: number | null;
-            /** Document Range Min */
-            document_range_min?: number | null;
-            /** Document Range Max */
-            document_range_max?: number | null;
-            /** Parameter Range Min */
-            parameter_range_min?: number | null;
-            /** Parameter Range Max */
-            parameter_range_max?: number | null;
             /** Video Enabled */
             video_enabled?: boolean | null;
             /** Questions Enabled */
@@ -10350,8 +10470,6 @@ export interface components {
             can_duplicate?: boolean | null;
             /** Can Delete */
             can_delete?: boolean | null;
-            /** Field Ranges */
-            field_ranges?: components["schemas"]["QGetScenarioV4FieldRange"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetScenarioV4Agent"][] | null;
             /** Simulations */
@@ -10555,6 +10673,11 @@ export interface components {
             scenario_show_selected?: boolean | null;
             /** Filter Scenario Ids */
             filter_scenario_ids?: string[] | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** GetSimulationApiResponse */
         GetSimulationApiResponse: {
@@ -15163,14 +15286,18 @@ export interface components {
             /** Show Selected */
             show_selected: boolean | null;
         };
-        /** QGetScenarioV4FieldRange */
-        QGetScenarioV4FieldRange: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Min Count */
-            min_count: number | null;
-            /** Max Count */
-            max_count: number | null;
+        /** QGetScenarioV4FlagResource */
+        QGetScenarioV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetScenarioV4ImageResource */
         QGetScenarioV4ImageResource: {
@@ -15278,6 +15405,17 @@ export interface components {
             question_text: string | null;
             /** Allow Multiple */
             allow_multiple: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioV4RangeResource */
+        QGetScenarioV4RangeResource: {
+            /** Id */
+            id: string | null;
+            /** Min Count */
+            min_count: number | null;
+            /** Max Count */
+            max_count: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -18496,6 +18634,33 @@ export interface components {
         QuestionsApiResponse: {
             /** Question Id */
             question_id?: string | null;
+        };
+        /** RangesApiRequest */
+        RangesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Min Count */
+            min_count: number;
+            /** Max Count */
+            max_count: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** RangesApiResponse */
+        RangesApiResponse: {
+            /** Range Id */
+            range_id?: string | null;
         };
         /** ReasoningLevelsApiRequest */
         ReasoningLevelsApiRequest: {
@@ -25709,6 +25874,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunsRubricGradeAgentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_ranges_api_v4_resources_ranges_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RangesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RangesApiResponse"];
                 };
             };
             /** @description Validation Error */

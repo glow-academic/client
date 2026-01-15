@@ -1,121 +1,206 @@
-"""Agent page handler - handles prompt/instructions logic, then routes to artifacts/generate.py."""
+"""Agent generation router - unified handler for all agent resource types."""
 
+import json
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.sql.types import GetAgentApiRequest, GetAgentSqlParams, GetAgentSqlRow
 from fastapi import APIRouter
-from pydantic import BaseModel
+from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_CONTEXT = (
-    "app/sql/v4/prompt/get_prompt_run_context_and_create_run_complete.sql"
-)
-SQL_PATH_MESSAGES = "app/sql/v4/simulations/get_simulation_messages_complete.sql"
+SQL_PATH = "app/sql/v4/agents/get_agent_complete.sql"
+
+# Agent resource types
+AGENT_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "models",
+    "prompts",
+    "instructions",
+    "flags",
+    "departments",
+]
 
 
-class GenerateAgentPayload(BaseModel):
-    """Request to generate prompt/instructions."""
+class GenerateAgentPayload(GetAgentApiRequest):
+    """Request to generate agent resources - extends GET API request with generation-specific fields."""
 
-    chat_id: str
-    group_id: str | None = None
+    agent_type: str | None = None  # Optional: "name", "description", "model", "prompt", "instructions", "flags", "departments", "general"/"all"
+    resource_types: list[str]  # Required: which resource types to generate
+    user_instructions: list[str] | None = None  # Optional: user instructions
 
 
-async def _generate_agent_impl(
+async def _agent_generate_impl(
     sid: str, data: GenerateAgentPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle prompt/instructions generation - format chat scenario then route to artifacts."""
+    """Handle agent generation - emit generate_artifact for each resource type, then emit client event."""
     try:
-        async with get_db_connection() as conn:
-            # Get prompt context from SQL
-            from app.sql.types import (
-                GetPromptRunContextAndCreateRunSqlParams,
-                GetPromptRunContextAndCreateRunSqlRow,
-                GetSimulationMessagesSqlParams,
-                GetSimulationMessagesSqlRow,
+        # Validate resource types
+        resource_types = data.resource_types
+        if not resource_types:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="resource_types must be provided",
+                    artifact_type="agent",
+                    group_id=None,
+                    resource_type="agent",
+                ),
+                sid=sid,
             )
+            return
 
-            chat_id_uuid = uuid.UUID(data.chat_id)
-            group_id_uuid = uuid.UUID(data.group_id) if data.group_id else None
+        invalid_types = [
+            rt for rt in resource_types if rt not in AGENT_RESOURCE_TYPES
+        ]
+        if invalid_types:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
+                    artifact_type="agent",
+                    group_id=None,
+                    resource_type="agent",
+                ),
+                sid=sid,
+            )
+            return
 
-            params = GetPromptRunContextAndCreateRunSqlParams(
-                chat_id=chat_id_uuid,
+        # Map agent_type to agent_id from response (will be done after fetching agent data)
+
+        # Call get_agent_v4 SQL function (same as GET API endpoint)
+        async with get_db_connection() as conn:
+            # Convert payload to SQL params (same as GET endpoint)
+            params = GetAgentSqlParams(
                 profile_id=profile_id,
-                group_id=group_id_uuid,
+                agent_id=data.agent_id,
+                draft_id=data.draft_id,
+                mcp=getattr(data, "mcp", False) or False,
             )
 
             result = cast(
-                GetPromptRunContextAndCreateRunSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=params),
+                GetAgentSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            if not result:
+            # Map agent_type to agent_id from response
+            agent_id: uuid.UUID | None = None
+            if data.agent_type:
+                agent_type_map = {
+                    "name": result.name_agent_id,
+                    "description": result.description_agent_id,
+                    "model": result.models_agent_id,
+                    "models": result.models_agent_id,
+                    "prompt": result.prompts_agent_id,
+                    "prompts": result.prompts_agent_id,
+                    "instructions": result.instructions_agent_id,
+                    "flags": result.flag_agent_id,
+                    "departments": result.departments_agent_id,
+                    "general": None,  # Will need to determine best agent for all resources
+                    "all": None,  # Will need to determine best agent for all resources
+                }
+                agent_id = agent_type_map.get(data.agent_type)
+
+            # For "general" or "all", we need to find an agent that can handle all resource types
+            # For now, use the first available agent_id from the resource types
+            if not agent_id and data.agent_type in ["general", "all"]:
+                # Try to find an agent that can handle all requested resource types
+                # Use the first available agent_id from the requested resource types
+                for rt in resource_types:
+                    rt_map = {
+                        "names": result.name_agent_id,
+                        "descriptions": result.description_agent_id,
+                        "models": result.models_agent_id,
+                        "prompts": result.prompts_agent_id,
+                        "instructions": result.instructions_agent_id,
+                        "flags": result.flag_agent_id,
+                        "departments": result.departments_agent_id,
+                    }
+                    candidate_agent_id = rt_map.get(rt)
+                    if candidate_agent_id:
+                        agent_id = candidate_agent_id
+                        break
+
+            if not agent_id:
                 await emit_to_internal(
                     "generate_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Failed to get prompt context",
-                        resource_id=data.chat_id,
-                        group_id=data.group_id,
-                        resource_type="prompt",
+                        error_message=f"No agent found for agent_type: {data.agent_type}",
+                        artifact_type="agent",
+                        group_id=None,
+                        resource_type="agent",
                     ),
                     sid=sid,
                 )
                 return
 
-            # Get conversation history
-            messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
-            messages_result = cast(
-                GetSimulationMessagesSqlRow,
-                await execute_sql_typed(
-                    conn, SQL_PATH_MESSAGES, params=messages_params
-                ),
-            )
-            conversation_history = (
-                messages_result.messages if messages_result.messages else []
-            )
+            # Extract resource IDs from arrays and build resources array (composite type format)
+            resources: list[dict[str, Any]] = []
 
-            # Step 1: Format chat scenario for context
-            scenario_text = format_chat_scenario(result.scenario_id)
+            # Extract IDs from each resource array
+            if result.names:
+                resources.append({
+                    "resource_type": "names",
+                    "resource_ids": [str(n.id) for n in result.names if n.id]
+                })
+            if result.descriptions:
+                resources.append({
+                    "resource_type": "descriptions",
+                    "resource_ids": [str(d.id) for d in result.descriptions if d.id]
+                })
+            if result.models:
+                resources.append({
+                    "resource_type": "models",
+                    "resource_ids": [str(m.model_id) for m in result.models if m.model_id]
+                })
+            if result.prompts:
+                resources.append({
+                    "resource_type": "prompts",
+                    "resource_ids": [str(p.prompt_id) for p in result.prompts if p.prompt_id]
+                })
+            if result.instructions:
+                resources.append({
+                    "resource_type": "instructions",
+                    "resource_ids": [str(inst.id) for inst in result.instructions if inst.id]
+                })
+            if result.departments:
+                resources.append({
+                    "resource_type": "departments",
+                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
+                })
 
-            # Build input items for agent
-            input_items: list[dict[str, Any]] = []
+            # Get group_id from response if available
+            group_id: uuid.UUID | None = result.group_id
 
-            # Add system prompt
-            system_prompt = str(result.system_prompt) if result.system_prompt else ""
-            if system_prompt:
-                input_items.append({"role": "system", "content": system_prompt})
-
-            # Add scenario context
-            if scenario_text:
-                input_items.append({"role": "user", "content": scenario_text})
-
-            # Add conversation history
-            for msg in conversation_history:
-                input_items.append(msg)
-
-            # Step 2: Route to generate_artifact (which will create run and handle generation)
-            # Note: Context should be handled via instructions linked to agent, not developer_message_contents
+            # Emit single generate_artifact event with all resource types
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "agent_id": result.agent_id,
-                    "resource_id": data.chat_id,
-                    "resource_type": "prompt",
-                    "group_id": data.group_id,  # May be None for new group
-                    "user_instructions": None,
-                    "message_ids": None,
+                    "artifact_type": "agent",
+                    "agent_id": str(agent_id),  # Use agent_id from mapping
+                    "resource_types": resource_types,  # Pass all resource types at once
+                    "group_id": str(group_id) if group_id else None,
+                    "resources": resources,  # Pass resources array
+                    "user_instructions": data.user_instructions
+                    if data.user_instructions
+                    else None,
                 },
             )
 
@@ -124,10 +209,10 @@ async def _generate_agent_impl(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to generate prompt: {str(e)}",
-                resource_id=data.chat_id,
-                group_id=data.group_id,
-                resource_type="prompt",
+                error_message=f"Failed to generate agent resources: {str(e)}",
+                artifact_type="agent",
+                group_id=None,
+                resource_type="agent",
             ),
             sid=sid,
         )
@@ -145,24 +230,24 @@ async def agent_generate(sid: str, data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    resource_id=data.get("chat_id"),
-                    group_id=data.get("group_id"),
-                    resource_type="prompt",
+                    artifact_type="agent",
+                    group_id=None,
+                    resource_type="agent",
                 ),
                 sid=sid,
             )
             return
         profile_id = uuid.UUID(profile_id_str)
-        await _generate_agent_impl(sid, payload, profile_id)
+        await _agent_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                resource_id=data.get("chat_id"),
-                group_id=data.get("group_id"),
-                resource_type="prompt",
+                artifact_type="agent",
+                group_id=None,
+                resource_type="agent",
             ),
             sid=sid,
         )
@@ -170,23 +255,39 @@ async def agent_generate(sid: str, data: dict[str, Any]) -> None:
 
 @internal_sio.on("agent_generate")  # type: ignore
 async def agent_generate_internal(data: dict[str, Any]) -> None:
-    """Handle agent_generate event from internal bus (server-to-server).
-
-    Routes directly to artifacts/generate.py which will create run and handle generation.
-    """
+    """Handle agent_generate event from internal bus (server-to-server)."""
     try:
-        # Route to artifacts/generate.py which will create run and handle generation
-        await internal_sio.emit("generate_artifact", data)
-    except Exception as e:
         sid = data.get("sid", "")
+        if not sid:
+            return
+
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Profile not found. Please reconnect.",
+                    artifact_type="agent",
+                    group_id=None,
+                    resource_type="agent",
+                ),
+                sid=sid,
+            )
+            return
+
+        profile_id = uuid.UUID(profile_id_str)
+        payload = GenerateAgentPayload(**data)
+        await _agent_generate_impl(sid, payload, profile_id)
+    except Exception as e:
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to route agent generation: {str(e)}",
-                resource_id=data.get("resource_id"),
-                group_id=data.get("group_id"),
-                resource_type="prompt",
+                error_message=f"Invalid request: {str(e)}",
+                artifact_type="agent",
+                group_id=None,
+                resource_type="agent",
             ),
             sid=sid,
         )

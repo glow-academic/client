@@ -52,8 +52,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
+import type { ResourceType } from "@/lib/resources/types";
+import { Names } from "@/components/resources/Names";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Models } from "@/components/resources/Models";
+import { Prompts } from "@/components/resources/Prompts";
+import { Instructions } from "@/components/resources/Instructions";
+import { Flags } from "@/components/resources/Flags";
+import { Departments } from "@/components/resources/Departments";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
+import { Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
@@ -129,9 +142,16 @@ export default function Agent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEditMode = !!agentId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { setGenerationCapability, clearGenerationCapability } =
+    useGenerationContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -144,6 +164,26 @@ export default function Agent({
     promptId: string;
     isDepartmentSpecific: boolean;
   } | null>(null);
+
+  // Generation state for AI workflows
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
+
+  // Modal state for generate/regenerate
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
+    null
+  );
+  const [modalResources, setModalResources] = useState<
+    GenerateRegenerateModalResource[]
+  >([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
 
   // Stabilize server props to prevent unnecessary re-renders from object reference changes
   const stabilizeServerProp = React.useCallback(
@@ -997,20 +1037,62 @@ export default function Agent({
 
   // Set breadcrumb context when agent data is loaded
   useEffect(() => {
-    if (agentDetail?.name && agentId && isEditMode) {
+    const agentName = agentData?.name_resource?.name || agentDetail?.name;
+    if (agentName && agentId && isEditMode) {
       setEntityMetadata({
         entityId: agentId,
-        entityName: agentDetail.name,
+        entityName: agentName,
         entityType: "agent",
       });
     }
     return () => clearEntityMetadata();
   }, [
-    agentDetail,
+    agentData?.name_resource?.name,
+    agentDetail?.name,
     agentId,
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
+  ]);
+
+  // Set generation capability when agent data is loaded
+  useEffect(() => {
+    // For agents, we need to determine if any agent_id is available for generation
+    // Use the first available agent_id from resource types
+    const availableAgentId =
+      agentData?.name_agent_id ||
+      agentData?.description_agent_id ||
+      agentData?.models_agent_id ||
+      agentData?.prompts_agent_id ||
+      agentData?.instructions_agent_id ||
+      agentData?.flag_agent_id ||
+      agentData?.departments_agent_id ||
+      null;
+
+    if (availableAgentId) {
+      setGenerationCapability({
+        artifactType: "agent",
+        canGenerate: true,
+        agentId: availableAgentId,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "agent",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [
+    agentData?.name_agent_id,
+    agentData?.description_agent_id,
+    agentData?.models_agent_id,
+    agentData?.prompts_agent_id,
+    agentData?.instructions_agent_id,
+    agentData?.flag_agent_id,
+    agentData?.departments_agent_id,
+    setGenerationCapability,
+    clearGenerationCapability,
   ]);
 
   // Initialize department change tracking ref
@@ -1319,17 +1401,25 @@ export default function Agent({
 
           // Note: profileId is added by the server action
           // Use input_agent_id = null for create, agent_id for update
+          // Extract name and description from resource IDs if available, otherwise use draftState text
+          const nameText =
+            agentData?.name_resource?.name || draftState.name || "New Agent";
+          const descriptionText =
+            agentData?.description_resource?.description ||
+            draftState.description ||
+            null;
+
           await handleSaveAgent({
             input_agent_id: isEditMode ? agentId : null,
-            name: draftState.name!,
-            description: draftState.description || null,
+            name: nameText,
+            description: descriptionText,
             model_id: draftState.modelId!.trim(),
             prompt_id: shouldCreateNewPrompt
               ? null
               : draftState.promptId || null,
             system_prompt: draftState.systemPrompt!,
-            instructions_id: null, // Not used for agents
-            active_flag_id: null, // Will be set based on active boolean
+            instructions_id: agentData?.instructions_id || null,
+            active_flag_id: agentData?.active_flag_id || null,
             department_ids: finalDepartmentIds,
             artifact_name: draftState.role || "assistant",
             temperature_level_id:
@@ -1510,40 +1600,372 @@ export default function Agent({
     [getRequiredModalities]
   );
 
+  // Helper to check if a resource type can be regenerated
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!agentData) return false;
+      switch (resourceType) {
+        case "names":
+          return agentData.name_resource?.generated ?? false;
+        case "descriptions":
+          return agentData.description_resource?.generated ?? false;
+        case "models":
+          return agentData.models?.some((m) => m.generated) ?? false;
+        case "prompts":
+          return agentData.prompts?.some((p) => p.generated) ?? false;
+        case "instructions":
+          return agentData.instructions_resource?.generated ?? false;
+        case "flags":
+          return agentData.flag_resource?.generated ?? false;
+        case "departments":
+          return agentData.departments?.some((d) => d.generated) ?? false;
+        default:
+          return false;
+      }
+    },
+    [agentData]
+  );
+
+  // Helper function to determine agent_type from resource types
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
+      if (resourceTypes.length === 1) {
+        const agentTypeMap: Record<ResourceType, string> = {
+          names: "name",
+          descriptions: "description",
+          models: "models",
+          prompts: "prompts",
+          instructions: "instructions",
+          flags: "flags",
+          departments: "departments",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType];
+        }
+      }
+      // For multiple resources, use "general" or find first available agent
+      return "general";
+    },
+    []
+  );
+
+  // Multi-generation handler - accepts list of resource types and optional user instructions
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      // Emit agent_generate event
+      socket.emit("agent_generate", {
+        resource_types: resourceTypes,
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        agent_id: agentId || null,
+        draft_id: draftId || null,
+        mcp: false,
+      });
+    },
+    [socket, isConnected, agentId, draftId]
+  );
+
+  // Individual generation handlers
+  const handleGenerateName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDescription = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["descriptions"],
+        determineAgentType(["descriptions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateInstructions = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["instructions"],
+        determineAgentType(["instructions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDepartments = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["departments"],
+        determineAgentType(["departments"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // WebSocket handlers for AI generation
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const currentGroupId = agentData?.group_id;
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      model_id?: string | null;
+      prompt_id?: string | null;
+      instructions_id?: string | null;
+      active_flag_id?: string | null;
+      department_ids?: string[];
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      if (
+        data.artifact_type !== "agent" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "models",
+        "prompts",
+        "instructions",
+        "flags",
+        "departments",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        // Update draftState with generated resource IDs and text
+        setDraftState((prev) => {
+          const updates: Partial<DraftState> = {};
+          if (data.name_id) {
+            // Find name text from agentData names array
+            const nameResource = agentData?.names?.find(
+              (n) => n.id === data.name_id
+            );
+            if (nameResource?.name) {
+              updates.name = nameResource.name;
+            }
+          }
+          if (data.description_id) {
+            // Find description text from agentData descriptions array
+            const descriptionResource = agentData?.descriptions?.find(
+              (d) => d.id === data.description_id
+            );
+            if (descriptionResource?.description) {
+              updates.description = descriptionResource.description;
+            }
+          }
+          if (data.model_id) updates.modelId = data.model_id;
+          if (data.prompt_id) updates.promptId = data.prompt_id;
+          if (data.instructions_id) {
+            // Find instructions text from agentData instructions array
+            const instructionsResource = agentData?.instructions?.find(
+              (inst) => inst.id === data.instructions_id
+            );
+            // Note: Instructions are stored separately, not in draftState.systemPrompt
+            // The systemPrompt is for prompts, not instructions
+          }
+          if (data.active_flag_id) {
+            updates.active = true; // Flag ID means active
+          }
+          if (data.department_ids && data.department_ids.length > 0) {
+            updates.departmentIds = [
+              ...new Set([...prev.departmentIds, ...data.department_ids]),
+            ];
+          }
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      if (
+        data.artifact_type !== "agent" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+      // Handle progress updates if needed
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      if (
+        data.artifact_type !== "agent" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "models",
+        "prompts",
+        "instructions",
+        "flags",
+        "departments",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    socket.on("agent_generation_progress", handleGenerationProgress);
+    socket.on("agent_generation_complete", handleGenerationComplete);
+    socket.on("agent_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("agent_generation_progress", handleGenerationProgress);
+      socket.off("agent_generation_complete", handleGenerationComplete);
+      socket.off("agent_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, agentData?.group_id, agentData?.names, agentData?.descriptions, agentData?.instructions]);
+
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      model: ["models"],
+      prompt: ["prompts"],
+      instructions: ["instructions"],
+      all: [
+        "names",
+        "descriptions",
+        "models",
+        "prompts",
+        "instructions",
+        "flags",
+        "departments",
+      ],
+    }),
+    []
+  );
+
+  // Resource labels for display
+  const resourceLabels: Record<ResourceType, string> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      models: "Models",
+      prompts: "Prompts",
+      instructions: "Instructions",
+      flags: "Flags",
+      departments: "Departments",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt],
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
+  // Handler for modal generate/regenerate action
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      const resourceTypes = selectedResources as ResourceType[];
+      const agentType = determineAgentType(resourceTypes);
+      await handleGenerateResources(
+        resourceTypes,
+        agentType,
+        instructions.trim() || undefined
+      );
+      setShowGenerateModal(false);
+      setModalInstructions("");
+    },
+    [handleGenerateResources, determineAgentType]
+  );
+
   return (
     <TooltipProvider>
       <div className="space-y-6 py-4 px-4">
-        {isReadonly && (
-          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-muted-foreground"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-foreground">
-                  Agent is read-only
-                </h3>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>
-                    {agentData?.department_ids?.length === 0
-                      ? "This is a default agent that cannot be edited. You can view the details but cannot make changes."
-                      : "This agent cannot be edited. You can view the details but cannot make changes."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={agentData?.disabled_reason ?? null}
+          entityType="agent"
+        />
         <div className="w-full">
           <GenericForm
             nuqsParsers={
@@ -1604,121 +2026,178 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      editableTitle={{
-                        value: draftState.name || "New Agent",
-                        onChange: (value) => {
-                          setDraftState((prev) => ({
-                            ...prev,
-                            name: value || "New Agent",
-                          }));
-                        },
-                        placeholder: "New Agent",
-                        defaultName: "New Agent",
-                        required: true,
-                      }}
+                      customHeader={
+                        <Names
+                          name_id={agentData?.name_id ?? null}
+                          name_resource={agentData?.name_resource ?? null}
+                          show_name={agentData?.show_name ?? true}
+                          name_suggestions={agentData?.name_suggestions ?? []}
+                          names={agentData?.names ?? []}
+                          disabled={isReadonly}
+                          onNameIdChange={(nameId) => {
+                            // Update draftState with name text from resource
+                            const nameResource = agentData?.names?.find(
+                              (n) => n.id === nameId
+                            );
+                            setDraftState((prev) => ({
+                              ...prev,
+                              name: nameResource?.name || "New Agent",
+                            }));
+                          }}
+                          onGenerate={handleGenerateName}
+                          isGenerating={isGenerating("names")}
+                          placeholder="e.g., Customer Support Agent"
+                          defaultName="New Agent"
+                          required={agentData?.name_required ?? false}
+                          hideDescription={true}
+                          group_id={agentData?.group_id ?? null}
+                          agent_id={agentData?.name_agent_id ?? null}
+                        />
+                      }
                       resetFields={[
                         "name",
                         "description",
                         "active",
                         "departmentIds",
                       ]}
+                      actions={
+                        stepResources["basic"] &&
+                        stepResources["basic"].length > 0 &&
+                        (agentData?.name_agent_id ||
+                          agentData?.description_agent_id ||
+                          agentData?.departments_agent_id ||
+                          agentData?.flag_agent_id) ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const hasRegeneratable = stepResources[
+                                      "basic"
+                                    ]!.some((rt) => canRegenerate(rt));
+                                    handleOpenStepCardModal(
+                                      "basic",
+                                      hasRegeneratable ? "regenerate" : "generate"
+                                    );
+                                  }}
+                                  disabled={
+                                    isReadonly ||
+                                    stepResources["basic"]!.some((rt) =>
+                                      isGenerating(rt)
+                                    )
+                                  }
+                                >
+                                  {stepResources["basic"]!.some((rt) =>
+                                    isGenerating(rt)
+                                  ) ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {stepResources["basic"]!.some((rt) =>
+                                  canRegenerate(rt)
+                                )
+                                  ? "Regenerate"
+                                  : "Generate"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : undefined
+                      }
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Description *</Label>
-                          <Textarea
-                            id="description"
-                            data-testid="input-agent-description"
-                            value={draftState.description || ""}
-                            onChange={(e) => {
-                              setDraftState((prev) => ({
-                                ...prev,
-                                description: e.target.value,
-                              }));
-                              if (errors.description) {
-                                setErrors((prev) => {
-                                  const { description: _, ...rest } = prev;
-                                  return rest;
-                                });
-                              }
-                            }}
-                            placeholder="Detailed behavior description and personality traits"
-                            rows={4}
-                            className={cn(
-                              errors?.description && "border-destructive"
-                            )}
-                            disabled={isReadonly}
-                            required
-                          />
-                          {errors?.description && (
-                            <p className="text-sm text-destructive">
-                              {errors.description}
-                            </p>
-                          )}
-                        </div>
+                        {/* Description field - using Descriptions resource component */}
+                        <Descriptions
+                          description_id={agentData?.description_id ?? null}
+                          description_resource={
+                            agentData?.description_resource ?? null
+                          }
+                          show_description={
+                            agentData?.show_description ?? true
+                          }
+                          description_suggestions={
+                            agentData?.description_suggestions ?? []
+                          }
+                          descriptions={agentData?.descriptions ?? []}
+                          disabled={isReadonly}
+                          onDescriptionIdChange={(descriptionId) => {
+                            // Update draftState with description text from resource
+                            const descriptionResource =
+                              agentData?.descriptions?.find(
+                                (d) => d.id === descriptionId
+                              );
+                            setDraftState((prev) => ({
+                              ...prev,
+                              description: descriptionResource?.description || "",
+                            }));
+                          }}
+                          onGenerate={handleGenerateDescription}
+                          isGenerating={isGenerating("descriptions")}
+                          label="Description"
+                          placeholder="Detailed behavior description and personality traits"
+                          required={agentData?.description_required ?? false}
+                          rows={4}
+                          data-testid="input-agent-description"
+                          group_id={agentData?.group_id ?? null}
+                          agent_id={agentData?.description_agent_id ?? null}
+                        />
 
                         {/* Department Selection */}
-                        {agentData?.valid_department_ids &&
-                        agentData.valid_department_ids.length > 1 ? (
-                          <div className="space-y-2">
-                            <Label htmlFor="department">Department</Label>
-                            <GenericPicker
-                              items={departmentMapping}
-                              itemIds={agentData.valid_department_ids}
-                              selectedIds={draftState.departmentIds || []}
-                              onSelect={(ids) => {
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  departmentIds: ids,
-                                }));
-                              }}
-                              getId={(dept) =>
-                                (dept as unknown as { id: string }).id
-                              }
-                              getLabel={(dept) => dept.name || ""}
-                              getSearchText={(dept) =>
-                                `${dept.name} ${dept.description || ""}`
-                              }
-                              placeholder="All Departments"
-                              disabled={isReadonly}
-                              multiSelect={true}
-                              hideSelectedChips={true}
-                              buttonClassName="w-full"
-                            />
-                          </div>
-                        ) : null}
+                        <Departments
+                          department_ids={draftState.departmentIds || []}
+                          department_resources={
+                            agentData?.department_resources ?? []
+                          }
+                          show_departments={
+                            agentData?.show_departments ?? false
+                          }
+                          department_suggestions={
+                            agentData?.department_suggestions ?? []
+                          }
+                          departments={agentData?.departments ?? []}
+                          disabled={isReadonly}
+                          onChange={(ids) => {
+                            setDraftState((prev) => ({
+                              ...prev,
+                              departmentIds: ids,
+                            }));
+                          }}
+                          onGenerate={handleGenerateDepartments}
+                          isGenerating={isGenerating("departments")}
+                          required={agentData?.departments_required ?? false}
+                          group_id={agentData?.group_id ?? null}
+                          agent_id={agentData?.departments_agent_id ?? null}
+                        />
 
-                        {/* Active Switch */}
-                        <div className="space-y-2 pt-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Label
-                                htmlFor="active"
-                                className="text-sm flex items-center gap-1.5"
-                              >
-                                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                                Active
-                              </Label>
-                              <Switch
-                                id="active"
-                                checked={draftState.active ?? true}
-                                onCheckedChange={(checked) => {
-                                  setDraftState((prev) => ({
-                                    ...prev,
-                                    active: checked,
-                                  }));
-                                }}
-                                disabled={isReadonly}
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground pl-5">
-                              Inactive agents will not be available to perform
-                              operations for departments
-                            </p>
-                          </div>
-                        </div>
+                        {/* Active Switch - using Flags resource component */}
+                        <Flags
+                          flag_id={agentData?.active_flag_id ?? null}
+                          flag_resource={agentData?.flag_resource ?? null}
+                          show_flag={agentData?.show_flag ?? false}
+                          disabled={isReadonly}
+                          onFlagIdChange={(flagId) => {
+                            // Update draftState active based on flag
+                            setDraftState((prev) => ({
+                              ...prev,
+                              active: flagId ? true : false,
+                            }));
+                          }}
+                          onGenerate={handleGenerateFlags}
+                          isGenerating={isGenerating("flags")}
+                          label="Active"
+                          helpText="Inactive agents will not be available to perform operations for departments"
+                          required={agentData?.flag_required ?? false}
+                          group_id={agentData?.group_id ?? null}
+                          agent_id={agentData?.flag_agent_id ?? null}
+                        />
                       </div>
                     </StepCard>
                   );
@@ -1891,6 +2370,53 @@ export default function Agent({
                       }
                       searchPlaceholder="Search models..."
                       resetFields={["modelId"]}
+                      actions={
+                        stepResources["model"] &&
+                        stepResources["model"].length > 0 &&
+                        agentData?.models_agent_id ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const hasRegeneratable = stepResources[
+                                      "model"
+                                    ]!.some((rt) => canRegenerate(rt));
+                                    handleOpenStepCardModal(
+                                      "model",
+                                      hasRegeneratable ? "regenerate" : "generate"
+                                    );
+                                  }}
+                                  disabled={
+                                    isReadonly ||
+                                    stepResources["model"]!.some((rt) =>
+                                      isGenerating(rt)
+                                    )
+                                  }
+                                >
+                                  {stepResources["model"]!.some((rt) =>
+                                    isGenerating(rt)
+                                  ) ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {stepResources["model"]!.some((rt) =>
+                                  canRegenerate(rt)
+                                )
+                                  ? "Regenerate"
+                                  : "Generate"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : undefined
+                      }
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
@@ -2674,6 +3200,23 @@ export default function Agent({
             }}
           />
         </div>
+
+        {/* Generate/Regenerate Modal */}
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
 
         {/* Delete Prompt Confirmation Dialog */}
         <AlertDialog
