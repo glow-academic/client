@@ -47,17 +47,17 @@ original_tool AS (
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),
-original_schemas AS (
-    -- Get schema IDs from original tool
-    SELECT schema_id
+original_args AS (
+    -- Get args IDs from original tool
+    SELECT args_id
     FROM params x
-    JOIN tool_schemas ts ON ts.tool_id = x.tool_id
+    JOIN tool_args ta ON ta.tool_id = x.tool_id
 ),
-original_templates AS (
-    -- Get template IDs from original tool
-    SELECT template_id
+original_args_outputs AS (
+    -- Get args_outputs IDs from original tool
+    SELECT args_outputs_id
     FROM params x
-    JOIN tool_templates tt ON tt.tool_id = x.tool_id
+    JOIN tool_args_outputs tao ON tao.tool_id = x.tool_id
 ),
 new_tool AS (
     INSERT INTO tool_artifact (
@@ -145,32 +145,28 @@ new_tool_active_flag AS (
     WHERE f.name = 'active'
     RETURNING tool_id
 ),
--- Copy schema links from original tool
-copy_schemas AS (
-    INSERT INTO tool_schemas (tool_id, schema_id, created_at, updated_at, generated, mcp)
+-- Copy args links from original tool
+copy_args AS (
+    INSERT INTO tool_args (tool_id, args_id, created_at, updated_at)
     SELECT 
         nt.id,
-        os.schema_id,
+        oa.args_id,
         NOW(),
-        NOW(),
-        false,
-        false
+        NOW()
     FROM new_tool nt
-    CROSS JOIN original_schemas os
+    CROSS JOIN original_args oa
     RETURNING tool_id
 ),
--- Copy template links from original tool
-copy_templates AS (
-    INSERT INTO tool_templates (tool_id, template_id, created_at, updated_at, generated, mcp)
+-- Copy args_outputs links from original tool
+copy_args_outputs AS (
+    INSERT INTO tool_args_outputs (tool_id, args_outputs_id, created_at, updated_at)
     SELECT 
         nt.id,
-        ot.template_id,
+        oao.args_outputs_id,
         NOW(),
-        NOW(),
-        false,
-        false
+        NOW()
     FROM new_tool nt
-    CROSS JOIN original_templates ot
+    CROSS JOIN original_args_outputs oao
     RETURNING tool_id
 )
 SELECT 

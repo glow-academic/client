@@ -1,4 +1,4 @@
--- Get output schema fields for a tool via tool_templates → schema_templates
+-- Get output schema fields for a tool via tool_args_outputs → args_outputs_resource
 -- Used to map template_values (which use output schema field names) to table column names
 
 -- Drop function if exists (handles signature variations)
@@ -32,17 +32,15 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        sf.name::text as name,
-        sf.field_type::text as field_type,
-        sf.required as required,
-        sf."position" as position,
-        sf.template::text as template
-    FROM tool_templates tt
-    JOIN schema_templates st ON st.template_id = tt.template_id
-    JOIN schemas_resource s ON s.id = st.schema_id
-    JOIN schema_fields_resource sf ON sf.schema_id = s.id
-    WHERE tt.tool_id = api_get_resource_output_schema_fields_v4.tool_id
-      AND sf.active = true
-    ORDER BY sf."position";
+        ao.name::text as name,
+        'string'::text as field_type,  -- args_outputs_resource doesn't have field_type, default to string
+        false as required,  -- args_outputs_resource doesn't have required, default to false
+        0 as position,  -- args_outputs_resource doesn't have position, default to 0
+        COALESCE(ao.template, '')::text as template
+    FROM tool_args_outputs tao
+    JOIN args_outputs_resource ao ON ao.id = tao.args_outputs_id
+    WHERE tao.tool_id = api_get_resource_output_schema_fields_v4.tool_id
+      AND ao.active = true
+    ORDER BY ao.created_at;  -- Use created_at for ordering since position doesn't exist
 END;
 $$;

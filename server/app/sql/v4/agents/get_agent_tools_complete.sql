@@ -25,67 +25,65 @@ AS $$
 WITH tool_schema_data AS (
     SELECT 
         t.id as tool_id,
-        ts.schema_id,
-        -- Build arguments JSONB FROM schema_fields_resource
+        -- Build arguments JSONB FROM tool_args → args_resource
         COALESCE(
             jsonb_object_agg(
-                sf.name,
+                ar.name,
                 jsonb_build_object(
-                    'type', CASE sf.field_type
+                    'type', CASE ar.field_type
                         WHEN 'string' THEN 'string'
                         WHEN 'number' THEN 'number'
                         WHEN 'boolean' THEN 'boolean'
                         WHEN 'array' THEN 'array'
                         ELSE 'string'
                     END,
-                    'required', sf.required
+                    'required', COALESCE(ar.required, false)
                 )
-                ORDER BY sf.position
-            ) FILTER (WHERE sf.name IS NOT NULL),
+                ORDER BY ar.position NULLS LAST, ar.created_at
+            ) FILTER (WHERE ar.name IS NOT NULL),
             '{}'::jsonb
         ) as arguments,
-        -- Build argument_descriptions JSONB FROM schema_fields_resource.description
+        -- Build argument_descriptions JSONB FROM args_resource.description
         COALESCE(
             jsonb_object_agg(
-                sf.name,
-                sf.description
-                ORDER BY sf.position
-            ) FILTER (WHERE sf.name IS NOT NULL AND sf.description != ''),
+                ar.name,
+                ar.description
+                ORDER BY ar.position NULLS LAST, ar.created_at
+            ) FILTER (WHERE ar.name IS NOT NULL AND ar.description != ''),
             '{}'::jsonb
         ) as argument_descriptions,
-        -- Build argument_defaults JSONB FROM schema_fields_resource.default_value
+        -- Build argument_defaults JSONB FROM args_resource.default_value
         COALESCE(
             jsonb_object_agg(
-                sf.name,
+                ar.name,
                 CASE 
-                    WHEN sf.default_value = '' THEN NULL
-                    WHEN sf.field_type = 'number' THEN 
+                    WHEN ar.default_value = '' THEN NULL
+                    WHEN ar.field_type = 'number' THEN 
                         CASE 
-                            WHEN sf.default_value ~ '^-?[0-9]+\.?[0-9]*$' THEN to_jsonb(sf.default_value::numeric)
+                            WHEN ar.default_value ~ '^-?[0-9]+\.?[0-9]*$' THEN to_jsonb(ar.default_value::numeric)
                             ELSE NULL
                         END
-                    WHEN sf.field_type = 'boolean' THEN 
+                    WHEN ar.field_type = 'boolean' THEN 
                         CASE 
-                            WHEN LOWER(sf.default_value) IN ('true', '1', 'yes') THEN 'true'::jsonb
-                            WHEN LOWER(sf.default_value) IN ('false', '0', 'no') THEN 'false'::jsonb
+                            WHEN LOWER(ar.default_value) IN ('true', '1', 'yes') THEN 'true'::jsonb
+                            WHEN LOWER(ar.default_value) IN ('false', '0', 'no') THEN 'false'::jsonb
                             ELSE NULL
                         END
-                    WHEN sf.field_type = 'array' THEN 
+                    WHEN ar.field_type = 'array' THEN 
                         CASE 
-                            WHEN sf.default_value ~ '^\[.*\]$' THEN sf.default_value::jsonb
+                            WHEN ar.default_value ~ '^\[.*\]$' THEN ar.default_value::jsonb
                             ELSE NULL
                         END
-                    ELSE sf.default_value::jsonb
+                    ELSE ar.default_value::jsonb
                 END
-                ORDER BY sf.position
-            ) FILTER (WHERE sf.name IS NOT NULL AND sf.default_value != ''),
+                ORDER BY ar.position NULLS LAST, ar.created_at
+            ) FILTER (WHERE ar.name IS NOT NULL AND ar.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
-    LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
-    LEFT JOIN schemas_resource s ON s.id = ts.schema_id
-    LEFT JOIN schema_fields_resource sf ON sf.schema_id = s.id
+    LEFT JOIN tool_args ta ON ta.tool_id = t.id
+    LEFT JOIN args_resource ar ON ar.id = ta.args_id AND ar.active = true
     WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
       AND at.active = TRUE
       AND EXISTS (
@@ -96,7 +94,7 @@ WITH tool_schema_data AS (
             AND tf.type = 'active'::type_tool_flags 
             AND tf.value = true
       )
-    GROUP BY t.id, ts.schema_id
+    GROUP BY t.id
 )
 SELECT DISTINCT ON (t.id)
     t.id,

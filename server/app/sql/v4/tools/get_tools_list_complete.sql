@@ -70,19 +70,19 @@ user_profile AS (
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
-tool_schema_counts AS (
+tool_args_counts AS (
     SELECT 
-        ts.tool_id,
-        COUNT(*) as num_schemas
-    FROM tool_schemas ts
-    GROUP BY ts.tool_id
+        ta.tool_id,
+        COUNT(*) as num_schemas  -- Keep name for backward compatibility
+    FROM tool_args ta
+    GROUP BY ta.tool_id
 ),
-tool_template_counts AS (
+tool_args_outputs_counts AS (
     SELECT 
-        tt.tool_id,
-        COUNT(*) as num_templates
-    FROM tool_templates tt
-    GROUP BY tt.tool_id
+        tao.tool_id,
+        COUNT(*) as num_templates  -- Keep name for backward compatibility
+    FROM tool_args_outputs tao
+    GROUP BY tao.tool_id
 ),
 tool_usage_counts AS (
     SELECT 
@@ -100,12 +100,12 @@ tool_data_base AS (
         (SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true) as active,
         t.updated_at,
-        COALESCE(tsc.num_schemas, 0) as num_schemas,
-        COALESCE(ttc.num_templates, 0) as num_templates,
+        COALESCE(tac.num_schemas, 0) as num_schemas,
+        COALESCE(taoc.num_templates, 0) as num_templates,
         COALESCE(tuc.usage_count, 0) as usage_count
     FROM tool_artifact t
-    LEFT JOIN tool_schema_counts tsc ON tsc.tool_id = t.id
-    LEFT JOIN tool_template_counts ttc ON ttc.tool_id = t.id
+    LEFT JOIN tool_args_counts tac ON tac.tool_id = t.id
+    LEFT JOIN tool_args_outputs_counts taoc ON taoc.tool_id = t.id
     LEFT JOIN tool_usage_counts tuc ON tuc.tool_id = t.id
 ),
 tool_data AS (

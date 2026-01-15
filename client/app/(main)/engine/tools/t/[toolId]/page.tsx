@@ -8,7 +8,7 @@ import Tool from "@/components/tools/Tool";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetToolIn = InputOf<"/api/v4/tools/get", "post">;
@@ -17,34 +17,6 @@ type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
 type SaveToolOut = OutputOf<"/api/v4/tools/save", "post">;
 type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
-type CreateDraftSchemasIn = InputOf<"/api/v4/resources/schemas", "post">;
-type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
-type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftSchemaFieldItemsIn = InputOf<
-  "/api/v4/resources/schema_field_items",
-  "post"
->;
-type CreateDraftSchemaFieldItemsOut = OutputOf<
-  "/api/v4/resources/schema_field_items",
-  "post"
->;
-type CreateDraftTemplateArrayItemsIn = InputOf<
-  "/api/v4/resources/template_array_items",
-  "post"
->;
-type CreateDraftTemplateArrayItemsOut = OutputOf<
-  "/api/v4/resources/template_array_items",
-  "post"
->;
-type CreateDraftTemplateValuesIn = InputOf<
-  "/api/v4/resources/template_values",
-  "post"
->;
-type CreateDraftTemplateValuesOut = OutputOf<
-  "/api/v4/resources/template_values",
-  "post"
->;
 type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -55,10 +27,6 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "/api/v4/resources/args_outputs",
   "post"
 >;
-type CreateSchemaFieldIn = InputOf<"/api/v4/resources/schema_fields", "post">;
-type CreateSchemaFieldOut = OutputOf<"/api/v4/resources/schema_fields", "post">;
-type CreateTemplateIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateTemplateOut = OutputOf<"/api/v4/resources/templates", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -175,22 +143,6 @@ async function createDraftArgsOutputs(
   return api.post("/resources/args_outputs", input);
 }
 
-async function createSchemaField(
-  input: CreateSchemaFieldIn
-): Promise<CreateSchemaFieldOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/schema_fields", input);
-}
-
-async function createTemplate(
-  input: CreateTemplateIn
-): Promise<CreateTemplateOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/templates", input);
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ToolDetailPage({
   params,
@@ -218,24 +170,16 @@ export default async function ToolDetailPage({
   // Inline server-side parsers for tool search params
   const toolSearchParams = {
     draftId: parseAsString,
-    schemaSearch: parseAsString,
-    templateSearch: parseAsString,
-    schemaShowSelected: parseAsBoolean,
-    templateShowSelected: parseAsBoolean,
   };
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
 
-  // Fetch tool detail with draft_id and filter params
+  // Fetch tool detail with draft_id
   try {
     const input: GetToolIn = {
       body: {
         tool_id: toolId,
         draft_id: q.draftId ?? null,
-        schema_search: q.schemaSearch ?? null,
-        template_search: q.templateSearch ?? null,
-        schema_show_selected: q.schemaShowSelected ?? null,
-        template_show_selected: q.templateShowSelected ?? null,
       } as GetToolIn["body"],
     };
     const toolDetail = await getTool(input);
@@ -257,15 +201,8 @@ export default async function ToolDetailPage({
           toolDetail={toolDetail}
           saveToolAction={saveTool}
           patchToolDraftAction={patchToolDraft}
-          createSchemasAction={createDraftSchemas}
-          createTemplatesAction={createDraftTemplates}
           createArgsAction={createDraftArgs}
           createArgsOutputsAction={createDraftArgsOutputs}
-          createSchemaFieldItemsAction={createDraftSchemaFieldItems}
-          createTemplateArrayItemsAction={createDraftTemplateArrayItems}
-          createTemplateValuesAction={createDraftTemplateValues}
-          createSchemaFieldAction={createSchemaField}
-          createTemplateAction={createTemplate}
         />
       </div>
     );

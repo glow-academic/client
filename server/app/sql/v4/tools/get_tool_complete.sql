@@ -141,6 +141,25 @@ CREATE TYPE types.q_get_tool_v4_args_outputs_resource AS (
     group_id uuid
 );
 
+CREATE TYPE types.q_get_tool_v4_args_field_detail AS (
+    args_id uuid,
+    name text,
+    description text,
+    field_type text,
+    required boolean,
+    default_value text,
+    position integer,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_tool_v4_args_outputs_detail AS (
+    args_outputs_id uuid,
+    args_id uuid,
+    name text,
+    template text,
+    generated boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_tool_v4(
     profile_id uuid,
@@ -180,63 +199,9 @@ RETURNS TABLE (
     description_required boolean,
     description_suggestions uuid[],
     descriptions types.q_get_tool_v4_description_resource[],
-    -- Multi-select resources: schemas
-    schema_ids uuid[],
-    schema_resources types.q_get_tool_v4_schema[],
-    show_schemas boolean,
-    schemas_agent_id uuid,
-    schemas_required boolean,
-    schema_suggestions uuid[],
-    schemas types.q_get_tool_v4_schema[],
-    -- Multi-select resources: schema_fields
-    schema_field_ids uuid[],
-    schema_field_resources types.q_get_tool_v4_schema_field[],
-    show_schema_fields boolean,
-    schema_fields_agent_id uuid,
-    schema_fields_required boolean,
-    schema_field_suggestions uuid[],
-    schema_fields types.q_get_tool_v4_schema_field[],
-    -- Multi-select resources: schema_field_items
-    schema_field_item_ids uuid[],
-    schema_field_item_resources types.q_get_tool_v4_schema_field_item[],
-    show_schema_field_items boolean,
-    schema_field_items_agent_id uuid,
-    schema_field_items_required boolean,
-    schema_field_item_suggestions uuid[],
-    schema_field_items types.q_get_tool_v4_schema_field_item[],
-    -- Multi-select resources: templates
-    template_ids uuid[],
-    template_resources types.q_get_tool_v4_template[],
-    show_templates boolean,
-    templates_agent_id uuid,
-    templates_required boolean,
-    template_suggestions uuid[],
-    templates types.q_get_tool_v4_template[],
-    -- Multi-select resources: template_array_items
-    template_array_item_ids uuid[],
-    template_array_item_resources types.q_get_tool_v4_template_array_item[],
-    show_template_array_items boolean,
-    template_array_items_agent_id uuid,
-    template_array_items_required boolean,
-    template_array_item_suggestions uuid[],
-    template_array_items types.q_get_tool_v4_template_array_item[],
-    -- Multi-select resources: template_values
-    template_value_ids uuid[],
-    template_value_resources types.q_get_tool_v4_template_value[],
-    show_template_values boolean,
-    template_values_agent_id uuid,
-    template_values_required boolean,
-    template_value_suggestions uuid[],
-    template_values types.q_get_tool_v4_template_value[],
     -- Domain connections (for scoping logic)
     domain_ids uuid[],
     domain_resources types.q_get_tool_v4_domain[],
-    -- Input schema details (for SchemaInput component)
-    input_schema_fields types.q_get_tool_v4_schema_field_detail[],
-    -- Output template details (for SchemaOutput component)
-    output_templates types.q_get_tool_v4_template_detail[],
-    -- Output schema fields (schema_fields from schemas linked to selected templates)
-    output_schema_fields types.q_get_tool_v4_schema_field_detail[],
     -- Multi-select resources: args
     args_ids uuid[],
     args_resources types.q_get_tool_v4_args_resource[],
@@ -252,7 +217,11 @@ RETURNS TABLE (
     args_outputs_agent_id uuid,
     args_outputs_required boolean,
     args_outputs_suggestions uuid[],
-    args_outputs types.q_get_tool_v4_args_outputs_resource[]
+    args_outputs types.q_get_tool_v4_args_outputs_resource[],
+    -- Input args fields detail (for Args component - fields from selected args_ids)
+    input_args_fields types.q_get_tool_v4_args_field_detail[],
+    -- Output args_outputs detail (for ArgsOutputs component - args_outputs from selected args_outputs_ids)
+    output_args_outputs types.q_get_tool_v4_args_outputs_detail[]
 )
 LANGUAGE sql
 STABLE
@@ -1124,6 +1093,44 @@ args_outputs_mapping_data AS (
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),
+-- Input args fields detail (for Args component - fields from selected args_ids)
+input_args_fields_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (a.id, a.name, COALESCE(a.description, ''), COALESCE(a.field_type, ''), COALESCE(a.required, false), COALESCE(a.default_value, ''), COALESCE(a.position, 0), COALESCE(ta.generated, false))::types.q_get_tool_v4_args_field_detail
+                ORDER BY a.position, a.name
+            )
+            FROM params x
+            CROSS JOIN args_ids_data aid
+            JOIN args_resource a ON a.id = ANY(aid.args_ids) AND a.active = true
+            LEFT JOIN tool_args ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
+            WHERE COALESCE(array_length(aid.args_ids, 1), 0) > 0),
+            ARRAY[]::types.q_get_tool_v4_args_field_detail[]
+        ) as input_args_fields
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Output args_outputs detail (for ArgsOutputs component - args_outputs from selected args_outputs_ids)
+output_args_outputs_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (ao.id, ao.args_id, ao.name, COALESCE(ao.template, ''), COALESCE(tao.generated, false))::types.q_get_tool_v4_args_outputs_detail
+                ORDER BY ao.name
+            )
+            FROM params x
+            CROSS JOIN args_outputs_ids_data aoid
+            JOIN args_outputs_resource ao ON ao.id = ANY(aoid.args_outputs_ids) AND ao.active = true
+            LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
+            WHERE COALESCE(array_length(aoid.args_outputs_ids, 1), 0) > 0),
+            ARRAY[]::types.q_get_tool_v4_args_outputs_detail[]
+        ) as output_args_outputs
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
 -- UI flags
 ui_flags AS (
     SELECT 
@@ -1137,30 +1144,6 @@ ui_flags AS (
             ELSE false
         END as show_description,
         -- Multi-select resource flags (based on business logic AND tool availability)
-        CASE 
-            WHEN (SELECT COUNT(*) FROM schema_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_schemas,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM schema_field_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_schema_fields,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM schema_field_item_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_schema_field_items,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM template_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_templates,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM template_array_item_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_template_array_items,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM template_value_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_template_values,
         CASE 
             WHEN (SELECT COUNT(*) FROM args_mapping_data) > 0 THEN true
             ELSE false
@@ -1917,42 +1900,6 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'schemas'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as schemas_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'schema_fields'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as schema_fields_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'schema_field_items'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as schema_field_items_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'templates'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as templates_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'template_array_items'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as template_array_items_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'template_values'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as template_values_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'args'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
         ) as args_has_tools,
@@ -1971,18 +1918,10 @@ missing_tools_check AS (
             -- names is required
             CASE WHEN NOT tec.names_has_tools AND uf.show_name THEN 'name' ELSE NULL END,
             -- descriptions is optional, so don't check
-            -- schemas is required if show_schemas is true
-            CASE WHEN NOT tec.schemas_has_tools AND uf.show_schemas THEN 'schemas' ELSE NULL END,
-            -- schema_fields is required if show_schema_fields is true
-            CASE WHEN NOT tec.schema_fields_has_tools AND uf.show_schema_fields THEN 'schema_fields' ELSE NULL END,
-            -- schema_field_items is required if show_schema_field_items is true
-            CASE WHEN NOT tec.schema_field_items_has_tools AND uf.show_schema_field_items THEN 'schema_field_items' ELSE NULL END,
-            -- templates is required if show_templates is true
-            CASE WHEN NOT tec.templates_has_tools AND uf.show_templates THEN 'templates' ELSE NULL END,
-            -- template_array_items is required if show_template_array_items is true
-            CASE WHEN NOT tec.template_array_items_has_tools AND uf.show_template_array_items THEN 'template_array_items' ELSE NULL END,
-            -- template_values is required if show_template_values is true
-            CASE WHEN NOT tec.template_values_has_tools AND uf.show_template_values THEN 'template_values' ELSE NULL END
+            -- args is required if show_args is true
+            CASE WHEN NOT tec.args_has_tools AND uf.show_args THEN 'args' ELSE NULL END,
+            -- args_outputs is required if show_args_outputs is true
+            CASE WHEN NOT tec.args_outputs_has_tools AND uf.show_args_outputs THEN 'args_outputs' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
@@ -2099,174 +2038,6 @@ SELECT
         CROSS JOIN description_suggestions_data dsd),
         '{}'::types.q_get_tool_v4_description_resource[]
     ) as descriptions,
-    -- Multi-select resources: schemas
-    sid.schema_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (smd.schema_id, smd.field_count, smd.generated)::types.q_get_tool_v4_schema
-            ORDER BY smd.schema_id
-        )
-        FROM schema_mapping_data smd
-        WHERE smd.schema_id = ANY(sid.schema_ids)),
-        '{}'::types.q_get_tool_v4_schema[]
-    ) as schema_resources,
-    CASE 
-        WHEN NOT tec.schemas_has_tools THEN false
-        ELSE uf.show_schemas
-    END as show_schemas,
-    (SELECT agent_id FROM schemas_agent_data) as schemas_agent_id,
-    CASE 
-        WHEN uf.show_schemas THEN true
-        ELSE false
-    END as schemas_required,
-    COALESCE((SELECT schema_suggestions FROM schema_suggestions_data), ARRAY[]::uuid[]) as schema_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (smd.schema_id, smd.field_count, smd.generated)::types.q_get_tool_v4_schema
-            ORDER BY smd.schema_id
-        ) FROM (SELECT DISTINCT schema_id, field_count, generated FROM schema_mapping_data) smd),
-        '{}'::types.q_get_tool_v4_schema[]
-    ) as schemas,
-    -- Multi-select resources: schema_fields
-    sfid.schema_field_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sfmd.schema_field_id, sfmd.name, sfmd.description, sfmd.generated)::types.q_get_tool_v4_schema_field
-            ORDER BY sfmd.schema_field_id
-        )
-        FROM schema_field_mapping_data sfmd
-        WHERE sfmd.schema_field_id = ANY(sfid.schema_field_ids)),
-        '{}'::types.q_get_tool_v4_schema_field[]
-    ) as schema_field_resources,
-    CASE 
-        WHEN NOT tec.schema_fields_has_tools THEN false
-        ELSE uf.show_schema_fields
-    END as show_schema_fields,
-    (SELECT agent_id FROM schema_fields_agent_data) as schema_fields_agent_id,
-    CASE 
-        WHEN uf.show_schema_fields THEN true
-        ELSE false
-    END as schema_fields_required,
-    COALESCE((SELECT schema_field_suggestions FROM schema_field_suggestions_data), ARRAY[]::uuid[]) as schema_field_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sfmd.schema_field_id, sfmd.name, sfmd.description, sfmd.generated)::types.q_get_tool_v4_schema_field
-            ORDER BY sfmd.schema_field_id
-        ) FROM (SELECT DISTINCT schema_field_id, name, description, generated FROM schema_field_mapping_data) sfmd),
-        '{}'::types.q_get_tool_v4_schema_field[]
-    ) as schema_fields,
-    -- Multi-select resources: schema_field_items
-    sfiid.schema_field_item_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sfimd.schema_field_item_id, sfimd.schema_field_id, sfimd.schema_field_name, sfimd.item_schema_id, sfimd.generated)::types.q_get_tool_v4_schema_field_item
-            ORDER BY sfimd.schema_field_item_id
-        )
-        FROM schema_field_item_mapping_data sfimd
-        WHERE sfimd.schema_field_item_id = ANY(sfiid.schema_field_item_ids)),
-        '{}'::types.q_get_tool_v4_schema_field_item[]
-    ) as schema_field_item_resources,
-    CASE 
-        WHEN NOT tec.schema_field_items_has_tools THEN false
-        ELSE uf.show_schema_field_items
-    END as show_schema_field_items,
-    (SELECT agent_id FROM schema_field_items_agent_data) as schema_field_items_agent_id,
-    CASE 
-        WHEN uf.show_schema_field_items THEN true
-        ELSE false
-    END as schema_field_items_required,
-    COALESCE((SELECT schema_field_item_suggestions FROM schema_field_item_suggestions_data), ARRAY[]::uuid[]) as schema_field_item_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sfimd.schema_field_item_id, sfimd.schema_field_id, sfimd.schema_field_name, sfimd.item_schema_id, sfimd.generated)::types.q_get_tool_v4_schema_field_item
-            ORDER BY sfimd.schema_field_item_id
-        ) FROM (SELECT DISTINCT schema_field_item_id, schema_field_id, schema_field_name, item_schema_id, generated FROM schema_field_item_mapping_data) sfimd),
-        '{}'::types.q_get_tool_v4_schema_field_item[]
-    ) as schema_field_items,
-    -- Multi-select resources: templates
-    tid.template_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (tmd.template_id, tmd.name, tmd.generated)::types.q_get_tool_v4_template
-            ORDER BY tmd.template_id
-        )
-        FROM template_mapping_data tmd
-        WHERE tmd.template_id = ANY(tid.template_ids)),
-        '{}'::types.q_get_tool_v4_template[]
-    ) as template_resources,
-    CASE 
-        WHEN NOT tec.templates_has_tools THEN false
-        ELSE uf.show_templates
-    END as show_templates,
-    (SELECT agent_id FROM templates_agent_data) as templates_agent_id,
-    CASE 
-        WHEN uf.show_templates THEN true
-        ELSE false
-    END as templates_required,
-    COALESCE((SELECT template_suggestions FROM template_suggestions_data), ARRAY[]::uuid[]) as template_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (tmd.template_id, tmd.name, tmd.generated)::types.q_get_tool_v4_template
-            ORDER BY tmd.template_id
-        ) FROM (SELECT DISTINCT template_id, name, generated FROM template_mapping_data) tmd),
-        '{}'::types.q_get_tool_v4_template[]
-    ) as templates,
-    -- Multi-select resources: template_array_items
-    taiid.template_array_item_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (taimd.template_array_item_id, taimd.template_id, taimd.template_name, taimd.schema_field_id, taimd.schema_field_name, taimd.item_template_id, taimd.item_template_name, taimd.generated)::types.q_get_tool_v4_template_array_item
-            ORDER BY taimd.template_array_item_id
-        )
-        FROM template_array_item_mapping_data taimd
-        WHERE taimd.template_array_item_id = ANY(taiid.template_array_item_ids)),
-        '{}'::types.q_get_tool_v4_template_array_item[]
-    ) as template_array_item_resources,
-    CASE 
-        WHEN NOT tec.template_array_items_has_tools THEN false
-        ELSE uf.show_template_array_items
-    END as show_template_array_items,
-    (SELECT agent_id FROM template_array_items_agent_data) as template_array_items_agent_id,
-    CASE 
-        WHEN uf.show_template_array_items THEN true
-        ELSE false
-    END as template_array_items_required,
-    COALESCE((SELECT template_array_item_suggestions FROM template_array_item_suggestions_data), ARRAY[]::uuid[]) as template_array_item_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (taimd.template_array_item_id, taimd.template_id, taimd.template_name, taimd.schema_field_id, taimd.schema_field_name, taimd.item_template_id, taimd.item_template_name, taimd.generated)::types.q_get_tool_v4_template_array_item
-            ORDER BY taimd.template_array_item_id
-        ) FROM (SELECT DISTINCT template_array_item_id, template_id, template_name, schema_field_id, schema_field_name, item_template_id, item_template_name, generated FROM template_array_item_mapping_data) taimd),
-        '{}'::types.q_get_tool_v4_template_array_item[]
-    ) as template_array_items,
-    -- Multi-select resources: template_values
-    tvid.template_value_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (tvmd.template_value_id, tvmd.template_id, tvmd.template_name, tvmd.schema_field_id, tvmd.schema_field_name, tvmd.value, tvmd.generated)::types.q_get_tool_v4_template_value
-            ORDER BY tvmd.template_value_id
-        )
-        FROM template_value_mapping_data tvmd
-        WHERE tvmd.template_value_id = ANY(tvid.template_value_ids)),
-        '{}'::types.q_get_tool_v4_template_value[]
-    ) as template_value_resources,
-    CASE 
-        WHEN NOT tec.template_values_has_tools THEN false
-        ELSE uf.show_template_values
-    END as show_template_values,
-    (SELECT agent_id FROM template_values_agent_data) as template_values_agent_id,
-    CASE 
-        WHEN uf.show_template_values THEN true
-        ELSE false
-    END as template_values_required,
-    COALESCE((SELECT template_value_suggestions FROM template_value_suggestions_data), ARRAY[]::uuid[]) as template_value_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (tvmd.template_value_id, tvmd.template_id, tvmd.template_name, tvmd.schema_field_id, tvmd.schema_field_name, tvmd.value, tvmd.generated)::types.q_get_tool_v4_template_value
-            ORDER BY tvmd.template_value_id
-        ) FROM (SELECT DISTINCT template_value_id, template_id, template_name, schema_field_id, schema_field_name, value, generated FROM template_value_mapping_data) tvmd),
-        '{}'::types.q_get_tool_v4_template_value[]
-    ) as template_values,
     -- Domain connections (for scoping logic)
     domids.domain_ids,
     COALESCE(
@@ -2278,12 +2049,6 @@ SELECT
         WHERE dmd.domain_id = ANY(domids.domain_ids)),
         '{}'::types.q_get_tool_v4_domain[]
     ) as domain_resources,
-    -- Input schema details (for SchemaInput component)
-    COALESCE((SELECT input_schema_fields FROM input_schema_fields_data), ARRAY[]::types.q_get_tool_v4_schema_field_detail[]) as input_schema_fields,
-    -- Output template details (for SchemaOutput component)
-    COALESCE((SELECT output_templates FROM output_templates_data), ARRAY[]::types.q_get_tool_v4_template_detail[]) as output_templates,
-    -- Output schema fields (for SchemaOutput component - Jinja templates in schema_fields)
-    COALESCE((SELECT output_schema_fields FROM output_schema_fields_data), ARRAY[]::types.q_get_tool_v4_schema_field_detail[]) as output_schema_fields,
     -- Multi-select resources: args
     aid.args_ids,
     COALESCE(
@@ -2339,7 +2104,11 @@ SELECT
             ORDER BY aomd.name
         ) FROM (SELECT DISTINCT id, args_id, name, template, generated, group_id FROM args_outputs_mapping_data) aomd),
         '{}'::types.q_get_tool_v4_args_outputs_resource[]
-    ) as args_outputs
+    ) as args_outputs,
+    -- Input args fields detail (for Args component - fields from selected args_ids)
+    COALESCE((SELECT input_args_fields FROM input_args_fields_data), ARRAY[]::types.q_get_tool_v4_args_field_detail[]) as input_args_fields,
+    -- Output args_outputs detail (for ArgsOutputs component - args_outputs from selected args_outputs_ids)
+    COALESCE((SELECT output_args_outputs FROM output_args_outputs_data), ARRAY[]::types.q_get_tool_v4_args_outputs_detail[]) as output_args_outputs
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
@@ -2349,25 +2118,12 @@ CROSS JOIN name_id_data nid
 CROSS JOIN name_suggestions_data nsd
 CROSS JOIN description_id_data did
 CROSS JOIN description_suggestions_data dsd
-CROSS JOIN schema_ids_data sid
-CROSS JOIN schema_suggestions_data ssd
-CROSS JOIN schema_field_ids_data sfid
-CROSS JOIN schema_field_suggestions_data sfisd
-CROSS JOIN schema_field_item_ids_data sfiid
-CROSS JOIN schema_field_item_suggestions_data sfiisd
-CROSS JOIN template_ids_data tid
-CROSS JOIN template_suggestions_data tsd
-CROSS JOIN template_array_item_ids_data taiid
-CROSS JOIN template_array_item_suggestions_data taiisd
-CROSS JOIN template_value_ids_data tvid
-CROSS JOIN template_value_suggestions_data tvisd
 CROSS JOIN args_ids_data aid
 CROSS JOIN args_suggestions_data asd
 CROSS JOIN args_outputs_ids_data aoid
 CROSS JOIN args_outputs_suggestions_data aosd
 CROSS JOIN domain_ids_data domids
-CROSS JOIN input_schema_fields_data isfd
-CROSS JOIN output_templates_data otd
-CROSS JOIN output_schema_fields_data osfd
+CROSS JOIN input_args_fields_data iafd
+CROSS JOIN output_args_outputs_data oaod
 LEFT JOIN tool_data td ON true
 $$;

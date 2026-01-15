@@ -16,34 +16,6 @@ type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
 type SaveToolOut = OutputOf<"/api/v4/tools/save", "post">;
 type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
-type CreateDraftSchemasIn = InputOf<"/api/v4/resources/schemas", "post">;
-type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
-type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
-type CreateDraftSchemaFieldItemsIn = InputOf<
-  "/api/v4/resources/schema_field_items",
-  "post"
->;
-type CreateDraftSchemaFieldItemsOut = OutputOf<
-  "/api/v4/resources/schema_field_items",
-  "post"
->;
-type CreateDraftTemplateArrayItemsIn = InputOf<
-  "/api/v4/resources/template_array_items",
-  "post"
->;
-type CreateDraftTemplateArrayItemsOut = OutputOf<
-  "/api/v4/resources/template_array_items",
-  "post"
->;
-type CreateDraftTemplateValuesIn = InputOf<
-  "/api/v4/resources/template_values",
-  "post"
->;
-type CreateDraftTemplateValuesOut = OutputOf<
-  "/api/v4/resources/template_values",
-  "post"
->;
 type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -90,46 +62,6 @@ async function patchToolDraft(
   return api.patch("/tools/draft", input);
 }
 
-async function createDraftSchemas(
-  input: CreateDraftSchemasIn
-): Promise<CreateDraftSchemasOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/schemas", input);
-}
-
-async function createDraftTemplates(
-  input: CreateDraftTemplatesIn
-): Promise<CreateDraftTemplatesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/templates", input);
-}
-
-async function createDraftSchemaFieldItems(
-  input: CreateDraftSchemaFieldItemsIn
-): Promise<CreateDraftSchemaFieldItemsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/schema_field_items", input);
-}
-
-async function createDraftTemplateArrayItems(
-  input: CreateDraftTemplateArrayItemsIn
-): Promise<CreateDraftTemplateArrayItemsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/template_array_items", input);
-}
-
-async function createDraftTemplateValues(
-  input: CreateDraftTemplateValuesIn
-): Promise<CreateDraftTemplateValuesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/template_values", input);
-}
-
 async function createDraftArgs(
   input: CreateDraftArgsIn
 ): Promise<CreateDraftArgsOut> {
@@ -144,22 +76,6 @@ async function createDraftArgsOutputs(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/args_outputs", input);
-}
-
-async function createSchemaField(
-  input: CreateSchemaFieldIn
-): Promise<CreateSchemaFieldOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/schema_fields", input);
-}
-
-async function createTemplate(
-  input: CreateTemplateIn
-): Promise<CreateTemplateOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/templates", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -217,15 +133,8 @@ export default async function NewToolPage({
         toolDetailDefault={toolDetailDefault}
         saveToolAction={saveTool}
         patchToolDraftAction={patchToolDraft}
-        createSchemasAction={createDraftSchemas}
-        createTemplatesAction={createDraftTemplates}
         createArgsAction={createDraftArgs}
         createArgsOutputsAction={createDraftArgsOutputs}
-        createSchemaFieldItemsAction={createDraftSchemaFieldItems}
-        createTemplateArrayItemsAction={createDraftTemplateArrayItems}
-        createTemplateValuesAction={createDraftTemplateValues}
-        createSchemaFieldAction={createSchemaField}
-        createTemplateAction={createTemplate}
       />
     </div>
   );

@@ -1,281 +1,444 @@
 /**
  * ArgsOutputs.tsx
- * Resource component for args_outputs selection
- * Uses SelectableGrid for args_outputs selection with search/filter support
- * Manages args_outputs_ids array and reports to parent
+ * Component for editing args_outputs Jinja templates
+ * Follows SchemaOutput.tsx pattern - manages own state, calls save actions directly
  */
 
 "use client";
 
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftArgsOutputsIn = InputOf<"/api/v4/resources/args_outputs", "post">;
-type CreateDraftArgsOutputsOut = OutputOf<"/api/v4/resources/args_outputs", "post">;
+type CreateDraftArgsOutputsOut = OutputOf<
+  "/api/v4/resources/args_outputs",
+  "post"
+>;
 
-export interface ArgsOutputItem {
-  id: string;
+export interface ArgsOutputsDetail {
+  args_outputs_id: string;
   args_id: string;
   name: string;
-  template?: string;
+  template: string;
+  generated: boolean;
+}
+
+export interface ArgsFieldDetail {
+  args_id: string;
+  name: string;
+  description: string;
+  field_type: string;
+  required: boolean;
+  default_value: string;
+  position: number;
+  generated: boolean;
 }
 
 export interface ArgsOutputsProps {
-  args_outputs_ids?: string[]; // Current args_outputs resource IDs (standardized prop name)
-  args_outputs_resources?: Array<{
-    id: string | null;
-    args_id: string | null;
-    name: string | null;
-    template?: string | null;
-    generated?: boolean | null;
-    group_id?: string | null;
-  }>; // Selected args_outputs resources (each includes generated and group_id fields)
-  show_args_outputs?: boolean; // Whether to show this resource picker
-  args_outputs_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  args_outputs?: Array<{
-    id: string | null;
-    args_id: string | null;
-    name: string | null;
-    template?: string | null;
-    generated?: boolean | null;
-    group_id?: string | null;
-  }>; // All available args_outputs from API (each includes generated and group_id fields)
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update args_outputs_ids in form state
-  label?: string;
-  id?: string;
-  required?: boolean;
-  placeholder?: string;
-  description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  args_outputs_ids: string[]; // From Tool.tsx formState - which args_outputs are selected
+  output_args_outputs: ArgsOutputsDetail[]; // From API - detailed args_outputs data for selected args_outputs_ids
+  input_args_fields: ArgsFieldDetail[]; // From API - for Jinja variable autocomplete/reference
+  disabled: boolean; // Based on can_edit flag from Tool.tsx
+  // Note: args_outputs_ids selection is managed by Tool.tsx in separate "args_outputs" step
+  // This component only edits args_outputs within selected args_outputs_ids
   createArgsOutputsAction?:
     | ((input: CreateDraftArgsOutputsIn) => Promise<CreateDraftArgsOutputsOut>)
     | undefined;
-  searchTerm?: string; // Search term for filtering args_outputs
-  showSelectedFilter?: boolean; // Whether to show only selected args_outputs
-  onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
-  // Args data for showing which args are linked
-  args?: Array<{
-    id: string | null;
-    name: string | null;
-  }>;
+  group_id?: string | null; // Group ID for resource creation
+  agent_id?: string | null; // Agent ID for resource creation
+  // Component handles args_outputs changes internally and calls createArgsOutputsAction
+  // No onChange callback needed - component manages its own state like SchemaOutput
 }
 
 export function ArgsOutputs({
   args_outputs_ids,
-  args_outputs_resources: _args_outputs_resources,
-  show_args_outputs = false,
-  args_outputs_suggestions: _args_outputs_suggestions,
-  args_outputs,
+  output_args_outputs,
+  input_args_fields,
   disabled = false,
-  onChange,
-  label = "Args Outputs",
-  id = "args_outputs",
-  required = false,
-  placeholder: _placeholder = "Select args outputs...",
-  description,
+  createArgsOutputsAction,
   group_id,
   agent_id,
-  createArgsOutputsAction,
-  searchTerm = "",
-  showSelectedFilter = false,
-  onGenerate,
-  isGenerating = false,
-  args = [],
 }: ArgsOutputsProps) {
-  // Use standardized props
-  const ids = useMemo(() => args_outputs_ids ?? [], [args_outputs_ids]);
-  const show = show_args_outputs ?? false;
-  const allArgsOutputsMemo = useMemo(() => args_outputs ?? [], [args_outputs]);
-  const suggestionsList = useMemo(
-    () => _args_outputs_suggestions ?? [],
-    [_args_outputs_suggestions]
-  );
+  // Get available Jinja variables from input args fields
+  const availableVariables = useMemo(() => {
+    return input_args_fields.map((field) => field.name);
+  }, [input_args_fields]);
 
-  // Track which args_outputs IDs have already had resources created
-  const createdArgsOutputsIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdArgsOutputsIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdArgsOutputsIdsRef.current.add(id));
-  }, [ids]);
-
-  // Create a map of args by id for quick lookup
+  // Create a map of args by id for displaying which arg each output belongs to
   const argsMap = useMemo(() => {
-    const map = new Map<string, string>();
-    args.forEach((arg) => {
-      if (arg.id && arg.name) {
-        map.set(arg.id, arg.name);
-      }
+    const map = new Map<string, ArgsFieldDetail>();
+    input_args_fields.forEach((field) => {
+      map.set(field.args_id, field);
     });
     return map;
-  }, [args]);
+  }, [input_args_fields]);
 
-  // Convert args_outputs array to ArgsOutputItem format for SelectableGrid
-  const argsOutputItems = useMemo(() => {
-    return allArgsOutputsMemo
-      .filter((ao) => ao.id && ao.name && ao.args_id) // Filter out nulls
-      .map((ao) => ({
-        id: ao.id!,
-        args_id: ao.args_id!,
-        name: ao.name!,
-        ...(ao.template && { template: ao.template }),
-      }));
-  }, [allArgsOutputsMemo]);
+  // Group args_outputs by args_id
+  const outputsByArgs = useMemo(() => {
+    const grouped: Record<string, ArgsOutputsDetail[]> = {};
+    output_args_outputs.forEach((output) => {
+      const argsId = output.args_id;
+      if (!grouped[argsId]) {
+        grouped[argsId] = [];
+      }
+      grouped[argsId]!.push(output);
+    });
+    // Sort outputs within each args_id by name
+    Object.keys(grouped).forEach((argsId) => {
+      const outputs = grouped[argsId];
+      if (outputs) {
+        grouped[argsId] = outputs.sort((a, b) => a.name.localeCompare(b.name));
+      }
+    });
+    return grouped;
+  }, [output_args_outputs]);
 
-  // Filter args_outputs based on search term
-  const filteredArgsOutputs = useMemo(() => {
-    let filtered = argsOutputItems;
+  // Internal state for args_outputs names
+  const [outputNames, setOutputNames] = useState<Record<string, string>>({});
+  const nameDebounceTimerRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const lastSavedNamesRef = useRef<Record<string, string>>({});
+  const isNameInitialMountRef = useRef(true);
 
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter((ao) => {
-        const argName = argsMap.get(ao.args_id) || "";
-        const searchText =
-          `${ao.name} ${ao.template || ""} ${argName}`.toLowerCase();
-        return searchText.includes(searchLower);
+  // Initialize output names from props
+  useEffect(() => {
+    if (isNameInitialMountRef.current) {
+      const initialNames: Record<string, string> = {};
+      output_args_outputs.forEach((output) => {
+        initialNames[output.args_outputs_id] = output.name;
       });
+      setOutputNames(initialNames);
+      lastSavedNamesRef.current = initialNames;
+      isNameInitialMountRef.current = false;
     }
+  }, [output_args_outputs]);
 
-    // Apply show selected filter
-    if (showSelectedFilter) {
-      filtered = filtered.filter((ao) => ids.includes(ao.id));
+  // Sync output names when props change
+  useEffect(() => {
+    const newNames: Record<string, string> = {};
+    let hasChanges = false;
+    output_args_outputs.forEach((output) => {
+      const currentName = lastSavedNamesRef.current[output.args_outputs_id];
+      if (!currentName || currentName !== output.name) {
+        newNames[output.args_outputs_id] = output.name;
+        hasChanges = true;
+      } else {
+        newNames[output.args_outputs_id] = currentName;
+      }
+    });
+    if (hasChanges) {
+      setOutputNames(newNames);
+      lastSavedNamesRef.current = newNames;
     }
+  }, [output_args_outputs]);
 
-    return filtered;
-  }, [argsOutputItems, searchTerm, showSelectedFilter, ids, argsMap]);
+  // Internal state for args_outputs templates (Jinja content)
+  const [outputTemplates, setOutputTemplates] = useState<
+    Record<string, string>
+  >({});
+  const templateDebounceTimerRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const lastSavedTemplatesRef = useRef<Record<string, string>>({});
+  const isTemplateInitialMountRef = useRef(true);
 
-  // Check if an args_output is suggested
-  const isSuggested = useCallback(
-    (argsOutputId: string) => suggestionsList.includes(argsOutputId),
-    [suggestionsList]
+  // Initialize output templates from props
+  useEffect(() => {
+    if (isTemplateInitialMountRef.current) {
+      const initialTemplates: Record<string, string> = {};
+      output_args_outputs.forEach((output) => {
+        initialTemplates[output.args_outputs_id] = output.template;
+      });
+      setOutputTemplates(initialTemplates);
+      lastSavedTemplatesRef.current = initialTemplates;
+      isTemplateInitialMountRef.current = false;
+    }
+  }, [output_args_outputs]);
+
+  // Sync output templates when props change
+  useEffect(() => {
+    const newTemplates: Record<string, string> = {};
+    let hasChanges = false;
+    output_args_outputs.forEach((output) => {
+      const currentTemplate =
+        lastSavedTemplatesRef.current[output.args_outputs_id];
+      if (!currentTemplate || currentTemplate !== output.template) {
+        newTemplates[output.args_outputs_id] = output.template;
+        hasChanges = true;
+      } else {
+        newTemplates[output.args_outputs_id] = currentTemplate;
+      }
+    });
+    if (hasChanges) {
+      setOutputTemplates(newTemplates);
+      lastSavedTemplatesRef.current = newTemplates;
+    }
+  }, [output_args_outputs]);
+
+  // Debounced save function for output name (creates new args_outputs resource)
+  const saveOutputName = useCallback(
+    async (outputId: string, name: string) => {
+      if (!createArgsOutputsAction || !agent_id || !group_id) return;
+
+      const output = output_args_outputs.find(
+        (o) => o.args_outputs_id === outputId
+      );
+      if (!output) return;
+
+      try {
+        // Create new args_outputs resource with updated name (write-only pattern)
+        await createArgsOutputsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            args_id: output.args_id,
+            name: name,
+            template: outputTemplates[outputId] ?? output.template,
+            mcp: false,
+          },
+        });
+        lastSavedNamesRef.current[outputId] = name;
+        // Note: The new args_outputs will need to be linked to the tool via tool_args_outputs junction table
+        // This happens when Tool.tsx saves with the new args_outputs_id
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to create args_outputs:", error);
+      }
+    },
+    [
+      createArgsOutputsAction,
+      output_args_outputs,
+      agent_id,
+      group_id,
+      outputTemplates,
+    ]
   );
 
-  const handleSelect = useCallback(
-    async (argsOutputId: string) => {
-      const isSelected = ids.includes(argsOutputId);
-      let newIds: string[];
+  // Debounced save function for output template (creates new args_outputs resource)
+  const saveOutputTemplate = useCallback(
+    async (outputId: string, template: string) => {
+      if (!createArgsOutputsAction || !agent_id || !group_id) return;
 
-      if (isSelected) {
-        // Remove args_output
-        newIds = ids.filter((id) => id !== argsOutputId);
-        createdArgsOutputsIdsRef.current.delete(argsOutputId);
-      } else {
-        // Add args_output - create resource if not already created
-        newIds = [...ids, argsOutputId];
+      const output = output_args_outputs.find(
+        (o) => o.args_outputs_id === outputId
+      );
+      if (!output) return;
 
-        if (
-          !createdArgsOutputsIdsRef.current.has(argsOutputId) &&
-          createArgsOutputsAction &&
-          agent_id &&
-          group_id
-        ) {
-          // Find the args_output to get its properties
-          const argsOutput = argsOutputItems.find((ao) => ao.id === argsOutputId);
-          if (argsOutput) {
-            try {
-              await createArgsOutputsAction({
-                body: {
-                  agent_id: agent_id,
-                  group_id: group_id,
-                  args_id: argsOutput.args_id,
-                  name: argsOutput.name,
-                  template: argsOutput.template || "",
-                  mcp: false,
-                },
-              });
-              createdArgsOutputsIdsRef.current.add(argsOutputId);
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error(
-                `Failed to create args_outputs resource for ${argsOutputId}:`,
-                error
-              );
-              // Don't block UI - still update selection
-            }
-          }
-        }
+      try {
+        // Create new args_outputs resource with updated template (write-only pattern)
+        await createArgsOutputsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            args_id: output.args_id,
+            name: outputNames[outputId] ?? output.name,
+            template: template,
+            mcp: false,
+          },
+        });
+        lastSavedTemplatesRef.current[outputId] = template;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to create args_outputs:", error);
+      }
+    },
+    [
+      createArgsOutputsAction,
+      output_args_outputs,
+      agent_id,
+      group_id,
+      outputNames,
+    ]
+  );
+
+  // Handle output name change with debouncing
+  const handleOutputNameChange = useCallback(
+    (outputId: string, name: string) => {
+      setOutputNames((prev) => ({
+        ...prev,
+        [outputId]: name,
+      }));
+
+      // Clear existing timer for this output
+      if (nameDebounceTimerRef.current[outputId]) {
+        clearTimeout(nameDebounceTimerRef.current[outputId]);
       }
 
-      // Update parent state
-      onChange(newIds);
+      // Set new timer (500ms debounce)
+      nameDebounceTimerRef.current[outputId] = setTimeout(() => {
+        const lastSaved = lastSavedNamesRef.current[outputId];
+        // Only save if value actually changed
+        if (!lastSaved || lastSaved !== name) {
+          saveOutputName(outputId, name);
+        }
+      }, 500);
     },
-    [ids, onChange, createArgsOutputsAction, agent_id, group_id, argsOutputItems]
+    [saveOutputName]
   );
 
-  // Don't render if show_args_outputs is false (AFTER all hooks)
-  if (!show) {
-    return null;
+  // Handle output template change with debouncing
+  const handleOutputTemplateChange = useCallback(
+    (outputId: string, template: string) => {
+      setOutputTemplates((prev) => ({
+        ...prev,
+        [outputId]: template,
+      }));
+
+      // Clear existing timer for this output
+      if (templateDebounceTimerRef.current[outputId]) {
+        clearTimeout(templateDebounceTimerRef.current[outputId]);
+      }
+
+      // Set new timer (500ms debounce)
+      templateDebounceTimerRef.current[outputId] = setTimeout(() => {
+        const lastSaved = lastSavedTemplatesRef.current[outputId];
+        // Only save if value actually changed
+        if (!lastSaved || lastSaved !== template) {
+          saveOutputTemplate(outputId, template);
+        }
+      }, 500);
+    },
+    [saveOutputTemplate]
+  );
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(nameDebounceTimerRef.current).forEach((timer) => {
+        if (timer) clearTimeout(timer);
+      });
+      Object.values(templateDebounceTimerRef.current).forEach((timer) => {
+        if (timer) clearTimeout(timer);
+      });
+    };
+  }, []);
+
+  // Don't render if no args_outputs selected
+  if (args_outputs_ids.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground p-4">
+        No args_outputs selected. Select args_outputs in the "Args Outputs" step
+        to edit them.
+      </div>
+    );
+  }
+
+  // Don't render if no outputs
+  if (output_args_outputs.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground p-4">
+        No args_outputs found for selected args_outputs_ids.
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-2">
-      {label && (
-        <Label htmlFor={id} className="flex items-center gap-1">
-          {label}
-          {required && <span className="text-destructive">*</span>}
-          {description && (
-            <span className="text-xs text-muted-foreground ml-2">
-              {description}
-            </span>
-          )}
-        </Label>
+    <div className="space-y-6">
+      {/* Available variables reference */}
+      {availableVariables.length > 0 && (
+        <div className="rounded-md border p-4 bg-muted/50">
+          <Label className="text-sm font-medium mb-2">
+            Available Jinja Variables (from Input Args)
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {availableVariables.map((variable) => (
+              <code
+                key={variable}
+                className="text-xs px-2 py-1 rounded bg-background border"
+              >
+                {`{{ ${variable} }}`}
+              </code>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Use these variables in template fields below. Variables reference
+            input arg names.
+          </p>
+        </div>
       )}
-      <SelectableGrid<ArgsOutputItem>
-        items={filteredArgsOutputs}
-        selectedId={null}
-        selectedIds={ids}
-        onSelect={handleSelect}
-        getId={(item) => item.id}
-        renderItem={(item, isSelected) => {
-          const argName = argsMap.get(item.args_id) || item.args_id;
-          return (
-            <div
-              className={cn(
-                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                "hover:shadow-md hover:bg-accent/50",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
-              )}
-            >
-              {/* Check icon - top right */}
-              {isSelected && (
-                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                </div>
-              )}
 
-              {/* Suggested badge - top right */}
-              {isSuggested(item.id) && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                  Suggested
-                </div>
-              )}
-
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Output for: {argName}
+      {/* Args_outputs grouped by args_id */}
+      {Object.entries(outputsByArgs).map(([argsId, outputs]) => {
+        const arg = argsMap.get(argsId);
+        const argName = arg?.name || argsId.slice(0, 8) + "...";
+        return (
+          <div key={argsId} className="border rounded-md p-4 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">
+                Outputs for Arg: {argName}
+              </Label>
+              {arg?.description && (
+                <p className="text-sm text-muted-foreground">
+                  {arg.description}
                 </p>
-                {item.template && (
-                  <p className="text-xs text-muted-foreground mt-1 font-mono">
-                    Template: {item.template}
-                  </p>
-                )}
-              </div>
+              )}
             </div>
-          );
-        }}
-        emptyMessage="No args outputs found."
-        disabled={disabled}
-      />
+            <div className="space-y-4">
+              {outputs.map((output) => {
+                const outputName =
+                  outputNames[output.args_outputs_id] ?? output.name;
+                const outputTemplate =
+                  outputTemplates[output.args_outputs_id] ?? output.template;
+                return (
+                  <div
+                    key={output.args_outputs_id}
+                    className="border rounded p-4 space-y-3 bg-muted/30"
+                  >
+                    {/* Output Name */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`${output.args_outputs_id}-name`}>
+                        Output Name
+                      </Label>
+                      <Input
+                        id={`${output.args_outputs_id}-name`}
+                        value={outputName}
+                        onChange={(e) =>
+                          handleOutputNameChange(
+                            output.args_outputs_id,
+                            e.target.value
+                          )
+                        }
+                        disabled={disabled}
+                        placeholder="Output name"
+                      />
+                    </div>
+
+                    {/* Template (Jinja) */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`${output.args_outputs_id}-template`}>
+                        Template (Jinja)
+                      </Label>
+                      <Textarea
+                        id={`${output.args_outputs_id}-template`}
+                        value={outputTemplate}
+                        onChange={(e) =>
+                          handleOutputTemplateChange(
+                            output.args_outputs_id,
+                            e.target.value
+                          )
+                        }
+                        disabled={disabled}
+                        placeholder={`{{ ${argName} }}`}
+                        rows={4}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Jinja template that transforms input arguments into this
+                        output's value. Use variables from input args:{" "}
+                        {availableVariables
+                          .slice(0, 5)
+                          .map((v) => `{{ ${v} }}`)
+                          .join(", ")}
+                        {availableVariables.length > 5 && "..."}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

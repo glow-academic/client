@@ -50,13 +50,12 @@ DECLARE
     v_run_id uuid;
 BEGIN
     -- Lookup tool_id from agent_tools + resource_tools
-    SELECT t.id, tt.template_id, st.schema_id
-    INTO v_tool_id, v_template_id, v_schema_id
+    -- Note: No longer need template_id or schema_id since we use tool_args directly
+    SELECT t.id
+    INTO v_tool_id
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN tool_templates tt ON tt.tool_id = t.id
-    LEFT JOIN schema_templates st ON st.template_id = tt.template_id
     WHERE at.agent_id = api_create_args_v4.agent_id
       AND rt.resource = 'args'::resources
       AND at.active = true
@@ -80,7 +79,7 @@ BEGIN
         END IF;
     END IF;
     
-    -- Dynamically build arguments_raw FROM schema_fields_resource and Jinja templates
+    -- Dynamically build arguments_raw FROM tool_args → args_resource
     -- Build a JSONB object with all function parameters first (for lookup)
     v_params_jsonb := jsonb_build_object(
         'name', name,
@@ -91,29 +90,22 @@ BEGIN
         'position_value', position_value
     );
     
-    -- For each schema field, extract variable names from template or use field name directly
-    -- Only if schema_id exists (may not exist for args)
-    IF v_schema_id IS NOT NULL THEN
+    -- For each args_resource entry linked to the tool, extract variable names from template or use field name directly
+    -- Only if tool_id exists
+    IF v_tool_id IS NOT NULL THEN
         FOR v_arg_key, v_arg_value IN
             SELECT 
                 CASE 
                     -- If template is empty, use field name as argument name
-                    WHEN COALESCE(sf.template, '') = '' THEN sf.name
-                    -- If template has variables, extract first variable name (before . or |)
-                    -- Pattern: {{ variable }} or {{ variable.property }} or {{ variable|filter }}
-                    ELSE COALESCE(
-                        (SELECT regexp_replace(
-                            regexp_replace(sf.template, '.*\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)', '\1'),
-                            '[\.\|].*', ''
-                        )),
-                        sf.name  -- Fallback to field name if extraction fails
-                    )
-                END as arg_key,
-                -- Look up value from function parameters using schema field name
-                v_params_jsonb->>sf.name as arg_value
-            FROM schema_fields_resource sf
-            WHERE sf.schema_id = v_schema_id
-            ORDER BY sf.position
+                    -- Note: args_resource doesn't have template field, so always use name
+                    ar.name as arg_key,
+                    -- Look up value from function parameters using args_resource name
+                    v_params_jsonb->>ar.name as arg_value
+            FROM tool_args ta
+            JOIN args_resource ar ON ar.id = ta.args_id
+            WHERE ta.tool_id = v_tool_id
+              AND ar.active = true
+            ORDER BY ar.position NULLS LAST, ar.created_at
         LOOP
             IF v_arg_value IS NOT NULL THEN
                 v_args_jsonb := v_args_jsonb || jsonb_build_object(v_arg_key, v_arg_value);
@@ -124,6 +116,7 @@ BEGIN
     v_arguments_raw := v_args_jsonb::text;
     
     -- Create call record
+    -- Note: template_id is no longer needed since we use tool_args_outputs directly
     v_call_id := uuidv7();
     INSERT INTO calls (
         id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at
@@ -132,7 +125,7 @@ BEGIN
         v_call_id,
         'args_' || v_call_id::text,
         v_tool_id,
-        v_template_id,
+        NULL,  -- template_id no longer used
         v_arguments_raw,
         true,
         NOW(),
