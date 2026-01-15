@@ -1,7 +1,4 @@
-"""Eval duplicate endpoint - v4 API following DHH principles.
-
-TODO: Implement eval duplication functionality.
-"""
+"""Eval duplicate endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -17,7 +14,6 @@ from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-# TODO: Create SQL file for eval duplication
 SQL_PATH = "app/sql/v4/evals/duplicate_eval_complete.sql"
 
 router = APIRouter()
@@ -39,7 +35,7 @@ async def duplicate_eval(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateEvalApiResponse:
-    """Duplicate an eval - TODO: Implement functionality."""
+    """Duplicate an eval."""
     tags = ["evals"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -55,7 +51,9 @@ async def duplicate_eval(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateEvalSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = DuplicateEvalSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
@@ -68,19 +66,37 @@ async def duplicate_eval(
             ),
         )
 
-        # Set audit context
+        if not result or not result.new_eval_id:
+            raise ValueError(f"Eval not found: {request.eval_id}")
+
+        original_name = result.original_name or "Unknown"
+
+        # Set audit context with data from SQL query
         if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                eval={"name": original_name, "id": str(request.eval_id)},
+            )
 
         # Convert SQL result to API response
-        api_response = DuplicateEvalApiResponse.model_validate(result.model_dump())
+        api_response = DuplicateEvalApiResponse.model_validate(
+            {
+                "success": True,
+                "evalId": str(result.new_eval_id),
+                "message": f"Eval '{original_name}' duplicated successfully",
+            }
+        )
 
-        # Invalidate cache tags
+        # Invalidate cache after mutation
         await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

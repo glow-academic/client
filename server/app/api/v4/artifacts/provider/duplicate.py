@@ -1,7 +1,4 @@
-"""Provider duplicate endpoint - v4 API following DHH principles.
-
-TODO: Implement provider duplication functionality.
-"""
+"""Provider duplicate endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -18,7 +15,6 @@ from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-# TODO: Create SQL file for provider duplication
 SQL_PATH = "app/sql/v4/providers/duplicate_provider_complete.sql"
 
 router = APIRouter()
@@ -40,7 +36,7 @@ async def duplicate_provider(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateProviderApiResponse:
-    """Duplicate a provider - TODO: Implement functionality."""
+    """Duplicate a provider."""
     tags = ["providers"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -56,7 +52,9 @@ async def duplicate_provider(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = DuplicateProviderSqlParams(**request.model_dump(), profile_id=profile_id)
+        params = DuplicateProviderSqlParams(
+            **request.model_dump(), profile_id=profile_id
+        )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
@@ -69,19 +67,37 @@ async def duplicate_provider(
             ),
         )
 
-        # Set audit context
+        if not result or not result.new_provider_id:
+            raise ValueError(f"Provider not found: {request.provider_id}")
+
+        original_name = result.original_name or "Unknown"
+
+        # Set audit context with data from SQL query
         if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                provider={"name": original_name, "id": str(request.provider_id)},
+            )
 
         # Convert SQL result to API response
-        api_response = DuplicateProviderApiResponse.model_validate(result.model_dump())
+        api_response = DuplicateProviderApiResponse.model_validate(
+            {
+                "success": True,
+                "providerId": str(result.new_provider_id),
+                "message": f"Provider '{original_name}' duplicated successfully",
+            }
+        )
 
-        # Invalidate cache tags
+        # Invalidate cache after mutation
         await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

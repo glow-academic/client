@@ -3675,6 +3675,52 @@ class HintToolCompleteApiResponse(BaseModel):
 
 
 
+# Generated from: patch_agent_draft
+
+class PatchAgentDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.expected_version,
+        )
+
+class PatchAgentDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchAgentDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchAgentDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_agent
 
 class SaveAgentSqlParams(BaseModel):
@@ -5609,6 +5655,49 @@ class GetLoginDataApiResponse(BaseModel):
     show_default_account: bool | None = None
     default_department_id: str | None = None
     realm_name: str | None = None
+
+
+
+# Generated from: patch_auth_draft
+
+class PatchAuthDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.expected_version,
+        )
+
+class PatchAuthDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchAuthDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    expected_version: int | None = 0
+
+class PatchAuthDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -8094,6 +8183,52 @@ class LeaveCohortApiResponse(BaseModel):
 
 
 
+# Generated from: patch_cohort_draft
+
+class PatchCohortDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.expected_version,
+        )
+
+class PatchCohortDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchCohortDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchCohortDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_cohort
 
 class SaveCohortSqlParams(BaseModel):
@@ -9300,6 +9435,52 @@ class GetDepartmentsListApiResponse(BaseModel):
 
 
 
+# Generated from: patch_department_draft
+
+class PatchDepartmentDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    setting_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.setting_ids,
+            self.expected_version,
+        )
+
+class PatchDepartmentDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchDepartmentDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    setting_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchDepartmentDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_department
 
 class SaveDepartmentSqlParams(BaseModel):
@@ -9784,6 +9965,37 @@ class DocumentToolProgressUpdateApiResponse(BaseModel):
     persisted_call_id: str | None = None
     tool_name: str | None = None
     arguments_raw: str | None = None
+
+
+
+# Generated from: duplicate_document
+
+class DuplicateDocumentSqlParams(BaseModel):
+
+    document_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+            self.profile_id,
+        )
+
+class DuplicateDocumentSqlRow(BaseModel):
+
+    new_document_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateDocumentApiRequest(BaseModel):
+
+    document_id: UUID
+
+class DuplicateDocumentApiResponse(BaseModel):
+
+    new_document_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -10715,6 +10927,119 @@ class InsertDocumentUploadApiResponse(BaseModel):
 
 
 
+# Generated from: patch_document_draft
+
+class PatchDocumentDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    field_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.field_ids,
+            self.department_ids,
+            self.expected_version,
+        )
+
+class PatchDocumentDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchDocumentDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    field_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchDocumentDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: process_document_csv
+
+class IProcessDocumentCsvV4ColumnMapping(BaseModel):
+
+    csv_column: str | None
+    target_field: str | None
+
+class ProcessDocumentCsvSqlParams(BaseModel):
+
+    csv_content: str
+    column_mappings: list[IProcessDocumentCsvV4ColumnMapping]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert column_mappings composite array to tuples for asyncpg
+        column_mappings_tuples = [
+            (conn.csv_column, conn.target_field)
+            for conn in (self.column_mappings or [])
+        ]
+        return (
+            self.csv_content,
+            column_mappings_tuples,
+            self.profile_id,
+        )
+
+class QProcessDocumentCsvV4CsvRowError(BaseModel):
+
+    row_index: int | None
+    field: str | None
+    message: str | None
+
+class QProcessDocumentCsvV4ProcessedRow(BaseModel):
+
+    row_index: int | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    department_ids: list[str] | None
+    cohort_ids: list[str] | None
+    errors: list[QProcessDocumentCsvV4CsvRowError] | None
+
+class ProcessDocumentCsvSqlRow(BaseModel):
+
+    success: bool | None = None
+    headers: list[str] | None = None
+    rows: list[QProcessDocumentCsvV4ProcessedRow] | None = None
+    actor_name: str | None = None
+
+class ProcessDocumentCsvApiRequest(BaseModel):
+
+    csv_content: str
+    column_mappings: list[IProcessDocumentCsvV4ColumnMapping]
+
+class ProcessDocumentCsvApiResponse(BaseModel):
+
+    success: bool | None = None
+    headers: list[str] | None = None
+    rows: list[QProcessDocumentCsvV4ProcessedRow] | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: render_template
 
 class RenderTemplateSqlParams(BaseModel):
@@ -11166,6 +11491,37 @@ class UpdateDocumentNameApiResponse(BaseModel):
 
 
 
+# Generated from: duplicate_eval
+
+class DuplicateEvalSqlParams(BaseModel):
+
+    eval_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.profile_id,
+        )
+
+class DuplicateEvalSqlRow(BaseModel):
+
+    new_eval_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateEvalApiRequest(BaseModel):
+
+    eval_id: UUID
+
+class DuplicateEvalApiResponse(BaseModel):
+
+    new_eval_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_eval
 
 class GetEvalSqlParams(BaseModel):
@@ -11418,6 +11774,55 @@ class GetEvalApiResponse(BaseModel):
     available_model_runs_page_size: int | None = None
     available_model_runs_total_pages: int | None = None
     available_groups: list[QGetEvalV4AvailableGroup] | None = None
+
+
+
+# Generated from: patch_eval_draft
+
+class PatchEvalDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.agent_ids,
+            self.expected_version,
+        )
+
+class PatchEvalDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchEvalDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchEvalDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -11969,6 +12374,52 @@ class GetFieldsListApiResponse(BaseModel):
     departments: list[QListFieldsV4Department] | None = None
     parameter_options: list[QListFieldsV4Option] | None = None
     department_options: list[QListFieldsV4Option] | None = None
+
+
+
+# Generated from: patch_field_draft
+
+class PatchFieldDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.expected_version,
+        )
+
+class PatchFieldDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchFieldDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchFieldDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -13121,6 +13572,85 @@ class GetHealthBundleApiResponse(BaseModel):
     actor_name: str | None = None
     health_kpis: QGetHealthBundleV4HealthKpis | None = None
     metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
+
+
+
+# Generated from: get_health
+
+class GetHealthSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class GetHealthSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    health_kpis: QGetHealthBundleV4HealthKpis | None = None
+    metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
+
+class GetHealthApiRequest(BaseModel):
+
+    pass
+
+class GetHealthApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    health_kpis: QGetHealthBundleV4HealthKpis | None = None
+    metrics: list[QGetHealthBundleV4MetricsDataPoint] | None = None
+
+
+
+# Generated from: get_health_list
+
+class GetHealthListSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+    page: int | None = 0
+    page_size: int | None = 50
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.page,
+            self.page_size,
+        )
+
+class QGetHealthListV4Metric(BaseModel):
+
+    date: str | None
+    cpu_percent: float | None
+    latency_ms: float | None
+    memory_bytes: int | None
+    requests_total: int | None
+    errors_total: int | None
+    sample_count: int | None
+
+class GetHealthListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    metrics: list[QGetHealthListV4Metric] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+
+class GetHealthListApiRequest(BaseModel):
+
+    page: int | None = 0
+    page_size: int | None = 50
+
+class GetHealthListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    metrics: list[QGetHealthListV4Metric] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
 
 
 
@@ -14938,6 +15468,133 @@ class GetLeaderboardBundleApiResponse(BaseModel):
 
 
 
+# Generated from: get_leaderboard
+
+class GetLeaderboardSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    roles: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_filters: list[str] | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.roles,
+            self.cohort_ids,
+            self.simulation_filters,
+            self.department_ids,
+        )
+
+class GetLeaderboardSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetLeaderboardBundleV4Row] | None = None
+    simulations: list[QGetLeaderboardBundleV4Simulation] | None = None
+    scenarios: list[QGetLeaderboardBundleV4Scenario] | None = None
+    primary_color: str | None = None
+    accent_color: str | None = None
+
+class GetLeaderboardApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    roles: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_filters: list[str] | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetLeaderboardApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetLeaderboardBundleV4Row] | None = None
+    simulations: list[QGetLeaderboardBundleV4Simulation] | None = None
+    scenarios: list[QGetLeaderboardBundleV4Scenario] | None = None
+    primary_color: str | None = None
+    accent_color: str | None = None
+
+
+
+# Generated from: get_leaderboard_list
+
+class GetLeaderboardListSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    profile_id: UUID
+    roles: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_filters: list[str] | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    offset: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.profile_id,
+            self.roles,
+            self.cohort_ids,
+            self.simulation_filters,
+            self.department_ids,
+            self.sort_by,
+            self.sort_order,
+            self.page_size,
+            self.offset,
+        )
+
+class QGetLeaderboardListV4Row(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    simulation_ids: list[UUID] | None
+    scenario_ids: list[UUID] | None
+    total_attempts: int | None
+    highest_score: int | None
+    avg_messages: int | None
+    persona_response_time: int | None
+    total_time: int | None
+    improvement_rate: int | None
+    perfect_count: int | None
+    quickest_pass: int | None
+    rank: int | None
+
+class GetLeaderboardListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetLeaderboardListV4Row] | None = None
+    total_count: int | None = None
+
+class GetLeaderboardListApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    roles: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_filters: list[str] | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    offset: int
+
+class GetLeaderboardListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetLeaderboardListV4Row] | None = None
+    total_count: int | None = None
+
+
+
 # Generated from: get_logs_bundle
 
 class GetLogsBundleSqlParams(BaseModel):
@@ -16330,6 +16987,52 @@ class ListModelsApiResponse(BaseModel):
 
 
 
+# Generated from: patch_model_draft
+
+class PatchModelDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    provider_id: UUID | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.provider_id,
+            self.expected_version,
+        )
+
+class PatchModelDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchModelDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    provider_id: UUID | None = None
+    expected_version: int | None = 0
+
+class PatchModelDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_model
 
 class ISaveModelV4Pricing(BaseModel):
@@ -17293,6 +17996,58 @@ class GetParametersListApiResponse(BaseModel):
     documents: list[QListParametersV4Document] | None = None
     scenario_options: list[QListParametersV4ScenarioOption] | None = None
     document_options: list[QListParametersV4DocumentOption] | None = None
+
+
+
+# Generated from: patch_parameter_draft
+
+class PatchParameterDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.expected_version,
+        )
+
+class PatchParameterDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchParameterDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchParameterDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
 
 
 
@@ -20594,6 +21349,37 @@ class DeleteProviderApiResponse(BaseModel):
     name: str | None = None
     actor_name: str | None = None
     deleted: bool | None = None
+
+
+
+# Generated from: duplicate_provider
+
+class DuplicateProviderSqlParams(BaseModel):
+
+    provider_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.profile_id,
+        )
+
+class DuplicateProviderSqlRow(BaseModel):
+
+    new_provider_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateProviderApiRequest(BaseModel):
+
+    provider_id: UUID
+
+class DuplicateProviderApiResponse(BaseModel):
+
+    new_provider_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -25788,6 +26574,58 @@ class GetRubricApiResponse(BaseModel):
 
 
 
+# Generated from: patch_rubric_draft
+
+class PatchRubricDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    point_ids: list[UUID] | None = None
+    standard_group_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.point_ids,
+            self.standard_group_ids,
+            self.expected_version,
+        )
+
+class PatchRubricDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchRubricDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    point_ids: list[UUID] | None = None
+    standard_group_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchRubricDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_rubric
 
 class SaveRubricSqlParams(BaseModel):
@@ -28868,6 +29706,73 @@ class GetScenarioApiResponse(BaseModel):
 
 
 
+# Generated from: patch_scenario_draft
+
+class PatchScenarioDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.parameter_ids,
+            self.field_ids,
+            self.image_ids,
+            self.objective_ids,
+            self.problem_statement_ids,
+            self.expected_version,
+        )
+
+class PatchScenarioDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchScenarioDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchScenarioDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_scenario
 
 class QSaveScenarioV4Parameter(BaseModel):
@@ -29050,6 +29955,37 @@ class GetTemplateSchemaApiRequest(BaseModel):
 class GetTemplateSchemaApiResponse(BaseModel):
 
     schema_id: UUID | None = None
+
+
+
+# Generated from: duplicate_setting
+
+class DuplicateSettingSqlParams(BaseModel):
+
+    setting_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.setting_id,
+            self.profile_id,
+        )
+
+class DuplicateSettingSqlRow(BaseModel):
+
+    new_setting_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateSettingApiRequest(BaseModel):
+
+    setting_id: UUID
+
+class DuplicateSettingApiResponse(BaseModel):
+
+    new_setting_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -32340,6 +33276,55 @@ class MarkChatCompletedApiResponse(BaseModel):
 
 
 
+# Generated from: patch_simulation_draft
+
+class PatchSimulationDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.scenario_ids,
+            self.expected_version,
+        )
+
+class PatchSimulationDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchSimulationDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchSimulationDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_simulation
 
 class ISaveSimulationV4ScenarioRubricGradeAgent(BaseModel):
@@ -35193,6 +36178,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "HintToolCompleteApiRequest",
         "HintToolCompleteApiResponse",
     ),
+    "app/sql/v4/agents/patch_agent_draft_complete.sql": (
+        "PatchAgentDraftSqlParams",
+        "PatchAgentDraftSqlRow",
+        "PatchAgentDraftApiRequest",
+        "PatchAgentDraftApiResponse",
+    ),
     "app/sql/v4/agents/save_agent_complete.sql": (
         "SaveAgentSqlParams",
         "SaveAgentSqlRow",
@@ -35372,6 +36363,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
+    ),
+    "app/sql/v4/auth/patch_auth_draft_complete.sql": (
+        "PatchAuthDraftSqlParams",
+        "PatchAuthDraftSqlRow",
+        "PatchAuthDraftApiRequest",
+        "PatchAuthDraftApiResponse",
     ),
     "app/sql/v4/auth/save_auth_complete.sql": (
         "SaveAuthSqlParams",
@@ -35637,6 +36634,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LeaveCohortApiRequest",
         "LeaveCohortApiResponse",
     ),
+    "app/sql/v4/cohorts/patch_cohort_draft_complete.sql": (
+        "PatchCohortDraftSqlParams",
+        "PatchCohortDraftSqlRow",
+        "PatchCohortDraftApiRequest",
+        "PatchCohortDraftApiResponse",
+    ),
     "app/sql/v4/cohorts/save_cohort_complete.sql": (
         "SaveCohortSqlParams",
         "SaveCohortSqlRow",
@@ -35690,6 +36693,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentsListSqlRow",
         "GetDepartmentsListApiRequest",
         "GetDepartmentsListApiResponse",
+    ),
+    "app/sql/v4/departments/patch_department_draft_complete.sql": (
+        "PatchDepartmentDraftSqlParams",
+        "PatchDepartmentDraftSqlRow",
+        "PatchDepartmentDraftApiRequest",
+        "PatchDepartmentDraftApiResponse",
     ),
     "app/sql/v4/departments/save_department_complete.sql": (
         "SaveDepartmentSqlParams",
@@ -35762,6 +36771,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DocumentToolProgressUpdateSqlRow",
         "DocumentToolProgressUpdateApiRequest",
         "DocumentToolProgressUpdateApiResponse",
+    ),
+    "app/sql/v4/documents/duplicate_document_complete.sql": (
+        "DuplicateDocumentSqlParams",
+        "DuplicateDocumentSqlRow",
+        "DuplicateDocumentApiRequest",
+        "DuplicateDocumentApiResponse",
     ),
     "app/sql/v4/documents/get_certificate_data_complete.sql": (
         "GetCertificateDataSqlParams",
@@ -35841,6 +36856,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertDocumentUploadApiRequest",
         "InsertDocumentUploadApiResponse",
     ),
+    "app/sql/v4/documents/patch_document_draft_complete.sql": (
+        "PatchDocumentDraftSqlParams",
+        "PatchDocumentDraftSqlRow",
+        "PatchDocumentDraftApiRequest",
+        "PatchDocumentDraftApiResponse",
+    ),
+    "app/sql/v4/documents/process_document_csv_complete.sql": (
+        "ProcessDocumentCsvSqlParams",
+        "ProcessDocumentCsvSqlRow",
+        "ProcessDocumentCsvApiRequest",
+        "ProcessDocumentCsvApiResponse",
+    ),
     "app/sql/v4/documents/render_template_complete.sql": (
         "RenderTemplateSqlParams",
         "RenderTemplateSqlRow",
@@ -35901,11 +36928,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentNameApiRequest",
         "UpdateDocumentNameApiResponse",
     ),
+    "app/sql/v4/evals/duplicate_eval_complete.sql": (
+        "DuplicateEvalSqlParams",
+        "DuplicateEvalSqlRow",
+        "DuplicateEvalApiRequest",
+        "DuplicateEvalApiResponse",
+    ),
     "app/sql/v4/evals/get_eval_complete.sql": (
         "GetEvalSqlParams",
         "GetEvalSqlRow",
         "GetEvalApiRequest",
         "GetEvalApiResponse",
+    ),
+    "app/sql/v4/evals/patch_eval_draft_complete.sql": (
+        "PatchEvalDraftSqlParams",
+        "PatchEvalDraftSqlRow",
+        "PatchEvalDraftApiRequest",
+        "PatchEvalDraftApiResponse",
     ),
     "app/sql/v4/evals/save_eval_complete.sql": (
         "SaveEvalSqlParams",
@@ -35972,6 +37011,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldsListSqlRow",
         "GetFieldsListApiRequest",
         "GetFieldsListApiResponse",
+    ),
+    "app/sql/v4/fields/patch_field_draft_complete.sql": (
+        "PatchFieldDraftSqlParams",
+        "PatchFieldDraftSqlRow",
+        "PatchFieldDraftApiRequest",
+        "PatchFieldDraftApiResponse",
     ),
     "app/sql/v4/fields/save_field_complete.sql": (
         "SaveFieldSqlParams",
@@ -36098,6 +37143,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetHealthBundleSqlRow",
         "GetHealthBundleApiRequest",
         "GetHealthBundleApiResponse",
+    ),
+    "app/sql/v4/health/get_health_complete.sql": (
+        "GetHealthSqlParams",
+        "GetHealthSqlRow",
+        "GetHealthApiRequest",
+        "GetHealthApiResponse",
+    ),
+    "app/sql/v4/health/get_health_list_complete.sql": (
+        "GetHealthListSqlParams",
+        "GetHealthListSqlRow",
+        "GetHealthListApiRequest",
+        "GetHealthListApiResponse",
     ),
     "app/sql/v4/home/get_home_history_complete.sql": (
         "GetHomeHistorySqlParams",
@@ -36405,6 +37462,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLeaderboardBundleApiRequest",
         "GetLeaderboardBundleApiResponse",
     ),
+    "app/sql/v4/leaderboard/get_leaderboard_complete.sql": (
+        "GetLeaderboardSqlParams",
+        "GetLeaderboardSqlRow",
+        "GetLeaderboardApiRequest",
+        "GetLeaderboardApiResponse",
+    ),
+    "app/sql/v4/leaderboard/get_leaderboard_list_complete.sql": (
+        "GetLeaderboardListSqlParams",
+        "GetLeaderboardListSqlRow",
+        "GetLeaderboardListApiRequest",
+        "GetLeaderboardListApiResponse",
+    ),
     "app/sql/v4/logs/get_logs_bundle_complete.sql": (
         "GetLogsBundleSqlParams",
         "GetLogsBundleSqlRow",
@@ -36531,6 +37600,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ListModelsApiRequest",
         "ListModelsApiResponse",
     ),
+    "app/sql/v4/models/patch_model_draft_complete.sql": (
+        "PatchModelDraftSqlParams",
+        "PatchModelDraftSqlRow",
+        "PatchModelDraftApiRequest",
+        "PatchModelDraftApiResponse",
+    ),
     "app/sql/v4/models/save_model_complete.sql": (
         "SaveModelSqlParams",
         "SaveModelSqlRow",
@@ -36596,6 +37671,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParametersListSqlRow",
         "GetParametersListApiRequest",
         "GetParametersListApiResponse",
+    ),
+    "app/sql/v4/parameters/patch_parameter_draft_complete.sql": (
+        "PatchParameterDraftSqlParams",
+        "PatchParameterDraftSqlRow",
+        "PatchParameterDraftApiRequest",
+        "PatchParameterDraftApiResponse",
     ),
     "app/sql/v4/parameters/save_parameter_complete.sql": (
         "SaveParameterSqlParams",
@@ -36890,6 +37971,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteProviderSqlRow",
         "DeleteProviderApiRequest",
         "DeleteProviderApiResponse",
+    ),
+    "app/sql/v4/providers/duplicate_provider_complete.sql": (
+        "DuplicateProviderSqlParams",
+        "DuplicateProviderSqlRow",
+        "DuplicateProviderApiRequest",
+        "DuplicateProviderApiResponse",
     ),
     "app/sql/v4/providers/get_provider_complete.sql": (
         "GetProviderSqlParams",
@@ -37515,6 +38602,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricApiRequest",
         "GetRubricApiResponse",
     ),
+    "app/sql/v4/rubrics/patch_rubric_draft_complete.sql": (
+        "PatchRubricDraftSqlParams",
+        "PatchRubricDraftSqlRow",
+        "PatchRubricDraftApiRequest",
+        "PatchRubricDraftApiResponse",
+    ),
     "app/sql/v4/rubrics/save_rubric_complete.sql": (
         "SaveRubricSqlParams",
         "SaveRubricSqlRow",
@@ -37755,6 +38848,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioApiRequest",
         "GetScenarioApiResponse",
     ),
+    "app/sql/v4/scenarios/patch_scenario_draft_complete.sql": (
+        "PatchScenarioDraftSqlParams",
+        "PatchScenarioDraftSqlRow",
+        "PatchScenarioDraftApiRequest",
+        "PatchScenarioDraftApiResponse",
+    ),
     "app/sql/v4/scenarios/save_scenario_complete.sql": (
         "SaveScenarioSqlParams",
         "SaveScenarioSqlRow",
@@ -37772,6 +38871,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTemplateSchemaSqlRow",
         "GetTemplateSchemaApiRequest",
         "GetTemplateSchemaApiResponse",
+    ),
+    "app/sql/v4/settings/duplicate_setting_complete.sql": (
+        "DuplicateSettingSqlParams",
+        "DuplicateSettingSqlRow",
+        "DuplicateSettingApiRequest",
+        "DuplicateSettingApiResponse",
     ),
     "app/sql/v4/settings/get_active_settings_complete.sql": (
         "GetActiveSettingsSqlParams",
@@ -38060,6 +39165,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkChatCompletedSqlRow",
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
+    ),
+    "app/sql/v4/simulations/patch_simulation_draft_complete.sql": (
+        "PatchSimulationDraftSqlParams",
+        "PatchSimulationDraftSqlRow",
+        "PatchSimulationDraftApiRequest",
+        "PatchSimulationDraftApiResponse",
     ),
     "app/sql/v4/simulations/save_simulation_complete.sql": (
         "SaveSimulationSqlParams",
@@ -38702,6 +39813,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/agents/patch_agent_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/agents/save_agent_complete.sql"]
     ) -> SqlString: ...
 
@@ -38848,6 +39964,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/get_login_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/patch_auth_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39072,6 +40193,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/patch_cohort_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/save_cohort_complete.sql"]
     ) -> SqlString: ...
 
@@ -39113,6 +40239,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/departments/get_departments_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/departments/patch_department_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39173,6 +40304,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/document_tool_progress_update_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/duplicate_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39242,6 +40378,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/patch_document_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/process_document_csv_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/render_template_complete.sql"]
     ) -> SqlString: ...
 
@@ -39292,7 +40438,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/evals/duplicate_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/evals/get_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/evals/patch_eval_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39348,6 +40504,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/fields/patch_field_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39453,6 +40614,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/health/get_health_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/health/get_health_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/health/get_health_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39712,6 +40883,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/leaderboard/get_leaderboard_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/leaderboard/get_leaderboard_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/logs/get_logs_bundle_complete.sql"]
     ) -> SqlString: ...
 
@@ -39817,6 +40998,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/models/patch_model_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/models/save_model_complete.sql"]
     ) -> SqlString: ...
 
@@ -39868,6 +41054,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/parameters/get_parameters_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/parameters/patch_parameter_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -40113,6 +41304,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/providers/delete_provider_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/providers/duplicate_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -40637,6 +41833,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/rubrics/patch_rubric_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/rubrics/save_rubric_complete.sql"]
     ) -> SqlString: ...
 
@@ -40837,6 +42038,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/scenarios/patch_scenario_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/scenarios/save_scenario_complete.sql"]
     ) -> SqlString: ...
 
@@ -40848,6 +42054,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/schemas/get_template_schema_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/settings/duplicate_setting_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41088,6 +42299,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/mark_chat_completed_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/patch_simulation_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

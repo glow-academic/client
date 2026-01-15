@@ -1,4 +1,4 @@
-"""Eval draft endpoint - handles autosave for all eval resources."""
+"""Scenario draft endpoint - handles autosave for all scenario resources."""
 
 from typing import Annotated, Any, cast
 
@@ -6,40 +6,37 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    PatchEvalDraftApiRequest,
-    PatchEvalDraftApiResponse,
-    PatchEvalDraftSqlParams,
-    PatchEvalDraftSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (PatchScenarioDraftApiRequest,
+                           PatchScenarioDraftApiResponse,
+                           PatchScenarioDraftSqlParams,
+                           PatchScenarioDraftSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/evals/patch_eval_draft_complete.sql"
+SQL_PATH = "app/sql/v4/scenarios/patch_scenario_draft_complete.sql"
 
 router = APIRouter()
 
 
 @router.patch(
     "/draft",
-    response_model=PatchEvalDraftApiResponse,
+    response_model=PatchScenarioDraftApiResponse,
     dependencies=[
         audit_activity(
-            "eval.draft.patched",
-            "{{ actor.name }} patched eval draft",
+            "scenario.draft.patched",
+            "{{ actor.name }} patched scenario draft",
         )
     ],
 )
-async def patch_eval_draft(
-    request: PatchEvalDraftApiRequest,
+async def patch_scenario_draft(
+    request: PatchScenarioDraftApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> PatchEvalDraftApiResponse:
-    """Patch eval draft - accepts resource IDs and creates/updates draft."""
-    tags = ["evals", "drafts"]
+) -> PatchScenarioDraftApiResponse:
+    """Patch scenario draft - accepts resource IDs and creates/updates draft."""
+    tags = ["scenarios", "drafts"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -53,18 +50,18 @@ async def patch_eval_draft(
             )
 
         async with conn.transaction():
-            params = PatchEvalDraftSqlParams(
+            params = PatchScenarioDraftSqlParams(
                 **request.model_dump(), profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
             result = cast(
-                PatchEvalDraftSqlRow,
+                PatchScenarioDraftSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
             if not result:
-                raise ValueError("Failed to patch eval draft")
+                raise ValueError("Failed to patch scenario draft")
 
             audit_set(
                 http_request,
@@ -72,7 +69,7 @@ async def patch_eval_draft(
                 draft={"id": str(result.draft_id)},
             )
 
-        api_response = PatchEvalDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchScenarioDraftApiResponse.model_validate(result.model_dump())
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
@@ -86,7 +83,7 @@ async def patch_eval_draft(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="patch_eval_draft",
+            operation="patch_scenario_draft",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
