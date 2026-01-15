@@ -1,13 +1,13 @@
 /**
  * Simulations.tsx
  * Resource component for simulation selection
- * Uses GenericPicker to select existing simulation resources
+ * Uses SelectableGrid for grid card layout (like Fields.tsx)
  * Manages simulation_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -96,7 +96,7 @@ export function Simulations({
     [simulation_suggestions]
   );
 
-  // Convert simulations array to SimulationItem format for GenericPicker
+  // Convert simulations array to SimulationItem format for SelectableGrid
   const simulationItems = useMemo(() => {
     return allSimulations
       .filter((s) => s.simulation_id && s.name) // Filter out nulls
@@ -118,8 +118,7 @@ export function Simulations({
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((sim) => {
-        const searchText =
-          `${sim.name} ${sim.description || ""}`.toLowerCase();
+        const searchText = `${sim.name} ${sim.description || ""}`.toLowerCase();
         return searchText.includes(searchLower);
       });
     }
@@ -139,11 +138,15 @@ export function Simulations({
   );
 
   const handleSelect = useCallback(
-    (selectedIds: string[]) => {
+    (simulationId: string) => {
+      const isSelected = ids.includes(simulationId);
+      const newIds = isSelected
+        ? ids.filter((id) => id !== simulationId)
+        : [...ids, simulationId];
       // Update parent state (simulations don't need resource creation)
-      onChange(selectedIds);
+      onChange(newIds);
     },
-    [onChange]
+    [ids, onChange]
   );
 
   // Check if any simulation resource is generated (must be before early return)
@@ -207,29 +210,41 @@ export function Simulations({
           )}
         </div>
       )}
-      <GenericPicker<SimulationItem>
+      <SelectableGrid<SimulationItem>
         items={filteredSimulationItems}
-        itemIds={allSimulations
-          .map((s) => s.simulation_id)
-          .filter((id): id is string => id !== null)} // All simulation IDs from array, filter nulls
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+              </div>
+            )}
+
+            {/* Suggested badge - top right */}
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+              {(item.description || item.time_limit) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                   {item.description && (
-                    <span className="truncate">{item.description}</span>
+                    <p className="truncate">{item.description}</p>
                   )}
                   {item.time_limit && (
                     <span className="shrink-0">
@@ -237,21 +252,12 @@ export function Simulations({
                     </span>
                   )}
                 </div>
-              </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
               )}
-            />
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No simulations found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

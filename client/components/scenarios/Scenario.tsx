@@ -32,7 +32,8 @@ import DocumentViewer, {
 } from "@/components/common/chat/viewers/DocumentViewer";
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
-import { ContentSection } from "@/components/scenarios/ContentSection";
+import { ConfigSection } from "@/components/scenarios/ConfigSection";
+import { PreviewStep } from "@/components/scenarios/PreviewStep";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -278,7 +279,7 @@ function ScenarioComponent({
   // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
   const initialDraftState = useMemo((): DraftState => {
     const data = isEditMode ? scenarioDetail : scenarioDetailDefault;
-    if (!data) {
+    if (!data || typeof data !== "object") {
       return {
         name: "",
         problemStatement: "",
@@ -323,17 +324,21 @@ function ScenarioComponent({
     let fieldRanges: Record<string, { min: number; max: number }> = {};
     let randomizeParameterItems: Record<string, string> = {};
 
+    // Type assert data as GetScenarioOut after null check
+    const typedData = data as GetScenarioOut;
+
     // Try to read from draft payload fields (returned by SQL when draft exists)
     if (
-      data &&
-      "draft_field_show_selected" in data &&
-      data.draft_field_show_selected
+      typedData &&
+      typeof typedData === "object" &&
+      "draft_field_show_selected" in typedData &&
+      typedData.draft_field_show_selected
     ) {
       try {
         const parsed =
-          typeof data.draft_field_show_selected === "string"
-            ? JSON.parse(data.draft_field_show_selected)
-            : data.draft_field_show_selected;
+          typeof typedData.draft_field_show_selected === "string"
+            ? JSON.parse(typedData.draft_field_show_selected)
+            : typedData.draft_field_show_selected;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           fieldShowSelected = parsed as Record<string, boolean>;
         }
@@ -342,12 +347,17 @@ function ScenarioComponent({
       }
     }
 
-    if (data && "draft_field_ranges" in data && data.draft_field_ranges) {
+    if (
+      typedData &&
+      typeof typedData === "object" &&
+      "draft_field_ranges" in typedData &&
+      typedData.draft_field_ranges
+    ) {
       try {
         const parsed =
-          typeof data.draft_field_ranges === "string"
-            ? JSON.parse(data.draft_field_ranges)
-            : data.draft_field_ranges;
+          typeof typedData.draft_field_ranges === "string"
+            ? JSON.parse(typedData.draft_field_ranges)
+            : typedData.draft_field_ranges;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           fieldRanges = parsed as Record<string, { min: number; max: number }>;
         }
@@ -357,15 +367,16 @@ function ScenarioComponent({
     }
 
     if (
-      data &&
-      "draft_randomize_parameter_items" in data &&
-      data.draft_randomize_parameter_items
+      typedData &&
+      typeof typedData === "object" &&
+      "draft_randomize_parameter_items" in typedData &&
+      typedData.draft_randomize_parameter_items
     ) {
       try {
         const parsed =
-          typeof data.draft_randomize_parameter_items === "string"
-            ? JSON.parse(data.draft_randomize_parameter_items)
-            : data.draft_randomize_parameter_items;
+          typeof typedData.draft_randomize_parameter_items === "string"
+            ? JSON.parse(typedData.draft_randomize_parameter_items)
+            : typedData.draft_randomize_parameter_items;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           randomizeParameterItems = parsed as Record<string, string>;
         }
@@ -377,33 +388,93 @@ function ScenarioComponent({
     // If draftId exists, server should have merged draft payload into data
     // Otherwise, use server defaults
     // Type narrowing: check isEditMode to determine which type we have
-    const isDetail = isEditMode && "problem_statement" in data;
-    const detailData = isDetail ? (data as ScenarioDetailOut) : null;
-    const newData = !isDetail ? (data as ScenarioNewOut) : null;
+    const isDetail = isEditMode && isScenarioDetailOut(typedData);
+    const detailData = isDetail ? typedData : null;
+    const newData = !isDetail && isScenarioNewOut(typedData) ? typedData : null;
+
+    // Safely access properties with type guards
+    const departmentIds = Array.isArray(typedData.department_ids)
+      ? typedData.department_ids.map((id) => String(id))
+      : [];
 
     return {
-      name: (isDetail && detailData?.name) || "",
-      problemStatement: detailData?.problem_statement || "",
+      name:
+        (isDetail && detailData && "name" in detailData && detailData.name) ||
+        "",
+      problemStatement:
+        (detailData &&
+          "problem_statement" in detailData &&
+          detailData.problem_statement) ||
+        "",
       objectives: [], // Will be populated from objective_ids if needed
-      departmentIds: (data.department_ids || []).map((id) => String(id)),
-      personaIds: detailData?.persona_ids || [],
-      documentIds: detailData?.document_ids || [],
-      templateDocumentIds: newData?.selected_template_document_ids || [],
-      parameterIds: detailData?.parameter_ids || [],
+      departmentIds,
+      personaIds:
+        detailData &&
+        "persona_ids" in detailData &&
+        Array.isArray(detailData.persona_ids)
+          ? detailData.persona_ids
+          : [],
+      documentIds:
+        detailData &&
+        "document_ids" in detailData &&
+        Array.isArray(detailData.document_ids)
+          ? detailData.document_ids
+          : [],
+      templateDocumentIds:
+        newData &&
+        "selected_template_document_ids" in newData &&
+        Array.isArray(newData.selected_template_document_ids)
+          ? newData.selected_template_document_ids
+          : [],
+      parameterIds:
+        detailData &&
+        "parameter_ids" in detailData &&
+        Array.isArray(detailData.parameter_ids)
+          ? detailData.parameter_ids
+          : [],
       fieldIds: [], // Will be populated from scenario fields if needed
       imageIds:
-        newData?.scenario_images?.map((img) => String(img.upload_id)) || [],
-      objectiveIds: detailData?.objective_ids || [],
-      problemStatementIds: detailData?.problem_statement_id
-        ? [String(detailData.problem_statement_id)]
-        : [],
-      useImage: detailData?.image_input_enabled ?? false,
-      useVideo: newData?.video_enabled ?? false,
-      useObjectives: detailData?.objectives_enabled ?? true,
-      useQuestions: newData?.questions_enabled ?? false,
+        newData &&
+        "scenario_images" in newData &&
+        Array.isArray(newData.scenario_images)
+          ? newData.scenario_images.map((img: { upload_id?: string | null }) =>
+              String(img.upload_id || "")
+            )
+          : [],
+      objectiveIds:
+        detailData &&
+        "objective_ids" in detailData &&
+        Array.isArray(detailData.objective_ids)
+          ? detailData.objective_ids
+          : [],
+      problemStatementIds:
+        detailData &&
+        "problem_statement_id" in detailData &&
+        detailData.problem_statement_id
+          ? [String(detailData.problem_statement_id)]
+          : [],
+      useImage:
+        detailData && "image_input_enabled" in detailData
+          ? (detailData.image_input_enabled ?? false)
+          : false,
+      useVideo:
+        newData && "video_enabled" in newData
+          ? (newData.video_enabled ?? false)
+          : false,
+      useObjectives:
+        detailData && "objectives_enabled" in detailData
+          ? (detailData.objectives_enabled ?? true)
+          : true,
+      useQuestions:
+        newData && "questions_enabled" in newData
+          ? (newData.questions_enabled ?? false)
+          : false,
       useProblemStatement: false, // Not directly available in data
       videoLength: null, // Will be set from selected video
-      active: detailData?.active ?? true,
+      active:
+        detailData && "active" in detailData
+          ? (detailData.active ?? true)
+          : true,
       randomize: null,
       randomizePersonas: null,
       randomizeDocuments: null,
@@ -411,17 +482,44 @@ function ScenarioComponent({
       fieldShowSelected,
       fieldRanges,
       randomizeParameterItems,
-      personaMin: detailData?.persona_range_min ?? null,
-      personaMax: detailData?.persona_range_max ?? null,
-      documentMin: detailData?.document_range_min ?? null,
-      documentMax: detailData?.document_range_max ?? null,
-      parameterSelectionMin: detailData?.parameter_range_min ?? null,
-      parameterSelectionMax: detailData?.parameter_range_max ?? null,
-      scenarioDomainId: data.scenario_domain_id || null,
-      imageDomainId: data.image_domain_id || null,
+      personaMin:
+        detailData && "persona_range_min" in detailData
+          ? (detailData.persona_range_min ?? null)
+          : null,
+      personaMax:
+        detailData && "persona_range_max" in detailData
+          ? (detailData.persona_range_max ?? null)
+          : null,
+      documentMin:
+        detailData && "document_range_min" in detailData
+          ? (detailData.document_range_min ?? null)
+          : null,
+      documentMax:
+        detailData && "document_range_max" in detailData
+          ? (detailData.document_range_max ?? null)
+          : null,
+      parameterSelectionMin:
+        detailData && "parameter_range_min" in detailData
+          ? (detailData.parameter_range_min ?? null)
+          : null,
+      parameterSelectionMax:
+        detailData && "parameter_range_max" in detailData
+          ? (detailData.parameter_range_max ?? null)
+          : null,
+      scenarioDomainId:
+        "scenario_domain_id" in typedData && typedData.scenario_domain_id
+          ? typedData.scenario_domain_id
+          : null,
+      imageDomainId:
+        "image_domain_id" in typedData && typedData.image_domain_id
+          ? typedData.image_domain_id
+          : null,
       videoDomainId:
-        (detailData as ScenarioDetailOut & { video_domain_id?: string })
-          ?.video_domain_id || null,
+        detailData &&
+        typeof detailData === "object" &&
+        "video_domain_id" in detailData
+          ? (detailData as { video_domain_id?: string }).video_domain_id || null
+          : null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -1568,11 +1666,10 @@ function ScenarioComponent({
 
   // Convert arrays to lookup maps for performance (prefer arrays, fallback to mappings for backward compatibility)
   const personaMapping = useMemo(() => {
-    if (!scenarioData) return {};
-    const personas =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.personas
-        : undefined;
+    if (!scenarioData || typeof scenarioData !== "object") return {};
+    const typedData = scenarioData as GetScenarioOut;
+    if (!("personas" in typedData)) return {};
+    const personas = typedData.personas;
     const map: Record<
       string,
       {
@@ -1949,8 +2046,15 @@ function ScenarioComponent({
   const filteredTemplateDocumentIds = useMemo(() => {
     // Get parent_document_id for each document in currentDocumentIds
     const childParentIds = new Set<string>();
+    if (!scenarioData || typeof scenarioData !== "object") {
+      return templateDocumentIds;
+    }
+    const typedData = scenarioData as GetScenarioOut;
+    if (!("document_details" in typedData) || !typedData.document_details) {
+      return templateDocumentIds;
+    }
     currentDocumentIds.forEach((docId) => {
-      const docDetail = scenarioData?.document_details?.find(
+      const docDetail = typedData.document_details?.find(
         (d) => d.document_id === docId
       );
       const parentId = (docDetail as { parent_document_id?: string })
@@ -1961,7 +2065,7 @@ function ScenarioComponent({
     });
     // Filter out parent documents from templateDocumentIds if we have their children
     return templateDocumentIds.filter((docId) => !childParentIds.has(docId));
-  }, [currentDocumentIds, templateDocumentIds, scenarioData?.document_details]);
+  }, [currentDocumentIds, templateDocumentIds, scenarioData]);
 
   // For display: replace parent template documents with their children
   // This ensures we show the actual dynamic document instead of the template
@@ -2125,7 +2229,15 @@ function ScenarioComponent({
 
   // Filter objectives_history based on selected departments
   const objectivesHistory = useMemo(() => {
-    const rawHistory = scenarioData?.objectives_history || [];
+    if (
+      !scenarioData ||
+      typeof scenarioData !== "object" ||
+      !("objectives_history" in scenarioData)
+    ) {
+      return [];
+    }
+    const typedData = scenarioData as GetScenarioOut;
+    const rawHistory = typedData.objectives_history || [];
     const selectedDeptIds = draftState.departmentIds || [];
 
     // Convert to array of strings for autocomplete
@@ -2175,28 +2287,50 @@ function ScenarioComponent({
     });
 
     return objectives;
-  }, [scenarioData?.objectives_history, draftState.departmentIds]);
+  }, [scenarioData, draftState.departmentIds]);
 
   // Use server-provided filtered valid IDs (replacing client-side filtering)
   // Server now handles all filtering logic based on query parameters
   const validPersonaIds = useMemo(() => {
-    return scenarioData?.valid_persona_ids || [];
-  }, [scenarioData?.valid_persona_ids]);
+    if (
+      !scenarioData ||
+      typeof scenarioData !== "object" ||
+      !("valid_persona_ids" in scenarioData)
+    ) {
+      return [];
+    }
+    const typedData = scenarioData as GetScenarioOut;
+    return typedData.valid_persona_ids || [];
+  }, [scenarioData]);
 
   // Use server-provided filtered valid document IDs
   const validDocumentIds = useMemo(() => {
-    return scenarioData?.valid_document_ids || [];
-  }, [scenarioData?.valid_document_ids]);
+    if (
+      !scenarioData ||
+      typeof scenarioData !== "object" ||
+      !("valid_document_ids" in scenarioData)
+    ) {
+      return [];
+    }
+    const typedData = scenarioData as GetScenarioOut;
+    return typedData.valid_document_ids || [];
+  }, [scenarioData]);
 
   // Use server-provided filtered valid parameter item IDs
   const validParameterItemIds = useMemo(() => {
     // Use server-provided filtered IDs if available, otherwise fall back to mapping keys
-    if (scenarioData?.valid_field_ids) {
-      return scenarioData.valid_field_ids;
+    if (
+      scenarioData &&
+      typeof scenarioData === "object" &&
+      "valid_field_ids" in scenarioData &&
+      scenarioData.valid_field_ids
+    ) {
+      const typedData = scenarioData as GetScenarioOut;
+      return typedData.valid_field_ids;
     }
     // Fallback for backward compatibility
     return Object.keys(fieldMapping || {});
-  }, [scenarioData?.valid_field_ids, fieldMapping]);
+  }, [scenarioData, fieldMapping]);
 
   // Use server-provided filtered valid general parameter item IDs
   const validGeneralParameterItemIds = useMemo(() => {
@@ -3432,7 +3566,15 @@ function ScenarioComponent({
 
   // Set breadcrumb context when scenario data is loaded
   useEffect(() => {
-    const scenarioName = scenarioData?.name_resource?.name;
+    if (
+      !scenarioData ||
+      typeof scenarioData !== "object" ||
+      !("name_resource" in scenarioData)
+    ) {
+      return;
+    }
+    const typedData = scenarioData as GetScenarioOut;
+    const scenarioName = typedData.name_resource?.name;
     if (scenarioName && scenarioId && isEditMode) {
       setEntityMetadata({
         entityId: scenarioId,
@@ -3449,27 +3591,8 @@ function ScenarioComponent({
     clearEntityMetadata,
   ]);
 
-  // Set generation capability when scenario data is loaded
-  useEffect(() => {
-    if (scenarioData?.general_agent_id) {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: true,
-        agentId: scenarioData.general_agent_id,
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    scenarioData?.general_agent_id,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
+  // Generation capability is handled by parent components
+  // Removed useGenerationContext integration - no longer needed
 
   // Get affected simulations from unified API data
   const affectedSimulations = useMemo(() => {
@@ -3600,6 +3723,12 @@ function ScenarioComponent({
           "useQuestions",
           "useProblemStatement",
         ],
+      },
+      {
+        id: "preview",
+        title: "Preview",
+        description: "Preview scenario messages, hints, and documents.",
+        resetFields: [],
       },
     ],
     []
@@ -5743,6 +5872,55 @@ function ScenarioComponent({
             </StepCard>
           );
         }
+        case "preview": {
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              resetFields={[]}
+              {...(onReset ? { onReset } : {})}
+            >
+              <PreviewStep
+                selectedPersonaIds={selectedPersonaIds}
+                personaMapping={personaMapping}
+                allPreviewDocumentIds={allPreviewDocumentIds}
+                documentMapping={documentMapping}
+                {...(scenarioData?.document_details
+                  ? {
+                      documentDetails: scenarioData.document_details as Array<{
+                        document_id: string;
+                        upload_id?: string | null;
+                        [key: string]: unknown;
+                      }>,
+                    }
+                  : {})}
+                scenarioPreviewDocumentId={
+                  contentState.scenarioPreviewDocumentId ?? null
+                }
+                onScenarioPreviewDocumentChange={(docId) => {
+                  setContentState((prev) => ({
+                    ...prev,
+                    scenarioPreviewDocumentId: docId,
+                  }));
+                }}
+                onDocumentRemove={handleDocumentRemove}
+                useVideo={useVideo ?? false}
+                selectedVideo={contentState.selectedVideo ?? null}
+                image={contentState.image ?? null}
+                stepStatus={stepStatus}
+                stepTitle={stepTitle}
+                stepDescription={stepDescription}
+                stepNumber={stepNumber}
+                isReadonly={isReadonly}
+                disabled={isReadonly}
+              />
+            </StepCard>
+          );
+        }
         default:
           // Handle dynamic parameter steps (parameter-{paramId})
           if (stepId.startsWith("parameter-")) {
@@ -6006,10 +6184,48 @@ function ScenarioComponent({
     <div className="w-full p-6 space-y-8">
       {isReadonly && (
         <ReadOnlyBanner
-          resourceType="scenario"
-          disabledReason={scenarioData?.disabled_reason ?? null}
+          disabledReason={
+            scenarioData &&
+            typeof scenarioData === "object" &&
+            "disabled_reason" in scenarioData
+              ? ((scenarioData as GetScenarioOut).disabled_reason ?? null)
+              : null
+          }
         />
       )}
+
+      {/* Config Section - Feature Flags */}
+      <div className="mb-6">
+        <ConfigSection
+          useProblemStatement={useProblemStatement ?? false}
+          useObjectives={useObjectives ?? false}
+          useImages={useImage ?? false}
+          useVideos={useVideo ?? false}
+          useQuestions={useQuestions ?? false}
+          onUseProblemStatementChange={(enabled) => {
+            handleInputChange("useProblemStatement", enabled || null);
+            if (!enabled) {
+              handleInputChange("problemStatement", null);
+            }
+          }}
+          onUseObjectivesChange={(enabled) => {
+            handleInputChange("useObjectives", enabled || null);
+          }}
+          onUseImagesChange={(enabled) => {
+            handleInputChange("useImage", enabled || null);
+          }}
+          onUseVideosChange={(enabled) => {
+            handleInputChange("useVideo", enabled || null);
+            if (!enabled) {
+              handleInputChange("useQuestions", null);
+            }
+          }}
+          onUseQuestionsChange={(enabled) => {
+            handleInputChange("useQuestions", enabled || null);
+          }}
+          disabled={isReadonly}
+        />
+      </div>
 
       <GenericForm
         nuqsParsers={

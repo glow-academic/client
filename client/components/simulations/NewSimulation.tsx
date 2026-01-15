@@ -22,24 +22,17 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
-import { Scenarios } from "@/components/resources/Scenarios";
 import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
 import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
 import { ScenarioRubricGradeAgents } from "@/components/resources/ScenarioRubricGradeAgents";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Scenarios } from "@/components/resources/Scenarios";
+
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
-import { Loader2, Sparkles } from "lucide-react";
-import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+import { parseAsString } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type SaveSimulationIn = InputOf<"/api/v4/simulations/save", "post">;
@@ -65,10 +58,7 @@ type CreateDraftDepartmentsOut = OutputOf<
   "post"
 >;
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<
-  "/api/v4/resources/scenarios",
-  "post"
->;
+type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/simulation_scenario_flags",
   "post"
@@ -103,7 +93,9 @@ export interface NewSimulationProps {
   // Server-provided data (for server-side rendering)
   simulationData?: SimulationData;
   // Server actions (replaces useMutation)
-  saveSimulationAction?: (input: SaveSimulationIn) => Promise<SaveSimulationOut>;
+  saveSimulationAction?: (
+    input: SaveSimulationIn
+  ) => Promise<SaveSimulationOut>;
   patchSimulationDraftAction?: (
     input: PatchSimulationDraftIn
   ) => Promise<PatchSimulationDraftOut>;
@@ -251,7 +243,8 @@ function NewSimulationComponent({
       show_scenario_positions: simulationData.show_scenario_positions,
       scenario_positions_agent_id: simulationData.scenario_positions_agent_id,
       scenario_positions_required: simulationData.scenario_positions_required,
-      scenario_position_suggestions: simulationData.scenario_position_suggestions,
+      scenario_position_suggestions:
+        simulationData.scenario_position_suggestions,
       scenario_positions: simulationData.scenario_positions,
       scenario_rubric_grade_agent_ids:
         simulationData.scenario_rubric_grade_agent_ids,
@@ -523,7 +516,9 @@ function NewSimulationComponent({
   }, [draftId, selectedDraftId, setSelectedDraftId]);
 
   // Use ref to stabilize patchSimulationDraftAction to prevent effect recreation when prop reference changes
-  const patchSimulationDraftActionRef = React.useRef(patchSimulationDraftAction);
+  const patchSimulationDraftActionRef = React.useRef(
+    patchSimulationDraftAction
+  );
   React.useEffect(() => {
     patchSimulationDraftActionRef.current = patchSimulationDraftAction;
   }, [patchSimulationDraftAction]);
@@ -539,7 +534,8 @@ function NewSimulationComponent({
       scenario_ids: formState.scenario_ids,
       scenario_flag_ids: formState.scenario_flag_ids,
       scenario_position_ids: formState.scenario_position_ids,
-      scenario_rubric_grade_agent_ids: formState.scenario_rubric_grade_agent_ids,
+      scenario_rubric_grade_agent_ids:
+        formState.scenario_rubric_grade_agent_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -664,6 +660,10 @@ function NewSimulationComponent({
         "descriptions",
         "flags",
         "departments",
+        "scenarios",
+        "scenario_flags",
+        "scenario_positions",
+        "scenario_rubric_grade_agents",
       ];
       if (
         data.resource_type &&
@@ -683,6 +683,50 @@ function NewSimulationComponent({
               (id) => !prev.department_ids.includes(id)
             );
             updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          }
+          if (data.scenario_ids && data.scenario_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newScenarioIds = data.scenario_ids.filter(
+              (id) => !prev.scenario_ids.includes(id)
+            );
+            updates.scenario_ids = [...prev.scenario_ids, ...newScenarioIds];
+          }
+          if (data.scenario_flag_ids && data.scenario_flag_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newScenarioFlagIds = data.scenario_flag_ids.filter(
+              (id) => !prev.scenario_flag_ids.includes(id)
+            );
+            updates.scenario_flag_ids = [
+              ...prev.scenario_flag_ids,
+              ...newScenarioFlagIds,
+            ];
+          }
+          if (
+            data.scenario_position_ids &&
+            data.scenario_position_ids.length > 0
+          ) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newScenarioPositionIds = data.scenario_position_ids.filter(
+              (id) => !prev.scenario_position_ids.includes(id)
+            );
+            updates.scenario_position_ids = [
+              ...prev.scenario_position_ids,
+              ...newScenarioPositionIds,
+            ];
+          }
+          if (
+            data.scenario_rubric_grade_agent_ids &&
+            data.scenario_rubric_grade_agent_ids.length > 0
+          ) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newScenarioRubricGradeAgentIds =
+              data.scenario_rubric_grade_agent_ids.filter(
+                (id) => !prev.scenario_rubric_grade_agent_ids.includes(id)
+              );
+            updates.scenario_rubric_grade_agent_ids = [
+              ...prev.scenario_rubric_grade_agent_ids,
+              ...newScenarioRubricGradeAgentIds,
+            ];
           }
 
           // Only update if there are actual changes
@@ -704,24 +748,38 @@ function NewSimulationComponent({
 
         if (data.success !== false) {
           toast.success(
-            `Generated ${data.resource_type} successfully${
-              data.message ? `: ${data.message}` : ""
-            }`
+            data.message || `${data.resource_type} generated successfully`
           );
         } else {
           toast.error(
-            `Failed to generate ${data.resource_type}${
-              data.message ? `: ${data.message}` : ""
-            }`
+            data.message || `Failed to generate ${data.resource_type}`
           );
         }
       }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "simulation" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this simulation or wrong group_id
+      }
+      // Handle progress updates if needed
     };
 
     const handleGenerationError = (data: {
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
+      resource_types?: string[];
       message?: string;
       [key: string]: unknown;
     }) => {
@@ -738,31 +796,34 @@ function NewSimulationComponent({
         "descriptions",
         "flags",
         "departments",
+        "scenarios",
+        "scenario_flags",
+        "scenario_positions",
+        "scenario_rubric_grade_agents",
       ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
         });
-
-        toast.error(
-          `Failed to generate ${data.resource_type}${
-            data.message ? `: ${data.message}` : ""
-          }`
-        );
-      }
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
     };
 
-    socket.on("simulation_generate_complete", handleGenerationComplete);
-    socket.on("simulation_generate_error", handleGenerationError);
+    // Listen to simulation-specific events filtered by artifact_type and group_id
+    socket.on("simulation_generation_progress", handleGenerationProgress);
+    socket.on("simulation_generation_complete", handleGenerationComplete);
+    socket.on("simulation_generation_error", handleGenerationError);
 
     return () => {
-      socket.off("simulation_generate_complete", handleGenerationComplete);
-      socket.off("simulation_generate_error", handleGenerationError);
+      socket.off("simulation_generation_progress", handleGenerationProgress);
+      socket.off("simulation_generation_complete", handleGenerationComplete);
+      socket.off("simulation_generation_error", handleGenerationError);
     };
   }, [socket, isConnected, simulationData?.group_id]);
 
@@ -774,6 +835,10 @@ function NewSimulationComponent({
         "descriptions",
         "departments",
         "flags",
+        "scenarios",
+        "scenario_flags",
+        "scenario_positions",
+        "scenario_rubric_grade_agents",
       ];
 
       const isAllResources =
@@ -789,6 +854,10 @@ function NewSimulationComponent({
           descriptions: "description",
           departments: "departments",
           flags: "flags",
+          scenarios: "scenarios",
+          scenario_flags: "scenario_flags",
+          scenario_positions: "scenario_positions",
+          scenario_rubric_grade_agents: "scenario_rubric_grade_agents",
           // Not used for simulations but needed for type safety
           colors: "color",
           icons: "icon",
@@ -829,6 +898,12 @@ function NewSimulationComponent({
       const draftId = (formData["draftId"] as string | undefined) ?? null;
       const descriptionSearch =
         (formData["descriptionSearch"] as string | undefined) ?? null;
+      const scenarioSearch =
+        (formData["scenarioSearch"] as string | undefined) ?? null;
+      const scenarioShowSelected =
+        (formData["scenarioShowSelected"] as boolean | undefined) ?? false;
+      const filterScenarioIds =
+        (formData["filterScenarioIds"] as string[] | undefined) ?? null;
 
       // Emit simulation_generate event with GetSimulationApiRequest fields
       socket.emit("simulation_generate", {
@@ -837,10 +912,11 @@ function NewSimulationComponent({
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetSimulationApiRequest fields from formData
         draft_id: draftId || null,
-        scenario_search: null, // Not used for resource generation
-        scenario_show_selected: false, // Not used for resource generation
-        filter_scenario_ids: null, // Not used for resource generation
+        scenario_search: scenarioSearch || null,
+        scenario_show_selected: scenarioShowSelected || false,
+        filter_scenario_ids: filterScenarioIds || null,
         simulation_id: simulationId || null,
+        mcp: false,
       });
     },
     [socket, isConnected, simulationId]
@@ -874,6 +950,39 @@ function NewSimulationComponent({
   const handleGenerateFlags = useCallback(
     async () =>
       handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateScenarios = useCallback(
+    async () =>
+      handleGenerateResources(["scenarios"], determineAgentType(["scenarios"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateScenarioFlags = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["scenario_flags"],
+        determineAgentType(["scenario_flags"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateScenarioPositions = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["scenario_positions"],
+        determineAgentType(["scenario_positions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateScenarioRubricGradeAgents = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["scenario_rubric_grade_agents"],
+        determineAgentType(["scenario_rubric_grade_agents"])
+      ),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -964,7 +1073,8 @@ function NewSimulationComponent({
       try {
         await saveSimulationAction({
           body: {
-            input_simulation_id: isEditMode && simulationId ? simulationId : null,
+            input_simulation_id:
+              isEditMode && simulationId ? simulationId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
@@ -1033,6 +1143,10 @@ function NewSimulationComponent({
         "descriptions",
         "departments",
         "flags",
+        "scenarios",
+        "scenario_flags",
+        "scenario_positions",
+        "scenario_rubric_grade_agents",
       ], // All resources for full-page generation
     }),
     []
@@ -1055,6 +1169,11 @@ function NewSimulationComponent({
       instructions: "Instructions",
       examples: "Examples",
       fields: "Fields",
+      schemas: "Schemas",
+      templates: "Templates",
+      schema_field_items: "Schema Field Items",
+      template_array_items: "Template Array Items",
+      template_values: "Template Values",
     }),
     []
   );
@@ -1124,12 +1243,7 @@ function NewSimulationComponent({
 
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
-    () => [
-      "name",
-      "description",
-      "departments",
-      "active",
-    ],
+    () => ["name", "description", "departments", "active"],
     []
   );
 
@@ -1147,216 +1261,209 @@ function NewSimulationComponent({
         case "basic":
           return (
             <div className="space-y-6">
-              {simulationData?.disabled_reason && (
-                <ReadOnlyBanner message={simulationData.disabled_reason} />
-              )}
-              {stableSimulationDataFields.show_name && (
-                <Names
-                  name_id={formState.name_id}
-                  name_resource={stableSimulationDataFields.name_resource}
-                  show_name={stableSimulationDataFields.show_name}
-                  name_suggestions={stableSimulationDataFields.name_suggestions}
-                  names={stableSimulationDataFields.names}
-                  disabled={disabled}
-                  onNameIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, name_id: id }))
-                  }
-                  onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
-                  createNamesAction={createNamesAction}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.name_agent_id}
-                  required={stableSimulationDataFields.name_required}
-                />
-              )}
-              {stableSimulationDataFields.show_description && (
-                <Descriptions
-                  description_id={formState.description_id}
-                  description_resource={
-                    stableSimulationDataFields.description_resource
-                  }
-                  show_description={stableSimulationDataFields.show_description}
-                  description_suggestions={
-                    stableSimulationDataFields.description_suggestions
-                  }
-                  descriptions={stableSimulationDataFields.descriptions}
-                  disabled={disabled}
-                  onDescriptionIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, description_id: id }))
-                  }
-                  onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
-                  createDescriptionsAction={createDescriptionsAction}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.description_agent_id}
-                  required={stableSimulationDataFields.description_required}
-                  searchTerm={descriptionSearch || undefined}
-                  onSearchChange={(term) => {
-                    // Update URL via GenericForm bridge
-                    setUrlFormDataRef.current?.({ descriptionSearch: term });
-                  }}
-                />
-              )}
-              {stableSimulationDataFields.show_departments && (
-                <Departments
-                  department_ids={formState.department_ids}
-                  department_resources={
-                    stableSimulationDataFields.department_resources
-                  }
-                  show_departments={stableSimulationDataFields.show_departments}
-                  department_suggestions={
-                    stableSimulationDataFields.department_suggestions
-                  }
-                  departments={stableSimulationDataFields.departments}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
-                  }
-                  createDepartmentsAction={createDepartmentsAction}
-                  onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.departments_agent_id}
-                  required={stableSimulationDataFields.departments_required}
-                />
-              )}
-              {stableSimulationDataFields.show_flag && (
-                <Flags
-                  flag_id={formState.active_flag_id}
-                  flag_resource={stableSimulationDataFields.flag_resource}
-                  show_flag={stableSimulationDataFields.show_flag}
-                  flags={stableSimulationDataFields.flags}
-                  disabled={disabled}
-                  onFlagIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, active_flag_id: id }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("flags")}
-                  createFlagsAction={createFlagsAction}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.flag_agent_id}
-                  required={stableSimulationDataFields.flag_required}
-                  label="Active"
-                  helpText="Whether this simulation is active"
-                />
-              )}
-              {stableSimulationDataFields.show_scenarios && (
-                <Scenarios
-                  scenario_ids={formState.scenario_ids}
-                  scenario_resources={stableSimulationDataFields.scenario_resources}
-                  show_scenarios={stableSimulationDataFields.show_scenarios}
-                  scenario_suggestions={
-                    stableSimulationDataFields.scenario_suggestions
-                  }
-                  scenarios={stableSimulationDataFields.scenarios}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, scenario_ids: ids }))
-                  }
-                  createScenariosAction={createScenariosAction}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.scenarios_agent_id}
-                  required={stableSimulationDataFields.scenarios_required}
-                />
-              )}
-              {stableSimulationDataFields.show_scenario_flags && (
-                <ScenarioFlags
-                  scenario_flag_ids={formState.scenario_flag_ids}
-                  scenario_flag_resources={
-                    stableSimulationDataFields.scenario_flag_resources
-                  }
-                  show_scenario_flags={
-                    stableSimulationDataFields.show_scenario_flags
-                  }
-                  scenario_flag_suggestions={
-                    stableSimulationDataFields.scenario_flag_suggestions
-                  }
-                  scenario_flags={stableSimulationDataFields.scenario_flags}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_flag_ids: ids,
-                    }))
-                  }
-                  createScenarioFlagsAction={createScenarioFlagsAction}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.scenario_flags_agent_id}
-                  required={stableSimulationDataFields.scenario_flags_required}
-                />
-              )}
-              {stableSimulationDataFields.show_scenario_positions && (
-                <ScenarioPositions
-                  scenario_position_ids={formState.scenario_position_ids}
-                  scenario_position_resources={
-                    stableSimulationDataFields.scenario_position_resources
-                  }
-                  show_scenario_positions={
-                    stableSimulationDataFields.show_scenario_positions
-                  }
-                  scenario_position_suggestions={
-                    stableSimulationDataFields.scenario_position_suggestions
-                  }
-                  scenario_positions={
-                    stableSimulationDataFields.scenario_positions
-                  }
-                  disabled={disabled}
-                  onChange={(positions) => {
-                    // Convert positions array to IDs array for form state
-                    const ids = positions.map(
-                      (p) => `${p.simulation_id}-${p.scenario_id}`
-                    );
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_position_ids: ids,
-                    }));
-                  }}
-                  simulation_id={simulationId || null}
-                  scenario_ids={formState.scenario_ids}
-                  createScenarioPositionsAction={createScenarioPositionsAction}
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={stableSimulationDataFields.scenario_positions_agent_id}
-                  required={
-                    stableSimulationDataFields.scenario_positions_required
-                  }
-                />
-              )}
-              {stableSimulationDataFields.show_scenario_rubric_grade_agents && (
-                <ScenarioRubricGradeAgents
-                  scenario_rubric_grade_agent_ids={
-                    formState.scenario_rubric_grade_agent_ids
-                  }
-                  scenario_rubric_grade_agent_resources={
-                    stableSimulationDataFields.scenario_rubric_grade_agent_resources
-                  }
-                  show_scenario_rubric_grade_agents={
-                    stableSimulationDataFields.show_scenario_rubric_grade_agents
-                  }
-                  scenario_rubric_grade_agent_suggestions={
-                    stableSimulationDataFields.scenario_rubric_grade_agent_suggestions
-                  }
-                  scenario_rubric_grade_agents={
-                    stableSimulationDataFields.scenario_rubric_grade_agents
-                  }
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      scenario_rubric_grade_agent_ids: ids,
-                    }))
-                  }
-                  createScenarioRubricGradeAgentsAction={
-                    createScenarioRubricGradeAgentsAction
-                  }
-                  group_id={stableSimulationDataFields.group_id}
-                  agent_id={
-                    stableSimulationDataFields.scenario_rubric_grade_agents_agent_id
-                  }
-                  required={
-                    stableSimulationDataFields.scenario_rubric_grade_agents_required
-                  }
-                />
-              )}
+              <Names
+                name_id={formState.name_id}
+                name_resource={stableSimulationDataFields.name_resource}
+                show_name={stableSimulationDataFields.show_name}
+                name_suggestions={stableSimulationDataFields.name_suggestions}
+                names={stableSimulationDataFields.names}
+                disabled={disabled}
+                onNameIdChange={(id) =>
+                  setFormState((prev) => ({ ...prev, name_id: id }))
+                }
+                onGenerate={handleGenerateName}
+                isGenerating={isGenerating("names")}
+                createNamesAction={createNamesAction}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={stableSimulationDataFields.name_agent_id}
+                required={stableSimulationDataFields.name_required}
+              />
+              <Descriptions
+                description_id={formState.description_id}
+                description_resource={
+                  stableSimulationDataFields.description_resource
+                }
+                show_description={stableSimulationDataFields.show_description}
+                description_suggestions={
+                  stableSimulationDataFields.description_suggestions
+                }
+                descriptions={stableSimulationDataFields.descriptions}
+                disabled={disabled}
+                onDescriptionIdChange={(id) =>
+                  setFormState((prev) => ({ ...prev, description_id: id }))
+                }
+                onGenerate={handleGenerateDescription}
+                isGenerating={isGenerating("descriptions")}
+                createDescriptionsAction={createDescriptionsAction}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={stableSimulationDataFields.description_agent_id}
+                required={stableSimulationDataFields.description_required}
+                searchTerm={descriptionSearch || undefined}
+                onSearchChange={(term) => {
+                  // Update URL via GenericForm bridge
+                  setUrlFormDataRef.current?.({ descriptionSearch: term });
+                }}
+              />
+              <Departments
+                department_ids={formState.department_ids}
+                department_resources={
+                  stableSimulationDataFields.department_resources
+                }
+                show_departments={stableSimulationDataFields.show_departments}
+                department_suggestions={
+                  stableSimulationDataFields.department_suggestions
+                }
+                departments={stableSimulationDataFields.departments}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, department_ids: ids }))
+                }
+                createDepartmentsAction={createDepartmentsAction}
+                onGenerate={handleGenerateDepartments}
+                isGenerating={isGenerating("departments")}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={stableSimulationDataFields.departments_agent_id}
+                required={stableSimulationDataFields.departments_required}
+              />
+              <Flags
+                flag_id={formState.active_flag_id}
+                flag_resource={stableSimulationDataFields.flag_resource}
+                show_flag={stableSimulationDataFields.show_flag}
+                flags={stableSimulationDataFields.flags}
+                disabled={disabled}
+                onFlagIdChange={(id) =>
+                  setFormState((prev) => ({ ...prev, active_flag_id: id }))
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("flags")}
+                createFlagsAction={createFlagsAction}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={stableSimulationDataFields.flag_agent_id}
+                required={stableSimulationDataFields.flag_required}
+                label="Active"
+                helpText="Whether this simulation is active"
+              />
+              <Scenarios
+                scenario_ids={formState.scenario_ids}
+                scenario_resources={
+                  stableSimulationDataFields.scenario_resources
+                }
+                show_scenarios={stableSimulationDataFields.show_scenarios}
+                scenario_suggestions={
+                  stableSimulationDataFields.scenario_suggestions
+                }
+                scenarios={stableSimulationDataFields.scenarios}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, scenario_ids: ids }))
+                }
+                createScenariosAction={createScenariosAction}
+                onGenerate={handleGenerateScenarios}
+                isGenerating={isGenerating("scenarios")}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={stableSimulationDataFields.scenarios_agent_id}
+                required={stableSimulationDataFields.scenarios_required}
+              />
+              <ScenarioFlags
+                scenario_flag_ids={formState.scenario_flag_ids}
+                scenario_flag_resources={
+                  stableSimulationDataFields.scenario_flag_resources
+                }
+                show_scenario_flags={
+                  stableSimulationDataFields.show_scenario_flags
+                }
+                scenario_flag_suggestions={
+                  stableSimulationDataFields.scenario_flag_suggestions
+                }
+                scenario_flags={stableSimulationDataFields.scenario_flags}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    scenario_flag_ids: ids,
+                  }))
+                }
+                createScenarioFlagsAction={createScenarioFlagsAction}
+                onGenerate={handleGenerateScenarioFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={stableSimulationDataFields.scenario_flags_agent_id}
+                required={stableSimulationDataFields.scenario_flags_required}
+              />
+              <ScenarioPositions
+                scenario_position_ids={formState.scenario_position_ids}
+                scenario_position_resources={
+                  stableSimulationDataFields.scenario_position_resources
+                }
+                show_scenario_positions={
+                  stableSimulationDataFields.show_scenario_positions
+                }
+                scenario_position_suggestions={
+                  stableSimulationDataFields.scenario_position_suggestions
+                }
+                scenario_positions={
+                  stableSimulationDataFields.scenario_positions
+                }
+                disabled={disabled}
+                onChange={(positions) => {
+                  // Convert positions array to IDs array for form state
+                  const ids = positions.map(
+                    (p) => `${p.simulation_id}-${p.scenario_id}`
+                  );
+                  setFormState((prev) => ({
+                    ...prev,
+                    scenario_position_ids: ids,
+                  }));
+                }}
+                simulation_id={simulationId || null}
+                scenario_ids={formState.scenario_ids}
+                createScenarioPositionsAction={createScenarioPositionsAction}
+                onGenerate={handleGenerateScenarioPositions}
+                isGenerating={isGenerating("scenario_positions")}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={
+                  stableSimulationDataFields.scenario_positions_agent_id
+                }
+                required={
+                  stableSimulationDataFields.scenario_positions_required
+                }
+              />
+              <ScenarioRubricGradeAgents
+                scenario_rubric_grade_agent_ids={
+                  formState.scenario_rubric_grade_agent_ids
+                }
+                scenario_rubric_grade_agent_resources={
+                  stableSimulationDataFields.scenario_rubric_grade_agent_resources
+                }
+                show_scenario_rubric_grade_agents={
+                  stableSimulationDataFields.show_scenario_rubric_grade_agents
+                }
+                scenario_rubric_grade_agent_suggestions={
+                  stableSimulationDataFields.scenario_rubric_grade_agent_suggestions
+                }
+                scenario_rubric_grade_agents={
+                  stableSimulationDataFields.scenario_rubric_grade_agents
+                }
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    scenario_rubric_grade_agent_ids: ids,
+                  }))
+                }
+                createScenarioRubricGradeAgentsAction={
+                  createScenarioRubricGradeAgentsAction
+                }
+                onGenerate={handleGenerateScenarioRubricGradeAgents}
+                isGenerating={isGenerating("scenario_rubric_grade_agents")}
+                group_id={stableSimulationDataFields.group_id}
+                agent_id={
+                  stableSimulationDataFields.scenario_rubric_grade_agents_agent_id
+                }
+                required={
+                  stableSimulationDataFields.scenario_rubric_grade_agents_required
+                }
+              />
             </div>
           );
         default:
@@ -1389,55 +1496,127 @@ function NewSimulationComponent({
   }
 
   return (
-    <GenericForm
-      steps={steps}
-      getStepStatus={getStepStatus}
-      renderStep={renderStep}
-      onSubmit={handleSubmit}
-      formFieldKeys={formFieldKeys}
-      searchParamsClient={simulationSearchParamsClient}
-      onFormDataChange={onFormDataChange}
-      setUrlFormDataRef={setUrlFormDataRef}
-    >
-      {({ currentStep, formData, setFormData }) => (
-        <div className="space-y-6">
-          {steps.map((step) => (
-            <StepCard
-              key={step.id}
-              step={step}
-              isActive={currentStep === step.id}
-              status={getStepStatus(step.id, formData)}
-              onGenerate={() => handleOpenStepCardModal(step.id, "generate")}
-              onRegenerate={() =>
-                handleOpenStepCardModal(step.id, "regenerate")
-              }
-              canRegenerate={stepResources[step.id]?.some((rt) =>
-                canRegenerate(rt)
-              )}
-              isGenerating={stepResources[step.id]?.some((rt) =>
-                isGenerating(rt)
-              )}
-            >
-              {renderStep(step.id, formData)}
-            </StepCard>
-          ))}
-        </div>
-      )}
-      <GenerateRegenerateModal
-        isOpen={showGenerateModal}
-        onClose={() => {
-          setShowGenerateModal(false);
-          setModalInstructions("");
-        }}
-        mode={modalMode}
-        resources={modalResources}
-        instructions={modalInstructions}
-        onInstructionsChange={setModalInstructions}
-        onGenerate={handleModalGenerate}
+    <div className="space-y-6">
+      <ReadOnlyBanner
+        disabled={disabled}
+        disabledReason={simulationData?.disabled_reason ?? null}
+        entityType="simulation"
       />
-    </GenericForm>
+      <GenericForm
+        steps={steps}
+        getStepStatus={getStepStatus}
+        renderStep={renderStep}
+        onSubmit={handleSubmit}
+        formFieldKeys={formFieldKeys}
+        searchParamsClient={simulationSearchParamsClient}
+        onFormDataChange={onFormDataChange}
+        setUrlFormDataRef={setUrlFormDataRef}
+      >
+        {({ currentStep, formData, setFormData }) => (
+          <div className="space-y-6">
+            {steps.map((step) => (
+              <StepCard
+                key={step.id}
+                step={step}
+                isActive={currentStep === step.id}
+                status={getStepStatus(step.id, formData)}
+                onGenerate={() => handleOpenStepCardModal(step.id, "generate")}
+                onRegenerate={() =>
+                  handleOpenStepCardModal(step.id, "regenerate")
+                }
+                canRegenerate={stepResources[step.id]?.some((rt) =>
+                  canRegenerate(rt)
+                )}
+                isGenerating={stepResources[step.id]?.some((rt) =>
+                  isGenerating(rt)
+                )}
+              >
+                {renderStep(step.id, formData)}
+              </StepCard>
+            ))}
+          </div>
+        )}
+        <GenerateRegenerateModal
+          isOpen={showGenerateModal}
+          onClose={() => {
+            setShowGenerateModal(false);
+            setModalInstructions("");
+          }}
+          mode={modalMode}
+          resources={modalResources}
+          instructions={modalInstructions}
+          onInstructionsChange={setModalInstructions}
+          onGenerate={handleModalGenerate}
+        />
+      </GenericForm>
+    </div>
   );
 }
 
-// Memoize top-level component to prevent unnecessary re-renders
-export const NewSimulation = React.memo(NewSimulationComponent);
+// Memoize component to prevent re-renders when only prop references change (content is same)
+export const NewSimulation = React.memo(
+  NewSimulationComponent,
+  (prevProps, nextProps) => {
+    // Compare simulationData by resource IDs, not object reference
+    const prevIds = {
+      name_id: prevProps.simulationData?.name_id,
+      description_id: prevProps.simulationData?.description_id,
+      active_flag_id: prevProps.simulationData?.active_flag_id,
+      department_ids: prevProps.simulationData?.department_ids,
+      scenario_ids: prevProps.simulationData?.scenario_ids,
+      scenario_flag_ids: prevProps.simulationData?.scenario_flag_ids,
+      scenario_position_ids:
+        prevProps.simulationData?.scenario_position_resources?.map(
+          (p) => `${p.simulation_id}-${p.scenario_id}`
+        ),
+      scenario_rubric_grade_agent_ids:
+        prevProps.simulationData?.scenario_rubric_grade_agent_ids,
+    };
+    const nextIds = {
+      name_id: nextProps.simulationData?.name_id,
+      description_id: nextProps.simulationData?.description_id,
+      active_flag_id: nextProps.simulationData?.active_flag_id,
+      department_ids: nextProps.simulationData?.department_ids,
+      scenario_ids: nextProps.simulationData?.scenario_ids,
+      scenario_flag_ids: nextProps.simulationData?.scenario_flag_ids,
+      scenario_position_ids:
+        nextProps.simulationData?.scenario_position_resources?.map(
+          (p) => `${p.simulation_id}-${p.scenario_id}`
+        ),
+      scenario_rubric_grade_agent_ids:
+        nextProps.simulationData?.scenario_rubric_grade_agent_ids,
+    };
+
+    // Compare primitive props
+    if (
+      prevProps.simulationId !== nextProps.simulationId ||
+      JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+    ) {
+      return false; // Props changed, re-render
+    }
+
+    // Compare function props by reference (should be stable from server actions)
+    if (
+      prevProps.saveSimulationAction !== nextProps.saveSimulationAction ||
+      prevProps.patchSimulationDraftAction !==
+        nextProps.patchSimulationDraftAction ||
+      prevProps.createNamesAction !== nextProps.createNamesAction ||
+      prevProps.createDescriptionsAction !==
+        nextProps.createDescriptionsAction ||
+      prevProps.createFlagsAction !== nextProps.createFlagsAction ||
+      prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
+      prevProps.createScenariosAction !== nextProps.createScenariosAction ||
+      prevProps.createScenarioFlagsAction !==
+        nextProps.createScenarioFlagsAction ||
+      prevProps.createScenarioPositionsAction !==
+        nextProps.createScenarioPositionsAction ||
+      prevProps.createScenarioRubricGradeAgentsAction !==
+        nextProps.createScenarioRubricGradeAgentsAction
+    ) {
+      return false; // Function props changed, re-render
+    }
+
+    // All props are equivalent, skip re-render
+    return true;
+  }
+);

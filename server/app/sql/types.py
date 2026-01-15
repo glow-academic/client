@@ -7975,6 +7975,50 @@ class GetCohortApiResponse(BaseModel):
 
 
 
+# Generated from: get_cohort_resource_ids_by_group_id
+
+class GetCohortResourceIdsByGroupIdSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class GetCohortResourceIdsByGroupIdSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+
+class GetCohortResourceIdsByGroupIdApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class GetCohortResourceIdsByGroupIdApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+
+
+
 # Generated from: get_cohort_search
 
 class GetCohortSearchSqlParams(BaseModel):
@@ -8270,6 +8314,75 @@ class SaveCohortApiResponse(BaseModel):
 
     cohort_id: UUID | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: validate_cohort_resource_error
+
+class ValidateCohortResourceErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.resource_types,
+            self.artifact_type,
+        )
+
+class ValidateCohortResourceErrorSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateCohortResourceErrorApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+class ValidateCohortResourceErrorApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
+# Generated from: validate_cohort_resource_progress
+
+class ValidateCohortResourceProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class ValidateCohortResourceProgressSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateCohortResourceProgressApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class ValidateCohortResourceProgressApiResponse(BaseModel):
+
+    is_valid: bool | None = None
 
 
 
@@ -12515,70 +12628,12 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
-# Generated from: get_generation_run_context_and_create_run
+# Generated from: get_text_run_context_and_create_run
 
 class IPersonaResourceV4(BaseModel):
 
     resource_type: str | None
     resource_ids: list[UUID] | None
-
-class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-    message_ids: list[UUID] | None = None
-    department_id: UUID | None = None
-    group_id: UUID | None = None
-    developer_instructions: list[str] | None = None
-    user_instructions: list[str] | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.agent_id,
-            self.profile_id,
-            self.message_ids,
-            self.department_id,
-            self.group_id,
-            self.developer_instructions,
-            self.user_instructions,
-            resources_tuples,
-        )
-
-class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    message_ids: list[UUID] | None = None
-    output_modalities: list[str] | None = None
-
-class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    department_id: UUID | None = None
-    group_id: UUID | None = None
-    developer_instructions: list[str] | None = None
-    user_instructions: list[str] | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    message_ids: list[UUID] | None = None
-    output_modalities: list[str] | None = None
-
-
-
-# Generated from: get_text_run_context_and_create_run
 
 class GetTextRunContextAndCreateRunSqlParams(BaseModel):
 
@@ -12681,94 +12736,6 @@ class GetTextRunContextAndCreateRunApiResponse(BaseModel):
     context: Any | None = None
     department_name: str | None = None
     developer_message_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-
-
-# Generated from: get_text_run_context_for_existing_run
-
-class GetTextRunContextForExistingRunSqlParams(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.run_id,
-            self.agent_id,
-            self.message_ids,
-            self.group_id,
-            resources_tuples,
-        )
-
-class GetTextRunContextForExistingRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-class GetTextRunContextForExistingRunApiRequest(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetTextRunContextForExistingRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
     mime_type: str | None = None
@@ -32339,6 +32306,7 @@ class GetSimulationSqlParams(BaseModel):
     scenario_search: str | None = None
     scenario_show_selected: bool | None = None
     filter_scenario_ids: list[UUID] | None = None
+    mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -32348,6 +32316,7 @@ class GetSimulationSqlParams(BaseModel):
             self.scenario_search,
             self.scenario_show_selected,
             self.filter_scenario_ids,
+            self.mcp,
         )
 
 class QGetSimulationV4Agent(BaseModel):
@@ -32709,6 +32678,7 @@ class GetSimulationApiRequest(BaseModel):
     scenario_search: str | None = None
     scenario_show_selected: bool | None = None
     filter_scenario_ids: list[UUID] | None = None
+    mcp: bool | None = False
 
 class GetSimulationApiResponse(BaseModel):
 
@@ -33000,6 +32970,56 @@ class GetSimulationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     previous_messages: list[QGetSimRegenRunContextCreateRunV4Msg] | None = None
+
+
+
+# Generated from: get_simulation_resource_ids_by_group_id
+
+class GetSimulationResourceIdsByGroupIdSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class GetSimulationResourceIdsByGroupIdSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+
+class GetSimulationResourceIdsByGroupIdApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class GetSimulationResourceIdsByGroupIdApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
 
 
 
@@ -33782,6 +33802,75 @@ class ValidateMessageBelongsToChatApiRequest(BaseModel):
 class ValidateMessageBelongsToChatApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: validate_simulation_resource_error
+
+class ValidateSimulationResourceErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.resource_types,
+            self.artifact_type,
+        )
+
+class ValidateSimulationResourceErrorSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateSimulationResourceErrorApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+class ValidateSimulationResourceErrorApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
+# Generated from: validate_simulation_resource_progress
+
+class ValidateSimulationResourceProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class ValidateSimulationResourceProgressSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateSimulationResourceProgressApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class ValidateSimulationResourceProgressApiResponse(BaseModel):
+
+    is_valid: bool | None = None
 
 
 
@@ -36786,6 +36875,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetCohortApiRequest",
         "GetCohortApiResponse",
     ),
+    "app/sql/v4/cohorts/get_cohort_resource_ids_by_group_id_complete.sql": (
+        "GetCohortResourceIdsByGroupIdSqlParams",
+        "GetCohortResourceIdsByGroupIdSqlRow",
+        "GetCohortResourceIdsByGroupIdApiRequest",
+        "GetCohortResourceIdsByGroupIdApiResponse",
+    ),
     "app/sql/v4/cohorts/get_cohort_search_complete.sql": (
         "GetCohortSearchSqlParams",
         "GetCohortSearchSqlRow",
@@ -36815,6 +36910,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveCohortSqlRow",
         "SaveCohortApiRequest",
         "SaveCohortApiResponse",
+    ),
+    "app/sql/v4/cohorts/validate_cohort_resource_error_complete.sql": (
+        "ValidateCohortResourceErrorSqlParams",
+        "ValidateCohortResourceErrorSqlRow",
+        "ValidateCohortResourceErrorApiRequest",
+        "ValidateCohortResourceErrorApiResponse",
+    ),
+    "app/sql/v4/cohorts/validate_cohort_resource_progress_complete.sql": (
+        "ValidateCohortResourceProgressSqlParams",
+        "ValidateCohortResourceProgressSqlRow",
+        "ValidateCohortResourceProgressApiRequest",
+        "ValidateCohortResourceProgressApiResponse",
     ),
     "app/sql/v4/dashboard/get_dashboard_bundle_complete.sql": (
         "GetDashboardBundleSqlParams",
@@ -37200,23 +37307,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
-    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql": (
-        "GetGenerationRunContextAndCreateRunSqlParams",
-        "GetGenerationRunContextAndCreateRunSqlRow",
-        "GetGenerationRunContextAndCreateRunApiRequest",
-        "GetGenerationRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql": (
         "GetTextRunContextAndCreateRunSqlParams",
         "GetTextRunContextAndCreateRunSqlRow",
         "GetTextRunContextAndCreateRunApiRequest",
         "GetTextRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql": (
-        "GetTextRunContextForExistingRunSqlParams",
-        "GetTextRunContextForExistingRunSqlRow",
-        "GetTextRunContextForExistingRunApiRequest",
-        "GetTextRunContextForExistingRunApiResponse",
     ),
     "app/sql/v4/generate/text/get_text_tool_call_results_complete.sql": (
         "GetTextToolCallResultsSqlParams",
@@ -39300,6 +39395,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationRegenerationRunContextAndCreateRunApiRequest",
         "GetSimulationRegenerationRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/simulations/get_simulation_resource_ids_by_group_id_complete.sql": (
+        "GetSimulationResourceIdsByGroupIdSqlParams",
+        "GetSimulationResourceIdsByGroupIdSqlRow",
+        "GetSimulationResourceIdsByGroupIdApiRequest",
+        "GetSimulationResourceIdsByGroupIdApiResponse",
+    ),
     "app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql": (
         "GetSimulationRunContextAndCreateRunSqlParams",
         "GetSimulationRunContextAndCreateRunSqlRow",
@@ -39371,6 +39472,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateMessageBelongsToChatSqlRow",
         "ValidateMessageBelongsToChatApiRequest",
         "ValidateMessageBelongsToChatApiResponse",
+    ),
+    "app/sql/v4/simulations/validate_simulation_resource_error_complete.sql": (
+        "ValidateSimulationResourceErrorSqlParams",
+        "ValidateSimulationResourceErrorSqlRow",
+        "ValidateSimulationResourceErrorApiRequest",
+        "ValidateSimulationResourceErrorApiResponse",
+    ),
+    "app/sql/v4/simulations/validate_simulation_resource_progress_complete.sql": (
+        "ValidateSimulationResourceProgressSqlParams",
+        "ValidateSimulationResourceProgressSqlRow",
+        "ValidateSimulationResourceProgressApiRequest",
+        "ValidateSimulationResourceProgressApiResponse",
     ),
     "app/sql/v4/staff/bulk_create_staff_complete.sql": (
         "BulkCreateStaffSqlParams",
@@ -40348,6 +40461,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/get_cohort_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/get_cohort_search_complete.sql"]
     ) -> SqlString: ...
 
@@ -40369,6 +40487,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/save_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/validate_cohort_resource_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/validate_cohort_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -40693,17 +40821,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42443,6 +42561,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_simulation_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -42499,6 +42622,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/validate_message_belongs_to_chat_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/validate_simulation_resource_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/validate_simulation_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload

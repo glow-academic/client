@@ -1,13 +1,15 @@
 /**
  * Questions.tsx
  * Resource component for question messages
- * Uses ReorderableList for UI, creates question resources, reports IDs to parent
+ * Redesigned to match ContentSection expandable question pattern
+ * Creates question resources, reports IDs to parent
  */
 
 "use client";
 
-import { ReorderableList } from "@/components/common/forms/ReorderableList";
+import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -16,11 +18,26 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Loader2,
+  MessageSquare,
+  PlusCircle,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
-type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
+type CreateDraftQuestionsOut = OutputOf<
+  "/api/v4/resources/questions",
+  "post"
+>;
 
 export interface QuestionsProps {
   question_ids?: string[]; // Current question resource IDs (standardized prop name)
@@ -55,7 +72,23 @@ export interface QuestionsProps {
   isGenerating?: boolean;
   // Optional: mapping of question_id -> question text (for initial display)
   questionMapping?: Record<string, string>;
+  // Optional: video length for time slider (when questions are associated with videos)
+  videoLength?: number | null;
 }
+
+// Internal question type (matching ContentSection pattern)
+type QuestionType = {
+  id: string;
+  question_text: string;
+  allow_multiple: boolean;
+  options: Array<{
+    id: string;
+    option_text: string;
+    type?: "discrete" | "freeform";
+    is_correct: boolean;
+  }>;
+  times?: number[];
+};
 
 export function Questions({
   question_ids,
@@ -70,7 +103,7 @@ export function Questions({
   label = "Questions",
   id = "questions",
   required = false,
-  maxItems = 10,
+  maxItems = 4, // Default to 4 like ContentSection
   addButtonLabel = "Add question",
   itemPlaceholder = "Question",
   group_id,
@@ -79,6 +112,7 @@ export function Questions({
   onGenerate,
   isGenerating = false,
   questionMapping = {},
+  videoLength = null,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
@@ -91,7 +125,6 @@ export function Questions({
       return questionMapping;
     }
     // Build mapping from questions array (question_id -> question text)
-    // Note: This requires question_ids to match questions array order
     const mapping: Record<string, string> = {};
     ids.forEach((id, idx) => {
       const question = allQuestions[idx];
@@ -105,7 +138,6 @@ export function Questions({
   // Convert question_suggestions (UUIDs) to question strings by looking them up
   const suggestionsList = useMemo(() => {
     if (question_suggestions && question_suggestions.length > 0) {
-      // Look up question text from suggestion IDs using the mapping
       return question_suggestions
         .map((id) => effectiveQuestionMapping[id])
         .filter(
@@ -116,46 +148,136 @@ export function Questions({
     return [];
   }, [question_suggestions, effectiveQuestionMapping]);
 
-  // Internal state for display texts (synced with question_ids via questionMapping)
-  const [internalTexts, setInternalTexts] = useState<string[]>(() => {
-    // Initialize from question_ids using effectiveQuestionMapping
-    if (ids.length > 0 && Object.keys(effectiveQuestionMapping).length > 0) {
-      return ids
-        .map((id) => effectiveQuestionMapping[id] || "")
-        .filter((text) => text.trim() !== "");
+  // Internal state for questions (matching ContentSection pattern)
+  const [internalQuestions, setInternalQuestions] = useState<QuestionType[]>(
+    () => {
+      // Initialize from question_ids using effectiveQuestionMapping
+      if (ids.length > 0 && Object.keys(effectiveQuestionMapping).length > 0) {
+        return ids.map((id, idx) => ({
+          id: id || `temp-${idx}`,
+          question_text: effectiveQuestionMapping[id] || "",
+          allow_multiple: false,
+          options: [
+            {
+              id: "",
+              option_text: "",
+              type: "discrete" as const,
+              is_correct: false,
+            },
+            {
+              id: "",
+              option_text: "",
+              type: "discrete" as const,
+              is_correct: false,
+            },
+          ],
+          times: [],
+        }));
+      }
+      return [];
     }
-    return [""];
-  });
+  );
 
   const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
-  const lastSavedTextsRef = useRef<string[]>(internalTexts);
+  const lastSavedQuestionsRef = useRef<QuestionType[]>(internalQuestions);
   const isInitialMountRef = useRef(true);
   const questionIdMapRef = useRef<Map<string, string>>(new Map()); // Maps question text -> question_id
+  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
+    number | null
+  >(null);
+  const [draggedOptionIndex, setDraggedOptionIndex] = useState<{
+    questionIndex: number;
+    optionIndex: number;
+  } | null>(null);
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
+    new Set()
+  );
+  const questionInputRefs = useRef<Record<number, HTMLInputElement | null>>(
+    {}
+  );
+  const [optionMaxWidths, setOptionMaxWidths] = useState<
+    Record<number, number | undefined>
+  >({});
 
   // Sync external question_ids changes (when loading from server)
   useEffect(() => {
     if (ids.length > 0 && Object.keys(effectiveQuestionMapping).length > 0) {
-      const texts = ids
-        .map((id) => effectiveQuestionMapping[id] || "")
-        .filter((text) => text.trim() !== "");
-      if (texts.length > 0) {
-        setInternalTexts(texts.length > 0 ? texts : [""]);
-        // Update mapping
-        ids.forEach((id, idx) => {
-          if (texts[idx]) {
-            questionIdMapRef.current.set(texts[idx], id);
-          }
-        });
-      }
+      const newQuestions = ids.map((id, idx) => ({
+        id: id || `temp-${idx}`,
+        question_text: effectiveQuestionMapping[id] || "",
+        allow_multiple: false,
+        options: [
+          {
+            id: "",
+            option_text: "",
+            type: "discrete" as const,
+            is_correct: false,
+          },
+          {
+            id: "",
+            option_text: "",
+            type: "discrete" as const,
+            is_correct: false,
+          },
+        ],
+        times: [],
+      }));
+      setInternalQuestions(newQuestions);
+      // Update mapping
+      ids.forEach((id, idx) => {
+        if (newQuestions[idx]?.question_text) {
+          questionIdMapRef.current.set(newQuestions[idx].question_text, id);
+        }
+      });
     }
   }, [ids, effectiveQuestionMapping]);
+
+  // Update option max widths when question inputs resize
+  useEffect(() => {
+    const updateWidths = () => {
+      const widths: Record<number, number | undefined> = {};
+      Object.entries(questionInputRefs.current).forEach(([indexStr, el]) => {
+        if (el) {
+          const index = parseInt(indexStr, 10);
+          const question = internalQuestions[index];
+          const baseSpace = 40; // gap + checkbox
+          const deleteButtonSpace =
+            question && question.options.length > 2 ? 40 : 0;
+          const totalSpace = baseSpace + deleteButtonSpace;
+          const calculatedWidth = el.offsetWidth - totalSpace;
+          widths[index] = calculatedWidth > 0 ? calculatedWidth : undefined;
+        }
+      });
+      setOptionMaxWidths(widths);
+    };
+
+    updateWidths();
+
+    const observers: ResizeObserver[] = [];
+    Object.values(questionInputRefs.current).forEach((el) => {
+      if (el) {
+        const observer = new ResizeObserver(() => {
+          updateWidths();
+        });
+        observer.observe(el);
+        observers.push(observer);
+      }
+    });
+
+    window.addEventListener("resize", updateWidths);
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+      window.removeEventListener("resize", updateWidths);
+    };
+  }, [internalQuestions, videoLength, expandedQuestions]);
 
   // Debounced resource creation for each question text
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
-      lastSavedTextsRef.current = internalTexts;
+      lastSavedQuestionsRef.current = internalQuestions;
       return;
     }
 
@@ -163,25 +285,21 @@ export function Questions({
     debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
     debounceTimersRef.current.clear();
 
-    // Create/update resources for each text
-    const newQuestionIds: string[] = [];
-    // Use promises to track async operations
+    // Create/update resources for each question text
     const promises: Promise<void>[] = [];
 
-    internalTexts.forEach((text, index) => {
-      if (!text.trim()) {
-        // Skip empty texts
+    internalQuestions.forEach((question, index) => {
+      if (!question.question_text.trim()) {
         return;
       }
 
       // Check if we already have an ID for this text
-      const existingId = questionIdMapRef.current.get(text);
+      const existingId = questionIdMapRef.current.get(question.question_text);
       if (existingId) {
-        newQuestionIds.push(existingId);
         return;
       }
 
-      // Debounce creation for this text
+      // Debounce creation for this question text
       const promise = (async () => {
         const effectiveAgentId = questions_agent_id ?? agent_id;
         if (createQuestionsAction && effectiveAgentId && group_id) {
@@ -190,17 +308,22 @@ export function Questions({
               body: {
                 agent_id: effectiveAgentId,
                 group_id: group_id,
-                question_text: text,
+                question_text: question.question_text,
                 mcp: false,
               },
             });
             if (result.question_id) {
-              questionIdMapRef.current.set(text, result.question_id);
+              questionIdMapRef.current.set(
+                question.question_text,
+                result.question_id
+              );
               // Update parent with all IDs
-              const allIds = internalTexts
-                .map((t) => {
-                  if (!t.trim()) return null;
-                  return questionIdMapRef.current.get(t) || null;
+              const allIds = internalQuestions
+                .map((q) => {
+                  if (!q.question_text.trim()) return null;
+                  return (
+                    questionIdMapRef.current.get(q.question_text) || null
+                  );
                 })
                 .filter((id): id is string => id !== null);
               onChange(allIds);
@@ -208,7 +331,7 @@ export function Questions({
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error(
-              `Failed to create question resource for "${text}":`,
+              `Failed to create question resource for "${question.question_text}":`,
               error
             );
           }
@@ -223,18 +346,16 @@ export function Questions({
       debounceTimersRef.current.set(index, timer);
     });
 
-    lastSavedTextsRef.current = internalTexts;
+    lastSavedQuestionsRef.current = internalQuestions;
 
-    // Capture ref value at effect start for cleanup
     const timersAtStart = debounceTimersRef.current;
 
     return () => {
-      // Use captured ref value for cleanup
       timersAtStart.forEach((timer) => clearTimeout(timer));
       timersAtStart.clear();
     };
   }, [
-    internalTexts,
+    internalQuestions,
     createQuestionsAction,
     onChange,
     questions_agent_id,
@@ -242,8 +363,259 @@ export function Questions({
     group_id,
   ]);
 
-  const handleItemsChange = useCallback((items: string[]) => {
-    setInternalTexts(items.length > 0 ? items : [""]);
+  // Question handlers (matching ContentSection pattern)
+  const toggleQuestionExpanded = useCallback((index: number) => {
+    setExpandedQuestions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleDragStartQuestion = useCallback(
+    (e: React.DragEvent, index: number) => {
+      setDraggedQuestionIndex(index);
+      e.dataTransfer.effectAllowed = "move";
+    },
+    []
+  );
+
+  const handleDragOverQuestion = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDropQuestion = useCallback(
+    (e: React.DragEvent, targetIndex: number) => {
+      e.preventDefault();
+      if (draggedQuestionIndex === null) return;
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const removed = next[draggedQuestionIndex];
+        if (!removed) return next;
+        next.splice(draggedQuestionIndex, 1);
+        next.splice(targetIndex, 0, removed);
+        return next;
+      });
+      setDraggedQuestionIndex(null);
+    },
+    [draggedQuestionIndex]
+  );
+
+  const handleDragStartOption = useCallback(
+    (
+      e: React.DragEvent,
+      questionIndex: number,
+      optionIndex: number
+    ) => {
+      setDraggedOptionIndex({ questionIndex, optionIndex });
+      e.dataTransfer.effectAllowed = "move";
+    },
+    []
+  );
+
+  const handleDragOverOption = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDropOption = useCallback(
+    (
+      e: React.DragEvent,
+      questionIndex: number,
+      targetOptionIndex: number
+    ) => {
+      e.preventDefault();
+      if (draggedOptionIndex === null) return;
+      if (
+        draggedOptionIndex.questionIndex !== questionIndex ||
+        draggedOptionIndex.optionIndex === targetOptionIndex
+      ) {
+        setDraggedOptionIndex(null);
+        return;
+      }
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const question = next[draggedOptionIndex.questionIndex];
+        if (!question) return next;
+        const options = [...question.options];
+        const removed = options[draggedOptionIndex.optionIndex];
+        if (!removed) return next;
+        options.splice(draggedOptionIndex.optionIndex, 1);
+        options.splice(targetOptionIndex, 0, removed);
+        next[draggedOptionIndex.questionIndex] = {
+          ...question,
+          options,
+        };
+        return next;
+      });
+      setDraggedOptionIndex(null);
+    },
+    [draggedOptionIndex]
+  );
+
+  const handleQuestionTextChange = useCallback(
+    (index: number, text: string) => {
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const question = next[index];
+        if (!question) return next;
+        next[index] = {
+          ...question,
+          question_text: text,
+        };
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleQuestionTimeChange = useCallback(
+    (index: number, range: [number, number]) => {
+      const time = range[1];
+      const estimatedVideoLength = videoLength || 8;
+      if (isNaN(time) || time < 0 || time > estimatedVideoLength) {
+        return;
+      }
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const question = next[index];
+        if (!question) return next;
+        next[index] = {
+          ...question,
+          times: [time],
+        };
+        return next;
+      });
+    },
+    [videoLength]
+  );
+
+  const handleAddOption = useCallback((questionIndex: number) => {
+    setInternalQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      next[questionIndex] = {
+        ...question,
+        options: [
+          ...question.options,
+          {
+            id: "",
+            option_text: "",
+            type: "discrete",
+            is_correct: false,
+          },
+        ],
+      };
+      return next;
+    });
+  }, []);
+
+  const handleRemoveOption = useCallback(
+    (questionIndex: number, optionIndex: number) => {
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const question = next[questionIndex];
+        if (!question) return next;
+        next[questionIndex] = {
+          ...question,
+          options: question.options.filter((_, i) => i !== optionIndex),
+        };
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleOptionChange = useCallback(
+    (
+      questionIndex: number,
+      optionIndex: number,
+      option: {
+        id: string;
+        option_text: string;
+        type?: "discrete" | "freeform";
+        is_correct: boolean;
+      }
+    ) => {
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const question = next[questionIndex];
+        if (!question) return next;
+        const options = [...question.options];
+        const existingOption = options[optionIndex];
+        if (!existingOption) return next;
+        options[optionIndex] = option;
+        next[questionIndex] = {
+          ...question,
+          options,
+        };
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleToggleOptionCorrect = useCallback(
+    (questionIndex: number, optionIndex: number) => {
+      setInternalQuestions((prev) => {
+        const next = [...prev];
+        const question = next[questionIndex];
+        if (!question) return next;
+        const options = [...question.options];
+        const existingOption = options[optionIndex];
+        if (!existingOption) return next;
+        options[optionIndex] = {
+          ...existingOption,
+          is_correct: !existingOption.is_correct,
+        };
+        next[questionIndex] = {
+          ...question,
+          options,
+        };
+        return next;
+      });
+    },
+    []
+  );
+
+  const addQuestion = useCallback(() => {
+    if (internalQuestions.length >= maxItems) {
+      toast.error(`Maximum ${maxItems} questions allowed`);
+      return;
+    }
+    setInternalQuestions((prev) => [
+      ...prev,
+      {
+        id: "",
+        question_text: "",
+        allow_multiple: false,
+        options: [
+          {
+            id: "",
+            option_text: "",
+            type: "discrete",
+            is_correct: false,
+          },
+          {
+            id: "",
+            option_text: "",
+            type: "discrete",
+            is_correct: false,
+          },
+        ],
+        times: [],
+      },
+    ]);
+  }, [internalQuestions.length, maxItems]);
+
+  const removeQuestion = useCallback((index: number) => {
+    setInternalQuestions((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   // Check if any question resource is generated (must be before early return)
@@ -258,9 +630,11 @@ export function Questions({
 
   return (
     <div className="space-y-2">
+      {/* Label and Generate Button */}
       {label && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
+          <Label htmlFor={id} className="flex items-center gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
             {label}
             {(required || questions_required) && (
               <span className="text-destructive">*</span>
@@ -293,15 +667,246 @@ export function Questions({
           )}
         </div>
       )}
-      <ReorderableList
-        items={internalTexts}
-        onItemsChange={handleItemsChange}
-        suggestions={suggestionsList}
-        maxItems={maxItems}
-        addButtonLabel={addButtonLabel}
-        disabled={disabled}
-        itemPlaceholder={itemPlaceholder}
-      />
+
+      {/* Questions List (matching ContentSection pattern) */}
+      {internalQuestions.length === 0 && (
+        <div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={addQuestion}
+            disabled={disabled}
+            size="sm"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" /> {addButtonLabel}
+          </Button>
+        </div>
+      )}
+      {internalQuestions.length > 0 && (
+        <div className="space-y-2">
+          {internalQuestions.map((question, index) => (
+            <div
+              key={question.id || index}
+              className={cn(
+                "space-y-2",
+                draggedQuestionIndex === index && "opacity-50"
+              )}
+              onDragOver={handleDragOverQuestion}
+              onDrop={(e) => handleDropQuestion(e, index)}
+            >
+              <div className="flex items-center gap-2">
+                {/* Drag Handle */}
+                {!disabled && (
+                  <div
+                    draggable={!disabled}
+                    onDragStart={(e) => handleDragStartQuestion(e, index)}
+                    className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+
+                {/* Accordion Toggle */}
+                {question.options.length > 0 && (
+                  <Button
+                    type="button"
+                    variant={
+                      expandedQuestions.has(index) ? "default" : "outline"
+                    }
+                    size="icon"
+                    onClick={() => toggleQuestionExpanded(index)}
+                    className="h-8 w-8 shrink-0"
+                    disabled={disabled}
+                  >
+                    {expandedQuestions.has(index) ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronUp className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+
+                {/* Question Text Input */}
+                <div className="flex-1 min-w-0">
+                  <Input
+                    ref={(el) => {
+                      questionInputRefs.current[index] = el;
+                    }}
+                    value={question.question_text}
+                    onChange={(e) =>
+                      handleQuestionTextChange(index, e.target.value)
+                    }
+                    placeholder={`${itemPlaceholder} ${index + 1}`}
+                    className="flex-1 w-full"
+                    disabled={disabled}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                </div>
+
+                {/* Time Slider (when video length is available) */}
+                {videoLength && (
+                  <div className="w-48 shrink-0">
+                    <RangeSlider
+                      min={0}
+                      max={videoLength}
+                      value={[
+                        0,
+                        Math.max(
+                          0,
+                          Math.min(
+                            videoLength,
+                            question.times?.[0] ?? 0
+                          )
+                        ),
+                      ]}
+                      onValueChange={(range) =>
+                        handleQuestionTimeChange(index, range)
+                      }
+                      disabled={disabled}
+                      className="space-y-0"
+                    />
+                  </div>
+                )}
+
+                {/* Delete Button */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeQuestion(index)}
+                  className="h-8 w-8 shrink-0"
+                  disabled={disabled}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Options (shown when expanded) */}
+              {expandedQuestions.has(index) &&
+                question.options.length > 0 && (
+                  <div className="pl-10 space-y-2 border-l-2 border-muted">
+                    {question.options.map((option, optIndex) => (
+                      <div
+                        key={option.id || optIndex}
+                        className={cn(
+                          "flex items-center gap-2",
+                          draggedOptionIndex?.questionIndex === index &&
+                            draggedOptionIndex?.optionIndex === optIndex &&
+                            "opacity-50"
+                        )}
+                        onDragOver={handleDragOverOption}
+                        onDrop={(e) => handleDropOption(e, index, optIndex)}
+                      >
+                        {/* Option Drag Handle */}
+                        <div
+                          draggable={!disabled}
+                          onDragStart={(e) =>
+                            handleDragStartOption(e, index, optIndex)
+                          }
+                          className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
+                        >
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
+
+                        {/* Correct Checkbox */}
+                        {option.type !== "freeform" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant={
+                                  option.is_correct ? "default" : "outline"
+                                }
+                                size="icon"
+                                onClick={() => {
+                                  handleToggleOptionCorrect(index, optIndex);
+                                }}
+                                className="h-8 w-8 shrink-0"
+                                disabled={disabled}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {option.is_correct
+                                ? "Mark as incorrect"
+                                : "Mark as correct"}
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+
+                        {/* Option Text Input */}
+                        <Input
+                          value={option.option_text}
+                          onChange={(e) => {
+                            handleOptionChange(index, optIndex, {
+                              ...option,
+                              option_text: e.target.value,
+                            });
+                          }}
+                          placeholder="Option text"
+                          className="flex-1 min-w-0"
+                          style={{
+                            maxWidth:
+                              optionMaxWidths[index] !== undefined
+                                ? `${optionMaxWidths[index]}px`
+                                : undefined,
+                          }}
+                          disabled={disabled}
+                          onDragStart={(e) => e.preventDefault()}
+                        />
+
+                        {/* Delete Option Button */}
+                        {question.options.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              handleRemoveOption(index, optIndex);
+                            }}
+                            className="h-8 w-8 shrink-0"
+                            disabled={disabled}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {question.options.length < 5 && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          handleAddOption(index);
+                        }}
+                        disabled={disabled}
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Option
+                      </Button>
+                    )}
+                  </div>
+                )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {internalQuestions.length < maxItems && internalQuestions.length > 0 && (
+        <div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={addQuestion}
+            disabled={disabled}
+            size="sm"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" /> {addButtonLabel}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -81,24 +81,33 @@ export type VideoMappingItem = {
 
 /**
  * Type guard to check if data is ScenarioDetailOut (unified GetScenarioOut with scenario_exists = true)
+ * Properly narrows GetScenarioOut to ensure scenario_id exists
  */
 export function isScenarioDetailOut(data: unknown): data is GetScenarioOut {
-  return (
+  if (
     typeof data === "object" &&
     data !== null &&
     "scenario_exists" in data &&
-    (data as GetScenarioOut).scenario_exists === true
-  );
+    "scenario_id" in data
+  ) {
+    const typed = data as GetScenarioOut;
+    return typed.scenario_exists === true && typed.scenario_id !== null;
+  }
+  return false;
 }
 
 /**
  * Type guard to check if data is ScenarioNewOut (unified GetScenarioOut with scenario_exists = false)
+ * Properly narrows GetScenarioOut to ensure scenario_id is null
  */
 export function isScenarioNewOut(data: unknown): data is GetScenarioOut {
-  return (
+  if (
     typeof data === "object" &&
     data !== null &&
-    "scenario_exists" in data &&
-    (data as GetScenarioOut).scenario_exists === false
-  );
+    "scenario_exists" in data
+  ) {
+    const typed = data as GetScenarioOut;
+    return typed.scenario_exists === false;
+  }
+  return false;
 }

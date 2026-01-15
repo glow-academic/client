@@ -1,12 +1,13 @@
 /**
  * Images.tsx
  * Resource component for image selection
- * Uses GenericPicker to select existing image artifacts
+ * Redesigned to match ContentSection interface-first pattern with horizontal scrollable row and upload box
  * Manages image_ids array and reports to parent
  */
 
 "use client";
 
+import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,8 +19,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Check, Eye, Image, Loader2, Sparkles, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
@@ -28,6 +29,8 @@ export interface ImageItem {
   id: string;
   name: string;
   description?: string;
+  upload_id?: string;
+  updated_at?: string;
 }
 
 export interface ImagesProps {
@@ -47,6 +50,8 @@ export interface ImagesProps {
     name: string | null;
     description?: string | null;
     generated?: boolean | null;
+    upload_id?: string | null;
+    updated_at?: string | null;
   }>; // All available images from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update image_ids in form state
@@ -62,6 +67,11 @@ export interface ImagesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  multiSelect?: boolean; // Whether to allow multiple image selection
+  maxImages?: number; // Maximum number of images allowed
+  onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
+  imageInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
+  isUploadingImage?: boolean; // Whether image is currently uploading
 }
 
 export function Images({
@@ -84,6 +94,11 @@ export function Images({
   createImagesAction,
   onGenerate,
   isGenerating = false,
+  multiSelect = false,
+  maxImages = 1,
+  onImageUpload,
+  imageInputRef,
+  isUploadingImage = false,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
@@ -93,23 +108,90 @@ export function Images({
     [image_suggestions]
   );
 
+  // Internal state for selected images (for display)
+  const [selectedImages, setSelectedImages] = useState<
+    Array<{ id: string; name: string; upload_id: string }>
+  >(() => {
+    // Initialize from image_resources or images array
+    if (image_resources && image_resources.length > 0) {
+      return image_resources
+        .filter((img) => img.image_id && img.name)
+        .map((img) => ({
+          id: img.image_id!,
+          name: img.name!,
+          upload_id: img.image_id!,
+        }));
+    }
+    if (ids.length > 0 && allImages.length > 0) {
+      return ids
+        .map((id) => {
+          const img = allImages.find((i) => i.image_id === id);
+          if (img && img.image_id && img.name) {
+            return {
+              id: img.image_id,
+              name: img.name,
+              upload_id: img.upload_id || img.image_id,
+            };
+          }
+          return null;
+        })
+        .filter(
+          (img): img is { id: string; name: string; upload_id: string } =>
+            img !== null
+        );
+    }
+    return [];
+  });
+
+  // Sync selectedImages when ids change
+  useEffect(() => {
+    if (ids.length > 0 && allImages.length > 0) {
+      const newSelectedImages = ids
+        .map((id) => {
+          const img = allImages.find((i) => i.image_id === id);
+          if (img && img.image_id && img.name) {
+            return {
+              id: img.image_id,
+              name: img.name,
+              upload_id: img.upload_id || img.image_id,
+            };
+          }
+          return null;
+        })
+        .filter(
+          (img): img is { id: string; name: string; upload_id: string } =>
+            img !== null
+        );
+      setSelectedImages(newSelectedImages);
+    } else if (ids.length === 0) {
+      setSelectedImages([]);
+    }
+  }, [ids, allImages]);
+
   // Track which image IDs have already had resources created
   const createdImageIdsRef = useRef<Set<string>>(new Set());
+  const [previewImageId, setPreviewImageId] = useState<string | null>(null);
 
   // Initialize createdImageIdsRef with current IDs
   useEffect(() => {
     ids.forEach((id) => createdImageIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert images array to ImageItem format for GenericPicker
-  const imageItems = useMemo(() => {
-    return allImages
-      .filter((i) => i.image_id && i.name) // Filter out nulls
-      .map((i) => ({
-        id: i.image_id!,
-        name: i.name!,
-        ...(i.description ? { description: i.description } : {}), // Only include if not null/undefined
-      }));
+  // Build image mapping for GenericPicker
+  const imageMapping = useMemo(() => {
+    const mapping: Record<string, ImageItem> = {};
+    allImages.forEach((img) => {
+      if (img.image_id && img.name) {
+        mapping[img.image_id] = {
+          id: img.image_id,
+          name: img.name,
+          ...(img.description ? { description: img.description } : {}),
+          ...(img.upload_id ? { upload_id: img.upload_id } : {}),
+          ...(img.updated_at ? { updated_at: img.updated_at } : {}),
+        };
+      }
+    });
+    return mapping;
   }, [allImages]);
 
   // Check if an image is suggested
@@ -118,7 +200,7 @@ export function Images({
     [suggestionsList]
   );
 
-  const handleSelect = useCallback(
+  const handleImageSelect = useCallback(
     async (selectedIds: string[]) => {
       // Find newly selected IDs
       const newlySelected = selectedIds.filter(
@@ -161,6 +243,14 @@ export function Images({
     [ids, onChange, createImagesAction, images_agent_id, agent_id, group_id]
   );
 
+  const handleImageRemove = useCallback(
+    (imageId: string) => {
+      const newIds = ids.filter((id) => id !== imageId);
+      onChange(newIds);
+    },
+    [ids, onChange]
+  );
+
   // Check if any image resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
     return image_resources?.some((i) => i.generated) ?? false;
@@ -171,19 +261,20 @@ export function Images({
     return null;
   }
 
+  // Create internal file input ref if not provided
+  const internalImageInputRef = useRef<HTMLInputElement>(null);
+  const effectiveImageInputRef = imageInputRef || internalImageInputRef;
+
   return (
     <div className="space-y-2">
+      {/* Label and Generate Button */}
       {label && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
+          <Label htmlFor={id} className="flex items-center gap-1.5">
+            <Image className="h-3.5 w-3.5 text-muted-foreground" />
             {label}
             {(required || images_required) && (
               <span className="text-destructive">*</span>
-            )}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
             )}
           </Label>
           {onGenerate && (images_agent_id || agent_id) && (
@@ -213,47 +304,176 @@ export function Images({
           )}
         </div>
       )}
-      <GenericPicker<ImageItem>
-        items={imageItems}
-        itemIds={allImages
-          .map((i) => i.image_id)
-          .filter((id): id is string => id !== null)} // All image IDs from array, filter nulls
-        selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
+
+      {/* Image Picker and Preview Section (matching ContentSection pattern) */}
+      <div className="space-y-2">
+        {/* Image Picker Dropdown */}
+        {Object.keys(imageMapping).length > 0 && (
+          <div className="flex items-center justify-between gap-2">
+            <GenericPicker
+              items={imageMapping}
+              itemIds={Object.keys(imageMapping)}
+              selectedIds={ids}
+              onSelect={handleImageSelect}
+              getId={(item) => {
+                const imgItem = item as ImageItem;
+                return imgItem.id;
+              }}
+              getLabel={(item) => {
+                const imgItem = item as ImageItem;
+                const date = imgItem.updated_at
+                  ? new Date(imgItem.updated_at)
+                  : new Date();
+                return `${imgItem.name} - ${date.toLocaleDateString()}`;
+              }}
+              getSearchText={(item) => {
+                const imgItem = item as ImageItem;
+                const date = imgItem.updated_at
+                  ? new Date(imgItem.updated_at)
+                  : new Date();
+                return `${imgItem.name} ${date.toLocaleDateString()}`;
+              }}
+              renderButton={(selectedItems) => {
+                if (selectedItems.length === 0) {
+                  return placeholder;
+                }
+                if (multiSelect && selectedItems.length > 1) {
+                  return `${selectedItems.length} images selected`;
+                }
+                const selectedImage = selectedItems[0] as ImageItem;
+                return selectedImage?.name || placeholder;
+              }}
+              renderItem={(item, isSelected) => {
+                const imgItem = item as ImageItem;
+                const date = imgItem.updated_at
+                  ? new Date(imgItem.updated_at)
+                  : new Date();
+                return (
+                  <div className="flex flex-col items-start py-3 w-full">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            isSelected ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="font-medium">{imgItem.name}</span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {date.toLocaleDateString()}{" "}
+                      {date.toLocaleTimeString()}
+                    </span>
                   </div>
-                )}
-              </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
+                );
+              }}
+              disabled={disabled}
+              multiSelect={multiSelect}
+              hideSelectedChips={true}
+              buttonClassName="h-8 justify-between"
+              compact={true}
+              groupHeading="Images"
+              placeholder={placeholder}
+              clearActionLabel="New Image"
             />
           </div>
         )}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
-      />
+
+        {/* Image Grid - Horizontal Scrollable Row (matching ContentSection pattern) */}
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 pb-2">
+            {/* Display selected images */}
+            {selectedImages.map((img) => (
+              <div
+                key={img.id}
+                className="relative aspect-square w-32 min-w-[8rem] border rounded-lg overflow-hidden bg-muted/20 shrink-0"
+              >
+                {/* Preview button - top left */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewImageId(img.id);
+                  }}
+                  className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                  disabled={disabled}
+                >
+                  <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                </button>
+                {/* Delete button - top right */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleImageRemove(img.id);
+                  }}
+                  className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                  disabled={disabled}
+                >
+                  <X className="h-3.5 w-3.5 text-primary-foreground" />
+                </button>
+                <ImageViewer
+                  imageId={img.id}
+                  name={img.name}
+                  bare={true}
+                />
+                {/* Image name at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
+                  <span className="truncate block">{img.name}</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Add Image Box - Show until max (matching ContentSection pattern) */}
+            {selectedImages.length < maxImages && (
+              <div
+                onClick={() => {
+                  if (!disabled && !isUploadingImage && onImageUpload) {
+                    effectiveImageInputRef.current?.click();
+                  }
+                }}
+                className="aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0"
+              >
+                <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-xs text-muted-foreground text-center px-2">
+                  Add image
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Hidden file input */}
+        {onImageUpload && (
+          <input
+            ref={effectiveImageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={onImageUpload}
+            disabled={isUploadingImage || disabled}
+            className="hidden"
+          />
+        )}
+      </div>
+
+      {/* Image Preview Dialog */}
+      {previewImageId && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={() => setPreviewImageId(null)}
+        >
+          <div className="max-w-4xl max-h-[90vh] p-4">
+            <ImageViewer
+              imageId={previewImageId}
+              name={
+                selectedImages.find((img) => img.id === previewImageId)?.name ||
+                "Image"
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

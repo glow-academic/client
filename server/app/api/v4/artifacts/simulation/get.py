@@ -40,20 +40,30 @@ async def get_simulation(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSimulationApiResponse:
-    """Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided)."""
+    """Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided).
+    
+    Validation Logic:
+    - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+    - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+    - Frontend components check agent_id before showing generate button
+    """
     tags = ["simulations"]  # From router tags
+
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
     # Use mode='json' to serialize UUIDs to strings for JSON compatibility
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetSimulationApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetSimulationApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -74,7 +84,10 @@ async def get_simulation(
         draft_id = request.draft_id
         simulation_id = request.simulation_id  # Can be NULL for new mode
 
-        # Convert API request to SQL params (add profile_id from header)
+        # Get mcp flag from header (set by router-level dependency)
+        mcp = getattr(http_request.state, "mcp", False) or False
+
+        # Convert API request to SQL params (add profile_id and mcp from header)
         params = GetSimulationSqlParams(
             profile_id=profile_id,
             simulation_id=simulation_id,
@@ -82,6 +95,7 @@ async def get_simulation(
             scenario_search=scenario_search,
             scenario_show_selected=scenario_show_selected,
             filter_scenario_ids=filter_scenario_ids,
+            mcp=mcp,
         )
         sql_params = params.to_tuple()
 

@@ -512,6 +512,46 @@ cohort_simulation_ids AS (
     JOIN cohort_simulations cs ON cs.cohort_id = x.cohort_id AND cs.active = true
     WHERE x.cohort_id IS NOT NULL
 ),
+-- Simulation suggestions: linked to cohorts with active=true OR same group with generated=true
+simulation_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(cs.simulation_id ORDER BY cs.created_at DESC)
+             FROM (
+                 SELECT DISTINCT cs.simulation_id, MAX(cs.created_at) as created_at
+                 FROM cohort_simulations cs
+                 JOIN simulation_artifact s ON s.id = cs.simulation_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE cs.simulation_id IS NOT NULL
+                   AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
+                   AND (
+                       -- Option 1: Linked to cohorts with active=true
+                       cs.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           cs.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM simulations_resource sr
+                               JOIN calls c ON c.id = sr.call_id
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE sr.simulation_id = cs.simulation_id
+                                 AND sr.generated = true
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY cs.simulation_id
+                 ORDER BY MAX(cs.created_at) DESC
+                 LIMIT 20
+             ) cs),
+            ARRAY[]::uuid[]
+        ) as simulation_suggestions
+    FROM params
+    LIMIT 1
+),
 -- UI flags
 ui_flags AS (
     SELECT 
@@ -1304,7 +1344,7 @@ SELECT
     END as show_simulations,
     (SELECT agent_id FROM simulations_agent_data) as simulations_agent_id,
     false as simulations_required,
-    ARRAY[]::uuid[] as simulation_suggestions,  -- TODO: Add simulation suggestions
+    COALESCE((SELECT simulation_suggestions FROM simulation_suggestions_data), ARRAY[]::uuid[]) as simulation_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
             (smd.simulation_id, smd.name, smd.description, smd.time_limit, smd.generated)::types.q_get_cohort_v4_simulation
@@ -1327,6 +1367,7 @@ CROSS JOIN flag_resource_data frd
 CROSS JOIN name_suggestions_data nsd
 CROSS JOIN description_suggestions_data dsd
 CROSS JOIN names_suggestions_objects nso
+CROSS JOIN simulation_suggestions_data ssd
 CROSS JOIN descriptions_suggestions_objects dso
 CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN missing_tools_check mtc

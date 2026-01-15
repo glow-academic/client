@@ -258,7 +258,8 @@ CREATE OR REPLACE FUNCTION api_get_simulation_v4(
     draft_id uuid DEFAULT NULL,
     scenario_search text DEFAULT NULL,
     scenario_show_selected boolean DEFAULT NULL,
-    filter_scenario_ids uuid[] DEFAULT NULL
+    filter_scenario_ids uuid[] DEFAULT NULL,
+    mcp boolean DEFAULT false
 )
 RETURNS TABLE (
     -- Required fields (first 5) - following RETURN_STRUCTURE_GUIDELINES.md
@@ -373,7 +374,8 @@ WITH params AS (
         draft_id AS draft_id,
         COALESCE(NULLIF(scenario_search, ''), NULL) AS scenario_search,
         COALESCE(scenario_show_selected, false) AS scenario_show_selected,
-        COALESCE(filter_scenario_ids, ARRAY[]::uuid[]) AS filter_scenario_ids
+        COALESCE(filter_scenario_ids, ARRAY[]::uuid[]) AS filter_scenario_ids,
+        mcp AS mcp
 ),
 -- Conditional: Only check simulation existence if simulation_id provided
 simulation_exists_check AS (
@@ -417,13 +419,19 @@ resolve_profile_id AS (
 ),
 user_context AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
-         WHERE pr_j.profile_id = p.id 
-         LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
+        COALESCE(
+            (SELECT r.role FROM profile_roles pr_j 
+             JOIN roles_resource r ON pr_j.role_id = r.id 
+             WHERE pr_j.profile_id = p.id 
+             LIMIT 1),
+            'guest'::profile_role
+        ) as role,
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            ''
+        ) as actor_name
+    FROM params x
+    LEFT JOIN profile_artifact p ON p.id = x.profile_id
 ),
 -- Conditional: Get simulation base data only if simulation_id provided (detail mode)
 simulation_departments_data AS (
@@ -439,7 +447,7 @@ simulation_department_access_check AS (
     SELECT 
         x.simulation_id,
         CASE 
-            WHEN uc.role = 'superadmin'::profile_role THEN true
+            WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN true
             WHEN EXISTS (
                 SELECT 1 FROM simulation_departments sd 
                 WHERE sd.simulation_id = x.simulation_id 
@@ -454,7 +462,7 @@ simulation_department_access_check AS (
             ELSE false
         END as has_access
     FROM params x
-    CROSS JOIN user_context uc
+    LEFT JOIN user_context uc ON true
     WHERE x.simulation_id IS NOT NULL
 ),
 simulation_base AS (
@@ -1060,7 +1068,7 @@ department_mapping_data AS (
         COALESCE(dri.rubric_ids, ARRAY[]::uuid[]) as rubric_ids,
         COALESCE(dci.cohort_ids, ARRAY[]::uuid[]) as cohort_ids
     FROM params x
-    CROSS JOIN user_context uc
+    LEFT JOIN user_context uc ON true
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
         EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -1523,6 +1531,15 @@ name_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
         )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -1583,6 +1600,15 @@ description_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
+        )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
         )
     ),
     agent_department_preference AS (
@@ -1645,6 +1671,15 @@ departments_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'departments'::resources
         )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -1705,6 +1740,15 @@ flag_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resources
+        )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
         )
     ),
     agent_department_preference AS (
@@ -1767,11 +1811,14 @@ scenarios_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'scenarios'::resources
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_flags af_mcp
-            WHERE af_mcp.agent_id = a.id
-              AND af_mcp.type = 'mcp'::type_agent_flags
-              AND af_mcp.value = true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
         )
     ),
     agent_department_preference AS (
@@ -1895,6 +1942,15 @@ general_agent_data AS (
             atr.updated_at
         FROM agent_tool_resources atr
         WHERE ARRAY['names', 'descriptions', 'departments', 'flags']::text[] <@ atr.tool_resources
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = atr.agent_id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -1975,9 +2031,8 @@ missing_tools_check AS (
     SELECT 
         ARRAY_REMOVE(ARRAY[
             CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
-            CASE WHEN NOT tec.descriptions_has_tools THEN 'description' ELSE NULL END,
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
-            CASE WHEN NOT tec.flags_has_tools THEN 'flag' ELSE NULL END
+            CASE WHEN NOT tec.scenarios_has_tools AND EXISTS (SELECT 1 FROM scenarios_resource s WHERE s.active = true LIMIT 1) THEN 'scenarios' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
@@ -1990,15 +2045,15 @@ permissions_data_with_tools AS (
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
                 CASE 
-                    WHEN uc.role = 'superadmin'::profile_role THEN true
+                    WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN true
                     WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
                     ELSE false
                 END
             -- Detail mode: check department access and role
             ELSE
                 CASE 
-                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND uc.role != 'superadmin' THEN false
-                    WHEN uc.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_role) != 'superadmin' THEN false
+                    WHEN COALESCE(uc.role, 'guest'::profile_role) IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
                     ELSE false
                 END
         END as base_can_edit,
@@ -2006,19 +2061,20 @@ permissions_data_with_tools AS (
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
                 CASE 
-                    WHEN uc.role = 'superadmin'::profile_role THEN NULL::text
+                    WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN NULL::text
                     WHEN (SELECT COUNT(*) FROM department_mapping_data) = 0 THEN 'No accessible departments found for user'::text
                     ELSE NULL::text
                 END
             -- Detail mode: check department access and role
             ELSE
                 CASE 
-                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND uc.role != 'superadmin' THEN 'No departments assigned to this simulation'::text
-                    WHEN uc.role NOT IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 'Insufficient permissions to edit simulation'::text
+                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_role) != 'superadmin' THEN 'No departments assigned to this simulation'::text
+                    WHEN COALESCE(uc.role, 'guest'::profile_role) NOT IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 'Insufficient permissions to edit simulation'::text
                     ELSE NULL::text
                 END
         END as base_disabled_reason
-    FROM user_context uc
+    FROM params x
+    LEFT JOIN user_context uc ON true
 ),
 permissions_final AS (
     SELECT 
@@ -2039,7 +2095,7 @@ permissions_final AS (
 )
 SELECT 
     -- Required fields (first 5) - following RETURN_STRUCTURE_GUIDELINES.md
-    uc.actor_name::text as actor_name,
+    COALESCE(uc.actor_name, '')::text as actor_name,
     (SELECT simulation_exists FROM simulation_exists_check) as simulation_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
@@ -2076,7 +2132,7 @@ SELECT
         FROM draft_payload_data),
         sb.department_ids,
         CASE 
-            WHEN uc.role = 'superadmin'::profile_role THEN NULL::uuid[]
+            WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN NULL::uuid[]
             ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
         END,
         ARRAY[]::uuid[]
@@ -2101,7 +2157,7 @@ SELECT
                 FROM draft_payload_data),
                 sb.department_ids,
                 CASE 
-                    WHEN uc.role = 'superadmin'::profile_role THEN NULL::uuid[]
+                    WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN NULL::uuid[]
                     ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
                 END,
                 ARRAY[]::uuid[]
@@ -2287,15 +2343,15 @@ SELECT
         NULL::uuid
     ) as member_agent_id,
     CASE 
-        WHEN uc.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+        WHEN COALESCE(uc.role, 'guest'::profile_role) IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_duplicate,
     CASE 
         WHEN (SELECT simulation_id FROM params) IS NULL THEN false
-        WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND uc.role != 'superadmin' THEN false
+        WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_role) != 'superadmin' THEN false
         WHEN COALESCE(sb.practice_simulation, false) = true THEN false
         WHEN COALESCE(cu.total_cohort_links, 0) > 0 THEN false
-        WHEN uc.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+        WHEN COALESCE(uc.role, 'guest'::profile_role) IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
         ELSE false
     END as can_delete,
     CASE 
@@ -2328,8 +2384,9 @@ SELECT
         (SELECT payload->'scenario_settings' FROM draft_payload_data),
         '{}'::jsonb
     ) as scenario_settings
-FROM user_context uc
-CROSS JOIN permissions_final perm_final
+FROM params p
+LEFT JOIN user_context uc ON true
+LEFT JOIN permissions_final perm_final ON true
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN simulation_exists_check sec

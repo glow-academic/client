@@ -2679,17 +2679,30 @@ SELECT
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_description_resource[]) as descriptions,
-    -- Single-select resources: problem_statement
-    (SELECT problem_statement_id FROM problem_statement_resource_data) as problem_statement_id,
-    psrd.problem_statement_resource,
+    -- Single-select resources: problem_statement (filtered by flag)
+    CASE 
+        WHEN sc.problem_statement_enabled THEN (SELECT problem_statement_id FROM problem_statement_resource_data)
+        ELSE NULL::uuid
+    END as problem_statement_id,
+    CASE 
+        WHEN sc.problem_statement_enabled THEN psrd.problem_statement_resource
+        ELSE NULL::types.q_get_scenario_v4_problem_statement_resource
+    END as problem_statement_resource,
     CASE 
         WHEN NOT tec.problem_statements_has_tools THEN false
-        ELSE uf.show_problem_statement
+        WHEN sc.problem_statement_enabled THEN uf.show_problem_statement
+        ELSE false
     END as show_problem_statement,
     (SELECT agent_id FROM problem_statement_agent_data) as problem_statement_agent_id,
     false as problem_statement_required,
-    COALESCE((SELECT problem_statement_suggestions FROM problem_statement_suggestions_data), ARRAY[]::uuid[]) as problem_statement_suggestions,
-    COALESCE((SELECT problem_statements FROM problem_statements_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[]) as problem_statements,
+    CASE 
+        WHEN sc.problem_statement_enabled THEN COALESCE((SELECT problem_statement_suggestions FROM problem_statement_suggestions_data), ARRAY[]::uuid[])
+        ELSE ARRAY[]::uuid[]
+    END as problem_statement_suggestions,
+    CASE 
+        WHEN sc.problem_statement_enabled THEN COALESCE((SELECT problem_statements FROM problem_statements_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[])
+        ELSE ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[]
+    END as problem_statements,
     -- Multi-select resources: departments
     COALESCE(
         (SELECT 
@@ -2772,62 +2785,182 @@ SELECT
     END as fields_required,
     ARRAY[]::uuid[] as field_suggestions,
     '{}'::types.q_get_scenario_v4_field[] as fields,
-    -- Multi-select resources: objectives (placeholder - will be populated)
-    ARRAY[]::uuid[] as objective_ids,
-    '{}'::types.q_get_scenario_v4_objective_resource[] as objective_resources,
+    -- Multi-select resources: objectives (populated from CTEs, filtered by flag)
+    CASE 
+        WHEN sc.objectives_enabled THEN COALESCE((
+            SELECT ARRAY_AGG(so.objective_id ORDER BY so.idx, so.objective_id)
+            FROM scenario_objectives so
+            WHERE so.scenario_id = (SELECT scenario_id FROM params LIMIT 1)
+        ), ARRAY[]::uuid[])
+        ELSE ARRAY[]::uuid[]
+    END as objective_ids,
+    CASE 
+        WHEN sc.objectives_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((so.objective_id, o.objective, false)::types.q_get_scenario_v4_objective_resource ORDER BY so.idx, so.objective_id)
+            FROM scenario_objectives so
+            JOIN objectives_resource o ON o.id = so.objective_id
+            WHERE so.scenario_id = (SELECT scenario_id FROM params LIMIT 1)
+        ), '{}'::types.q_get_scenario_v4_objective_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
+    END as objective_resources,
     CASE 
         WHEN NOT tec.objectives_has_tools AND uf.show_objectives THEN false
-        ELSE uf.show_objectives
+        WHEN sc.objectives_enabled THEN uf.show_objectives
+        ELSE false
     END as show_objectives,
     (SELECT agent_id FROM objectives_agent_data) as objectives_agent_id,
     CASE 
-        WHEN uf.show_objectives THEN true
+        WHEN uf.show_objectives AND sc.objectives_enabled THEN true
         ELSE false
     END as objectives_required,
     ARRAY[]::uuid[] as objective_suggestions,
-    '{}'::types.q_get_scenario_v4_objective_resource[] as objectives,
-    -- Multi-select resources: images (placeholder - will be populated)
-    ARRAY[]::uuid[] as image_ids,
-    '{}'::types.q_get_scenario_v4_image_resource[] as image_resources,
+    CASE 
+        WHEN sc.objectives_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((o.objective_id, o.name, false)::types.q_get_scenario_v4_objective_resource)
+            FROM (
+                SELECT 
+                    o2.id as objective_id,
+                    o2.objective as name
+                FROM objectives_resource o2
+                LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o2.id AND od_dept.active = true
+                LEFT JOIN scenario_objectives so2 ON so2.objective_id = o2.id AND so2.scenario_id = (SELECT scenario_id FROM params)
+                WHERE (
+                    od_dept.department_id IN (SELECT id FROM user_departments_rows)
+                    OR NOT EXISTS (SELECT 1 FROM objective_departments od3 WHERE od3.objective_id = o2.id AND od3.active = true)
+                )
+                ORDER BY CASE WHEN so2.scenario_id IS NOT NULL THEN 0 ELSE 1 END, COALESCE(so2.idx, 999999), o2.created_at DESC
+                LIMIT 100
+            ) o
+        ), '{}'::types.q_get_scenario_v4_objective_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
+    END as objectives,
+    -- Multi-select resources: images (populated from CTEs, filtered by flag)
+    CASE 
+        WHEN sc.images_enabled THEN COALESCE((
+            SELECT ARRAY_AGG(si.image_id ORDER BY si.created_at)
+            FROM scenario_images si
+            WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
+        ), ARRAY[]::uuid[])
+        ELSE ARRAY[]::uuid[]
+    END as image_ids,
+    CASE 
+        WHEN sc.images_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((si.image_id, i.name, u.file_path, u.mime_type, COALESCE(iu.upload_id, si.image_id), false)::types.q_get_scenario_v4_image_resource ORDER BY si.created_at)
+            FROM scenario_images si
+            JOIN images_resource i ON i.id = si.image_id
+            LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+            LEFT JOIN uploads u ON u.id = iu.upload_id
+            WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
+        ), '{}'::types.q_get_scenario_v4_image_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_image_resource[]
+    END as image_resources,
     CASE 
         WHEN NOT tec.images_has_tools AND uf.show_images THEN false
-        ELSE uf.show_images
+        WHEN sc.images_enabled THEN uf.show_images
+        ELSE false
     END as show_images,
     (SELECT agent_id FROM images_agent_data) as images_agent_id,
     CASE 
-        WHEN uf.show_images THEN true
+        WHEN uf.show_images AND sc.images_enabled THEN true
         ELSE false
     END as images_required,
     ARRAY[]::uuid[] as image_suggestions,
-    '{}'::types.q_get_scenario_v4_image_resource[] as images,
-    -- Multi-select resources: videos (placeholder - will be populated)
-    ARRAY[]::uuid[] as video_ids,
-    '{}'::types.q_get_scenario_v4_video_resource[] as video_resources,
+    CASE 
+        WHEN sc.images_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((i.upload_id, i.name, i.file_path, i.mime_type, i.upload_id, false)::types.q_get_scenario_v4_image_resource)
+            FROM (
+                SELECT upload_id, name, file_path, mime_type
+                FROM scenario_images_array
+                ORDER BY sort_order, created_at DESC
+                LIMIT 100
+            ) i
+        ), '{}'::types.q_get_scenario_v4_image_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_image_resource[]
+    END as images,
+    -- Multi-select resources: videos (populated from CTEs, filtered by flag)
+    CASE 
+        WHEN sc.video_enabled THEN COALESCE((
+            SELECT ARRAY_AGG(sv.video_id ORDER BY sv.created_at)
+            FROM scenario_videos sv
+            WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
+        ), ARRAY[]::uuid[])
+        ELSE ARRAY[]::uuid[]
+    END as video_ids,
+    CASE 
+        WHEN sc.video_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((sv.video_id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(vu.upload_id, sv.video_id), false)::types.q_get_scenario_v4_video_resource ORDER BY sv.created_at)
+            FROM scenario_videos sv
+            JOIN videos_resource v ON v.id = sv.video_id
+            LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
+            LEFT JOIN uploads u ON u.id = vu.upload_id
+            WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
+        ), '{}'::types.q_get_scenario_v4_video_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_video_resource[]
+    END as video_resources,
     CASE 
         WHEN NOT tec.videos_has_tools AND uf.show_videos THEN false
-        ELSE uf.show_videos
+        WHEN sc.video_enabled THEN uf.show_videos
+        ELSE false
     END as show_videos,
     (SELECT agent_id FROM videos_agent_data) as videos_agent_id,
     CASE 
-        WHEN uf.show_videos THEN true
+        WHEN uf.show_videos AND sc.video_enabled THEN true
         ELSE false
     END as videos_required,
     ARRAY[]::uuid[] as video_suggestions,
-    '{}'::types.q_get_scenario_v4_video_resource[] as videos,
-    -- Multi-select resources: questions (placeholder - will be populated)
-    ARRAY[]::uuid[] as question_ids,
-    '{}'::types.q_get_scenario_v4_question_resource[] as question_resources,
+    CASE 
+        WHEN sc.video_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((v.id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(v.file_path, ''), COALESCE(v.mime_type, ''), COALESCE(v.upload_id, v.id), false)::types.q_get_scenario_v4_video_resource)
+            FROM (
+                SELECT id, name, length_seconds, completed, file_path, mime_type, upload_id
+                FROM scenario_videos_array
+                ORDER BY sort_order, created_at DESC
+                LIMIT 100
+            ) v
+        ), '{}'::types.q_get_scenario_v4_video_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_video_resource[]
+    END as videos,
+    -- Multi-select resources: questions (populated from CTEs, filtered by flag)
+    CASE 
+        WHEN sc.questions_enabled THEN COALESCE((
+            SELECT ARRAY_AGG(sq.question_id ORDER BY sq.created_at)
+            FROM scenario_questions sq
+            WHERE sq.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sq.active = true
+        ), ARRAY[]::uuid[])
+        ELSE ARRAY[]::uuid[]
+    END as question_ids,
+    CASE 
+        WHEN sc.questions_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((sq.question_id, q.question_text, COALESCE(q.allow_multiple, false), false)::types.q_get_scenario_v4_question_resource ORDER BY sq.created_at)
+            FROM scenario_questions sq
+            JOIN questions_resource q ON q.id = sq.question_id
+            WHERE sq.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sq.active = true
+        ), '{}'::types.q_get_scenario_v4_question_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_question_resource[]
+    END as question_resources,
     CASE 
         WHEN NOT tec.questions_has_tools AND uf.show_questions THEN false
-        ELSE uf.show_questions
+        WHEN sc.questions_enabled THEN uf.show_questions
+        ELSE false
     END as show_questions,
     (SELECT agent_id FROM questions_agent_data) as questions_agent_id,
     CASE 
-        WHEN uf.show_questions THEN true
+        WHEN uf.show_questions AND sc.questions_enabled THEN true
         ELSE false
     END as questions_required,
     ARRAY[]::uuid[] as question_suggestions,
-    '{}'::types.q_get_scenario_v4_question_resource[] as questions,
+    CASE 
+        WHEN sc.questions_enabled THEN COALESCE((
+            SELECT ARRAY_AGG((q.id, q.question_text, q.allow_multiple, false)::types.q_get_scenario_v4_question_resource)
+            FROM (
+                SELECT id, question_text, COALESCE(allow_multiple, false) as allow_multiple
+                FROM scenario_questions_array
+                ORDER BY sort_order, created_at DESC
+                LIMIT 100
+            ) q
+        ), '{}'::types.q_get_scenario_v4_question_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_question_resource[]
+    END as questions,
     -- Multi-select resources: templates (placeholder - will be populated)
     ARRAY[]::uuid[] as template_ids,
     '{}'::types.q_get_scenario_v4_template_resource[] as template_resources,
