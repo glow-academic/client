@@ -101,8 +101,8 @@ async def get_resource_schema_fields(
 ) -> list[dict[str, Any]]:
     """Discover schema fields for a resource type.
     
-    Queries resource_schemas → schemas → schema_fields to get the output schema
-    fields for a resource. These fields define what data the resource expects.
+    Queries resource_outputs → outputs to get the output schema fields for a resource.
+    These fields define what output fields the resource has.
     
     Args:
         conn: Database connection
@@ -112,9 +112,9 @@ async def get_resource_schema_fields(
         List of schema field metadata dictionaries with keys:
         - name: Field name
         - field_type: Field type (string, number, boolean)
-        - required: Whether field is required
-        - position: Field position in schema
-        - template: Jinja template string (if any)
+        - required: Always False (outputs don't have required field)
+        - position: Always 0 (outputs don't have position field)
+        - template: Always empty string (templates are handled by args_outputs)
     """
     sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"
     

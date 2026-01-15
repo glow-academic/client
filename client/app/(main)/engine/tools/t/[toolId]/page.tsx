@@ -45,6 +45,16 @@ type CreateDraftTemplateValuesOut = OutputOf<
   "/api/v4/resources/template_values",
   "post"
 >;
+type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
+type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
+type CreateDraftArgsOutputsIn = InputOf<
+  "/api/v4/resources/args_outputs",
+  "post"
+>;
+type CreateDraftArgsOutputsOut = OutputOf<
+  "/api/v4/resources/args_outputs",
+  "post"
+>;
 type CreateSchemaFieldIn = InputOf<"/api/v4/resources/schema_fields", "post">;
 type CreateSchemaFieldOut = OutputOf<"/api/v4/resources/schema_fields", "post">;
 type CreateTemplateIn = InputOf<"/api/v4/resources/templates", "post">;
@@ -149,6 +159,22 @@ async function createDraftTemplateValues(
   return api.post("/resources/template_values", input);
 }
 
+async function createDraftArgs(
+  input: CreateDraftArgsIn
+): Promise<CreateDraftArgsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/args", input);
+}
+
+async function createDraftArgsOutputs(
+  input: CreateDraftArgsOutputsIn
+): Promise<CreateDraftArgsOutputsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/args_outputs", input);
+}
+
 async function createSchemaField(
   input: CreateSchemaFieldIn
 ): Promise<CreateSchemaFieldOut> {
@@ -233,6 +259,8 @@ export default async function ToolDetailPage({
           patchToolDraftAction={patchToolDraft}
           createSchemasAction={createDraftSchemas}
           createTemplatesAction={createDraftTemplates}
+          createArgsAction={createDraftArgs}
+          createArgsOutputsAction={createDraftArgsOutputs}
           createSchemaFieldItemsAction={createDraftSchemaFieldItems}
           createTemplateArrayItemsAction={createDraftTemplateArrayItems}
           createTemplateValuesAction={createDraftTemplateValues}

@@ -21756,6 +21756,95 @@ class AnalysesApiResponse(BaseModel):
 
 
 
+# Generated from: args
+
+class ArgsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    name: str
+    description: str | None = None
+    field_type: str | None = None
+    required: bool | None = False
+    default_value: str | None = None
+    position_value: int | None = 0
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.name,
+            self.description,
+            self.field_type,
+            self.required,
+            self.default_value,
+            self.position_value,
+            self.mcp,
+        )
+
+class ArgsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ArgsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    name: str
+    description: str | None = None
+    field_type: str | None = None
+    required: bool | None = False
+    default_value: str | None = None
+    position_value: int | None = 0
+    mcp: bool | None = False
+
+class ArgsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
+# Generated from: args_outputs
+
+class ArgsOutputsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    args_id: UUID
+    name: str
+    template: str | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.args_id,
+            self.name,
+            self.template,
+            self.mcp,
+        )
+
+class ArgsOutputsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ArgsOutputsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    args_id: UUID
+    name: str
+    template: str | None = None
+    mcp: bool | None = False
+
+class ArgsOutputsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: audios
 
 class AudiosSqlParams(BaseModel):
@@ -32863,6 +32952,33 @@ class GetToolSqlParams(BaseModel):
             self.mcp,
         )
 
+class QGetToolV4ArgsOutputsResource(BaseModel):
+
+    id: UUID | None
+    args_id: UUID | None
+    name: str | None
+    template: str | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
+class QGetToolV4ArgsResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    field_type: str | None
+    required: bool | None
+    default_value: str | None
+    position: int | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
 class QGetToolV4DescriptionResource(BaseModel):
 
     id: UUID | None
@@ -33051,6 +33167,20 @@ class GetToolSqlRow(BaseModel):
     input_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
     output_templates: list[QGetToolV4TemplateDetail] | None = None
     output_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
+    args_ids: list[UUID] | None = None
+    args_resources: list[QGetToolV4ArgsResource] | None = None
+    show_args: bool | None = None
+    args_agent_id: UUID | None = None
+    args_required: bool | None = None
+    args_suggestions: list[UUID] | None = None
+    args: list[QGetToolV4ArgsResource] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    args_outputs_resources: list[QGetToolV4ArgsOutputsResource] | None = None
+    show_args_outputs: bool | None = None
+    args_outputs_agent_id: UUID | None = None
+    args_outputs_required: bool | None = None
+    args_outputs_suggestions: list[UUID] | None = None
+    args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
 
 class GetToolApiRequest(BaseModel):
 
@@ -33134,6 +33264,20 @@ class GetToolApiResponse(BaseModel):
     input_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
     output_templates: list[QGetToolV4TemplateDetail] | None = None
     output_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
+    args_ids: list[UUID] | None = None
+    args_resources: list[QGetToolV4ArgsResource] | None = None
+    show_args: bool | None = None
+    args_agent_id: UUID | None = None
+    args_required: bool | None = None
+    args_suggestions: list[UUID] | None = None
+    args: list[QGetToolV4ArgsResource] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    args_outputs_resources: list[QGetToolV4ArgsOutputsResource] | None = None
+    show_args_outputs: bool | None = None
+    args_outputs_agent_id: UUID | None = None
+    args_outputs_required: bool | None = None
+    args_outputs_suggestions: list[UUID] | None = None
+    args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
 
 
 
@@ -33238,6 +33382,8 @@ class SaveToolSqlParams(BaseModel):
     schema_field_item_ids: list[UUID] | None = None
     template_array_item_ids: list[UUID] | None = None
     template_value_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
     input_tool_id: UUID | None = None
     active: bool | None = True
 
@@ -33251,6 +33397,8 @@ class SaveToolSqlParams(BaseModel):
             self.schema_field_item_ids,
             self.template_array_item_ids,
             self.template_value_ids,
+            self.args_ids,
+            self.args_outputs_ids,
             self.input_tool_id,
             self.active,
         )
@@ -33269,6 +33417,8 @@ class SaveToolApiRequest(BaseModel):
     schema_field_item_ids: list[UUID] | None = None
     template_array_item_ids: list[UUID] | None = None
     template_value_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
     input_tool_id: UUID | None = None
     active: bool | None = True
 
@@ -36273,6 +36423,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "AnalysesSqlRow",
         "AnalysesApiRequest",
         "AnalysesApiResponse",
+    ),
+    "app/sql/v4/resources/args_complete.sql": (
+        "ArgsSqlParams",
+        "ArgsSqlRow",
+        "ArgsApiRequest",
+        "ArgsApiResponse",
+    ),
+    "app/sql/v4/resources/args_outputs_complete.sql": (
+        "ArgsOutputsSqlParams",
+        "ArgsOutputsSqlRow",
+        "ArgsOutputsApiRequest",
+        "ArgsOutputsApiResponse",
     ),
     "app/sql/v4/resources/audios_complete.sql": (
         "AudiosSqlParams",
@@ -39451,6 +39613,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/analyses_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/args_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/args_outputs_complete.sql"]
     ) -> SqlString: ...
 
     @overload

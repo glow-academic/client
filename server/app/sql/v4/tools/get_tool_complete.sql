@@ -120,6 +120,27 @@ CREATE TYPE types.q_get_tool_v4_template_detail AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_tool_v4_args_resource AS (
+    id uuid,
+    name text,
+    description text,
+    field_type text,
+    required boolean,
+    default_value text,
+    position integer,
+    generated boolean,
+    group_id uuid
+);
+
+CREATE TYPE types.q_get_tool_v4_args_outputs_resource AS (
+    id uuid,
+    args_id uuid,
+    name text,
+    template text,
+    generated boolean,
+    group_id uuid
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_tool_v4(
     profile_id uuid,
@@ -215,7 +236,23 @@ RETURNS TABLE (
     -- Output template details (for SchemaOutput component)
     output_templates types.q_get_tool_v4_template_detail[],
     -- Output schema fields (schema_fields from schemas linked to selected templates)
-    output_schema_fields types.q_get_tool_v4_schema_field_detail[]
+    output_schema_fields types.q_get_tool_v4_schema_field_detail[],
+    -- Multi-select resources: args
+    args_ids uuid[],
+    args_resources types.q_get_tool_v4_args_resource[],
+    show_args boolean,
+    args_agent_id uuid,
+    args_required boolean,
+    args_suggestions uuid[],
+    args types.q_get_tool_v4_args_resource[],
+    -- Multi-select resources: args_outputs
+    args_outputs_ids uuid[],
+    args_outputs_resources types.q_get_tool_v4_args_outputs_resource[],
+    show_args_outputs boolean,
+    args_outputs_agent_id uuid,
+    args_outputs_required boolean,
+    args_outputs_suggestions uuid[],
+    args_outputs types.q_get_tool_v4_args_outputs_resource[]
 )
 LANGUAGE sql
 STABLE
@@ -934,6 +971,159 @@ template_value_mapping_data AS (
     LEFT JOIN tool_template_values ttv ON ttv.template_value_id = tv.id AND ttv.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all template_values for new tools
 ),
+-- Args IDs (selected args IDs for tool)
+args_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at)
+                 FROM tool_args ta
+                 WHERE ta.tool_id = (SELECT tool_id FROM params)),
+                ARRAY[]::uuid[]
+            )
+        END as args_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Args suggestions: linked to tools OR same group with generated=true
+args_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at DESC)
+             FROM (
+                 SELECT DISTINCT ta.args_id, MAX(ta.created_at) as created_at
+                 FROM tool_args ta
+                 JOIN args_resource a ON a.id = ta.args_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE ta.args_id IS NOT NULL
+                   AND a.active = true
+                   AND (
+                       -- Option 1: Linked to tools (tool_args junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       ta.generated = false
+                       OR
+                       (
+                           ta.generated = true
+                           AND a.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = a.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY ta.args_id
+                 ORDER BY MAX(ta.created_at) DESC
+                 LIMIT 20
+             ) ta),
+            ARRAY[]::uuid[]
+        ) as args_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Args mapping (for args array - all available args)
+args_mapping_data AS (
+    SELECT 
+        a.id,
+        a.name,
+        a.description,
+        a.field_type,
+        a.required,
+        a.default_value,
+        a.position,
+        COALESCE(ta.generated, false) as generated,
+        COALESCE(gr.group_id, NULL::uuid) as group_id
+    FROM params x
+    CROSS JOIN draft_group_data dgd
+    JOIN args_resource a ON a.active = true
+    LEFT JOIN tool_args ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
+    LEFT JOIN calls c ON c.id = a.call_id
+    LEFT JOIN message_calls mc ON mc.call_id = c.id
+    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
+    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
+),
+-- Args outputs IDs (selected args_outputs IDs for tool)
+args_outputs_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at)
+                 FROM tool_args_outputs tao
+                 WHERE tao.tool_id = (SELECT tool_id FROM params)),
+                ARRAY[]::uuid[]
+            )
+        END as args_outputs_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Args outputs suggestions: linked to tools OR same group with generated=true
+args_outputs_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at DESC)
+             FROM (
+                 SELECT DISTINCT tao.args_outputs_id, MAX(tao.created_at) as created_at
+                 FROM tool_args_outputs tao
+                 JOIN args_outputs_resource ao ON ao.id = tao.args_outputs_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE tao.args_outputs_id IS NOT NULL
+                   AND ao.active = true
+                   AND (
+                       -- Option 1: Linked to tools (tool_args_outputs junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       tao.generated = false
+                       OR
+                       (
+                           tao.generated = true
+                           AND ao.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = ao.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY tao.args_outputs_id
+                 ORDER BY MAX(tao.created_at) DESC
+                 LIMIT 20
+             ) tao),
+            ARRAY[]::uuid[]
+        ) as args_outputs_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Args outputs mapping (for args_outputs array - all available args_outputs)
+args_outputs_mapping_data AS (
+    SELECT 
+        ao.id,
+        ao.args_id,
+        ao.name,
+        ao.template,
+        COALESCE(tao.generated, false) as generated,
+        COALESCE(gr.group_id, NULL::uuid) as group_id
+    FROM params x
+    CROSS JOIN draft_group_data dgd
+    JOIN args_outputs_resource ao ON ao.active = true
+    LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
+    LEFT JOIN calls c ON c.id = ao.call_id
+    LEFT JOIN message_calls mc ON mc.call_id = c.id
+    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
+    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
+),
 -- UI flags
 ui_flags AS (
     SELECT 
@@ -970,7 +1160,15 @@ ui_flags AS (
         CASE 
             WHEN (SELECT COUNT(*) FROM template_value_mapping_data) > 0 THEN true
             ELSE false
-        END as show_template_values
+        END as show_template_values,
+        CASE 
+            WHEN (SELECT COUNT(*) FROM args_mapping_data) > 0 THEN true
+            ELSE false
+        END as show_args,
+        CASE 
+            WHEN (SELECT COUNT(*) FROM args_outputs_mapping_data) > 0 THEN true
+            ELSE false
+        END as show_args_outputs
     FROM params x
 ),
 -- Agent selection helper CTEs (shared across all agent selections)
@@ -1557,6 +1755,148 @@ template_values_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'args' resource
+args_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 
+            
+            WHERE NULL::uuid = a.id
+              AND NULL::artifacts = 'tool'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE NULL::uuid = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'args'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'args_outputs' resource
+args_outputs_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 
+            
+            WHERE NULL::uuid = a.id
+              AND NULL::artifacts = 'tool'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE NULL::uuid = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'args_outputs'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Check for missing tools on required resources (after all agent selection CTEs and ui_flags)
 -- IMPORTANT: We check for TOOLS existence (not agents). Tools are required, agents are optional.
 -- If no tools exist for a resource, we error. If tools exist but no agent exists, that's fine (manual entry).
@@ -1609,7 +1949,19 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'template_values'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as template_values_has_tools
+        ) as template_values_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'args'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as args_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'args_outputs'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as args_outputs_has_tools
     FROM params x
 ),
 missing_tools_check AS (
@@ -1931,7 +2283,63 @@ SELECT
     -- Output template details (for SchemaOutput component)
     COALESCE((SELECT output_templates FROM output_templates_data), ARRAY[]::types.q_get_tool_v4_template_detail[]) as output_templates,
     -- Output schema fields (for SchemaOutput component - Jinja templates in schema_fields)
-    COALESCE((SELECT output_schema_fields FROM output_schema_fields_data), ARRAY[]::types.q_get_tool_v4_schema_field_detail[]) as output_schema_fields
+    COALESCE((SELECT output_schema_fields FROM output_schema_fields_data), ARRAY[]::types.q_get_tool_v4_schema_field_detail[]) as output_schema_fields,
+    -- Multi-select resources: args
+    aid.args_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (amd.id, amd.name, amd.description, amd.field_type, amd.required, amd.default_value, amd.position, amd.generated, amd.group_id)::types.q_get_tool_v4_args_resource
+            ORDER BY amd.position, amd.name
+        )
+        FROM args_mapping_data amd
+        WHERE amd.id = ANY(aid.args_ids)),
+        '{}'::types.q_get_tool_v4_args_resource[]
+    ) as args_resources,
+    CASE 
+        WHEN NOT tec.args_has_tools THEN false
+        ELSE uf.show_args
+    END as show_args,
+    (SELECT agent_id FROM args_agent_data) as args_agent_id,
+    CASE 
+        WHEN uf.show_args THEN true
+        ELSE false
+    END as args_required,
+    COALESCE((SELECT args_suggestions FROM args_suggestions_data), ARRAY[]::uuid[]) as args_suggestions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (amd.id, amd.name, amd.description, amd.field_type, amd.required, amd.default_value, amd.position, amd.generated, amd.group_id)::types.q_get_tool_v4_args_resource
+            ORDER BY amd.position, amd.name
+        ) FROM (SELECT DISTINCT id, name, description, field_type, required, default_value, position, generated, group_id FROM args_mapping_data) amd),
+        '{}'::types.q_get_tool_v4_args_resource[]
+    ) as args,
+    -- Multi-select resources: args_outputs
+    aoid.args_outputs_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (aomd.id, aomd.args_id, aomd.name, aomd.template, aomd.generated, aomd.group_id)::types.q_get_tool_v4_args_outputs_resource
+            ORDER BY aomd.name
+        )
+        FROM args_outputs_mapping_data aomd
+        WHERE aomd.id = ANY(aoid.args_outputs_ids)),
+        '{}'::types.q_get_tool_v4_args_outputs_resource[]
+    ) as args_outputs_resources,
+    CASE 
+        WHEN NOT tec.args_outputs_has_tools THEN false
+        ELSE uf.show_args_outputs
+    END as show_args_outputs,
+    (SELECT agent_id FROM args_outputs_agent_data) as args_outputs_agent_id,
+    CASE 
+        WHEN uf.show_args_outputs THEN true
+        ELSE false
+    END as args_outputs_required,
+    COALESCE((SELECT args_outputs_suggestions FROM args_outputs_suggestions_data), ARRAY[]::uuid[]) as args_outputs_suggestions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (aomd.id, aomd.args_id, aomd.name, aomd.template, aomd.generated, aomd.group_id)::types.q_get_tool_v4_args_outputs_resource
+            ORDER BY aomd.name
+        ) FROM (SELECT DISTINCT id, args_id, name, template, generated, group_id FROM args_outputs_mapping_data) aomd),
+        '{}'::types.q_get_tool_v4_args_outputs_resource[]
+    ) as args_outputs
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
@@ -1953,6 +2361,10 @@ CROSS JOIN template_array_item_ids_data taiid
 CROSS JOIN template_array_item_suggestions_data taiisd
 CROSS JOIN template_value_ids_data tvid
 CROSS JOIN template_value_suggestions_data tvisd
+CROSS JOIN args_ids_data aid
+CROSS JOIN args_suggestions_data asd
+CROSS JOIN args_outputs_ids_data aoid
+CROSS JOIN args_outputs_suggestions_data aosd
 CROSS JOIN domain_ids_data domids
 CROSS JOIN input_schema_fields_data isfd
 CROSS JOIN output_templates_data otd

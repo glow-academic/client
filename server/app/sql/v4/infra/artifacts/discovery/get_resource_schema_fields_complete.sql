@@ -1,5 +1,5 @@
 -- Get schema fields for a resource type
--- Queries resource_schemas → schemas → schema_fields to get the output schema fields
+-- Queries resource_outputs → outputs to get the output schema fields
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -32,16 +32,14 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        sf.name::text as name,
-        sf.field_type::text as field_type,
-        sf.required as required,
-        sf."position" as position,
-        sf.template::text as template
-    FROM resource_schemas rs
-    JOIN schemas_resource s ON s.id = rs.schema_id
-    JOIN schema_fields_resource sf ON sf.schema_id = s.id
-    WHERE rs.resource = api_get_resource_schema_fields_v4.resource_type::resources
-      AND sf.active = true
-    ORDER BY sf."position";
+        o.name::text as name,
+        o.field_type::text as field_type,
+        false as required,  -- outputs don't have required field (they're outputs, not inputs)
+        0 as position,  -- outputs don't have position field
+        ''::text as template  -- templates are handled by args_outputs, not outputs
+    FROM resource_outputs ro
+    JOIN outputs o ON o.id = ro.outputs_id
+    WHERE ro.resource = api_get_resource_schema_fields_v4.resource_type::resources
+    ORDER BY o.name;  -- Order by name since position doesn't exist
 END;
 $$;

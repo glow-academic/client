@@ -1,5 +1,7 @@
 """Resources v4 API routes."""
 
+from app.api.v4.resources.args import router as args_router
+from app.api.v4.resources.args_outputs import router as args_outputs_router
 from app.api.v4.resources.agents import router as agents_router
 from app.api.v4.resources.analyses import router as analyses_router
 from app.api.v4.resources.auths import router as auths_router
@@ -95,6 +97,8 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/resources", tags=["resources"])
 
 # Include endpoint routers
+router.include_router(args_router)
+router.include_router(args_outputs_router)
 router.include_router(agents_router)
 router.include_router(analyses_router)
 router.include_router(auths_router)

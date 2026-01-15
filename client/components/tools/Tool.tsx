@@ -16,6 +16,8 @@ import {
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { SchemaFieldItems } from "@/components/resources/SchemaFieldItems";
+import { Args } from "@/components/resources/Args";
+import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
 import { Schemas } from "@/components/resources/Schemas";
 import { TemplateArrayItems } from "@/components/resources/TemplateArrayItems";
 import { Templates } from "@/components/resources/Templates";
@@ -39,6 +41,10 @@ type CreateDraftSchemasIn = InputOf<"/api/v4/resources/schemas", "post">;
 type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
+type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
+type CreateDraftArgsOutputsIn = InputOf<"/api/v4/resources/args_outputs", "post">;
+type CreateDraftArgsOutputsOut = OutputOf<"/api/v4/resources/args_outputs", "post">;
 type CreateDraftSchemaFieldItemsIn = InputOf<
   "/api/v4/resources/schema_field_items",
   "post"
@@ -90,6 +96,12 @@ export interface ToolProps {
   createTemplatesAction?: (
     input: CreateDraftTemplatesIn
   ) => Promise<CreateDraftTemplatesOut>;
+  createArgsAction?: (
+    input: CreateDraftArgsIn
+  ) => Promise<CreateDraftArgsOut>;
+  createArgsOutputsAction?: (
+    input: CreateDraftArgsOutputsIn
+  ) => Promise<CreateDraftArgsOutputsOut>;
   createSchemaFieldItemsAction?: (
     input: CreateDraftSchemaFieldItemsIn
   ) => Promise<CreateDraftSchemaFieldItemsOut>;
@@ -116,6 +128,8 @@ function ToolComponent({
   patchToolDraftAction,
   createSchemasAction,
   createTemplatesAction,
+  createArgsAction,
+  createArgsOutputsAction,
   createSchemaFieldItemsAction,
   createTemplateArrayItemsAction,
   createTemplateValuesAction,
@@ -158,12 +172,16 @@ function ToolComponent({
       schemaFieldItemSearch: parseAsString,
       templateArrayItemSearch: parseAsString,
       templateValueSearch: parseAsString,
+      argsSearch: parseAsString,
+      argsOutputsSearch: parseAsString,
       // Filter params (URL-backed)
       schemaShowSelected: parseAsBoolean,
       templateShowSelected: parseAsBoolean,
       schemaFieldItemShowSelected: parseAsBoolean,
       templateArrayItemShowSelected: parseAsBoolean,
       templateValueShowSelected: parseAsBoolean,
+      argsShowSelected: parseAsBoolean,
+      argsOutputsShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -212,6 +230,20 @@ function ToolComponent({
       template_values: toolData.template_values,
       template_values_required: toolData.template_values_required,
       template_values_agent_id: toolData.template_values_agent_id,
+      args_ids: toolData.args_ids,
+      args_resources: toolData.args_resources,
+      show_args: toolData.show_args,
+      args_suggestions: toolData.args_suggestions,
+      args: toolData.args,
+      args_required: toolData.args_required,
+      args_agent_id: toolData.args_agent_id,
+      args_outputs_ids: toolData.args_outputs_ids,
+      args_outputs_resources: toolData.args_outputs_resources,
+      show_args_outputs: toolData.show_args_outputs,
+      args_outputs_suggestions: toolData.args_outputs_suggestions,
+      args_outputs: toolData.args_outputs,
+      args_outputs_required: toolData.args_outputs_required,
+      args_outputs_agent_id: toolData.args_outputs_agent_id,
       input_schema_fields: toolData.input_schema_fields ?? [],
       output_templates:
         (toolData as typeof toolData & { output_templates?: unknown[] })
@@ -234,6 +266,8 @@ function ToolComponent({
         schema_field_item_ids: [] as string[],
         template_array_item_ids: [] as string[],
         template_value_ids: [] as string[],
+        args_ids: [] as string[],
+        args_outputs_ids: [] as string[],
       };
     }
     return {
@@ -244,6 +278,8 @@ function ToolComponent({
       schema_field_item_ids: data.schema_field_item_ids ?? [],
       template_array_item_ids: data.template_array_item_ids ?? [],
       template_value_ids: data.template_value_ids ?? [],
+      args_ids: data.args_ids ?? [],
+      args_outputs_ids: data.args_outputs_ids ?? [],
     };
   }, []);
 
@@ -350,6 +386,8 @@ function ToolComponent({
       schema_field_item_ids: formState.schema_field_item_ids,
       template_array_item_ids: formState.template_array_item_ids,
       template_value_ids: formState.template_value_ids,
+      args_ids: formState.args_ids,
+      args_outputs_ids: formState.args_outputs_ids,
     });
   }, [
     draftId,
@@ -358,6 +396,8 @@ function ToolComponent({
     formState.schema_field_item_ids,
     formState.template_array_item_ids,
     formState.template_value_ids,
+    formState.args_ids,
+    formState.args_outputs_ids,
   ]);
 
   const lastPatchedKeyRef = React.useRef<string | null>(null);
@@ -807,6 +847,22 @@ function ToolComponent({
         throw new Error("Template values are required");
       }
 
+      if (
+        toolData?.args_required &&
+        formState.args_ids.length === 0
+      ) {
+        toast.error("Args are required");
+        throw new Error("Args are required");
+      }
+
+      if (
+        toolData?.args_outputs_required &&
+        formState.args_outputs_ids.length === 0
+      ) {
+        toast.error("Args outputs are required");
+        throw new Error("Args outputs are required");
+      }
+
       if (!effectiveProfile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
@@ -833,6 +889,8 @@ function ToolComponent({
             schema_field_item_ids: formState.schema_field_item_ids,
             template_array_item_ids: formState.template_array_item_ids,
             template_value_ids: formState.template_value_ids,
+            args_ids: formState.args_ids,
+            args_outputs_ids: formState.args_outputs_ids,
             active: true,
           },
         });
@@ -861,6 +919,8 @@ function ToolComponent({
       toolData?.schema_field_items_required,
       toolData?.template_array_items_required,
       toolData?.template_values_required,
+      toolData?.args_required,
+      toolData?.args_outputs_required,
     ]
   );
 
@@ -901,6 +961,16 @@ function ToolComponent({
         case "template_values":
           if (!hasName || !hasDescription) return "pending";
           return hasTemplateValues ? "completed" : "active";
+        case "args": {
+          const hasArgs = (formState.args_ids?.length ?? 0) > 0;
+          if (!hasName || !hasDescription) return "pending";
+          return hasArgs ? "completed" : "active";
+        }
+        case "args_outputs": {
+          const hasArgsOutputs = (formState.args_outputs_ids?.length ?? 0) > 0;
+          if (!hasName || !hasDescription) return "pending";
+          return hasArgsOutputs ? "completed" : "active";
+        }
         default:
           return "pending";
       }
@@ -959,6 +1029,18 @@ function ToolComponent({
         description: "Select template values for this tool.",
         resetFields: ["template_value_ids"],
       },
+      {
+        id: "args",
+        title: "Args",
+        description: "Select args for this tool.",
+        resetFields: ["args_ids"],
+      },
+      {
+        id: "args_outputs",
+        title: "Args Outputs",
+        description: "Select args outputs for this tool.",
+        resetFields: ["args_outputs_ids"],
+      },
     ],
     []
   );
@@ -972,6 +1054,8 @@ function ToolComponent({
       "schema_field_item_ids",
       "template_array_item_ids",
       "template_value_ids",
+      "args_ids",
+      "args_outputs_ids",
     ],
     []
   );
@@ -990,6 +1074,10 @@ function ToolComponent({
         return "Template array items reset";
       case "template_values":
         return "Template values reset";
+      case "args":
+        return "Args reset";
+      case "args_outputs":
+        return "Args outputs reset";
       default:
         return "Reset";
     }
@@ -1632,16 +1720,148 @@ function ToolComponent({
           );
         }
 
+        case "args": {
+          const argsSearchTerm =
+            (stepFormData["argsSearch"] as string | null | undefined) || "";
+          const argsShowSelected =
+            (stepFormData["argsShowSelected"] as boolean | null | undefined) ??
+            false;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={argsSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ argsSearch: term || null })
+              }
+              searchPlaceholder="Search args..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: argsShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      argsShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={["args_ids", "argsSearch", "argsShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Args
+                args_ids={formState.args_ids ?? []}
+                args_resources={currentToolData?.args_resources ?? []}
+                show_args={currentToolData?.show_args ?? false}
+                args_suggestions={currentToolData?.args_suggestions ?? []}
+                args={currentToolData?.args ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, args_ids: ids }))
+                }
+                label="Args"
+                required={currentToolData?.args_required ?? false}
+                group_id={currentToolData?.group_id ?? null}
+                agent_id={currentToolData?.args_agent_id ?? null}
+                createArgsAction={createArgsAction}
+                searchTerm={argsSearchTerm}
+                showSelectedFilter={argsShowSelected}
+              />
+            </StepCard>
+          );
+        }
+
+        case "args_outputs": {
+          const argsOutputsSearchTerm =
+            (stepFormData["argsOutputsSearch"] as string | null | undefined) ||
+            "";
+          const argsOutputsShowSelected =
+            (stepFormData["argsOutputsShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={argsOutputsSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ argsOutputsSearch: term || null })
+              }
+              searchPlaceholder="Search args outputs..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: argsOutputsShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      argsOutputsShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={[
+                "args_outputs_ids",
+                "argsOutputsSearch",
+                "argsOutputsShowSelected",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <ArgsOutputs
+                args_outputs_ids={formState.args_outputs_ids ?? []}
+                args_outputs_resources={
+                  currentToolData?.args_outputs_resources ?? []
+                }
+                show_args_outputs={currentToolData?.show_args_outputs ?? false}
+                args_outputs_suggestions={
+                  currentToolData?.args_outputs_suggestions ?? []
+                }
+                args_outputs={currentToolData?.args_outputs ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    args_outputs_ids: ids,
+                  }))
+                }
+                label="Args Outputs"
+                required={currentToolData?.args_outputs_required ?? false}
+                group_id={currentToolData?.group_id ?? null}
+                agent_id={currentToolData?.args_outputs_agent_id ?? null}
+                createArgsOutputsAction={createArgsOutputsAction}
+                searchTerm={argsOutputsSearchTerm}
+                showSelectedFilter={argsOutputsShowSelected}
+                args={currentToolData?.args ?? []}
+              />
+            </StepCard>
+          );
+        }
+
         default:
           return null;
       }
     },
     [
+      formState,
       stableToolDataFields,
       disabled,
       isEditMode,
       createSchemaFieldAction,
       createTemplateAction,
+      createArgsAction,
+      createArgsOutputsAction,
       handleGenerateSchemas,
       handleGenerateTemplates,
       isGenerating,
@@ -1652,6 +1872,8 @@ function ToolComponent({
       formState.schema_field_item_ids,
       formState.template_array_item_ids,
       formState.template_value_ids,
+      formState.args_ids,
+      formState.args_outputs_ids,
       createSchemasAction,
       createTemplatesAction,
       createSchemaFieldItemsAction,

@@ -25,6 +25,8 @@ CREATE OR REPLACE FUNCTION api_save_tool_v4(
     schema_field_item_ids uuid[] DEFAULT NULL,
     template_array_item_ids uuid[] DEFAULT NULL,
     template_value_ids uuid[] DEFAULT NULL,
+    args_ids uuid[] DEFAULT NULL,
+    args_outputs_ids uuid[] DEFAULT NULL,
     input_tool_id uuid DEFAULT NULL,
     active boolean DEFAULT true
 )
@@ -156,6 +158,26 @@ BEGIN
         END IF;
     END IF;
     
+    -- Validate args IDs exist
+    IF args_ids IS NOT NULL AND COALESCE(array_length(args_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(args_ids) AS args_id
+            WHERE NOT EXISTS (SELECT 1 FROM args_resource WHERE id = args_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more args resources not found';
+        END IF;
+    END IF;
+    
+    -- Validate args_outputs IDs exist
+    IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(args_outputs_ids) AS args_outputs_id
+            WHERE NOT EXISTS (SELECT 1 FROM args_outputs_resource WHERE id = args_outputs_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more args_outputs resources not found';
+        END IF;
+    END IF;
+    
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
         DELETE FROM tool_schemas WHERE tool_id = v_tool_id;
@@ -163,6 +185,8 @@ BEGIN
         DELETE FROM tool_schema_field_items WHERE tool_id = v_tool_id;
         DELETE FROM tool_template_array_items WHERE tool_id = v_tool_id;
         DELETE FROM tool_template_values WHERE tool_id = v_tool_id;
+        DELETE FROM tool_args WHERE tool_id = v_tool_id;
+        DELETE FROM tool_args_outputs WHERE tool_id = v_tool_id;
     END IF;
     
     -- Continue with tool save using SQL (tool already created/updated above)
@@ -175,6 +199,8 @@ BEGIN
             COALESCE(schema_field_item_ids, ARRAY[]::uuid[]) AS schema_field_item_ids,
             COALESCE(template_array_item_ids, ARRAY[]::uuid[]) AS template_array_item_ids,
             COALESCE(template_value_ids, ARRAY[]::uuid[]) AS template_value_ids,
+            COALESCE(args_ids, ARRAY[]::uuid[]) AS args_ids,
+            COALESCE(args_outputs_ids, ARRAY[]::uuid[]) AS args_outputs_ids,
             profile_id
     ),
     user_profile AS (
@@ -269,6 +295,38 @@ BEGIN
         CROSS JOIN UNNEST(x.template_value_ids) as template_value_id
         WHERE COALESCE(array_length(x.template_value_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT tool_template_values_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link tool to args (old ones already deleted above if update)
+    link_args AS (
+        INSERT INTO tool_args (tool_id, args_id, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.tool_id,
+            args_id,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN UNNEST(x.args_ids) as args_id
+        WHERE COALESCE(array_length(x.args_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT tool_args_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link tool to args_outputs (old ones already deleted above if update)
+    link_args_outputs AS (
+        INSERT INTO tool_args_outputs (tool_id, args_outputs_id, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.tool_id,
+            args_outputs_id,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN UNNEST(x.args_outputs_ids) as args_outputs_id
+        WHERE COALESCE(array_length(x.args_outputs_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO UPDATE SET
             updated_at = NOW()
     )
     SELECT 
