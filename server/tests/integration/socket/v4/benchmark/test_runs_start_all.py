@@ -14,7 +14,7 @@ from tests.integration.socket.v4.helpers import (
 )
 
 from app.infra.v4.websocket.set_socket_owner import set_socket_owner
-from app.socket.v4.benchmark.runs_start_all import benchmark_runs_start_all
+from app.socket.v4.attempts.benchmark.runs_start_all import benchmark_runs_start_all
 
 pytestmark = pytest.mark.asyncio
 

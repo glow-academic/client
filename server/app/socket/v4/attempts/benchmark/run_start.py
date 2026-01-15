@@ -166,7 +166,7 @@ async def _benchmark_run_start_impl(
             )
 
             # Emit benchmark_next internally to start the run
-            from app.socket.v4.benchmark.next import BenchmarkNextPayload
+            from app.socket.v4.attempts.benchmark.next import BenchmarkNextPayload
 
             await emit_to_internal(
                 "benchmark_next",

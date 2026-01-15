@@ -60,8 +60,8 @@ from .member_progress import (
     server_router as member_progress_server_router,
 )
 
-client_router = APIRouter(prefix="/simulations", tags=["socket-client"])
-server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
+client_router = APIRouter(prefix="/simulation", tags=["socket-client"])
+server_router = APIRouter(prefix="/simulation", tags=["socket-server"])
 
 client_router.include_router(enter_client_router)
 client_router.include_router(join_client_router)

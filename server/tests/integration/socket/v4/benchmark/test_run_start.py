@@ -16,7 +16,7 @@ from tests.integration.socket.v4.helpers import (
 from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.websocket.set_socket_owner import set_socket_owner
-from app.socket.v4.benchmark.run_start import benchmark_run_start
+from app.socket.v4.attempts.benchmark.run_start import benchmark_run_start
 
 pytestmark = pytest.mark.asyncio
 

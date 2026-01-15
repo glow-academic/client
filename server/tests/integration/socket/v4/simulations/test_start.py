@@ -6,7 +6,7 @@ from tests.integration.socket.v4.conftest import MockSocketIO
 from tests.integration.socket.v4.helpers import get_or_create_test_profile
 
 from app.infra.v4.websocket.set_socket_owner import set_socket_owner
-from app.socket.v4.simulations.start import simulation_start
+from app.socket.v4.attempts.simulation.start import simulation_start
 
 pytestmark = pytest.mark.asyncio
 

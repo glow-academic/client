@@ -12,7 +12,7 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 
 # Import chat creation function from start.py
-from app.socket.v4.simulations.start import simulation_chat_create_impl
+from app.socket.v4.attempts.simulation.start import simulation_chat_create_impl
 from app.sql.types import (
     GetSimulationRunContextSqlParams,
     GetSimulationRunContextSqlRow,

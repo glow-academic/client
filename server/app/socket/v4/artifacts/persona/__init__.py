@@ -1,4 +1,4 @@
-"""Personas socket v4 API routers - handles persona resource generation events."""
+"""Persona socket v4 API routers - handles persona resource generation events."""
 
 from fastapi import APIRouter
 

@@ -4,7 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.v4.conftest import MockSocketIO
 
-from app.socket.v4.benchmark.start import benchmark_start
+from app.socket.v4.attempts.benchmark.start import benchmark_start
 
 pytestmark = pytest.mark.asyncio
 

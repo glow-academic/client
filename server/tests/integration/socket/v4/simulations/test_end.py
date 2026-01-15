@@ -8,7 +8,7 @@ from tests.integration.socket.v4.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v4.simulations.end import simulation_text_end
+from app.socket.v4.attempts.simulation.end import simulation_text_end
 
 pytestmark = pytest.mark.asyncio
 

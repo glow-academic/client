@@ -130,7 +130,7 @@ async def _benchmark_runs_start_all_impl(
                 return
 
             # Emit benchmark_next for each pending run/group
-            from app.socket.v4.benchmark.next import BenchmarkNextPayload
+            from app.socket.v4.attempts.benchmark.next import BenchmarkNextPayload
 
             for pending_id in pending_ids:
                 if use_groups:

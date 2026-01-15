@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.v4.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.v4.helpers import get_or_create_test_profile
 
-from app.socket.v4.simulations.next import simulation_next
+from app.socket.v4.attempts.simulation.next import simulation_next
 
 pytestmark = pytest.mark.asyncio
 

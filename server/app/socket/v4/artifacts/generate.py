@@ -1860,7 +1860,7 @@ async def _handle_audio_generation(
                                     try:
                                         from app.infra.v4.websocket.find_profile_by_socket import \
                                             find_profile_by_socket
-                                        from app.socket.v4.simulations.member_progress import (
+                                        from app.socket.v4.attempts.simulation.member_progress import (
                                             MemberProgressPayload,
                                             _member_progress_impl)
                                         

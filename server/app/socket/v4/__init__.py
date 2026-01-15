@@ -14,16 +14,20 @@ See `AGENTS.md` for overall architecture principles.
 from fastapi import APIRouter
 
 from . import (
-    agent,
     artifacts,
-    benchmark,
     connect,
     disconnect,
+)
+from .artifacts import (
+    agent,
     document,
-    personas,
+    persona,
     rubric,
     scenario,
-    simulations,
+)
+from .attempts import (
+    benchmark,
+    simulation,
 )
 
 # Create main router
@@ -43,7 +47,7 @@ server_router.include_router(connect.server_router)
 client_router.include_router(artifacts.client_router)
 server_router.include_router(artifacts.server_router)
 
-# Include page routers (scenario, rubric, document, agent)
+# Include artifact routers (scenario, rubric, document, agent, persona)
 client_router.include_router(scenario.client_router)
 server_router.include_router(scenario.server_router)
 
@@ -56,15 +60,13 @@ server_router.include_router(document.server_router)
 client_router.include_router(agent.client_router)
 server_router.include_router(agent.server_router)
 
-# Include persona operation routers
-client_router.include_router(personas.client_router)
-server_router.include_router(personas.server_router)
+client_router.include_router(persona.client_router)
+server_router.include_router(persona.server_router)
 
-# Include simulation operation routers
-client_router.include_router(simulations.client_router)
-server_router.include_router(simulations.server_router)
+# Include attempts routers (simulation, benchmark)
+client_router.include_router(simulation.client_router)
+server_router.include_router(simulation.server_router)
 
-# Include benchmark operation routers
 client_router.include_router(benchmark.client_router)
 server_router.include_router(benchmark.server_router)
 
