@@ -4,6 +4,7 @@
  */
 
 import type {
+  GetScenarioOut,
   ScenarioDetailOut,
   ScenarioNewOut,
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
@@ -83,25 +84,25 @@ export type VideoMappingItem = {
 };
 
 /**
- * Type guard to check if data is ScenarioDetailOut
+ * Type guard to check if data is ScenarioDetailOut (unified GetScenarioOut with scenario_exists = true)
  */
-export function isScenarioDetailOut(data: unknown): data is ScenarioDetailOut {
+export function isScenarioDetailOut(data: unknown): data is GetScenarioOut {
   return (
     typeof data === "object" &&
     data !== null &&
-    "department_ids" in data &&
-    "scenario_id" in data
+    "scenario_exists" in data &&
+    (data as GetScenarioOut).scenario_exists === true
   );
 }
 
 /**
- * Type guard to check if data is ScenarioNewOut
+ * Type guard to check if data is ScenarioNewOut (unified GetScenarioOut with scenario_exists = false)
  */
-export function isScenarioNewOut(data: unknown): data is ScenarioNewOut {
+export function isScenarioNewOut(data: unknown): data is GetScenarioOut {
   return (
     typeof data === "object" &&
     data !== null &&
-    "valid_department_ids" in data &&
-    !("scenario_id" in data)
+    "scenario_exists" in data &&
+    (data as GetScenarioOut).scenario_exists === false
   );
 }

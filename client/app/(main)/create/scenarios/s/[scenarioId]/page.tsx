@@ -18,10 +18,16 @@ import {
 } from "../../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
+type GetScenarioIn = InputOf<"/api/v4/scenarios/get", "post">;
+type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
+// Keep old types for backward compatibility during migration
 type ScenarioDetailIn = InputOf<"/api/v4/scenarios/detail", "post">;
 type ScenarioDetailOut = OutputOf<"/api/v4/scenarios/detail", "post">;
 type ScenarioNewIn = InputOf<"/api/v4/scenarios/new", "post">;
 type ScenarioNewOut = OutputOf<"/api/v4/scenarios/new", "post">;
+type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
+// Keep old types for backward compatibility
 type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v4/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
@@ -56,6 +62,7 @@ type GenerateAIScenarioOut = {
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
+ * Uses unified get endpoint.
  */
 const getScenario = async (
   scenarioId: string,
@@ -88,10 +95,10 @@ const getScenario = async (
     objectiveIds?: string[];
     problemStatementIds?: string[];
   }
-): Promise<ScenarioDetailOut> => {
+): Promise<GetScenarioOut> => {
   // Convert camelCase filter params to snake_case for API
   // Use proper type from InputOf to ensure type safety
-  const body: ScenarioDetailIn["body"] = {
+  const body: GetScenarioIn["body"] = {
     scenario_id: scenarioId,
   };
   
@@ -120,12 +127,13 @@ const getScenario = async (
     }
     if (filterParams.useImage !== undefined) body.use_image = filterParams.useImage;
     if (filterParams.useVideo !== undefined) body.use_video = filterParams.useVideo;
-    // Note: image_ids and objective_ids are not part of the API request
+    if (filterParams.imageIds) body.image_ids = filterParams.imageIds;
+    if (filterParams.objectiveIds) body.objective_ids = filterParams.objectiveIds;
     if (filterParams.problemStatementIds) body.problem_statement_ids = filterParams.problemStatementIds;
   }
   
   return api.post(
-    "/scenarios/detail",
+    "/scenarios/get",
     {
       body,
     },
@@ -167,8 +175,23 @@ async function updateScenario(
   input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/update", input);
+  // Convert to unified save endpoint
+  const saveInput: SaveScenarioIn = {
+    body: {
+      ...input.body,
+      input_scenario_id: input.body.scenario_id,
+    },
+  };
+  const result = await api.post("/scenarios/save", saveInput);
+  // Convert back to UpdateScenarioOut format for compatibility
+  return {
+    body: {
+      scenario_id: result.body.scenario_id,
+      actor_name: result.body.actor_name,
+      scenario_exists: true,
+      name: input.body.name,
+    },
+  };
 }
 
 async function patchScenarioDraft(
@@ -353,8 +376,12 @@ export type {
   CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
+  GetScenarioIn,
+  GetScenarioOut,
   PatchScenarioDraftIn,
   PatchScenarioDraftOut,
+  SaveScenarioIn,
+  SaveScenarioOut,
   ScenarioDetailIn,
   ScenarioDetailOut,
   ScenarioNewIn,

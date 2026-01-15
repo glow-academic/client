@@ -16,6 +16,11 @@ import {
 } from "../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
+type GetScenarioIn = InputOf<"/api/v4/scenarios/get", "post">;
+type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
+type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
+// Keep old types for backward compatibility during migration
 type ScenarioNewIn = InputOf<"/api/v4/scenarios/new", "post">;
 type ScenarioNewOut = OutputOf<"/api/v4/scenarios/new", "post">;
 type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
@@ -27,11 +32,37 @@ type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
+ * Uses unified get endpoint with scenario_id = null for new mode.
  */
 const getScenarioDefault = async (
   input: ScenarioNewIn
-): Promise<ScenarioNewOut> => {
-  return api.post("/scenarios/new", input, {
+): Promise<GetScenarioOut> => {
+  // Convert to unified get endpoint format
+  const getInput: GetScenarioIn = {
+    body: {
+      scenario_id: null,
+      draft_id: input.body.draft_id,
+      filter_department_ids: input.body.filter_department_ids,
+      filter_persona_ids: input.body.filter_persona_ids,
+      filter_document_ids: input.body.filter_document_ids,
+      template_document_ids: input.body.template_document_ids,
+      filter_parameter_ids: input.body.filter_parameter_ids,
+      filter_field_ids: input.body.filter_field_ids,
+      persona_search: input.body.persona_search,
+      document_search: input.body.document_search,
+      parameter_search: input.body.parameter_search,
+      document_show_selected: input.body.document_show_selected,
+      persona_show_selected: input.body.persona_show_selected,
+      parameter_show_selected: input.body.parameter_show_selected,
+      field_show_selected_by_param: input.body.field_show_selected_by_param,
+      use_image: input.body.use_image,
+      use_video: input.body.use_video,
+      image_ids: input.body.image_ids,
+      objective_ids: input.body.objective_ids,
+      problem_statement_ids: input.body.problem_statement_ids,
+    },
+  };
+  return api.post("/scenarios/get", getInput, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -44,8 +75,21 @@ async function createScenario(
   input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/create", input);
+  // Convert to unified save endpoint
+  const saveInput: SaveScenarioIn = {
+    body: {
+      ...input.body,
+      input_scenario_id: null,
+    },
+  };
+  const result = await api.post("/scenarios/save", saveInput);
+  // Convert back to CreateScenarioOut format for compatibility
+  return {
+    body: {
+      scenario_id: result.body.scenario_id,
+      actor_name: result.body.actor_name,
+    },
+  };
 }
 
 async function patchScenarioDraft(
@@ -140,8 +184,12 @@ export default async function NewScenarioPage({
 export type {
   CreateScenarioIn,
   CreateScenarioOut,
+  GetScenarioIn,
+  GetScenarioOut,
   PatchScenarioDraftIn,
   PatchScenarioDraftOut,
+  SaveScenarioIn,
+  SaveScenarioOut,
   ScenarioNewIn,
   ScenarioNewOut,
   UpdateScenarioIn,

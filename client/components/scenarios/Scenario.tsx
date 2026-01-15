@@ -76,6 +76,7 @@ import {
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { buildSearchParams } from "./scenario-helpers";
 import type { DraftState } from "./scenario-types";
 import { isScenarioDetailOut, isScenarioNewOut } from "./scenario-types";
@@ -99,6 +100,7 @@ import type {
   CreateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
+  GetScenarioOut,
   PatchScenarioDraftIn,
   PatchScenarioDraftOut,
   ScenarioDetailOut,
@@ -122,8 +124,9 @@ export interface ScenarioProps {
   scenarioId?: string;
   mode?: "create" | "edit";
   // Server-provided data (for server-side rendering)
-  scenarioDetail?: ScenarioDetailOut;
-  scenarioDetailDefault?: ScenarioNewOut;
+  // Unified endpoint: both use GetScenarioOut (scenario_id null for new, provided for detail)
+  scenarioDetail?: GetScenarioOut;
+  scenarioDetailDefault?: GetScenarioOut;
   // Server actions (replaces useMutation)
   createScenarioAction?: (
     input: CreateScenarioIn
@@ -3431,19 +3434,20 @@ export default function Scenario({
     return problemStatement !== originalProblemStatement;
   }, [isEditMode, problemStatement, originalProblemStatement]);
 
-  // Use server-computed readonly flag from V2 API
+  // Use server-computed readonly flag from unified API
+  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const isReadonly = useMemo(() => {
-    if (!isEditMode || !scenarioData) return false;
-    // can_edit exists on ScenarioDetailOut
+    if (!scenarioData) return false;
+    // can_edit exists on GetScenarioOut (unified response)
     if ("can_edit" in scenarioData) {
-      return !(scenarioData as ScenarioDetailOut).can_edit;
+      return !scenarioData.can_edit;
     }
     return false;
-  }, [isEditMode, scenarioData]);
+  }, [scenarioData]);
 
-  // Get affected simulations from V2 data
+  // Get affected simulations from unified API data
   const affectedSimulations = useMemo(() => {
-    // simulation_ids exists on ScenarioDetailOut
+    // simulation_ids exists on GetScenarioOut when scenario_exists is true
     if (isEditMode && scenarioData && isScenarioDetailOut(scenarioData)) {
       if (!scenarioData.simulation_ids) return [];
       return scenarioData.simulation_ids.map((id: string) => {
@@ -5975,53 +5979,10 @@ export default function Scenario({
   return (
     <div className="w-full p-6 space-y-8">
       {isReadonly && (
-        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-muted-foreground"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-foreground">
-                {isEditMode &&
-                scenarioData &&
-                "department_ids" in scenarioData &&
-                (scenarioData as ScenarioDetailOut).department_ids?.length === 0
-                  ? "Default scenario cannot be edited"
-                  : "Scenario is in use by active simulations"}
-              </h3>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {isEditMode &&
-                scenarioData &&
-                "department_ids" in scenarioData &&
-                (scenarioData as ScenarioDetailOut).department_ids?.length ===
-                  0 ? (
-                  <p>
-                    This is a default scenario that cannot be edited. You can
-                    view the details but cannot make changes.
-                  </p>
-                ) : (
-                  <p>
-                    This scenario is currently being used by{" "}
-                    {affectedSimulations.length} active simulation
-                    {affectedSimulations.length !== 1 ? "s" : ""}. You can view
-                    the details but cannot make changes to prevent disruption to
-                    ongoing simulations.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ReadOnlyBanner
+          resourceType="scenario"
+          disabledReason={scenarioData?.disabled_reason ?? null}
+        />
       )}
 
       <GenericForm
