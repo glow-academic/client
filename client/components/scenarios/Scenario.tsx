@@ -15,7 +15,7 @@ import {
   type Parser,
   type Values,
 } from "nuqs";
-import {
+import React, {
   useCallback,
   useEffect,
   useMemo,
@@ -142,7 +142,7 @@ export interface ScenarioProps {
 
 // StepStatus type imported from GenericForm
 
-export default function Scenario({
+function ScenarioComponent({
   mode = "create",
   scenarioId,
   scenarioDetail: serverScenarioDetail,
@@ -561,24 +561,6 @@ export default function Scenario({
       [router, searchParams]
     ),
   });
-
-  // Set breadcrumb context when scenario data is loaded
-  useEffect(() => {
-    if (scenarioDetail?.name && scenarioId && isEditMode) {
-      setEntityMetadata({
-        entityId: scenarioId,
-        entityName: scenarioDetail.name,
-        entityType: "scenario",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    scenarioDetail,
-    scenarioId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Extract body types for type safety
   type CreateScenarioBody = CreateScenarioIn extends { body: infer B }
@@ -3434,9 +3416,9 @@ export default function Scenario({
     return problemStatement !== originalProblemStatement;
   }, [isEditMode, problemStatement, originalProblemStatement]);
 
-  // Use server-computed readonly flag from unified API
+  // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
-  const isReadonly = useMemo(() => {
+  const disabled = useMemo(() => {
     if (!scenarioData) return false;
     // can_edit exists on GetScenarioOut (unified response)
     if ("can_edit" in scenarioData) {
@@ -3444,6 +3426,50 @@ export default function Scenario({
     }
     return false;
   }, [scenarioData]);
+
+  // Alias for backward compatibility during migration
+  const isReadonly = disabled;
+
+  // Set breadcrumb context when scenario data is loaded
+  useEffect(() => {
+    const scenarioName = scenarioData?.name_resource?.name;
+    if (scenarioName && scenarioId && isEditMode) {
+      setEntityMetadata({
+        entityId: scenarioId,
+        entityName: scenarioName,
+        entityType: "scenario",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    scenarioData,
+    scenarioId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
+
+  // Set generation capability when scenario data is loaded
+  useEffect(() => {
+    if (scenarioData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "scenario",
+        canGenerate: true,
+        agentId: scenarioData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "scenario",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [
+    scenarioData?.general_agent_id,
+    setGenerationCapability,
+    clearGenerationCapability,
+  ]);
 
   // Get affected simulations from unified API data
   const affectedSimulations = useMemo(() => {
@@ -6199,3 +6225,59 @@ export default function Scenario({
     </div>
   );
 }
+
+// Memoize component to prevent re-renders when only prop references change (content is same)
+export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
+  // Compare scenarioData by resource IDs, not object reference
+  const prevIds = {
+    name_id: prevProps.scenarioDetail?.name_id,
+    description_id: prevProps.scenarioDetail?.description_id,
+    problem_statement_id: prevProps.scenarioDetail?.problem_statement_id,
+    department_ids: prevProps.scenarioDetail?.department_ids,
+    persona_ids: prevProps.scenarioDetail?.persona_ids,
+    document_ids: prevProps.scenarioDetail?.document_ids,
+    parameter_ids: prevProps.scenarioDetail?.parameter_ids,
+    field_ids: prevProps.scenarioDetail?.field_ids,
+    objective_ids: prevProps.scenarioDetail?.objective_ids,
+    image_ids: prevProps.scenarioDetail?.image_ids,
+    video_ids: prevProps.scenarioDetail?.video_ids,
+    question_ids: prevProps.scenarioDetail?.question_ids,
+    template_ids: prevProps.scenarioDetail?.template_ids,
+  };
+  const nextIds = {
+    name_id: nextProps.scenarioDetail?.name_id,
+    description_id: nextProps.scenarioDetail?.description_id,
+    problem_statement_id: nextProps.scenarioDetail?.problem_statement_id,
+    department_ids: nextProps.scenarioDetail?.department_ids,
+    persona_ids: nextProps.scenarioDetail?.persona_ids,
+    document_ids: nextProps.scenarioDetail?.document_ids,
+    parameter_ids: nextProps.scenarioDetail?.parameter_ids,
+    field_ids: nextProps.scenarioDetail?.field_ids,
+    objective_ids: nextProps.scenarioDetail?.objective_ids,
+    image_ids: nextProps.scenarioDetail?.image_ids,
+    video_ids: nextProps.scenarioDetail?.video_ids,
+    question_ids: nextProps.scenarioDetail?.question_ids,
+    template_ids: nextProps.scenarioDetail?.template_ids,
+  };
+
+  // Compare primitive props
+  if (
+    prevProps.scenarioId !== nextProps.scenarioId ||
+    prevProps.mode !== nextProps.mode ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.createScenarioAction !== nextProps.createScenarioAction ||
+    prevProps.updateScenarioAction !== nextProps.updateScenarioAction ||
+    prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction
+  ) {
+    return false; // Function props changed, re-render
+  }
+
+  // All props are equivalent, skip re-render
+  return true;
+});

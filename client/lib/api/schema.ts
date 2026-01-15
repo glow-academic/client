@@ -10107,6 +10107,191 @@ export interface components {
             disabled_reason?: string | null;
             /** Group Id */
             group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetScenarioV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetScenarioV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetScenarioV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetScenarioV4DescriptionResource"][] | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            problem_statement_resource?: components["schemas"]["QGetScenarioV4ProblemStatementResource"] | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Problem Statement Agent Id */
+            problem_statement_agent_id?: string | null;
+            /** Problem Statement Required */
+            problem_statement_required?: boolean | null;
+            /** Problem Statement Suggestions */
+            problem_statement_suggestions?: string[] | null;
+            /** Problem Statements */
+            problem_statements?: components["schemas"]["QGetScenarioV4ProblemStatementResource"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetScenarioV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetScenarioV4Department"][] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Field Resources */
+            field_resources?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Show Fields */
+            show_fields?: boolean | null;
+            /** Fields Agent Id */
+            fields_agent_id?: string | null;
+            /** Fields Required */
+            fields_required?: boolean | null;
+            /** Field Suggestions */
+            field_suggestions?: string[] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Objective Resources */
+            objective_resources?: components["schemas"]["QGetScenarioV4ObjectiveResource"][] | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Objectives Agent Id */
+            objectives_agent_id?: string | null;
+            /** Objectives Required */
+            objectives_required?: boolean | null;
+            /** Objective Suggestions */
+            objective_suggestions?: string[] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["QGetScenarioV4ObjectiveResource"][] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Image Resources */
+            image_resources?: components["schemas"]["QGetScenarioV4ImageResource"][] | null;
+            /** Show Images */
+            show_images?: boolean | null;
+            /** Images Agent Id */
+            images_agent_id?: string | null;
+            /** Images Required */
+            images_required?: boolean | null;
+            /** Image Suggestions */
+            image_suggestions?: string[] | null;
+            /** Images */
+            images?: components["schemas"]["QGetScenarioV4ImageResource"][] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Video Resources */
+            video_resources?: components["schemas"]["QGetScenarioV4VideoResource"][] | null;
+            /** Show Videos */
+            show_videos?: boolean | null;
+            /** Videos Agent Id */
+            videos_agent_id?: string | null;
+            /** Videos Required */
+            videos_required?: boolean | null;
+            /** Video Suggestions */
+            video_suggestions?: string[] | null;
+            /** Videos */
+            videos?: components["schemas"]["QGetScenarioV4VideoResource"][] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Question Resources */
+            question_resources?: components["schemas"]["QGetScenarioV4QuestionResource"][] | null;
+            /** Show Questions */
+            show_questions?: boolean | null;
+            /** Questions Agent Id */
+            questions_agent_id?: string | null;
+            /** Questions Required */
+            questions_required?: boolean | null;
+            /** Question Suggestions */
+            question_suggestions?: string[] | null;
+            /** Questions */
+            questions?: components["schemas"]["QGetScenarioV4QuestionResource"][] | null;
+            /** Template Ids */
+            template_ids?: string[] | null;
+            /** Template Resources */
+            template_resources?: components["schemas"]["QGetScenarioV4TemplateResource"][] | null;
+            /** Show Templates */
+            show_templates?: boolean | null;
+            /** Templates Agent Id */
+            templates_agent_id?: string | null;
+            /** Templates Required */
+            templates_required?: boolean | null;
+            /** Template Suggestions */
+            template_suggestions?: string[] | null;
+            /** Templates */
+            templates?: components["schemas"]["QGetScenarioV4TemplateResource"][] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Persona Resources */
+            persona_resources?: components["schemas"]["QGetScenarioV4Persona"][] | null;
+            /** Show Personas */
+            show_personas?: boolean | null;
+            /** Personas Agent Id */
+            personas_agent_id?: string | null;
+            /** Personas Required */
+            personas_required?: boolean | null;
+            /** Persona Suggestions */
+            persona_suggestions?: string[] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetScenarioV4Persona"][] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Document Resources */
+            document_resources?: components["schemas"]["QGetScenarioV4Document"][] | null;
+            /** Show Documents */
+            show_documents?: boolean | null;
+            /** Documents Agent Id */
+            documents_agent_id?: string | null;
+            /** Documents Required */
+            documents_required?: boolean | null;
+            /** Document Suggestions */
+            document_suggestions?: string[] | null;
+            /** Documents */
+            documents?: components["schemas"]["QGetScenarioV4Document"][] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Resources */
+            parameter_resources?: components["schemas"]["QGetScenarioV4Parameter"][] | null;
+            /** Show Parameters */
+            show_parameters?: boolean | null;
+            /** Parameters Agent Id */
+            parameters_agent_id?: string | null;
+            /** Parameters Required */
+            parameters_required?: boolean | null;
+            /** Parameter Suggestions */
+            parameter_suggestions?: string[] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetScenarioV4Parameter"][] | null;
+            /** Basic Agent Id */
+            basic_agent_id?: string | null;
+            /** Content Agent Id */
+            content_agent_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
             /** Scenario Id */
             scenario_id?: string | null;
             /** Name */
@@ -10115,12 +10300,8 @@ export interface components {
             description?: string | null;
             /** Problem Statement */
             problem_statement?: string | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
             /** Active */
             active?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
             /** Parent Scenario Id */
             parent_scenario_id?: string | null;
             /** Hints Enabled */
@@ -10129,12 +10310,6 @@ export interface components {
             objectives_enabled?: boolean | null;
             /** Image Input Enabled */
             image_input_enabled?: boolean | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
             /** Simulation Ids */
             simulation_ids?: string[] | null;
             /** Valid Persona Ids */
@@ -10147,14 +10322,10 @@ export interface components {
             active_usage_count?: number | null;
             /** User Role */
             user_role?: string | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
             /** Valid Parameter Ids */
             valid_parameter_ids?: string[] | null;
             /** Valid Field Ids */
             valid_field_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
             /** Persona Range Min */
             persona_range_min?: number | null;
             /** Persona Range Max */
@@ -10181,30 +10352,10 @@ export interface components {
             can_delete?: boolean | null;
             /** Field Ranges */
             field_ranges?: components["schemas"]["QGetScenarioV4FieldRange"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetScenarioV4Persona"][] | null;
-            /** Documents */
-            documents?: components["schemas"]["QGetScenarioV4Document"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetScenarioV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetScenarioV4Department"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetScenarioV4Agent"][] | null;
             /** Simulations */
             simulations?: components["schemas"]["QGetScenarioV4Simulation"][] | null;
-            /** Objectives */
-            objectives?: components["schemas"]["QGetScenarioV4Objective"][] | null;
-            /** Problem Statements */
-            problem_statements?: components["schemas"]["QGetScenarioV4ProblemStatement"][] | null;
-            /** Scenario Images */
-            scenario_images?: components["schemas"]["QGetScenarioV4ScenarioImage"][] | null;
-            /** Scenario Videos */
-            scenario_videos?: components["schemas"]["QGetScenarioV4ScenarioVideo"][] | null;
-            /** Questions */
-            questions?: components["schemas"]["QGetScenarioV4Question"][] | null;
             /** Objectives History */
             objectives_history?: components["schemas"]["QGetScenarioV4ObjectiveWithDepartments"][] | null;
             /** Document Details */
@@ -14924,14 +15075,17 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
-            /** Document Ids */
-            document_ids: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
-            /** Field Ids */
-            field_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioV4DescriptionResource */
+        QGetScenarioV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetScenarioV4Document */
         QGetScenarioV4Document: {
@@ -14999,6 +15153,8 @@ export interface components {
             parameter_name: string | null;
             /** Conditional Parameter Ids */
             conditional_parameter_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetScenarioV4FieldParamFilter */
         QGetScenarioV4FieldParamFilter: {
@@ -15016,14 +15172,38 @@ export interface components {
             /** Max Count */
             max_count: number | null;
         };
-        /** QGetScenarioV4Objective */
-        QGetScenarioV4Objective: {
-            /** Objective Id */
-            objective_id: string | null;
+        /** QGetScenarioV4ImageResource */
+        QGetScenarioV4ImageResource: {
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
-            /** Description */
-            description: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioV4NameResource */
+        QGetScenarioV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioV4ObjectiveResource */
+        QGetScenarioV4ObjectiveResource: {
+            /** Id */
+            id: string | null;
+            /** Objective */
+            objective: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetScenarioV4ObjectiveWithDepartments */
         QGetScenarioV4ObjectiveWithDepartments: {
@@ -15079,78 +15259,27 @@ export interface components {
             /** Example */
             example: string | null;
         };
-        /** QGetScenarioV4ProblemStatement */
-        QGetScenarioV4ProblemStatement: {
-            /** Problem Statement Id */
-            problem_statement_id: string | null;
+        /** QGetScenarioV4ProblemStatementResource */
+        QGetScenarioV4ProblemStatementResource: {
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Problem Statement */
             problem_statement: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetScenarioV4Question */
-        QGetScenarioV4Question: {
+        /** QGetScenarioV4QuestionResource */
+        QGetScenarioV4QuestionResource: {
             /** Id */
             id: string | null;
             /** Question Text */
             question_text: string | null;
             /** Allow Multiple */
             allow_multiple: boolean | null;
-            /** Active */
-            active: boolean | null;
-            /** Options */
-            options: components["schemas"]["QGetScenarioV4QuestionOption"][] | null;
-            /** Times */
-            times: number[] | null;
-        };
-        /** QGetScenarioV4QuestionOption */
-        QGetScenarioV4QuestionOption: {
-            /** Id */
-            id: string | null;
-            /** Option Text */
-            option_text: string | null;
-            /** Is Correct */
-            is_correct: boolean | null;
-        };
-        /** QGetScenarioV4ScenarioImage */
-        QGetScenarioV4ScenarioImage: {
-            /** Upload Id */
-            upload_id: string | null;
-            /** Name */
-            name: string | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-        };
-        /** QGetScenarioV4ScenarioVideo */
-        QGetScenarioV4ScenarioVideo: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Length Seconds */
-            length_seconds: number | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Active */
-            active: boolean | null;
-            /** File Path */
-            file_path: string | null;
-            /** Mime Type */
-            mime_type: string | null;
-            /** Upload Id */
-            upload_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetScenarioV4Simulation */
         QGetScenarioV4Simulation: {
@@ -15164,6 +15293,36 @@ export interface components {
             time_limit: number | null;
             /** Department Ids */
             department_ids: string[] | null;
+        };
+        /** QGetScenarioV4TemplateResource */
+        QGetScenarioV4TemplateResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetScenarioV4VideoResource */
+        QGetScenarioV4VideoResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Length Seconds */
+            length_seconds: number | null;
+            /** Completed */
+            completed: boolean | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetSettingV4Auth */
         QGetSettingV4Auth: {

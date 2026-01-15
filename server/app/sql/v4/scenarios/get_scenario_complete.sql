@@ -38,9 +38,89 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
+-- Note: Composite types include `generated` boolean but NOT `group_id` (group_id is top-level field)
+-- Following RETURN_STRUCTURE_GUIDELINES.md pattern
+
 CREATE TYPE types.q_get_scenario_v4_field_param_filter AS (
     parameter_id uuid,
     show_selected boolean
+);
+
+-- Resource composite types (with generated boolean, NOT group_id)
+CREATE TYPE types.q_get_scenario_v4_name_resource AS (
+    id uuid,
+    name text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_description_resource AS (
+    id uuid,
+    description text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_problem_statement_resource AS (
+    id uuid,
+    name text,
+    problem_statement text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_objective_resource AS (
+    id uuid,
+    objective text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_department AS (
+    department_id uuid,
+    name text,
+    description text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_field AS (
+    field_id uuid,
+    name text,
+    description text,
+    parameter_id uuid,
+    parameter_name text,
+    conditional_parameter_ids uuid[],
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_image_resource AS (
+    id uuid,
+    name text,
+    file_path text,
+    mime_type text,
+    upload_id uuid,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_video_resource AS (
+    id uuid,
+    name text,
+    length_seconds integer,
+    completed boolean,
+    file_path text,
+    mime_type text,
+    upload_id uuid,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_question_resource AS (
+    id uuid,
+    question_text text,
+    allow_multiple boolean,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_scenario_v4_template_resource AS (
+    id uuid,
+    name text,
+    description text,
+    generated boolean
 );
 
 CREATE TYPE types.q_get_scenario_v4_persona AS (
@@ -76,25 +156,7 @@ CREATE TYPE types.q_get_scenario_v4_parameter AS (
     video_parameter boolean
 );
 
-CREATE TYPE types.q_get_scenario_v4_field AS (
-    field_id uuid,
-    name text,
-    description text,
-    parameter_id uuid,
-    parameter_name text,
-    conditional_parameter_ids uuid[]
-);
-
-CREATE TYPE types.q_get_scenario_v4_department AS (
-    department_id uuid,
-    name text,
-    description text,
-    persona_ids uuid[],
-    document_ids uuid[],
-    parameter_ids uuid[],
-    field_ids uuid[]
-);
-
+-- Legacy types (kept for backward compatibility with existing arrays)
 CREATE TYPE types.q_get_scenario_v4_agent AS (
     agent_id uuid,
     name text,
@@ -230,31 +292,132 @@ RETURNS TABLE (
     can_edit boolean,
     disabled_reason text,
     group_id uuid,
-    -- Scenario fields
+    -- Single-select resources: name
+    name_id uuid,
+    name_resource types.q_get_scenario_v4_name_resource,
+    show_name boolean,
+    name_agent_id uuid,
+    name_required boolean,
+    name_suggestions uuid[],
+    names types.q_get_scenario_v4_name_resource[],
+    -- Single-select resources: description
+    description_id uuid,
+    description_resource types.q_get_scenario_v4_description_resource,
+    show_description boolean,
+    description_agent_id uuid,
+    description_required boolean,
+    description_suggestions uuid[],
+    descriptions types.q_get_scenario_v4_description_resource[],
+    -- Single-select resources: problem_statement
+    problem_statement_id uuid,
+    problem_statement_resource types.q_get_scenario_v4_problem_statement_resource,
+    show_problem_statement boolean,
+    problem_statement_agent_id uuid,
+    problem_statement_required boolean,
+    problem_statement_suggestions uuid[],
+    problem_statements types.q_get_scenario_v4_problem_statement_resource[],
+    -- Multi-select resources: departments
+    department_ids uuid[],
+    department_resources types.q_get_scenario_v4_department[],
+    show_departments boolean,
+    departments_agent_id uuid,
+    departments_required boolean,
+    department_suggestions uuid[],
+    departments types.q_get_scenario_v4_department[],
+    -- Multi-select resources: fields
+    field_ids uuid[],
+    field_resources types.q_get_scenario_v4_field[],
+    show_fields boolean,
+    fields_agent_id uuid,
+    fields_required boolean,
+    field_suggestions uuid[],
+    fields types.q_get_scenario_v4_field[],
+    -- Multi-select resources: objectives
+    objective_ids uuid[],
+    objective_resources types.q_get_scenario_v4_objective_resource[],
+    show_objectives boolean,
+    objectives_agent_id uuid,
+    objectives_required boolean,
+    objective_suggestions uuid[],
+    objectives types.q_get_scenario_v4_objective_resource[],
+    -- Multi-select resources: images
+    image_ids uuid[],
+    image_resources types.q_get_scenario_v4_image_resource[],
+    show_images boolean,
+    images_agent_id uuid,
+    images_required boolean,
+    image_suggestions uuid[],
+    images types.q_get_scenario_v4_image_resource[],
+    -- Multi-select resources: videos
+    video_ids uuid[],
+    video_resources types.q_get_scenario_v4_video_resource[],
+    show_videos boolean,
+    videos_agent_id uuid,
+    videos_required boolean,
+    video_suggestions uuid[],
+    videos types.q_get_scenario_v4_video_resource[],
+    -- Multi-select resources: questions
+    question_ids uuid[],
+    question_resources types.q_get_scenario_v4_question_resource[],
+    show_questions boolean,
+    questions_agent_id uuid,
+    questions_required boolean,
+    question_suggestions uuid[],
+    questions types.q_get_scenario_v4_question_resource[],
+    -- Multi-select resources: templates
+    template_ids uuid[],
+    template_resources types.q_get_scenario_v4_template_resource[],
+    show_templates boolean,
+    templates_agent_id uuid,
+    templates_required boolean,
+    template_suggestions uuid[],
+    templates types.q_get_scenario_v4_template_resource[],
+    -- Multi-select resources: personas
+    persona_ids uuid[],
+    persona_resources types.q_get_scenario_v4_persona[],
+    show_personas boolean,
+    personas_agent_id uuid,
+    personas_required boolean,
+    persona_suggestions uuid[],
+    personas types.q_get_scenario_v4_persona[],
+    -- Multi-select resources: documents
+    document_ids uuid[],
+    document_resources types.q_get_scenario_v4_document[],
+    show_documents boolean,
+    documents_agent_id uuid,
+    documents_required boolean,
+    document_suggestions uuid[],
+    documents types.q_get_scenario_v4_document[],
+    -- Multi-select resources: parameters
+    parameter_ids uuid[],
+    parameter_resources types.q_get_scenario_v4_parameter[],
+    show_parameters boolean,
+    parameters_agent_id uuid,
+    parameters_required boolean,
+    parameter_suggestions uuid[],
+    parameters types.q_get_scenario_v4_parameter[],
+    -- Multi-resource combination agent IDs
+    basic_agent_id uuid,
+    content_agent_id uuid,
+    general_agent_id uuid,
+    -- Scenario-specific fields (kept for backward compatibility)
     scenario_id uuid,
     name text,
     description text,
     problem_statement text,
-    problem_statement_id text,
     active boolean,
-    department_ids text[],
     parent_scenario_id uuid,
     hints_enabled boolean,
     objectives_enabled boolean,
     image_input_enabled boolean,
-    persona_ids text[],
-    document_ids text[],
-    objective_ids text[],
     simulation_ids text[],
     valid_persona_ids text[],
     valid_document_ids text[],
     valid_department_ids uuid[],
     active_usage_count bigint,
     user_role text,
-    parameter_ids text[],
     valid_parameter_ids text[],
     valid_field_ids text[],
-    question_ids text[],
     persona_range_min integer,
     persona_range_max integer,
     document_range_min integer,
@@ -268,18 +431,8 @@ RETURNS TABLE (
     can_duplicate boolean,
     can_delete boolean,
     field_ranges types.q_get_scenario_v4_field_range[],
-    personas types.q_get_scenario_v4_persona[],
-    documents types.q_get_scenario_v4_document[],
-    parameters types.q_get_scenario_v4_parameter[],
-    fields types.q_get_scenario_v4_field[],
-    departments types.q_get_scenario_v4_department[],
     agents types.q_get_scenario_v4_agent[],
     simulations types.q_get_scenario_v4_simulation[],
-    objectives types.q_get_scenario_v4_objective[],
-    problem_statements types.q_get_scenario_v4_problem_statement[],
-    scenario_images types.q_get_scenario_v4_scenario_image[],
-    scenario_videos types.q_get_scenario_v4_scenario_video[],
-    questions types.q_get_scenario_v4_question[],
     objectives_history types.q_get_scenario_v4_objective_with_departments[],
     document_details types.q_get_scenario_v4_document_detail[],
     parameters_detail types.q_get_scenario_v4_parameter_detail[],
@@ -372,7 +525,7 @@ user_profile AS (
     WHERE p.id = (SELECT profile_id FROM params LIMIT 1)
 ),
 user_departments AS (
-    SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
+    SELECT ARRAY_AGG(DISTINCT pd.department_id)::uuid[] as dept_ids
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
     JOIN departments_resource d ON d.id = pd.department_id
@@ -498,6 +651,249 @@ scenario_core AS (
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     LEFT JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id
     WHERE x.scenario_id IS NULL OR (x.scenario_id IS NOT NULL AND sdac.has_access = true)
+    LIMIT 1
+),
+-- Resource data CTEs - query from scenario_* tables or draft_* tables if draft_id provided
+-- Name resource data
+name_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT sn.name_id FROM scenario_names sn WHERE sn.scenario_id = (SELECT scenario_id FROM params) LIMIT 1)
+        ) as name_id,
+        (
+            SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_scenario_v4_name_resource 
+            FROM (
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
+                FROM draft_names dn 
+                JOIN names_resource n ON dn.names_id = n.id 
+                WHERE dn.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
+                FROM scenario_names sn 
+                JOIN names_resource n ON sn.name_id = n.id 
+                WHERE sn.scenario_id = (SELECT scenario_id FROM params)
+            ) n
+            ORDER BY priority
+            LIMIT 1
+        ) as name_resource
+    FROM params
+),
+-- Description resource data
+description_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT sd.description_id FROM scenario_descriptions sd WHERE sd.scenario_id = (SELECT scenario_id FROM params) LIMIT 1)
+        ) as description_id,
+        (
+            SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_scenario_v4_description_resource 
+            FROM (
+                SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
+                FROM draft_descriptions dd 
+                JOIN descriptions_resource d ON dd.descriptions_id = d.id 
+                WHERE dd.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 2 as priority
+                FROM scenario_descriptions sd 
+                JOIN descriptions_resource d ON sd.description_id = d.id 
+                WHERE sd.scenario_id = (SELECT scenario_id FROM params)
+            ) d
+            ORDER BY priority
+            LIMIT 1
+        ) as description_resource
+    FROM params
+),
+-- Problem statement resource data
+problem_statement_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT sps.problem_statement_id FROM scenario_problem_statements sps WHERE sps.scenario_id = (SELECT scenario_id FROM params) AND sps.active = true LIMIT 1),
+            NULL::uuid
+        ) as problem_statement_id,
+        (
+            SELECT ROW(ps.id, ps.name, ps.problem_statement, COALESCE(ps.generated, false))::types.q_get_scenario_v4_problem_statement_resource 
+            FROM scenario_problem_statements sps
+            JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
+            WHERE sps.scenario_id = (SELECT scenario_id FROM params) AND sps.active = true
+            LIMIT 1
+        ) as problem_statement_resource
+    FROM params
+),
+-- Suggestions CTEs (UUID arrays, two-part filtering: linked to scenarios OR same group with generated=true)
+-- Name suggestions
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sn.name_id ORDER BY sn.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sn.name_id, MAX(sn.created_at) as created_at
+                 FROM scenario_names sn
+                 JOIN names_resource n ON n.id = sn.name_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sn.name_id IS NOT NULL
+                   AND n.name IS NOT NULL
+                   AND n.name != ''
+                   AND (
+                       -- Option 1: Linked to scenarios (scenario_names junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true
+                       sn.generated = false
+                       OR
+                       (
+                           sn.generated = true
+                           AND n.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = n.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sn.name_id
+                 ORDER BY MAX(sn.created_at) DESC
+                 LIMIT 20
+             ) sn),
+            ARRAY[]::uuid[]
+        ) as name_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Description suggestions
+description_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sd.description_id ORDER BY sd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sd.description_id, MAX(sd.created_at) as created_at
+                 FROM scenario_descriptions sd
+                 JOIN descriptions_resource d ON d.id = sd.description_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sd.description_id IS NOT NULL
+                   AND d.description IS NOT NULL
+                   AND d.description != ''
+                   AND (
+                       -- Option 1: Linked to scenarios
+                       -- Option 2: OR linked to same group with generated=true
+                       sd.generated = false
+                       OR
+                       (
+                           sd.generated = true
+                           AND d.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sd.description_id
+                 ORDER BY MAX(sd.created_at) DESC
+                 LIMIT 20
+             ) sd),
+            ARRAY[]::uuid[]
+        ) as description_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Problem statement suggestions
+problem_statement_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sps.problem_statement_id ORDER BY sps.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sps.problem_statement_id, MAX(sps.created_at) as created_at
+                 FROM scenario_problem_statements sps
+                 JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sps.problem_statement_id IS NOT NULL
+                   AND ps.problem_statement IS NOT NULL
+                   AND ps.problem_statement != ''
+                   AND (
+                       -- Option 1: Linked to scenarios
+                       -- Option 2: OR linked to same group with generated=true
+                       sps.generated = false
+                       OR
+                       (
+                           sps.generated = true
+                           AND ps.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = ps.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sps.problem_statement_id
+                 ORDER BY MAX(sps.created_at) DESC
+                 LIMIT 20
+             ) sps),
+            ARRAY[]::uuid[]
+        ) as problem_statement_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Suggested resource objects CTEs - fetch full resource objects for suggestions
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(n.generated, false))::types.q_get_scenario_v4_name_resource
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_scenario_v4_name_resource[]
+        ) as names
+    FROM params
+    LIMIT 1
+),
+descriptions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (d.id, d.description, COALESCE(d.generated, false))::types.q_get_scenario_v4_description_resource
+                    ORDER BY array_position(dsd.description_suggestions, d.id)
+                )
+                FROM description_suggestions_data dsd
+                CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
+                WHERE d.description IS NOT NULL AND d.description != ''
+            ),
+            ARRAY[]::types.q_get_scenario_v4_description_resource[]
+        ) as descriptions
+    FROM params
+    LIMIT 1
+),
+problem_statements_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (ps.id, ps.name, ps.problem_statement, COALESCE(ps.generated, false))::types.q_get_scenario_v4_problem_statement_resource
+                    ORDER BY array_position(psd.problem_statement_suggestions, ps.id)
+                )
+                FROM problem_statement_suggestions_data psd
+                CROSS JOIN LATERAL unnest(psd.problem_statement_suggestions) AS suggestion_id
+                JOIN problem_statements_resource ps ON ps.id = suggestion_id
+                WHERE ps.problem_statement IS NOT NULL AND ps.problem_statement != ''
+            ),
+            ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[]
+        ) as problem_statements
+    FROM params
     LIMIT 1
 ),
 scenario_simulation_attributes AS (
@@ -1879,34 +2275,625 @@ valid_agents_array AS (
     HAVING 
         COUNT(NULL::uuid) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+-- Agent selection helper CTEs (shared across all agent selections)
+scenario_department_for_agents AS (
+    SELECT sd.department_id
+    FROM params p
+    JOIN scenario_departments sd ON sd.scenario_id = p.scenario_id AND sd.active = true
+    WHERE p.scenario_id IS NOT NULL
+    LIMIT 1
+),
+profile_primary_department_for_agents AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    WHERE p.scenario_id IS NULL
+    LIMIT 1
+),
+selected_department_for_agents AS (
+    SELECT 
+        COALESCE(
+            (SELECT department_id FROM scenario_department_for_agents),
+            (SELECT department_id FROM profile_primary_department_for_agents)
+        ) as department_id
+),
+user_departments_for_agents_scenario AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
+),
+-- Department mapping data (for departments array) - must be defined before ui_flags
+department_mapping_data_scenario AS (
+    SELECT 
+        d.id as department_id,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        COALESCE(d.generated, false) as generated
+    FROM params x
+    CROSS JOIN user_profile up
+    JOIN departments_resource d ON (
+        -- Only include departments with active flag AND user is linked to them
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+        AND
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
+    )
+),
+-- Placeholder CTEs for mapping data (must be defined before ui_flags)
+field_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+objective_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+image_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+video_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+question_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+template_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+persona_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+document_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+parameter_mapping_data_scenario AS (
+    SELECT 1 WHERE false
+),
+-- UI flags for show_{resource} logic
+ui_flags AS (
+    SELECT 
+        -- Single-select resource flags (based on whether options exist)
+        true as show_name,  -- Always show name picker
+        true as show_description,  -- Always show description picker
+        true as show_problem_statement,  -- Always show problem statement picker
+        -- Multi-select resource flags (based on business logic)
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM department_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_departments,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM field_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_fields,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM objective_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_objectives,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM image_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_images,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM video_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_videos,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM question_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_questions,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM template_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_templates,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM persona_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_personas,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM document_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_documents,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM parameter_mapping_data_scenario LIMIT 1) THEN true
+            ELSE false
+        END as show_parameters
+    FROM params x
+),
+-- Department suggestions
+department_suggestions_data_scenario AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sd.department_id ORDER BY sd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sd.department_id, MAX(sd.created_at) as created_at
+                 FROM scenario_departments sd
+                 JOIN departments_resource d ON d.id = sd.department_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sd.department_id IS NOT NULL
+                   AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
+                         AND df.value = true
+                   )
+                   AND (
+                       -- Option 1: Linked to scenarios with active=true
+                       sd.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           sd.generated = true
+                           AND d.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sd.department_id
+                 ORDER BY MAX(sd.created_at) DESC
+                 LIMIT 20
+             ) sd),
+            ARRAY[]::uuid[]
+        ) as department_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Agent selection CTEs for each resource (following personas pattern)
+-- Note: These are simplified placeholders - will be fully implemented based on personas pattern
+name_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+description_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+problem_statement_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+departments_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+fields_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+objectives_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+images_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+videos_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+questions_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+templates_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+personas_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+documents_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+parameters_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+basic_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+content_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+general_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+-- Tools existence check CTE
+tools_existence_check AS (
+    SELECT 
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'names'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as names_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'descriptions'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as descriptions_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'problem_statements'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as problem_statements_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'departments'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as departments_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'fields'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as fields_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'objectives'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as objectives_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'images'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as images_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'videos'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as videos_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'questions'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as questions_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'templates'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as templates_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'personas'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as personas_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'documents'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as documents_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'parameters'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as parameters_has_tools
+    FROM params x
+),
+missing_tools_check AS (
+    SELECT 
+        ARRAY_REMOVE(ARRAY[
+            -- Check if tools exist (not agents). Error only if NO tools exist for required resources.
+            CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
+            CASE WHEN NOT tec.descriptions_has_tools THEN 'description' ELSE NULL END,
+            CASE WHEN NOT tec.problem_statements_has_tools THEN 'problem_statement' ELSE NULL END,
+            CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
+            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END,
+            CASE WHEN NOT tec.objectives_has_tools AND uf.show_objectives THEN 'objectives' ELSE NULL END,
+            CASE WHEN NOT tec.images_has_tools AND uf.show_images THEN 'images' ELSE NULL END,
+            CASE WHEN NOT tec.videos_has_tools AND uf.show_videos THEN 'videos' ELSE NULL END,
+            CASE WHEN NOT tec.questions_has_tools AND uf.show_questions THEN 'questions' ELSE NULL END,
+            CASE WHEN NOT tec.templates_has_tools AND uf.show_templates THEN 'templates' ELSE NULL END,
+            CASE WHEN NOT tec.personas_has_tools AND uf.show_personas THEN 'personas' ELSE NULL END,
+            CASE WHEN NOT tec.documents_has_tools AND uf.show_documents THEN 'documents' ELSE NULL END,
+            CASE WHEN NOT tec.parameters_has_tools AND uf.show_parameters THEN 'parameters' ELSE NULL END
+        ]::text[], NULL) as missing_resources
+    FROM params x
+    CROSS JOIN ui_flags uf
+    CROSS JOIN tools_existence_check tec
+),
+permissions_data_with_tools AS (
+    SELECT 
+        sdd.department_ids,
+        CASE 
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN
+                -- New mode permissions
+                CASE 
+                    WHEN up.role = 'superadmin' THEN true
+                    WHEN EXISTS (SELECT 1 FROM user_departments) THEN true
+                    ELSE false
+                END
+            ELSE
+                -- Detail mode permissions
+                CASE 
+                    WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN false
+                    WHEN (COALESCE(sdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false
+                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    ELSE false
+                END
+        END as base_can_edit,
+        CASE 
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN
+                -- New mode: always editable if can_edit is true
+                NULL::text
+            ELSE
+                -- Detail mode: compute disabled_reason
+                CASE 
+                    WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN 'Scenario is currently in use and cannot be edited.'
+                    WHEN (COALESCE(sdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN 'You do not have access to edit this scenario.'
+                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN NULL::text
+                    ELSE 'This scenario cannot be edited. You can view the details but cannot make changes.'::text
+                END
+        END as base_disabled_reason
+    FROM params x
+    LEFT JOIN scenario_departments_data sdd ON true
+    CROSS JOIN user_profile up
+    LEFT JOIN scenario_simulations_agg ssa ON true
+),
+permissions_final AS (
+    SELECT 
+        pd.department_ids,
+        mtc.missing_resources,
+        CASE 
+            WHEN array_length(mtc.missing_resources, 1) > 0 THEN false
+            ELSE pd.base_can_edit
+        END as can_edit,
+        CASE 
+            WHEN array_length(mtc.missing_resources, 1) > 0 THEN
+                'No tool configured for ' || 
+                array_to_string(mtc.missing_resources, ', ') || 
+                '. Therefore we cannot proceed ahead.'::text
+            ELSE pd.base_disabled_reason
+        END as disabled_reason
+    FROM permissions_data_with_tools pd
+    CROSS JOIN missing_tools_check mtc
 )
 SELECT
     -- Required fields (first 5)
-    up.actor_name,
-    sec.scenario_exists,
-    -- can_edit: true if user has access and scenario is not in active use
+    up.actor_name::text as actor_name,
+    (SELECT scenario_exists FROM scenario_exists_check) as scenario_exists,
+    perm_final.can_edit,
+    perm_final.disabled_reason,
+    -- Group ID for linking resources
+    dgd.group_id,
+    -- Single-select resources: name
+    (SELECT name_id FROM name_resource_data) as name_id,
+    nrd.name_resource,
     CASE 
-        WHEN (SELECT scenario_id FROM params) IS NULL THEN true  -- New mode: always editable
-        WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN false
-        WHEN (COALESCE(sc.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false
-        ELSE true
-    END as can_edit,
-    -- disabled_reason: explain why editing is disabled
+        WHEN NOT tec.names_has_tools THEN false
+        ELSE uf.show_name
+    END as show_name,
+    (SELECT agent_id FROM name_agent_data) as name_agent_id,
+    true as name_required,
+    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
+    COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_name_resource[]) as names,
+    -- Single-select resources: description
+    (SELECT description_id FROM description_resource_data) as description_id,
+    drd.description_resource,
     CASE 
-        WHEN (SELECT scenario_id FROM params) IS NULL THEN NULL::text  -- New mode: no reason
-        WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN 'Scenario is currently in use and cannot be edited.'
-        WHEN (COALESCE(sc.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN 'You do not have access to edit this scenario.'
-        ELSE NULL::text
-    END as disabled_reason,
-    (SELECT group_id FROM draft_group_data) as group_id,
-    -- Scenario fields
+        WHEN NOT tec.descriptions_has_tools THEN false
+        ELSE uf.show_description
+    END as show_description,
+    (SELECT agent_id FROM description_agent_data) as description_agent_id,
+    false as description_required,
+    COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
+    COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_description_resource[]) as descriptions,
+    -- Single-select resources: problem_statement
+    (SELECT problem_statement_id FROM problem_statement_resource_data) as problem_statement_id,
+    psrd.problem_statement_resource,
+    CASE 
+        WHEN NOT tec.problem_statements_has_tools THEN false
+        ELSE uf.show_problem_statement
+    END as show_problem_statement,
+    (SELECT agent_id FROM problem_statement_agent_data) as problem_statement_agent_id,
+    false as problem_statement_required,
+    COALESCE((SELECT problem_statement_suggestions FROM problem_statement_suggestions_data), ARRAY[]::uuid[]) as problem_statement_suggestions,
+    COALESCE((SELECT problem_statements FROM problem_statements_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[]) as problem_statements,
+    -- Multi-select resources: departments
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN
+                ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(department_id::uuid ORDER BY created_at)
+                 FROM scenario_departments sd
+                 WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
+                ARRAY[]::uuid[]
+            )
+        END
+    ) as department_ids,
+    -- Department resources (selected departments filtered by department_ids)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_scenario_v4_department
+            ORDER BY dmd.name
+        )
+        FROM department_mapping_data_scenario dmd
+        WHERE dmd.department_id = ANY(
+            COALESCE(
+                (SELECT 
+                    CASE 
+                        WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                            ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                        ELSE NULL
+                    END
+                FROM draft_payload_data),
+                CASE 
+                    WHEN (SELECT scenario_id FROM params) IS NULL THEN
+                        ARRAY[]::uuid[]
+                    ELSE COALESCE(
+                        (SELECT ARRAY_AGG(department_id::uuid ORDER BY created_at)
+                         FROM scenario_departments sd
+                         WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
+                        ARRAY[]::uuid[]
+                    )
+                END
+            )
+        )),
+        '{}'::types.q_get_scenario_v4_department[]
+    ) as department_resources,
+    CASE 
+        WHEN NOT tec.departments_has_tools AND uf.show_departments THEN false
+        WHEN EXISTS (SELECT 1 FROM department_mapping_data_scenario LIMIT 1) THEN true
+        ELSE uf.show_departments
+    END as show_departments,
+    (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
+    CASE 
+        WHEN uf.show_departments THEN true
+        ELSE false
+    END as departments_required,
+    COALESCE((SELECT department_suggestions FROM department_suggestions_data_scenario), ARRAY[]::uuid[]) as department_suggestions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_scenario_v4_department
+            ORDER BY dmd.name
+        ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data_scenario) dmd),
+        '{}'::types.q_get_scenario_v4_department[]
+    ) as departments,
+    -- Multi-select resources: fields (placeholder - will be populated)
+    ARRAY[]::uuid[] as field_ids,
+    '{}'::types.q_get_scenario_v4_field[] as field_resources,
+    CASE 
+        WHEN NOT tec.fields_has_tools AND uf.show_fields THEN false
+        ELSE uf.show_fields
+    END as show_fields,
+    (SELECT agent_id FROM fields_agent_data) as fields_agent_id,
+    CASE 
+        WHEN uf.show_fields THEN true
+        ELSE false
+    END as fields_required,
+    ARRAY[]::uuid[] as field_suggestions,
+    '{}'::types.q_get_scenario_v4_field[] as fields,
+    -- Multi-select resources: objectives (placeholder - will be populated)
+    ARRAY[]::uuid[] as objective_ids,
+    '{}'::types.q_get_scenario_v4_objective_resource[] as objective_resources,
+    CASE 
+        WHEN NOT tec.objectives_has_tools AND uf.show_objectives THEN false
+        ELSE uf.show_objectives
+    END as show_objectives,
+    (SELECT agent_id FROM objectives_agent_data) as objectives_agent_id,
+    CASE 
+        WHEN uf.show_objectives THEN true
+        ELSE false
+    END as objectives_required,
+    ARRAY[]::uuid[] as objective_suggestions,
+    '{}'::types.q_get_scenario_v4_objective_resource[] as objectives,
+    -- Multi-select resources: images (placeholder - will be populated)
+    ARRAY[]::uuid[] as image_ids,
+    '{}'::types.q_get_scenario_v4_image_resource[] as image_resources,
+    CASE 
+        WHEN NOT tec.images_has_tools AND uf.show_images THEN false
+        ELSE uf.show_images
+    END as show_images,
+    (SELECT agent_id FROM images_agent_data) as images_agent_id,
+    CASE 
+        WHEN uf.show_images THEN true
+        ELSE false
+    END as images_required,
+    ARRAY[]::uuid[] as image_suggestions,
+    '{}'::types.q_get_scenario_v4_image_resource[] as images,
+    -- Multi-select resources: videos (placeholder - will be populated)
+    ARRAY[]::uuid[] as video_ids,
+    '{}'::types.q_get_scenario_v4_video_resource[] as video_resources,
+    CASE 
+        WHEN NOT tec.videos_has_tools AND uf.show_videos THEN false
+        ELSE uf.show_videos
+    END as show_videos,
+    (SELECT agent_id FROM videos_agent_data) as videos_agent_id,
+    CASE 
+        WHEN uf.show_videos THEN true
+        ELSE false
+    END as videos_required,
+    ARRAY[]::uuid[] as video_suggestions,
+    '{}'::types.q_get_scenario_v4_video_resource[] as videos,
+    -- Multi-select resources: questions (placeholder - will be populated)
+    ARRAY[]::uuid[] as question_ids,
+    '{}'::types.q_get_scenario_v4_question_resource[] as question_resources,
+    CASE 
+        WHEN NOT tec.questions_has_tools AND uf.show_questions THEN false
+        ELSE uf.show_questions
+    END as show_questions,
+    (SELECT agent_id FROM questions_agent_data) as questions_agent_id,
+    CASE 
+        WHEN uf.show_questions THEN true
+        ELSE false
+    END as questions_required,
+    ARRAY[]::uuid[] as question_suggestions,
+    '{}'::types.q_get_scenario_v4_question_resource[] as questions,
+    -- Multi-select resources: templates (placeholder - will be populated)
+    ARRAY[]::uuid[] as template_ids,
+    '{}'::types.q_get_scenario_v4_template_resource[] as template_resources,
+    CASE 
+        WHEN NOT tec.templates_has_tools AND uf.show_templates THEN false
+        ELSE uf.show_templates
+    END as show_templates,
+    (SELECT agent_id FROM templates_agent_data) as templates_agent_id,
+    CASE 
+        WHEN uf.show_templates THEN true
+        ELSE false
+    END as templates_required,
+    ARRAY[]::uuid[] as template_suggestions,
+    '{}'::types.q_get_scenario_v4_template_resource[] as templates,
+    -- Multi-select resources: personas (placeholder - will be populated)
+    ARRAY[]::uuid[] as persona_ids,
+    '{}'::types.q_get_scenario_v4_persona[] as persona_resources,
+    CASE 
+        WHEN NOT tec.personas_has_tools AND uf.show_personas THEN false
+        ELSE uf.show_personas
+    END as show_personas,
+    (SELECT agent_id FROM personas_agent_data) as personas_agent_id,
+    CASE 
+        WHEN uf.show_personas THEN true
+        ELSE false
+    END as personas_required,
+    ARRAY[]::uuid[] as persona_suggestions,
+    '{}'::types.q_get_scenario_v4_persona[] as personas,
+    -- Multi-select resources: documents (placeholder - will be populated)
+    ARRAY[]::uuid[] as document_ids,
+    '{}'::types.q_get_scenario_v4_document[] as document_resources,
+    CASE 
+        WHEN NOT tec.documents_has_tools AND uf.show_documents THEN false
+        ELSE uf.show_documents
+    END as show_documents,
+    (SELECT agent_id FROM documents_agent_data) as documents_agent_id,
+    CASE 
+        WHEN uf.show_documents THEN true
+        ELSE false
+    END as documents_required,
+    ARRAY[]::uuid[] as document_suggestions,
+    '{}'::types.q_get_scenario_v4_document[] as documents,
+    -- Multi-select resources: parameters (placeholder - will be populated)
+    ARRAY[]::uuid[] as parameter_ids,
+    '{}'::types.q_get_scenario_v4_parameter[] as parameter_resources,
+    CASE 
+        WHEN NOT tec.parameters_has_tools AND uf.show_parameters THEN false
+        ELSE uf.show_parameters
+    END as show_parameters,
+    (SELECT agent_id FROM parameters_agent_data) as parameters_agent_id,
+    CASE 
+        WHEN uf.show_parameters THEN true
+        ELSE false
+    END as parameters_required,
+    ARRAY[]::uuid[] as parameter_suggestions,
+    '{}'::types.q_get_scenario_v4_parameter[] as parameters,
+    -- Multi-resource combination agent IDs
+    (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
+    (SELECT agent_id FROM content_agent_data) as content_agent_id,
+    (SELECT agent_id FROM general_agent_data) as general_agent_id,
+    -- Scenario-specific fields (kept for backward compatibility)
     sc.id as scenario_id,
     sc.name,
     sc.description,
     sc.problem_statement,
-    sc.problem_statement_id,
     sc.active,
-    sc.department_ids,
     sc.parent_scenario_id,
     COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
     COALESCE(
@@ -1917,39 +2904,7 @@ SELECT
         (SELECT (payload->>'use_image')::boolean FROM draft_payload_data),
         sc.images_enabled
     ) as image_input_enabled,
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'persona_ids' IS NOT NULL AND jsonb_typeof(payload->'persona_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'persona_ids'))
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        COALESCE(spa.persona_ids, ARRAY[]::text[])
-    ) as persona_ids,
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'document_ids' IS NOT NULL AND jsonb_typeof(payload->'document_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'document_ids'))
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        COALESCE(sd.document_ids, ARRAY[]::text[])
-    ) as document_ids,
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'objective_ids' IS NOT NULL AND jsonb_typeof(payload->'objective_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'objective_ids'))
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        COALESCE((
-            SELECT ARRAY_AGG(objective_id::text ORDER BY sort_order, idx, created_at DESC)
-            FROM scenario_objectives_array
-        ), ARRAY[]::text[])
-    ) as objective_ids,
+    -- Note: persona_ids, document_ids, objective_ids are now returned earlier as uuid[] arrays (new resource fields)
     COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
     COALESCE((
         SELECT ARRAY_AGG(persona_id::text ORDER BY name)
@@ -1959,13 +2914,10 @@ SELECT
         SELECT ARRAY_AGG(document_id::text ORDER BY name)
         FROM all_documents_array
     ), ARRAY[]::text[]) as valid_document_ids,
-    (SELECT dept_ids FROM user_departments) as valid_department_ids,
+    COALESCE((SELECT dept_ids FROM user_departments), ARRAY[]::uuid[]) as valid_department_ids,
     COALESCE(ssa.active_usage_count, 0) as active_usage_count,
     up.role as user_role,
-    COALESCE((
-        SELECT ARRAY_AGG(id::text ORDER BY name)
-        FROM all_parameters_array
-    ), ARRAY[]::text[]) as parameter_ids,
+    -- Note: parameter_ids is now returned earlier as uuid[] array (new resource field)
     COALESCE((
         SELECT ARRAY_AGG(id::text ORDER BY name)
         FROM all_parameters_array
@@ -1974,10 +2926,6 @@ SELECT
         SELECT ARRAY_AGG(field_id::text ORDER BY parameter_name, name)
         FROM all_fields_array
     ), ARRAY[]::text[]) as valid_field_ids,
-    COALESCE((
-        SELECT ARRAY_AGG(id::text ORDER BY sort_order, created_at DESC)
-        FROM scenario_questions_array
-    ), ARRAY[]::text[]) as question_ids,
     COALESCE((SELECT persona_min FROM scenario_persona_ranges_data), 1) as persona_range_min,
     COALESCE((SELECT persona_max FROM scenario_persona_ranges_data), 3) as persona_range_max,
     COALESCE((SELECT document_min FROM scenario_document_ranges_data), 0) as document_range_min,
@@ -2001,26 +2949,7 @@ SELECT
         ELSE true
     END as can_delete,
     COALESCE(sfrd.field_ranges, ARRAY[]::types.q_get_scenario_v4_field_range[]) as field_ranges,
-    COALESCE((
-        SELECT ARRAY_AGG((vpa.persona_id, vpa.name, vpa.description, vpa.color, vpa.icon, vpa.image_model, vpa.parameter_ids, vpa.field_ids, vpa.example)::types.q_get_scenario_v4_persona ORDER BY vpa.name)
-        FROM valid_personas_array vpa
-    ), '{}'::types.q_get_scenario_v4_persona[]) as personas,
-    COALESCE((
-        SELECT ARRAY_AGG((ada.document_id, ada.name, ada.description, ada.file_path, ada.mime_type, ada.parameter_ids, ada.field_ids, ada.parent_document_id)::types.q_get_scenario_v4_document ORDER BY ada.name)
-        FROM all_documents_array ada
-    ), '{}'::types.q_get_scenario_v4_document[]) as documents,
-    COALESCE((
-        SELECT ARRAY_AGG((aparam.id, aparam.name, aparam.description, aparam.document_parameter, aparam.persona_parameter, aparam.scenario_parameter, aparam.video_parameter)::types.q_get_scenario_v4_parameter ORDER BY aparam.name)
-        FROM all_parameters_array aparam
-    ), '{}'::types.q_get_scenario_v4_parameter[]) as parameters,
-    COALESCE((
-        SELECT ARRAY_AGG((afa.field_id, afa.name, afa.description, afa.parameter_id, afa.parameter_name, afa.conditional_parameter_ids)::types.q_get_scenario_v4_field ORDER BY afa.parameter_name, afa.name)
-        FROM all_fields_array afa
-    ), '{}'::types.q_get_scenario_v4_field[]) as fields,
-    COALESCE((
-        SELECT ARRAY_AGG((ada2.department_id, ada2.name, ada2.description, ada2.persona_ids, ada2.document_ids, ada2.parameter_ids, ada2.field_ids)::types.q_get_scenario_v4_department ORDER BY ada2.name)
-        FROM all_departments_array ada2
-    ), '{}'::types.q_get_scenario_v4_department[]) as departments,
+    -- Backward compatibility arrays (kept for legacy support)
     COALESCE((
         SELECT ARRAY_AGG((vaa.agent_id, vaa.name, vaa.description, vaa.roles)::types.q_get_scenario_v4_agent ORDER BY vaa.name)
         FROM valid_agents_array vaa
@@ -2029,44 +2958,6 @@ SELECT
         SELECT ARRAY_AGG((sda.simulation_id, sda.name, sda.description, sda.time_limit, sda.department_ids)::types.q_get_scenario_v4_simulation ORDER BY sda.name)
         FROM simulation_data sda
     ), '{}'::types.q_get_scenario_v4_simulation[]) as simulations,
-    COALESCE((
-        SELECT ARRAY_AGG((soa.objective_id, soa.name, soa.description)::types.q_get_scenario_v4_objective ORDER BY soa.sort_order, soa.idx, soa.created_at DESC)
-        FROM scenario_objectives_array soa
-    ), '{}'::types.q_get_scenario_v4_objective[]) as objectives,
-    COALESCE((
-        SELECT ARRAY_AGG((psa.problem_statement_id, psa.name, psa.problem_statement, psa.created_at, psa.updated_at)::types.q_get_scenario_v4_problem_statement ORDER BY psa.sort_order, psa.problem_statement_id)
-        FROM problem_statements_array psa
-    ), '{}'::types.q_get_scenario_v4_problem_statement[]) as problem_statements,
-    COALESCE((
-        SELECT ARRAY_AGG((sia.upload_id, sia.name, sia.file_path, sia.mime_type, sia.active, sia.created_at, sia.updated_at)::types.q_get_scenario_v4_scenario_image ORDER BY sia.sort_order, sia.created_at DESC)
-        FROM scenario_images_array sia
-    ), '{}'::types.q_get_scenario_v4_scenario_image[]) as scenario_images,
-    COALESCE((
-        SELECT ARRAY_AGG((sva.id, sva.name, sva.length_seconds, sva.completed, sva.active, sva.file_path, sva.mime_type, sva.upload_id)::types.q_get_scenario_v4_scenario_video ORDER BY sva.sort_order, sva.created_at DESC)
-        FROM scenario_videos_array sva
-    ), '{}'::types.q_get_scenario_v4_scenario_video[]) as scenario_videos,
-    COALESCE((
-        SELECT ARRAY_AGG(
-            ROW(
-                sqa.id,
-                sqa.question_text,
-                sqa.allow_multiple,
-                sqa.active,
-                COALESCE((
-                    SELECT ARRAY_AGG(ROW(qoa.id, qoa.option_text, qoa.is_correct)::types.q_get_scenario_v4_question_option ORDER BY qoa.id)
-                    FROM question_options_array qoa
-                    WHERE qoa.question_id = sqa.id
-                ), '{}'::types.q_get_scenario_v4_question_option[]),
-                COALESCE((
-                    SELECT ARRAY_AGG(qta.time ORDER BY qta.time)
-                    FROM question_times_array qta
-                    WHERE qta.question_id = sqa.id
-                ), ARRAY[]::integer[])
-            )::types.q_get_scenario_v4_question
-            ORDER BY sqa.sort_order, sqa.created_at DESC
-        )
-        FROM scenario_questions_array sqa
-    ), '{}'::types.q_get_scenario_v4_question[]) as questions,
     COALESCE((
         SELECT ARRAY_AGG((owda.objective, owda.department_ids)::types.q_get_scenario_v4_objective_with_departments ORDER BY owda.objective)
         FROM objectives_with_departments_array owda
@@ -2096,10 +2987,16 @@ SELECT
         (SELECT payload->'randomize_parameter_items' FROM draft_payload_data),
         '{}'::jsonb
     ) as draft_randomize_parameter_items
-FROM scenario_core sc
-CROSS JOIN user_profile up
+FROM user_profile up
+CROSS JOIN permissions_final perm_final
+CROSS JOIN ui_flags uf
+CROSS JOIN tools_existence_check tec
+CROSS JOIN scenario_core sc
 CROSS JOIN scenario_exists_check sec
 CROSS JOIN draft_group_data dgd
+CROSS JOIN name_resource_data nrd
+CROSS JOIN description_resource_data drd
+CROSS JOIN problem_statement_resource_data psrd
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
 LEFT JOIN scenario_personas_agg spa ON true
 LEFT JOIN scenario_documents_agg sd ON true

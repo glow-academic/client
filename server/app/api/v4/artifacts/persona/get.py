@@ -49,17 +49,21 @@ async def get_persona(
     """
     tags = ["personas"]  # From router tags
 
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
     # Generate cache key from path and parsed body
     # Use mode='json' to serialize UUIDs to strings for JSON compatibility
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetPersonaApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetPersonaApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None

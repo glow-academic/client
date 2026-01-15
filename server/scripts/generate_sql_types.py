@@ -21,9 +21,10 @@ VERSION = "v4"
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
+from utils.sql_helper import load_sql
+
 from scripts.sql_introspect import introspect_sql_file
 from scripts.sql_typegen import generate_types_file
-from utils.sql_helper import load_sql
 
 
 def _to_class_name(route_name: str, suffix: str) -> str:
@@ -1200,13 +1201,15 @@ async def main() -> int:
         return 1
 
     try:
-        # Load existing type definitions if in incremental mode
+        # Load existing type definitions for fallback preservation (both incremental and full mode)
         existing_app_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
         existing_test_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
 
+        # Load existing types even in full mode for fallback when files fail
+        existing_app_types = parse_existing_types_file("app", server_root)
+        existing_test_types = parse_existing_types_file("test", server_root)
+
         if incremental_mode:
-            existing_app_types = parse_existing_types_file("app", server_root)
-            existing_test_types = parse_existing_types_file("test", server_root)
             print(
                 f"📚 Loaded {len(existing_app_types)} existing app types and {len(existing_test_types)} existing test types"
             )
@@ -1305,18 +1308,30 @@ async def main() -> int:
             if sql_path in failed_files:
                 skipped.append(sql_path)
                 print(f"⏭️  Skipping {sql_path} (failed during execution phase)")
+
+                # Preserve existing types if available
+                existing_type = None
+                if sql_path in existing_app_types:
+                    existing_type = existing_app_types[sql_path]
+                elif sql_path in existing_test_types:
+                    existing_type = existing_test_types[sql_path]
+
+                if existing_type:
+                    print(
+                        f"   Preserving existing type definitions for {sql_path} due to compilation failure"
+                    )
+                    type_definitions.append(existing_type)
                 continue
 
             # Recover from transaction abort if needed before each introspection
             await _recover_from_transaction_abort(conn)
 
-            # Check if we have existing types for this file (incremental mode only)
+            # Check if we have existing types for this file (for fallback preservation)
             existing_type = None
-            if incremental_mode:
-                if sql_path in existing_app_types:
-                    existing_type = existing_app_types[sql_path]
-                elif sql_path in existing_test_types:
-                    existing_type = existing_test_types[sql_path]
+            if sql_path in existing_app_types:
+                existing_type = existing_app_types[sql_path]
+            elif sql_path in existing_test_types:
+                existing_type = existing_test_types[sql_path]
 
             success, message, type_definition = await generate_types_for_sql_file(
                 sql_path, conn, server_root, skip_execution=True
@@ -1340,10 +1355,10 @@ async def main() -> int:
                 errors.append((sql_path, message))
                 print(f"❌ {sql_path}: {message}")
 
-                # In incremental mode, keep existing types if available
-                if incremental_mode and existing_type:
+                # Preserve existing types if available (works in both incremental and full mode)
+                if existing_type:
                     print(
-                        f"   Keeping existing type definitions for {sql_path} due to error"
+                        f"   Preserving existing type definitions for {sql_path} due to error"
                     )
                     type_definitions.append(existing_type)
 
