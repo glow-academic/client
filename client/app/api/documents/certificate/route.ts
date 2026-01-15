@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Use typed path from api client for type safety
-    const typedPath = toFull(API_VERSION, "/documents/certificate");
+    const typedPath = toFull(API_VERSION, "/export/certificate");
 
     // For binary responses (PDF), we need fetch directly
     // api.post would try to parse as JSON/text which fails for binary

@@ -55,7 +55,7 @@ type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 const getBenchmarkBundle = async (
   input: BenchmarkBundleIn
 ): Promise<BenchmarkBundleOut> => {
-  return api.post("/benchmark/bundle", input, {
+  return api.post("/analytics/benchmark/get", input, {
     cache: "no-store",
   });
 };

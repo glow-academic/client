@@ -16,20 +16,20 @@ type StaffListIn = InputOf<"/api/v4/staff/list", "post">;
 type StaffListOut = OutputOf<"/api/v4/staff/list", "post">;
 type DeleteStaffIn = InputOf<"/api/v4/profile/delete", "post">;
 type DeleteStaffOut = OutputOf<"/api/v4/profile/delete", "post">;
-type BulkDeleteStaffIn = InputOf<"/api/v4/staff/delete", "post">;
-type BulkDeleteStaffOut = OutputOf<"/api/v4/staff/delete", "post">;
+type BulkDeleteStaffIn = InputOf<"/api/v4/bulk/staff/delete", "post">;
+type BulkDeleteStaffOut = OutputOf<"/api/v4/bulk/staff/delete", "post">;
 type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
 type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
-type BulkUpdateStaffIn = InputOf<"/api/v4/staff/update", "post">;
-type BulkUpdateStaffOut = OutputOf<"/api/v4/staff/update", "post">;
-type SearchStaffIn = InputOf<"/api/v4/staff/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/staff/search", "post">;
+type BulkUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
+type BulkUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
+type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
 type CreateStaffDataIn = InputOf<"/api/v4/staff/data/create", "post">;
 type CreateStaffDataOut = OutputOf<"/api/v4/staff/data/create", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/staff/csv", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/staff/csv", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/staff/upsert", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/staff/upsert", "post">;
+type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
+type ProcessCSVOut = OutputOf<"/api/v4/bulk/staff/process", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<StaffListOut["staff"]>[number];
 type SearchStaffItem = NonNullable<SearchStaffOut["staff"]>[number];
@@ -43,7 +43,7 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
  */
 const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/staff/list", input, {
+  return api.post("/profile/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -65,7 +65,7 @@ async function bulkDeleteStaff(
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/delete", input);
+  return api.post("/bulk/staff/delete", input);
 }
 
 async function getCreateStaffData(
@@ -77,7 +77,7 @@ async function getCreateStaffData(
 
 async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/staff/csv", input);
+  return api.post("/bulk/staff/process", input);
 }
 
 async function bulkCreateOrUpdateStaff(
@@ -85,7 +85,7 @@ async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/upsert", input);
+  return api.post("/bulk/staff/save", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

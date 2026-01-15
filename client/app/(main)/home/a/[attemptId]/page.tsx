@@ -12,8 +12,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AttemptFullIn = InputOf<"/api/v4/attempts/simulation", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation", "post">;
+type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
@@ -22,7 +22,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation", input, {
+  return api.post("/attempts/simulation/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

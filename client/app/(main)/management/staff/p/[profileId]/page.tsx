@@ -44,7 +44,7 @@ type CreateDraftRequestLimitsOut = OutputOf<
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getStaff = async (input: GetStaffIn): Promise<GetStaffOut> => {
-  return api.post("/staff/get", input, {
+  return api.post("/profile/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -91,7 +91,7 @@ async function saveStaff(input: SaveStaffIn): Promise<SaveStaffOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/save", input);
+  return api.post("/profile/save", input);
 }
 
 async function createDraftNames(

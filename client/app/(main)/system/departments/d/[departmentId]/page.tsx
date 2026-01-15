@@ -36,8 +36,8 @@ type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 
 type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v4/keys/decrypt", "post">;
-type DecryptKeyOut = OutputOf<"/api/v4/keys/decrypt", "post">;
+type DecryptKeyIn = InputOf<"/api/v4/decrypt/key", "post">;
+type DecryptKeyOut = OutputOf<"/api/v4/decrypt/key", "post">;
 type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
 type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;

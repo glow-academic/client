@@ -21,10 +21,10 @@ type GetProfileOut = OutputOf<"/api/v4/profile/get", "post">;
 // Keep old types for backward compatibility during migration
 type ProfileDetailIn = InputOf<"/api/v4/profile/detail", "post">;
 type ProfileDetailOut = OutputOf<"/api/v4/profile/detail", "post">;
-type ReportsOverviewIn = InputOf<"/api/v4/reports/overview", "post">;
-type ReportsOverviewOut = OutputOf<"/api/v4/reports/overview", "post">;
-type ReportsHistoryIn = InputOf<"/api/v4/reports/history", "post">;
-type ReportsHistoryOut = OutputOf<"/api/v4/reports/history", "post">;
+type ReportsOverviewIn = InputOf<"/api/v4/analytics/reports/get", "post">;
+type ReportsOverviewOut = OutputOf<"/api/v4/analytics/reports/get", "post">;
+type ReportsHistoryIn = InputOf<"/api/v4/analytics/reports/get", "post">;
+type ReportsHistoryOut = OutputOf<"/api/v4/analytics/reports/get", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
@@ -58,7 +58,7 @@ const getReportsOverview = async (
 ): Promise<ReportsOverviewOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/reports/overview", input, {
+  return api.post("/analytics/reports/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -78,7 +78,7 @@ const getReportsHistory = async (
 ): Promise<ReportsHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/reports/history", input, {
+  return api.post("/analytics/reports/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

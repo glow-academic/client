@@ -242,11 +242,11 @@ def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) 
 
 # Static imports for all artifact handlers
 try:
-    from app.api.v4.personas.delete import delete_persona
-    from app.api.v4.personas.duplicate import duplicate_persona
-    from app.api.v4.personas.get import get_persona
-    from app.api.v4.personas.list import get_personas_list
-    from app.api.v4.personas.save import save_persona
+    from app.api.v4.artifacts.persona.delete import delete_persona
+    from app.api.v4.artifacts.persona.duplicate import duplicate_persona
+    from app.api.v4.artifacts.persona.get import get_persona
+    from app.api.v4.artifacts.persona.list import get_personas_list
+    from app.api.v4.artifacts.persona.save import save_persona
 
     PERSONAS_HANDLERS = {
         "get": get_persona,
@@ -258,18 +258,17 @@ try:
 except ImportError:
     PERSONAS_HANDLERS = {}
 
-# Scenarios handlers (uses detail.py for get, create.py/update.py for save)
+# Scenarios handlers (uses unified get.py and save.py)
 try:
-    from app.api.v4.scenarios.create import create_scenario
-    from app.api.v4.scenarios.delete import delete_scenario
-    from app.api.v4.scenarios.detail import get_scenario_detail
-    from app.api.v4.scenarios.duplicate import duplicate_scenario
-    from app.api.v4.scenarios.list import get_scenarios_list
-    from app.api.v4.scenarios.update import update_scenario
+    from app.api.v4.artifacts.scenario.delete import delete_scenario
+    from app.api.v4.artifacts.scenario.duplicate import duplicate_scenario
+    from app.api.v4.artifacts.scenario.get import get_scenario
+    from app.api.v4.artifacts.scenario.list import get_scenarios_list
+    from app.api.v4.artifacts.scenario.save import save_scenario
 
     SCENARIOS_HANDLERS = {
-        "get": get_scenario_detail,
-        "save": create_save_handler(create_scenario, update_scenario, "scenario_id"),
+        "get": get_scenario,
+        "save": save_scenario,
         "list": get_scenarios_list,
         "duplicate": duplicate_scenario,
         "delete": delete_scenario,
@@ -279,11 +278,11 @@ except ImportError:
 
 # Simulations handlers
 try:
-    from app.api.v4.simulations.delete import delete_simulation
-    from app.api.v4.simulations.duplicate import duplicate_simulation
-    from app.api.v4.simulations.get import get_simulation
-    from app.api.v4.simulations.list import get_simulations_list
-    from app.api.v4.simulations.save import save_simulation
+    from app.api.v4.artifacts.simulation.delete import delete_simulation
+    from app.api.v4.artifacts.simulation.duplicate import duplicate_simulation
+    from app.api.v4.artifacts.simulation.get import get_simulation
+    from app.api.v4.artifacts.simulation.list import get_simulations_list
+    from app.api.v4.artifacts.simulation.save import save_simulation
 
     SIMULATIONS_HANDLERS = {
         "get": get_simulation,
@@ -297,10 +296,10 @@ except ImportError:
 
 # Documents handlers (uses unified save.py)
 try:
-    from app.api.v4.documents.delete import delete_document
-    from app.api.v4.documents.get import get_document
-    from app.api.v4.documents.list import get_documents_list
-    from app.api.v4.documents.save import save_document
+    from app.api.v4.artifacts.document.delete import delete_document
+    from app.api.v4.artifacts.document.get import get_document
+    from app.api.v4.artifacts.document.list import get_documents_list
+    from app.api.v4.artifacts.document.save import save_document
 
     DOCUMENTS_HANDLERS = {
         "get": get_document,
@@ -314,11 +313,11 @@ except ImportError:
 
 # Departments handlers
 try:
-    from app.api.v4.departments.delete import delete_department
-    from app.api.v4.departments.duplicate import duplicate_department
-    from app.api.v4.departments.get import get_department
-    from app.api.v4.departments.list import get_departments_list
-    from app.api.v4.departments.save import save_department
+    from app.api.v4.artifacts.department.delete import delete_department
+    from app.api.v4.artifacts.department.duplicate import duplicate_department
+    from app.api.v4.artifacts.department.get import get_department
+    from app.api.v4.artifacts.department.list import get_departments_list
+    from app.api.v4.artifacts.department.save import save_department
 
     DEPARTMENTS_HANDLERS = {
         "get": get_department,
@@ -332,11 +331,11 @@ except ImportError:
 
 # Cohorts handlers
 try:
-    from app.api.v4.cohorts.delete import delete_cohort
-    from app.api.v4.cohorts.duplicate import duplicate_cohort
-    from app.api.v4.cohorts.get import get_cohort
-    from app.api.v4.cohorts.list import get_cohorts_list
-    from app.api.v4.cohorts.save import save_cohort
+    from app.api.v4.artifacts.cohort.delete import delete_cohort
+    from app.api.v4.artifacts.cohort.duplicate import duplicate_cohort
+    from app.api.v4.artifacts.cohort.get import get_cohort
+    from app.api.v4.artifacts.cohort.list import get_cohorts_list
+    from app.api.v4.artifacts.cohort.save import save_cohort
 
     COHORTS_HANDLERS = {
         "get": get_cohort,
@@ -350,10 +349,10 @@ except ImportError:
 
 # Evals handlers (uses unified save.py)
 try:
-    from app.api.v4.evals.delete import delete_eval
-    from app.api.v4.evals.get import get_eval
-    from app.api.v4.evals.list import get_evals_list
-    from app.api.v4.evals.save import save_eval
+    from app.api.v4.artifacts.eval.delete import delete_eval
+    from app.api.v4.artifacts.eval.get import get_eval
+    from app.api.v4.artifacts.eval.list import get_evals_list
+    from app.api.v4.artifacts.eval.save import save_eval
 
     EVALS_HANDLERS = {
         "get": get_eval,
@@ -367,11 +366,11 @@ except ImportError:
 
 # Rubrics handlers (uses unified save.py)
 try:
-    from app.api.v4.rubrics.delete import delete_rubric
-    from app.api.v4.rubrics.duplicate import duplicate_rubric
-    from app.api.v4.rubrics.get import get_rubric
-    from app.api.v4.rubrics.list import get_rubrics_list
-    from app.api.v4.rubrics.save import save_rubric
+    from app.api.v4.artifacts.rubric.delete import delete_rubric
+    from app.api.v4.artifacts.rubric.duplicate import duplicate_rubric
+    from app.api.v4.artifacts.rubric.get import get_rubric
+    from app.api.v4.artifacts.rubric.list import get_rubrics_list
+    from app.api.v4.artifacts.rubric.save import save_rubric
 
     RUBRICS_HANDLERS = {
         "get": get_rubric,
@@ -385,11 +384,11 @@ except ImportError:
 
 # Agents handlers (uses unified save.py)
 try:
-    from app.api.v4.agents.delete import delete_agent
-    from app.api.v4.agents.duplicate import duplicate_agent
-    from app.api.v4.agents.get import get_agent
-    from app.api.v4.agents.list import list_agents
-    from app.api.v4.agents.save import save_agent
+    from app.api.v4.artifacts.agent.delete import delete_agent
+    from app.api.v4.artifacts.agent.duplicate import duplicate_agent
+    from app.api.v4.artifacts.agent.get import get_agent
+    from app.api.v4.artifacts.agent.list import list_agents
+    from app.api.v4.artifacts.agent.save import save_agent
 
     AGENTS_HANDLERS = {
         "get": get_agent,
@@ -403,11 +402,11 @@ except ImportError:
 
 # Models handlers (uses unified save.py)
 try:
-    from app.api.v4.models.delete import delete_model
-    from app.api.v4.models.duplicate import duplicate_model
-    from app.api.v4.models.get import get_model
-    from app.api.v4.models.list import get_models_list
-    from app.api.v4.models.save import save_model
+    from app.api.v4.artifacts.model.delete import delete_model
+    from app.api.v4.artifacts.model.duplicate import duplicate_model
+    from app.api.v4.artifacts.model.get import get_model
+    from app.api.v4.artifacts.model.list import get_models_list
+    from app.api.v4.artifacts.model.save import save_model
 
     MODELS_HANDLERS = {
         "get": get_model,
@@ -421,10 +420,10 @@ except ImportError:
 
 # Providers handlers
 try:
-    from app.api.v4.providers.delete import delete_provider
-    from app.api.v4.providers.get import get_provider
-    from app.api.v4.providers.list import get_providers_list
-    from app.api.v4.providers.save import save_provider
+    from app.api.v4.artifacts.provider.delete import delete_provider
+    from app.api.v4.artifacts.provider.get import get_provider
+    from app.api.v4.artifacts.provider.list import get_providers_list
+    from app.api.v4.artifacts.provider.save import save_provider
 
     PROVIDERS_HANDLERS = {
         "get": get_provider,
@@ -438,11 +437,11 @@ except ImportError:
 
 # Parameters handlers (uses unified save.py)
 try:
-    from app.api.v4.parameters.delete import delete_parameter
-    from app.api.v4.parameters.duplicate import duplicate_parameter
-    from app.api.v4.parameters.get import get_parameter
-    from app.api.v4.parameters.list import get_parameters_list
-    from app.api.v4.parameters.save import save_parameter
+    from app.api.v4.artifacts.parameter.delete import delete_parameter
+    from app.api.v4.artifacts.parameter.duplicate import duplicate_parameter
+    from app.api.v4.artifacts.parameter.get import get_parameter
+    from app.api.v4.artifacts.parameter.list import get_parameters_list
+    from app.api.v4.artifacts.parameter.save import save_parameter
 
     PARAMETERS_HANDLERS = {
         "get": get_parameter,
@@ -456,11 +455,11 @@ except ImportError:
 
 # Fields handlers
 try:
-    from app.api.v4.fields.delete import delete_field
-    from app.api.v4.fields.duplicate import duplicate_field
-    from app.api.v4.fields.get import get_field
-    from app.api.v4.fields.list import get_fields_list
-    from app.api.v4.fields.save import save_field
+    from app.api.v4.artifacts.field.delete import delete_field
+    from app.api.v4.artifacts.field.duplicate import duplicate_field
+    from app.api.v4.artifacts.field.get import get_field
+    from app.api.v4.artifacts.field.list import get_fields_list
+    from app.api.v4.artifacts.field.save import save_field
 
     FIELDS_HANDLERS = {
         "get": get_field,
@@ -472,17 +471,16 @@ try:
 except ImportError:
     FIELDS_HANDLERS = {}
 
-# Profile handlers (uses create.py/update.py for save)
+# Profile handlers (uses unified get.py and save.py)
 try:
-    from app.api.v4.profile.create import create_profile
-    from app.api.v4.profile.delete import delete_profile
-    from app.api.v4.profile.detail import get_profile_detail
-    from app.api.v4.profile.update import update_profile
+    from app.api.v4.artifacts.profile.delete import delete_profile
+    from app.api.v4.artifacts.profile.get import get_profile
+    from app.api.v4.artifacts.profile.save import save_profile
 
     PROFILE_HANDLERS = {
-        "get": get_profile_detail,
-        "save": create_save_handler(create_profile, update_profile, "profile_id"),
-        "list": None,  # Profile doesn't have list
+        "get": get_profile,
+        "save": save_profile,
+        "list": None,  # Profile doesn't have list (staff list is separate)
         "duplicate": None,  # Profile doesn't have duplicate
         "delete": delete_profile,
     }
@@ -491,11 +489,11 @@ except ImportError:
 
 # Auth handlers (uses unified save.py)
 try:
-    from app.api.v4.auth.delete import delete_auth
-    from app.api.v4.auth.duplicate import duplicate_auth
-    from app.api.v4.auth.get import get_auth
-    from app.api.v4.auth.list import get_auth_list
-    from app.api.v4.auth.save import save_auth
+    from app.api.v4.artifacts.auth.delete import delete_auth
+    from app.api.v4.artifacts.auth.duplicate import duplicate_auth
+    from app.api.v4.artifacts.auth.get import get_auth
+    from app.api.v4.artifacts.auth.list import get_auth_list
+    from app.api.v4.artifacts.auth.save import save_auth
 
     AUTH_HANDLERS = {
         "get": get_auth,
@@ -509,11 +507,11 @@ except ImportError:
 
 # Tools handlers
 try:
-    from app.api.v4.tools.delete import delete_tool
-    from app.api.v4.tools.duplicate import duplicate_tool
-    from app.api.v4.tools.get import get_tool
-    from app.api.v4.tools.list import get_tools_list
-    from app.api.v4.tools.save import save_tool
+    from app.api.v4.artifacts.tool.delete import delete_tool
+    from app.api.v4.artifacts.tool.duplicate import duplicate_tool
+    from app.api.v4.artifacts.tool.get import get_tool
+    from app.api.v4.artifacts.tool.list import get_tools_list
+    from app.api.v4.artifacts.tool.save import save_tool
 
     TOOLS_HANDLERS = {
         "get": get_tool,
@@ -530,54 +528,55 @@ KEYS_HANDLERS: dict[str, Any] = {}
 
 # Analytics handlers
 try:
-    from app.api.v4.activity.list import get_activity_list
-    from app.api.v4.benchmark.overview import get_benchmark_overview
-    from app.api.v4.dashboard.bundle import get_dashboard
-    from app.api.v4.health.bundle import get_health_bundle
-    from app.api.v4.home.overview import get_home_overview
-    from app.api.v4.leaderboard.bundle import get_leaderboard
-    from app.api.v4.practice.overview import get_practice_overview
-    from app.api.v4.pricing.analytics import get_pricing
-    from app.api.v4.reports.bundle import \
-        get_reports  # Bundle for multiple profiles
-    from app.api.v4.reports.overview import \
-        get_reports_overview  # Single profile report
+    from app.api.v4.analytics.activity.get import get_activity_bundle
+    from app.api.v4.analytics.activity.list import get_activity_list
+    from app.api.v4.analytics.benchmark.get import get_benchmark_overview
+    from app.api.v4.analytics.dashboard.get import get_dashboard
+    from app.api.v4.analytics.health.get import get_health
+    from app.api.v4.analytics.home.get import get_home_overview
+    from app.api.v4.analytics.leaderboard.get import get_leaderboard
+    from app.api.v4.analytics.practice.get import get_practice_overview
+    from app.api.v4.analytics.pricing.get import get_pricing
+    from app.api.v4.analytics.reports.get import \
+        get_reports  # Single profile report (merged overview + history)
+    from app.api.v4.analytics.reports.list import \
+        get_reports as get_reports_list  # List for multiple profiles
 
     ANALYTICS_HANDLERS = {
         "home": get_home_overview,
         "dashboard": get_dashboard,
         "practice": get_practice_overview,
         "leaderboard": get_leaderboard,
-        "reports": get_reports,  # Bundle for multiple profiles
-        "report": get_reports_overview,  # Single profile report
-        "activity": get_activity_list,
+        "reports": get_reports_list,  # List for multiple profiles
+        "report": get_reports,  # Single profile report (merged overview + history)
+        "activity": get_activity_bundle,
         "pricing": get_pricing,
-        "health": get_health_bundle,
+        "health": get_health,
         "benchmark": get_benchmark_overview,
     }
 except ImportError:
     ANALYTICS_HANDLERS = {}
 
-# Groups handlers (pricing)
+# Groups handlers
 try:
-    from app.api.v4.pricing.detail import get_pricing_run_detail
-    from app.api.v4.pricing.runs import get_pricing_runs
+    from app.api.v4.analytics.pricing.list import get_pricing_list
+    from app.api.v4.artifacts.group import get_group
 
     GROUPS_HANDLERS = {
-        "list": get_pricing_runs,
-        "get": get_pricing_run_detail,
+        "list": get_pricing_list,
+        "get": get_group,
     }
 except ImportError:
     GROUPS_HANDLERS = {}
 
 # Attempts handlers
 try:
+    from app.api.v4.analytics.dashboard.list import get_dashboard_history
+    from app.api.v4.analytics.home.list import get_home_history
+    from app.api.v4.analytics.practice.list import get_practice_history
     from app.api.v4.attempts.archive import bulk_archive_attempts
-    from app.api.v4.attempts.eval import get_eval_attempt_full
-    from app.api.v4.attempts.simulation import get_attempt_full
-    from app.api.v4.dashboard.history import get_dashboard_history
-    from app.api.v4.home.history import get_home_history
-    from app.api.v4.practice.history import get_practice_history
+    from app.api.v4.attempts.benchmark.get import get_eval_attempt_full
+    from app.api.v4.attempts.simulation.get import get_attempt_full
 
     ATTEMPTS_HANDLERS = {
         "list_home": get_home_history,
@@ -593,8 +592,8 @@ except ImportError:
 
 # Settings handlers (embedded in artifacts)
 try:
-    from app.api.v4.settings.list import list_settings
-    from app.api.v4.settings.update import update_settings
+    from app.api.v4.artifacts.setting.list import list_settings
+    from app.api.v4.artifacts.setting.update import update_settings
 
     SETTINGS_HANDLERS = {
         "get": list_settings,
@@ -794,18 +793,98 @@ except ImportError:
 
 # Import artifact documentation functions
 # Maps singular artifact names (MCP/database) to docs functions
-# Docs functions are imported from plural API endpoints
+# Docs functions are imported from artifact endpoints
 ARTIFACT_DOCS: dict[str, Any] = {}
 try:
-    from app.api.v4.personas.docs import get_personas_docs
-
+    from app.api.v4.artifacts.persona.docs import get_personas_docs
     ARTIFACT_DOCS["persona"] = get_personas_docs
 except ImportError:
     pass
+try:
+    from app.api.v4.artifacts.scenario.docs import get_scenarios_docs
+    ARTIFACT_DOCS["scenario"] = get_scenarios_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.simulation.docs import get_simulations_docs
+    ARTIFACT_DOCS["simulation"] = get_simulations_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.document.docs import get_documents_docs
+    ARTIFACT_DOCS["document"] = get_documents_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.department.docs import get_departments_docs
+    ARTIFACT_DOCS["department"] = get_departments_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.cohort.docs import get_cohorts_docs
+    ARTIFACT_DOCS["cohort"] = get_cohorts_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.eval.docs import get_evals_docs
+    ARTIFACT_DOCS["eval"] = get_evals_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.rubric.docs import get_rubrics_docs
+    ARTIFACT_DOCS["rubric"] = get_rubrics_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.setting.docs import get_settings_docs
+    ARTIFACT_DOCS["setting"] = get_settings_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.agent.docs import get_agents_docs
+    ARTIFACT_DOCS["agent"] = get_agents_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.model.docs import get_models_docs
+    ARTIFACT_DOCS["model"] = get_models_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.provider.docs import get_providers_docs
+    ARTIFACT_DOCS["provider"] = get_providers_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.parameter.docs import get_parameters_docs
+    ARTIFACT_DOCS["parameter"] = get_parameters_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.field.docs import get_fields_docs
+    ARTIFACT_DOCS["field"] = get_fields_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.profile.docs import get_profiles_docs
+    ARTIFACT_DOCS["profile"] = get_profiles_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.auth.docs import get_auths_docs
+    ARTIFACT_DOCS["auth"] = get_auths_docs
+except ImportError:
+    pass
+try:
+    from app.api.v4.artifacts.tool.docs import get_tools_docs
+    ARTIFACT_DOCS["tool"] = get_tools_docs
+except ImportError:
+    pass
+
 
 # Import root GLOW documentation
 try:
-    from app.mcp.docs import get_glow_docs as _get_glow_docs
+    from app.api.v4.docs import get_glow_docs as _get_glow_docs
 
     def get_glow_docs() -> dict[str, Any]:
         """Wrapper for root GLOW docs."""

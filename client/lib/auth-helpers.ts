@@ -131,7 +131,7 @@ export async function checkRouteAccess(
             .join("; ");
 
           const profileContext = await api.post(
-            "/profile/context",
+            "/auth/context",
             {
               body: {},
             },

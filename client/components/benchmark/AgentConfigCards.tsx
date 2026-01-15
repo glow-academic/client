@@ -14,7 +14,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/eval", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/get", "post">;
 type AgentsListOut = OutputOf<"/api/v4/agents/list", "post">;
 type AgentDetailOut = OutputOf<"/api/v4/agents/detail", "post">;
 type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;

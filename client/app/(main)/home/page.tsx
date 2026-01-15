@@ -16,10 +16,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v4/home/overview", "post">;
-type HomeOut = OutputOf<"/api/v4/home/overview", "post">;
-type HomeHistoryIn = InputOf<"/api/v4/home/history", "post">;
-type HomeHistoryOut = OutputOf<"/api/v4/home/history", "post">;
+type HomeIn = InputOf<"/api/v4/analytics/home/get", "post">;
+type HomeOut = OutputOf<"/api/v4/analytics/home/get", "post">;
+type HomeHistoryIn = InputOf<"/api/v4/analytics/home/list", "post">;
+type HomeHistoryOut = OutputOf<"/api/v4/analytics/home/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Home overview responses can get large and exceed Next.js 2MB cache limit.
@@ -29,7 +29,7 @@ type HomeHistoryOut = OutputOf<"/api/v4/home/history", "post">;
 const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/home/overview", input, {
+  return api.post("/analytics/home/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -49,7 +49,7 @@ const getHomeHistory = async (
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/home/history", input, {
+  return api.post("/analytics/home/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

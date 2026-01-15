@@ -10,32 +10,32 @@ import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LayoutContextIn = InputOf<"/api/v4/profile/context", "post">;
-type LayoutContextOut = OutputOf<"/api/v4/profile/context", "post">;
-type AuthorizeEmulationIn = InputOf<"/api/v4/profile/emulate", "post">;
-type AuthorizeEmulationOut = OutputOf<"/api/v4/profile/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v4/feedback/create", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v4/feedback/create", "post">;
+type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
+type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
+type AuthorizeEmulationIn = InputOf<"/api/v4/auth/emulate", "post">;
+type AuthorizeEmulationOut = OutputOf<"/api/v4/auth/emulate", "post">;
+type CreateFeedbackIn = InputOf<"/api/v4/debug", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v4/debug", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v4/analytics/refresh", "post">;
-type AttemptFullIn = InputOf<"/api/v4/attempts/simulation", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation", "post">;
+type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<
-  "/api/v4/profile/simulatable",
+  "/api/v4/auth/simulatable",
   "post"
 >;
 type SearchSimulatableProfilesOut = OutputOf<
-  "/api/v4/profile/simulatable",
+  "/api/v4/auth/simulatable",
   "post"
 >;
-type SearchStaffIn = InputOf<"/api/v4/staff/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/staff/search", "post">;
+type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
+type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
 type CreateStaffDataIn = InputOf<"/api/v4/staff/data/create", "post">;
 type CreateStaffDataOut = OutputOf<"/api/v4/staff/data/create", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/staff/csv", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/staff/csv", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/staff/upsert", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/staff/upsert", "post">;
+type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
+type ProcessCSVOut = OutputOf<"/api/v4/bulk/staff/process", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
 /** ---- Client-side settings type (excludes guestProfileId) ----
  * guestProfileId is server-side only and should not be exposed to client components
  *
@@ -111,7 +111,7 @@ export const getLayoutContext = cache(
       .join("; ");
 
     const result = await api.post(
-      "/profile/context",
+      "/auth/context",
       input,
       cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined
     );
@@ -127,7 +127,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation", input, {
+  return api.post("/attempts/simulation/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -447,7 +447,7 @@ type SwitchEffectiveProfileResult = {
 async function authorizeEmulation(
   input: AuthorizeEmulationIn
 ): Promise<AuthorizeEmulationOut> {
-  return api.post("/profile/emulate", input);
+  return api.post("/auth/emulate", input);
 }
 
 /**
@@ -604,7 +604,7 @@ export async function clearGuestSessionCookies(): Promise<void> {
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/feedback/create", input);
+  return api.post("/debug", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
@@ -618,7 +618,7 @@ export async function refreshAnalytics(
 export async function searchSimulatableProfiles(
   input: SearchSimulatableProfilesIn
 ): Promise<SearchSimulatableProfilesOut> {
-  return api.post("/profile/simulatable", input);
+  return api.post("/auth/simulatable", input);
 }
 
 /** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
@@ -626,7 +626,7 @@ export async function searchStaff(
   input: SearchStaffIn
 ): Promise<SearchStaffOut> {
   "use server";
-  return api.post("/staff/search", input);
+  return api.post("/bulk/staff/search", input);
 }
 
 export async function getCreateStaffData(
@@ -638,7 +638,7 @@ export async function getCreateStaffData(
 
 export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/staff/csv", input);
+  return api.post("/bulk/staff/process", input);
 }
 
 export async function bulkCreateOrUpdateStaff(
@@ -646,7 +646,7 @@ export async function bulkCreateOrUpdateStaff(
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/staff/upsert", input);
+  return api.post("/bulk/staff/save", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

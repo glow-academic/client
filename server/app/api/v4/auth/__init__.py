@@ -1,20 +1,19 @@
-"""Auth resource router."""
+"""Auth resource router (not available to MCP)."""
 
-from fastapi import APIRouter
-
-from app.api.v4.auth.delete import router as delete_router
-from app.api.v4.auth.duplicate import router as duplicate_router
-from app.api.v4.auth.get import router as get_router
-from app.api.v4.auth.list import router as list_router
+from app.api.v4.auth.context import router as context_router
+from app.api.v4.auth.email import router as email_router
+from app.api.v4.auth.emulate import router as emulate_router
 from app.api.v4.auth.login import router as login_router
-from app.api.v4.auth.save import router as save_router
+from app.api.v4.auth.simulatable import router as simulatable_router
+from app.api.v4.auth.upsert import router as upsert_router
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Include endpoint routers
-router.include_router(list_router)
-router.include_router(get_router)
-router.include_router(save_router)
-router.include_router(duplicate_router)
-router.include_router(delete_router)
+# Include all auth endpoint routers
 router.include_router(login_router)
+router.include_router(context_router)
+router.include_router(email_router)
+router.include_router(upsert_router)
+router.include_router(simulatable_router)
+router.include_router(emulate_router)

@@ -16,12 +16,18 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v4/dashboard/overview", "post">;
-type DashboardOut = OutputOf<"/api/v4/dashboard/overview", "post">;
-type DashboardHistoryIn = InputOf<"/api/v4/dashboard/history", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v4/dashboard/history", "post">;
-type BulkArchiveAttemptsIn = InputOf<"/api/v4/attempts/archive", "post">;
-type BulkArchiveAttemptsOut = OutputOf<"/api/v4/attempts/archive", "post">;
+type DashboardIn = InputOf<"/api/v4/analytics/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v4/analytics/dashboard/get", "post">;
+type DashboardHistoryIn = InputOf<"/api/v4/analytics/dashboard/list", "post">;
+type DashboardHistoryOut = OutputOf<"/api/v4/analytics/dashboard/list", "post">;
+type BulkArchiveAttemptsIn = InputOf<
+  "/api/v4/attempts/simulation/archive",
+  "post"
+>;
+type BulkArchiveAttemptsOut = OutputOf<
+  "/api/v4/attempts/simulation/archive",
+  "post"
+>;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
@@ -34,7 +40,7 @@ const getDashboardOverview = async (
   const bypassCache = await isHardRefresh();
 
   // InputOf types have body property with snake_case fields
-  return api.post("/dashboard/overview", input, {
+  return api.post("/analytics/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -55,7 +61,7 @@ const getDashboardHistory = async (
   const bypassCache = await isHardRefresh();
 
   // InputOf types have body property with snake_case fields
-  return api.post("/dashboard/history", input, {
+  return api.post("/analytics/dashboard/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -293,7 +299,7 @@ async function bulkArchiveAttempts(
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
   // Server invalidates Redis cache with "dashboard" and "history" tags
-  return api.post("/attempts/archive", input);
+  return api.post("/attempts/simulation/archive", input);
 }
 
 /** ---- Inline history section component (only used here) ---- */
@@ -372,30 +378,48 @@ async function DashboardHistorySection({
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profile_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-    const count = typeof opt.count === "number" ? opt.count : undefined;
-    return {
-      value: String(opt.value || ""),
-      label: String(opt.label || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-  const simulationOptions = (historyData.simulation_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-    const count = typeof opt.count === "number" ? opt.count : undefined;
-    return {
-      value: String(opt.value || ""),
-      label: String(opt.label || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-  const scenarioOptions = (historyData.scenario_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
-    const count = typeof opt.count === "number" ? opt.count : undefined;
-    return {
-      value: String(opt.value || ""),
-      label: String(opt.label || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
+  const profileOptions = (historyData.profile_options || []).map(
+    (opt: {
+      value?: string | null;
+      label?: string | null;
+      count?: number | null;
+    }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt: {
+      value?: string | null;
+      label?: string | null;
+      count?: number | null;
+    }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const scenarioOptions = (historyData.scenario_options || []).map(
+    (opt: {
+      value?: string | null;
+      label?: string | null;
+      count?: number | null;
+    }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
 
   return (
     <SimulationHistory

@@ -138,7 +138,7 @@ export const {
         // V3 API - fetch profile by email
         let existingProfile = null;
         try {
-          const profileResponse = await api.post("/profile/email", {
+          const profileResponse = await api.post("/auth/email", {
             body: { email: user.email || "" },
           });
           // API response has profile_id directly, not nested in profile object
@@ -199,7 +199,7 @@ export const {
           // V3 API - fetch profile by email
           let existingProfile = null;
           try {
-            const profileResponse = await api.post("/profile/email", {
+            const profileResponse = await api.post("/auth/email", {
               body: { email: user.email },
             });
             // API response has profile_id directly, not nested in profile object
@@ -253,7 +253,7 @@ export const {
         // V3 API - fetch profile by email
         let profile = null;
         try {
-          const profileResponse = await api.post("/profile/email", {
+          const profileResponse = await api.post("/auth/email", {
             body: { email: user.email },
           });
           // API response has profile_id directly, not nested in profile object
@@ -270,7 +270,7 @@ export const {
             await createGuestProfile(user.email, user.name);
             // Retry fetching the profile after creation
             try {
-              const profileResponse = await api.post("/profile/email", {
+              const profileResponse = await api.post("/auth/email", {
                 body: { email: user.email },
               });
               // API response has profile_id directly, not nested in profile object

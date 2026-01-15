@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile/upsert": {
+    "/api/v4/auth/upsert": {
         parameters: {
             query?: never;
             header?: never;
@@ -124,7 +124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile/email": {
+    "/api/v4/auth/email": {
         parameters: {
             query?: never;
             header?: never;
@@ -144,7 +144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile/context": {
+    "/api/v4/auth/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +168,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile/emulate": {
+    "/api/v4/auth/emulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,7 +188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/profile/simulatable": {
+    "/api/v4/auth/simulatable": {
         parameters: {
             query?: never;
             header?: never;
@@ -1077,7 +1077,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/certificate": {
+    "/api/v4/export/certificate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3197,7 +3197,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/activity/bundle": {
+    "/api/v4/analytics/activity/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3217,7 +3217,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/activity/list": {
+    "/api/v4/analytics/activity/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3257,7 +3257,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/dashboard/history": {
+    "/api/v4/analytics/dashboard/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3277,7 +3277,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/reports/export": {
+    "/api/v4/export/report": {
         parameters: {
             query?: never;
             header?: never;
@@ -3297,7 +3297,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/reports": {
+    "/api/v4/analytics/reports/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3317,7 +3317,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/reports/overview": {
+    "/api/v4/analytics/reports/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3337,7 +3337,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/reports/history": {
+    "/api/v4/analytics/reports/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3357,7 +3357,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/leaderboard/bundle": {
+    "/api/v4/analytics/leaderboard/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3482,7 +3482,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/keys/decrypt": {
+    "/api/v4/decrypt/key": {
         parameters: {
             query?: never;
             header?: never;
@@ -3917,7 +3917,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/feedback/create": {
+    "/api/v4/debug": {
         parameters: {
             query?: never;
             header?: never;
@@ -3977,7 +3977,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/health/bundle": {
+    "/api/v4/analytics/health/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3997,7 +3997,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/archive": {
+    "/api/v4/attempts/simulation/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -4017,7 +4017,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/simulation": {
+    "/api/v4/attempts/simulation/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4037,7 +4037,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/eval": {
+    "/api/v4/attempts/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4182,7 +4182,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/staff/search": {
+    "/api/v4/bulk/staff/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4202,7 +4202,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/staff/csv": {
+    "/api/v4/bulk/staff/process": {
         parameters: {
             query?: never;
             header?: never;
@@ -4242,7 +4242,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/staff/create": {
+    "/api/v4/bulk/staff/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -4262,7 +4262,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/staff/update": {
+    "/api/v4/bulk/staff/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -4282,7 +4282,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/staff/delete": {
+    "/api/v4/bulk/staff/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4302,7 +4302,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/staff/upsert": {
+    "/api/v4/bulk/staff/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -4322,7 +4322,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/benchmark/overview": {
+    "/api/v4/analytics/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4345,7 +4345,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/benchmark/history": {
+    "/api/v4/analytics/benchmark/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -4365,7 +4365,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/home/overview": {
+    "/api/v4/analytics/home/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4388,7 +4388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/home/history": {
+    "/api/v4/analytics/home/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -4408,7 +4408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/practice/overview": {
+    "/api/v4/analytics/practice/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4432,7 +4432,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/practice/history": {
+    "/api/v4/analytics/practice/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -4452,7 +4452,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/pricing/analytics": {
+    "/api/v4/analytics/pricing/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4472,7 +4472,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/pricing/runs": {
+    "/api/v4/analytics/pricing/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -4492,7 +4492,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/pricing/detail": {
+    "/api/v4/artifacts/group/get": {
         parameters: {
             query?: never;
             header?: never;

@@ -16,10 +16,10 @@ import type { Metadata } from "next";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingIn = InputOf<"/api/v4/pricing/analytics", "post">;
-type PricingOut = OutputOf<"/api/v4/pricing/analytics", "post">;
-type PricingRunsIn = InputOf<"/api/v4/pricing/runs", "post">;
-type PricingRunsOut = OutputOf<"/api/v4/pricing/runs", "post">;
+type PricingIn = InputOf<"/api/v4/analytics/pricing/get", "post">;
+type PricingOut = OutputOf<"/api/v4/analytics/pricing/get", "post">;
+type PricingRunsIn = InputOf<"/api/v4/analytics/pricing/list", "post">;
+type PricingRunsOut = OutputOf<"/api/v4/analytics/pricing/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Pricing analytics responses can get large and exceed Next.js 2MB cache limit (~9MB).
@@ -29,7 +29,7 @@ type PricingRunsOut = OutputOf<"/api/v4/pricing/runs", "post">;
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/pricing/analytics", input, {
+  return api.post("/analytics/pricing/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -49,7 +49,7 @@ const getPricingRuns = async (
 ): Promise<PricingRunsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/pricing/runs", input, {
+  return api.post("/analytics/pricing/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

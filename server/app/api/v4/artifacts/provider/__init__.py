@@ -1,0 +1,19 @@
+"""Provider v4 router."""
+
+from app.api.v4.artifacts.provider.delete import router as delete_router
+from app.api.v4.artifacts.provider.draft import router as draft_router
+from app.api.v4.artifacts.provider.duplicate import router as duplicate_router
+from app.api.v4.artifacts.provider.get import router as get_router
+from app.api.v4.artifacts.provider.list import router as list_router
+from app.api.v4.artifacts.provider.save import router as save_router
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/providers", tags=["providers"])
+
+# Include all endpoint routers (standard 6 endpoints)
+router.include_router(list_router)
+router.include_router(get_router)
+router.include_router(save_router)
+router.include_router(duplicate_router)
+router.include_router(delete_router)
+router.include_router(draft_router)

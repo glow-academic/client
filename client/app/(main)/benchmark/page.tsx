@@ -15,10 +15,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/api/v4/benchmark/overview", "post">;
-type BenchmarkOverviewOut = OutputOf<"/api/v4/benchmark/overview", "post">;
-type BenchmarkHistoryIn = InputOf<"/api/v4/benchmark/history", "post">;
-type BenchmarkHistoryOut = OutputOf<"/api/v4/benchmark/history", "post">;
+type BenchmarkOverviewIn = InputOf<"/api/v4/analytics/benchmark/get", "post">;
+type BenchmarkOverviewOut = OutputOf<"/api/v4/analytics/benchmark/get", "post">;
+type BenchmarkHistoryIn = InputOf<"/api/v4/analytics/benchmark/list", "post">;
+type BenchmarkHistoryOut = OutputOf<"/api/v4/analytics/benchmark/list", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -43,7 +43,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/benchmark/overview", input, {
+  return api.post("/analytics/benchmark/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -64,7 +64,7 @@ const getBenchmarkHistory = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/benchmark/history", input, {
+  return api.post("/analytics/benchmark/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
