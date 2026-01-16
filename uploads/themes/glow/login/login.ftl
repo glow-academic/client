@@ -236,22 +236,41 @@
               <#-- Provider buttons (all rendered, filtered client-side by JavaScript) -->
               <#-- Includes regular IdPs (Google, Microsoft, etc.) and default-idp instances -->
               <#if social.providers?? && social.providers?size gt 0>
+                <#-- Separate providers into non-guest and guest -->
+                <#assign nonGuestProviders = [] />
+                <#assign guestProviders = [] />
                 <#list social.providers as p>
-                  <a id="social-${p.alias}" class="action-button" href="${p.loginUrl}" <#if !allowed?seq_contains(p.alias)>style="display: none;"</#if>>
+                  <#if p.alias?contains("guest")>
+                    <#assign guestProviders = guestProviders + [p] />
+                  <#else>
+                    <#assign nonGuestProviders = nonGuestProviders + [p] />
+                  </#if>
+                </#list>
+                
+                <#-- Render non-guest providers first -->
+                <#list nonGuestProviders as p>
+                  <#assign loadingText = "Signing in..." />
+                  <a id="social-${p.alias}" 
+                     class="action-button" 
+                     href="${p.loginUrl}" 
+                     <#if !allowed?seq_contains(p.alias)>style="display: none;"</#if>
+                     data-loading-text="${loadingText}">
                     <div class="action-button-shine-1"></div>
                     <div class="action-button-shine-2"></div>
                     <div class="action-button-content">
+                      <#-- Icon (hidden when loading) -->
                       <#if p.iconClasses?has_content>
-                        <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
+                        <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!} action-button-icon" aria-hidden="true"></i>
+                      <#elseif p.alias?contains("default") && !p.alias?contains("guest")>
+                        <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
                       </#if>
-                      <#-- Default-idp instances have specific display names, regular IdPs use their displayName -->
+                      <#-- Spinner (hidden by default, shown when loading) -->
+                      <div class="action-button-spinner"></div>
+                      <#-- Text -->
                       <#if p.alias?starts_with("default-idp-")>
-                        <#if p.alias?contains("guest")>
-                          <span class="action-button-text">Continue as Guest</span>
-                        <#elseif p.alias?contains("default")>
-                          <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                          </svg>
+                        <#if p.alias?contains("default")>
                           <span class="action-button-text">Continue as Default Account</span>
                         <#else>
                           <span class="action-button-text">${p.displayName!}</span>
@@ -259,6 +278,42 @@
                       <#else>
                         <span class="action-button-text">Continue with ${p.displayName!}</span>
                       </#if>
+                      <#-- Loading text (hidden by default) -->
+                      <span class="action-button-loading-text"></span>
+                    </div>
+                  </a>
+                </#list>
+                
+                <#-- Add OR divider only if we have both non-guest and guest providers -->
+                <#if nonGuestProviders?size gt 0 && guestProviders?size gt 0>
+                  <div class="or-divider">
+                    <div class="or-divider-text">
+                      <span>Or</span>
+                    </div>
+                  </div>
+                </#if>
+                
+                <#-- Render guest providers after the divider -->
+                <#list guestProviders as p>
+                  <#assign loadingText = "Accessing..." />
+                  <a id="social-${p.alias}" 
+                     class="action-button" 
+                     href="${p.loginUrl}" 
+                     <#if !allowed?seq_contains(p.alias)>style="display: none;"</#if>
+                     data-loading-text="${loadingText}">
+                    <div class="action-button-shine-1"></div>
+                    <div class="action-button-shine-2"></div>
+                    <div class="action-button-content">
+                      <#-- Icon (hidden when loading) -->
+                      <#if p.iconClasses?has_content>
+                        <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!} action-button-icon" aria-hidden="true"></i>
+                      </#if>
+                      <#-- Spinner (hidden by default, shown when loading) -->
+                      <div class="action-button-spinner"></div>
+                      <#-- Text -->
+                      <span class="action-button-text">Continue as Guest</span>
+                      <#-- Loading text (hidden by default) -->
+                      <span class="action-button-loading-text"></span>
                     </div>
                   </a>
                 </#list>
@@ -271,5 +326,7 @@
     
     <#-- Load sparkles JavaScript from external file to avoid CSP issues -->
     <script src="${url.resourcesPath}/js/sparkles.js"></script>
+    <#-- Load login interactions JavaScript for loading states -->
+    <script src="${url.resourcesPath}/js/login-interactions.js"></script>
   </#if>
 </@layout.registrationLayout>

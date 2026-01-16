@@ -149,12 +149,12 @@ body.login-pf .login-pf-page {
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  text-decoration: none !important;
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -252,12 +252,14 @@ body.login-pf .login-pf-page {
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  text-decoration: none;
+  text-decoration: none !important;
   transition: opacity 0.3s ease;
+  color: inherit;
 }
 
 .logo-link:hover {
   opacity: 0.9;
+  text-decoration: none !important;
 }
 
 .logo-icon {
@@ -272,6 +274,14 @@ body.login-pf .login-pf-page {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
+  color: transparent;
+}
+
+.logo-link .glow-title {
+  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Form content */
@@ -286,10 +296,29 @@ body.login-pf .login-pf-page {
   position: relative;
 }
 
+/* Custom chevron - only show subtle icon, no hover effect to match Login.tsx */
+.department-picker-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 1;
+}
+
 .department-select {
   width: 100%;
   height: 3rem;
   padding: 0 1rem;
+  padding-right: 2.5rem;
   background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -304,11 +333,8 @@ body.login-pf .login-pf-page {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-  padding-right: 2.5rem;
+  /* Hide native chevron */
+  background-image: none !important;
   cursor: pointer;
 }
 
@@ -421,6 +447,23 @@ body.login-pf .login-pf-page {
   cursor: not-allowed;
 }
 
+/* Remove button underlines - override Keycloak defaults */
+.action-button,
+.action-button:link,
+.action-button:visited,
+.action-button:hover,
+.action-button:active,
+.action-button:focus {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Override any Keycloak default link styles */
+a.action-button {
+  text-decoration: none !important;
+}
+
 /* Legacy social provider button styles removed - now using unified .action-button */
 
 /* Legacy guest button styles removed - now using unified .action-button */
@@ -496,6 +539,78 @@ button,
 select,
 label {
   font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+
+/* OR Divider - matching Login.tsx */
+.or-divider {
+  position: relative;
+  padding: 0.5rem 0;
+}
+
+.or-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.or-divider-text {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.or-divider-text span {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  padding: 0.25rem 1rem;
+  color: white;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border-radius: 0.25rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Loading spinner - matching Login.tsx */
+.action-button-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.action-button-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.action-button-loading .action-button-icon,
+.action-button-loading .action-button-text {
+  display: none !important;
+}
+
+.action-button-loading .action-button-spinner {
+  display: inline-block !important;
+}
+
+.action-button-loading-text {
+  display: none;
+}
+
+.action-button-loading .action-button-loading-text {
+  display: inline-block !important;
 }
 
 /* Responsive adjustments */
