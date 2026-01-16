@@ -21,6 +21,420 @@ INITIAL_RETRY_DELAY = 2.0  # seconds
 MAX_RETRY_DELAY = 30.0  # seconds
 
 
+# ============================================================================
+# Helper functions for raw Keycloak Admin REST API calls
+# ============================================================================
+
+def kc_raw_get(kc_admin: Any, path: str) -> dict | list:
+    """Helper to make raw GET requests to Keycloak Admin API.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        path: Admin API path (e.g., '/admin/realms/master/authentication/flows')
+    
+    Returns:
+        Parsed JSON response
+    """
+    import json
+    resp = kc_admin.connection.raw_get(path)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def kc_raw_post(kc_admin: Any, path: str, payload: dict) -> dict | None:
+    """Helper to make raw POST requests to Keycloak Admin API."""
+    import json
+    resp = kc_admin.connection.raw_post(path, data=json.dumps(payload))
+    resp.raise_for_status()
+    # Some endpoints return empty body on success
+    try:
+        return resp.json()
+    except Exception:
+        return None
+
+
+def kc_raw_put(kc_admin: Any, path: str, payload: dict) -> None:
+    """Helper to make raw PUT requests to Keycloak Admin API."""
+    import json
+    resp = kc_admin.connection.raw_put(path, data=json.dumps(payload))
+    resp.raise_for_status()
+
+
+def add_execution_to_flow(kc_admin: Any, realm: str, flow_alias: str, provider_id: str, requirement: str = "ALTERNATIVE") -> bool:
+    """Add an authenticator execution to a flow.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias
+        provider_id: Authenticator provider ID (e.g., "idp-auto-link")
+        requirement: Requirement level (REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL)
+    
+    Returns:
+        True if added successfully, False otherwise
+    """
+    import urllib.parse
+    encoded_flow = urllib.parse.quote(flow_alias, safe="")
+    # POST /admin/realms/{realm}/authentication/flows/{flowAlias}/executions/execution
+    path = f"/auth/admin/realms/{realm}/authentication/flows/{encoded_flow}/executions/execution"
+    payload = {"provider": provider_id}
+    
+    try:
+        kc_raw_post(kc_admin, path, payload)
+        
+        # After adding, we need to set its requirement
+        # Get the newly added execution
+        execs = get_flow_executions(kc_admin, realm, flow_alias)
+        for e in execs:
+            if e.get("providerId") == provider_id:
+                exec_id = e.get("id")
+                if exec_id:
+                    set_execution_requirement(kc_admin, realm, flow_alias, exec_id, requirement)
+                    logger.info(f"✅ Added execution '{provider_id}' to flow '{flow_alias}' with requirement '{requirement}'")
+                    return True
+        
+        logger.warning(f"Added execution '{provider_id}' but could not set requirement")
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to add execution '{provider_id}' to flow '{flow_alias}': {e}")
+        return False
+
+
+# ============================================================================
+# Authentication Flow Management Functions
+# ============================================================================
+
+def list_authentication_flows(kc_admin: Any, realm: str) -> list[dict]:
+    """List all authentication flows in a realm."""
+    # Include /auth in path because connection object strips it from base_url for /admin paths
+    path = f"/auth/admin/realms/{realm}/authentication/flows"
+    return kc_raw_get(kc_admin, path)
+
+
+def copy_first_broker_login_flow(kc_admin: Any, realm: str, new_flow_name: str) -> str:
+    """Copy the built-in 'first broker login' flow to a new flow.
+    
+    Returns:
+        The alias of the new flow (usually same as new_flow_name)
+    """
+    source_alias = "first broker login"
+    # URL encode the flow alias (spaces become %20)
+    import urllib.parse
+    encoded_alias = urllib.parse.quote(source_alias, safe="")
+    # Include /auth in path because connection object strips it from base_url for /admin paths
+    path = f"/auth/admin/realms/{realm}/authentication/flows/{encoded_alias}/copy"
+    
+    try:
+        kc_raw_post(kc_admin, path, {"newName": new_flow_name})
+        logger.info(f"✅ Copied flow '{source_alias}' to '{new_flow_name}'")
+        return new_flow_name
+    except Exception as e:
+        logger.warning(f"Copy endpoint failed: {e}. Flow may already exist or endpoint may differ.")
+        raise
+
+
+def get_flow_executions(kc_admin: Any, realm: str, flow_alias: str) -> list[dict]:
+    """Get all executions for a flow."""
+    import urllib.parse
+    encoded_alias = urllib.parse.quote(flow_alias, safe="")
+    # Include /auth in path because connection object strips it from base_url for /admin paths
+    path = f"/auth/admin/realms/{realm}/authentication/flows/{encoded_alias}/executions"
+    return kc_raw_get(kc_admin, path)
+
+
+def set_execution_requirement(kc_admin: Any, realm: str, flow_alias: str, execution_id: str, requirement: str, priority: int | None = None) -> None:
+    """Set the requirement for an execution (REQUIRED, OPTIONAL, DISABLED, ALTERNATIVE).
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias (e.g., "First Broker Login - Silent Email AutoLink")
+        execution_id: Execution ID
+        requirement: Requirement level (REQUIRED, OPTIONAL, DISABLED, ALTERNATIVE)
+        priority: Optional priority to set (lower numbers execute first)
+    """
+    import urllib.parse
+    encoded_flow = urllib.parse.quote(flow_alias, safe="")
+    # Use flow-based endpoint: PUT /admin/realms/{realm}/authentication/flows/{flowAlias}/executions
+    # Include /auth in path because connection object strips it from base_url for /admin paths
+    path = f"/auth/admin/realms/{realm}/authentication/flows/{encoded_flow}/executions"
+    payload = {"id": execution_id, "requirement": requirement}
+    if priority is not None:
+        payload["priority"] = priority
+    kc_raw_put(kc_admin, path, payload)
+
+
+def disable_confirm_link_step(kc_admin: Any, realm: str, flow_alias: str) -> bool:
+    """Disable the 'confirm link existing account' execution in a flow and its sub-flows.
+    
+    Specifically targets the idp-confirm-link provider, which shows the prompt.
+    Searches both the main flow and all sub-flows recursively.
+    
+    Returns:
+        True if found and disabled, False otherwise
+    """
+    def search_and_disable_in_flow(target_flow_alias: str) -> bool:
+        """Search for idp-confirm-link in a specific flow and disable it."""
+        execs = get_flow_executions(kc_admin, realm, target_flow_alias)
+        
+        candidates = []
+        subflow_aliases = []
+        
+        # Get all flows to map flowId to alias
+        flows = list_authentication_flows(kc_admin, realm)
+        flow_id_to_alias = {f.get("id"): f.get("alias") for f in flows if f.get("id") and f.get("alias")}
+        
+        for e in execs:
+            name = (e.get("displayName") or "").lower()
+            provider = (e.get("providerId") or "").lower()
+            flow_id = e.get("flowId")
+            
+            # Track sub-flows to search recursively (executions with flowId are sub-flow references)
+            if flow_id and flow_id in flow_id_to_alias:
+                subflow_alias = flow_id_to_alias[flow_id]
+                if subflow_alias not in subflow_aliases:
+                    subflow_aliases.append(subflow_alias)
+            
+            # Only target the specific idp-confirm-link provider (the prompt)
+            if provider == "idp-confirm-link" or (provider and "confirm" in provider and "link" in provider):
+                candidates.append((target_flow_alias, e))
+            # Also match by display name if providerId is missing but name is clear
+            elif not provider and "confirm" in name and "link" in name and "existing" in name:
+                candidates.append((target_flow_alias, e))
+        
+        # Disable found candidates
+        disabled_any = False
+        for target_flow, e in candidates:
+            exec_id = e.get("id")
+            if exec_id:
+                set_execution_requirement(kc_admin, realm, target_flow, exec_id, "DISABLED")
+                logger.info(f"✅ Disabled execution '{e.get('displayName')}' in flow '{target_flow}' (ProviderId: {e.get('providerId', 'N/A')}, ID: {exec_id})")
+                disabled_any = True
+        
+        # Recursively search sub-flows
+        for subflow_alias in subflow_aliases:
+            if search_and_disable_in_flow(subflow_alias):
+                disabled_any = True
+        
+        return disabled_any
+    
+    return search_and_disable_in_flow(flow_alias)
+
+
+def enable_handle_existing_account_subflow(kc_admin: Any, realm: str, flow_alias: str) -> bool:
+    """Enable the 'Handle Existing Account' sub-flow and disable verification steps.
+    
+    This sub-flow is needed to handle existing accounts. We need to:
+    1. Enable the sub-flow itself (ALTERNATIVE)
+    2. Disable verification steps (email verification, re-authentication) so it auto-links silently
+    
+    Returns:
+        True if found and configured, False otherwise
+    """
+    execs = get_flow_executions(kc_admin, realm, flow_alias)
+    
+    # Find the "Handle Existing Account" sub-flow execution in main flow
+    handle_existing_flow_id = None
+    handle_existing_exec_id = None
+    
+    for e in execs:
+        display = (e.get("displayName") or "").lower()
+        flow_id = e.get("flowId")
+        
+        # Look for sub-flow executions that reference "Handle Existing Account"
+        if flow_id and ("handle" in display and "existing" in display and "account" in display):
+            handle_existing_exec_id = e.get("id")
+            handle_existing_flow_id = flow_id
+            # Enable the sub-flow
+            set_execution_requirement(kc_admin, realm, flow_alias, handle_existing_exec_id, "ALTERNATIVE")
+            logger.info(f"✅ Enabled Handle Existing Account sub-flow '{e.get('displayName')}' (ID: {handle_existing_exec_id})")
+            break
+    
+    if not handle_existing_flow_id:
+        logger.warning(f"No Handle Existing Account sub-flow found in flow '{flow_alias}'")
+        return False
+    
+    # Get the sub-flow alias from flowId
+    flows = list_authentication_flows(kc_admin, realm)
+    subflow_alias = None
+    for f in flows:
+        if f.get("id") == handle_existing_flow_id:
+            subflow_alias = f.get("alias")
+            break
+    
+    if not subflow_alias:
+        logger.warning(f"Could not find sub-flow alias for flow ID '{handle_existing_flow_id}'")
+        return False
+    
+    # Disable verification steps in the sub-flow
+    subflow_execs = get_flow_executions(kc_admin, realm, subflow_alias)
+    verification_disabled = False
+    
+    for e in subflow_execs:
+        provider = (e.get("providerId") or "").lower()
+        display = (e.get("displayName") or "").lower()
+        
+        # Disable email verification and re-authentication steps
+        if provider in ("idp-email-verification", "idp-username-password-form") or \
+           ("verify" in display and "email" in display) or \
+           ("reauthentication" in display or "re-authentication" in display):
+            exec_id = e.get("id")
+            if exec_id:
+                set_execution_requirement(kc_admin, realm, subflow_alias, exec_id, "DISABLED")
+                logger.info(f"✅ Disabled verification step '{e.get('displayName')}' in Handle Existing Account sub-flow")
+                verification_disabled = True
+    
+    if not verification_disabled:
+        logger.warning(f"No verification steps found to disable in Handle Existing Account sub-flow")
+    
+    return True
+
+
+def enable_auto_link_step(kc_admin: Any, realm: str, flow_alias: str) -> bool:
+    """Enable auto-link execution in a flow.
+    
+    In Keycloak, when "Confirm link existing account" is disabled, the "Create User If Unique" 
+    execution handles auto-linking: if a user with matching email exists, it links automatically;
+    otherwise it creates a new user. Setting this to REQUIRED ensures it runs.
+    
+    Returns:
+        True if found and enabled, False otherwise
+    """
+    execs = get_flow_executions(kc_admin, realm, flow_alias)
+    
+    # Look for "Create User If Unique" - this handles auto-linking when confirm is disabled
+    for e in execs:
+        display = (e.get("displayName") or "").lower()
+        provider = (e.get("providerId") or "").lower()
+        
+        # "Create User If Unique" is the execution that auto-links when email matches
+        looks_like_auto = (
+            provider == "idp-create-user-if-unique" or
+            ("create" in display and "unique" in display) or
+            ("auto" in display and "link" in display) or
+            ("auto" in provider and "link" in provider) or
+            "idp-auto-link" in provider
+        )
+        
+        if looks_like_auto:
+            exec_id = e.get("id")
+            if exec_id:
+                # Set to ALTERNATIVE (not REQUIRED) so it doesn't conflict with idp-auto-link
+                # Both "Create User If Unique" and "Automatically Set Existing User" must be ALTERNATIVE
+                # so Keycloak can choose the appropriate one based on whether user exists
+                set_execution_requirement(kc_admin, realm, flow_alias, exec_id, "ALTERNATIVE")
+                logger.info(f"✅ Enabled auto-link execution '{e.get('displayName')}' (ProviderId: {e.get('providerId', 'N/A')}, ID: {exec_id})")
+                return True
+    
+    logger.warning(f"No auto-link execution found in flow '{flow_alias}' - 'Create User If Unique' may need to be enabled manually")
+    return False
+
+
+def set_idp_first_broker_flow(kc_admin: Any, realm: str, idp_alias: str, flow_alias: str) -> None:
+    """Set the firstBrokerLoginFlowAlias for an IdP."""
+    # Include /auth in path because connection object strips it from base_url for /admin paths
+    path = f"/auth/admin/realms/{realm}/identity-provider/instances/{idp_alias}"
+    idp = kc_raw_get(kc_admin, path)
+    idp["firstBrokerLoginFlowAlias"] = flow_alias
+    kc_raw_put(kc_admin, path, idp)
+    logger.info(f"✅ Set firstBrokerLoginFlowAlias='{flow_alias}' for IdP '{idp_alias}'")
+
+
+async def configure_silent_email_autolink(kc_admin: Any, realm: str) -> None:
+    """Configure silent email auto-link for all IdPs.
+    
+    This function:
+    1. Copies the built-in 'first broker login' flow
+    2. Disables the confirm-link prompt
+    3. Enables auto-link execution
+    4. Assigns the flow to all IdPs
+    
+    Security note: Silent auto-link by email is safe only if:
+    - IdP email is verified
+    - IdP is trusted (Google/Microsoft are generally safe)
+    - Custom IdPs (like default-idp) must properly verify email ownership
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+        realm: Realm name (usually "master")
+    """
+    new_flow_name = "First Broker Login - Silent Email AutoLink"
+    
+    try:
+        kc_admin.change_current_realm(realm_name=realm)
+        
+        # Check if flow already exists
+        flows = list_authentication_flows(kc_admin, realm)
+        flow_exists = any(f.get("alias") == new_flow_name for f in flows)
+        
+        if not flow_exists:
+            # 1) Copy built-in flow
+            copy_first_broker_login_flow(kc_admin, realm, new_flow_name)
+        else:
+            logger.info(f"Flow '{new_flow_name}' already exists, reusing it")
+        
+        # 2) Disable confirm-link prompt (searches recursively in sub-flows)
+        disabled = disable_confirm_link_step(kc_admin, realm, new_flow_name)
+        if not disabled:
+            logger.warning("Could not disable confirm-link step - flow may still prompt")
+        
+        # 3) Enable "Handle Existing Account" sub-flow (needed for auto-linking existing accounts)
+        # This sub-flow handles existing accounts, but with confirm-link disabled inside it
+        handle_existing_enabled = enable_handle_existing_account_subflow(kc_admin, realm, new_flow_name)
+        if not handle_existing_enabled:
+            logger.warning("Could not enable Handle Existing Account sub-flow - existing accounts may not auto-link")
+        
+        # 4) Ensure "Create User If Unique" is ALTERNATIVE (handles new users)
+        # Must be ALTERNATIVE, not REQUIRED, so it doesn't conflict with idp-auto-link
+        # Both need to be ALTERNATIVE so Keycloak can choose the right one
+        enabled = enable_auto_link_step(kc_admin, realm, new_flow_name)
+        if not enabled:
+            logger.warning("Could not enable auto-link step - manual configuration may be needed")
+        
+        # 5) Add "Automatically Set Existing User" authenticator (handles existing accounts by email)
+        # Check if it already exists
+        execs = get_flow_executions(kc_admin, realm, new_flow_name)
+        has_auto_link = any(e.get("providerId") == "idp-auto-link" for e in execs)
+        if not has_auto_link:
+            auto_link_added = add_execution_to_flow(kc_admin, realm, new_flow_name, "idp-auto-link", "ALTERNATIVE")
+            if not auto_link_added:
+                logger.warning("Could not add 'Automatically Set Existing User' authenticator - existing accounts may not auto-link")
+        else:
+            logger.info("'Automatically Set Existing User' authenticator already exists in flow")
+        
+        # 6) Set correct priorities: idp-auto-link should come AFTER idp-create-user-if-unique
+        # Order: Create User If Unique (priority -10) -> Automatically Set Existing User (priority -5)
+        # This ensures: new users get created first, existing users get auto-linked second
+        execs = get_flow_executions(kc_admin, realm, new_flow_name)
+        for e in execs:
+            provider = e.get("providerId")
+            exec_id = e.get("id")
+            if provider == "idp-create-user-if-unique" and exec_id:
+                set_execution_requirement(kc_admin, realm, new_flow_name, exec_id, "ALTERNATIVE", priority=-10)
+                logger.info("✅ Set 'Create User If Unique' priority to -10 (runs first)")
+            elif provider == "idp-auto-link" and exec_id:
+                set_execution_requirement(kc_admin, realm, new_flow_name, exec_id, "ALTERNATIVE", priority=-5)
+                logger.info("✅ Set 'Automatically Set Existing User' priority to -5 (runs second)")
+        
+        # 4) Assign flow to all IdPs
+        idps = kc_admin.get_idps()
+        assigned_count = 0
+        for idp in idps:
+            alias = idp.get("alias")
+            if alias:
+                try:
+                    set_idp_first_broker_flow(kc_admin, realm, alias, new_flow_name)
+                    assigned_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to assign flow to IdP '{alias}': {e}")
+        
+        logger.info(f"✅ Configured silent email auto-link: assigned flow to {assigned_count} IdPs")
+        
+    except Exception as e:
+        logger.warning(f"Failed to configure silent email auto-link: {e}", exc_info=True)
+        # Don't fail the entire sync if flow configuration fails
+
+
 @dataclass
 class KeycloakSyncResult:
     """Result of a Keycloak sync operation."""
@@ -1544,6 +1958,10 @@ async def sync_identity_providers(
                                 logger.warning(f"Failed to delete IdP '{idp_alias}': {delete_e}")
         except Exception as cleanup_e:
             logger.warning(f"Failed to clean up obsolete IdPs: {cleanup_e}")
+        
+        # Step 4: Configure silent email auto-link for all IdPs
+        logger.info("Configuring silent email auto-link for all IdPs...")
+        await configure_silent_email_autolink(kc_admin, "master")
         
         logger.info("✅ Identity provider sync completed")
     except Exception as e:
