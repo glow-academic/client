@@ -67,13 +67,6 @@ CREATE TYPE types.q_get_document_detail_v4_agent AS (
     roles text[]
 );
 
-CREATE TYPE types.q_get_document_detail_v4_template AS (
-    template_id uuid,
-    schema_id uuid,
-    active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
-);
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_document_detail_v4(
@@ -105,13 +98,6 @@ RETURNS TABLE (
     parameters types.q_get_document_detail_v4_parameter[],
     agents types.q_get_document_detail_v4_agent[],
     valid_agent_ids text[],
-    template boolean,
-    template_id uuid,
-    schema_id uuid,
-    html_id uuid,
-    template_file_path text,
-    template_html text,
-    templates types.q_get_document_detail_v4_template[],
     actor_name text,
     draft_version int
 )
@@ -150,17 +136,9 @@ document_data AS (
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT dh.html_id FROM document_html dh WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as html_id,
-        (SELECT da.args_id FROM document_args da WHERE da.document_id = d.id ORDER BY da.created_at DESC LIMIT 1) as schema_id,  -- Using args_id as schema_id for backward compatibility
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
-        (SELECT u.file_path FROM document_html dh
-         JOIN html_resource h ON h.id = dh.html_id
-         JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
-         JOIN uploads u ON u.id = hu.upload_id 
-         WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as template_file_path,
-        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
          WHERE sd.document_id = d.id AND sd.active = true) as scenario_ids,
@@ -168,33 +146,6 @@ document_data AS (
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id) as total_scenario_links
     FROM params x
     JOIN documents_resource d ON d.id = x.document_id
-),
-document_active_template AS (
-    SELECT 
-        dao.document_id,
-        dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
-        da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
-        dao.created_at as template_created_at,
-        dao.updated_at as template_updated_at
-    FROM params x
-    JOIN document_args_outputs dao ON dao.document_id = x.document_id
-    JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
-    LEFT JOIN document_args da ON da.document_id = dao.document_id
-    ORDER BY dao.created_at DESC
-    LIMIT 1
-),
-document_all_templates AS (
-    SELECT 
-        dao.document_id,
-        dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
-        da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
-        ao.active as template_active,  -- Get active status from args_outputs_resource
-        dao.created_at as template_created_at,
-        dao.updated_at as template_updated_at
-    FROM params x
-    JOIN document_args_outputs dao ON dao.document_id = x.document_id
-    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id
-    LEFT JOIN document_args da ON da.document_id = dao.document_id
 ),
 user_profile AS (
     SELECT 
@@ -452,26 +403,11 @@ SELECT
         '{}'::types.q_get_document_detail_v4_agent[]
     ) as agents,
     COALESCE((SELECT ARRAY_AGG(ad2.agent_id::text ORDER BY ad2.name) FROM agent_data ad2), ARRAY[]::text[])::text[] as valid_agent_ids,
-    dd.template::boolean as template,
-    dat.template_id::uuid as template_id,
-    dat.schema_id::uuid as schema_id,
-    dd.html_id::uuid as html_id,
-    dd.template_file_path::text as template_file_path,
-    NULL::text as template_html,  -- Will be populated in Python from file system
-    -- Aggregate templates separately
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dat2.template_id, dat2.schema_id, dat2.template_active, dat2.template_created_at, dat2.template_updated_at)::types.q_get_document_detail_v4_template
-            ORDER BY dat2.template_created_at DESC
-        ) FROM document_all_templates dat2),
-        '{}'::types.q_get_document_detail_v4_template[]
-    ) as templates,
     up.actor_name::text as actor_name,
     COALESCE((SELECT draft_version FROM draft_payload_data), 0)::int as draft_version
 FROM document_exists_check dec
 CROSS JOIN user_profile up
 LEFT JOIN document_data dd ON dec.document_exists = true
-LEFT JOIN document_active_template dat ON dat.document_id = dd.document_id AND dec.document_exists = true
 LEFT JOIN valid_field_ids_data vfid ON vfid.document_id = dd.document_id AND dec.document_exists = true
 LIMIT 1
 $$;

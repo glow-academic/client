@@ -9927,8 +9927,6 @@ class CreateDocumentSqlParams(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_item_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -9938,8 +9936,6 @@ class CreateDocumentSqlParams(BaseModel):
             self.upload_id,
             self.department_ids,
             self.parameter_item_ids,
-            self.html_id,
-            self.schema_id,
         )
 
 class CreateDocumentSqlRow(BaseModel):
@@ -9956,8 +9952,6 @@ class CreateDocumentApiRequest(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_item_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
 
 class CreateDocumentApiResponse(BaseModel):
 
@@ -9965,46 +9959,6 @@ class CreateDocumentApiResponse(BaseModel):
     message: str | None = None
     document_id: UUID | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: create_template_and_link
-
-class CreateTemplateAndLinkSqlParams(BaseModel):
-
-    document_id: UUID
-    html_id: UUID
-    name: str
-    schema_id: UUID
-    active: bool
-    run_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-            self.html_id,
-            self.name,
-            self.schema_id,
-            self.active,
-            self.run_id,
-        )
-
-class CreateTemplateAndLinkSqlRow(BaseModel):
-
-    template_id: UUID | None = None
-
-class CreateTemplateAndLinkApiRequest(BaseModel):
-
-    document_id: UUID
-    html_id: UUID
-    name: str
-    schema_id: UUID
-    active: bool
-    run_id: UUID
-
-class CreateTemplateAndLinkApiResponse(BaseModel):
-
-    template_id: UUID | None = None
 
 
 
@@ -10333,17 +10287,6 @@ class QGetDocumentV4NameResource(BaseModel):
     name: str | None
     generated: bool | None
 
-
-
-
-class QGetDocumentV4Template(BaseModel):
-
-    template_id: UUID | None
-    schema_id: UUID | None
-    active: bool | None
-    created_at: str | None
-    updated_at: str | None
-
 class GetDocumentSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -10384,12 +10327,6 @@ class GetDocumentSqlRow(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
-    template: bool | None = None
-    template_id: UUID | None = None
-    schema_id: UUID | None = None
-    html_id: UUID | None = None
-    template_file_path: str | None = None
-    templates: list[QGetDocumentV4Template] | None = None
     general_agent_id: UUID | None = None
 
 class GetDocumentApiRequest(BaseModel):
@@ -10438,12 +10375,6 @@ class GetDocumentApiResponse(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
-    template: bool | None = None
-    template_id: UUID | None = None
-    schema_id: UUID | None = None
-    html_id: UUID | None = None
-    template_file_path: str | None = None
-    templates: list[QGetDocumentV4Template] | None = None
     general_agent_id: UUID | None = None
 
 
@@ -10504,17 +10435,6 @@ class QGetDocumentDetailV4Parameter(BaseModel):
     scenario_parameter: bool | None
     video_parameter: bool | None
 
-
-
-
-class QGetDocumentDetailV4Template(BaseModel):
-
-    template_id: UUID | None
-    schema_id: UUID | None
-    active: bool | None
-    created_at: str | None
-    updated_at: str | None
-
 class GetDocumentDetailSqlRow(BaseModel):
 
     document_exists: bool | None = None
@@ -10540,13 +10460,6 @@ class GetDocumentDetailSqlRow(BaseModel):
     parameters: list[QGetDocumentDetailV4Parameter] | None = None
     agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
-    template: bool | None = None
-    template_id: UUID | None = None
-    schema_id: UUID | None = None
-    html_id: UUID | None = None
-    template_file_path: str | None = None
-    template_html: str | None = None
-    templates: list[QGetDocumentDetailV4Template] | None = None
     actor_name: str | None = None
     draft_version: int | None = None
 
@@ -10580,13 +10493,6 @@ class GetDocumentDetailApiResponse(BaseModel):
     parameters: list[QGetDocumentDetailV4Parameter] | None = None
     agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
-    template: bool | None = None
-    template_id: UUID | None = None
-    schema_id: UUID | None = None
-    html_id: UUID | None = None
-    template_file_path: str | None = None
-    template_html: str | None = None
-    templates: list[QGetDocumentDetailV4Template] | None = None
     actor_name: str | None = None
     draft_version: int | None = None
 
@@ -10815,72 +10721,6 @@ class GetDocumentTemplateContextApiResponse(BaseModel):
 
 
 
-# Generated from: get_document_template_info
-
-class GetDocumentTemplateInfoSqlParams(BaseModel):
-
-    parent_document_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parent_document_id,
-        )
-
-class GetDocumentTemplateInfoSqlRow(BaseModel):
-
-    file_path: str | None = None
-    schema_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-
-class GetDocumentTemplateInfoApiRequest(BaseModel):
-
-    parent_document_id: UUID
-
-class GetDocumentTemplateInfoApiResponse(BaseModel):
-
-    file_path: str | None = None
-    schema_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-
-
-
-# Generated from: get_document_templates
-
-class GetDocumentTemplatesSqlParams(BaseModel):
-
-    document_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-        )
-
-class GetDocumentTemplatesSqlRow(BaseModel):
-
-    html_id: UUID | None = None
-    template_id: UUID | None = None
-    schema_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-class GetDocumentTemplatesApiRequest(BaseModel):
-
-    document_id: UUID
-
-class GetDocumentTemplatesApiResponse(BaseModel):
-
-    html_id: UUID | None = None
-    template_id: UUID | None = None
-    schema_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-
-
 # Generated from: get_document_tool_call_results
 
 class GetDocumentToolCallResultsSqlParams(BaseModel):
@@ -11040,8 +10880,6 @@ class InsertDocumentSqlParams(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11052,8 +10890,6 @@ class InsertDocumentSqlParams(BaseModel):
             self.upload_id,
             self.department_ids,
             self.field_ids,
-            self.html_id,
-            self.schema_id,
         )
 
 class InsertDocumentSqlRow(BaseModel):
@@ -11069,8 +10905,6 @@ class InsertDocumentApiRequest(BaseModel):
     upload_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
 
 class InsertDocumentApiResponse(BaseModel):
 
@@ -11267,67 +11101,6 @@ class ProcessDocumentCsvApiResponse(BaseModel):
     headers: list[str] | None = None
     rows: list[QProcessDocumentCsvV4ProcessedRow] | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: render_template
-
-class RenderTemplateSqlParams(BaseModel):
-
-    document_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-            self.profile_id,
-        )
-
-class RenderTemplateSqlRow(BaseModel):
-
-    document_name: str | None = None
-    actor_name: str | None = None
-    file_path: str | None = None
-    schema_id: UUID | None = None
-    settings_primary_color: str | None = None
-    settings_accent: str | None = None
-    settings_background: str | None = None
-    settings_surface: str | None = None
-    settings_success: str | None = None
-    settings_warning: str | None = None
-    settings_error: str | None = None
-    settings_sidebar_background: str | None = None
-    settings_sidebar_primary: str | None = None
-    settings_chart1: str | None = None
-    settings_chart2: str | None = None
-    settings_chart3: str | None = None
-    settings_chart4: str | None = None
-    settings_chart5: str | None = None
-
-class RenderTemplateApiRequest(BaseModel):
-
-    document_id: UUID
-
-class RenderTemplateApiResponse(BaseModel):
-
-    document_name: str | None = None
-    actor_name: str | None = None
-    file_path: str | None = None
-    schema_id: UUID | None = None
-    settings_primary_color: str | None = None
-    settings_accent: str | None = None
-    settings_background: str | None = None
-    settings_surface: str | None = None
-    settings_success: str | None = None
-    settings_warning: str | None = None
-    settings_error: str | None = None
-    settings_sidebar_background: str | None = None
-    settings_sidebar_primary: str | None = None
-    settings_chart1: str | None = None
-    settings_chart2: str | None = None
-    settings_chart3: str | None = None
-    settings_chart4: str | None = None
-    settings_chart5: str | None = None
 
 
 
@@ -11641,11 +11414,8 @@ class UpdateDocumentSqlParams(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    template: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11654,11 +11424,8 @@ class UpdateDocumentSqlParams(BaseModel):
             self.name,
             self.description,
             self.active,
-            self.template,
             self.department_id,
             self.field_ids,
-            self.html_id,
-            self.schema_id,
         )
 
 class UpdateDocumentSqlRow(BaseModel):
@@ -11675,11 +11442,8 @@ class UpdateDocumentApiRequest(BaseModel):
     name: str | None = None
     description: str | None = None
     active: bool | None = None
-    template: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    html_id: UUID | None = None
-    schema_id: UUID | None = None
 
 class UpdateDocumentApiResponse(BaseModel):
 
@@ -28528,17 +28292,6 @@ class IGetScenarioRegenerationRunContextAndCreateRunV4Doc(BaseModel):
     file_path: str | None
     mime_type: str | None
     template: bool | None
-    schema_id: UUID | None
-
-
-
-
-class IGetScenarioRegenerationRunContextAndCreateRunV4Docum(BaseModel):
-
-    document_id: str | None
-    document_name: str | None
-    schema_id: UUID | None
-    html_id: str | None
 
 
 
@@ -28578,7 +28331,6 @@ class GetScenarioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     persona_name: str | None = None
     persona_description: str | None = None
     documents: list[IGetScenarioRegenerationRunContextAndCreateRunV4Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV4Docum] | None = None
     parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV4Param] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
@@ -28619,7 +28371,6 @@ class GetScenarioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     persona_name: str | None = None
     persona_description: str | None = None
     documents: list[IGetScenarioRegenerationRunContextAndCreateRunV4Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV4Docum] | None = None
     parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV4Param] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
@@ -28662,19 +28413,6 @@ class IGetScenarioRunContextAndCreateRunV4Document(BaseModel):
     file_path: str | None
     mime_type: str | None
     template: bool | None
-    schema_id: UUID | None
-
-
-
-
-class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
-
-    document_id: str | None
-    document_name: str | None
-    document_description: str | None
-    schema_id: UUID | None
-    html_id: str | None
-    template_file_path: str | None
 
 
 
@@ -28706,7 +28444,6 @@ class GetScenarioRunContextAndCreateRunSqlRow(BaseModel):
     persona_name: str | None = None
     persona_description: str | None = None
     documents: list[IGetScenarioRunContextAndCreateRunV4Document] | None = None
-    document_templates: list[IGetScenarioRunContextAndCreateRunV4DocumentTemplate] | None = None
     parameter_items: list[IGetScenarioRunContextAndCreateRunV4ParameterItem] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
@@ -28759,7 +28496,6 @@ class GetScenarioRunContextAndCreateRunApiResponse(BaseModel):
     persona_name: str | None = None
     persona_description: str | None = None
     documents: list[IGetScenarioRunContextAndCreateRunV4Document] | None = None
-    document_templates: list[IGetScenarioRunContextAndCreateRunV4DocumentTemplate] | None = None
     parameter_items: list[IGetScenarioRunContextAndCreateRunV4ParameterItem] | None = None
     profile_id: str | None = None
     req_per_day: int | None = None
@@ -29556,704 +29292,6 @@ class UpdateScenarioNameApiResponse(BaseModel):
 
     scenario_id: UUID | None = None
     name: str | None = None
-
-
-
-# Generated from: get_scenario
-
-class QGetScenarioV4FieldParamFilter(BaseModel):
-
-    parameter_id: UUID | None
-    show_selected: bool | None
-
-class GetScenarioSqlParams(BaseModel):
-
-    profile_id: UUID
-    scenario_id: UUID | None = None
-    use_image: bool | None = None
-    use_objectives: bool | None = None
-    document_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    use_video: bool | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_persona_ids: list[UUID] | None = None
-    filter_document_ids: list[UUID] | None = None
-    filter_parameter_ids: list[UUID] | None = None
-    filter_field_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    document_search: str | None = None
-    parameter_search: str | None = None
-    persona_show_selected: bool | None = None
-    document_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert field_show_selected_by_param composite array to tuples for asyncpg
-        field_show_selected_by_param_tuples = [
-            (conn.parameter_id, conn.show_selected)
-            for conn in (self.field_show_selected_by_param or [])
-        ]
-        return (
-            self.profile_id,
-            self.scenario_id,
-            self.use_image,
-            self.use_objectives,
-            self.document_ids,
-            self.problem_statement_ids,
-            self.template_document_ids,
-            self.use_video,
-            self.filter_department_ids,
-            self.filter_persona_ids,
-            self.filter_document_ids,
-            self.filter_parameter_ids,
-            self.filter_field_ids,
-            self.persona_search,
-            self.document_search,
-            self.parameter_search,
-            self.persona_show_selected,
-            self.document_show_selected,
-            self.parameter_show_selected,
-            field_show_selected_by_param_tuples,
-            self.draft_id,
-            self.mcp,
-        )
-
-class QGetScenarioV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
-
-class QGetScenarioV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4Document(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    description: str | None
-    file_path: str | None
-    mime_type: str | None
-    parameter_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    parent_document_id: UUID | None
-
-
-
-
-class QGetScenarioV4DocumentDetail(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    updated_at: str | None
-    extension: str | None
-    scenario_ids: list[UUID] | None
-    can_edit: bool | None
-    can_delete: bool | None
-    active: bool | None
-    department_ids: list[UUID] | None
-    file_path: str | None
-    mime_type: str | None
-    upload_id: UUID | None
-    field_ids: list[UUID] | None
-    is_template: bool | None
-    parent_document_id: UUID | None
-
-
-
-
-class QGetScenarioV4Field(BaseModel):
-
-    field_id: UUID | None
-    name: str | None
-    description: str | None
-    parameter_id: UUID | None
-    parameter_name: str | None
-    conditional_parameter_ids: list[UUID] | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon_id: UUID | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4ImageResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-    upload_id: UUID | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4ObjectiveResource(BaseModel):
-
-    id: UUID | None
-    objective: str | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4ObjectiveWithDepartments(BaseModel):
-
-    objective: str | None
-    department_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    document_parameter: bool | None
-    persona_parameter: bool | None
-    scenario_parameter: bool | None
-    video_parameter: bool | None
-
-
-
-
-class QGetScenarioV4ParameterDetail(BaseModel):
-
-    parameter_id: UUID | None
-    field_ids: list[UUID] | None
-    valid_field_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-    description: str | None
-    color: str | None
-    icon: str | None
-    image_model: bool | None
-    parameter_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    example: str | None
-
-
-
-
-class QGetScenarioV4ProblemStatementResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    problem_statement: str | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4QuestionResource(BaseModel):
-
-    id: UUID | None
-    question_text: str | None
-    allow_multiple: bool | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4RangeResource(BaseModel):
-
-    id: UUID | None
-    min_count: int | None
-    max_count: int | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4Simulation(BaseModel):
-
-    simulation_id: UUID | None
-    name: str | None
-    description: str | None
-    time_limit: int | None
-    department_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioV4TemplateResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetScenarioV4VideoResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    length_seconds: int | None
-    completed: bool | None
-    file_path: str | None
-    mime_type: str | None
-    upload_id: UUID | None
-    generated: bool | None
-
-class GetScenarioSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    scenario_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetScenarioV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetScenarioV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetScenarioV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetScenarioV4DescriptionResource] | None = None
-    problem_statement_id: UUID | None = None
-    problem_statement_resource: QGetScenarioV4ProblemStatementResource | None = None
-    show_problem_statement: bool | None = None
-    problem_statement_agent_id: UUID | None = None
-    problem_statement_required: bool | None = None
-    problem_statement_suggestions: list[UUID] | None = None
-    problem_statements: list[QGetScenarioV4ProblemStatementResource] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    objectives_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_objectives_enabled_flag: bool | None = None
-    objectives_enabled_flag_agent_id: UUID | None = None
-    objectives_enabled_flag_required: bool | None = None
-    images_enabled_flag_id: UUID | None = None
-    images_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_images_enabled_flag: bool | None = None
-    images_enabled_flag_agent_id: UUID | None = None
-    images_enabled_flag_required: bool | None = None
-    video_enabled_flag_id: UUID | None = None
-    video_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_video_enabled_flag: bool | None = None
-    video_enabled_flag_agent_id: UUID | None = None
-    video_enabled_flag_required: bool | None = None
-    questions_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_questions_enabled_flag: bool | None = None
-    questions_enabled_flag_agent_id: UUID | None = None
-    questions_enabled_flag_required: bool | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_problem_statement_enabled_flag: bool | None = None
-    problem_statement_enabled_flag_agent_id: UUID | None = None
-    problem_statement_enabled_flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetScenarioV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetScenarioV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetScenarioV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetScenarioV4Field] | None = None
-    objective_ids: list[UUID] | None = None
-    objective_resources: list[QGetScenarioV4ObjectiveResource] | None = None
-    show_objectives: bool | None = None
-    objectives_agent_id: UUID | None = None
-    objectives_required: bool | None = None
-    objective_suggestions: list[UUID] | None = None
-    objectives: list[QGetScenarioV4ObjectiveResource] | None = None
-    image_ids: list[UUID] | None = None
-    image_resources: list[QGetScenarioV4ImageResource] | None = None
-    show_images: bool | None = None
-    images_agent_id: UUID | None = None
-    images_required: bool | None = None
-    image_suggestions: list[UUID] | None = None
-    images: list[QGetScenarioV4ImageResource] | None = None
-    video_ids: list[UUID] | None = None
-    video_resources: list[QGetScenarioV4VideoResource] | None = None
-    show_videos: bool | None = None
-    videos_agent_id: UUID | None = None
-    videos_required: bool | None = None
-    video_suggestions: list[UUID] | None = None
-    videos: list[QGetScenarioV4VideoResource] | None = None
-    question_ids: list[UUID] | None = None
-    question_resources: list[QGetScenarioV4QuestionResource] | None = None
-    show_questions: bool | None = None
-    questions_agent_id: UUID | None = None
-    questions_required: bool | None = None
-    question_suggestions: list[UUID] | None = None
-    questions: list[QGetScenarioV4QuestionResource] | None = None
-    template_ids: list[UUID] | None = None
-    template_resources: list[QGetScenarioV4TemplateResource] | None = None
-    show_templates: bool | None = None
-    templates_agent_id: UUID | None = None
-    templates_required: bool | None = None
-    template_suggestions: list[UUID] | None = None
-    templates: list[QGetScenarioV4TemplateResource] | None = None
-    persona_ids: list[UUID] | None = None
-    persona_resources: list[QGetScenarioV4Persona] | None = None
-    show_personas: bool | None = None
-    personas_agent_id: UUID | None = None
-    personas_required: bool | None = None
-    persona_suggestions: list[UUID] | None = None
-    personas: list[QGetScenarioV4Persona] | None = None
-    document_ids: list[UUID] | None = None
-    document_resources: list[QGetScenarioV4Document] | None = None
-    show_documents: bool | None = None
-    documents_agent_id: UUID | None = None
-    documents_required: bool | None = None
-    document_suggestions: list[UUID] | None = None
-    documents: list[QGetScenarioV4Document] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[QGetScenarioV4Parameter] | None = None
-    show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters: list[QGetScenarioV4Parameter] | None = None
-    persona_range_id: UUID | None = None
-    persona_range_resource: QGetScenarioV4RangeResource | None = None
-    show_persona_range: bool | None = None
-    persona_range_agent_id: UUID | None = None
-    persona_range_required: bool | None = None
-    persona_range_suggestions: list[UUID] | None = None
-    persona_ranges: list[QGetScenarioV4RangeResource] | None = None
-    document_range_id: UUID | None = None
-    document_range_resource: QGetScenarioV4RangeResource | None = None
-    show_document_range: bool | None = None
-    document_range_agent_id: UUID | None = None
-    document_range_required: bool | None = None
-    document_range_suggestions: list[UUID] | None = None
-    document_ranges: list[QGetScenarioV4RangeResource] | None = None
-    parameter_range_id: UUID | None = None
-    parameter_range_resource: QGetScenarioV4RangeResource | None = None
-    show_parameter_range: bool | None = None
-    parameter_range_agent_id: UUID | None = None
-    parameter_range_required: bool | None = None
-    parameter_range_suggestions: list[UUID] | None = None
-    parameter_ranges: list[QGetScenarioV4RangeResource] | None = None
-    field_range_ids: list[UUID] | None = None
-    field_range_resources: list[QGetScenarioV4RangeResource] | None = None
-    show_field_ranges: bool | None = None
-    field_ranges_agent_id: UUID | None = None
-    field_ranges_required: bool | None = None
-    field_range_suggestions: list[UUID] | None = None
-    field_ranges: list[QGetScenarioV4RangeResource] | None = None
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    parent_scenario_id: UUID | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_enabled: bool | None = None
-    simulation_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
-    valid_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-    user_role: str | None = None
-    valid_parameter_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
-    video_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    valid_agent_ids: list[str] | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    agents: list[QGetScenarioV4Agent] | None = None
-    simulations: list[QGetScenarioV4Simulation] | None = None
-    objectives_history: list[QGetScenarioV4ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioV4DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioV4ParameterDetail] | None = None
-    draft_version: int | None = None
-    draft_field_show_selected: Any | None = None
-    draft_field_ranges: Any | None = None
-    draft_randomize_parameter_items: Any | None = None
-
-class GetScenarioApiRequest(BaseModel):
-
-    scenario_id: UUID | None = None
-    use_image: bool | None = None
-    use_objectives: bool | None = None
-    document_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    use_video: bool | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_persona_ids: list[UUID] | None = None
-    filter_document_ids: list[UUID] | None = None
-    filter_parameter_ids: list[UUID] | None = None
-    filter_field_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    document_search: str | None = None
-    parameter_search: str | None = None
-    persona_show_selected: bool | None = None
-    document_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-
-class GetScenarioApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    scenario_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetScenarioV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetScenarioV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetScenarioV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetScenarioV4DescriptionResource] | None = None
-    problem_statement_id: UUID | None = None
-    problem_statement_resource: QGetScenarioV4ProblemStatementResource | None = None
-    show_problem_statement: bool | None = None
-    problem_statement_agent_id: UUID | None = None
-    problem_statement_required: bool | None = None
-    problem_statement_suggestions: list[UUID] | None = None
-    problem_statements: list[QGetScenarioV4ProblemStatementResource] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    objectives_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_objectives_enabled_flag: bool | None = None
-    objectives_enabled_flag_agent_id: UUID | None = None
-    objectives_enabled_flag_required: bool | None = None
-    images_enabled_flag_id: UUID | None = None
-    images_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_images_enabled_flag: bool | None = None
-    images_enabled_flag_agent_id: UUID | None = None
-    images_enabled_flag_required: bool | None = None
-    video_enabled_flag_id: UUID | None = None
-    video_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_video_enabled_flag: bool | None = None
-    video_enabled_flag_agent_id: UUID | None = None
-    video_enabled_flag_required: bool | None = None
-    questions_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_questions_enabled_flag: bool | None = None
-    questions_enabled_flag_agent_id: UUID | None = None
-    questions_enabled_flag_required: bool | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
-    show_problem_statement_enabled_flag: bool | None = None
-    problem_statement_enabled_flag_agent_id: UUID | None = None
-    problem_statement_enabled_flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetScenarioV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetScenarioV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetScenarioV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetScenarioV4Field] | None = None
-    objective_ids: list[UUID] | None = None
-    objective_resources: list[QGetScenarioV4ObjectiveResource] | None = None
-    show_objectives: bool | None = None
-    objectives_agent_id: UUID | None = None
-    objectives_required: bool | None = None
-    objective_suggestions: list[UUID] | None = None
-    objectives: list[QGetScenarioV4ObjectiveResource] | None = None
-    image_ids: list[UUID] | None = None
-    image_resources: list[QGetScenarioV4ImageResource] | None = None
-    show_images: bool | None = None
-    images_agent_id: UUID | None = None
-    images_required: bool | None = None
-    image_suggestions: list[UUID] | None = None
-    images: list[QGetScenarioV4ImageResource] | None = None
-    video_ids: list[UUID] | None = None
-    video_resources: list[QGetScenarioV4VideoResource] | None = None
-    show_videos: bool | None = None
-    videos_agent_id: UUID | None = None
-    videos_required: bool | None = None
-    video_suggestions: list[UUID] | None = None
-    videos: list[QGetScenarioV4VideoResource] | None = None
-    question_ids: list[UUID] | None = None
-    question_resources: list[QGetScenarioV4QuestionResource] | None = None
-    show_questions: bool | None = None
-    questions_agent_id: UUID | None = None
-    questions_required: bool | None = None
-    question_suggestions: list[UUID] | None = None
-    questions: list[QGetScenarioV4QuestionResource] | None = None
-    template_ids: list[UUID] | None = None
-    template_resources: list[QGetScenarioV4TemplateResource] | None = None
-    show_templates: bool | None = None
-    templates_agent_id: UUID | None = None
-    templates_required: bool | None = None
-    template_suggestions: list[UUID] | None = None
-    templates: list[QGetScenarioV4TemplateResource] | None = None
-    persona_ids: list[UUID] | None = None
-    persona_resources: list[QGetScenarioV4Persona] | None = None
-    show_personas: bool | None = None
-    personas_agent_id: UUID | None = None
-    personas_required: bool | None = None
-    persona_suggestions: list[UUID] | None = None
-    personas: list[QGetScenarioV4Persona] | None = None
-    document_ids: list[UUID] | None = None
-    document_resources: list[QGetScenarioV4Document] | None = None
-    show_documents: bool | None = None
-    documents_agent_id: UUID | None = None
-    documents_required: bool | None = None
-    document_suggestions: list[UUID] | None = None
-    documents: list[QGetScenarioV4Document] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[QGetScenarioV4Parameter] | None = None
-    show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters: list[QGetScenarioV4Parameter] | None = None
-    persona_range_id: UUID | None = None
-    persona_range_resource: QGetScenarioV4RangeResource | None = None
-    show_persona_range: bool | None = None
-    persona_range_agent_id: UUID | None = None
-    persona_range_required: bool | None = None
-    persona_range_suggestions: list[UUID] | None = None
-    persona_ranges: list[QGetScenarioV4RangeResource] | None = None
-    document_range_id: UUID | None = None
-    document_range_resource: QGetScenarioV4RangeResource | None = None
-    show_document_range: bool | None = None
-    document_range_agent_id: UUID | None = None
-    document_range_required: bool | None = None
-    document_range_suggestions: list[UUID] | None = None
-    document_ranges: list[QGetScenarioV4RangeResource] | None = None
-    parameter_range_id: UUID | None = None
-    parameter_range_resource: QGetScenarioV4RangeResource | None = None
-    show_parameter_range: bool | None = None
-    parameter_range_agent_id: UUID | None = None
-    parameter_range_required: bool | None = None
-    parameter_range_suggestions: list[UUID] | None = None
-    parameter_ranges: list[QGetScenarioV4RangeResource] | None = None
-    field_range_ids: list[UUID] | None = None
-    field_range_resources: list[QGetScenarioV4RangeResource] | None = None
-    show_field_ranges: bool | None = None
-    field_ranges_agent_id: UUID | None = None
-    field_ranges_required: bool | None = None
-    field_range_suggestions: list[UUID] | None = None
-    field_ranges: list[QGetScenarioV4RangeResource] | None = None
-    basic_agent_id: UUID | None = None
-    content_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    parent_scenario_id: UUID | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_enabled: bool | None = None
-    simulation_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
-    valid_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-    user_role: str | None = None
-    valid_parameter_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
-    video_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    valid_agent_ids: list[str] | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    agents: list[QGetScenarioV4Agent] | None = None
-    simulations: list[QGetScenarioV4Simulation] | None = None
-    objectives_history: list[QGetScenarioV4ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioV4DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioV4ParameterDetail] | None = None
-    draft_version: int | None = None
-    draft_field_show_selected: Any | None = None
-    draft_field_ranges: Any | None = None
-    draft_randomize_parameter_items: Any | None = None
 
 
 
@@ -35864,8 +34902,6 @@ class GetUploadFileInfoSqlRow(BaseModel):
     mime_type: str | None = None
     size: int | None = None
     actor_name: str | None = None
-    is_template: bool | None = None
-    schema_id: UUID | None = None
 
 class GetUploadFileInfoApiRequest(BaseModel):
 
@@ -35879,8 +34915,6 @@ class GetUploadFileInfoApiResponse(BaseModel):
     mime_type: str | None = None
     size: int | None = None
     actor_name: str | None = None
-    is_template: bool | None = None
-    schema_id: UUID | None = None
 
 
 
@@ -37451,12 +36485,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateDocumentApiRequest",
         "CreateDocumentApiResponse",
     ),
-    "app/sql/v4/documents/create_template_and_link_complete.sql": (
-        "CreateTemplateAndLinkSqlParams",
-        "CreateTemplateAndLinkSqlRow",
-        "CreateTemplateAndLinkApiRequest",
-        "CreateTemplateAndLinkApiResponse",
-    ),
     "app/sql/v4/documents/delete_document_complete.sql": (
         "DeleteDocumentSqlParams",
         "DeleteDocumentSqlRow",
@@ -37523,18 +36551,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentTemplateContextApiRequest",
         "GetDocumentTemplateContextApiResponse",
     ),
-    "app/sql/v4/documents/get_document_template_info_complete.sql": (
-        "GetDocumentTemplateInfoSqlParams",
-        "GetDocumentTemplateInfoSqlRow",
-        "GetDocumentTemplateInfoApiRequest",
-        "GetDocumentTemplateInfoApiResponse",
-    ),
-    "app/sql/v4/documents/get_document_templates_complete.sql": (
-        "GetDocumentTemplatesSqlParams",
-        "GetDocumentTemplatesSqlRow",
-        "GetDocumentTemplatesApiRequest",
-        "GetDocumentTemplatesApiResponse",
-    ),
     "app/sql/v4/documents/get_document_tool_call_results_complete.sql": (
         "GetDocumentToolCallResultsSqlParams",
         "GetDocumentToolCallResultsSqlRow",
@@ -37576,12 +36592,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProcessDocumentCsvSqlRow",
         "ProcessDocumentCsvApiRequest",
         "ProcessDocumentCsvApiResponse",
-    ),
-    "app/sql/v4/documents/render_template_complete.sql": (
-        "RenderTemplateSqlParams",
-        "RenderTemplateSqlRow",
-        "RenderTemplateApiRequest",
-        "RenderTemplateApiResponse",
     ),
     "app/sql/v4/documents/save_document_complete.sql": (
         "SaveDocumentSqlParams",
@@ -39557,12 +38567,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateScenarioNameApiRequest",
         "UpdateScenarioNameApiResponse",
     ),
-    "app/sql/v4/scenarios/get_scenario_complete.sql": (
-        "GetScenarioSqlParams",
-        "GetScenarioSqlRow",
-        "GetScenarioApiRequest",
-        "GetScenarioApiResponse",
-    ),
     "app/sql/v4/scenarios/patch_scenario_draft_complete.sql": (
         "PatchScenarioDraftSqlParams",
         "PatchScenarioDraftSqlRow",
@@ -41046,11 +40050,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/create_template_and_link_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/delete_document_complete.sql"]
     ) -> SqlString: ...
 
@@ -41106,16 +40105,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_document_template_info_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_document_templates_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/get_document_tool_call_results_complete.sql"]
     ) -> SqlString: ...
 
@@ -41147,11 +40136,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/process_document_csv_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/render_template_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42797,11 +41781,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/update_scenario_name_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/get_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload

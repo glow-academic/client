@@ -27,9 +27,7 @@ RETURNS TABLE (
     file_path text,
     mime_type text,
     size bigint,
-    actor_name text,
-    is_template boolean,
-    schema_id uuid
+    actor_name text
 )
 LANGUAGE sql
 STABLE
@@ -58,45 +56,12 @@ actor_profile AS (
 ),
 regular_document_upload AS (
     -- Case 1: Upload is linked to a document via document_uploads
-    -- Also get schema_id if document has template=true
     SELECT 
-        du.document_id,
-        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
-        (SELECT da.args_id 
-         FROM document_args da 
-         WHERE da.document_id = d.id 
-         ORDER BY da.created_at DESC 
-         LIMIT 1) as schema_id  -- Using args_id as schema_id for backward compatibility
+        du.document_id
     FROM document_uploads du
     JOIN documents_resource d ON d.id = du.document_id
     WHERE du.upload_id = (SELECT upload_id FROM params)
       AND du.active = true
-    LIMIT 1
-),
-template_upload AS (
-    -- Case 2: Upload is a template upload (via document_html → html → html_uploads)
-    SELECT 
-        dh.document_id,
-        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
-        da.args_id as schema_id  -- Using args_id as schema_id for backward compatibility
-    FROM html_uploads hu
-    JOIN html_resource h ON h.id = hu.html_id
-    JOIN document_html dh ON dh.html_id = h.id AND dh.active = true
-    JOIN documents_resource d ON d.id = dh.document_id
-    LEFT JOIN document_args da ON da.document_id = dh.document_id
-    WHERE hu.upload_id = (SELECT upload_id FROM params)
-      AND hu.active = true
-    ORDER BY dh.created_at DESC
-    LIMIT 1
-),
-template_info AS (
-    -- Return template info from either case (prefer regular document upload if both exist)
-    SELECT 
-        COALESCE(rdu.template, tu.template, false) as is_template,
-        COALESCE(tu.schema_id, rdu.schema_id) as schema_id
-    FROM regular_document_upload rdu
-    FULL OUTER JOIN template_upload tu ON true
-    WHERE rdu.document_id IS NOT NULL OR tu.document_id IS NOT NULL
     LIMIT 1
 )
 SELECT 
@@ -105,7 +70,5 @@ SELECT
     COALESCE((SELECT file_path FROM upload_info), '')::text as file_path,
     COALESCE((SELECT mime_type FROM upload_info), '')::text as mime_type,
     COALESCE((SELECT size FROM upload_info), 0)::bigint as size,
-    COALESCE((SELECT actor_name FROM actor_profile), 'System')::text as actor_name,
-    COALESCE((SELECT is_template FROM template_info), false)::boolean as is_template,
-    (SELECT schema_id FROM template_info)::uuid as schema_id;
+    COALESCE((SELECT actor_name FROM actor_profile), 'System')::text as actor_name;
 $$;

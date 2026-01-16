@@ -901,8 +901,8 @@ all_documents_array AS (
         d.id as document_id,
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
-        COALESCE(u.file_path, template_u.file_path) as file_path,
-        COALESCE(u.mime_type, template_u.mime_type) as mime_type,
+        u.file_path as file_path,
+        u.mime_type as mime_type,
         COALESCE((
             SELECT ARRAY_AGG(dpr.parameter_id ORDER BY dpr.parameter_id)
             FROM document_parameter_relationships dpr
@@ -913,12 +913,6 @@ all_documents_array AS (
     FROM document_data d
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    LEFT JOIN document_args_outputs dao ON dao.document_id = d.id
-    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
-    LEFT JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
-    LEFT JOIN html_resource h ON h.id = dh.html_id
-    LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
-    LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
     LEFT JOIN document_fields_data dfd ON dfd.document_id = d.id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
 ),
@@ -1313,7 +1307,6 @@ all_document_details_array AS (
         d.updated_at,
         CASE 
             WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
-            WHEN template_u.file_path IS NOT NULL THEN SUBSTRING(template_u.file_path FROM '\\.([^\\.]+)$')
             ELSE NULL 
         END as extension,
         ARRAY[]::uuid[] as scenario_ids,
@@ -1325,10 +1318,9 @@ all_document_details_array AS (
             FROM document_departments dd
             WHERE dd.document_id = d.id AND dd.active = true
         ), ARRAY[]::uuid[]) as department_ids,
-        COALESCE(u.file_path, template_u.file_path) as file_path,
-        COALESCE(u.mime_type, template_u.mime_type) as mime_type,
-        COALESCE(u.id, template_u.id) as upload_id,
-        dh2.html_id as html_id,
+        u.file_path as file_path,
+        u.mime_type as mime_type,
+        u.id as upload_id,
         COALESCE((
             SELECT ARRAY_AGG(df.field_id)
             FROM document_fields df
@@ -1336,23 +1328,12 @@ all_document_details_array AS (
         ), ARRAY[]::uuid[]) as field_ids,
         CASE 
             WHEN EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
-            WHEN EXISTS(
-                SELECT 1 FROM document_args_outputs dao2 
-                JOIN args_outputs_resource ao2 ON ao2.id = dao2.args_outputs_id AND ao2.active = true
-                WHERE dao2.document_id = d.id
-            ) THEN true
             ELSE false
         END as is_template,
         dtd.parent_id as parent_document_id
     FROM document_artifact d
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    LEFT JOIN document_args_outputs dao ON dao.document_id = d.id
-    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
-    LEFT JOIN document_html dh2 ON dh2.document_id = d.id AND dh2.active = true
-    LEFT JOIN html_resource h ON h.id = dh2.html_id
-    LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
-    LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
     WHERE (
         d.id IN (SELECT id FROM document_data)

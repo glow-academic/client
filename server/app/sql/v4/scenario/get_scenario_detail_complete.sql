@@ -1321,11 +1321,6 @@ document_details_array AS (
         ), ARRAY[]::uuid[]) as field_ids,
         CASE 
             WHEN EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = dd.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
-            WHEN EXISTS(
-                SELECT 1 FROM document_args_outputs dao2 
-                JOIN args_outputs_resource ao2 ON ao2.id = dao2.args_outputs_id AND ao2.active = true
-                WHERE dao2.document_id = dd.id
-            ) THEN true
             ELSE false
         END as is_template,
         (SELECT dt.parent_id FROM document_tree dt WHERE dt.child_id = dd.id AND dt.active = true LIMIT 1) as parent_document_id
@@ -1790,44 +1785,27 @@ expected_agent_role AS (
 ),
 scenario_persona_ranges_data AS (
     SELECT 
-        COALESCE(rr.min_count, 1) as persona_min,
-        COALESCE(rr.max_count, 3) as persona_max
+        1 as persona_min,
+        3 as persona_max
     FROM scenario_core sc
-    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'persona'::type_scenario_ranges
-    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
 ),
 scenario_document_ranges_data AS (
     SELECT 
-        COALESCE(rr.min_count, 0) as document_min,
-        COALESCE(rr.max_count, 3) as document_max
+        0 as document_min,
+        3 as document_max
     FROM scenario_core sc
-    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'document'::type_scenario_ranges
-    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
 ),
 scenario_parameter_ranges_data AS (
     SELECT 
-        COALESCE(rr.min_count, 0) as parameter_min,
-        COALESCE(rr.max_count, 3) as parameter_max
+        0 as parameter_min,
+        3 as parameter_max
     FROM scenario_core sc
-    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'parameter'::type_scenario_ranges
-    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
 ),
 scenario_field_ranges_data AS (
     SELECT 
         sc.id as scenario_id,
-        COALESCE(
-            ARRAY_AGG((p.id, rr.min_count, rr.max_count)::types.q_get_scenario_detail_v4_field_range ORDER BY p.id)
-            FILTER (WHERE p.id IS NOT NULL),
-            ARRAY[]::types.q_get_scenario_detail_v4_field_range[]
-        ) as field_ranges
+        ARRAY[]::types.q_get_scenario_detail_v4_field_range[] as field_ranges
     FROM scenario_core sc
-    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'field'::type_scenario_ranges
-    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
-    -- Note: Field ranges are per scenario in new structure, not per parameter
-    -- We return one range per parameter that has fields linked to the scenario
-    LEFT JOIN scenario_parameters sp ON sp.scenario_id = sc.id AND sp.active = true
-    LEFT JOIN parameter_artifact p ON p.id = sp.parameter_id
-    GROUP BY sc.id
 ),
 valid_agents_array AS (
     SELECT 

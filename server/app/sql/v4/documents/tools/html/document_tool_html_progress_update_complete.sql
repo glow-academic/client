@@ -1,5 +1,5 @@
--- UPDATE document_artifact HTML tool call progress - creates/updates tool_call and accumulates arguments
--- Handles create_html tool (tool_type='html', tool_name='create_html')
+-- UPDATE document_artifact templates tool call progress - creates/updates tool_call and accumulates arguments
+-- Handles create_templates tool (resource='templates')
 -- Uses safe drop/recreate pattern
 
 -- 1) Drop function first
@@ -37,12 +37,12 @@ AS $$
 WITH params AS (
     SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
 ),
--- Get tool_id for HTML tool (resource='html', artifact='document')
+-- Get tool_id for templates tool (resource='templates', artifact='document')
 get_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    WHERE rt.resource = 'html'::resources
+    WHERE rt.resource = 'templates'::resources
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1
 ),

@@ -43,15 +43,7 @@ CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc 
     name text,
     file_path text,
     mime_type text,
-    template boolean,
-    schema_id uuid
-);
-
-CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template AS (
-    document_id text,
-    document_name text,
-    schema_id uuid,
-    html_id text
+    template boolean
 );
 
 CREATE TYPE types.i_get_scenario_regeneration_run_context_and_create_run_v4_parameter_item AS (
@@ -97,7 +89,6 @@ RETURNS TABLE (
     persona_name text,
     persona_description text,
     documents types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[],
-    document_templates types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template[],
     parameter_items types.i_get_scenario_regeneration_run_context_and_create_run_v4_parameter_item[],
     profile_id text,
     req_per_day integer,
@@ -293,43 +284,18 @@ context_data AS (
         COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pers.id LIMIT 1), '') as persona_description,
         
         -- Documents data (aggregated as composite type array)
-        -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE), da.args_id)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path, u.mime_type, EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE))::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
             FROM document_artifact d
             LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
             LEFT JOIN uploads u ON u.id = du.upload_id
-            LEFT JOIN document_args_outputs dao ON dao.document_id = d.id
-            LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
-            LEFT JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
-            LEFT JOIN html_resource h ON h.id = dh.html_id
-            LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
-            LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
-            LEFT JOIN document_args da ON da.document_id = d.id
             WHERE d.id = ANY(p.document_ids)
             ),
             ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
         ) as documents,
-        
-        -- Document templates data (aggregated as composite type array for template documents)
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), da.args_id, dh.html_id::text)::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template
-                ORDER BY array_position(p.document_ids, d.id)
-            )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template[]
-            FROM document_artifact d
-            INNER JOIN document_args_outputs dao ON dao.document_id = d.id
-            INNER JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
-            LEFT JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
-            LEFT JOIN document_args da ON da.document_id = d.id
-            WHERE d.id = ANY(p.document_ids)
-              AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE)
-            ),
-            ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v4_document_template[]
-        ) as document_templates,
         
         -- Parameter items data (aggregated as composite type array with parameter info)
         COALESCE(
@@ -460,7 +426,6 @@ SELECT
     cd.persona_name,
     cd.persona_description,
     cd.documents,
-    cd.document_templates,
     cd.parameter_items,
     cd.profile_id,
     cd.req_per_day,

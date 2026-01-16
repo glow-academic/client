@@ -239,21 +239,13 @@ BEGIN
     valid_parameter_ids := COALESCE(valid_parameter_ids, ARRAY[]::uuid[]);
     valid_field_ids := COALESCE(valid_field_ids, ARRAY[]::uuid[]);
     
-    -- Get ranges from database (scenario-specific or defaults) using new scenario_ranges structure
-    SELECT
-        COALESCE((SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'persona'::type_scenario_ranges LIMIT 1), 1),
-        COALESCE((SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'persona'::type_scenario_ranges LIMIT 1), 3),
-        COALESCE((SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'document'::type_scenario_ranges LIMIT 1), 0),
-        COALESCE((SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'document'::type_scenario_ranges LIMIT 1), 3),
-        COALESCE((SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'parameter'::type_scenario_ranges LIMIT 1), 0),
-        COALESCE((SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'parameter'::type_scenario_ranges LIMIT 1), 3)
-    INTO
-        allowed_persona_min,
-        allowed_persona_max,
-        allowed_document_min,
-        allowed_document_max,
-        allowed_parameter_min,
-        allowed_parameter_max;
+    -- Use hardcoded defaults (ranges logic removed)
+    allowed_persona_min := 1;
+    allowed_persona_max := 3;
+    allowed_document_min := 0;
+    allowed_document_max := 3;
+    allowed_parameter_min := 0;
+    allowed_parameter_max := 3;
     
     -- Validate and cap persona ranges
     final_persona_min := COALESCE(api_randomize_scenario_v4.persona_min, allowed_persona_min);
@@ -325,16 +317,9 @@ BEGIN
         randomized_items := ARRAY[]::uuid[];
         FOR param_id IN SELECT unnest(valid_parameter_ids)
         LOOP
-            -- Get range for this parameter (from field_ranges_json or defaults)
-            param_range := field_ranges_json -> param_id::text;
-            IF param_range IS NULL THEN
-                -- Use defaults if not in JSON
-                param_min_val := 1;
-                param_max_val := 1;
-            ELSE
-                param_min_val := COALESCE((param_range->>'min')::integer, 1);
-                param_max_val := COALESCE((param_range->>'max')::integer, 1);
-            END IF;
+            -- Use hardcoded defaults (ranges logic removed)
+            param_min_val := 1;
+            param_max_val := 1;
             param_max_val := LEAST(param_max_val, 3);
             param_min_val := LEAST(param_min_val, param_max_val);
             
@@ -408,16 +393,9 @@ BEGIN
         -- Randomize fields for specific parameter
         param_id := (regexp_replace(randomize_type, '^parameter_', ''))::uuid;
         
-        -- Get range for this parameter (from field_ranges_json or defaults)
-        param_range := field_ranges_json -> param_id::text;
-        IF param_range IS NULL THEN
-            -- Use defaults if not in JSON
-            param_min_val := 1;
-            param_max_val := 1;
-        ELSE
-            param_min_val := COALESCE((param_range->>'min')::integer, 1);
-            param_max_val := COALESCE((param_range->>'max')::integer, 1);
-        END IF;
+        -- Use hardcoded defaults (ranges logic removed)
+        param_min_val := 1;
+        param_max_val := 1;
         param_max_val := LEAST(param_max_val, 3);
         param_min_val := LEAST(param_min_val, param_max_val);
         

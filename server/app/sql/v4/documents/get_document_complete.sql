@@ -69,13 +69,6 @@ CREATE TYPE types.q_get_document_v4_flag_resource AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_document_v4_template AS (
-    template_id uuid,
-    schema_id uuid,
-    active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
-);
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_document_v4(
@@ -129,13 +122,6 @@ RETURNS TABLE (
     show_flag boolean,
     flag_agent_id uuid,
     flag_required boolean,
-    -- Template-specific fields
-    template boolean,
-    template_id uuid,
-    schema_id uuid,
-    html_id uuid,
-    template_file_path text,
-    templates types.q_get_document_v4_template[],
     general_agent_id uuid
 )
 LANGUAGE sql
@@ -423,51 +409,14 @@ document_data AS (
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
-        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT dh.html_id FROM document_html dh WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as html_id,
-        (SELECT da.args_id FROM document_args da WHERE da.document_id = d.id ORDER BY da.created_at DESC LIMIT 1) as schema_id,  -- Using args_id as schema_id for backward compatibility
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
-        (SELECT u.file_path FROM document_html dh
-         JOIN html_resource h ON h.id = dh.html_id
-         JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
-         JOIN uploads u ON u.id = hu.upload_id 
-         WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as template_file_path,
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id AND sd.active = true) as active_scenario_count,
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id) as total_scenario_links
     FROM params x
     JOIN document_artifact d ON d.id = x.document_id
-    WHERE x.document_id IS NOT NULL
-),
-document_active_template AS (
-    SELECT 
-        dao.document_id,
-        dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
-        da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
-        dao.created_at as template_created_at,
-        dao.updated_at as template_updated_at
-    FROM params x
-    JOIN document_args_outputs dao ON dao.document_id = x.document_id
-    JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id AND ao.active = true
-    LEFT JOIN document_args da ON da.document_id = dao.document_id
-    WHERE x.document_id IS NOT NULL
-    ORDER BY dao.created_at DESC
-    LIMIT 1
-),
-document_all_templates AS (
-    SELECT 
-        dao.document_id,
-        dao.args_outputs_id as template_id,  -- Using args_outputs_id as template_id for backward compatibility
-        da.args_id as schema_id,  -- Using args_id as schema_id for backward compatibility
-        ao.active as template_active,  -- Get active status from args_outputs_resource
-        dao.created_at as template_created_at,
-        dao.updated_at as template_updated_at
-    FROM params x
-    JOIN document_args_outputs dao ON dao.document_id = x.document_id
-    LEFT JOIN args_outputs_resource ao ON ao.id = dao.args_outputs_id
-    LEFT JOIN document_args da ON da.document_id = dao.document_id
     WHERE x.document_id IS NOT NULL
 ),
 -- Name suggestions: linked to documents OR same group with generated=true
@@ -1346,19 +1295,6 @@ SELECT
     uf.show_flag,
     (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
     false as flag_required,
-    -- Template-specific fields
-    COALESCE(dd.template, false) as template,
-    dat.template_id,
-    dat.schema_id,
-    dd.html_id,
-    dd.template_file_path,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dat2.template_id, dat2.schema_id, dat2.template_active, dat2.template_created_at, dat2.template_updated_at)::types.q_get_document_v4_template
-            ORDER BY dat2.template_created_at DESC
-        ) FROM document_all_templates dat2),
-        '{}'::types.q_get_document_v4_template[]
-    ) as templates,
     -- Multi-resource combination agent IDs
     (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up
@@ -1367,7 +1303,6 @@ CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 LEFT JOIN document_departments_data ddd ON true
 LEFT JOIN document_data dd ON dd.document_id = (SELECT document_id FROM params)
-LEFT JOIN document_active_template dat ON dat.document_id = dd.document_id
 CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd

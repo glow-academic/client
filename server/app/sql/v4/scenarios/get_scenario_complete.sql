@@ -266,13 +266,6 @@ CREATE TYPE types.q_get_scenario_v4_flag_resource AS (
     generated boolean
 );
 
--- Range resource composite type (with generated boolean, NOT group_id)
-CREATE TYPE types.q_get_scenario_v4_range_resource AS (
-    id uuid,
-    min_count integer,
-    max_count integer,
-    generated boolean
-);
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_scenario_v4(
@@ -445,35 +438,6 @@ RETURNS TABLE (
     parameter_suggestions uuid[],
     parameters types.q_get_scenario_v4_parameter[],
     -- Single-select resources: ranges (one per range type)
-    persona_range_id uuid,
-    persona_range_resource types.q_get_scenario_v4_range_resource,
-    show_persona_range boolean,
-    persona_range_agent_id uuid,
-    persona_range_required boolean,
-    persona_range_suggestions uuid[],
-    persona_ranges types.q_get_scenario_v4_range_resource[],
-    document_range_id uuid,
-    document_range_resource types.q_get_scenario_v4_range_resource,
-    show_document_range boolean,
-    document_range_agent_id uuid,
-    document_range_required boolean,
-    document_range_suggestions uuid[],
-    document_ranges types.q_get_scenario_v4_range_resource[],
-    parameter_range_id uuid,
-    parameter_range_resource types.q_get_scenario_v4_range_resource,
-    show_parameter_range boolean,
-    parameter_range_agent_id uuid,
-    parameter_range_required boolean,
-    parameter_range_suggestions uuid[],
-    parameter_ranges types.q_get_scenario_v4_range_resource[],
-    -- Multi-select resources: field_ranges (per parameter)
-    field_range_ids uuid[],
-    field_range_resources types.q_get_scenario_v4_range_resource[],
-    show_field_ranges boolean,
-    field_ranges_agent_id uuid,
-    field_ranges_required boolean,
-    field_range_suggestions uuid[],
-    field_ranges types.q_get_scenario_v4_range_resource[],
     -- Multi-resource combination agent IDs
     basic_agent_id uuid,
     content_agent_id uuid,
@@ -892,68 +856,6 @@ problem_statement_enabled_flag_resource_data AS (
          AND sfr.name = 'problem_statement_enabled' 
          AND ssf.active = true 
          LIMIT 1) as problem_statement_enabled_flag_resource
-    FROM params
-),
--- Range resource data CTEs (one per range type, following Persona.tsx pattern)
-persona_range_resource_data AS (
-    SELECT 
-        (SELECT sr.range_id FROM scenario_ranges sr 
-         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
-         AND sr.type = 'persona'::type_scenario_ranges 
-         LIMIT 1) as persona_range_id,
-        (SELECT ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource 
-         FROM scenario_ranges sr 
-         JOIN ranges_resource rr ON rr.id = sr.range_id 
-         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
-         AND sr.type = 'persona'::type_scenario_ranges 
-         LIMIT 1) as persona_range_resource
-    FROM params
-),
-document_range_resource_data AS (
-    SELECT 
-        (SELECT sr.range_id FROM scenario_ranges sr 
-         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
-         AND sr.type = 'document'::type_scenario_ranges 
-         LIMIT 1) as document_range_id,
-        (SELECT ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource 
-         FROM scenario_ranges sr 
-         JOIN ranges_resource rr ON rr.id = sr.range_id 
-         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
-         AND sr.type = 'document'::type_scenario_ranges 
-         LIMIT 1) as document_range_resource
-    FROM params
-),
-parameter_range_resource_data AS (
-    SELECT 
-        (SELECT sr.range_id FROM scenario_ranges sr 
-         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
-         AND sr.type = 'parameter'::type_scenario_ranges 
-         LIMIT 1) as parameter_range_id,
-        (SELECT ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource 
-         FROM scenario_ranges sr 
-         JOIN ranges_resource rr ON rr.id = sr.range_id 
-         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
-         AND sr.type = 'parameter'::type_scenario_ranges 
-         LIMIT 1) as parameter_range_resource
-    FROM params
-),
-field_range_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(sr.range_id)
-             FROM scenario_ranges sr 
-             WHERE sr.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
-             AND sr.type = 'field'::type_scenario_ranges),
-            ARRAY[]::uuid[]
-        ) as field_range_ids,
-        COALESCE(
-            (SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
-             FROM scenario_ranges sr 
-             JOIN ranges_resource rr ON rr.id = sr.range_id 
-             WHERE sr.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
-             AND sr.type = 'field'::type_scenario_ranges),
-            ARRAY[]::types.q_get_scenario_v4_range_resource[]
-        ) as field_range_resources
     FROM params
 ),
 -- Suggestions CTEs (UUID arrays, two-part filtering: linked to scenarios OR same group with generated=true)
@@ -1991,11 +1893,6 @@ document_details_array AS (
         ), ARRAY[]::uuid[]) as field_ids,
         CASE 
             WHEN EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = dd.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
-            WHEN EXISTS(
-                SELECT 1 FROM document_args_outputs dao2 
-                JOIN args_outputs_resource ao2 ON ao2.id = dao2.args_outputs_id AND ao2.active = true
-                WHERE dao2.document_id = dd.id
-            ) THEN true
             ELSE false
         END as is_template,
         (SELECT dt.parent_id FROM document_tree dt WHERE dt.child_id = dd.id AND dt.active = true LIMIT 1) as parent_document_id
@@ -2515,7 +2412,6 @@ department_mapping_data_scenario AS (
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
-    CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
         EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -2811,12 +2707,6 @@ tools_existence_check AS (
             WHERE rt.resource = 'scenario_flags'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
         ) as scenario_flags_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'ranges'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as ranges_has_tools
     FROM params x
 ),
 missing_tools_check AS (
@@ -3314,71 +3204,6 @@ SELECT
     END as parameters_required,
     ARRAY[]::uuid[] as parameter_suggestions,
     '{}'::types.q_get_scenario_v4_parameter[] as parameters,
-    -- Single-select resources: ranges (one per range type)
-    prrd.persona_range_id,
-    prrd.persona_range_resource,
-    CASE 
-        WHEN NOT tec.ranges_has_tools THEN false
-        ELSE true
-    END as show_persona_range,
-    (SELECT agent_id FROM persona_range_agent_data) as persona_range_agent_id,
-    false as persona_range_required,
-    ARRAY[]::uuid[] as persona_range_suggestions,
-    COALESCE((
-        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
-        FROM ranges_resource rr
-        WHERE rr.active = true
-        LIMIT 100
-    ), '{}'::types.q_get_scenario_v4_range_resource[]) as persona_ranges,
-    drrd.document_range_id,
-    drrd.document_range_resource,
-    CASE 
-        WHEN NOT tec.ranges_has_tools THEN false
-        ELSE true
-    END as show_document_range,
-    (SELECT agent_id FROM document_range_agent_data) as document_range_agent_id,
-    false as document_range_required,
-    ARRAY[]::uuid[] as document_range_suggestions,
-    COALESCE((
-        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
-        FROM ranges_resource rr
-        WHERE rr.active = true
-        LIMIT 100
-    ), '{}'::types.q_get_scenario_v4_range_resource[]) as document_ranges,
-    (SELECT parameter_range_id FROM parameter_range_resource_data) as parameter_range_id,
-    (SELECT parameter_range_resource FROM parameter_range_resource_data) as parameter_range_resource,
-    CASE 
-        WHEN NOT tec.ranges_has_tools THEN false
-        ELSE true
-    END as show_parameter_range,
-    (SELECT agent_id FROM parameter_range_agent_data) as parameter_range_agent_id,
-    false as parameter_range_required,
-    ARRAY[]::uuid[] as parameter_range_suggestions,
-    COALESCE((
-        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
-        FROM (
-            SELECT id, min_count, max_count, generated
-            FROM ranges_resource
-            WHERE active = true
-            LIMIT 100
-        ) rr
-    ), '{}'::types.q_get_scenario_v4_range_resource[]) as parameter_ranges,
-    -- Multi-select resources: field_ranges (per parameter)
-    frrd.field_range_ids,
-    frrd.field_range_resources,
-    CASE 
-        WHEN NOT tec.ranges_has_tools THEN false
-        ELSE true
-    END as show_field_ranges,
-    (SELECT agent_id FROM field_ranges_agent_data) as field_ranges_agent_id,
-    false as field_ranges_required,
-    ARRAY[]::uuid[] as field_range_suggestions,
-    COALESCE((
-        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
-        FROM ranges_resource rr
-        WHERE rr.active = true
-        LIMIT 100
-    ), '{}'::types.q_get_scenario_v4_range_resource[]) as field_ranges,
     -- Multi-resource combination agent IDs
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
     (SELECT agent_id FROM content_agent_data) as content_agent_id,
@@ -3491,10 +3316,6 @@ CROSS JOIN images_enabled_flag_resource_data iefrd
 CROSS JOIN video_enabled_flag_resource_data vefrd
 CROSS JOIN questions_enabled_flag_resource_data qefrd
 CROSS JOIN problem_statement_enabled_flag_resource_data psefrd
-CROSS JOIN persona_range_resource_data prrd
-CROSS JOIN document_range_resource_data drrd
-CROSS JOIN parameter_range_resource_data parrd
-CROSS JOIN field_range_resource_data frrd
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
 LEFT JOIN scenario_personas_agg spa ON true
 LEFT JOIN scenario_documents_agg sd ON true
