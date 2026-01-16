@@ -914,6 +914,9 @@ async def sync_department_realm_by_settings(
                         items_function_call_sql, *items_sql_params
                     )
                     items = [dict(row) for row in item_rows]
+                    logger.info(
+                        f"🔍 Retrieved {len(items)} items for provider '{slug}' (auth_id={auth_id}): {[item['name'] for item in items]}"
+                    )
                 else:
                     raise ValueError(
                         "Expected function definition in get_auth_items_complete.sql"
@@ -980,6 +983,11 @@ async def sync_department_realm_by_settings(
                 logger.info(
                     f"🔍 Payload for {slug} in realm {realm_name}: {payload['config']}"
                 )
+                if not config_map:
+                    logger.warning(
+                        f"⚠️  No config values found for provider '{slug}' (auth_id={auth_id}). "
+                        f"Items retrieved: {len(items)}. Check SQL query and database."
+                    )
 
                 try:
                     kc_admin.get_idp(idp_alias=slug)

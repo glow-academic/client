@@ -13,21 +13,20 @@ STABLE
 AS $$
 WITH dept_settings AS (
     -- Get department-specific settings if department_id provided
-    SELECT DISTINCT s.setting_id as settings_id
-    FROM settings_resource s
-    JOIN department_settings ds ON ds.settings_id = s.setting_id AND ds.active = true
+    SELECT DISTINCT s.id as settings_id
+    FROM setting_artifact s
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE (api_get_auth_providers_v4.department_id IS NOT NULL AND ds.department_id = api_get_auth_providers_v4.department_id)
-      AND s.active = true
-    LIMIT 1
+      AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
 ),
 default_settings AS (
     -- Get default settings (no department links)
-    SELECT s.setting_id as settings_id
-    FROM settings_resource s
-    WHERE s.active = true
+    SELECT s.id as settings_id
+    FROM setting_artifact s
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
-          WHERE sd.settings_id = s.setting_id AND sd.active = true
+          WHERE sd.settings_id = s.id AND sd.active = true
       )
     LIMIT 1
 ),
@@ -67,8 +66,9 @@ settings_auths AS (
       AND ss.settings_id IS NOT NULL
 )
 -- Return providers for the selected settings
+-- Return auth_artifact.id (not auths_resource.id) since get_auth_items_complete.sql expects auth_artifact.id
 SELECT DISTINCT
-    ar.id, 
+    ar.auth_id as id, 
     (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = ar.auth_id LIMIT 1) as slug, 
     (SELECT p.value FROM auth_protocols ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = ar.auth_id LIMIT 1) as provider_id, 
     (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = ar.auth_id LIMIT 1) 

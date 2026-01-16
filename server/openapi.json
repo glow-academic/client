@@ -24629,7 +24629,7 @@
     "/init": {
       "post": {
         "summary": "Init System",
-        "description": "Trigger system initialization (Keycloak sync).\n\nCalled by notify service to initialize system on startup.\nPerforms Keycloak sync to ensure identity providers are configured.\nNo authentication required - internal service-to-service call.",
+        "description": "Trigger system initialization (SQL compilation and Keycloak sync).\n\nCalled by notify service to initialize system on startup.\nPerforms:\n1. SQL type compilation (if types.py is missing or incomplete)\n2. Keycloak sync to ensure identity providers are configured.\n\nNo authentication required - internal service-to-service call.",
         "operationId": "init_system_init_post",
         "responses": {
           "200": {

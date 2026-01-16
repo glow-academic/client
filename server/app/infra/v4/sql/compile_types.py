@@ -1,30 +1,25 @@
-#!/usr/bin/env python3
-"""Generate Python type files from SQL introspection.
+"""SQL type compilation infrastructure.
 
-Walks all SQL files, introspects them, and generates Pydantic models
-for request/response types.
+Provides compile_sql_types() function that can be called programmatically
+from both the Makefile script and the /init endpoint.
+
+All helper functions are inlined here to avoid dependencies on scripts folder
+at runtime in production.
 """
 
-import argparse
-import asyncio
 import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 import asyncpg  # type: ignore
 
 # Version constant - change this to switch versions (e.g., 'v4', 'v5')
 VERSION = "v4"
 
-# Add server directory to path for imports
-server_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(server_dir))
-
+# Import utilities that are available in app folder
 from utils.sql_helper import load_sql
-
-from scripts.sql_introspect import introspect_sql_file
-from scripts.sql_typegen import generate_types_file
 
 
 def _to_class_name(route_name: str, suffix: str) -> str:
@@ -156,57 +151,145 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     return None
 
 
-def generate_registry_entry(
-    sql_path: str, route_name: str
-) -> tuple[str, str, str, str, str, str] | None:
-    """Generate registry entry for a SQL file.
+def _detect_function_in_sql(sql_text: str) -> bool:
+    """Detect if SQL file contains a function definition.
 
     Args:
-        sql_path: SQL file path (e.g., f"app/sql/{VERSION}/agents/get_agent_new_complete.sql")
-        route_name: Route name (e.g., "get_agent_new")
+        sql_text: SQL file content
 
     Returns:
-        Tuple of (registry_type, sql_path, sql_params_class, sql_row_class, api_request_class, api_response_class) or None if invalid
-        registry_type is either "app" or "test"
+        True if SQL contains CREATE OR REPLACE FUNCTION
     """
-    app_sql_prefix = f"app/sql/{VERSION}/"
-    tests_sql_prefix = f"tests/sql/{VERSION}/integration/"
+    # Check for function definition pattern
+    # Match CREATE OR REPLACE FUNCTION (case insensitive, multiline)
+    pattern = r"CREATE\s+OR\s+REPLACE\s+FUNCTION"
+    return bool(re.search(pattern, sql_text, re.IGNORECASE | re.MULTILINE))
 
-    # Process app/sql/{VERSION}/ files
-    if sql_path.startswith(app_sql_prefix):
-        # Generate class names
-        sql_params_class = _to_class_name(route_name, "SqlParams")
-        sql_row_class = _to_class_name(route_name, "SqlRow")
-        api_request_class = _to_class_name(route_name, "ApiRequest")
-        api_response_class = _to_class_name(route_name, "ApiResponse")
 
+async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
+    """Recover from transaction abort by rolling back.
+
+    Args:
+        conn: Database connection
+
+    Returns:
+        True if recovery was attempted, False if connection is clean
+    """
+    try:
+        # Try to execute a simple query to check transaction state
+        await conn.execute("SELECT 1")
+        return False  # Connection is clean
+    except Exception as e:
+        error_msg = str(e)
+        if "current transaction is aborted" in error_msg.lower():
+            # Transaction is aborted, rollback to clean state
+            try:
+                await conn.execute("ROLLBACK")
+                return True  # Recovery attempted
+            except Exception:
+                # Rollback failed, connection is corrupted
+                # This shouldn't happen with savepoints, but handle it anyway
+                return False
+        # Some other error, not a transaction abort
+        return False
+
+
+def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
+    """Sort SQL files with analytics routes first, and handle type dependencies.
+    
+    Args:
+        sql_file: Path to SQL file
+        server_root: Server root directory
+    
+    Returns:
+        Tuple of (priority, path) where:
+        - Priority 0: Analytics view creation file (must be first)
+        - Priority 1: Other analytics routes
+        - Priority 2: Files that depend on analytics view (dashboard, home, reports, etc.)
+        - Priority 3: Settings detail (must come before active settings)
+        - Priority 4: All other routes (sorted alphabetically)
+    """
+    sql_path = str(sql_file.relative_to(server_root))
+    
+    # Analytics view creation file must be first
+    if (
+        sql_path
+        == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
+    ):
+        return (0, sql_path)
+    
+    # Other analytics routes come next
+    if sql_path.startswith(f"app/sql/{VERSION}/analytics/"):
+        return (1, sql_path)
+    
+    # Files that depend on analytics view must come after analytics
+    analytics_dependent_paths = [
+        f"app/sql/{VERSION}/dashboard/get_dashboard_bundle_complete.sql",
+        f"app/sql/{VERSION}/documents/get_certificate_data_complete.sql",
+        f"app/sql/{VERSION}/home/get_home_overview_complete.sql",
+        f"app/sql/{VERSION}/leaderboard/get_leaderboard_bundle_complete.sql",
+        f"app/sql/{VERSION}/practice/get_practice_overview_complete.sql",
+        f"app/sql/{VERSION}/reports/get_per_simulation_metrics_complete.sql",
+        f"app/sql/{VERSION}/reports/get_reports_bundle_complete.sql",
+        f"app/sql/{VERSION}/reports/get_reports_overview_complete.sql",
+    ]
+    if sql_path in analytics_dependent_paths:
+        return (2, sql_path)
+    
+    # Settings detail must come before active settings (type dependency)
+    if sql_path == f"app/sql/{VERSION}/settings/get_settings_detail_complete.sql":
         return (
-            "app",
-            sql_path,
-            sql_params_class,
-            sql_row_class,
-            api_request_class,
-            api_response_class,
+            3,
+            "a_" + sql_path,
+        )  # 'a_' prefix ensures it sorts before 'get_active_'
+    
+    if sql_path == f"app/sql/{VERSION}/settings/get_active_settings_complete.sql":
+        return (3, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
+    
+    # All other routes sorted alphabetically
+    return (4, sql_path)
+
+
+async def execute_sql_file(
+    sql_path: str, conn: asyncpg.Connection, server_root: Path
+) -> tuple[bool, str]:
+    """Execute SQL file on database (for functions/types).
+
+    Args:
+        sql_path: SQL file path relative to server root
+        conn: Database connection
+        server_root: Server root directory
+
+    Returns:
+        Tuple of (success, error_message)
+    """
+    try:
+        # Load SQL file
+        sql_text = load_sql(sql_path)
+
+        # Check if it contains function definitions
+        has_function = _detect_function_in_sql(sql_text)
+
+        # Always execute analytics view creation file (DDL only, no function)
+        # This must be executed before other files that depend on the analytics view
+        is_analytics_view = (
+            sql_path
+            == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
         )
 
-    # Process test SQL files
-    if sql_path.startswith(tests_sql_prefix):
-        # Generate class names
-        sql_params_class = _to_class_name(route_name, "SqlParams")
-        sql_row_class = _to_class_name(route_name, "SqlRow")
-        api_request_class = _to_class_name(route_name, "ApiRequest")
-        api_response_class = _to_class_name(route_name, "ApiResponse")
+        # Execute if it contains function definitions OR is the analytics view creation file
+        if not has_function and not is_analytics_view:
+            return (
+                True,
+                f"Skipping {sql_path} (no function definition)",
+            )
 
-        return (
-            "test",
-            sql_path,
-            sql_params_class,
-            sql_row_class,
-            api_request_class,
-            api_response_class,
-        )
+        # Execute SQL file directly (no BEGIN/COMMIT blocks to strip)
+        await conn.execute(sql_text)
+        return True, f"Executed {sql_path}"
 
-    return None
+    except Exception as e:
+        return False, f"Error executing {sql_path}: {str(e)}"
 
 
 def parse_existing_types_file(
@@ -841,147 +924,6 @@ def write_consolidated_types_file(
     types_file.write_text("\n".join(lines))
 
 
-def _detect_function_in_sql(sql_text: str) -> bool:
-    """Detect if SQL file contains a function definition.
-
-    Args:
-        sql_text: SQL file content
-
-    Returns:
-        True if SQL contains CREATE OR REPLACE FUNCTION
-    """
-    # Check for function definition pattern
-    # Match CREATE OR REPLACE FUNCTION (case insensitive, multiline)
-    pattern = r"CREATE\s+OR\s+REPLACE\s+FUNCTION"
-    return bool(re.search(pattern, sql_text, re.IGNORECASE | re.MULTILINE))
-
-
-async def execute_sql_file(
-    sql_path: str, conn: asyncpg.Connection, server_root: Path
-) -> tuple[bool, str]:
-    """Execute SQL file on database (for functions/types).
-
-    Args:
-        sql_path: SQL file path relative to server root
-        conn: Database connection
-        server_root: Server root directory
-
-    Returns:
-        Tuple of (success, error_message)
-    """
-    try:
-        # Load SQL file
-        sql_text = load_sql(sql_path)
-
-        # Check if it contains function definitions
-        has_function = _detect_function_in_sql(sql_text)
-
-        # Always execute analytics view creation file (DDL only, no function)
-        # This must be executed before other files that depend on the analytics view
-        is_analytics_view = (
-            sql_path
-            == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
-        )
-
-        # Execute if it contains function definitions OR is the analytics view creation file
-        if not has_function and not is_analytics_view:
-            return (
-                True,
-                f"Skipping {sql_path} (no function definition)",
-            )
-
-        # Execute SQL file directly (no BEGIN/COMMIT blocks to strip)
-        await conn.execute(sql_text)
-        return True, f"Executed {sql_path}"
-
-    except Exception as e:
-        return False, f"Error executing {sql_path}: {str(e)}"
-
-
-async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
-    """Recover from transaction abort by rolling back.
-
-    Args:
-        conn: Database connection
-
-    Returns:
-        True if recovery was attempted, False if connection is clean
-    """
-    try:
-        # Try to execute a simple query to check transaction state
-        await conn.execute("SELECT 1")
-        return False  # Connection is clean
-    except Exception as e:
-        error_msg = str(e)
-        if "current transaction is aborted" in error_msg.lower():
-            # Transaction is aborted, rollback to clean state
-            try:
-                await conn.execute("ROLLBACK")
-                return True  # Recovery attempted
-            except Exception:
-                # Rollback failed, connection is corrupted
-                # This shouldn't happen with savepoints, but handle it anyway
-                return False
-        # Some other error, not a transaction abort
-        return False
-
-
-def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
-    """Sort SQL files with analytics routes first, and handle type dependencies.
-    
-    Args:
-        sql_file: Path to SQL file
-        server_root: Server root directory
-    
-    Returns:
-        Tuple of (priority, path) where:
-        - Priority 0: Analytics view creation file (must be first)
-        - Priority 1: Other analytics routes
-        - Priority 2: Files that depend on analytics view (dashboard, home, reports, etc.)
-        - Priority 3: Settings detail (must come before active settings)
-        - Priority 4: All other routes (sorted alphabetically)
-    """
-    sql_path = str(sql_file.relative_to(server_root))
-    
-    # Analytics view creation file must be first
-    if (
-        sql_path
-        == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
-    ):
-        return (0, sql_path)
-    
-    # Other analytics routes come next
-    if sql_path.startswith(f"app/sql/{VERSION}/analytics/"):
-        return (1, sql_path)
-    
-    # Files that depend on analytics view must come after analytics
-    analytics_dependent_paths = [
-        f"app/sql/{VERSION}/dashboard/get_dashboard_bundle_complete.sql",
-        f"app/sql/{VERSION}/documents/get_certificate_data_complete.sql",
-        f"app/sql/{VERSION}/home/get_home_overview_complete.sql",
-        f"app/sql/{VERSION}/leaderboard/get_leaderboard_bundle_complete.sql",
-        f"app/sql/{VERSION}/practice/get_practice_overview_complete.sql",
-        f"app/sql/{VERSION}/reports/get_per_simulation_metrics_complete.sql",
-        f"app/sql/{VERSION}/reports/get_reports_bundle_complete.sql",
-        f"app/sql/{VERSION}/reports/get_reports_overview_complete.sql",
-    ]
-    if sql_path in analytics_dependent_paths:
-        return (2, sql_path)
-    
-    # Settings detail must come before active settings (type dependency)
-    if sql_path == f"app/sql/{VERSION}/settings/get_settings_detail_complete.sql":
-        return (
-            3,
-            "a_" + sql_path,
-        )  # 'a_' prefix ensures it sorts before 'get_active_'
-    
-    if sql_path == f"app/sql/{VERSION}/settings/get_active_settings_complete.sql":
-        return (3, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
-    
-    # All other routes sorted alphabetically
-    return (4, sql_path)
-
-
 async def generate_types_for_sql_file(
     sql_path: str,
     conn: asyncpg.Connection,
@@ -1002,6 +944,16 @@ async def generate_types_for_sql_file(
         or None if skipped/error
     """
     try:
+        # Import introspection functions lazily (they're in scripts folder)
+        # Ensure server root is in path for imports
+        server_root_str = str(server_root)
+        if server_root_str not in sys.path:
+            sys.path.insert(0, server_root_str)
+        
+        # Import introspection functions from app folder (available at runtime)
+        from app.infra.v4.sql.sql_introspect import introspect_sql_file
+        from app.infra.v4.sql.sql_typegen import generate_types_file
+
         # Skip introspection for DDL-only files (no function definitions)
         # These files are executed but don't need type generation
         # Exception: analytics view is legitimate DDL and should not show warning
@@ -1106,34 +1058,392 @@ async def generate_types_for_sql_file(
         return False, f"Error processing {sql_path}: {str(e)}", None
 
 
-async def main() -> int:
-    """Main entry point for command-line usage."""
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(
-        description="Generate Python type files from SQL introspection."
-    )
-    parser.add_argument(
-        "files",
-        nargs="*",
-        help="Optional: Specific SQL files to process (relative to server root). If not provided, processes all files.",
-    )
-    args = parser.parse_args()
+async def compile_sql_types(
+    sql_files: list[str] | None = None,
+    db_user: str | None = None,
+    db_password: str | None = None,
+    db_name: str | None = None,
+    db_host: str | None = None,
+    db_port: int | None = None,
+    server_root: Path | None = None,
+) -> tuple[bool, str]:
+    """Compile SQL files and generate types.
     
-    # Import here to avoid circular dependency at module level
-    from app.infra.v4.sql.compile_types import compile_sql_types
-
-    # Call the core function
-    success, message = await compile_sql_types(
-        sql_files=args.files if args.files else None
-    )
+    This is the core function that can be called programmatically from both
+    the Makefile script and the /init endpoint.
     
-    if success:
-        return 0
+    Args:
+        sql_files: Optional list of specific SQL files to process (relative to server root).
+                   If None, processes all files.
+        db_user: Database user (defaults to DB_USER env var or "myuser")
+        db_password: Database password (defaults to DB_PASSWORD env var or "mypassword")
+        db_name: Database name (defaults to DB_NAME env var or "mydb")
+        db_host: Database host (defaults to DB_HOST env var or "localhost")
+        db_port: Database port (defaults to DB_PORT env var or 5432)
+        server_root: Server root directory (defaults to parent of app directory)
+    
+    Returns:
+        Tuple of (success, message) where success is True if compilation succeeded
+    """
+    # Get server root
+    if server_root is None:
+        # Default to parent of app directory (server root)
+        # compile_types.py is at: server/app/infra/v4/sql/compile_types.py
+        # We need to go up 5 levels: sql -> v4 -> infra -> app -> server
+        server_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+    
+    # Ensure server root is in path for imports (needed when called from script)
+    server_root_str = str(server_root)
+    if server_root_str not in sys.path:
+        sys.path.insert(0, server_root_str)
+    
+    # Get database connection info from environment or parameters
+    db_user = db_user or os.getenv("DB_USER", "myuser")
+    db_password = db_password or os.getenv("DB_PASSWORD", "mypassword")
+    db_name = db_name or os.getenv("DB_NAME", "mydb")
+    db_host = db_host or os.getenv("DB_HOST", "localhost")
+    db_port = db_port or int(os.getenv("DB_PORT", "5432"))
+    
+    db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    
+    # Determine if we're in incremental mode
+    incremental_mode = sql_files is not None and len(sql_files) > 0
+    
+    # Find all SQL files from both app and tests directories
+    sql_file_paths: list[Path] = []
+    
+    if incremental_mode:
+        # In incremental mode, only process specified files
+        for file_path_str in sql_files or []:
+            # Convert to Path and resolve relative to server root
+            file_path = Path(file_path_str)
+            if not file_path.is_absolute():
+                file_path = server_root / file_path
+            
+            # Validate file exists
+            if not file_path.exists():
+                print(f"⚠️  File not found: {file_path}")
+                continue
+            
+            # Validate file is within allowed directories
+            try:
+                rel_path = file_path.relative_to(server_root)
+                rel_str = str(rel_path)
+                if not (
+                    rel_str.startswith(f"app/sql/{VERSION}/")
+                    or rel_str.startswith(f"tests/sql/{VERSION}/integration/")
+                ):
+                    print(
+                        f"⚠️  File must be in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/: {rel_str}"
+                    )
+                    continue
+            except ValueError:
+                print(f"⚠️  File must be relative to server root: {file_path}")
+                continue
+            
+            sql_file_paths.append(file_path)
+        
+        if not sql_file_paths:
+            return False, "No valid SQL files provided"
+        
+        print(f"🔍 Processing {len(sql_file_paths)} SQL file(s) in incremental mode")
     else:
-        print(f"❌ {message}")
-        return 1
-
-
-if __name__ == "__main__":
-    exit_code = asyncio.run(main())
-    sys.exit(exit_code)
+        # Full mode: process all files
+        # Process app/sql/{VERSION}/
+        app_sql_dir = server_root / "app" / "sql" / VERSION
+        if app_sql_dir.exists():
+            sql_file_paths.extend(app_sql_dir.rglob("*.sql"))
+        
+        # Process tests/sql/{VERSION}/integration/ (all subdirectories)
+        tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
+        if tests_sql_dir.exists():
+            sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
+        
+        if not sql_file_paths:
+            return True, f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
+        
+        print(f"🔍 Found {len(sql_file_paths)} SQL files to process")
+    
+    # Sort SQL files with analytics routes first
+    sorted_sql_files = sorted(sql_file_paths, key=lambda f: _sort_sql_files(f, server_root))
+    
+    # Connect to database
+    try:
+        conn = await asyncpg.connect(db_url)
+    except Exception as e:
+        error_msg = f"Failed to connect to database: {e}"
+        print(f"❌ {error_msg}")
+        print(f"   URL: postgresql://{db_user}:***@{db_host}:{db_port}/{db_name}")
+        return False, error_msg
+    
+    try:
+        # Load existing type definitions for fallback preservation (both incremental and full mode)
+        existing_app_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
+        existing_test_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
+        
+        # Load existing types even in full mode for fallback when files fail
+        existing_app_types = parse_existing_types_file("app", server_root)
+        existing_test_types = parse_existing_types_file("test", server_root)
+        
+        if incremental_mode:
+            print(
+                f"📚 Loaded {len(existing_app_types)} existing app types and {len(existing_test_types)} existing test types"
+            )
+            
+            # Check if types.py is complete - if not, fall back to full compilation
+            if not is_types_file_complete(
+                server_root, existing_app_types, existing_test_types
+            ):
+                print(
+                    f"\n⚠️  types.py appears incomplete (found {len(existing_app_types)} app types, expected many more)"
+                )
+                print(
+                    "   Falling back to full compilation to ensure all types are available..."
+                )
+                print("   This may take a moment...\n")
+                # Switch to full mode by clearing sql_files and re-finding all files
+                sql_file_paths = []
+                incremental_mode = False
+                # Re-find all SQL files (full mode logic)
+                app_sql_dir = server_root / "app" / "sql" / VERSION
+                if app_sql_dir.exists():
+                    sql_file_paths.extend(app_sql_dir.rglob("*.sql"))
+                tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
+                if tests_sql_dir.exists():
+                    sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
+                if not sql_file_paths:
+                    return True, f"No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
+                # Re-sort SQL files with analytics routes first
+                sorted_sql_files = sorted(sql_file_paths, key=lambda f: _sort_sql_files(f, server_root))
+                print(
+                    f"🔍 Found {len(sql_file_paths)} SQL files to process (full compilation mode)"
+                )
+        
+        # Process each SQL file
+        errors: list[tuple[str, str]] = []  # (sql_path, error_message)
+        successes: list[str] = []
+        skipped: list[str] = []
+        type_definitions: list[
+            tuple[str, str, str, str, str, str, str]
+        ] = []  # (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
+        
+        # First pass: Execute all SQL files that contain functions/types
+        # This ensures functions and types exist in the database before introspection
+        # Analytics routes are processed first since they depend on the materialized view
+        print("\n📝 Executing SQL files with functions/types...")
+        print("   (Analytics routes processed first due to dependencies)")
+        execution_errors: list[tuple[str, str]] = []
+        failed_files: set[str] = set()  # Track files that failed during execution
+        
+        for sql_file in sorted_sql_files:
+            sql_path = str(sql_file.relative_to(server_root))
+            execute_success, execute_message = await execute_sql_file(
+                sql_path, conn, server_root
+            )
+            
+            if not execute_success:
+                # Recover from transaction abort if needed
+                await _recover_from_transaction_abort(conn)
+                
+                # Track failed files
+                failed_files.add(sql_path)
+                
+                # For test SQL files, treat execution errors as skips
+                if sql_path.startswith("tests/sql/"):
+                    print(f"⏭️  {execute_message}")
+                else:
+                    execution_errors.append((sql_path, execute_message))
+                    print(f"❌ {execute_message}")
+            elif "Executed" in execute_message:
+                pass  # Success - no logging needed
+        
+        # Ensure connection is in clean state before introspection
+        await _recover_from_transaction_abort(conn)
+        
+        # Add execution errors to main errors list for accurate counting
+        errors.extend(execution_errors)
+        
+        if execution_errors:
+            print(f"\n⚠️  {len(execution_errors)} SQL files failed to execute:")
+            for sql_path, error_msg in execution_errors:
+                print(f"   - {sql_path}: {error_msg}")
+            print("\n   Continuing with type generation anyway...")
+        
+        # Second pass: Generate types for all SQL files
+        # Use same sorting order as execution phase
+        print("\n🔍 Generating types from SQL files...")
+        
+        for sql_file in sorted_sql_files:
+            # Get relative path from server root
+            sql_path = str(sql_file.relative_to(server_root))
+            
+            # Skip files that failed during execution phase
+            if sql_path in failed_files:
+                skipped.append(sql_path)
+                print(f"⏭️  Skipping {sql_path} (failed during execution phase)")
+                
+                # Preserve existing types if available
+                existing_type = None
+                if sql_path in existing_app_types:
+                    existing_type = existing_app_types[sql_path]
+                elif sql_path in existing_test_types:
+                    existing_type = existing_test_types[sql_path]
+                
+                if existing_type:
+                    print(
+                        f"   Preserving existing type definitions for {sql_path} due to compilation failure"
+                    )
+                    type_definitions.append(existing_type)
+                continue
+            
+            # Recover from transaction abort if needed before each introspection
+            await _recover_from_transaction_abort(conn)
+            
+            # Check if we have existing types for this file (for fallback preservation)
+            existing_type = None
+            if sql_path in existing_app_types:
+                existing_type = existing_app_types[sql_path]
+            elif sql_path in existing_test_types:
+                existing_type = existing_test_types[sql_path]
+            
+            success, message, type_definition = await generate_types_for_sql_file(
+                sql_path, conn, server_root, skip_execution=True
+            )
+            
+            if success:
+                if "Skipping" not in message:
+                    successes.append(message)
+                    # Success - no logging needed
+                    # Collect type definition if available
+                    if type_definition:
+                        type_definitions.append(type_definition)
+                else:
+                    skipped.append(sql_path)
+                    print(f"⏭️  {message}")
+            else:
+                # Recover from transaction abort after error
+                await _recover_from_transaction_abort(conn)
+                
+                # Store as tuple for better grouping
+                errors.append((sql_path, message))
+                print(f"❌ {sql_path}: {message}")
+                
+                # Preserve existing types if available (works in both incremental and full mode)
+                if existing_type:
+                    print(
+                        f"   Preserving existing type definitions for {sql_path} due to error"
+                    )
+                    type_definitions.append(existing_type)
+        
+        # Separate app and test type definitions
+        app_type_definitions = [
+            td for td in type_definitions if td[0].startswith(f"app/sql/{VERSION}/")
+        ]
+        test_type_definitions = [
+            td
+            for td in type_definitions
+            if td[0].startswith(f"tests/sql/{VERSION}/integration/")
+        ]
+        
+        # In incremental mode, merge with existing types for files not processed
+        if incremental_mode:
+            # Create set of processed SQL paths
+            processed_paths = {td[0] for td in type_definitions}
+            
+            # Add existing app types that weren't processed
+            for sql_path, existing_td in existing_app_types.items():
+                if sql_path not in processed_paths:
+                    app_type_definitions.append(existing_td)
+            
+            # Add existing test types that weren't processed
+            for sql_path, existing_td in existing_test_types.items():
+                if sql_path not in processed_paths:
+                    test_type_definitions.append(existing_td)
+            
+            # Sort to maintain consistent order
+            app_type_definitions.sort(key=lambda x: x[0])
+            test_type_definitions.sort(key=lambda x: x[0])
+        
+        # Write app consolidated types file if we have entries
+        if app_type_definitions:
+            write_consolidated_types_file(app_type_definitions, "app", server_root)
+            # Success - no logging needed
+        
+        # Write test consolidated types file if we have entries
+        if test_type_definitions:
+            write_consolidated_types_file(test_type_definitions, "test", server_root)
+            # Success - no logging needed
+        
+        # Summary
+        print("\n📊 Summary:")
+        print(f"   ⏭️  Skipped: {len(skipped)}")
+        print(f"   ❌ Errors: {len(errors)}")
+        
+        if errors:
+            # Group errors by error message to identify patterns
+            error_groups: dict[str, list[str]] = {}
+            for sql_path, error_msg in errors:
+                # Extract the core error (remove file-specific details)
+                # Common patterns: function doesn't exist, relation doesn't exist, syntax error
+                core_error = error_msg
+                # Normalize error messages for grouping
+                if "does not exist" in error_msg:
+                    # Extract the object name (function, relation, column)
+                    if "function" in error_msg:
+                        # Extract function name
+                        match = re.search(
+                            r"function (\w+)\([^)]+\) does not exist", error_msg
+                        )
+                        if match:
+                            core_error = f"function {match.group(1)} does not exist"
+                    elif "relation" in error_msg:
+                        match = re.search(
+                            r'relation "([^"]+)" does not exist', error_msg
+                        )
+                        if match:
+                            core_error = f'relation "{match.group(1)}" does not exist'
+                    elif "column" in error_msg:
+                        match = re.search(
+                            r'column "([^"]+)" (?:of relation "[^"]+" )?does not exist',
+                            error_msg,
+                        )
+                        if match:
+                            core_error = f'column "{match.group(1)}" does not exist'
+                elif "syntax error" in error_msg:
+                    # Extract the location of syntax error
+                    match = re.search(r'syntax error at or near "([^"]+)"', error_msg)
+                    if match:
+                        core_error = f'syntax error at or near "{match.group(1)}"'
+                elif "cannot insert multiple commands" in error_msg:
+                    core_error = (
+                        "cannot insert multiple commands into a prepared statement"
+                    )
+                elif "could not determine data type" in error_msg:
+                    core_error = "could not determine data type of parameter"
+                
+                if core_error not in error_groups:
+                    error_groups[core_error] = []
+                error_groups[core_error].append(sql_path)
+            
+            # Sort error groups by count (most common first)
+            sorted_groups = sorted(
+                error_groups.items(), key=lambda x: len(x[1]), reverse=True
+            )
+            
+            print("\n❌ SQL compilation failed. Errors grouped by type:")
+            print()
+            
+            for core_error, files in sorted_groups:
+                count = len(files)
+                print(f"   {core_error} ({count} file{'s' if count > 1 else ''}):")
+                # Show all files for this error type
+                for file_path in sorted(files):
+                    print(f"      - {file_path}")
+                print()
+            
+            return False, f"SQL compilation failed with {len(errors)} error(s)"
+        
+        return True, f"SQL compilation completed successfully ({len(successes)} files processed)"
+    
+    finally:
+        await conn.close()

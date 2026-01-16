@@ -825,37 +825,87 @@ async def metrics_snapshot() -> JSONResponse:
         )
 
 
+async def _compile_sql_types() -> tuple[bool, str]:
+    """Compile SQL types by executing SQL files and generating Python types.
+    
+    This function:
+    1. Executes all SQL files on the database (creates/updates PostgreSQL functions and types)
+    2. Introspects those functions to generate Python type definitions
+    
+    This is idempotent and safe to run multiple times. It ensures types are always
+    up-to-date after migrations or SQL file changes.
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        from app.infra.v4.sql.compile_types import compile_sql_types
+        
+        success, message = await compile_sql_types()
+        return success, message
+    except Exception as e:
+        return False, f"Error running SQL compilation: {str(e)}"
+
+
 @fastapi_app.post("/init")
 async def init_system() -> JSONResponse:
-    """Trigger system initialization (Keycloak sync).
+    """Trigger system initialization (SQL compilation and Keycloak sync).
 
     Called by notify service to initialize system on startup.
-    Performs Keycloak sync to ensure identity providers are configured.
+    Performs:
+    1. SQL type compilation (if types.py is missing or incomplete)
+    2. Keycloak sync to ensure identity providers are configured.
+    
     No authentication required - internal service-to-service call.
     """
     from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
     from utils.logging.db_logger import get_logger
 
     logger = get_logger("app.main")
+    
+    init_messages: list[str] = []
+    init_errors: list[str] = []
 
     try:
+        # 1. Compile SQL types (executes SQL files and generates Python types)
+        # This is idempotent and ensures types are up-to-date after migrations
+        sql_success, sql_message = await _compile_sql_types()
+        if sql_success:
+            init_messages.append(sql_message)
+            logger.info(f"SQL compilation: {sql_message}")
+        else:
+            init_errors.append(sql_message)
+            logger.warning(f"SQL compilation: {sql_message}")
+        
+        # 2. Perform Keycloak sync
         result = await perform_keycloak_sync(department_id=None)
+        
+        if result.success:
+            init_messages.append(result.message)
+            logger.info(f"Keycloak sync: {result.message}")
+        else:
+            init_errors.append(result.message)
+            logger.error(f"Keycloak sync failed: {result.message}")
 
+        # Return success if at least Keycloak sync succeeded
+        # SQL compilation warnings don't block startup
         if result.success:
             return JSONResponse(
                 content={
                     "success": True,
-                    "message": result.message,
+                    "message": "; ".join(init_messages),
+                    "warnings": init_errors if init_errors else None,
                     "error": None,
                 }
             )
         else:
-            # Sync failed - return error response
+            # Keycloak sync failed - return error response
             return JSONResponse(
                 status_code=500,
                 content={
                     "success": False,
-                    "message": result.message,
+                    "message": "; ".join(init_errors),
+                    "warnings": init_messages if init_messages else None,
                     "error": result.error,
                 },
             )

@@ -5721,10 +5721,13 @@ export interface paths {
         put?: never;
         /**
          * Init System
-         * @description Trigger system initialization (Keycloak sync).
+         * @description Trigger system initialization (SQL compilation and Keycloak sync).
          *
          *     Called by notify service to initialize system on startup.
-         *     Performs Keycloak sync to ensure identity providers are configured.
+         *     Performs:
+         *     1. SQL type compilation (if types.py is missing or incomplete)
+         *     2. Keycloak sync to ensure identity providers are configured.
+         *
          *     No authentication required - internal service-to-service call.
          */
         post: operations["init_system_init_post"];

@@ -334,12 +334,12 @@ sql-compile: check-venv
 	@if [ -z "$$DB_USER" ] || [ -z "$$DB_PASSWORD" ] || [ -z "$$DB_NAME" ]; then \
 		echo "⚠️  Warning: DB_USER, DB_PASSWORD, or DB_NAME not set. Using defaults."; \
 	fi
-	@DB_USER="$${DB_USER:-myuser}" \
+	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
 	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
 	 DB_NAME="$${DB_NAME:-mydb}" \
 	 DB_HOST="$${DB_HOST:-localhost}" \
 	 DB_PORT="$${DB_PORT:-5432}" \
-	 $(VENV_PYTHON) server/scripts/generate_sql_types.py
+	 $(VENV_PYTHON) -c "import asyncio; from app.infra.v4.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types())[0] else 1)"
 	@echo "✅ SQL compilation complete"
 
 # Compile specific SQL files incrementally (for watch mode)
@@ -353,12 +353,12 @@ sql-compile-incremental: check-venv
 	@if [ -z "$$DB_USER" ] || [ -z "$$DB_PASSWORD" ] || [ -z "$$DB_NAME" ]; then \
 		echo "⚠️  Warning: DB_USER, DB_PASSWORD, or DB_NAME not set. Using defaults."; \
 	fi
-	@DB_USER="$${DB_USER:-myuser}" \
+	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
 	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
 	 DB_NAME="$${DB_NAME:-mydb}" \
 	 DB_HOST="$${DB_HOST:-localhost}" \
 	 DB_PORT="$${DB_PORT:-5432}" \
-	 $(VENV_PYTHON) server/scripts/generate_sql_types.py "$(FILE)"
+	 $(VENV_PYTHON) -c "import asyncio, sys; from app.infra.v4.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types(sql_files=[sys.argv[1]]))[0] else 1)" "$(FILE)"
 
 # Watch SQL files and regenerate types on change
 watch-sql-types:
