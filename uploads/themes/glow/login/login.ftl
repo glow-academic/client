@@ -91,11 +91,10 @@
           
           <#-- Form content -->
           <div class="form-content">
-            <#-- Department Picker -->
+            <#-- Department Picker (only show if departments exist, no "Default" option) -->
             <#if departments?size gt 0>
               <div class="department-picker-wrapper">
                 <select id="department" name="department" class="department-select">
-                  <option value="" <#if !departmentId?has_content>selected</#if>>Default</option>
                   <#list departments as d>
                     <option value="${d.id}" <#if departmentId == d.id>selected</#if>>${d.title}</option>
                   </#list>
@@ -106,6 +105,24 @@
                 (function () {
                   var select = document.getElementById("department");
                   if (!select) return;
+                  
+                  // Departments array from FreeMarker
+                  var departments = [
+                    <#list departments as d>
+                    {id: "${d.id}", title: "${d.title}"}<#sep>,
+                    </#list>
+                  ];
+                  
+                  // Initialize: if no department selected and departments exist, select first
+                  var currentDept = select.value || "";
+                  if (!currentDept && departments.length > 0) {
+                    currentDept = departments[0].id;
+                    select.value = currentDept;
+                    // Update URL to reflect first department
+                    var url = new URL(window.location.href);
+                    url.searchParams.set("department", currentDept);
+                    window.history.replaceState({}, "", url.toString());
+                  }
 
                   function applyDept(dept) {
                     // Update URL without reload
@@ -146,10 +163,15 @@
                   });
 
                   // Apply initial state from URL or server-rendered departmentId
+                  // If no department selected and departments exist, default to first department
                   var initial = "${departmentId}";
                   if (!initial) {
                     var urlParams = new URLSearchParams(window.location.search);
                     initial = urlParams.get("department") || "";
+                  }
+                  // If still no initial and departments exist, use first department
+                  if (!initial && departments.length > 0) {
+                    initial = departments[0].id;
                   }
                   if (select.value !== initial) select.value = initial;
                   applyDept(initial);

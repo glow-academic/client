@@ -1179,14 +1179,11 @@ async def sync_identity_providers(
         kc_admin.change_current_realm(realm_name="master")
         
         # Step 0: Sync default-idp instances (custom OIDC IdP for guest/default-account)
-        # Create IdP instances per department/mode combination
+        # Strategy: Only create platform-level instances if there are 0 departments
+        # Otherwise, only create department-level instances
         logger.info("Syncing default-idp Identity Provider instances...")
         
-        # Sync platform-level default-idp instances (no department)
-        await sync_default_idp_for_department(None, "guest", kc_admin)
-        await sync_default_idp_for_department(None, "default-account", kc_admin)
-        
-        # Sync department-level default-idp instances
+        # Check if departments exist
         async with pool.acquire() as conn:
             dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
             dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
@@ -1195,13 +1192,21 @@ async def sync_identity_providers(
                 dept_function_call_sql = f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
                 departments = await conn.fetch(dept_function_call_sql)
                 
-                for dept_row in departments:
-                    dept = dict(dept_row)
-                    dept_id = str(dept["department_id"])
-                    
-                    # Sync guest and default-account IdPs for each department
-                    await sync_default_idp_for_department(dept_id, "guest", kc_admin)
-                    await sync_default_idp_for_department(dept_id, "default-account", kc_admin)
+                if len(departments) == 0:
+                    # No departments: create platform-level default-idp instances only
+                    logger.info("No departments found - creating platform-level default-idp instances")
+                    await sync_default_idp_for_department(None, "guest", kc_admin)
+                    await sync_default_idp_for_department(None, "default-account", kc_admin)
+                else:
+                    # Departments exist: create department-level default-idp instances only
+                    logger.info(f"Found {len(departments)} departments - creating department-level default-idp instances")
+                    for dept_row in departments:
+                        dept = dict(dept_row)
+                        dept_id = str(dept["department_id"])
+                        
+                        # Sync guest and default-account IdPs for each department
+                        await sync_default_idp_for_department(dept_id, "guest", kc_admin)
+                        await sync_default_idp_for_department(dept_id, "default-account", kc_admin)
         
         # Step 1: Sync realm-level IdPs (from default settings)
         logger.info("Syncing realm-level IdPs (platform login)...")
@@ -1300,23 +1305,26 @@ async def sync_identity_providers(
             existing_idps = kc_admin.get_idps()
             
             # Collect expected default-idp aliases (from Step 0 sync)
-            # Note: mode is "default-account" but alias uses "default-account" in the name
+            # Strategy: Platform-level only if 0 departments, otherwise department-level only
             expected_default_idp_aliases: set[str] = set()
-            # Platform-level
-            expected_default_idp_aliases.add("default-idp-guest-platform")
-            expected_default_idp_aliases.add("default-idp-default-account-platform")  # mode="default-account" → alias uses "default-account"
-            # Department-level (collect from departments)
             async with pool.acquire() as conn:
                 dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
                 dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
                 if dept_is_function and dept_function_name:
                     dept_function_call_sql = f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
                     departments = await conn.fetch(dept_function_call_sql)
-                    for dept_row in departments:
-                        dept = dict(dept_row)
-                        dept_id = str(dept["department_id"])
-                        expected_default_idp_aliases.add(f"default-idp-guest-dept-{dept_id}")
-                        expected_default_idp_aliases.add(f"default-idp-default-account-dept-{dept_id}")  # mode="default-account" → alias uses "default-account"
+                    
+                    if len(departments) == 0:
+                        # No departments: expect platform-level instances only
+                        expected_default_idp_aliases.add("default-idp-guest-platform")
+                        expected_default_idp_aliases.add("default-idp-default-account-platform")
+                    else:
+                        # Departments exist: expect department-level instances only
+                        for dept_row in departments:
+                            dept = dict(dept_row)
+                            dept_id = str(dept["department_id"])
+                            expected_default_idp_aliases.add(f"default-idp-guest-dept-{dept_id}")
+                            expected_default_idp_aliases.add(f"default-idp-default-account-dept-{dept_id}")
             
             # Get expected realm-level slugs
             async with pool.acquire() as conn:

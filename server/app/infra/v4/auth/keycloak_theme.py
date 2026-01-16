@@ -49,11 +49,14 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
         dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
         is_function, function_name, schema = _detect_function_in_sql(dept_sql)
         
+        has_departments = False
         if is_function and function_name:
             function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
             departments = await conn.fetch(function_call_sql)
+            has_departments = len(departments) > 0
             
             # Step 3: For each department, get its allowed IdPs and determine default-idp availability
+            # Only process departments if they exist (no platform-level fallback)
             for dept_row in departments:
                 dept = dict(dept_row)
                 dept_id = str(dept["department_id"])
@@ -111,51 +114,44 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
                         # - No active departments, OR
                         # - Department has no auth providers, OR
                         # - Platform has no default auth providers and all departments have auth providers
-                        if dept_id:
-                            # Department-specific: available if department has no auth providers
-                            if dept_auth_count == 0:
-                                default_account_alias = f"default-idp-default-dept-{dept_id}"
-                                dept_aliases.append(default_account_alias)
-                                default_idp_aliases.add(default_account_alias)
-                                all_idp_aliases.add(default_account_alias)
-                        else:
-                            # Platform-level: available if no active departments OR no default auth providers
-                            if active_dept_count == 0 or (default_auth_count == 0 and depts_without_auth_count > 0):
-                                default_account_alias = "default-idp-default-platform"
-                                dept_aliases.append(default_account_alias)
-                                default_idp_aliases.add(default_account_alias)
-                                all_idp_aliases.add(default_account_alias)
+                        # Department-specific: available if department has no auth providers
+                        if dept_auth_count == 0:
+                            default_account_alias = f"default-idp-default-account-dept-{dept_id}"  # Match sync alias format
+                            dept_aliases.append(default_account_alias)
+                            default_idp_aliases.add(default_account_alias)
+                            all_idp_aliases.add(default_account_alias)
                 
                 # Department gets: department-scoped IdPs + default-idp instances
                 allowed_providers_by_dept[dept_id] = dept_aliases
         
-        # Step 4: Add platform-level default-idp instances to platform_providers
-        # Check platform-level availability (no department selected)
-        check_auth_sql = load_sql("app/sql/v4/profile/check_login_authorization_complete.sql")
-        check_auth_is_function, check_auth_function_name, check_auth_schema = _detect_function_in_sql(check_auth_sql)
-        
-        if check_auth_is_function and check_auth_function_name:
-            check_auth_function_call_sql = f'SELECT * FROM "{check_auth_schema}"."{check_auth_function_name}"(NULL)'
-            auth_result = await conn.fetchrow(check_auth_function_call_sql)
+        # Step 4: Add platform-level default-idp instances ONLY if there are no departments
+        # If departments exist, we don't use platform-level instances (always use first department)
+        if not has_departments:
+            check_auth_sql = load_sql("app/sql/v4/profile/check_login_authorization_complete.sql")
+            check_auth_is_function, check_auth_function_name, check_auth_schema = _detect_function_in_sql(check_auth_sql)
             
-            if auth_result:
-                auth_data = dict(auth_result)
-                guest_enabled = auth_data.get("guest_login_enabled", False)
-                active_dept_count = auth_data.get("active_departments_count", 0) or 0
-                default_auth_count = auth_data.get("default_settings_auth_providers_count", 0) or 0
-                depts_without_auth_count = auth_data.get("departments_without_auth_providers_count", 0) or 0
+            if check_auth_is_function and check_auth_function_name:
+                check_auth_function_call_sql = f'SELECT * FROM "{check_auth_schema}"."{check_auth_function_name}"(NULL)'
+                auth_result = await conn.fetchrow(check_auth_function_call_sql)
                 
-                # Add platform-level guest default-idp if guest login is enabled
-                if guest_enabled:
-                    platform_providers.append("default-idp-guest-platform")
-                    default_idp_aliases.add("default-idp-guest-platform")
-                    all_idp_aliases.add("default-idp-guest-platform")
-                
-                # Add platform-level default-account default-idp if appropriate
-                if active_dept_count == 0 or (default_auth_count == 0 and depts_without_auth_count > 0):
-                    platform_providers.append("default-idp-default-account-platform")  # Match sync alias format
-                    default_idp_aliases.add("default-idp-default-account-platform")
-                    all_idp_aliases.add("default-idp-default-account-platform")
+                if auth_result:
+                    auth_data = dict(auth_result)
+                    guest_enabled = auth_data.get("guest_login_enabled", False)
+                    active_dept_count = auth_data.get("active_departments_count", 0) or 0
+                    default_auth_count = auth_data.get("default_settings_auth_providers_count", 0) or 0
+                    depts_without_auth_count = auth_data.get("departments_without_auth_providers_count", 0) or 0
+                    
+                    # Add platform-level guest default-idp if guest login is enabled
+                    if guest_enabled:
+                        platform_providers.append("default-idp-guest-platform")
+                        default_idp_aliases.add("default-idp-guest-platform")
+                        all_idp_aliases.add("default-idp-guest-platform")
+                    
+                    # Add platform-level default-account default-idp if appropriate
+                    if active_dept_count == 0 or (default_auth_count == 0 and depts_without_auth_count > 0):
+                        platform_providers.append("default-idp-default-account-platform")
+                        default_idp_aliases.add("default-idp-default-account-platform")
+                        all_idp_aliases.add("default-idp-default-account-platform")
     
     # Step 4: Generate FreeMarker file with department-based mapping
     # Use UPLOAD_FOLDER constant for consistent routing (works in Docker and local dev)
@@ -201,24 +197,33 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     lines.append("} />")
     lines.append("")
     
-    # Generate platform providers
-    lines.append("<#-- Platform fallback (when no department chosen) -->")
+    # Generate platform providers (only used when no departments exist)
+    lines.append("<#-- Platform providers (only used when no departments exist) -->")
     platform_list = ", ".join([f'"{p}"' for p in platform_providers])
     lines.append(f'<#assign platformProviders = [{platform_list}] />')
     lines.append("")
     
     # Generate function
+    # Strategy: If departments exist, always use department-specific providers (default to first if none selected)
+    # If no departments exist, use platform providers
     lines.append("<#function getAllowedProvidersForDepartment deptId>")
-    lines.append('  <#if deptId?has_content && allowedProvidersByDept[deptId]??>')
-    lines.append('    <#assign deptProviders = allowedProvidersByDept[deptId] />')
-    lines.append('    <#if deptProviders?size gt 0>')
-    lines.append('      <#return deptProviders>')
-    lines.append('    <#else>')
-    lines.append('      <#-- Department has no IdPs, fallback to platform -->')
-    lines.append('      <#return platformProviders>')
+    lines.append('  <#-- If departments exist, always use department-specific providers -->')
+    lines.append('  <#if departments?size gt 0>')
+    lines.append('    <#-- Default to first department if no department selected -->')
+    lines.append('    <#assign effectiveDeptId = deptId!"" />')
+    lines.append('    <#if !effectiveDeptId?has_content>')
+    lines.append('      <#assign effectiveDeptId = departments[0].id />')
     lines.append('    </#if>')
+    lines.append('    <#if effectiveDeptId?has_content && allowedProvidersByDept[effectiveDeptId]??>')
+    lines.append('      <#assign deptProviders = allowedProvidersByDept[effectiveDeptId] />')
+    lines.append('      <#if deptProviders?size gt 0>')
+    lines.append('        <#return deptProviders>')
+    lines.append('      </#if>')
+    lines.append('    </#if>')
+    lines.append('    <#-- Fallback: return empty list if department has no providers -->')
+    lines.append('    <#return []>')
     lines.append('  <#else>')
-    lines.append('    <#-- No department selected, return platform IdPs -->')
+    lines.append('    <#-- No departments exist: use platform providers -->')
     lines.append('    <#return platformProviders>')
     lines.append('  </#if>')
     lines.append("</#function>")
