@@ -14,7 +14,7 @@ import re
 from typing import Any
 
 import asyncpg
-from utils.sql_helper import _detect_function_in_sql, load_sql
+from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 
 async def get_resource_sql_function_name(

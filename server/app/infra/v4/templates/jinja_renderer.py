@@ -4,8 +4,8 @@ from typing import Any
 
 from jinja2 import Environment, TemplateError
 from jinja2.environment import Template as JinjaTemplate
-from utils.logging.db_logger import get_logger
-from utils.settings.theme import ThemeTokens
+from app.utils.logging.db_logger import get_logger
+from app.utils.settings.theme import ThemeTokens
 
 logger = get_logger(__name__)
 

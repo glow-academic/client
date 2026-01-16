@@ -3,7 +3,7 @@
 from typing import cast
 
 import asyncpg  # type: ignore
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.profile_exists import profile_exists
 from app.sql.types import (

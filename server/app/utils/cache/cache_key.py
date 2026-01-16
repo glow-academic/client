@@ -3,7 +3,7 @@
 import hashlib
 from typing import Any
 
-from utils.cache.stable_dumps import stable_dumps
+from app.utils.cache.stable_dumps import stable_dumps
 
 CACHE_KEY_PREFIX = "http:cache:"
 

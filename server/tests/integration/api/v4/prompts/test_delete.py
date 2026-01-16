@@ -26,7 +26,7 @@ from tests.sql.types import (
     GetPersonaPromptLinkStatusSqlParams,
     GetPersonaPromptLinkStatusSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
 

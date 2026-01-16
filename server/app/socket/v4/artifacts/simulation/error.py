@@ -10,7 +10,7 @@ from app.main import get_internal_sio, sio
 from app.sql.types import (ValidateSimulationResourceErrorSqlParams,
                            ValidateSimulationResourceErrorSqlRow)
 from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 

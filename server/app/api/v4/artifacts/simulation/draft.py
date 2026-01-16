@@ -11,8 +11,8 @@ from app.sql.types import (PatchSimulationDraftApiRequest,
                            PatchSimulationDraftSqlParams,
                            PatchSimulationDraftSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/simulations/patch_simulation_draft_complete.sql"
 

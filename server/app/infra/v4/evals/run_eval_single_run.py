@@ -10,8 +10,8 @@ from typing import Any
 
 from app.infra.v4.agents.run_agent import run_agent_with_tools
 from app.infra.v4.agents.types import TResponseInputItem
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext

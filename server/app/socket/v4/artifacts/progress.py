@@ -16,7 +16,7 @@ from app.sql.types import (GetImageGenerationContextAndCreateUploadSqlParams,
                            TextToolProgressUpdateSqlParams,
                            TextToolProgressUpdateSqlRow)
 from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 

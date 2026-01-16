@@ -4,7 +4,7 @@ Tests for app.utils.cache.stable_dumps
 
 import json
 
-from utils.cache.stable_dumps import stable_dumps
+from app.utils.cache.stable_dumps import stable_dumps
 
 
 class TestStable_Dumps:

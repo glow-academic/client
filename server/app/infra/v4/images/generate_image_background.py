@@ -4,9 +4,9 @@ import os
 import uuid
 from typing import cast
 
-from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.main import UPLOAD_FOLDER, get_pool
 

@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from scripts.sql_introspect import ColumnMetadata, SQLMetadata
-from utils.sql_nest import nest
+from app.utils.sql_nest import nest
 
 
 def _to_pydantic_field_type(python_type: str, is_optional: bool = False) -> str:

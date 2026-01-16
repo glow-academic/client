@@ -11,7 +11,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 
 class TestDecrypt_Api_Key:

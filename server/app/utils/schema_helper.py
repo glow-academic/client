@@ -26,7 +26,7 @@ from app.sql.types import (CreateSchemaFieldItemV4SqlParams,
                            GetTemplateValuesV4SqlParams,
                            GetTemplateValuesV4SqlRow,
                            LinkSchemaTemplateV4SqlParams)
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 
 async def get_schema_with_fields(

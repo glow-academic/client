@@ -7,7 +7,7 @@ import asyncpg
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from app.utils.schema_helper import get_schema_tree
-from utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

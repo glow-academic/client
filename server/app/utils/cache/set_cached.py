@@ -4,10 +4,9 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
-from utils.cache.tag_set_name import tag_set_name
-from utils.logging.db_logger import get_logger
-
 from app.main import get_redis_client
+from app.utils.cache.tag_set_name import tag_set_name
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

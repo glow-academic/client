@@ -10,8 +10,8 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import get_db

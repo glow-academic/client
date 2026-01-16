@@ -235,7 +235,7 @@ from app.sql.types import (
     InfraProfileExistsSqlParams,
     InfraProfileExistsSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/infrastructure/activity/profile_exists_complete.sql"
 

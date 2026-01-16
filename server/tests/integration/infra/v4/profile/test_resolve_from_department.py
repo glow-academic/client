@@ -6,7 +6,7 @@ from tests.sql.types import (
     CreateTestProfileSqlParams,
     CreateTestProfileSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.profile.resolve_from_department import resolve_profile_from_department
 

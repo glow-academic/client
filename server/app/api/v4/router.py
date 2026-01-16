@@ -73,9 +73,9 @@ from app.api.v4.uploads import router as uploads_router
 # Imports
 # ============================================================================
 from fastapi import APIRouter, Depends
-from utils.mcp.get_mcp import get_mcp
-from utils.profile.get_effective_profile_id import get_effective_profile_id
-from utils.profile.get_profile_id import get_profile_id
+from app.utils.mcp.get_mcp import get_mcp
+from app.utils.profile.get_effective_profile_id import get_effective_profile_id
+from app.utils.profile.get_profile_id import get_profile_id
 
 # ============================================================================
 # Main Router Configuration

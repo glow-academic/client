@@ -10,8 +10,8 @@ from app.sql.types import (GetTestDetailsV4SqlParams, GetTestDetailsV4SqlRow,
                            MarkTestCompleteV4SqlParams)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 

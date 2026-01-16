@@ -14,7 +14,7 @@ from app.sql.types import (CreateTestV4SqlParams, GetAgentNameV4SqlParams,
                            GetToolNameV4SqlRow, LinkAttemptTestV4SqlParams)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 

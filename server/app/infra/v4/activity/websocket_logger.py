@@ -11,8 +11,8 @@ from app.infra.v4.websocket.find_profile_by_socket import \
 from app.main import get_pool
 from app.sql.types import (InfraActivityGetProfileNameForLoggingSqlParams,
                            InfraActivityGetProfileNameForLoggingSqlRow)
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 

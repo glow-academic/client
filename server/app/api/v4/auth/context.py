@@ -4,9 +4,9 @@ from typing import Annotated, Any, cast
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
-from utils.sql_helper import execute_sql_typed
-from utils.theme.color_utils import ensure_contrast, shade, tint
-from utils.theme.oklch_to_hex import hex_to_oklch
+from app.utils.sql_helper import execute_sql_typed
+from app.utils.theme.color_utils import ensure_contrast, shade, tint
+from app.utils.theme.oklch_to_hex import hex_to_oklch
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

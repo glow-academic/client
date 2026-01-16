@@ -1,7 +1,7 @@
 """Tests for utils.theme.color_utils."""
 
 import pytest
-from utils.theme.color_utils import (
+from app.utils.theme.color_utils import (
     ensure_contrast,
     format_oklch,
     parse_oklch,

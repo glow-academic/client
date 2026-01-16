@@ -1,6 +1,6 @@
 """Get the socket ID that owns a profile from Redis."""
 
-from utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 from app.main import get_redis_client, get_socket_owner_dict
 

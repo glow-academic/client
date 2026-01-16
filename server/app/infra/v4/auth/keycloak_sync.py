@@ -9,9 +9,9 @@ from typing import Any
 
 from app.main import get_pool
 from app.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
-from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import _detect_function_in_sql, load_sql
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 logger = get_logger(__name__)
 
@@ -156,7 +156,7 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
 
         from app.sql.types import (GetRealmNameForDepartmentSqlParams,
                                    GetRealmNameForDepartmentSqlRow)
-        from utils.sql_helper import execute_sql_typed
+        from app.utils.sql_helper import execute_sql_typed
 
         async with pool.acquire() as conn:
             params = GetRealmNameForDepartmentSqlParams(
@@ -1081,7 +1081,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                     from typing import cast
 
                     from app.sql.types import UpdateMasterRealmSslSqlRow
-                    from utils.sql_helper import execute_sql_typed
+                    from app.utils.sql_helper import execute_sql_typed
 
                     result = cast(
                         UpdateMasterRealmSslSqlRow,
@@ -1158,7 +1158,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             async with pool.acquire() as conn:
                 # Simplified: Get all settings with providers and keys
                 # Master realm for default settings, settings_id for department-specific
-                from utils.sql_helper import _detect_function_in_sql, load_sql
+                from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
                 sql_text = load_sql("app/sql/v4/keycloak/get_settings_to_sync_complete.sql")
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
@@ -1189,7 +1189,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                         from app.sql.types import (
                             GetDepartmentIdForSettingsSqlParams,
                             GetDepartmentIdForSettingsSqlRow)
-                        from utils.sql_helper import execute_sql_typed
+                        from app.utils.sql_helper import execute_sql_typed
 
                         params = GetDepartmentIdForSettingsSqlParams(
                             settings_id=uuid.UUID(settings_id)

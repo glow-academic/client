@@ -9,7 +9,7 @@ from tests.sql.types import (
     CreateTestSimulationWithRubricV4SqlRow,
     GetOrCreateRubricV4SqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
 

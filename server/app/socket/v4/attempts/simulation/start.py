@@ -9,7 +9,7 @@ import asyncpg  # type: ignore
 # Removed gen_trace_id import - trace_id comes from SQL
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket

@@ -2,7 +2,7 @@
 Tests for app.utils.agents.tools.create_classification_function
 """
 
-from utils.agents.tools.create_classification_function import (
+from app.utils.agents.tools.create_classification_function import (
     create_classification_function,
 )
 

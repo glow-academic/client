@@ -422,7 +422,7 @@ from app.sql.types import (
     GetRubricRunContextSqlRow,
     RubricGenerationErrorSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/rubrics/get_rubric_run_context_complete.sql"
 
@@ -480,7 +480,7 @@ from app.sql.types import (
     UpdateStandardDescriptionsSqlParams,
     UpdateStandardDescriptionsSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 SQL_PATH = "app/sql/v4/rubrics/update_standard_descriptions_complete.sql"

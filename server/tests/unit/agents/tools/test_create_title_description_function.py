@@ -4,7 +4,7 @@ Tests for app.utils.agents.tools.create_title_description_function
 
 import uuid
 
-from utils.agents.tools.create_title_description_function import (
+from app.utils.agents.tools.create_title_description_function import (
     create_title_description_function,
 )
 

@@ -4,7 +4,7 @@ from typing import Any, Callable
 
 from app.infra.v4.tools.build_pydantic_fields import build_function_signature_string
 from pydantic import Field
-from utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

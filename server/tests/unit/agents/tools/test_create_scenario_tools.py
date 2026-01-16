@@ -4,7 +4,7 @@ Tests for app.utils.agents.tools.create_scenario_tools
 
 import uuid
 
-from utils.agents.tools.create_scenario_tools import create_scenario_tools
+from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 
 
 class TestCreate_Scenario_Tools:

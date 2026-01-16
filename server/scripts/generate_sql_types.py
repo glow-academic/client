@@ -21,7 +21,7 @@ VERSION = "v4"
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from utils.sql_helper import load_sql
+from app.utils.sql_helper import load_sql
 
 from scripts.sql_introspect import introspect_sql_file
 from scripts.sql_typegen import generate_types_file
@@ -834,7 +834,7 @@ def write_consolidated_types_file(
     lines.append("        ```")
     lines.append('    """')
     lines.append("    # Import here to avoid circular imports")
-    lines.append("    from utils.sql_helper import load_sql")
+    lines.append("    from app.utils.sql_helper import load_sql")
     lines.append("")
     lines.append("    return load_sql(file_path)")
 

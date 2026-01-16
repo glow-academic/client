@@ -9,7 +9,7 @@ import uuid
 from typing import Any, cast
 
 from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event

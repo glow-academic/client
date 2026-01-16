@@ -19,7 +19,7 @@ from app.sql.types import (
     MemberProgressUpsertSqlParams,
     MemberProgressUpsertSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 

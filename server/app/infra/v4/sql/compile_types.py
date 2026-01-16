@@ -19,7 +19,7 @@ import asyncpg  # type: ignore
 VERSION = "v4"
 
 # Import utilities that are available in app folder
-from utils.sql_helper import load_sql
+from app.utils.sql_helper import load_sql
 
 
 def _to_class_name(route_name: str, suffix: str) -> str:

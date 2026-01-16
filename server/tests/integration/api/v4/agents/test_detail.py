@@ -5,7 +5,7 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import GetFirstModelSqlRow
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
 

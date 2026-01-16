@@ -154,15 +154,15 @@ class InlineSQLChecker(ast.NodeVisitor):
 
 
 def find_python_files() -> list[Path]:
-    """Find all Python files in server/app/ and server/utils/ directories.
+    """Find all Python files in server/app/ directory (includes app/utils/).
 
     Excludes scripts/ directory - scripts are tooling code where inline SQL is acceptable.
     """
     python_files: list[Path] = []
-    for directory in ["app", "utils"]:
-        dir_path = server_dir / directory
-        if dir_path.exists():
-            python_files.extend(dir_path.rglob("*.py"))
+    # Utils is now inside app/, so we only need to scan app/
+    dir_path = server_dir / "app"
+    if dir_path.exists():
+        python_files.extend(dir_path.rglob("*.py"))
     # Exclude __pycache__ and test files (we only check app code, not tests)
     # Also exclude scripts/ - tooling code where inline SQL is acceptable
     python_files = [
@@ -199,6 +199,7 @@ def group_by_directory(
     grouped = defaultdict(list)
     for file_path, line_no, sql_snippet, context in violations:
         # Extract directory name (e.g., "api/v3/agents" from "server/app/api/v3/agents/create.py")
+        # or "utils/cache" from "server/app/utils/cache/cache_key.py"
         parts = file_path.parts
         if "app" in parts:
             idx = parts.index("app")
@@ -208,12 +209,6 @@ def group_by_directory(
                 )  # Everything after "app" except filename
             else:
                 dir_name = "app"
-        elif "utils" in parts:
-            idx = parts.index("utils")
-            if idx + 1 < len(parts):
-                dir_name = "utils/" + "/".join(parts[idx + 1 : -1])
-            else:
-                dir_name = "utils"
         else:
             dir_name = "other"
         grouped[dir_name].append((file_path, line_no, sql_snippet, context))

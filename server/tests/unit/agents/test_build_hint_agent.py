@@ -4,7 +4,7 @@ Tests for app.utils.agents.build_hint_agent
 
 from unittest.mock import patch
 
-from utils.agents.tools.create_hint_tools import create_hint_tools
+from app.utils.agents.tools.create_hint_tools import create_hint_tools
 
 from app.infra.v4.agents.utils.build_hint_agent import build_hint_agent
 

@@ -4,7 +4,7 @@ from typing import Annotated, Any, cast
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

@@ -1,7 +1,7 @@
 """Helper functions for socket v4 integration tests."""
 
 import asyncpg  # type: ignore
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     GetOrCreateTestDepartmentV4SqlParams,

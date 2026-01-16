@@ -5,7 +5,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, Request
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity
 from app.main import get_db

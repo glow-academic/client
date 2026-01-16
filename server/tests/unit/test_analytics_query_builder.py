@@ -4,7 +4,7 @@ Tests for app.utils.analytics_query_builder
 
 from datetime import datetime
 
-from utils.analytics_query_builder import build_base_filter
+from app.utils.analytics_query_builder import build_base_filter
 
 
 class TestBuild_Base_Filter:

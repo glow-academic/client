@@ -5,7 +5,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection

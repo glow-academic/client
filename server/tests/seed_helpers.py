@@ -6,7 +6,7 @@ from tests.sql.types import (
     GetSuperadminAliasSqlParams,
     GetSuperadminAliasSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 
 async def get_cs_dept_id(conn: asyncpg.Connection) -> str:

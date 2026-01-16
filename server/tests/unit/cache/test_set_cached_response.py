@@ -5,7 +5,7 @@ Tests for app.utils.cache.set_cached_response
 from unittest.mock import MagicMock, patch
 
 import pytest
-from utils.cache.set_cached_response import set_cached_response
+from app.utils.cache.set_cached_response import set_cached_response
 
 
 class TestSet_Cached_Response:

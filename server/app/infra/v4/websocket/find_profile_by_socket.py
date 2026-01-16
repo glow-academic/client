@@ -1,7 +1,7 @@
 """Find the profile ID owned by a socket ID."""
 
 import contextvars
-from utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 from app.main import get_redis_client, get_socket_owner_dict
 

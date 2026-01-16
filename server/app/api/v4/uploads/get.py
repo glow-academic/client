@@ -8,10 +8,10 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
-from utils.document.pdf_first_page_to_image_bytes import pdf_first_page_to_image_bytes
-from utils.mime.get_content_type import get_content_type
-from utils.settings.theme import ThemeTokens
-from utils.sql_helper import execute_sql_typed
+from app.utils.document.pdf_first_page_to_image_bytes import pdf_first_page_to_image_bytes
+from app.utils.mime.get_content_type import get_content_type
+from app.utils.settings.theme import ThemeTokens
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

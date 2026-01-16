@@ -11,8 +11,8 @@ from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.sql.types import GetAgentApiRequest, GetAgentSqlParams, GetAgentSqlRow
 from fastapi import APIRouter
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 

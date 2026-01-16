@@ -6,8 +6,8 @@ from typing import Any, cast
 import asyncpg
 from jinja2 import Environment, TemplateError
 from jinja2.environment import Template as JinjaTemplate
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     InfrastructureDeveloperInstructionsGetDomainArtifactSqlParams,

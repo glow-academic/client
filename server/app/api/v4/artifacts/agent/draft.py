@@ -14,8 +14,8 @@ from app.sql.types import (
     load_sql_query,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/agents/patch_agent_draft_complete.sql"
 

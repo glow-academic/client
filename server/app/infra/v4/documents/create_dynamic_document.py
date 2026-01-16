@@ -6,13 +6,13 @@ from typing import Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import Request
-from utils.logging.db_logger import get_logger
-from utils.settings.theme import (
+from app.utils.logging.db_logger import get_logger
+from app.utils.settings.theme import (
     ThemePrimitives,
     ThemeTokens,
     derive_theme_tokens,
 )
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.templates.jinja_renderer import render_template
 from app.main import UPLOAD_FOLDER

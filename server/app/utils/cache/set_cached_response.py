@@ -1,26 +1,27 @@
-"""Get cached response if available."""
+"""Cache response data."""
 
 from typing import Any
 
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.set_cached import set_cached
 from fastapi import Request
-from utils.cache.cache_key import cache_key
-from utils.cache.get_cached import get_cached
 
 
-async def get_cached_response(
+async def set_cached_response(
     request: Request,
+    data: dict[str, Any],
     tags: list[str],
+    ttl: int = 60,
     user_ctx: str | None = None,
-) -> dict[str, Any] | None:
-    """Get cached response if available.
+) -> None:
+    """Cache response data.
 
     Args:
         request: FastAPI Request object
+        data: Response data to cache
         tags: List of cache tags
+        ttl: Time to live in seconds (default: 60)
         user_ctx: Optional user context for per-user caching
-
-    Returns:
-        Cached response data or None
     """
     body_dict: dict[str, Any] | None = None
     if request.method == "POST":
@@ -29,4 +30,4 @@ async def get_cached_response(
         body_dict = {}
 
     cache_key_val = cache_key(request.url.path, body_dict, user_ctx)
-    return await get_cached(cache_key_val)
+    await set_cached(cache_key_val, {"data": data}, ttl, tags)

@@ -6,8 +6,8 @@ import os
 from unittest.mock import patch
 
 import pytest
-from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.auth.encrypt_api_key import encrypt_api_key
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.encrypt_api_key import encrypt_api_key
 
 
 class TestEncrypt_Api_Key:

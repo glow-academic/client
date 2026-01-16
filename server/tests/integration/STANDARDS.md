@@ -110,7 +110,7 @@ $$;
 **Usage in Test:**
 ```python
 from app.sql.types import TestGetSuperadminAliasV4SqlParams, TestGetSuperadminAliasV4SqlRow
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 async def test_example(db: asyncpg.Connection) -> None:
     result = await execute_sql_typed(
@@ -162,7 +162,7 @@ from app.sql.types import (
     TestCreateTestAgentV4SqlParams,
     TestCreateTestAgentV4SqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 async def test_create_agent(db: asyncpg.Connection) -> None:
     # Get model_id first (using another test function)
@@ -262,7 +262,7 @@ from app.sql.types import (
     TestCreateSimulationAttemptV4SqlParams,
     TestCreateSimulationAttemptV4SqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 async def test_simulation_setup(db: asyncpg.Connection) -> None:
     # Get test profile and department (using helper functions)
@@ -421,7 +421,7 @@ Update `conftest.py` to use SQL files for common setup:
 
 ```python
 from app.sql.types import TestGetSuperadminAliasV4SqlRow
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 @pytest.fixture
 async def superadmin_profile(db: asyncpg.Connection) -> TestGetSuperadminAliasV4SqlRow:

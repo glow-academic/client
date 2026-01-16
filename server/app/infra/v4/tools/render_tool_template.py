@@ -14,8 +14,8 @@ from app.sql.types import (InfraToolsGetSchemaFieldsV4SqlParams,
                            InfraToolsGetToolCallResultV4SqlRow)
 from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -111,7 +111,7 @@ async def render_tool_template(
 
     # Get all schema_fields for that schema with their templates
     # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
-    from utils.sql_helper import load_sql
+    from app.utils.sql_helper import load_sql
     
     schema_fields_sql = load_sql(GET_SCHEMA_FIELDS_SQL_PATH)
     schema_fields_raw = await conn.fetch(schema_fields_sql, schema_id)

@@ -44,8 +44,8 @@ from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
                            InfraArtifactsGetGroupIdFromRunSqlRow,
                            InsertUploadSqlParams, InsertUploadSqlRow)
 from jinja2 import Environment, TemplateError
-from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 

@@ -10,7 +10,7 @@ from tests.sql.types import (
     TestGetActivityByMessageSqlParams,
     TestGetActivityByMessageSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.insert import insert_activity
 

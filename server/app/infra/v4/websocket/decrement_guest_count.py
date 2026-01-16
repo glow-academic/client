@@ -1,6 +1,6 @@
 """Decrement guest connection count and return new total (floor at 0)."""
 
-from utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 from app.main import get_redis_client
 

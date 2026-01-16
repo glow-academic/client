@@ -6,7 +6,7 @@ import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from utils.cache.get_cached import get_cached
+from app.utils.cache.get_cached import get_cached
 
 
 class TestGet_Cached:

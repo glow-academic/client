@@ -16,10 +16,10 @@ from app.sql.types import (
     load_sql_query,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.cache.cache_key import cache_key
-from utils.cache.get_cached import get_cached
-from utils.cache.set_cached import set_cached
-from utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/departments/get_department_complete.sql"

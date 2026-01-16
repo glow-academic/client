@@ -2,7 +2,7 @@
 Tests for app.utils.agents.tools.create_hint_tools
 """
 
-from utils.agents.tools.create_hint_tools import create_hint_tools
+from app.utils.agents.tools.create_hint_tools import create_hint_tools
 
 
 class TestCreate_Hint_Tools:

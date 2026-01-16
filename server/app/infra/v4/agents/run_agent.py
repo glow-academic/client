@@ -8,7 +8,7 @@ from typing import Any
 import litellm  # type: ignore
 from app.infra.v4.artifacts.convert_tools_to_openai_format import \
     convert_tools_to_openai_format
-from utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

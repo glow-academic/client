@@ -6,7 +6,7 @@ import uuid
 from typing import Any, cast
 
 import asyncpg  # type: ignore
-from utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 from app.sql.types import (
     InfrastructureEvalsGetRubricDetailsSqlParams,

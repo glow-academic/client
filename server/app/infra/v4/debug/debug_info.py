@@ -5,7 +5,7 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from app.sql.types import InfrastructureDebugInsertDebugInfoSqlParams
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
     "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"

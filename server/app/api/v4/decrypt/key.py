@@ -4,8 +4,8 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import execute_sql_typed
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error

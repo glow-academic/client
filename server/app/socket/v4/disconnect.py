@@ -4,7 +4,7 @@ import uuid
 from typing import cast
 
 from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.decrement_guest_count import decrement_guest_count
