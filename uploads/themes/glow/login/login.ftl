@@ -58,13 +58,25 @@
         </#if>
         
         <#-- Provider buttons (filtered by client_id) -->
+        <#-- DEBUG: Check what's available -->
+        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc; font-family: monospace; font-size: 12px;">
+          <strong>DEBUG INFO:</strong><br/>
+          social.providers exists: <#if social.providers??>yes<#else>no</#if><br/>
+          social.providers size: ${(social.providers?size)!0}<br/>
+          client.clientId: ${client.clientId!""}<br/>
+          <#if social.providers??>
+            <#assign cid = client.clientId!"" />
+            <#assign allowed = getAllowedProviders(cid) />
+            allowed providers: ${allowed?join(", ")}<br/>
+            <#list social.providers as p>
+              provider alias seen: ${p.alias}<br/>
+            </#list>
+          </#if>
+        </div>
+        
         <#if social.providers?? && social.providers?size gt 0>
           <#assign cid = client.clientId!"" />
           <#assign allowed = getAllowedProviders(cid) />
-          
-          <#-- Debug info (commented out for production) -->
-          <#-- Client ID: ${cid} -->
-          <#-- Allowed providers: ${allowed?join(", ")} -->
           
           <#if allowed?size gt 0>
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">

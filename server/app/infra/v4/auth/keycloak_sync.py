@@ -807,14 +807,15 @@ async def sync_identity_provider_for_realm_level(
                 config_map[item_name] = raw_value
         
         # Build IdP payload
-        # Set hideOnLogin=True - ALL IdPs are hidden, theme controls visibility
+        # Set hideOnLogin=False - theme controls visibility via filtering
+        # If we hide IdPs, Keycloak 26.0 excludes them from social.providers, so theme can't render them
         payload: dict[str, Any] = {
             "alias": slug,
             "providerId": provider_id,
             "displayName": display_name,
             "enabled": True,
             "trustEmail": True,
-            "hideOnLogin": True,  # Hide ALL IdPs, theme controls visibility
+            "hideOnLogin": False,  # Must be False so IdPs appear in social.providers for theme filtering
             "config": {},
         }
         
@@ -928,7 +929,8 @@ async def sync_identity_provider_for_org(
                 config_map[item_name] = raw_value
         
         # Build IdP payload (no organizationId - shared IdP across departments)
-        # Set hideOnLogin=True - ALL IdPs are hidden, theme controls visibility
+        # Set hideOnLogin=False - theme controls visibility via filtering
+        # If we hide IdPs, Keycloak 26.0 excludes them from social.providers, so theme can't render them
         payload: dict[str, Any] = {
             "alias": unique_alias,
             "providerId": provider_id,
@@ -936,7 +938,7 @@ async def sync_identity_provider_for_org(
             "enabled": True,
             "trustEmail": True,
             # No organizationId - removed org concept, client-id scoping handles routing
-            "hideOnLogin": True,  # Hide ALL IdPs, theme controls visibility
+            "hideOnLogin": False,  # Must be False so IdPs appear in social.providers for theme filtering
             "config": {},
         }
         

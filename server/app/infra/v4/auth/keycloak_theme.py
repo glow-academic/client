@@ -76,8 +76,8 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
                     dept_aliases = [f"auth_{p['slug']}_{p['id']}" for p in org_providers]
                     all_idp_aliases.update(dept_aliases)
                     
-                    # Department client gets: realm-level + department-scoped IdPs
-                    mapping[client_id] = realm_level_aliases + dept_aliases
+                    # Department client gets: department-scoped IdPs ONLY (not realm-level)
+                    mapping[client_id] = dept_aliases
                 else:
                     # No department-specific auths, just realm-level
                     mapping[client_id] = realm_level_aliases.copy()
