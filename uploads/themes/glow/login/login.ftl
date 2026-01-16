@@ -1,9 +1,6 @@
 <#import "template.ftl" as layout>
 <#include "providers.ftl">
 
-<#-- Include custom CSS -->
-<link rel="stylesheet" href="${url.resourcesPath}/css/styles.css" />
-
 <@layout.registrationLayout displayInfo=social.displayInfo; section>
   <#if section = "form">
     <div id="kc-form">
