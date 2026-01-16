@@ -1,5 +1,5 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-01-16T14:46:56.850779 -->
+<#-- Generated at: 2026-01-16T15:08:21.055567 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
@@ -11,24 +11,20 @@
   Enumerated IdP aliases:
     - auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8
     - auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294
-    - default-idp-default-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d
-    - default-idp-default-dept-019b3be4-3247-7d4f-9974-77e974f7949c
-    - default-idp-default-dept-019b3be4-3247-7d5e-a958-5b9fb4e2725b
-    - default-idp-default-platform
+    - default-idp-default-account-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d
+    - default-idp-default-account-dept-019b3be4-3247-7d4f-9974-77e974f7949c
+    - default-idp-default-account-dept-019b3be4-3247-7d5e-a958-5b9fb4e2725b
     - default-idp-guest-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d
     - default-idp-guest-dept-019b3be4-3247-7d4f-9974-77e974f7949c
-    - default-idp-guest-platform
     - google
     - microsoft
 
   Default-IdP aliases:
-    - default-idp-default-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d
-    - default-idp-default-dept-019b3be4-3247-7d4f-9974-77e974f7949c
-    - default-idp-default-dept-019b3be4-3247-7d5e-a958-5b9fb4e2725b
-    - default-idp-default-platform
+    - default-idp-default-account-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d
+    - default-idp-default-account-dept-019b3be4-3247-7d4f-9974-77e974f7949c
+    - default-idp-default-account-dept-019b3be4-3247-7d5e-a958-5b9fb4e2725b
     - default-idp-guest-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d
     - default-idp-guest-dept-019b3be4-3247-7d4f-9974-77e974f7949c
-    - default-idp-guest-platform
 -->
 
 <#-- Departments to show in the picker -->
@@ -40,25 +36,32 @@
 
 <#-- Map department_id -> allowed IdP aliases -->
 <#assign allowedProvidersByDept = {
-  "019b3be4-3247-7cb0-bd74-9b2467b5e32d": ["auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294", "default-idp-guest-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d", "default-idp-default-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d"],
-  "019b3be4-3247-7d4f-9974-77e974f7949c": ["auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8", "default-idp-guest-dept-019b3be4-3247-7d4f-9974-77e974f7949c", "default-idp-default-dept-019b3be4-3247-7d4f-9974-77e974f7949c"],
-  "019b3be4-3247-7d5e-a958-5b9fb4e2725b": ["auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8", "auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294", "default-idp-default-dept-019b3be4-3247-7d5e-a958-5b9fb4e2725b"]
+  "019b3be4-3247-7cb0-bd74-9b2467b5e32d": ["auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294", "default-idp-guest-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d", "default-idp-default-account-dept-019b3be4-3247-7cb0-bd74-9b2467b5e32d"],
+  "019b3be4-3247-7d4f-9974-77e974f7949c": ["auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8", "default-idp-guest-dept-019b3be4-3247-7d4f-9974-77e974f7949c", "default-idp-default-account-dept-019b3be4-3247-7d4f-9974-77e974f7949c"],
+  "019b3be4-3247-7d5e-a958-5b9fb4e2725b": ["auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8", "auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294", "default-idp-default-account-dept-019b3be4-3247-7d5e-a958-5b9fb4e2725b"]
 } />
 
-<#-- Platform fallback (when no department chosen) -->
-<#assign platformProviders = ["google", "microsoft", "default-idp-guest-platform", "default-idp-default-platform"] />
+<#-- Platform providers (only used when no departments exist) -->
+<#assign platformProviders = ["google", "microsoft"] />
 
 <#function getAllowedProvidersForDepartment deptId>
-  <#if deptId?has_content && allowedProvidersByDept[deptId]??>
-    <#assign deptProviders = allowedProvidersByDept[deptId] />
-    <#if deptProviders?size gt 0>
-      <#return deptProviders>
-    <#else>
-      <#-- Department has no IdPs, fallback to platform -->
-      <#return platformProviders>
+  <#-- If departments exist, always use department-specific providers -->
+  <#if departments?size gt 0>
+    <#-- Default to first department if no department selected -->
+    <#assign effectiveDeptId = deptId!"" />
+    <#if !effectiveDeptId?has_content>
+      <#assign effectiveDeptId = departments[0].id />
     </#if>
+    <#if effectiveDeptId?has_content && allowedProvidersByDept[effectiveDeptId]??>
+      <#assign deptProviders = allowedProvidersByDept[effectiveDeptId] />
+      <#if deptProviders?size gt 0>
+        <#return deptProviders>
+      </#if>
+    </#if>
+    <#-- Fallback: return empty list if department has no providers -->
+    <#return []>
   <#else>
-    <#-- No department selected, return platform IdPs -->
+    <#-- No departments exist: use platform providers -->
     <#return platformProviders>
   </#if>
 </#function>

@@ -979,11 +979,14 @@ async def sync_identity_provider_for_org(
         logger.warning(f"Failed to sync org-scoped IdP '{unique_alias}': {e}", exc_info=True)
 
 
-def get_idp_base_url() -> str:
-    """Get the base URL for the IdP based on environment.
+def get_idp_public_url() -> str:
+    """Get the public base URL for the IdP (accessible from browser).
     
-    Uses same pattern as mcp/oauth.py:
-    - Local dev: http://localhost:8000 (direct backend access)
+    This URL is used in authorizationUrl, which Keycloak redirects the browser to.
+    Must be accessible from the user's browser.
+    
+    Scenarios:
+    - Local dev: http://localhost:8000 (browser can access)
     - Production: ORIGIN (public domain, nginx proxies to backend)
     
     Path is at root level: /default-idp/ (not /api/v4/auth/default-idp/)
@@ -991,19 +994,69 @@ def get_idp_base_url() -> str:
     origin = os.getenv("ORIGIN", "http://localhost:3000")
     app_prefix = os.getenv("APP_PREFIX", "").strip("/")
     
-    # Detect local dev (same pattern as mcp/oauth.py)
+    # Detect local dev
     is_local_dev = "localhost" in origin.lower()
     
     if is_local_dev:
-        # Local dev: use direct backend URL (backend accessible on localhost:8000)
+        # Local dev: browser can access localhost:8000 directly
         base = "http://localhost:8000"
     else:
         # Production: use public ORIGIN (nginx will proxy /default-idp/ to backend)
-        base = origin
+        base = origin.rstrip("/")
     
     if app_prefix:
         return f"{base}/{app_prefix}/default-idp"
     return f"{base}/default-idp"
+
+
+def get_idp_internal_url() -> str:
+    """Get the internal base URL for the IdP (accessible from Keycloak server).
+    
+    This URL is used in tokenUrl and jwksUrl, which Keycloak server calls directly.
+    Must be accessible from Keycloak's perspective (inside Docker or on host).
+    
+    Scenarios:
+    - Keycloak in Docker + Server in Docker: http://server:8000 (Docker service name)
+    - Keycloak in Docker + Server on host: http://host.docker.internal:8000 (Docker host access)
+    - Keycloak on host + Server on host: http://localhost:8000 (direct access)
+    - Production: ORIGIN (public domain, nginx proxies to backend)
+    
+    Path is at root level: /default-idp/ (not /api/v4/auth/default-idp/)
+    """
+    origin = os.getenv("ORIGIN", "http://localhost:3000")
+    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
+    docker_env = os.getenv("DOCKER_ENV")
+    
+    # Check if we're in Docker environment (server running in Docker)
+    if docker_env:
+        # Server is in Docker: use service name for internal communication (Keycloak -> Server)
+        # Both Keycloak and Server are in Docker Compose, so they can communicate via service name
+        base = "http://server:8000"
+    else:
+        # Server is running locally (make run), but Keycloak might be in Docker
+        # When Keycloak (in Docker) needs to reach host server, use host.docker.internal
+        # This is the same pattern used for database connection in Makefile
+        is_local_dev = "localhost" in origin.lower()
+        
+        if is_local_dev:
+            # Keycloak is in Docker, server is on host: use host.docker.internal
+            # This allows Keycloak container to reach the host machine's localhost:8000
+            base = "http://host.docker.internal:8000"
+        else:
+            # Production: use public ORIGIN (nginx will proxy /default-idp/ to backend)
+            base = origin.rstrip("/")
+    
+    if app_prefix:
+        return f"{base}/{app_prefix}/default-idp"
+    return f"{base}/default-idp"
+
+
+def get_idp_base_url() -> str:
+    """Legacy function - use get_idp_public_url() or get_idp_internal_url() instead.
+    
+    Kept for backward compatibility. Returns public URL.
+    """
+    return get_idp_public_url()
 
 
 async def sync_default_idp(kc_admin: Any) -> None:
@@ -1019,8 +1072,9 @@ async def sync_default_idp(kc_admin: Any) -> None:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
         
-        # Get IdP base URL using environment detection
-        idp_base_url = get_idp_base_url()
+        # Get IdP URLs - public for browser redirects, internal for server-to-server calls
+        idp_public_url = get_idp_public_url()  # Used in authorizationUrl (browser redirect)
+        idp_internal_url = get_idp_internal_url()  # Used in tokenUrl/jwksUrl (server-to-server)
         
         # Generate or retrieve client secret (should be stored securely in production)
         # For now, use AUTH_SECRET as the client secret (shared secret between Keycloak and IdP)
@@ -1039,10 +1093,10 @@ async def sync_default_idp(kc_admin: Any) -> None:
             "trustEmail": True,
             "hideOnLogin": False,  # Must be False so it appears in social.providers for theme rendering
             "config": {
-                "authorizationUrl": f"{idp_base_url}/authorize?mode=guest",  # Default to guest mode
-                "tokenUrl": f"{idp_base_url}/token",
-                "jwksUrl": f"{idp_base_url}/jwks",
-                "issuer": idp_base_url,
+                "authorizationUrl": f"{idp_public_url}/authorize?mode=guest",  # Browser-accessible URL
+                "tokenUrl": f"{idp_internal_url}/token",  # Server-to-server URL
+                "jwksUrl": f"{idp_internal_url}/jwks",  # Server-to-server URL
+                "issuer": idp_public_url,  # Issuer should match public URL
                 "clientId": "keycloak-broker",  # Keycloak acts as client
                 "clientSecret": client_secret,
                 "useJwksUrl": "true",
@@ -1096,8 +1150,9 @@ async def sync_default_idp_for_department(
             alias = f"default-idp-{mode}-platform"
             display_name = f"Default Account / Guest - {mode} - Platform"
         
-        # All IdPs use the same base URL (state token handles differentiation)
-        idp_base_url = get_idp_base_url()
+        # Get IdP URLs - public for browser redirects, internal for server-to-server calls
+        idp_public_url = get_idp_public_url()  # Used in authorizationUrl (browser redirect)
+        idp_internal_url = get_idp_internal_url()  # Used in tokenUrl/jwksUrl (server-to-server)
         
         # Generate or retrieve client secret (should be stored securely in production)
         client_secret = os.getenv("AUTH_SECRET")
@@ -1113,7 +1168,8 @@ async def sync_default_idp_for_department(
         
         # Build authorizationUrl with mode and department_id as query params
         # Keycloak will append its own state parameter, so we use & to chain params
-        auth_url = f"{idp_base_url}/authorize?mode={mode_param}"
+        # This URL must be accessible from the browser
+        auth_url = f"{idp_public_url}/authorize?mode={mode_param}"
         if dept_param:
             auth_url += f"&department_id={dept_param}"
         
@@ -1125,10 +1181,10 @@ async def sync_default_idp_for_department(
             "trustEmail": True,
             "hideOnLogin": False,  # Must be False so it appears in social.providers for theme rendering
             "config": {
-                "authorizationUrl": auth_url,  # Includes mode and department_id as query params
-                "tokenUrl": f"{idp_base_url}/token",
-                "jwksUrl": f"{idp_base_url}/jwks",
-                "issuer": idp_base_url,
+                "authorizationUrl": auth_url,  # Browser-accessible URL (includes mode and department_id as query params)
+                "tokenUrl": f"{idp_internal_url}/token",  # Server-to-server URL
+                "jwksUrl": f"{idp_internal_url}/jwks",  # Server-to-server URL
+                "issuer": idp_public_url,  # Issuer should match public URL
                 "clientId": "keycloak-broker",  # Keycloak acts as client
                 "clientSecret": client_secret,
                 "useJwksUrl": "true",
