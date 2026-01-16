@@ -4,17 +4,12 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, Request
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity
 from app.main import get_db
-from app.sql.types import (
-    GetLoginDataApiRequest,
-    GetLoginDataApiResponse,
-    GetLoginDataSqlParams,
-    GetLoginDataSqlRow,
-)
+from app.sql.types import (GetLoginDataApiRequest, GetLoginDataApiResponse,
+                           GetLoginDataSqlParams, GetLoginDataSqlRow)
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, Request
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/auth/get_login_data_complete.sql"
@@ -68,7 +63,7 @@ async def get_login_providers(
             ),
         )
 
-        # Convert SQL result to API response (all fields including show_default_account come from SQL)
+        # Convert SQL result to API response (all fields come from SQL)
         api_response = GetLoginDataApiResponse.model_validate(result.model_dump())
 
         return api_response
@@ -78,7 +73,7 @@ async def get_login_providers(
             providers=[],
             departments=[],
             guest_login_enabled=True,
-            show_default_account=False,
             default_department_id=None,
             realm_name="master",
+            organization_id=None,
         )

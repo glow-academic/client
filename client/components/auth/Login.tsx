@@ -19,43 +19,10 @@ import { applyThemeTokens } from "@/lib/theme/apply-theme";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-// Provider icon component - renders icon from URL or fallback
-const ProviderIcon = ({
-  icon,
-  name,
-}: {
-  icon: string | null | undefined;
-  name: string;
-}) => {
-  if (icon) {
-    return (
-      <div className="w-7 h-7 rounded bg-white/90 p-1 shadow-sm flex items-center justify-center">
-        <Image
-          src={icon}
-          alt={name}
-          width={20}
-          height={20}
-          className="w-full h-full object-contain"
-          unoptimized={true} // External URLs, no optimization needed for small icons
-        />
-      </div>
-    );
-  }
-  // Fallback: simple circle icon if no icon URL provided
-  return (
-    <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
-      <span className="text-xs text-gray-700 font-bold">
-        {name.charAt(0).toUpperCase()}
-      </span>
-    </div>
-  );
-};
 
 // User Icon Component
 const UserIcon = ({
@@ -238,30 +205,30 @@ interface DepartmentOption {
 }
 
 interface LoginProps {
-  providers?: ProviderOption[]; // Updated to accept ProviderOption array
+  providers?: ProviderOption[]; // Still fetched for validation/logging, but not displayed
   guest_login_enabled?: boolean; // Whether guest login button should be shown
-  show_default_account?: boolean; // Whether to show "continue as default account" button
   departments?: DepartmentOption[]; // List of departments for picker
   initialDepartmentId?: string | undefined; // Initial department ID from query parameter
   activeSettings?: SettingsActiveClient | null; // Active settings for theme application
   defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
   realmName?: string; // Always "master" (organizations replace multi-realm architecture)
   redirectPath?: string; // Redirect path after login
+  department_client_id?: string | null; // Department-specific client_id (glow-client-{department_id}) or null for platform client
 }
 
 export default function Login({
-  providers = [],
+  providers: _providers = [],
   guest_login_enabled = true,
-  show_default_account: _show_default_account = false,
   departments = [],
   initialDepartmentId,
   activeSettings,
   defaultDepartmentId,
-  realmName = "master", // Realm name from API (settings-based)
+  realmName: _realmName = "master", // Realm name from API (settings-based) - always "master"
   redirectPath: redirectPathProp,
+  department_client_id,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [loadingDepartmentLogin, setLoadingDepartmentLogin] = useState(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
   >(
@@ -322,39 +289,47 @@ export default function Login({
 
   // Always use master realm (organizations replace multi-realm architecture)
   // Realm name is always "master" - org-scoped IdPs are handled by Keycloak organizations
+  // Use client-scoped org routing: department-specific client_id routes to appropriate IdPs
 
-  // Generic handler for ANY SSO provider (data-agnostic)
-  const handleSSOLogin = async (provider: ProviderOption) => {
+  // Handler for department login (uses client-scoped org routing)
+  const handleDepartmentLogin = async () => {
     try {
-      setLoading({ ...loading, [provider.id]: true });
+      setLoadingDepartmentLogin(true);
 
       // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
+      localStorage.removeItem("defaultAccountMode");
+      localStorage.removeItem("defaultAccountProfileId");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
       // Redirect to redirectPath if provided, otherwise home (home page will handle role-based redirects)
-      // (guests will be redirected to /practice by the home page)
       const redirectTo = redirectPath
         ? `${appPrefix}${redirectPath}`
         : `${appPrefix}/home`;
 
-      // Use NextAuth's signIn with "keycloak" provider (our only provider in auth.ts)
-      // Pass kc_idp_hint to force Keycloak to skip login page and redirect to the specified provider
-      // The provider.id is the slug (already lowercase from database)
-      // Always uses master realm - org-scoped IdPs are handled by Keycloak organizations
-      // For org-scoped IdPs, the alias format is "slug-department_id", so we need to pass the full alias
-      // For realm-level IdPs, just use the slug
-      await signIn(
-        "keycloak",
-        {
-          callbackUrl: redirectTo,
-        },
-        {
-          kc_idp_hint: provider.id, // This will be the slug for realm-level, or "slug-department_id" for org-scoped
-        }
-      );
+      // Calculate department-specific client_id based on currently selected department
+      // Format: glow-client-{department_id} if department selected, otherwise null (uses default glow-client)
+      const currentDepartmentClientId = selectedDepartmentId
+        ? `glow-client-${selectedDepartmentId}`
+        : null;
+
+      // Use NextAuth's signIn with "keycloak" provider
+      // Pass department-specific client_id via cookie (NextAuth doesn't pass custom options to authorization callback)
+      // Keycloak will show appropriate IdPs based on client scoping
+      // If currentDepartmentClientId is null, uses default glow-client (platform login)
+      if (currentDepartmentClientId) {
+        // Set cookie with department-specific client_id for authorization callback to read
+        document.cookie = `department-client-id=${currentDepartmentClientId}; path=/; max-age=60; SameSite=Lax`;
+      } else {
+        // Clear cookie if no department (use default client)
+        document.cookie = `department-client-id=; path=/; max-age=0; SameSite=Lax`;
+      }
+
+      await signIn("keycloak", {
+        callbackUrl: redirectTo,
+      });
 
       // Note: signIn redirects immediately on success, so we don't need toast.success here
     } catch (error) {
@@ -363,7 +338,7 @@ export default function Login({
       if (!errorMessage.toLowerCase().includes("load failed")) {
         toast.error("An error occurred during login: " + errorMessage);
       }
-      setLoading({ ...loading, [provider.id]: false });
+      setLoadingDepartmentLogin(false);
     }
   };
 
@@ -405,52 +380,6 @@ export default function Login({
       }
     } finally {
       setLoadingGuest(false);
-    }
-  };
-
-  const handleDefaultAccountLogin = async () => {
-    try {
-      if (!activeSettings?.["default_account_profile_id"]) {
-        toast.error("Default account not configured");
-        return;
-      }
-
-      setLoading({ ...loading, defaultAccount: true });
-
-      // Import server action dynamically to avoid SSR issues
-      const { setDefaultAccountSession } = await import(
-        "@/app/(main)/layout-server"
-      );
-
-      // Set default account session cookies server-side (department-id + auth-mode)
-      // Pass selectedDepartmentId (can be null for default settings)
-      const result = await setDefaultAccountSession(selectedDepartmentId);
-
-      if (!result.ok) {
-        toast.error(result.reason || "Failed to set default account session");
-        return;
-      }
-
-      // Clear localStorage - cookies are now the source of truth
-      localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedProfileId");
-      localStorage.removeItem("defaultAccountMode");
-      localStorage.removeItem("defaultAccountProfileId");
-
-      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-
-      // Redirect to home after login - home page will handle role-based redirects
-      const redirectTo = `${appPrefix}/home`;
-
-      toast.success("Accessing as default account!");
-      router.push(redirectTo);
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      if (!errorMessage.toLowerCase().includes("load failed")) {
-        toast.error("An error occurred during login: " + errorMessage);
-      }
-    } finally {
-      setLoading({ ...loading, defaultAccount: false });
     }
   };
 
@@ -675,129 +604,75 @@ export default function Login({
             )}
 
             <div className="space-y-4">
-              {/* 🚀 DYNAMIC PROVIDER LIST - Renders buttons for all providers from API */}
-              {providers.map((provider) => (
-                <motion.div
-                  key={provider.id}
-                  variants={cardVariants}
-                  whileHover="hover"
+              {/* Department Login Button - Always shows */}
+              <motion.div variants={cardVariants} whileHover="hover">
+                <Button
+                  type="button"
+                  onClick={handleDepartmentLogin}
+                  disabled={loadingDepartmentLogin}
+                  data-testid="department-login-button"
+                  className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                    boxShadow:
+                      "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
+                  }}
                 >
-                  <Button
-                    type="button"
-                    onClick={() => handleSSOLogin(provider)}
-                    disabled={loading[provider.id]}
-                    data-testid={`${provider.id}-login-button`}
-                    className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
-                      boxShadow:
-                        "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background =
-                        "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background =
-                        "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
-                    }}
-                  >
-                    {/* Liquid glass shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
-                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                    <div className="relative flex items-center justify-center space-x-3">
-                      {loading[provider.id] ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <ProviderIcon
-                          icon={provider.icon}
-                          name={provider.name}
-                        />
-                      )}
-                      <span className="text-base">
-                        {loading[provider.id]
-                          ? "Signing in..."
-                          : `Continue with ${provider.name}`}
-                      </span>
-                    </div>
-                  </Button>
+                  {/* Liquid glass shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
+                  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                  <div className="relative flex items-center justify-center space-x-3">
+                    {loadingDepartmentLogin ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <UserIcon />
+                    )}
+                    <span className="text-base">
+                      {loadingDepartmentLogin
+                        ? "Signing in..."
+                        : selectedDepartmentId
+                          ? `Continue with ${
+                              departments.find(
+                                (d) => d.id === selectedDepartmentId
+                              )?.title || "Department"
+                            }`
+                          : "Continue with Default Account"}
+                    </span>
+                  </div>
+                </Button>
+              </motion.div>
+
+              {/* Divider - only show if guest login is enabled */}
+              {guest_login_enabled && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="relative py-2"
+                >
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/30" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase z-10">
+                    <span className="bg-blue-400 px-4 py-1 text-white font-medium tracking-wider rounded backdrop-blur-sm">
+                      Or
+                    </span>
+                  </div>
                 </motion.div>
-              ))}
-
-              {/* Default Account Button - only show if show_default_account is true and default_account_profile_id exists */}
-              {_show_default_account &&
-                activeSettings?.["default_account_profile_id"] && (
-                  <motion.div variants={cardVariants} whileHover="hover">
-                    <Button
-                      type="button"
-                      onClick={handleDefaultAccountLogin}
-                      disabled={loading["defaultAccount"]}
-                      data-testid="default-account-login-button"
-                      className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
-                        boxShadow:
-                          "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background =
-                          "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
-                        e.currentTarget.style.boxShadow =
-                          "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background =
-                          "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
-                        e.currentTarget.style.boxShadow =
-                          "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
-                      }}
-                    >
-                      {/* Liquid glass shine effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
-                      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                      <div className="relative flex items-center justify-center space-x-3">
-                        {loading["defaultAccount"] ? (
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          <UserIcon />
-                        )}
-                        <span className="text-base">
-                          {loading["defaultAccount"]
-                            ? "Signing in..."
-                            : "Continue as Default Account"}
-                        </span>
-                      </div>
-                    </Button>
-                  </motion.div>
-                )}
-
-              {/* Divider - only show if there are SSO providers AND there's something below (guest login OR default account button) */}
-              {providers.length > 0 &&
-                (guest_login_enabled ||
-                  (_show_default_account &&
-                    activeSettings?.["default_account_profile_id"])) && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="relative py-2"
-                  >
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/30" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase z-10">
-                      <span className="bg-blue-400 px-4 py-1 text-white font-medium tracking-wider rounded backdrop-blur-sm">
-                        Or
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
+              )}
 
               {/* Guest Access Button - only show if guest_login_enabled is true */}
               {guest_login_enabled && (

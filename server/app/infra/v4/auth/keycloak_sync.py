@@ -257,6 +257,122 @@ async def sync_organization_for_department(
         return None
 
 
+async def ensure_department_client(
+    department_id: str,
+    department_name: str,
+    kc_admin: Any,
+) -> str | None:
+    """Ensure department-specific client exists in master realm.
+    
+    Creates client with ID: glow-client-{department_id}
+    This allows client-scoped org routing in Keycloak.
+    
+    Args:
+        department_id: Department ID (UUID string)
+        department_name: Department name (for display)
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    
+    Returns:
+        client_id if created/updated, None if error
+    """
+    target_secret: str | None = os.getenv("AUTH_KEYCLOAK_SECRET")
+    client_port = os.getenv("CLIENT_PORT", "3000")
+    app_prefix = os.getenv("APP_PREFIX", "")
+    
+    if not target_secret:
+        logger.warning(f"⚠️  AUTH_KEYCLOAK_SECRET is missing. Cannot create department client for {department_id}.")
+        return None
+    
+    try:
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Client ID format: glow-client-{department_id}
+        department_client_id = f"glow-client-{department_id}"
+        
+        origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
+        base_url = origin.rstrip("/")
+        redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
+        redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
+        
+        clients = kc_admin.get_clients()
+        existing_client = next(
+            (c for c in clients if c.get("clientId") == department_client_id),
+            None,
+        )
+        
+        client_payload: dict[str, Any] = {
+            "clientId": department_client_id,
+            "name": f"Glow App - {department_name}",
+            "rootUrl": base_url,
+            "baseUrl": base_url,
+            "redirectUris": redirect_uris,
+            "webOrigins": ["+"],
+            "enabled": True,
+            "publicClient": False,
+            "protocol": "openid-connect",
+            "standardFlowEnabled": True,
+            "directAccessGrantsEnabled": True,
+            "serviceAccountsEnabled": True,
+            "clientAuthenticatorType": "client-secret",
+            "secret": target_secret,
+        }
+        
+        if existing_client:
+            client_uuid = existing_client.get("id")
+            if client_uuid:
+                try:
+                    kc_admin.update_client(
+                        client_id=client_uuid, payload=client_payload
+                    )
+                    logger.info(f"✅ Department client '{department_client_id}' updated")
+                    return department_client_id
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to update department client '{department_client_id}': {e}"
+                    )
+                    return None
+        else:
+            try:
+                new_client_uuid = kc_admin.create_client(
+                    payload=client_payload, skip_exists=True
+                )
+                logger.info(f"✅ Department client '{department_client_id}' created")
+                
+                if new_client_uuid:
+                    kc_admin.update_client(
+                        client_id=new_client_uuid,
+                        payload={"secret": target_secret},
+                    )
+                    logger.info(
+                        f"✅ Department client secret enforced for '{department_client_id}'"
+                    )
+                    return department_client_id
+            except Exception as e:
+                error_str = str(e).lower()
+                is_conflict = (
+                    "location" in error_str
+                    or "duplicate" in error_str
+                    or "conflict" in error_str
+                    or "409" in error_str
+                    or "already exists" in error_str
+                )
+                
+                if is_conflict:
+                    logger.info(
+                        f"⚠️  Department client '{department_client_id}' already exists"
+                    )
+                    return department_client_id
+                else:
+                    logger.warning(
+                        f"Failed to create department client '{department_client_id}': {e}"
+                    )
+                    return None
+    except Exception as e:
+        logger.warning(f"Could not ensure department client for {department_id}: {e}")
+        return None
+
+
 async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
     """Ensure glow-client exists in master realm with correct configuration.
 
@@ -1043,6 +1159,16 @@ async def sync_identity_providers(
                     if not org_id:
                         logger.warning(f"Failed to create organization for department {dept_id}, skipping IdP sync")
                         continue
+                    
+                    # Ensure department-specific client exists (for client-scoped org routing)
+                    dept_client_id = await ensure_department_client(
+                        department_id=dept_id,
+                        department_name=dept_name,
+                        kc_admin=kc_admin,
+                    )
+                    
+                    if not dept_client_id:
+                        logger.warning(f"Failed to create department client for {dept_id}, continuing with IdP sync")
                     
                     # Get auths for this department
                     auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")

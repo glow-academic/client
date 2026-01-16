@@ -37015,17 +37015,6 @@
             ],
             "title": "Guest Login Enabled"
           },
-          "show_default_account": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Default Account"
-          },
           "default_department_id": {
             "anyOf": [
               {

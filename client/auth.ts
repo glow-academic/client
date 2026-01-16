@@ -95,8 +95,29 @@ export const {
           `${realmIssuer}/protocol/openid-connect/auth`
         );
 
-        // Add standard OAuth parameters
-        authorizationUrl.searchParams.set("client_id", keycloakClientId);
+        // Read department-specific client_id from cookie if set (set by Login component before signIn)
+        // Format: glow-client-{department_id} for departments, or default glow-client for platform
+        let clientId = keycloakClientId; // Default to platform client
+        try {
+          const headersList = await headers();
+          const cookieHeader = headersList.get("cookie");
+          if (cookieHeader) {
+            const cookies = Object.fromEntries(
+              cookieHeader.split("; ").map((c) => {
+                const [key, ...valueParts] = c.split("=");
+                return [key, valueParts.join("=")];
+              })
+            );
+            const departmentClientId = cookies["department-client-id"];
+            if (departmentClientId) {
+              clientId = departmentClientId;
+            }
+          }
+        } catch {
+          // If headers not available, use default client_id
+        }
+
+        authorizationUrl.searchParams.set("client_id", clientId);
         const redirectUri = params["redirect_uri"];
         if (redirectUri) {
           authorizationUrl.searchParams.set("redirect_uri", redirectUri);

@@ -59,7 +59,6 @@ RETURNS TABLE (
     providers types.q_get_login_data_v4_provider[],
     departments types.q_get_login_data_v4_department[],
     guest_login_enabled boolean,
-    show_default_account boolean,
     default_department_id text,
     realm_name text,
     organization_id text
@@ -194,70 +193,18 @@ organization_calc AS (
                  LIMIT 1)
             ELSE NULL::text
         END as organization_id
-),
--- Check department-specific default account (if department_id provided)
-dept_default_account_check AS (
-    SELECT EXISTS (
-        SELECT 1
-        FROM setting_artifact s
-        JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-        JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-        WHERE ds.department_id = (SELECT department_id FROM params)
-          AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
-          AND (SELECT department_id FROM params) IS NOT NULL
-    )::boolean as dept_has_default_account
-),
--- Check default settings default account (fallback)
-default_settings_default_account_check AS (
-    SELECT EXISTS (
-        SELECT 1
-        FROM setting_artifact s
-        JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-        WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
-          AND NOT EXISTS (
-              SELECT 1 FROM department_settings ds 
-              WHERE ds.settings_id = s.id AND ds.active = true
-          )
-    )::boolean as default_settings_has_default_account
-),
--- Calculate show_default_account: show if no providers AND default account exists
-show_default_account_calc AS (
-    SELECT 
-        CASE 
-            -- No providers exist
-            WHEN array_length((SELECT providers FROM providers_with_default LIMIT 1), 1) IS NULL OR array_length((SELECT providers FROM providers_with_default LIMIT 1), 1) = 0 THEN
-                CASE 
-                    -- Department-specific: check department settings first, fallback to default settings
-                    WHEN (SELECT department_id FROM params) IS NOT NULL THEN
-                        COALESCE(
-                            (SELECT dept_has_default_account FROM dept_default_account_check),
-                            (SELECT default_settings_has_default_account FROM default_settings_default_account_check),
-                            false
-                        )
-                    -- No department: check default settings only
-                    ELSE
-                        COALESCE(
-                            (SELECT default_settings_has_default_account FROM default_settings_default_account_check),
-                            false
-                        )
-                END
-            -- Providers exist → don't show default account
-            ELSE false
-        END::boolean as show_default_account
 )
 -- Cross join ensures we always get exactly one row
 SELECT 
     p.providers as providers,
     d.departments as departments,
     COALESCE((SELECT guest_login_enabled FROM active_settings LIMIT 1), true)::boolean as guest_login_enabled,
-    COALESCE((SELECT show_default_account FROM show_default_account_calc LIMIT 1), false)::boolean as show_default_account,
     COALESCE((SELECT department_id::text FROM default_department_from_settings LIMIT 1), NULL)::text as default_department_id,
     (SELECT realm_name FROM realm_name_calc LIMIT 1)::text as realm_name,
     (SELECT organization_id FROM organization_calc LIMIT 1)::text as organization_id
 FROM providers_with_default p
 CROSS JOIN departments_with_default d
 CROSS JOIN realm_name_calc
-CROSS JOIN show_default_account_calc
 CROSS JOIN organization_calc
 LIMIT 1
 $$;

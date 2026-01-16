@@ -8868,8 +8868,6 @@ export interface components {
             departments?: components["schemas"]["QGetLoginDataV4Department"][] | null;
             /** Guest Login Enabled */
             guest_login_enabled?: boolean | null;
-            /** Show Default Account */
-            show_default_account?: boolean | null;
             /** Default Department Id */
             default_department_id?: string | null;
             /** Realm Name */

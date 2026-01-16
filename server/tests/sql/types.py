@@ -5161,6 +5161,6 @@ def load_sql_query(
         ```
     """
     # Import here to avoid circular imports
-    from utils.sql_helper import load_sql
+    from app.utils.sql_helper import load_sql
 
     return load_sql(file_path)
