@@ -49,7 +49,16 @@ def load_sql(file_path: str) -> str:
     Returns:
         SQL string with parameter placeholders ($1, $2, etc.)
     """
-    sql_path = Path(__file__).parent.parent / file_path
+    import os
+
+    # In Docker: PYTHONPATH=/app, so resolve relative to /app
+    # Locally: resolve relative to server root (3 levels up from utils/)
+    if os.getenv("PYTHONPATH") == "/app" or os.getenv("DOCKER_ENV") == "1":
+        sql_path = Path("/app") / file_path
+    else:
+        # Local development: go up 3 levels from utils/ to server root
+        sql_path = Path(__file__).parent.parent.parent / file_path
+
     return sql_path.read_text()
 
 
