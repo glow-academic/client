@@ -137,6 +137,32 @@ async def wait_for_keycloak(
     return None
 
 
+async def ensure_organizations_enabled(kc_admin: Any) -> None:
+    """Ensure Organizations feature is enabled in master realm.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    try:
+        kc_admin.change_current_realm(realm_name="master")
+        realm = kc_admin.get_realm("master")
+        
+        # Check if organizations are enabled
+        # In Keycloak 26.0, organizationsEnabled is a top-level realm property (not in attributes)
+        orgs_enabled = realm.get("organizationsEnabled", False)
+        
+        if not orgs_enabled:
+            # Enable organizations - preserve all existing realm properties
+            update_payload = dict(realm)
+            update_payload["organizationsEnabled"] = True
+            kc_admin.update_realm(realm_name="master", payload=update_payload)
+            logger.info("✅ Enabled Organizations feature in master realm")
+        else:
+            logger.info("✅ Organizations feature already enabled in master realm")
+    except Exception as e:
+        logger.warning(f"Failed to enable Organizations feature: {e}")
+
+
 async def sync_organization_for_department(
     department_id: str,
     department_name: str,
@@ -156,6 +182,9 @@ async def sync_organization_for_department(
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
         
+        # Ensure organizations are enabled first
+        await ensure_organizations_enabled(kc_admin)
+        
         # Check if org exists (by alias = department_id)
         orgs = kc_admin.get_organizations()
         existing = next(
@@ -165,8 +194,12 @@ async def sync_organization_for_department(
         
         if existing:
             org_id = existing.get("id")
-            logger.info(f"✅ Organization '{department_name}' already exists (id: {org_id})")
-            return org_id
+            if org_id:
+                logger.info(f"✅ Organization '{department_name}' already exists (id: {org_id})")
+                return str(org_id)
+            else:
+                logger.warning(f"Organization '{department_name}' exists but has no ID")
+                return None
         
         # Create new org
         org_payload: dict[str, Any] = {
@@ -176,8 +209,12 @@ async def sync_organization_for_department(
         }
         
         org_id = kc_admin.create_organization(payload=org_payload)
-        logger.info(f"✅ Created organization '{department_name}' (id: {org_id})")
-        return org_id
+        if org_id:
+            logger.info(f"✅ Created organization '{department_name}' (id: {org_id})")
+            return str(org_id)
+        else:
+            logger.warning(f"Organization '{department_name}' creation returned no ID")
+            return None
     except Exception as e:
         error_str = str(e).lower()
         is_conflict = (
@@ -198,8 +235,12 @@ async def sync_organization_for_department(
                 )
                 if existing:
                     org_id = existing.get("id")
-                    logger.info(f"⚠️  Organization '{department_name}' was created by another process (id: {org_id})")
-                    return org_id
+                    if org_id:
+                        logger.info(f"⚠️  Organization '{department_name}' was created by another process (id: {org_id})")
+                        return str(org_id)
+                    else:
+                        logger.warning(f"Organization '{department_name}' exists but has no ID")
+                        return None
             except Exception as fetch_e:
                 logger.warning(f"Failed to fetch organization after conflict: {fetch_e}")
         
@@ -724,8 +765,6 @@ async def sync_identity_provider_for_realm_level(
         
         # Get auth items (config) - use None for department_id (default settings)
         import uuid
-
-        from app.sql.types import GetAuthItemsSqlParams
         
         async with pool.acquire() as conn:
             items_sql_text = load_sql("app/sql/v4/keycloak/get_auth_items_complete.sql")
@@ -733,8 +772,9 @@ async def sync_identity_provider_for_realm_level(
             
             if items_is_function and items_function_name:
                 auth_id_uuid = uuid.UUID(auth_id)
-                items_params = GetAuthItemsSqlParams(auth_id=auth_id_uuid, department_id=None)
-                items_sql_params = items_params.to_tuple()
+                # Pass NULL directly to PostgreSQL (function accepts NULL even though signature shows uuid)
+                # SQL function checks IS NOT NULL internally
+                items_sql_params = (auth_id_uuid, None)
                 items_param_placeholders = ", ".join([f"${i + 1}" for i in range(len(items_sql_params))])
                 items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
                 item_rows = await conn.fetch(items_function_call_sql, *items_sql_params)
@@ -1223,6 +1263,9 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         
         # Ensure Trusted Hosts policy is configured for client registration
         await ensure_trusted_hosts_policy(kc_admin)
+
+        # Ensure Organizations feature is enabled (required for org-scoped IdPs)
+        await ensure_organizations_enabled(kc_admin)
 
         # Sync identity providers (realm-level + org-scoped)
         # This replaces the old realm-based sync logic
