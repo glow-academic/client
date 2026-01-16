@@ -26307,11 +26307,6 @@
       },
       "CreateOrUpdateProfileApiRequest": {
         "properties": {
-          "profile_id_new": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Profile Id New"
-          },
           "first_name": {
             "type": "string",
             "title": "First Name"
@@ -26396,11 +26391,22 @@
               }
             ],
             "title": "Cohort Ids"
+          },
+          "profile_id_new": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id New"
           }
         },
         "type": "object",
         "required": [
-          "profile_id_new",
           "first_name",
           "last_name",
           "emails",
@@ -37041,6 +37047,17 @@
               }
             ],
             "title": "Realm Name"
+          },
+          "organization_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Id"
           }
         },
         "type": "object",

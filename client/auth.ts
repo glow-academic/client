@@ -37,8 +37,9 @@ async function createGuestProfile(
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
-    // Convert to unified save endpoint
-    await api.post("/profile/save", {
+    // Use auth/upsert endpoint to create or update profile
+    // profile_id_new is optional - SQL generates it server-side if not provided
+    await api.post("/auth/upsert", {
       body: {
         first_name: firstName,
         last_name: lastName,
@@ -48,7 +49,6 @@ async function createGuestProfile(
         active: true,
         cohort_ids: [],
         department_ids: [],
-        input_profile_id: null, // NULL for create mode
       },
     });
   } catch (error) {
@@ -149,19 +149,29 @@ export const {
         }
 
         if (existingProfile) {
-          // Unified API - update existing profile lastLogin
+          // Use auth/upsert endpoint to update existing profile
+          // Note: last_login and last_active are not supported by upsert endpoint
+          // These may need to be handled separately or the endpoint extended
+          const { firstName, lastName } = parseName(user.name);
           try {
-            await api.post("/profile/save", {
+            // Use auth/upsert endpoint to update existing profile
+            // profile_id_new is optional - SQL finds existing profile by email and uses that ID
+            await api.post("/auth/upsert", {
               body: {
-                input_profile_id: existingProfile.id,
-                last_login: new Date().toISOString(),
-                last_active: new Date().toISOString(),
+                first_name: firstName,
+                last_name: lastName,
+                emails: [user.email || ""],
+                role: existingProfile.role || "guest",
+                primary_email_index: 0,
+                active: true,
+                cohort_ids: [],
+                department_ids: [],
               },
             });
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error(
-              `Failed to update lastLogin for profile ${existingProfile.id}:`,
+              `Failed to update profile ${existingProfile.id}:`,
               error instanceof Error ? error.message : String(error)
             );
           }
@@ -210,15 +220,21 @@ export const {
           }
 
           if (existingProfile) {
-            // Unified API - update profile
+            // Use auth/upsert endpoint to update profile
+            // Note: last_login and last_active are not supported by upsert endpoint
+            // These may need to be handled separately or the endpoint extended
+            // profile_id_new is optional - SQL finds existing profile by email and uses that ID
             try {
-              await api.post("/profile/save", {
+              await api.post("/auth/upsert", {
                 body: {
-                  input_profile_id: existingProfile.id,
                   first_name: firstName,
                   last_name: lastName,
-                  last_login: new Date().toISOString(),
-                  last_active: new Date().toISOString(),
+                  emails: [user.email],
+                  role: existingProfile.role || "guest",
+                  primary_email_index: 0,
+                  active: true,
+                  cohort_ids: [],
+                  department_ids: [],
                 },
               });
             } catch (error) {
@@ -258,7 +274,7 @@ export const {
                 role: profileResponse.role || "guest",
               }
             : null;
-        } catch (error) {
+        } catch {
           // Profile not found - create it synchronously as fallback
           // This handles race conditions where createUser event hasn't completed yet
           try {

@@ -97,7 +97,7 @@ export default function Home({ homeData }: HomeProps) {
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null,
+    null
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -133,14 +133,14 @@ export default function Home({ homeData }: HomeProps) {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as unknown as EventListener,
+      handleSimulationStarted as unknown as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as unknown as EventListener,
+        handleSimulationStarted as unknown as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -160,7 +160,7 @@ export default function Home({ homeData }: HomeProps) {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           return;
         }
@@ -197,7 +197,7 @@ export default function Home({ homeData }: HomeProps) {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-    ],
+    ]
   );
 
   // Use data directly from the hook
@@ -348,7 +348,12 @@ export default function Home({ homeData }: HomeProps) {
                     {...(item.cohort_names &&
                       !item.cohort_name && { cohortName: item.cohort_names })}
                     simulationName={item.simulation_name || ""}
-                    status={(item.status || "not-started") as "not-started" | "in-progress" | "passed"}
+                    status={
+                      (item.status || "not-started") as
+                        | "not-started"
+                        | "in-progress"
+                        | "passed"
+                    }
                     completionPct={item.completion_pct || 0}
                     {...(typeof item.passed_count === "number" && {
                       passedCount: item.passed_count,
@@ -363,7 +368,7 @@ export default function Home({ homeData }: HomeProps) {
                       passPct: item.pass_pct,
                     })}
                   />
-                ) : null,
+                ) : null
               )}
             </div>
           </div>
@@ -424,7 +429,9 @@ export default function Home({ homeData }: HomeProps) {
                       })}
                       simulationTitle={item.simulation_title || ""}
                       simulationDescription={item.simulation_description || ""}
-                      standard_groups={buildStandardGroupsDict(item.standard_groups || [])}
+                      standard_groups={buildStandardGroupsDict(
+                        item.standard_groups || []
+                      )}
                       standardGroupsMapping={
                         standardGroupsMapping as Record<
                           string,
@@ -463,7 +470,7 @@ export default function Home({ homeData }: HomeProps) {
                           | "guest",
                       }}
                     />
-                  ) : null,
+                  ) : null
                 )}
               </div>
 

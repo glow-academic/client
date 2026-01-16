@@ -22,7 +22,6 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_create_or_update_profile_v4(
-    profile_id_new uuid,  -- New UUID for create, will be ignored if profile exists
     first_name text,
     last_name text,
     emails text[],  -- Array of all emails (first one is primary by default)
@@ -31,7 +30,8 @@ CREATE OR REPLACE FUNCTION api_create_or_update_profile_v4(
     primary_email_index integer DEFAULT 0,
     active boolean DEFAULT true,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    cohort_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    profile_id_new uuid DEFAULT NULL  -- New UUID for create (generated if NULL), will be ignored if profile exists
 )
 RETURNS TABLE (
     profile_id uuid,
@@ -43,7 +43,7 @@ VOLATILE
 AS $$
 WITH params AS (
     SELECT 
-        profile_id_new AS profile_id_new,
+        COALESCE(profile_id_new, gen_random_uuid()) AS profile_id_new,  -- Generate UUID if not provided
         first_name AS first_name,
         last_name AS last_name,
         COALESCE(emails, ARRAY[]::text[]) AS emails,

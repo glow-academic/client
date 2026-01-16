@@ -5644,6 +5644,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/.well-known/oauth-authorization-server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oauth Authorization Server Metadata
+         * @description RFC 8414 OAuth Authorization Server Metadata endpoint.
+         *
+         *     ChatGPT Dev Mode uses this endpoint to discover OAuth configuration.
+         *     This is required for OAuth to work with ChatGPT.
+         */
+        get: operations["oauth_authorization_server_metadata__well_known_oauth_authorization_server_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -6413,11 +6436,6 @@ export interface components {
         };
         /** CreateOrUpdateProfileApiRequest */
         CreateOrUpdateProfileApiRequest: {
-            /**
-             * Profile Id New
-             * Format: uuid
-             */
-            profile_id_new: string;
             /** First Name */
             first_name: string;
             /** Last Name */
@@ -6442,6 +6460,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Cohort Ids */
             cohort_ids?: string[] | null;
+            /** Profile Id New */
+            profile_id_new?: string | null;
         };
         /** CreateOrUpdateProfileApiResponse */
         CreateOrUpdateProfileApiResponse: {
@@ -7482,6 +7502,8 @@ export interface components {
              * Format: uuid
              */
             icon_id: string;
+            /** Type */
+            type?: string | null;
             /**
              * Mcp
              * @default false
@@ -8339,18 +8361,6 @@ export interface components {
             flag_agent_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Template */
-            template?: boolean | null;
-            /** Template Id */
-            template_id?: string | null;
-            /** Schema Id */
-            schema_id?: string | null;
-            /** Html Id */
-            html_id?: string | null;
-            /** Template File Path */
-            template_file_path?: string | null;
-            /** Templates */
-            templates?: components["schemas"]["QGetDocumentV4Template"][] | null;
             /** General Agent Id */
             general_agent_id?: string | null;
         };
@@ -8864,6 +8874,8 @@ export interface components {
             default_department_id?: string | null;
             /** Realm Name */
             realm_name?: string | null;
+            /** Organization Id */
+            organization_id?: string | null;
         };
         /** GetModelApiRequest */
         GetModelApiRequest: {
@@ -10368,59 +10380,6 @@ export interface components {
             parameter_suggestions?: string[] | null;
             /** Parameters */
             parameters?: components["schemas"]["QGetScenarioV4Parameter"][] | null;
-            /** Persona Range Id */
-            persona_range_id?: string | null;
-            persona_range_resource?: components["schemas"]["QGetScenarioV4RangeResource"] | null;
-            /** Show Persona Range */
-            show_persona_range?: boolean | null;
-            /** Persona Range Agent Id */
-            persona_range_agent_id?: string | null;
-            /** Persona Range Required */
-            persona_range_required?: boolean | null;
-            /** Persona Range Suggestions */
-            persona_range_suggestions?: string[] | null;
-            /** Persona Ranges */
-            persona_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
-            /** Document Range Id */
-            document_range_id?: string | null;
-            document_range_resource?: components["schemas"]["QGetScenarioV4RangeResource"] | null;
-            /** Show Document Range */
-            show_document_range?: boolean | null;
-            /** Document Range Agent Id */
-            document_range_agent_id?: string | null;
-            /** Document Range Required */
-            document_range_required?: boolean | null;
-            /** Document Range Suggestions */
-            document_range_suggestions?: string[] | null;
-            /** Document Ranges */
-            document_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
-            /** Parameter Range Id */
-            parameter_range_id?: string | null;
-            parameter_range_resource?: components["schemas"]["QGetScenarioV4RangeResource"] | null;
-            /** Show Parameter Range */
-            show_parameter_range?: boolean | null;
-            /** Parameter Range Agent Id */
-            parameter_range_agent_id?: string | null;
-            /** Parameter Range Required */
-            parameter_range_required?: boolean | null;
-            /** Parameter Range Suggestions */
-            parameter_range_suggestions?: string[] | null;
-            /** Parameter Ranges */
-            parameter_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
-            /** Field Range Ids */
-            field_range_ids?: string[] | null;
-            /** Field Range Resources */
-            field_range_resources?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
-            /** Show Field Ranges */
-            show_field_ranges?: boolean | null;
-            /** Field Ranges Agent Id */
-            field_ranges_agent_id?: string | null;
-            /** Field Ranges Required */
-            field_ranges_required?: boolean | null;
-            /** Field Range Suggestions */
-            field_range_suggestions?: string[] | null;
-            /** Field Ranges */
-            field_ranges?: components["schemas"]["QGetScenarioV4RangeResource"][] | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** Content Agent Id */
@@ -13466,19 +13425,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetDocumentV4Template */
-        QGetDocumentV4Template: {
-            /** Template Id */
-            template_id: string | null;
-            /** Schema Id */
-            schema_id: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-        };
         /** QGetEvalAttemptV4Attempt */
         QGetEvalAttemptV4Attempt: {
             /** Id */
@@ -15408,17 +15354,6 @@ export interface components {
             question_text: string | null;
             /** Allow Multiple */
             allow_multiple: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetScenarioV4RangeResource */
-        QGetScenarioV4RangeResource: {
-            /** Id */
-            id: string | null;
-            /** Min Count */
-            min_count: number | null;
-            /** Max Count */
-            max_count: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -30683,6 +30618,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oauth_authorization_server_metadata__well_known_oauth_authorization_server_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

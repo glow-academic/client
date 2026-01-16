@@ -4,20 +4,16 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
-from app.sql.types import (
-    CreateOrUpdateProfileApiRequest,
-    CreateOrUpdateProfileApiResponse,
-    CreateOrUpdateProfileSqlParams,
-    CreateOrUpdateProfileSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (CreateOrUpdateProfileApiRequest,
+                           CreateOrUpdateProfileApiResponse,
+                           CreateOrUpdateProfileSqlParams,
+                           CreateOrUpdateProfileSqlRow, load_sql_query)
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/profile/create_or_update_profile_complete.sql"
@@ -64,19 +60,16 @@ async def create_or_update_profile(
         # Get current_profile_id from header (optional for upsert)
         current_profile_id = http_request.state.profile_id
 
-        # Generate new profile ID (will be used if profile doesn't exist)
-        profile_id_new = uuid.uuid4()
-
         # Convert API request to SQL params using double star pattern
         # Pydantic handles UUID conversion from strings automatically if types are correct
         # SQL handles None-to-empty conversions via COALESCE in params CTE
-        # Exclude profile_id_new and current_profile_id from request if present (we generate/override them)
+        # SQL generates profile_id_new if not provided (for creates)
+        # Exclude current_profile_id from request if present (we override it)
         request_dict = request.model_dump(
-            exclude={"profile_id_new", "current_profile_id"}, exclude_none=False
+            exclude={"current_profile_id"}, exclude_none=False
         )
         params = CreateOrUpdateProfileSqlParams(
             **request_dict,
-            profile_id_new=profile_id_new,
             current_profile_id=current_profile_id,
         )
         sql_params = params.to_tuple()

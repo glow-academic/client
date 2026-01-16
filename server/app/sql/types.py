@@ -5759,6 +5759,7 @@ class GetLoginDataSqlRow(BaseModel):
     show_default_account: bool | None = None
     default_department_id: str | None = None
     realm_name: str | None = None
+    organization_id: str | None = None
 
 class GetLoginDataApiRequest(BaseModel):
 
@@ -5772,6 +5773,7 @@ class GetLoginDataApiResponse(BaseModel):
     show_default_account: bool | None = None
     default_department_id: str | None = None
     realm_name: str | None = None
+    organization_id: str | None = None
 
 
 
@@ -15113,34 +15115,9 @@ class GetAuthProvidersApiResponse(BaseModel):
 
 
 
-# Generated from: get_department_id_for_settings
+# Generated from: get_auths_for_org
 
-class GetDepartmentIdForSettingsSqlParams(BaseModel):
-
-    settings_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.settings_id,
-        )
-
-class GetDepartmentIdForSettingsSqlRow(BaseModel):
-
-    department_id: str | None = None
-
-class GetDepartmentIdForSettingsApiRequest(BaseModel):
-
-    settings_id: UUID
-
-class GetDepartmentIdForSettingsApiResponse(BaseModel):
-
-    department_id: str | None = None
-
-
-
-# Generated from: get_realm_name_for_department
-
-class GetRealmNameForDepartmentSqlParams(BaseModel):
+class GetAuthsForOrgSqlParams(BaseModel):
 
     department_id: UUID
 
@@ -15149,37 +15126,71 @@ class GetRealmNameForDepartmentSqlParams(BaseModel):
             self.department_id,
         )
 
-class GetRealmNameForDepartmentSqlRow(BaseModel):
+class GetAuthsForOrgSqlRow(BaseModel):
 
-    realm_name: str | None = None
+    id: UUID | None = None
+    slug: str | None = None
+    provider_id: str | None = None
+    name: str | None = None
 
-class GetRealmNameForDepartmentApiRequest(BaseModel):
+class GetAuthsForOrgApiRequest(BaseModel):
 
     department_id: UUID
 
-class GetRealmNameForDepartmentApiResponse(BaseModel):
+class GetAuthsForOrgApiResponse(BaseModel):
 
-    realm_name: str | None = None
+    id: UUID | None = None
+    slug: str | None = None
+    provider_id: str | None = None
+    name: str | None = None
 
 
 
-# Generated from: get_settings_to_sync
+# Generated from: get_auths_for_realm_level
 
-class GetSettingsToSyncSqlParams(BaseModel):
-
-    pass
-
-class GetSettingsToSyncSqlRow(BaseModel):
-
-    realm_name: str | None = None
-
-class GetSettingsToSyncApiRequest(BaseModel):
+class GetAuthsForRealmLevelSqlParams(BaseModel):
 
     pass
 
-class GetSettingsToSyncApiResponse(BaseModel):
+class GetAuthsForRealmLevelSqlRow(BaseModel):
 
-    realm_name: str | None = None
+    id: UUID | None = None
+    slug: str | None = None
+    provider_id: str | None = None
+    name: str | None = None
+
+class GetAuthsForRealmLevelApiRequest(BaseModel):
+
+    pass
+
+class GetAuthsForRealmLevelApiResponse(BaseModel):
+
+    id: UUID | None = None
+    slug: str | None = None
+    provider_id: str | None = None
+    name: str | None = None
+
+
+
+# Generated from: get_departments_for_org_sync
+
+class GetDepartmentsForOrgSyncSqlParams(BaseModel):
+
+    pass
+
+class GetDepartmentsForOrgSyncSqlRow(BaseModel):
+
+    department_id: UUID | None = None
+    department_name: str | None = None
+
+class GetDepartmentsForOrgSyncApiRequest(BaseModel):
+
+    pass
+
+class GetDepartmentsForOrgSyncApiResponse(BaseModel):
+
+    department_id: UUID | None = None
+    department_name: str | None = None
 
 
 
@@ -19914,7 +19925,6 @@ class CheckLoginAuthorizationApiResponse(BaseModel):
 
 class CreateOrUpdateProfileSqlParams(BaseModel):
 
-    profile_id_new: UUID
     first_name: str
     last_name: str
     emails: list[str]
@@ -19924,10 +19934,10 @@ class CreateOrUpdateProfileSqlParams(BaseModel):
     active: bool | None = True
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_id_new: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.profile_id_new,
             self.first_name,
             self.last_name,
             self.emails,
@@ -19937,6 +19947,7 @@ class CreateOrUpdateProfileSqlParams(BaseModel):
             self.active,
             self.department_ids,
             self.cohort_ids,
+            self.profile_id_new,
         )
 
 class CreateOrUpdateProfileSqlRow(BaseModel):
@@ -19947,7 +19958,6 @@ class CreateOrUpdateProfileSqlRow(BaseModel):
 
 class CreateOrUpdateProfileApiRequest(BaseModel):
 
-    profile_id_new: UUID
     first_name: str
     last_name: str
     emails: list[str]
@@ -19957,6 +19967,7 @@ class CreateOrUpdateProfileApiRequest(BaseModel):
     active: bool | None = True
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_id_new: UUID | None = None
 
 class CreateOrUpdateProfileApiResponse(BaseModel):
 
@@ -37762,23 +37773,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthProvidersApiRequest",
         "GetAuthProvidersApiResponse",
     ),
-    "app/sql/v4/keycloak/get_department_id_for_settings_complete.sql": (
-        "GetDepartmentIdForSettingsSqlParams",
-        "GetDepartmentIdForSettingsSqlRow",
-        "GetDepartmentIdForSettingsApiRequest",
-        "GetDepartmentIdForSettingsApiResponse",
+    "app/sql/v4/keycloak/get_auths_for_org_complete.sql": (
+        "GetAuthsForOrgSqlParams",
+        "GetAuthsForOrgSqlRow",
+        "GetAuthsForOrgApiRequest",
+        "GetAuthsForOrgApiResponse",
     ),
-    "app/sql/v4/keycloak/get_realm_name_for_department_complete.sql": (
-        "GetRealmNameForDepartmentSqlParams",
-        "GetRealmNameForDepartmentSqlRow",
-        "GetRealmNameForDepartmentApiRequest",
-        "GetRealmNameForDepartmentApiResponse",
+    "app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql": (
+        "GetAuthsForRealmLevelSqlParams",
+        "GetAuthsForRealmLevelSqlRow",
+        "GetAuthsForRealmLevelApiRequest",
+        "GetAuthsForRealmLevelApiResponse",
     ),
-    "app/sql/v4/keycloak/get_settings_to_sync_complete.sql": (
-        "GetSettingsToSyncSqlParams",
-        "GetSettingsToSyncSqlRow",
-        "GetSettingsToSyncApiRequest",
-        "GetSettingsToSyncApiResponse",
+    "app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql": (
+        "GetDepartmentsForOrgSyncSqlParams",
+        "GetDepartmentsForOrgSyncSqlRow",
+        "GetDepartmentsForOrgSyncApiRequest",
+        "GetDepartmentsForOrgSyncApiResponse",
     ),
     "app/sql/v4/keycloak/update_master_realm_ssl_complete.sql": (
         "UpdateMasterRealmSslSqlParams",
@@ -41226,17 +41237,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_department_id_for_settings_complete.sql"]
+        file_path: Literal["app/sql/v4/keycloak/get_auths_for_org_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_realm_name_for_department_complete.sql"]
+        file_path: Literal["app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_settings_to_sync_complete.sql"]
+        file_path: Literal["app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql"]
     ) -> SqlString: ...
 
     @overload
