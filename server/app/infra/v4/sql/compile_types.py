@@ -1106,6 +1106,12 @@ async def compile_sql_types(
     
     db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     
+    # Detect if we're in production (skip introspection)
+    # In production, we only execute SQL files, don't generate types.py
+    origin = os.getenv("ORIGIN", "http://localhost")
+    is_production = "localhost" not in origin.lower()
+    skip_introspection = is_production
+    
     # Determine if we're in incremental mode
     incremental_mode = sql_files is not None and len(sql_files) > 0
     
@@ -1270,6 +1276,15 @@ async def compile_sql_types(
             print("\n   Continuing with type generation anyway...")
         
         # Second pass: Generate types for all SQL files
+        # Skip in production - only execute SQL files, don't generate types.py
+        if skip_introspection:
+            print("\n⏭️  Skipping type generation (production mode - ORIGIN doesn't contain localhost)")
+            executed_count = len(sorted_sql_files) - len(failed_files) - len(execution_errors)
+            print(f"   ✅ Executed {executed_count} SQL files successfully")
+            if execution_errors:
+                print(f"   ⚠️  {len(execution_errors)} files had errors")
+            return True, f"SQL execution completed successfully ({executed_count} files executed, type generation skipped in production)"
+        
         # Use same sorting order as execution phase
         print("\n🔍 Generating types from SQL files...")
         
@@ -1365,12 +1380,14 @@ async def compile_sql_types(
             test_type_definitions.sort(key=lambda x: x[0])
         
         # Write app consolidated types file if we have entries
-        if app_type_definitions:
+        # Skip in production - types.py is pre-generated and committed
+        if not skip_introspection and app_type_definitions:
             write_consolidated_types_file(app_type_definitions, "app", server_root)
             # Success - no logging needed
         
         # Write test consolidated types file if we have entries
-        if test_type_definitions:
+        # Skip in production - types.py is pre-generated and committed
+        if not skip_introspection and test_type_definitions:
             write_consolidated_types_file(test_type_definitions, "test", server_root)
             # Success - no logging needed
         

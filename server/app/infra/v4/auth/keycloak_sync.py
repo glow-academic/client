@@ -578,10 +578,28 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
             hostname = hostname_with_port
         
         # Build trusted hosts list: production hostname + localhost variants
+        # In Docker/local dev, also disable host matching to allow container IPs
+        origin_check = os.getenv("ORIGIN", "http://localhost:3000")
+        is_local_dev = "localhost" in origin_check.lower()
+        
+        # Detect Docker environment - check if we're running in a container
+        # Docker containers typically have hostname that matches container name or is a hash
+        # Also check if DB_HOST or other services use Docker network names
+        is_docker_env = (
+            os.getenv("DOCKER_ENV") == "1"
+            or os.getenv("DB_HOST", "").endswith(".local")
+            or socket.gethostname() != socket.gethostname().split(".")[0]  # Hostname has domain
+        )
+        
         trusted_hosts = [hostname]
         if hostname not in ["localhost", "127.0.0.1"]:
             # Add localhost variants for local development
             trusted_hosts.extend(["localhost", "*.localhost"])
+        
+        # In local dev/Docker, we need to allow container IPs
+        # Docker networks typically use 172.x.x.x ranges
+        # Keycloak's trusted hosts works with hostnames, not IPs
+        # So we'll disable host matching in Docker environments
         
         # Get components for master realm
         # Components are retrieved by parent_id (realm ID)
@@ -640,16 +658,26 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
             new_config["trusted-hosts"] = trusted_hosts
             needs_update = True
         
-        # Set host-sending-registration-request-must-match to true
+        # Set host-sending-registration-request-must-match
+        # In local dev/Docker, disable this to allow container IPs (172.x.x.x)
+        # In production (non-Docker), enable it for security
+        # Always disable in Docker environments to allow container-to-container communication
+        desired_host_match = "false" if (is_local_dev or is_docker_env) else "true"
         current_host_match = current_config.get("host-sending-registration-request-must-match", ["true"])
-        if current_host_match != ["true"]:
-            new_config["host-sending-registration-request-must-match"] = ["true"]
+        if current_host_match != [desired_host_match]:
+            new_config["host-sending-registration-request-must-match"] = [desired_host_match]
             needs_update = True
         
-        # Set client-uris-must-match to false (user doesn't need this for MCP)
+        # Set client-uris-must-match
+        # For catchall (allow any domain), set to false
+        # Keycloak allows both validations to be disabled for catchall behavior
+        # In Docker/local dev, disable URI matching to allow any redirect URI (catchall)
+        # In production, can also disable for catchall, or enable for security
+        # Setting to false enables catchall - any domain can register clients
+        desired_uris_match = "false"  # Catchall: allow any domain
         current_uris_match = current_config.get("client-uris-must-match", ["true"])
-        if current_uris_match != ["false"]:
-            new_config["client-uris-must-match"] = ["false"]
+        if current_uris_match != [desired_uris_match]:
+            new_config["client-uris-must-match"] = [desired_uris_match]
             needs_update = True
         
         if needs_update:
@@ -667,12 +695,14 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
             kc_admin.update_component(component_id=component_id, payload=update_payload)
             logger.info(
                 f"✅ Updated Trusted Hosts policy: trusted-hosts={trusted_hosts}, "
-                f"host-sending-registration-request-must-match=true, "
-                f"client-uris-must-match=false"
+                f"host-sending-registration-request-must-match={desired_host_match}, "
+                f"client-uris-must-match={desired_uris_match}"
             )
         else:
-            logger.debug(
-                f"Trusted Hosts policy already configured correctly: trusted-hosts={trusted_hosts}"
+            logger.info(
+                f"✅ Trusted Hosts policy already configured correctly: trusted-hosts={trusted_hosts}, "
+                f"host-sending-registration-request-must-match={desired_host_match}, "
+                f"client-uris-must-match={desired_uris_match}"
             )
     except Exception as e:
         logger.warning(f"Could not ensure Trusted Hosts policy: {e}", exc_info=True)
