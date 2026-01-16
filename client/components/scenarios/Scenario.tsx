@@ -1261,10 +1261,6 @@ function ScenarioComponent({
     handleGenerateResources(["objectives"]);
   }, [handleGenerateResources]);
 
-  const handleGenerateProblemStatements = useCallback(() => {
-    handleGenerateResources(["problem_statements"]);
-  }, [handleGenerateResources]);
-
   // Helper function to determine agent_type from resource types
   const determineAgentType = useCallback(
     (resourceTypes: ResourceType[]): string | null => {

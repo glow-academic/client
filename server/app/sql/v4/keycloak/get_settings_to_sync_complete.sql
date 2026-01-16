@@ -27,22 +27,22 @@ AS $$
     SELECT 'master'::text as realm_name
     WHERE EXISTS (
         SELECT 1 FROM settings_resource s
-        JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
+        JOIN setting_auths sa ON sa.settings_id = s.setting_id AND sa.active = true
         WHERE s.active = true
           AND NOT EXISTS (
               SELECT 1 FROM department_settings sd 
-              WHERE sd.settings_id = s.id AND sd.active = true
+              WHERE sd.settings_id = s.setting_id AND sd.active = true
           )
     )
     UNION
     -- Department-specific settings with keys → use settings_id as realm
-    SELECT DISTINCT s.id::text as realm_name
+    SELECT DISTINCT s.setting_id::text as realm_name
     FROM settings_resource s
-    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    JOIN setting_auths sa ON sa.settings_id = s.setting_id AND sa.active = true
+    JOIN department_settings ds ON ds.settings_id = s.setting_id AND ds.active = true
     WHERE s.active = true
       AND EXISTS (
           SELECT 1 FROM setting_auth_keys sak
-          WHERE sak.settings_id = s.id AND sak.active = true
+          WHERE sak.settings_id = s.setting_id AND sak.active = true
       );
 $$;

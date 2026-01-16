@@ -13,21 +13,21 @@ STABLE
 AS $$
 WITH dept_settings AS (
     -- Get department-specific settings if department_id provided
-    SELECT DISTINCT s.id as settings_id
-    FROM setting_artifact s
-    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    SELECT DISTINCT s.setting_id as settings_id
+    FROM settings_resource s
+    JOIN department_settings ds ON ds.settings_id = s.setting_id AND ds.active = true
     WHERE (api_get_auth_providers_v4.department_id IS NOT NULL AND ds.department_id = api_get_auth_providers_v4.department_id)
-      AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+      AND s.active = true
     LIMIT 1
 ),
 default_settings AS (
     -- Get default settings (no department links)
-    SELECT s.id as settings_id
-    FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    SELECT s.setting_id as settings_id
+    FROM settings_resource s
+    WHERE s.active = true
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
-          WHERE sd.settings_id = s.id AND sd.active = true
+          WHERE sd.settings_id = s.setting_id AND sd.active = true
       )
     LIMIT 1
 ),
@@ -57,20 +57,23 @@ selected_settings AS (
 ),
 settings_auths AS (
     -- Get auths linked to the selected settings
-    SELECT DISTINCT a.id
-    FROM auths_resource a
-    JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
+    -- Note: setting_auths.settings_id references setting_artifact.id, which matches settings_resource.setting_id
+    -- Note: setting_auths.auth_id references auths_resource.id, but auth_flags.auth_id references auth_artifact.id
+    SELECT DISTINCT ar.id
+    FROM auths_resource ar
+    JOIN setting_auths sa ON sa.auth_id = ar.id AND sa.active = true
     JOIN selected_settings ss ON sa.settings_id = ss.settings_id
-    WHERE EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = ar.auth_id AND af.type = 'active'::type_auth_flags AND af.value = true)
+      AND ss.settings_id IS NOT NULL
 )
 -- Return providers for the selected settings
 SELECT DISTINCT
-    a.id, 
-    (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1) as slug, 
-    (SELECT p.value FROM auth_protocols ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = a.id LIMIT 1) as provider_id, 
-    (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1) 
-FROM auths_resource a
-WHERE EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
-  AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = a.id)
-ORDER BY (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1)
+    ar.id, 
+    (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = ar.auth_id LIMIT 1) as slug, 
+    (SELECT p.value FROM auth_protocols ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = ar.auth_id LIMIT 1) as provider_id, 
+    (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = ar.auth_id LIMIT 1) 
+FROM auths_resource ar
+WHERE EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = ar.auth_id AND af.type = 'active'::type_auth_flags AND af.value = true)
+  AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = ar.id)
+ORDER BY (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = ar.auth_id LIMIT 1)
 $$;

@@ -14,6 +14,7 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
@@ -23,15 +24,14 @@ import { Emails } from "@/components/resources/Emails";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { RequestLimits } from "@/components/resources/RequestLimits";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Label } from "@/components/ui/label";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -253,8 +253,8 @@ function NewStaffComponent({
       switch (resourceType) {
         case "names":
           return (
-            stableStaffDataFields.first_name_resource?.generated ?? false ||
-            stableStaffDataFields.last_name_resource?.generated ?? false
+            (stableStaffDataFields.first_name_resource?.generated ?? false) ||
+            (stableStaffDataFields.last_name_resource?.generated ?? false)
           );
         case "flags":
           return stableStaffDataFields.flag_resource?.generated ?? false;
@@ -712,13 +712,7 @@ function NewStaffComponent({
       });
     }
     return () => clearEntityMetadata();
-  }, [
-    staffData,
-    staffId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  }, [staffData, staffId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Set generation capability when staff data is loaded
   // Note: Staff doesn't have general_agent_id, so we'll use basic_agent_id or individual agent IDs
@@ -865,13 +859,7 @@ function NewStaffComponent({
       basic: ["names", "flags"],
       contact: ["emails", "request_limits"],
       organization: ["departments"],
-      all: [
-        "names",
-        "flags",
-        "request_limits",
-        "departments",
-        "emails",
-      ], // All resources for full-page generation
+      all: ["names", "flags", "request_limits", "departments", "emails"], // All resources for full-page generation
     }),
     []
   );
@@ -1033,7 +1021,9 @@ function NewStaffComponent({
                 <div className="flex items-end gap-2">
                   <Names
                     name_id={formState.first_name_id ?? null}
-                    name_resource={currentStaffData?.first_name_resource ?? null}
+                    name_resource={
+                      currentStaffData?.first_name_resource ?? null
+                    }
                     show_name={currentStaffData?.show_first_name ?? true}
                     name_suggestions={
                       currentStaffData?.first_name_suggestions ?? []
@@ -1097,8 +1087,7 @@ function NewStaffComponent({
               }
               resetFields={["first_name", "last_name", "active"]}
               actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 ? (
+                stepResources["basic"] && stepResources["basic"].length > 0 ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1350,9 +1339,7 @@ function NewStaffComponent({
                   department_resources={
                     currentStaffData?.department_resources ?? []
                   }
-                  show_departments={
-                    currentStaffData?.show_departments ?? false
-                  }
+                  show_departments={currentStaffData?.show_departments ?? false}
                   department_suggestions={
                     currentStaffData?.department_suggestions ?? []
                   }
@@ -1406,9 +1393,7 @@ function NewStaffComponent({
                         description?: string;
                       }>
                         items={currentStaffData.cohorts
-                          .filter(
-                            (c) => c.cohort_id && c.name
-                          )
+                          .filter((c) => c.cohort_id && c.name)
                           .map((c) => ({
                             id: c.cohort_id!,
                             name: c.name!,

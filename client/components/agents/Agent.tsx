@@ -1435,14 +1435,14 @@ export default function Agent({
           toast.success(`Agent ${isEditMode ? "updated" : "created"} successfully!`);
           resetFormAndState();
           router.push("/engine/agents");
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : "Unknown error";
-        toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
-        );
-        throw error; // Re-throw for GenericForm to handle
-      }
-    },
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : "Unknown error";
+          toast.error(
+            `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+          );
+          throw error; // Re-throw for GenericForm to handle
+        }
+      },
     [
       draftState,
       isEditMode,
