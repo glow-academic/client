@@ -18,8 +18,8 @@ export function LogoutGuard({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    // Clear logout flag if we're on the login page
-    if (pathname === "/login" || pathname?.startsWith("/login")) {
+    // Clear logout flag if we're on the home page (where logout redirects to)
+    if (pathname === "/" || pathname === "") {
       sessionStorage.removeItem("logout-in-progress");
       setIsLoggingOut(false);
       return;
@@ -89,7 +89,7 @@ export function LogoutGuard({ children }: { children: React.ReactNode }) {
     // Check periodically in case logout starts after component mounts
     const interval = setInterval(checkLogout, 100);
 
-    // Clean up logout flag when navigating away (e.g., to login page)
+    // Clean up logout flag when navigating away (e.g., to home page)
     const handleBeforeUnload = () => {
       sessionStorage.removeItem("logout-in-progress");
       sessionStorage.removeItem("logout-start-time");

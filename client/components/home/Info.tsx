@@ -15,8 +15,8 @@ import {
   useTransform,
 } from "framer-motion";
 import { BarChart3, FilePlus, Layers, MessageSquare } from "lucide-react";
+import { signIn } from "next-auth/react";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 export default function Info() {
@@ -138,9 +138,13 @@ export default function Info() {
             whileTap={{ scale: 0.95 }}
             className="bg-transparent"
           >
-            <Link
-              href="/login"
-              className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 border-2 ${
+            <button
+              onClick={async () => {
+                await signIn("keycloak", {
+                  callbackUrl: "/home",
+                });
+              }}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 border-2 cursor-pointer ${
                 isOverBlueSection
                   ? "bg-white/10 backdrop-blur-sm border-white text-white hover:bg-white/20 shadow-lg"
                   : "border-transparent text-white"
@@ -171,7 +175,7 @@ export default function Info() {
               }}
             >
               Login
-            </Link>
+            </button>
           </motion.div>
         </div>
       </motion.nav>
@@ -886,8 +890,8 @@ export default function Info() {
               >
                 Alex Siladie
               </a>{" "}
-              and initially piloted in Purdue's Teaching Assistant program in Fall 2025.
-              Results pending.
+              and initially piloted in Purdue's Teaching Assistant program in
+              Fall 2025. Results pending.
             </p>
           </motion.div>
         </div>

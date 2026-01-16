@@ -49,9 +49,9 @@ export function useFederatedLogout() {
       // Always use master realm (organizations replace multi-realm architecture)
       const realm = "master";
 
-      // Where to go after Keycloak is done (back to your login page)
+      // Where to go after Keycloak is done (back to home page)
       const returnTo = encodeURIComponent(
-        `${window.location.origin}${appPrefix}/login`
+        `${window.location.origin}${appPrefix}/`
       );
 
       // 4. Construct the logout URL with dynamic realm
@@ -63,7 +63,7 @@ export function useFederatedLogout() {
         logoutUrl += `&id_token_hint=${session.id_token}`;
       }
 
-      // Redirect to Keycloak logout (flag will be cleared by LogoutGuard when reaching login page)
+      // Redirect to Keycloak logout (flag will be cleared by LogoutGuard when reaching home page)
       if (typeof window !== "undefined") {
         window.location.href = logoutUrl;
       }
@@ -75,9 +75,9 @@ export function useFederatedLogout() {
         sessionStorage.removeItem("logout-in-progress");
         sessionStorage.removeItem("logout-start-time");
       }
-      // Fallback: just reload to login if something breaks
+      // Fallback: redirect to home page if something breaks
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-      window.location.href = `${appPrefix}/login`;
+      window.location.href = `${appPrefix}/`;
     }
   };
 }
