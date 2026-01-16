@@ -1,132 +1,168 @@
-/* Keycloak Login Theme Styles - Inspired by Next.js Login.tsx */
+/* Keycloak Login Theme Styles - Exact Match to Next.js Login.tsx */
+
+/* Hide Keycloak default elements - DO NOT hide .card-pf as it contains the login content */
+#kc-header,
+.login-pf-page-header,
+.login-pf-header,
+#kc-page-title {
+  display: none !important;
+}
+
+/* Override Keycloak's page structure */
+.login-pf-page {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 100vh !important;
+  position: relative !important;
+  display: block !important;
+}
+
+#kc-content,
+#kc-content-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  background: none !important;
+  position: relative !important;
+}
+
+/* DO NOT hide .card-pf - it contains the login form content */
+/* Instead, remove its default styling */
+.card-pf {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  position: relative !important;
+}
 
 /* Page background */
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 body.login-pf {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%) !important;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Glassmorphism card wrapper */
-#kc-form-wrapper {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 16px 60px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 28px;
+body.login-pf .login-pf-page {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%) !important;
+}
+
+/* Full-page wrapper matching Next.js */
+.glow-page-wrapper {
   position: relative;
-  overflow: hidden;
-  max-width: 420px;
-  margin: 0 auto;
-}
-
-/* Liquid glass shine effect */
-#kc-form-wrapper::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.20) 0%, transparent 45%);
-  pointer-events: none;
-  border-radius: 20px;
-}
-
-#kc-form-wrapper::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 1px;
-  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
-  pointer-events: none;
-}
-
-/* Department picker styling */
-#department {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: white;
-  font-size: 14px;
-  width: 100%;
-  transition: all 0.3s ease;
-}
-
-#department:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-#department:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
-}
-
-#department option {
-  background: #1a1a2e;
-  color: white;
-}
-
-/* Social provider buttons - glassmorphism style */
-#kc-social-providers {
-  margin-top: 24px;
-}
-
-#kc-social-providers ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-#kc-social-providers li {
-  margin: 0;
-}
-
-#kc-social-providers a {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 16px;
+  background: transparent;
+  padding: 1rem;
+  z-index: 1;
+}
+
+/* Sparkles background */
+.sparkles-background {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sparkle {
+  position: absolute;
+  color: rgba(253, 224, 71, 0.6);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sparkle svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sparkle-static {
+  animation: sparkle-twinkle 2s ease-in-out infinite;
+  color: rgba(253, 224, 71, 0.5);
+}
+
+.sparkle-moving {
+  animation: sparkle-move 3s ease-in-out infinite;
+  color: rgba(253, 224, 71, 0.45);
+}
+
+.sparkle-floating {
+  animation: sparkle-float 4s ease-in-out infinite;
+  color: rgba(253, 224, 71, 0.4);
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+}
+
+@keyframes sparkle-move {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+  25% { transform: translate(10px, -10px) scale(1.1); opacity: 0.5; }
+  50% { transform: translate(-5px, 5px) scale(0.9); opacity: 0.4; }
+  75% { transform: translate(-10px, -5px) scale(1.05); opacity: 0.45; }
+}
+
+@keyframes sparkle-float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 0.5; }
+}
+
+/* Back button */
+.back-button-container {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 50;
+}
+
+.back-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
   color: white;
   text-decoration: none;
+  font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
 }
 
-#kc-social-providers a::before {
-  content: '';
+.back-button-shine-1 {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom right, rgba(255,255,255,0.2) 0%, transparent 50%, transparent 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 45%);
   pointer-events: none;
-  border-radius: 12px;
+  border-radius: 0.5rem;
 }
 
-#kc-social-providers a::after {
-  content: '';
+.back-button-shine-2 {
   position: absolute;
   top: 0;
   left: 0;
@@ -136,48 +172,285 @@ body.login-pf {
   pointer-events: none;
 }
 
-#kc-social-providers a:hover {
+.back-icon {
+  width: 1rem;
+  height: 1rem;
+  position: relative;
+  z-index: 10;
+}
+
+.back-text {
+  position: relative;
+  z-index: 10;
+}
+
+.back-button:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Centered card */
+.glow-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.glow-card-shine-1 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 45%);
+  pointer-events: none;
+  border-radius: 1rem;
+}
+
+.glow-card-shine-2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.glow-card-content {
+  position: relative;
+  z-index: 10;
+}
+
+/* Logo section */
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.logo-link {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.logo-link:hover {
+  opacity: 0.9;
+}
+
+.logo-icon {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.glow-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+/* Form content */
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Department picker */
+.department-picker-wrapper {
+  position: relative;
+}
+
+.department-select {
+  width: 100%;
+  height: 3rem;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0.75rem;
+  color: white !important;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.department-select:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.department-select:focus {
+  outline: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.department-select option {
+  background: #1a1a2e !important;
+  color: white !important;
+  padding: 0.5rem;
+}
+
+/* Continue button */
+.continue-button-wrapper {
+  width: 100%;
+}
+
+.continue-button {
+  position: relative;
+  width: 100%;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.continue-button-shine-1 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 45%);
+  pointer-events: none;
+  border-radius: 0.75rem;
+}
+
+.continue-button-shine-2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.continue-button-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.continue-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: white;
+}
+
+.continue-button-text {
+  font-size: 1rem;
+}
+
+.continue-button:hover {
   background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
   border-color: rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
 }
 
-#kc-social-providers a:active {
+.continue-button:active {
   transform: translateY(0);
 }
 
-/* Guest button styling */
-.guest-button {
-  display: block;
+.continue-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Social provider buttons */
+.social-providers-section {
+  margin-top: 0;
+}
+
+.social-providers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.social-providers-list li {
+  margin: 0;
+}
+
+.social-provider-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  padding: 12px 16px;
-  margin-top: 20px;
+  height: 3rem;
+  padding: 0 1rem;
   background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 0.75rem;
   color: white;
   text-decoration: none;
   font-weight: 500;
-  text-align: center;
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
 }
 
-.guest-button::before {
+.social-provider-button::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom right, rgba(255,255,255,0.2) 0%, transparent 50%, transparent 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 45%);
   pointer-events: none;
-  border-radius: 12px;
+  border-radius: 0.75rem;
 }
 
-.guest-button::after {
+.social-provider-button::after {
   content: '';
   position: absolute;
   top: 0;
@@ -186,6 +459,72 @@ body.login-pf {
   height: 1px;
   background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
   pointer-events: none;
+}
+
+.social-provider-name {
+  position: relative;
+  z-index: 10;
+}
+
+.social-provider-button:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.social-provider-button:active {
+  transform: translateY(0);
+}
+
+/* Guest button */
+.guest-button-wrapper {
+  width: 100%;
+  margin-top: 0;
+}
+
+.guest-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 3rem;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  text-align: center;
+  line-height: 3rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.guest-button-shine-1 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 45%);
+  pointer-events: none;
+  border-radius: 0.75rem;
+}
+
+.guest-button-shine-2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.guest-button-text {
+  position: relative;
+  z-index: 10;
 }
 
 .guest-button:hover {
@@ -199,27 +538,29 @@ body.login-pf {
   transform: translateY(0);
 }
 
-/* Form input styling enhancements */
+/* Form input styling (for username/password if shown) */
 .kc-input {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   color: white;
+  padding: 0.625rem 0.75rem;
 }
 
 .kc-input:focus {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  outline: none;
 }
 
 .kc-input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* Button styling enhancements */
+/* Button styling */
 .kc-button-primary {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(37, 99, 235, 0.8) 100%);
   backdrop-filter: blur(12px);
@@ -227,6 +568,7 @@ body.login-pf {
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+  color: white;
 }
 
 .kc-button-primary:hover {
@@ -245,15 +587,18 @@ body.login-pf {
   font-weight: 500;
 }
 
-/* Divider styling */
-#kc-social-providers hr {
-  border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  margin: 24px 0;
-}
-
-#kc-social-providers h4 {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-  margin-bottom: 16px;
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .glow-page-wrapper {
+    padding: 0.5rem;
+  }
+  
+  .glow-card {
+    padding: 1.5rem;
+  }
+  
+  .back-button-container {
+    top: 1rem;
+    left: 1rem;
+  }
 }
