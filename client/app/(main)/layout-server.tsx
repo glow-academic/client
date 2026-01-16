@@ -20,10 +20,7 @@ type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v4/analytics/refresh", "post">;
 type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
-type SearchSimulatableProfilesIn = InputOf<
-  "/api/v4/auth/simulatable",
-  "post"
->;
+type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
 type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
   "post"

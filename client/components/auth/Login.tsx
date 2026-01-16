@@ -213,7 +213,6 @@ interface LoginProps {
   defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
   realmName?: string; // Always "master" (organizations replace multi-realm architecture)
   redirectPath?: string; // Redirect path after login
-  department_client_id?: string | null; // Department-specific client_id (glow-client-{department_id}) or null for platform client
 }
 
 export default function Login({
@@ -225,7 +224,6 @@ export default function Login({
   defaultDepartmentId,
   realmName: _realmName = "master", // Realm name from API (settings-based) - always "master"
   redirectPath: redirectPathProp,
-  department_client_id,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingDepartmentLogin, setLoadingDepartmentLogin] = useState(false);
@@ -309,27 +307,25 @@ export default function Login({
         ? `${appPrefix}${redirectPath}`
         : `${appPrefix}/home`;
 
-      // Calculate department-specific client_id based on currently selected department
-      // Format: glow-client-{department_id} if department selected, otherwise null (uses default glow-client)
+      // Calculate department-specific client_id to pass as authorization param
+      // This is passed directly to NextAuth's authorization callback via signIn() third argument
       const currentDepartmentClientId = selectedDepartmentId
         ? `glow-client-${selectedDepartmentId}`
         : null;
 
-      // Use NextAuth's signIn with "keycloak" provider
-      // Pass department-specific client_id via cookie (NextAuth doesn't pass custom options to authorization callback)
-      // Keycloak will show appropriate IdPs based on client scoping
-      // If currentDepartmentClientId is null, uses default glow-client (platform login)
-      if (currentDepartmentClientId) {
-        // Set cookie with department-specific client_id for authorization callback to read
-        document.cookie = `department-client-id=${currentDepartmentClientId}; path=/; max-age=60; SameSite=Lax`;
-      } else {
-        // Clear cookie if no department (use default client)
-        document.cookie = `department-client-id=; path=/; max-age=0; SameSite=Lax`;
-      }
-
-      await signIn("keycloak", {
-        callbackUrl: redirectTo,
-      });
+      // Call signIn with department-specific client_id as authorization param
+      // The authorization callback will read this from params and use it in the authorization URL
+      await signIn(
+        "keycloak",
+        {
+          callbackUrl: redirectTo,
+        },
+        currentDepartmentClientId
+          ? {
+              client_id: currentDepartmentClientId,
+            }
+          : undefined
+      );
 
       // Note: signIn redirects immediately on success, so we don't need toast.success here
     } catch (error) {

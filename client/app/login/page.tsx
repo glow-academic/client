@@ -180,12 +180,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       ? (loginData.departments[0]?.id ?? undefined)
       : undefined);
 
-  // Calculate department-specific client_id for Keycloak client-scoped org routing
-  // Format: glow-client-{department_id} if department selected, otherwise null (uses default glow-client)
-  const department_client_id = initialDepartmentId
-    ? `glow-client-${initialDepartmentId}`
-    : null;
-
   // Filter and transform providers to match component types (filter out items with null IDs)
   const providers = (loginData.providers ?? [])
     .filter(
@@ -233,7 +227,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     activeSettings: typeof activeSettings;
     defaultDepartmentId: string | null;
     realmName: string;
-    department_client_id: string | null;
     redirectPath?: string;
   } = {
     providers,
@@ -243,7 +236,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     activeSettings,
     defaultDepartmentId: loginData.default_department_id ?? null,
     realmName: "master", // Always master realm (organizations replace multi-realm architecture)
-    department_client_id,
   };
   if (redirectPath) {
     loginProps.redirectPath = redirectPath;

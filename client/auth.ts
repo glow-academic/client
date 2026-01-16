@@ -95,28 +95,15 @@ export const {
           `${realmIssuer}/protocol/openid-connect/auth`
         );
 
-        // Read department-specific client_id from cookie if set (set by Login component before signIn)
+        // Read department-specific client_id from authorization params (passed via signIn third argument)
         // Format: glow-client-{department_id} for departments, or default glow-client for platform
-        let clientId = keycloakClientId; // Default to platform client
-        try {
-          const headersList = await headers();
-          const cookieHeader = headersList.get("cookie");
-          if (cookieHeader) {
-            const cookies = Object.fromEntries(
-              cookieHeader.split("; ").map((c) => {
-                const [key, ...valueParts] = c.split("=");
-                return [key, valueParts.join("=")];
-              })
-            );
-            const departmentClientId = cookies["department-client-id"];
-            if (departmentClientId) {
-              clientId = departmentClientId;
-            }
-          }
-        } catch {
-          // If headers not available, use default client_id
-        }
+        // This is more reliable than cookies because NextAuth passes params directly to the authorization callback
+        const clientId =
+          params.client_id && params.client_id.trim()
+            ? params.client_id.trim()
+            : keycloakClientId; // Default to platform client
 
+        // Set client_id FIRST before other params (to ensure it's not overridden)
         authorizationUrl.searchParams.set("client_id", clientId);
         const redirectUri = params["redirect_uri"];
         if (redirectUri) {
@@ -136,6 +123,9 @@ export const {
           authorizationUrl.searchParams.set("code_challenge", codeChallenge);
           authorizationUrl.searchParams.set("code_challenge_method", "S256");
         }
+
+        // Ensure client_id is still set after all params (NextAuth might override it)
+        authorizationUrl.searchParams.set("client_id", clientId);
 
         return authorizationUrl.toString();
       },
