@@ -221,6 +221,7 @@ run: check-venv
 		CLIENT_PORT=$${CLIENT_PORT:-3000}; \
 		APP_PREFIX=$${APP_PREFIX:-}; \
 		docker run -d --name glow-keycloak -p $(KEYCLOAK_PORT):8080 \
+			-v "$(PWD)/uploads/themes:/opt/keycloak/themes:ro" \
 			-e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
 			-e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
 			-e KC_DB=postgres \

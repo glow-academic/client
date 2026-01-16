@@ -59,6 +59,8 @@ services:
     image: quay.io/keycloak/keycloak:26.0
     restart: unless-stopped
     command: ["start-dev"] # switch to "start" + TLS in real prod
+    volumes:
+      - ./uploads/themes:/opt/keycloak/themes:ro
     environment:
       # Admin bootstrap (Keycloak 26.0 uses KC_BOOTSTRAP_* instead of KEYCLOAK_*)
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}

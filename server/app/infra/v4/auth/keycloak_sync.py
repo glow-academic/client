@@ -137,126 +137,6 @@ async def wait_for_keycloak(
     return None
 
 
-async def ensure_organizations_enabled(kc_admin: Any) -> None:
-    """Ensure Organizations feature is enabled in master realm.
-    
-    Args:
-        kc_admin: KeycloakAdmin instance (must be in master realm)
-    """
-    try:
-        kc_admin.change_current_realm(realm_name="master")
-        realm = kc_admin.get_realm("master")
-        
-        # Check if organizations are enabled
-        # In Keycloak 26.0, organizationsEnabled is a top-level realm property (not in attributes)
-        orgs_enabled = realm.get("organizationsEnabled", False)
-        
-        if not orgs_enabled:
-            # Enable organizations - preserve all existing realm properties
-            update_payload = dict(realm)
-            update_payload["organizationsEnabled"] = True
-            kc_admin.update_realm(realm_name="master", payload=update_payload)
-            logger.info("✅ Enabled Organizations feature in master realm")
-        else:
-            logger.info("✅ Organizations feature already enabled in master realm")
-    except Exception as e:
-        logger.warning(f"Failed to enable Organizations feature: {e}")
-
-
-async def sync_organization_for_department(
-    department_id: str,
-    department_name: str,
-    kc_admin: Any,
-) -> str | None:
-    """Create/update Keycloak organization for department.
-    
-    Args:
-        department_id: Department ID (UUID string)
-        department_name: Department name
-        kc_admin: KeycloakAdmin instance (must be in master realm)
-    
-    Returns:
-        organization_id if created/updated, None if error
-    """
-    try:
-        # Ensure we're in master realm
-        kc_admin.change_current_realm(realm_name="master")
-        
-        # Ensure organizations are enabled first
-        await ensure_organizations_enabled(kc_admin)
-        
-        # Check if org exists (by alias = department_id)
-        orgs = kc_admin.get_organizations()
-        existing = next(
-            (o for o in orgs if o.get("alias") == department_id or o.get("name") == department_name),
-            None
-        )
-        
-        if existing:
-            org_id = existing.get("id")
-            if org_id:
-                logger.info(f"✅ Organization '{department_name}' already exists (id: {org_id})")
-                return str(org_id)
-            else:
-                logger.warning(f"Organization '{department_name}' exists but has no ID")
-                return None
-        
-        # Create new org
-        # Note: Keycloak 26.0 API requires at least one domain object
-        # We use a placeholder domain that won't match real emails
-        # This allows org creation without domain restrictions
-        org_payload: dict[str, Any] = {
-            "name": department_name,
-            "alias": department_id,  # Use department_id as alias for uniqueness
-            "enabled": True,
-            "domains": [
-                {
-                    "name": f"placeholder-{department_id}.local",  # Placeholder domain that won't match real emails
-                    "verified": False,
-                }
-            ],
-        }
-        
-        org_id = kc_admin.create_organization(payload=org_payload)
-        if org_id:
-            logger.info(f"✅ Created organization '{department_name}' (id: {org_id})")
-            return str(org_id)
-        else:
-            logger.warning(f"Organization '{department_name}' creation returned no ID")
-            return None
-    except Exception as e:
-        error_str = str(e).lower()
-        is_conflict = (
-            "location" in error_str
-            or "duplicate" in error_str
-            or "conflict" in error_str
-            or "409" in error_str
-            or "already exists" in error_str
-        )
-        
-        if is_conflict:
-            # Org was created by another process, fetch it
-            try:
-                orgs = kc_admin.get_organizations()
-                existing = next(
-                    (o for o in orgs if o.get("alias") == department_id or o.get("name") == department_name),
-                    None
-                )
-                if existing:
-                    org_id = existing.get("id")
-                    if org_id:
-                        logger.info(f"⚠️  Organization '{department_name}' was created by another process (id: {org_id})")
-                        return str(org_id)
-                    else:
-                        logger.warning(f"Organization '{department_name}' exists but has no ID")
-                        return None
-            except Exception as fetch_e:
-                logger.warning(f"Failed to fetch organization after conflict: {fetch_e}")
-        
-        logger.warning(f"Failed to create organization for department {department_id}: {e}")
-        return None
-
-
 async def ensure_department_client(
     department_id: str,
     department_name: str,
@@ -927,12 +807,14 @@ async def sync_identity_provider_for_realm_level(
                 config_map[item_name] = raw_value
         
         # Build IdP payload
+        # Set hideOnLogin=True - ALL IdPs are hidden, theme controls visibility
         payload: dict[str, Any] = {
             "alias": slug,
             "providerId": provider_id,
             "displayName": display_name,
             "enabled": True,
             "trustEmail": True,
+            "hideOnLogin": True,  # Hide ALL IdPs, theme controls visibility
             "config": {},
         }
         
@@ -978,20 +860,21 @@ async def sync_identity_provider_for_org(
     slug: str,
     provider_id: str,
     display_name: str,
-    organization_id: str,
     department_id: str,
     kc_admin: Any,
     pool: Any,
 ) -> None:
-    """Sync a single identity provider for an organization (org-scoped).
+    """Sync a single identity provider for department-scoped auths.
+    
+    Uses auth_id-based alias for 1:1 mapping: auth_{slug}_{auth_id}
+    This ensures one IdP per auth object regardless of how many departments use it.
     
     Args:
         auth_id: Auth ID (UUID string)
-        slug: Provider slug/alias (base slug, will be made unique per org)
+        slug: Provider slug/alias
         provider_id: Provider type (e.g., "google", "oidc", "saml")
         display_name: Display name for the provider
-        organization_id: Keycloak organization ID
-        department_id: Department ID (for config lookup)
+        department_id: Department ID (for config lookup only)
         kc_admin: KeycloakAdmin instance (must be in master realm)
         pool: Database connection pool
     """
@@ -1001,8 +884,8 @@ async def sync_identity_provider_for_org(
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
         
-        # Create unique alias per org (slug-department_id)
-        unique_alias = f"{slug}-{department_id}"
+        # Use auth_id-based alias for 1:1 mapping (auth_{slug}_{auth_id})
+        unique_alias = f"auth_{slug}_{auth_id}"
         
         # Get auth items (config) - use department_id for department-specific settings
         import uuid
@@ -1044,14 +927,16 @@ async def sync_identity_provider_for_org(
             else:
                 config_map[item_name] = raw_value
         
-        # Build IdP payload with organization_id
+        # Build IdP payload (no organizationId - shared IdP across departments)
+        # Set hideOnLogin=True - ALL IdPs are hidden, theme controls visibility
         payload: dict[str, Any] = {
             "alias": unique_alias,
             "providerId": provider_id,
             "displayName": display_name,
             "enabled": True,
             "trustEmail": True,
-            "organizationId": organization_id,  # Link to organization
+            # No organizationId - removed org concept, client-id scoping handles routing
+            "hideOnLogin": True,  # Hide ALL IdPs, theme controls visibility
             "config": {},
         }
         
@@ -1078,16 +963,16 @@ async def sync_identity_provider_for_org(
             if "useJwksUrl" not in payload["config"]:
                 payload["config"]["useJwksUrl"] = "true"
         
-        # Create or update IdP (org-scoped)
+        # Create or update IdP (department-scoped, shared across departments)
         try:
             kc_admin.get_idp(idp_alias=unique_alias)
             # IdP exists, update it
             kc_admin.update_idp(idp_alias=unique_alias, payload=payload)
-            logger.info(f"✅ Updated org-scoped IdP: {unique_alias} (org: {organization_id})")
+            logger.info(f"✅ Updated department-scoped IdP: {unique_alias}")
         except Exception:
             # IdP doesn't exist, create it
             kc_admin.create_idp(payload=payload)
-            logger.info(f"✅ Created org-scoped IdP: {unique_alias} (org: {organization_id})")
+            logger.info(f"✅ Created department-scoped IdP: {unique_alias}")
     except Exception as e:
         logger.warning(f"Failed to sync org-scoped IdP '{unique_alias}': {e}", exc_info=True)
 
@@ -1098,8 +983,10 @@ async def sync_identity_providers(
 ) -> None:
     """Sync all identity providers to master realm.
     
-    - Realm-level: Auths from default settings (platform login)
-    - Org-scoped: Auths from department settings (one IdP per org, duplicates shared auths)
+    - Realm-level: Auths from default settings (platform login) - alias: slug
+    - Department-scoped: Auths from department settings - alias: auth_{slug}_{auth_id} (1:1 mapping)
+    
+    All IdPs are hidden (hideOnLogin=true), theme controls visibility based on client_id.
     
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
@@ -1134,8 +1021,8 @@ async def sync_identity_providers(
             else:
                 raise ValueError("Expected function definition in get_auths_for_realm_level_complete.sql")
         
-        # Step 2: Get all departments that need organizations
-        logger.info("Syncing org-scoped IdPs (department-specific)...")
+        # Step 2: Collect all unique department-scoped auths (deduplicate by auth_id)
+        logger.info("Syncing department-scoped IdPs...")
         async with pool.acquire() as conn:
             sql_text = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
             is_function, function_name, schema = _detect_function_in_sql(sql_text)
@@ -1144,23 +1031,15 @@ async def sync_identity_providers(
                 function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
                 departments = await conn.fetch(function_call_sql)
                 
+                # Collect all unique auths (deduplicate by auth_id)
+                all_department_auths: dict[str, dict[str, Any]] = {}  # key: auth_id, value: auth data
+                
                 for dept_row in departments:
                     dept = dict(dept_row)
                     dept_id = str(dept["department_id"])
                     dept_name = dept["department_name"] or dept_id
                     
-                    # Ensure organization exists
-                    org_id = await sync_organization_for_department(
-                        department_id=dept_id,
-                        department_name=dept_name,
-                        kc_admin=kc_admin,
-                    )
-                    
-                    if not org_id:
-                        logger.warning(f"Failed to create organization for department {dept_id}, skipping IdP sync")
-                        continue
-                    
-                    # Ensure department-specific client exists (for client-scoped org routing)
+                    # Ensure department-specific client exists (for client-scoped routing)
                     dept_client_id = await ensure_department_client(
                         department_id=dept_id,
                         department_name=dept_name,
@@ -1181,18 +1060,31 @@ async def sync_identity_providers(
                         
                         for provider_row in org_providers:
                             provider = dict(provider_row)
-                            await sync_identity_provider_for_org(
-                                auth_id=str(provider["id"]),
-                                slug=provider["slug"],
-                                provider_id=provider["provider_id"],
-                                display_name=provider["name"],
-                                organization_id=org_id,
-                                department_id=dept_id,
-                                kc_admin=kc_admin,
-                                pool=pool,
-                            )
+                            auth_id = str(provider["id"])
+                            
+                            # Store auth once (first department wins for config lookup)
+                            if auth_id not in all_department_auths:
+                                all_department_auths[auth_id] = {
+                                    "auth_id": auth_id,
+                                    "slug": provider["slug"],
+                                    "provider_id": provider["provider_id"],
+                                    "display_name": provider["name"],
+                                    "department_id": dept_id,  # For config lookup
+                                }
                     else:
                         raise ValueError("Expected function definition in get_auths_for_org_complete.sql")
+                
+                # Sync each unique auth once (prevents duplicates)
+                for auth_data in all_department_auths.values():
+                    await sync_identity_provider_for_org(
+                        auth_id=auth_data["auth_id"],
+                        slug=auth_data["slug"],
+                        provider_id=auth_data["provider_id"],
+                        display_name=auth_data["display_name"],
+                        department_id=auth_data["department_id"],
+                        kc_admin=kc_admin,
+                        pool=pool,
+                    )
             else:
                 raise ValueError("Expected function definition in get_departments_for_org_sync_complete.sql")
         
@@ -1213,7 +1105,7 @@ async def sync_identity_providers(
                 else:
                     expected_realm_slugs = set()
             
-            # Get expected org-scoped aliases (slug-department_id pattern)
+            # Get expected department-scoped aliases (auth_{slug}_{auth_id} pattern)
             async with pool.acquire() as conn:
                 sql_text = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
@@ -1221,7 +1113,9 @@ async def sync_identity_providers(
                     function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
                     departments = await conn.fetch(function_call_sql)
                     
-                    expected_org_aliases = set()
+                    expected_dept_aliases = set()
+                    # Collect unique auths (deduplicate)
+                    seen_auths: set[str] = set()
                     for dept_row in departments:
                         dept = dict(dept_row)
                         dept_id = str(dept["department_id"])
@@ -1234,21 +1128,24 @@ async def sync_identity_providers(
                             org_providers = await conn.fetch(auths_function_call_sql, uuid.UUID(dept_id))
                             for provider_row in org_providers:
                                 provider = dict(provider_row)
-                                expected_org_aliases.add(f"{provider['slug']}-{dept_id}")
+                                auth_id = str(provider["id"])
+                                # Use auth_id-based alias (1:1 mapping)
+                                alias = f"auth_{provider['slug']}_{auth_id}"
+                                expected_dept_aliases.add(alias)
                 else:
-                    expected_org_aliases = set()
+                    expected_dept_aliases = set()
             
             # Delete IdPs that shouldn't exist
             for idp in existing_idps:
                 idp_alias = idp.get("alias", "")
-                org_id = idp.get("organizationId")
                 
-                # Skip if it's an org-scoped IdP (we'll handle those separately)
-                if org_id:
-                    if idp_alias not in expected_org_aliases:
+                # Check if it's realm-level or department-scoped
+                if idp_alias.startswith("auth_"):
+                    # Department-scoped IdP (auth_{slug}_{auth_id} pattern)
+                    if idp_alias not in expected_dept_aliases:
                         try:
                             kc_admin.delete_idp(idp_alias=idp_alias)
-                            logger.info(f"🗑️  Deleted obsolete org-scoped IdP: {idp_alias}")
+                            logger.info(f"🗑️  Deleted obsolete department-scoped IdP: {idp_alias}")
                         except Exception as delete_e:
                             error_str = str(delete_e).lower()
                             if "not found" in error_str or "404" in error_str:
@@ -1256,7 +1153,7 @@ async def sync_identity_providers(
                             else:
                                 logger.warning(f"Failed to delete IdP '{idp_alias}': {delete_e}")
                 else:
-                    # Realm-level IdP
+                    # Realm-level IdP (uses slug directly)
                     if idp_alias not in expected_realm_slugs:
                         try:
                             kc_admin.delete_idp(idp_alias=idp_alias)
@@ -1276,8 +1173,8 @@ async def sync_identity_providers(
 
 
 # OLD FUNCTION REMOVED: sync_department_realm_by_settings
-# This function was replaced by sync_identity_providers() which uses organizations instead of multiple realms
-# The old function created separate realms per settings, but we now use a single master realm with organizations
+# This function was replaced by sync_identity_providers() which uses client-id scoping instead of multiple realms
+# The old function created separate realms per settings, but we now use a single master realm with client-id based routing
 
 
 async def sync_keycloak(department_id: str | None = None) -> None:
@@ -1399,12 +1296,29 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         # Ensure Trusted Hosts policy is configured for client registration
         await ensure_trusted_hosts_policy(kc_admin)
 
-        # Ensure Organizations feature is enabled (required for org-scoped IdPs)
-        await ensure_organizations_enabled(kc_admin)
-
-        # Sync identity providers (realm-level + org-scoped)
-        # This replaces the old realm-based sync logic
+        # Sync identity providers (realm-level + department-scoped)
+        # All IdPs are hidden, theme controls visibility based on client_id
         await sync_identity_providers(kc_admin, pool)
+        
+        # Generate theme provider mapping (client_id -> allowed IdP aliases)
+        logger.info("Generating comprehensive Keycloak theme provider mapping...")
+        try:
+            from app.infra.v4.auth.keycloak_theme import \
+                generate_keycloak_theme_providers
+            
+            await generate_keycloak_theme_providers(pool)
+            logger.info("✅ Theme provider mapping generated with all clientId and IdP combinations")
+        except Exception as e:
+            logger.warning(f"Failed to generate theme mapping: {e}", exc_info=True)
+        
+        # Set login theme to "glow" (theme controls IdP visibility)
+        try:
+            realm = kc_admin.get_realm("master")
+            if realm.get("loginTheme") != "glow":
+                kc_admin.update_realm("master", {"loginTheme": "glow"})
+                logger.info("✅ Set master realm login theme to 'glow'")
+        except Exception as e:
+            logger.warning(f"Failed to set login theme: {e}")
 
         # Clean up old non-master realms (safety check - should all be deleted already)
         try:
@@ -1431,100 +1345,6 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         logger.info("Keycloak sync completed")
     except Exception as e:
         logger.warning(f"Keycloak sync failed (non-blocking): {e}", exc_info=True)
-
-
-async def delete_department_organization(department_id: str) -> None:
-    """Delete a department organization from Keycloak.
-
-    Args:
-        department_id: Department ID to delete organization for
-    """
-    pool = get_pool()
-    if not pool:
-        logger.warning("Database pool not available, skipping organization deletion")
-        return
-
-    try:
-        app_prefix = os.getenv("APP_PREFIX", "")
-        explicit_keycloak_url = os.getenv("KEYCLOAK_URL")
-
-        if explicit_keycloak_url:
-            keycloak_url = explicit_keycloak_url.rstrip("/")
-        else:
-            docker_env = os.getenv("DOCKER_ENV")
-            keycloak_internal_url = os.getenv("KEYCLOAK_INTERNAL_URL")
-
-            if keycloak_internal_url:
-                base_url = keycloak_internal_url.rstrip("/")
-            elif docker_env:
-                base_url = "http://keycloak:8080"
-            else:
-                base_url = "http://localhost:8080"
-
-            # Keycloak admin API: use /auth path for consistency
-            # For local dev: Keycloak serves at /auth (KC_HTTP_RELATIVE_PATH=/auth)
-            # For Docker/production: Keycloak is behind nginx at /auth
-            keycloak_url = f"{base_url}{app_prefix}/auth"
-
-        keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
-        keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
-
-        kc_admin = await wait_for_keycloak(
-            keycloak_url, keycloak_admin, keycloak_admin_password
-        )
-        if not kc_admin:
-            logger.warning("Keycloak not available, skipping organization deletion")
-            return
-
-        # Ensure we're in master realm
-        kc_admin.change_current_realm(realm_name="master")
-
-        # Find organization by alias (department_id)
-        try:
-            orgs = kc_admin.get_organizations()
-            org_to_delete = next(
-                (o for o in orgs if o.get("alias") == department_id),
-                None
-            )
-            
-            if not org_to_delete:
-                logger.info(f"Organization for department {department_id} not found (may already be deleted)")
-                return
-            
-            org_id = org_to_delete.get("id")
-            if not org_id:
-                logger.warning(f"Organization for department {department_id} has no ID")
-                return
-            
-            # Delete org-scoped IdPs first (they'll be cleaned up automatically, but let's be explicit)
-            try:
-                existing_idps = kc_admin.get_idps()
-                for idp in existing_idps:
-                    if idp.get("organizationId") == org_id:
-                        idp_alias = idp.get("alias", "")
-                        try:
-                            kc_admin.delete_idp(idp_alias=idp_alias)
-                            logger.info(f"🗑️  Deleted org-scoped IdP: {idp_alias}")
-                        except Exception as idp_e:
-                            error_str = str(idp_e).lower()
-                            if "not found" in error_str or "404" in error_str:
-                                pass  # Already deleted
-                            else:
-                                logger.warning(f"Failed to delete IdP '{idp_alias}': {idp_e}")
-            except Exception as idp_cleanup_e:
-                logger.warning(f"Failed to clean up org-scoped IdPs: {idp_cleanup_e}")
-            
-            # Delete the organization
-            kc_admin.delete_organization(organization_id=org_id)
-            logger.info(f"✅ Deleted Keycloak organization for department: {department_id}")
-        except Exception as e:
-            error_str = str(e).lower()
-            if "not found" in error_str or "404" in error_str:
-                logger.info(f"Organization for department {department_id} already deleted")
-            else:
-                logger.warning(f"Failed to delete organization for department {department_id}: {e}")
-    except Exception as e:
-        logger.warning(f"Organization deletion failed (non-blocking): {e}", exc_info=True)
 
 
 async def perform_keycloak_sync(

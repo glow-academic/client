@@ -4,7 +4,6 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.auth.keycloak_sync import delete_department_organization
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_internal_sio
 from app.sql.types import (DeleteDepartmentApiRequest,
@@ -106,8 +105,7 @@ async def delete_department(
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        # Delete Keycloak organization for the deleted department (fire-and-forget)
-        await delete_department_organization(str(request.department_id))
+        # Note: No Keycloak cleanup needed - organizations removed, client-id scoping handles routing
 
         return result_response
     except HTTPException:
