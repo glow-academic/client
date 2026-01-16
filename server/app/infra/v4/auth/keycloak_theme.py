@@ -153,9 +153,9 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
                 
                 # Add platform-level default-account default-idp if appropriate
                 if active_dept_count == 0 or (default_auth_count == 0 and depts_without_auth_count > 0):
-                    platform_providers.append("default-idp-default-platform")
-                    default_idp_aliases.add("default-idp-default-platform")
-                    all_idp_aliases.add("default-idp-default-platform")
+                    platform_providers.append("default-idp-default-account-platform")  # Match sync alias format
+                    default_idp_aliases.add("default-idp-default-account-platform")
+                    all_idp_aliases.add("default-idp-default-account-platform")
     
     # Step 4: Generate FreeMarker file with department-based mapping
     # Use UPLOAD_FOLDER constant for consistent routing (works in Docker and local dev)

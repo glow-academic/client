@@ -1299,6 +1299,25 @@ async def sync_identity_providers(
         try:
             existing_idps = kc_admin.get_idps()
             
+            # Collect expected default-idp aliases (from Step 0 sync)
+            # Note: mode is "default-account" but alias uses "default-account" in the name
+            expected_default_idp_aliases: set[str] = set()
+            # Platform-level
+            expected_default_idp_aliases.add("default-idp-guest-platform")
+            expected_default_idp_aliases.add("default-idp-default-account-platform")  # mode="default-account" → alias uses "default-account"
+            # Department-level (collect from departments)
+            async with pool.acquire() as conn:
+                dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+                dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
+                if dept_is_function and dept_function_name:
+                    dept_function_call_sql = f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
+                    departments = await conn.fetch(dept_function_call_sql)
+                    for dept_row in departments:
+                        dept = dict(dept_row)
+                        dept_id = str(dept["department_id"])
+                        expected_default_idp_aliases.add(f"default-idp-guest-dept-{dept_id}")
+                        expected_default_idp_aliases.add(f"default-idp-default-account-dept-{dept_id}")  # mode="default-account" → alias uses "default-account"
+            
             # Get expected realm-level slugs
             async with pool.acquire() as conn:
                 sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql")
@@ -1307,8 +1326,10 @@ async def sync_identity_providers(
                     function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
                     realm_level_providers = await conn.fetch(function_call_sql)
                     expected_realm_slugs = {p["slug"] for p in realm_level_providers}
+                    # Add default-idp aliases to expected realm-level slugs (they're realm-level IdPs)
+                    expected_realm_slugs.update(expected_default_idp_aliases)
                 else:
-                    expected_realm_slugs = set()
+                    expected_realm_slugs = expected_default_idp_aliases.copy()
             
             # Get expected department-scoped aliases (auth_{slug}_{auth_id} pattern)
             async with pool.acquire() as conn:
@@ -1343,6 +1364,10 @@ async def sync_identity_providers(
             # Delete IdPs that shouldn't exist
             for idp in existing_idps:
                 idp_alias = idp.get("alias", "")
+                
+                # Skip default-idp instances (they're managed separately and should always exist if synced)
+                if idp_alias.startswith("default-idp-"):
+                    continue
                 
                 # Check if it's realm-level or department-scoped
                 if idp_alias.startswith("auth_"):

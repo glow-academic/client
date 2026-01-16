@@ -5744,51 +5744,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/default-idp/initiate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Initiate Guest Login
-         * @description Initiate guest/default-account login flow.
-         *
-         *     This endpoint generates a state token and redirects to Keycloak OAuth with kc_idp_hint.
-         *     Called directly from Keycloak theme login.ftl.
-         */
-        get: operations["initiate_guest_login_default_idp_initiate_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/default-idp/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate State Token
-         * @description Generate signed state token for default-idp authentication.
-         *
-         *     Validates that department + mode combination is allowed before signing.
-         */
-        post: operations["generate_state_token_default_idp_state_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/.well-known/oauth-authorization-server": {
         parameters: {
             query?: never;
@@ -7659,26 +7614,6 @@ export interface components {
         FlagsApiResponse: {
             /** Flag Id */
             flag_id?: string | null;
-        };
-        /**
-         * GenerateStateRequest
-         * @description Request model for state token generation.
-         */
-        GenerateStateRequest: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Mode */
-            mode: string;
-        };
-        /**
-         * GenerateStateResponse
-         * @description Response model for state token generation.
-         */
-        GenerateStateResponse: {
-            /** State */
-            state: string;
-            /** Nonce */
-            nonce: string;
         };
         /** GetActivityBundleApiRequest */
         GetActivityBundleApiRequest: Record<string, never>;
@@ -30930,71 +30865,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    initiate_guest_login_default_idp_initiate_get: {
-        parameters: {
-            query?: {
-                department_id?: string | null;
-                mode?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_state_token_default_idp_state_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateStateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerateStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
