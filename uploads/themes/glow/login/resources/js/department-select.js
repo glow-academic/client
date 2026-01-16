@@ -3,6 +3,7 @@
   "use strict";
 
   function init() {
+    console.log("department-select.js loaded");
     var select = document.getElementById("department");
     if (!select) return;
 
@@ -133,16 +134,16 @@
     function toggleDropdown() {
       isOpen = !isOpen;
       dropdownButton.setAttribute("aria-expanded", isOpen.toString());
+      dropdownButton.classList.toggle("open", isOpen);
       dropdownMenu.classList.toggle("open", isOpen);
-      // Chevron rotation handled by CSS
     }
 
     function closeDropdown() {
       if (isOpen) {
         isOpen = false;
         dropdownButton.setAttribute("aria-expanded", "false");
+        dropdownButton.classList.remove("open");
         dropdownMenu.classList.remove("open");
-        chevronIcon.style.transform = "rotate(0deg)";
       }
     }
 
@@ -215,11 +216,33 @@
       var actionButtons = document.querySelectorAll(
         ".action-button[id^='social-']"
       );
+      var visibleNonGuestCount = 0;
+      var visibleGuestCount = 0;
+
       actionButtons.forEach(function (btn) {
         var alias = btn.id.replace("social-", "");
         var show = allowed.indexOf(alias) !== -1;
         btn.style.display = show ? "" : "none";
+
+        // Count visible providers for OR divider
+        if (show) {
+          if (alias.startsWith("default-idp-guest-")) {
+            visibleGuestCount++;
+          } else {
+            visibleNonGuestCount++;
+          }
+        }
       });
+
+      // Update OR divider visibility based on actual visible providers
+      var orDivider = document.querySelector(".or-divider");
+      if (orDivider) {
+        if (visibleNonGuestCount > 0 && visibleGuestCount > 0) {
+          orDivider.style.display = "";
+        } else {
+          orDivider.style.display = "none";
+        }
+      }
     }
 
     // Apply initial state

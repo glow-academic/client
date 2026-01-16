@@ -176,10 +176,11 @@
               <#-- Includes regular IdPs (Google, Microsoft, etc.) and default-idp instances -->
               <#if social.providers?? && social.providers?size gt 0>
                 <#-- Separate providers into non-guest and guest -->
+                <#-- Use explicit prefix match to avoid false positives -->
                 <#assign nonGuestProviders = [] />
                 <#assign guestProviders = [] />
                 <#list social.providers as p>
-                  <#if p.alias?contains("guest")>
+                  <#if p.alias?starts_with("default-idp-guest-")>
                     <#assign guestProviders = guestProviders + [p] />
                   <#else>
                     <#assign nonGuestProviders = nonGuestProviders + [p] />
@@ -224,9 +225,10 @@
                 </#list>
                 
                 <#-- Filter guest providers to only those allowed for current department (for OR divider check) -->
+                <#-- Use explicit prefix match to avoid false positives -->
                 <#assign visibleGuestProviders = [] />
                 <#list guestProviders as p>
-                  <#if allowed?seq_contains(p.alias)>
+                  <#if p.alias?starts_with("default-idp-guest-") && allowed?seq_contains(p.alias)>
                     <#assign visibleGuestProviders = visibleGuestProviders + [p] />
                   </#if>
                 </#list>
