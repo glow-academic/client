@@ -13,7 +13,7 @@ from app.sql.types import (CheckLoginAuthorizationSqlParams,
                            ResolveDefaultIdpProfileSqlParams,
                            ResolveDefaultIdpProfileSqlRow, load_sql_query)
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from jose import jwt
 
@@ -29,12 +29,13 @@ _code_ttl = 600  # 10 minutes
 
 
 def get_idp_base_url() -> str:
-    """Get the base URL for the IdP."""
-    origin = os.getenv("ORIGIN", "http://localhost:3000")
-    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
-    if app_prefix:
-        return f"{origin}/{app_prefix}/api/v4/auth/default-idp"
-    return f"{origin}/api/v4/auth/default-idp"
+    """Get the base URL for the IdP (public URL for issuer).
+    
+    Uses the same logic as keycloak_sync.py get_idp_public_url().
+    This URL is used in the issuer claim and must be accessible from browsers.
+    """
+    from app.infra.v4.auth.keycloak_sync import get_idp_public_url
+    return get_idp_public_url()
 
 
 @router.get("/.well-known/openid-configuration")
@@ -66,6 +67,7 @@ async def authorize(
     response_type: str = Query(...),
     state: str = Query(...),
     scope: str = Query("openid profile email"),
+    nonce: str | None = Query(None),  # Extract nonce from Keycloak's authorization request
     # Custom parameters passed via IdP authorizationUrl config
     # Format: /authorize?mode=guest&department_id=... (Keycloak preserves these)
     mode: str | None = Query(None),
@@ -87,7 +89,7 @@ async def authorize(
         # Extract mode and department_id from query params (preferred) or state token (fallback)
         extracted_mode: str | None = mode
         extracted_department_id: str | None = department_id
-        nonce: str | None = None
+        extracted_nonce: str | None = nonce  # Use nonce from Keycloak's request
         
         # If not in query params, try to extract from state token (backward compatibility)
         if not extracted_mode:
@@ -96,10 +98,11 @@ async def authorize(
                 extracted_mode = state_payload.get("mode")
                 if not extracted_department_id:
                     extracted_department_id = state_payload.get("department_id")
-                nonce = state_payload.get("nonce")
+                if not extracted_nonce:
+                    extracted_nonce = state_payload.get("nonce")
             except (jwt.ExpiredSignatureError, jwt.JWTError):
                 # State token is Keycloak's OAuth state, not our custom token
-                # Generate new nonce for this flow
+                # Nonce should come from query parameter
                 pass
         
         # Require mode parameter
@@ -109,12 +112,16 @@ async def authorize(
                 detail="Mode parameter is required. Ensure IdP authorizationUrl includes ?mode=guest or ?mode=default-account"
             )
         
-        # Generate nonce if not from state token
-        if not nonce:
-            nonce = secrets.token_urlsafe(32)
+        # Use nonce from Keycloak's request if provided, otherwise generate one
+        # Keycloak typically sends nonce for OIDC flows, but we'll handle both cases
+        if not extracted_nonce:
+            # Generate nonce if Keycloak didn't provide one (shouldn't happen in normal OIDC flow)
+            extracted_nonce = secrets.token_urlsafe(32)
         
+        # Use extracted values
         department_id = extracted_department_id
         mode = extracted_mode
+        nonce = extracted_nonce  # Use nonce from Keycloak's request (or generated fallback)
         
         # Map mode to auth_mode for SQL function
         # mode uses "guest" or "default-account", SQL expects "default-guest" or "default-account"
@@ -248,11 +255,11 @@ async def authorize(
 @router.post("/token")
 async def token(
     request: Request,
-    grant_type: str = Query(...),
-    code: str = Query(...),
-    redirect_uri: str = Query(...),
-    client_id: str = Query(...),
-    client_secret: str = Query(None),
+    grant_type: str = Form(...),
+    code: str = Form(...),
+    redirect_uri: str = Form(...),
+    client_id: str = Form(...),
+    client_secret: str = Form(None),
 ) -> dict[str, Any]:
     """Token endpoint - exchanges authorization codes for tokens."""
     try:

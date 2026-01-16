@@ -6324,6 +6324,19 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** Body_token_default_idp_token_post */
+        Body_token_default_idp_token_post: {
+            /** Grant Type */
+            grant_type: string;
+            /** Code */
+            code: string;
+            /** Redirect Uri */
+            redirect_uri: string;
+            /** Client Id */
+            client_id: string;
+            /** Client Secret */
+            client_secret?: string;
+        };
         /** BulkArchiveAttemptsApiRequest */
         BulkArchiveAttemptsApiRequest: {
             /** Archived */
@@ -30750,6 +30763,7 @@ export interface operations {
                 response_type: string;
                 state: string;
                 scope?: string;
+                nonce?: string | null;
                 mode?: string | null;
                 department_id?: string | null;
             };
@@ -30781,18 +30795,16 @@ export interface operations {
     };
     token_default_idp_token_post: {
         parameters: {
-            query: {
-                grant_type: string;
-                code: string;
-                redirect_uri: string;
-                client_id: string;
-                client_secret?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_token_default_idp_token_post"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
