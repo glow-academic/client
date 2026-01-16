@@ -307,22 +307,16 @@ export default function Login({
         ? `${appPrefix}${redirectPath}`
         : `${appPrefix}/home`;
 
-      // Calculate department-specific client_id to pass as authorization param
-      // This is passed directly to NextAuth's authorization callback via signIn() third argument
-      const currentDepartmentClientId = selectedDepartmentId
-        ? `glow-client-${selectedDepartmentId}`
-        : null;
-
-      // Call signIn with department-specific client_id as authorization param
-      // The authorization callback will read this from params and use it in the authorization URL
+      // Use NextAuth signIn() and pass department parameter via authorizationParams
+      // The authorization callback will preserve the department param in the Keycloak URL
       await signIn(
         "keycloak",
         {
           callbackUrl: redirectTo,
         },
-        currentDepartmentClientId
+        selectedDepartmentId
           ? {
-              client_id: currentDepartmentClientId,
+              department: selectedDepartmentId,
             }
           : undefined
       );

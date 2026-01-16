@@ -95,16 +95,10 @@ export const {
           `${realmIssuer}/protocol/openid-connect/auth`
         );
 
-        // Read department-specific client_id from authorization params (passed via signIn third argument)
-        // Format: glow-client-{department_id} for departments, or default glow-client for platform
-        // This is more reliable than cookies because NextAuth passes params directly to the authorization callback
-        const clientId =
-          params.client_id && params.client_id.trim()
-            ? params.client_id.trim()
-            : keycloakClientId; // Default to platform client
+        // Always use single glow-client for all OAuth flows
+        // Department filtering is handled by Keycloak theme via ?department URL parameter
+        authorizationUrl.searchParams.set("client_id", keycloakClientId);
 
-        // Set client_id FIRST before other params (to ensure it's not overridden)
-        authorizationUrl.searchParams.set("client_id", clientId);
         const redirectUri = params["redirect_uri"];
         if (redirectUri) {
           authorizationUrl.searchParams.set("redirect_uri", redirectUri);
@@ -124,8 +118,11 @@ export const {
           authorizationUrl.searchParams.set("code_challenge_method", "S256");
         }
 
-        // Ensure client_id is still set after all params (NextAuth might override it)
-        authorizationUrl.searchParams.set("client_id", clientId);
+        // Preserve department parameter if present (passed from frontend redirect)
+        const department = params["department"];
+        if (department) {
+          authorizationUrl.searchParams.set("department", department);
+        }
 
         return authorizationUrl.toString();
       },

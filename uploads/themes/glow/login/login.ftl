@@ -1,10 +1,121 @@
 <#import "template.ftl" as layout>
 <#include "providers.ftl">
 
+<#-- Include custom CSS -->
+<link rel="stylesheet" href="${url.resourcesPath}/css/styles.css" />
+
 <@layout.registrationLayout displayInfo=social.displayInfo; section>
   <#if section = "form">
     <div id="kc-form">
       <div id="kc-form-wrapper">
+        <#-- Read department from URL parameter (param is available in Keycloak FreeMarker) -->
+        <#assign departmentId = "" />
+        <#if param?? && param.department??>
+          <#assign departmentId = param.department?string />
+        </#if>
+        <#assign allowed = getAllowedProvidersForDepartment(departmentId) />
+        
+        <#-- Department Picker -->
+        <#if departments?size gt 0>
+          <div class="${properties.kcFormGroupClass!}" style="margin-bottom: 20px;">
+            <label for="department" class="${properties.kcLabelClass!}">Department</label>
+            <select id="department" name="department" class="${properties.kcInputClass!}" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+              <option value="" <#if !departmentId?has_content>selected</#if>>Default</option>
+              <#list departments as d>
+                <option value="${d.id}" <#if departmentId == d.id>selected</#if>>${d.title}</option>
+              </#list>
+            </select>
+          </div>
+          
+          <script>
+            (function () {
+              var select = document.getElementById("department");
+              if (!select) return;
+              
+              select.addEventListener("change", function () {
+                var dept = select.value || "";
+                var url = new URL(window.location.href);
+                
+                if (dept) {
+                  url.searchParams.set("department", dept);
+                } else {
+                  url.searchParams.delete("department");
+                }
+                
+                // Reload to let FTL render correct provider set
+                window.location.href = url.toString();
+              });
+            })();
+          </script>
+        </#if>
+        
+        <#-- Auto-redirect if only one provider for selected department -->
+        <#if social.providers?? && allowed?size == 1>
+          <#assign targetAlias = allowed[0] />
+          <#list social.providers as p>
+            <#if p.alias == targetAlias>
+              <script>
+                window.location.href = "${p.loginUrl}";
+              </script>
+            </#if>
+          </#list>
+        </#if>
+        
+        <#-- JavaScript fallback: Read department from URL if param not available (for robustness) -->
+        <script>
+          (function () {
+            // Fallback: if departmentId is empty, try reading from URL
+            var departmentId = "${departmentId}";
+            if (!departmentId) {
+              var urlParams = new URLSearchParams(window.location.search);
+              departmentId = urlParams.get("department") || "";
+            }
+            
+            // Store department mapping for client-side filtering fallback
+            var allowedProvidersByDept = {
+              <#list allowedProvidersByDept?keys as deptId>
+              "${deptId}": [<#list allowedProvidersByDept[deptId] as alias>"${alias}"<#sep>, </#list>]<#sep>,
+              </#list>
+            };
+            var platformProviders = [<#list platformProviders as p>"${p}"<#sep>, </#list>];
+            
+            // Fallback filtering function (only used if server-side filtering didn't work)
+            function getAllowedProvidersFallback(deptId) {
+              if (deptId && allowedProvidersByDept[deptId] && allowedProvidersByDept[deptId].length > 0) {
+                return allowedProvidersByDept[deptId];
+              }
+              return platformProviders;
+            }
+            
+            // Only apply fallback filtering if needed (when param wasn't available)
+            <#if !departmentId?has_content>
+            document.addEventListener("DOMContentLoaded", function() {
+              var allowed = getAllowedProvidersFallback(departmentId);
+              var providerLinks = document.querySelectorAll("#kc-social-providers a[id^='social-']");
+              var visibleCount = 0;
+              var firstVisibleLink = null;
+              
+              providerLinks.forEach(function(link) {
+                var alias = link.id.replace("social-", "");
+                if (allowed.indexOf(alias) === -1) {
+                  link.parentElement.style.display = "none";
+                } else {
+                  visibleCount++;
+                  if (!firstVisibleLink) {
+                    firstVisibleLink = link;
+                  }
+                }
+              });
+              
+              // Auto-redirect if only one provider
+              if (visibleCount === 1 && firstVisibleLink) {
+                window.location.href = firstVisibleLink.href;
+              }
+            });
+            </#if>
+          })();
+        </script>
+        
         <#-- Username/password form (from base theme) -->
         <#if realm.password>
           <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
@@ -57,37 +168,18 @@
           </form>
         </#if>
         
-        <#-- Provider buttons (filtered by client_id) -->
-        <#-- DEBUG: Check what's available -->
-        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc; font-family: monospace; font-size: 12px;">
-          <strong>DEBUG INFO:</strong><br/>
-          social.providers exists: <#if social.providers??>yes<#else>no</#if><br/>
-          social.providers size: ${(social.providers?size)!0}<br/>
-          client.clientId: ${client.clientId!""}<br/>
-          <#if social.providers??>
-            <#assign cid = client.clientId!"" />
-            <#assign allowed = getAllowedProviders(cid) />
-            allowed providers: ${allowed?join(", ")}<br/>
-            <#list social.providers as p>
-              provider alias seen: ${p.alias}<br/>
-            </#list>
-          </#if>
-        </div>
-        
+        <#-- Provider buttons (filtered by department server-side) -->
         <#if social.providers?? && social.providers?size gt 0>
-          <#assign cid = client.clientId!"" />
-          <#assign allowed = getAllowedProviders(cid) />
-          
           <#if allowed?size gt 0>
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
               <hr/>
               <h4>${msg("identity-provider-login-label")}</h4>
-              <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
+              <ul class="${properties.kcFormSocialAccountListClass!} <#if allowed?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
                 <#list social.providers as p>
                   <#if allowed?seq_contains(p.alias)>
                     <li>
                       <a id="social-${p.alias}" 
-                         class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
+                         class="${properties.kcFormSocialAccountListButtonClass!} <#if allowed?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
                          type="button" 
                          href="${p.loginUrl}">
                         <#if p.iconClasses?has_content>
@@ -103,6 +195,22 @@
               </ul>
             </div>
           </#if>
+        </#if>
+        
+        <#-- Continue as Guest button -->
+        <#-- Link back to app login page - app will handle guest login -->
+        <#assign appBase = client.baseUrl!"" />
+        <#if appBase?has_content>
+          <#assign guestUrl = appBase + "/login" />
+          <#if departmentId?has_content>
+            <#assign guestUrl = guestUrl + "?department=" + departmentId />
+          </#if>
+          
+          <div style="margin-top: 20px;">
+            <a class="guest-button" href="${guestUrl}">
+              Continue as Guest
+            </a>
+          </div>
         </#if>
       </div>
     </div>
