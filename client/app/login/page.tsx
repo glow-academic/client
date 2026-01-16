@@ -237,7 +237,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     initialDepartmentId,
     activeSettings,
     defaultDepartmentId: loginData.default_department_id ?? null,
-    realmName: loginData.realm_name ?? "master",
+    realmName: "master", // Always master realm (organizations replace multi-realm architecture)
   };
   if (redirectPath) {
     loginProps.redirectPath = redirectPath;

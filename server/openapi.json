@@ -24575,6 +24575,23 @@
         ]
       }
     },
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "summary": "Oauth Authorization Server Metadata",
+        "description": "RFC 8414 OAuth Authorization Server Metadata endpoint.\n\nChatGPT Dev Mode uses this endpoint to discover OAuth configuration.\nThis is required for OAuth to work with ChatGPT.",
+        "operationId": "oauth_authorization_server_metadata__well_known_oauth_authorization_server_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root Info",
@@ -29535,6 +29552,17 @@
             "format": "uuid",
             "title": "Icon Id"
           },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
           "mcp": {
             "anyOf": [
               {
@@ -34347,78 +34375,6 @@
               }
             ],
             "title": "Flag Required"
-          },
-          "template": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template"
-          },
-          "template_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Id"
-          },
-          "schema_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Id"
-          },
-          "html_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Html Id"
-          },
-          "template_file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template File Path"
-          },
-          "templates": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetDocumentV4Template"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templates"
           },
           "general_agent_id": {
             "anyOf": [
@@ -45715,353 +45671,6 @@
               }
             ],
             "title": "Parameters"
-          },
-          "persona_range_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Id"
-          },
-          "persona_range_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_persona_range": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Persona Range"
-          },
-          "persona_range_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Agent Id"
-          },
-          "persona_range_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Required"
-          },
-          "persona_range_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Suggestions"
-          },
-          "persona_ranges": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ranges"
-          },
-          "document_range_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Id"
-          },
-          "document_range_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_document_range": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Document Range"
-          },
-          "document_range_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Agent Id"
-          },
-          "document_range_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Required"
-          },
-          "document_range_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Suggestions"
-          },
-          "document_ranges": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ranges"
-          },
-          "parameter_range_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Id"
-          },
-          "parameter_range_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_parameter_range": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Parameter Range"
-          },
-          "parameter_range_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Agent Id"
-          },
-          "parameter_range_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Required"
-          },
-          "parameter_range_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Suggestions"
-          },
-          "parameter_ranges": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ranges"
-          },
-          "field_range_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Range Ids"
-          },
-          "field_range_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Range Resources"
-          },
-          "show_field_ranges": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Field Ranges"
-          },
-          "field_ranges_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges Agent Id"
-          },
-          "field_ranges_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges Required"
-          },
-          "field_range_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Range Suggestions"
-          },
-          "field_ranges": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioV4RangeResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges"
           },
           "basic_agent_id": {
             "anyOf": [
@@ -60601,76 +60210,6 @@
         ],
         "title": "QGetDocumentV4NameResource"
       },
-      "QGetDocumentV4Template": {
-        "properties": {
-          "template_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Id"
-          },
-          "schema_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Id"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "template_id",
-          "schema_id",
-          "active",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "QGetDocumentV4Template"
-      },
       "QGetEvalAttemptV4Attempt": {
         "properties": {
           "id": {
@@ -71317,63 +70856,6 @@
           "generated"
         ],
         "title": "QGetScenarioV4QuestionResource"
-      },
-      "QGetScenarioV4RangeResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "min_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Min Count"
-          },
-          "max_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Count"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "min_count",
-          "max_count",
-          "generated"
-        ],
-        "title": "QGetScenarioV4RangeResource"
       },
       "QGetScenarioV4Simulation": {
         "properties": {

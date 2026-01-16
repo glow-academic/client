@@ -46,17 +46,12 @@ export function useFederatedLogout() {
       const clientId =
         process.env["NEXT_PUBLIC_AUTH_KEYCLOAK_ID"] || "glow-client";
 
-      // Get realm name from cookie (set during login) or default to master
-      // Read realm-name cookie to determine which realm to logout from
-      const realmNameCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("realm-name="))
-        ?.split("=")[1];
-      const realm = realmNameCookie || "master";
+      // Always use master realm (organizations replace multi-realm architecture)
+      const realm = "master";
 
       // Where to go after Keycloak is done (back to your login page)
       const returnTo = encodeURIComponent(
-        `${window.location.origin}${appPrefix}/login`,
+        `${window.location.origin}${appPrefix}/login`
       );
 
       // 4. Construct the logout URL with dynamic realm

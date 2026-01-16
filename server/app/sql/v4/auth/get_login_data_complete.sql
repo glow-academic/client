@@ -48,6 +48,11 @@ CREATE TYPE types.q_get_login_data_v4_department AS (
     description text
 );
 
+CREATE TYPE types.q_get_login_data_v4_organization AS (
+    id text,
+    alias text
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_login_data_v4(department_id uuid DEFAULT NULL)
 RETURNS TABLE (
@@ -56,7 +61,8 @@ RETURNS TABLE (
     guest_login_enabled boolean,
     show_default_account boolean,
     default_department_id text,
-    realm_name text
+    realm_name text,
+    organization_id text
 )
 LANGUAGE sql
 STABLE
@@ -173,31 +179,21 @@ departments_with_default AS (
     UNION ALL
     SELECT '{}'::types.q_get_login_data_v4_department[] WHERE NOT EXISTS (SELECT 1 FROM departments_data)
 ),
--- Calculate realm name: use settings_id if dept settings has keys, else 'master'
--- Simplified: Check if dept settings has keys, if yes use settings_id, else 'master'
+-- Always use master realm (organizations replace multi-realm architecture)
 realm_name_calc AS (
+    SELECT 'master'::text as realm_name
+),
+-- Get organization_id for department (if provided)
+organization_calc AS (
     SELECT 
         CASE 
-            -- No department → master realm
-            WHEN (SELECT department_id FROM params) IS NULL THEN 'master'::text
-            -- Check if department-specific settings has keys
-            WHEN EXISTS (
-                SELECT 1 
-                FROM department_settings ds
-                JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
-                JOIN setting_auth_keys sak ON sak.settings_id = s.id AND sak.active = true
-                WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true
-            ) THEN (
-                -- Department settings has keys → use settings_id as realm
-                SELECT s.id::text
-                FROM department_settings ds
-                JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
-                WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true
-                LIMIT 1
-            )
-            -- No keys in dept settings → use master realm
-            ELSE 'master'::text
-        END as realm_name
+            WHEN (SELECT department_id FROM params) IS NOT NULL THEN
+                (SELECT o.id::text 
+                 FROM keycloak.org o 
+                 WHERE o.alias = (SELECT department_id FROM params)::text
+                 LIMIT 1)
+            ELSE NULL::text
+        END as organization_id
 ),
 -- Check department-specific default account (if department_id provided)
 dept_default_account_check AS (
@@ -256,10 +252,12 @@ SELECT
     COALESCE((SELECT guest_login_enabled FROM active_settings LIMIT 1), true)::boolean as guest_login_enabled,
     COALESCE((SELECT show_default_account FROM show_default_account_calc LIMIT 1), false)::boolean as show_default_account,
     COALESCE((SELECT department_id::text FROM default_department_from_settings LIMIT 1), NULL)::text as default_department_id,
-    (SELECT realm_name FROM realm_name_calc LIMIT 1)::text as realm_name
+    (SELECT realm_name FROM realm_name_calc LIMIT 1)::text as realm_name,
+    (SELECT organization_id FROM organization_calc LIMIT 1)::text as organization_id
 FROM providers_with_default p
 CROSS JOIN departments_with_default d
 CROSS JOIN realm_name_calc
 CROSS JOIN show_default_account_calc
+CROSS JOIN organization_calc
 LIMIT 1
 $$;

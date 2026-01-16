@@ -22,7 +22,7 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // Provider icon component - renders icon from URL or fallback
@@ -245,7 +245,7 @@ interface LoginProps {
   initialDepartmentId?: string | undefined; // Initial department ID from query parameter
   activeSettings?: SettingsActiveClient | null; // Active settings for theme application
   defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
-  realmName?: string; // Realm name for the selected department (master for default, department_id otherwise)
+  realmName?: string; // Always "master" (organizations replace multi-realm architecture)
   redirectPath?: string; // Redirect path after login
 }
 
@@ -320,19 +320,8 @@ export default function Login({
     },
   };
 
-  // Use realm_name from API response (settings-based, not department-based)
-  // Realm name is calculated server-side based on which settings has keys for providers
-  // If department-specific settings has keys → realm = settings_id
-  // If not → realm = "master" (default settings)
-  const currentRealmName = React.useMemo(() => {
-    // Use realm_name from API if available, otherwise fallback to master
-    return realmName || "master";
-  }, [realmName]);
-
-  // Set realm-name cookie when realm changes
-  useEffect(() => {
-    document.cookie = `realm-name=${currentRealmName}; path=/; max-age=3600; SameSite=Lax`;
-  }, [currentRealmName]);
+  // Always use master realm (organizations replace multi-realm architecture)
+  // Realm name is always "master" - org-scoped IdPs are handled by Keycloak organizations
 
   // Generic handler for ANY SSO provider (data-agnostic)
   const handleSSOLogin = async (provider: ProviderOption) => {
@@ -342,9 +331,6 @@ export default function Login({
       // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
-
-      // Realm-name cookie is already set by useEffect when department changes
-      // This allows dynamic realm selection based on department
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
@@ -357,14 +343,16 @@ export default function Login({
       // Use NextAuth's signIn with "keycloak" provider (our only provider in auth.ts)
       // Pass kc_idp_hint to force Keycloak to skip login page and redirect to the specified provider
       // The provider.id is the slug (already lowercase from database)
-      // Realm selection is handled via realm-name cookie read in auth.ts authorization callback
+      // Always uses master realm - org-scoped IdPs are handled by Keycloak organizations
+      // For org-scoped IdPs, the alias format is "slug-department_id", so we need to pass the full alias
+      // For realm-level IdPs, just use the slug
       await signIn(
         "keycloak",
         {
           callbackUrl: redirectTo,
         },
         {
-          kc_idp_hint: provider.id,
+          kc_idp_hint: provider.id, // This will be the slug for realm-level, or "slug-department_id" for org-scoped
         }
       );
 
@@ -621,11 +609,7 @@ export default function Login({
                     onValueChange={(value) => {
                       setSelectedDepartmentId(value);
 
-                      // Calculate and set realm-name cookie for dynamic realm selection
-                      // All departments (including default) use their department_id as realm name
-                      // Realm name will be updated via API call when department changes
-                      // The API response includes the correct realm_name based on settings
-                      // Cookie will be set by the useEffect hook when realmName prop updates
+                      // Always use master realm (organizations replace multi-realm architecture)
 
                       // Update URL with department parameter and trigger server-side refetch
                       // If selected department is the default, remove query param to keep URL clean

@@ -3,7 +3,7 @@ import { api } from "@/lib/api/client";
 import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { cache } from "react";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
@@ -82,20 +82,15 @@ export const {
     Keycloak({
       clientId: keycloakClientId,
       clientSecret: keycloakClientSecret,
-      issuer: defaultIssuer, // Base issuer (master realm), overridden in authorization callback
+      issuer: defaultIssuer, // Always use master realm
       allowDangerousEmailAccountLinking: true, // Allow merging Google/MS accounts with same email
       authorization: async ({
         params,
       }: {
         params: Record<string, string | undefined>;
       }) => {
-        // Read realm-name from cookie to determine which realm to use
-        const cookieStore = await cookies();
-        const realmNameCookie = cookieStore.get("realm-name")?.value;
-        const realmName = realmNameCookie || "master";
-
-        // Construct authorization URL with correct realm
-        const realmIssuer = `${keycloakPublicUrl}/realms/${realmName}`;
+        // Always use master realm (organizations replace multi-realm architecture)
+        const realmIssuer = `${keycloakPublicUrl}/realms/master`;
         const authorizationUrl = new URL(
           `${realmIssuer}/protocol/openid-connect/auth`
         );

@@ -137,43 +137,74 @@ async def wait_for_keycloak(
     return None
 
 
-async def get_realm_name_for_department(department_id: str | None, pool: Any) -> str:
-    """Get realm name for a department based on which settings has keys.
-
+async def sync_organization_for_department(
+    department_id: str,
+    department_name: str,
+    kc_admin: Any,
+) -> str | None:
+    """Create/update Keycloak organization for department.
+    
     Args:
-        department_id: Department ID (None for no department)
-        pool: Database connection pool
-
+        department_id: Department ID (UUID string)
+        department_name: Department name
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    
     Returns:
-        Realm name: settings_id if department-specific settings has keys, "master" otherwise
+        organization_id if created/updated, None if error
     """
-    if department_id is None:
-        return "master"  # No department → master realm (default settings)
-
     try:
-        import uuid
-        from typing import cast
-
-        from app.sql.types import (GetRealmNameForDepartmentSqlParams,
-                                   GetRealmNameForDepartmentSqlRow)
-        from app.utils.sql_helper import execute_sql_typed
-
-        async with pool.acquire() as conn:
-            params = GetRealmNameForDepartmentSqlParams(
-                department_id=uuid.UUID(department_id)
-            )
-            result = cast(
-                GetRealmNameForDepartmentSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    "app/sql/v4/keycloak/get_realm_name_for_department_complete.sql",
-                    params=params,
-                ),
-            )
-            return result.realm_name or "master"
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Check if org exists (by alias = department_id)
+        orgs = kc_admin.get_organizations()
+        existing = next(
+            (o for o in orgs if o.get("alias") == department_id or o.get("name") == department_name),
+            None
+        )
+        
+        if existing:
+            org_id = existing.get("id")
+            logger.info(f"✅ Organization '{department_name}' already exists (id: {org_id})")
+            return org_id
+        
+        # Create new org
+        org_payload: dict[str, Any] = {
+            "name": department_name,
+            "alias": department_id,  # Use department_id as alias for uniqueness
+            "enabled": True,
+        }
+        
+        org_id = kc_admin.create_organization(payload=org_payload)
+        logger.info(f"✅ Created organization '{department_name}' (id: {org_id})")
+        return org_id
     except Exception as e:
-        logger.warning(f"Failed to get realm name for department {department_id}: {e}")
-        return "master"  # Fallback to master on error
+        error_str = str(e).lower()
+        is_conflict = (
+            "location" in error_str
+            or "duplicate" in error_str
+            or "conflict" in error_str
+            or "409" in error_str
+            or "already exists" in error_str
+        )
+        
+        if is_conflict:
+            # Org was created by another process, fetch it
+            try:
+                orgs = kc_admin.get_organizations()
+                existing = next(
+                    (o for o in orgs if o.get("alias") == department_id or o.get("name") == department_name),
+                    None
+                )
+                if existing:
+                    org_id = existing.get("id")
+                    logger.info(f"⚠️  Organization '{department_name}' was created by another process (id: {org_id})")
+                    return org_id
+            except Exception as fetch_e:
+                logger.warning(f"Failed to fetch organization after conflict: {fetch_e}")
+        
+        logger.warning(f"Failed to create organization for department {department_id}: {e}")
+        return None
 
 
 async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
@@ -667,484 +698,411 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
         logger.warning(f"Could not remove Trusted Hosts policy: {e}", exc_info=True)
 
 
-async def sync_department_realm_by_settings(
-    realm_name: str, department_id: str | None, kc_admin: Any, pool: Any
+async def sync_identity_provider_for_realm_level(
+    auth_id: str,
+    slug: str,
+    provider_id: str,
+    display_name: str,
+    kc_admin: Any,
+    pool: Any,
 ) -> None:
-    """Sync a realm based on settings_id (realm_name).
-
+    """Sync a single identity provider at realm level (platform login).
+    
     Args:
-        realm_name: Realm name (settings_id or "master" for default settings)
-        department_id: Department ID for provider sync logic (can be None)
-        kc_admin: KeycloakAdmin instance
+        auth_id: Auth ID (UUID string)
+        slug: Provider slug/alias
+        provider_id: Provider type (e.g., "google", "oidc", "saml")
+        display_name: Display name for the provider
+        kc_admin: KeycloakAdmin instance (must be in master realm)
         pool: Database connection pool
     """
     bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
-
-    # Ensure realm exists
+    
     try:
-        realms = kc_admin.get_realms()
-        realm_exists = any(r["realm"] == realm_name for r in realms)
-
-        if not realm_exists:
-            logger.info(f"[{bootstrap_leader}] Creating Keycloak realm: {realm_name}")
-            try:
-                kc_admin.create_realm(
-                    payload={"realm": realm_name, "enabled": True},
-                    skip_exists=True,
-                )
-                logger.info(f"✅ Realm '{realm_name}' created")
-            except Exception as e:
-                error_str = str(e).lower()
-                is_conflict = (
-                    "location" in error_str
-                    or "duplicate" in error_str
-                    or "conflict" in error_str
-                    or "409" in error_str
-                    or "already exists" in error_str
-                )
-
-                if is_conflict:
-                    logger.info(
-                        f"⚠️  [{bootstrap_leader}] Realm '{realm_name}' may have been created by another server, re-checking..."
-                    )
-                    realms = kc_admin.get_realms()
-                    realm_exists_now = any(r["realm"] == realm_name for r in realms)
-
-                    if realm_exists_now:
-                        logger.info(f"✅ Realm '{realm_name}' now exists")
-                    else:
-                        logger.warning(
-                            "⚠️  Realm creation conflict but realm not found on re-check"
-                        )
-                else:
-                    raise
-        else:
-            logger.info(f"✅ Realm '{realm_name}' already exists")
-    except Exception as e:
-        logger.error(f"Failed to ensure realm exists: {e}", exc_info=True)
-        return
-
-    # Switch to target realm
-    kc_admin.change_current_realm(realm_name=realm_name)
-
-    # Fix realm settings for local development
-    try:
-        realm_details = kc_admin.get_realm(realm_name)
-        attributes = realm_details.get("attributes", {})
-        current_frontend_url = attributes.get("frontendUrl", "")
-        current_ssl_required = realm_details.get("sslRequired", "EXTERNAL")
-
-        origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-        is_local_dev = "localhost" in origin_check.lower()
-
-        needs_update = False
-        update_payload: dict[str, Any] = {}
-
-        if current_frontend_url and "/realms/" in current_frontend_url:
-            update_payload["attributes"] = {
-                **attributes,
-                "frontendUrl": "",
-            }
-            needs_update = True
-            logger.info(f"Fixing realm frontend URL (was: {current_frontend_url})")
-        elif not current_frontend_url and update_payload.get("attributes") is None:
-            update_payload["attributes"] = attributes
-
-        if is_local_dev and current_ssl_required != "NONE":
-            if "attributes" not in update_payload:
-                update_payload["attributes"] = attributes
-            update_payload["sslRequired"] = "NONE"
-            needs_update = True
-            logger.info(
-                f"Disabling SSL requirement for local development (was: {current_ssl_required})"
-            )
-
-        if needs_update:
-            kc_admin.update_realm(realm_name=realm_name, payload=update_payload)
-            logger.info("✅ Realm settings updated")
-    except Exception as e:
-        logger.warning(f"Could not update realm settings: {e}. Continuing...")
-
-    # Setup Next.js client with pre-shared secret
-    target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
-    target_secret: str | None = os.getenv("AUTH_KEYCLOAK_SECRET")
-    client_port = os.getenv("CLIENT_PORT", "3000")
-    app_prefix = os.getenv("APP_PREFIX", "")
-
-    if not target_secret:
-        logger.warning(
-            "⚠️  AUTH_KEYCLOAK_SECRET is missing. Cannot enforce DHH-style auth."
-        )
-    else:
-        try:
-            origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
-            base_url = origin.rstrip("/")
-            redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
-            redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
-
-            clients = kc_admin.get_clients()
-            existing_client = next(
-                (c for c in clients if c.get("clientId") == target_client_id),
-                None,
-            )
-
-            client_payload: dict[str, Any] = {
-                "clientId": target_client_id,
-                "name": "Glow App",
-                "rootUrl": base_url,
-                "baseUrl": base_url,
-                "redirectUris": redirect_uris,
-                "webOrigins": ["+"],
-                "enabled": True,
-                "publicClient": False,
-                "protocol": "openid-connect",
-                "standardFlowEnabled": True,
-                "directAccessGrantsEnabled": True,
-                "serviceAccountsEnabled": True,
-                "clientAuthenticatorType": "client-secret",
-                "secret": target_secret,
-            }
-
-            if existing_client:
-                client_uuid = existing_client.get("id")
-                if client_uuid:
-                    try:
-                        kc_admin.update_client(
-                            client_id=client_uuid, payload=client_payload
-                        )
-                        logger.info(f"✅ Client '{target_client_id}' updated")
-                    except Exception as e:
-                        error_str = str(e).lower()
-                        is_conflict = (
-                            "409" in error_str
-                            or "conflict" in error_str
-                            or "already exists" in error_str
-                            or "not found" in error_str
-                        )
-
-                        if is_conflict:
-                            logger.info(
-                                f"⚠️  [{bootstrap_leader}] Client '{target_client_id}' update conflict, re-checking..."
-                            )
-                            clients = kc_admin.get_clients()
-                            existing_client_now = next(
-                                (
-                                    c
-                                    for c in clients
-                                    if c.get("clientId") == target_client_id
-                                ),
-                                None,
-                            )
-
-                            if existing_client_now:
-                                logger.info(
-                                    f"✅ Client '{target_client_id}' still exists, update may have been applied by another server"
-                                )
-                            else:
-                                logger.warning(
-                                    f"⚠️  Client '{target_client_id}' no longer exists after update conflict"
-                                )
-                        else:
-                            raise
-                else:
-                    logger.warning(
-                        f"⚠️  Client '{target_client_id}' exists but has no ID"
-                    )
-            else:
-                try:
-                    new_client_uuid = kc_admin.create_client(
-                        payload=client_payload, skip_exists=True
-                    )
-                    logger.info(f"✅ Client '{target_client_id}' created")
-
-                    if new_client_uuid:
-                        kc_admin.update_client(
-                            client_id=new_client_uuid,
-                            payload={"secret": target_secret},
-                        )
-                        logger.info(
-                            f"✅ Client Secret enforced for '{target_client_id}'"
-                        )
-                except Exception as e:
-                    error_str = str(e).lower()
-                    is_conflict = (
-                        "location" in error_str
-                        or "duplicate" in error_str
-                        or "conflict" in error_str
-                        or "409" in error_str
-                        or "already exists" in error_str
-                    )
-
-                    if is_conflict:
-                        logger.info(
-                            f"⚠️  [{bootstrap_leader}] Client '{target_client_id}' was created by another server, re-checking..."
-                        )
-                        clients = kc_admin.get_clients()
-                        existing_client = next(
-                            (
-                                c
-                                for c in clients
-                                if c.get("clientId") == target_client_id
-                            ),
-                            None,
-                        )
-
-                        if existing_client:
-                            client_uuid = existing_client.get("id")
-                            if client_uuid:
-                                kc_admin.update_client(
-                                    client_id=client_uuid,
-                                    payload={"secret": target_secret},
-                                )
-                                logger.info(
-                                    f"✅ Client '{target_client_id}' found and secret updated"
-                                )
-                            else:
-                                logger.warning(
-                                    f"⚠️  Client '{target_client_id}' exists but has no ID"
-                                )
-                        else:
-                            logger.warning(
-                                f"⚠️  Client '{target_client_id}' creation conflict but not found on re-check"
-                            )
-                    else:
-                        raise
-
-        except Exception as e:
-            logger.error(f"❌ Client sync failed: {e}", exc_info=True)
-
-    # Sync identity providers for this settings realm
-    # Determine which settings_id to use for provider sync
-    async with pool.acquire() as conn:
-        if realm_name == "master":
-            # Master realm uses default settings
-            settings_id = None
-        else:
-            # Settings-based realm uses the settings_id as realm_name
-            settings_id = realm_name
-
-        # Get providers for this settings (not department)
-        # We need to update get_auth_providers_complete.sql to accept settings_id
-        # For now, if we have department_id, use it; otherwise use NULL for default settings
-        # Pass department_id for backward compatibility, but logic will be updated
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Get auth items (config) - use None for department_id (default settings)
         import uuid
 
-        from app.sql.types import GetAuthProvidersSqlParams
-
-        # Handle multi-row function results
-        sql_text = load_sql("app/sql/v4/keycloak/get_auth_providers_complete.sql")
-        is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
-        if is_function and function_name:
-            # Handle None department_id - function accepts NULL but Pydantic requires UUID
-            # Pass None directly to PostgreSQL (it accepts NULL even for non-nullable params)
-            if department_id:
-                dept_id_uuid = uuid.UUID(department_id)
-                params = GetAuthProvidersSqlParams(department_id=dept_id_uuid)
-                sql_params = params.to_tuple()
+        from app.sql.types import GetAuthItemsSqlParams
+        
+        async with pool.acquire() as conn:
+            items_sql_text = load_sql("app/sql/v4/keycloak/get_auth_items_complete.sql")
+            items_is_function, items_function_name, items_schema = _detect_function_in_sql(items_sql_text)
+            
+            if items_is_function and items_function_name:
+                auth_id_uuid = uuid.UUID(auth_id)
+                items_params = GetAuthItemsSqlParams(auth_id=auth_id_uuid, department_id=None)
+                items_sql_params = items_params.to_tuple()
+                items_param_placeholders = ", ".join([f"${i + 1}" for i in range(len(items_sql_params))])
+                items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
+                item_rows = await conn.fetch(items_function_call_sql, *items_sql_params)
+                items = [dict(row) for row in item_rows]
             else:
-                # Pass NULL directly to PostgreSQL function
-                sql_params = (None,)
-            param_placeholders = ", ".join(
-                [f"${i + 1}" for i in range(len(sql_params))]
-            )
-            function_call_sql = (
-                f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
-            )
-            provider_rows = await conn.fetch(function_call_sql, *sql_params)
-            providers = [dict(row) for row in provider_rows]
+                raise ValueError("Expected function definition in get_auth_items_complete.sql")
+        
+        # Build config map from items
+        config_map: dict[str, str] = {}
+        for item in items:
+            item_name = item["name"]
+            raw_value = item["value"]
+            is_encrypted = item.get("encrypted", True)
+            
+            if is_encrypted:
+                try:
+                    decrypted_value = decrypt_api_key(raw_value)
+                    config_map[item_name] = decrypted_value
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to decrypt auth_item '{item_name}' for provider '{slug}': {e}. Using as plain text."
+                    )
+                    config_map[item_name] = raw_value
+            else:
+                config_map[item_name] = raw_value
+        
+        # Build IdP payload
+        payload: dict[str, Any] = {
+            "alias": slug,
+            "providerId": provider_id,
+            "displayName": display_name,
+            "enabled": True,
+            "trustEmail": True,
+            "config": {},
+        }
+        
+        # Configure provider-specific settings
+        if provider_id == "saml":
+            if "ssoUrl" in config_map:
+                payload["config"]["singleSignOnServiceUrl"] = config_map["ssoUrl"]
+            if "entityId" in config_map:
+                payload["config"]["entityId"] = config_map["entityId"]
+            if "metadataUrl" in config_map:
+                payload["config"]["importFromIdpUrl"] = config_map["metadataUrl"]
+            if "certificate" in config_map:
+                payload["config"]["signingCertificate"] = config_map["certificate"]
+            if "nameIDPolicyFormat" not in payload["config"]:
+                payload["config"]["nameIDPolicyFormat"] = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+            if "syncMode" not in payload["config"]:
+                payload["config"]["syncMode"] = "FORCE"
+            if "allowCreate" not in payload["config"]:
+                payload["config"]["allowCreate"] = "true"
         else:
-            raise ValueError(
-                "Expected function definition in get_auth_providers_complete.sql"
-            )
+            payload["config"] = config_map
+            if "syncMode" not in payload["config"]:
+                payload["config"]["syncMode"] = "FORCE"
+            if "useJwksUrl" not in payload["config"]:
+                payload["config"]["useJwksUrl"] = "true"
+        
+        # Create or update IdP (realm-level, no organization_id)
+        try:
+            kc_admin.get_idp(idp_alias=slug)
+            # IdP exists, update it
+            kc_admin.update_idp(idp_alias=slug, payload=payload)
+            logger.info(f"✅ Updated realm-level IdP: {slug}")
+        except Exception:
+            # IdP doesn't exist, create it
+            kc_admin.create_idp(payload=payload)
+            logger.info(f"✅ Created realm-level IdP: {slug}")
+    except Exception as e:
+        logger.warning(f"Failed to sync realm-level IdP '{slug}': {e}", exc_info=True)
 
-        # Get list of provider slugs that should exist
-        expected_provider_slugs = {p["slug"] for p in providers} if providers else set()
 
-        # Get existing providers in Keycloak realm
+async def sync_identity_provider_for_org(
+    auth_id: str,
+    slug: str,
+    provider_id: str,
+    display_name: str,
+    organization_id: str,
+    department_id: str,
+    kc_admin: Any,
+    pool: Any,
+) -> None:
+    """Sync a single identity provider for an organization (org-scoped).
+    
+    Args:
+        auth_id: Auth ID (UUID string)
+        slug: Provider slug/alias (base slug, will be made unique per org)
+        provider_id: Provider type (e.g., "google", "oidc", "saml")
+        display_name: Display name for the provider
+        organization_id: Keycloak organization ID
+        department_id: Department ID (for config lookup)
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+        pool: Database connection pool
+    """
+    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
+    
+    try:
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Create unique alias per org (slug-department_id)
+        unique_alias = f"{slug}-{department_id}"
+        
+        # Get auth items (config) - use department_id for department-specific settings
+        import uuid
+
+        from app.sql.types import GetAuthItemsSqlParams
+        
+        async with pool.acquire() as conn:
+            items_sql_text = load_sql("app/sql/v4/keycloak/get_auth_items_complete.sql")
+            items_is_function, items_function_name, items_schema = _detect_function_in_sql(items_sql_text)
+            
+            if items_is_function and items_function_name:
+                auth_id_uuid = uuid.UUID(auth_id)
+                dept_id_uuid = uuid.UUID(department_id)
+                items_params = GetAuthItemsSqlParams(auth_id=auth_id_uuid, department_id=dept_id_uuid)
+                items_sql_params = items_params.to_tuple()
+                items_param_placeholders = ", ".join([f"${i + 1}" for i in range(len(items_sql_params))])
+                items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
+                item_rows = await conn.fetch(items_function_call_sql, *items_sql_params)
+                items = [dict(row) for row in item_rows]
+            else:
+                raise ValueError("Expected function definition in get_auth_items_complete.sql")
+        
+        # Build config map from items
+        config_map: dict[str, str] = {}
+        for item in items:
+            item_name = item["name"]
+            raw_value = item["value"]
+            is_encrypted = item.get("encrypted", True)
+            
+            if is_encrypted:
+                try:
+                    decrypted_value = decrypt_api_key(raw_value)
+                    config_map[item_name] = decrypted_value
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to decrypt auth_item '{item_name}' for provider '{unique_alias}': {e}. Using as plain text."
+                    )
+                    config_map[item_name] = raw_value
+            else:
+                config_map[item_name] = raw_value
+        
+        # Build IdP payload with organization_id
+        payload: dict[str, Any] = {
+            "alias": unique_alias,
+            "providerId": provider_id,
+            "displayName": display_name,
+            "enabled": True,
+            "trustEmail": True,
+            "organizationId": organization_id,  # Link to organization
+            "config": {},
+        }
+        
+        # Configure provider-specific settings
+        if provider_id == "saml":
+            if "ssoUrl" in config_map:
+                payload["config"]["singleSignOnServiceUrl"] = config_map["ssoUrl"]
+            if "entityId" in config_map:
+                payload["config"]["entityId"] = config_map["entityId"]
+            if "metadataUrl" in config_map:
+                payload["config"]["importFromIdpUrl"] = config_map["metadataUrl"]
+            if "certificate" in config_map:
+                payload["config"]["signingCertificate"] = config_map["certificate"]
+            if "nameIDPolicyFormat" not in payload["config"]:
+                payload["config"]["nameIDPolicyFormat"] = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+            if "syncMode" not in payload["config"]:
+                payload["config"]["syncMode"] = "FORCE"
+            if "allowCreate" not in payload["config"]:
+                payload["config"]["allowCreate"] = "true"
+        else:
+            payload["config"] = config_map
+            if "syncMode" not in payload["config"]:
+                payload["config"]["syncMode"] = "FORCE"
+            if "useJwksUrl" not in payload["config"]:
+                payload["config"]["useJwksUrl"] = "true"
+        
+        # Create or update IdP (org-scoped)
+        try:
+            kc_admin.get_idp(idp_alias=unique_alias)
+            # IdP exists, update it
+            kc_admin.update_idp(idp_alias=unique_alias, payload=payload)
+            logger.info(f"✅ Updated org-scoped IdP: {unique_alias} (org: {organization_id})")
+        except Exception:
+            # IdP doesn't exist, create it
+            kc_admin.create_idp(payload=payload)
+            logger.info(f"✅ Created org-scoped IdP: {unique_alias} (org: {organization_id})")
+    except Exception as e:
+        logger.warning(f"Failed to sync org-scoped IdP '{unique_alias}': {e}", exc_info=True)
+
+
+async def sync_identity_providers(
+    kc_admin: Any,
+    pool: Any,
+) -> None:
+    """Sync all identity providers to master realm.
+    
+    - Realm-level: Auths from default settings (platform login)
+    - Org-scoped: Auths from department settings (one IdP per org, duplicates shared auths)
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+        pool: Database connection pool
+    """
+    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
+    
+    try:
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Step 1: Sync realm-level IdPs (from default settings)
+        logger.info("Syncing realm-level IdPs (platform login)...")
+        async with pool.acquire() as conn:
+            sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql")
+            is_function, function_name, schema = _detect_function_in_sql(sql_text)
+            
+            if is_function and function_name:
+                function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
+                realm_level_providers = await conn.fetch(function_call_sql)
+                
+                for provider_row in realm_level_providers:
+                    provider = dict(provider_row)
+                    await sync_identity_provider_for_realm_level(
+                        auth_id=str(provider["id"]),
+                        slug=provider["slug"],
+                        provider_id=provider["provider_id"],
+                        display_name=provider["name"],
+                        kc_admin=kc_admin,
+                        pool=pool,
+                    )
+            else:
+                raise ValueError("Expected function definition in get_auths_for_realm_level_complete.sql")
+        
+        # Step 2: Get all departments that need organizations
+        logger.info("Syncing org-scoped IdPs (department-specific)...")
+        async with pool.acquire() as conn:
+            sql_text = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+            is_function, function_name, schema = _detect_function_in_sql(sql_text)
+            
+            if is_function and function_name:
+                function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
+                departments = await conn.fetch(function_call_sql)
+                
+                for dept_row in departments:
+                    dept = dict(dept_row)
+                    dept_id = str(dept["department_id"])
+                    dept_name = dept["department_name"] or dept_id
+                    
+                    # Ensure organization exists
+                    org_id = await sync_organization_for_department(
+                        department_id=dept_id,
+                        department_name=dept_name,
+                        kc_admin=kc_admin,
+                    )
+                    
+                    if not org_id:
+                        logger.warning(f"Failed to create organization for department {dept_id}, skipping IdP sync")
+                        continue
+                    
+                    # Get auths for this department
+                    auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                    auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
+                    
+                    if auths_is_function and auths_function_name:
+                        import uuid
+                        auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
+                        org_providers = await conn.fetch(auths_function_call_sql, uuid.UUID(dept_id))
+                        
+                        for provider_row in org_providers:
+                            provider = dict(provider_row)
+                            await sync_identity_provider_for_org(
+                                auth_id=str(provider["id"]),
+                                slug=provider["slug"],
+                                provider_id=provider["provider_id"],
+                                display_name=provider["name"],
+                                organization_id=org_id,
+                                department_id=dept_id,
+                                kc_admin=kc_admin,
+                                pool=pool,
+                            )
+                    else:
+                        raise ValueError("Expected function definition in get_auths_for_org_complete.sql")
+            else:
+                raise ValueError("Expected function definition in get_departments_for_org_sync_complete.sql")
+        
+        # Step 3: Clean up IdPs that shouldn't exist
+        # Delete realm-level IdPs that are no longer in default settings
+        logger.info("Cleaning up obsolete IdPs...")
         try:
             existing_idps = kc_admin.get_idps()
-            existing_provider_slugs = {idp.get("alias", "") for idp in existing_idps}
-
-            # Delete providers that shouldn't be in this realm
-            providers_to_delete = existing_provider_slugs - expected_provider_slugs
-            for slug_to_delete in providers_to_delete:
-                try:
-                    kc_admin.delete_idp(idp_alias=slug_to_delete)
-                    logger.info(
-                        f"🗑️  Deleted provider '{slug_to_delete}' from realm '{realm_name}' (not in database)"
-                    )
-                except Exception as delete_e:
-                    error_str = str(delete_e).lower()
-                    if "not found" in error_str or "404" in error_str:
-                        logger.info(
-                            f"Provider '{slug_to_delete}' already deleted from realm '{realm_name}'"
-                        )
-                    else:
-                        logger.warning(
-                            f"Failed to delete provider '{slug_to_delete}' from realm '{realm_name}': {delete_e}"
-                        )
-        except Exception as list_e:
-            logger.warning(
-                f"Failed to list existing providers in realm '{realm_name}': {list_e}"
-            )
-
-        if not providers:
-            logger.info(
-                f"No active providers found for department {department_id or 'default'}, skipping sync"
-            )
-        else:
-            for p in providers:
-                auth_id = p["id"]
-                slug = p["slug"]
-                provider_id = p["provider_id"]
-                display_name = p["name"]
-
-                # Handle multi-row function results for auth items
-                from app.sql.types import GetAuthItemsSqlParams
-
-                items_sql_text = load_sql(
-                    "app/sql/v4/keycloak/get_auth_items_complete.sql"
-                )
-                items_is_function, items_function_name, items_schema = (
-                    _detect_function_in_sql(items_sql_text)
-                )
-
-                if items_is_function and items_function_name:
-                    auth_id_uuid = uuid.UUID(str(auth_id))
-                    # Handle None department_id - function accepts NULL but Pydantic requires UUID
-                    if department_id:
-                        dept_id_uuid = uuid.UUID(department_id)
-                        items_params = GetAuthItemsSqlParams(
-                            auth_id=auth_id_uuid, department_id=dept_id_uuid
-                        )
-                        items_sql_params = items_params.to_tuple()
-                    else:
-                        # Pass NULL directly to PostgreSQL function
-                        items_sql_params = (auth_id_uuid, None)
-                    items_param_placeholders = ", ".join(
-                        [f"${i + 1}" for i in range(len(items_sql_params))]
-                    )
-                    items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
-                    item_rows = await conn.fetch(
-                        items_function_call_sql, *items_sql_params
-                    )
-                    items = [dict(row) for row in item_rows]
-                    logger.info(
-                        f"🔍 Retrieved {len(items)} items for provider '{slug}' (auth_id={auth_id}): {[item['name'] for item in items]}"
-                    )
+            
+            # Get expected realm-level slugs
+            async with pool.acquire() as conn:
+                sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql")
+                is_function, function_name, schema = _detect_function_in_sql(sql_text)
+                if is_function and function_name:
+                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
+                    realm_level_providers = await conn.fetch(function_call_sql)
+                    expected_realm_slugs = {p["slug"] for p in realm_level_providers}
                 else:
-                    raise ValueError(
-                        "Expected function definition in get_auth_items_complete.sql"
-                    )
-
-                config_map: dict[str, str] = {}
-                for item in items:
-                    item_name = item["name"]
-                    raw_value = item["value"]
-                    is_encrypted = item.get("encrypted", True)
-
-                    if is_encrypted:
+                    expected_realm_slugs = set()
+            
+            # Get expected org-scoped aliases (slug-department_id pattern)
+            async with pool.acquire() as conn:
+                sql_text = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+                is_function, function_name, schema = _detect_function_in_sql(sql_text)
+                if is_function and function_name:
+                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
+                    departments = await conn.fetch(function_call_sql)
+                    
+                    expected_org_aliases = set()
+                    for dept_row in departments:
+                        dept = dict(dept_row)
+                        dept_id = str(dept["department_id"])
+                        
+                        auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                        auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
+                        if auths_is_function and auths_function_name:
+                            import uuid
+                            auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
+                            org_providers = await conn.fetch(auths_function_call_sql, uuid.UUID(dept_id))
+                            for provider_row in org_providers:
+                                provider = dict(provider_row)
+                                expected_org_aliases.add(f"{provider['slug']}-{dept_id}")
+                else:
+                    expected_org_aliases = set()
+            
+            # Delete IdPs that shouldn't exist
+            for idp in existing_idps:
+                idp_alias = idp.get("alias", "")
+                org_id = idp.get("organizationId")
+                
+                # Skip if it's an org-scoped IdP (we'll handle those separately)
+                if org_id:
+                    if idp_alias not in expected_org_aliases:
                         try:
-                            decrypted_value = decrypt_api_key(raw_value)
-                            config_map[item_name] = decrypted_value
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to decrypt auth_item '{item_name}' for provider '{slug}': {e}. "
-                                f"Using as plain text."
-                            )
-                            config_map[item_name] = raw_value
-                    else:
-                        config_map[item_name] = raw_value
-
-                payload: dict[str, Any] = {
-                    "alias": slug,
-                    "providerId": provider_id,
-                    "displayName": display_name,
-                    "enabled": True,
-                    "trustEmail": True,
-                    "config": {},
-                }
-
-                if provider_id == "saml":
-                    if "ssoUrl" in config_map:
-                        payload["config"]["singleSignOnServiceUrl"] = config_map[
-                            "ssoUrl"
-                        ]
-                    if "entityId" in config_map:
-                        payload["config"]["entityId"] = config_map["entityId"]
-                    if "metadataUrl" in config_map:
-                        payload["config"]["importFromIdpUrl"] = config_map[
-                            "metadataUrl"
-                        ]
-                    if "certificate" in config_map:
-                        payload["config"]["signingCertificate"] = config_map[
-                            "certificate"
-                        ]
-                    if "nameIDPolicyFormat" not in payload["config"]:
-                        payload["config"]["nameIDPolicyFormat"] = (
-                            "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-                        )
-                    if "syncMode" not in payload["config"]:
-                        payload["config"]["syncMode"] = "FORCE"
-                    if "allowCreate" not in payload["config"]:
-                        payload["config"]["allowCreate"] = "true"
+                            kc_admin.delete_idp(idp_alias=idp_alias)
+                            logger.info(f"🗑️  Deleted obsolete org-scoped IdP: {idp_alias}")
+                        except Exception as delete_e:
+                            error_str = str(delete_e).lower()
+                            if "not found" in error_str or "404" in error_str:
+                                pass  # Already deleted
+                            else:
+                                logger.warning(f"Failed to delete IdP '{idp_alias}': {delete_e}")
                 else:
-                    payload["config"] = config_map
-                    if "syncMode" not in payload["config"]:
-                        payload["config"]["syncMode"] = "FORCE"
-                    if "useJwksUrl" not in payload["config"]:
-                        payload["config"]["useJwksUrl"] = "true"
+                    # Realm-level IdP
+                    if idp_alias not in expected_realm_slugs:
+                        try:
+                            kc_admin.delete_idp(idp_alias=idp_alias)
+                            logger.info(f"🗑️  Deleted obsolete realm-level IdP: {idp_alias}")
+                        except Exception as delete_e:
+                            error_str = str(delete_e).lower()
+                            if "not found" in error_str or "404" in error_str:
+                                pass  # Already deleted
+                            else:
+                                logger.warning(f"Failed to delete IdP '{idp_alias}': {delete_e}")
+        except Exception as cleanup_e:
+            logger.warning(f"Failed to clean up obsolete IdPs: {cleanup_e}")
+        
+        logger.info("✅ Identity provider sync completed")
+    except Exception as e:
+        logger.error(f"Failed to sync identity providers: {e}", exc_info=True)
 
-                logger.info(
-                    f"🔍 Payload for {slug} in realm {realm_name}: {payload['config']}"
-                )
-                if not config_map:
-                    logger.warning(
-                        f"⚠️  No config values found for provider '{slug}' (auth_id={auth_id}). "
-                        f"Items retrieved: {len(items)}. Check SQL query and database."
-                    )
 
-                try:
-                    kc_admin.get_idp(idp_alias=slug)
-                    try:
-                        kc_admin.update_idp(idp_alias=slug, payload=payload)
-                        logger.info(f"✅ Synced Keycloak provider: {slug}")
-                    except Exception as update_e:
-                        error_str = str(update_e).lower()
-                        if (
-                            "409" in error_str
-                            or "conflict" in error_str
-                            or "already exists" in error_str
-                        ):
-                            logger.info(
-                                f"⚠️  [{bootstrap_leader}] Provider '{slug}' update conflict, may have been updated by another server"
-                            )
-                        else:
-                            raise
-                except Exception:
-                    try:
-                        kc_admin.create_idp(payload=payload)
-                        logger.info(f"✅ Created Keycloak provider: {slug}")
-                    except Exception as create_e:
-                        error_str = str(create_e).lower()
-                        if (
-                            "409" in error_str
-                            or "conflict" in error_str
-                            or "already exists" in error_str
-                        ):
-                            logger.info(
-                                f"⚠️  [{bootstrap_leader}] Provider '{slug}' was created by another server, updating instead..."
-                            )
-                            try:
-                                kc_admin.update_idp(idp_alias=slug, payload=payload)
-                                logger.info(f"✅ Synced Keycloak provider: {slug}")
-                            except Exception as update_retry_e:
-                                logger.warning(
-                                    f"⚠️  Failed to update provider '{slug}' after create conflict: {update_retry_e}"
-                                )
-                        else:
-                            raise
+# OLD FUNCTION REMOVED: sync_department_realm_by_settings
+# This function was replaced by sync_identity_providers() which uses organizations instead of multiple realms
+# The old function created separate realms per settings, but we now use a single master realm with organizations
 
 
 async def sync_keycloak(department_id: str | None = None) -> None:
@@ -1254,7 +1212,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                 f"Could not update master realm SSL setting: {e}. Continuing..."
             )
 
-        # Ensure glow-client exists in master realm before syncing departments
+        # Ensure glow-client exists in master realm before syncing
         await ensure_glow_client_in_master_realm(kc_admin)
 
         # Ensure MCP client scope is configured (after client is ensured)
@@ -1266,109 +1224,29 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         # Ensure Trusted Hosts policy is configured for client registration
         await ensure_trusted_hosts_policy(kc_admin)
 
-        # Determine which settings to sync (settings-based realms, not department-based)
-        # Sync each settings that has providers with keys
-        if department_id is not None:
-            # Sync specific department - determine which settings it uses
-            realm_name = await get_realm_name_for_department(department_id, pool)
-            settings_to_sync = [realm_name]  # realm_name is settings_id or "master"
-        else:
-            # Sync all settings that have providers with keys
-            async with pool.acquire() as conn:
-                # Simplified: Get all settings with providers and keys
-                # Master realm for default settings, settings_id for department-specific
-                from app.utils.sql_helper import (_detect_function_in_sql,
-                                                  load_sql)
+        # Sync identity providers (realm-level + org-scoped)
+        # This replaces the old realm-based sync logic
+        await sync_identity_providers(kc_admin, pool)
 
-                sql_text = load_sql("app/sql/v4/keycloak/get_settings_to_sync_complete.sql")
-                is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
-                if is_function and function_name:
-                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-                    settings_to_sync_result = await conn.fetch(function_call_sql)
-                    settings_to_sync = [
-                        row["realm_name"] for row in settings_to_sync_result
-                    ]
-                else:
-                    raise ValueError(
-                        "Expected function definition in get_settings_to_sync_complete.sql"
-                    )
-
-        # Sync each settings realm (settings-based, not department-based)
-        for settings_id in settings_to_sync:
-            try:
-                # For settings-based sync, determine department_id if needed
-                # If settings_id is "master", use None (default settings)
-                # Otherwise, find a department that uses this settings
-                department_id_for_sync = None
-                if settings_id != "master":
-                    async with pool.acquire() as conn:
-                        import uuid
-                        from typing import cast
-
-                        from app.sql.types import (
-                            GetDepartmentIdForSettingsSqlParams,
-                            GetDepartmentIdForSettingsSqlRow)
-                        from app.utils.sql_helper import execute_sql_typed
-
-                        params = GetDepartmentIdForSettingsSqlParams(
-                            settings_id=uuid.UUID(settings_id)
-                        )
-                        result = cast(
-                            GetDepartmentIdForSettingsSqlRow,
-                            await execute_sql_typed(
-                                conn,
-                                "app/sql/v4/keycloak/get_department_id_for_settings_complete.sql",
-                                params=params,
-                            ),
-                        )
-                        department_id_for_sync = result.department_id
-
-                # Sync the realm using settings_id as realm_name
-                await sync_department_realm_by_settings(
-                    settings_id, department_id_for_sync, kc_admin, pool
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Failed to sync settings realm {settings_id}: {e}",
-                    exc_info=True,
-                )
-
-        # Clean up old department-based realms that are no longer needed
-        # These are realms that were created with department_id as name but should now be deleted
-        # since we're using settings-based realms
+        # Clean up old non-master realms (safety check - should all be deleted already)
         try:
-            async with pool.acquire() as conn:
-                # Get list of valid realm names (master + settings_ids with keys)
-                valid_realm_names = set(settings_to_sync)
+            existing_realms = kc_admin.get_realms()
+            for realm in existing_realms:
+                realm_name = realm.get("realm", "")
+                # Skip master realm
+                if realm_name == "master":
+                    continue
 
-                # Get all existing realms
-                existing_realms = kc_admin.get_realms()
-                for realm in existing_realms:
-                    realm_name = realm.get("realm", "")
-                    # Skip master realm
-                    if realm_name == "master":
-                        continue
-
-                    # If realm is not in valid list and looks like a UUID (old department-based realm),
-                    # delete it
-                    if realm_name not in valid_realm_names:
-                        # Check if it's a UUID format (old department-based realm)
-                        uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-                        if re.match(uuid_pattern, realm_name.lower()):
-                            try:
-                                kc_admin.delete_realm(realm_name=realm_name)
-                                logger.info(
-                                    f"✅ Deleted old department-based realm: {realm_name}"
-                                )
-                            except Exception as e:
-                                error_str = str(e).lower()
-                                if "not found" in error_str or "404" in error_str:
-                                    logger.info(f"Realm '{realm_name}' already deleted")
-                                else:
-                                    logger.warning(
-                                        f"Failed to delete old realm '{realm_name}': {e}"
-                                    )
+                # Delete any non-master realms (old architecture)
+                try:
+                    kc_admin.delete_realm(realm_name=realm_name)
+                    logger.info(f"✅ Deleted old realm: {realm_name}")
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "not found" in error_str or "404" in error_str:
+                        logger.info(f"Realm '{realm_name}' already deleted")
+                    else:
+                        logger.warning(f"Failed to delete old realm '{realm_name}': {e}")
         except Exception as e:
             logger.warning(f"Failed to clean up old realms: {e}", exc_info=True)
 
@@ -1377,15 +1255,15 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         logger.warning(f"Keycloak sync failed (non-blocking): {e}", exc_info=True)
 
 
-async def delete_department_realm(department_id: str) -> None:
-    """Delete a department realm from Keycloak.
+async def delete_department_organization(department_id: str) -> None:
+    """Delete a department organization from Keycloak.
 
     Args:
-        department_id: Department ID to delete realm for
+        department_id: Department ID to delete organization for
     """
     pool = get_pool()
     if not pool:
-        logger.warning("Database pool not available, skipping realm deletion")
+        logger.warning("Database pool not available, skipping organization deletion")
         return
 
     try:
@@ -1417,35 +1295,58 @@ async def delete_department_realm(department_id: str) -> None:
             keycloak_url, keycloak_admin, keycloak_admin_password
         )
         if not kc_admin:
-            logger.warning("Keycloak not available, skipping realm deletion")
+            logger.warning("Keycloak not available, skipping organization deletion")
             return
 
-        # Get default department ID to check if this is the default department
-        async with pool.acquire() as conn:
-            sql_default_department = load_sql(
-                "app/sql/v4/settings/get_default_department.sql"
-            )
-            default_dept_result = await conn.fetchval(sql_default_department)
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
 
-        # Get realm name for this department
-        realm_name = await get_realm_name_for_department(department_id, pool)
-
-        # Don't delete master realm
-        if realm_name == "master":
-            logger.info("Skipping deletion of master realm")
-            return
-
+        # Find organization by alias (department_id)
         try:
-            kc_admin.delete_realm(realm_name=realm_name)
-            logger.info(f"✅ Deleted Keycloak realm: {realm_name}")
+            orgs = kc_admin.get_organizations()
+            org_to_delete = next(
+                (o for o in orgs if o.get("alias") == department_id),
+                None
+            )
+            
+            if not org_to_delete:
+                logger.info(f"Organization for department {department_id} not found (may already be deleted)")
+                return
+            
+            org_id = org_to_delete.get("id")
+            if not org_id:
+                logger.warning(f"Organization for department {department_id} has no ID")
+                return
+            
+            # Delete org-scoped IdPs first (they'll be cleaned up automatically, but let's be explicit)
+            try:
+                existing_idps = kc_admin.get_idps()
+                for idp in existing_idps:
+                    if idp.get("organizationId") == org_id:
+                        idp_alias = idp.get("alias", "")
+                        try:
+                            kc_admin.delete_idp(idp_alias=idp_alias)
+                            logger.info(f"🗑️  Deleted org-scoped IdP: {idp_alias}")
+                        except Exception as idp_e:
+                            error_str = str(idp_e).lower()
+                            if "not found" in error_str or "404" in error_str:
+                                pass  # Already deleted
+                            else:
+                                logger.warning(f"Failed to delete IdP '{idp_alias}': {idp_e}")
+            except Exception as idp_cleanup_e:
+                logger.warning(f"Failed to clean up org-scoped IdPs: {idp_cleanup_e}")
+            
+            # Delete the organization
+            kc_admin.delete_organization(organization_id=org_id)
+            logger.info(f"✅ Deleted Keycloak organization for department: {department_id}")
         except Exception as e:
             error_str = str(e).lower()
             if "not found" in error_str or "404" in error_str:
-                logger.info(f"Realm '{realm_name}' already deleted")
+                logger.info(f"Organization for department {department_id} already deleted")
             else:
-                logger.warning(f"Failed to delete realm '{realm_name}': {e}")
+                logger.warning(f"Failed to delete organization for department {department_id}: {e}")
     except Exception as e:
-        logger.warning(f"Realm deletion failed (non-blocking): {e}", exc_info=True)
+        logger.warning(f"Organization deletion failed (non-blocking): {e}", exc_info=True)
 
 
 async def perform_keycloak_sync(
