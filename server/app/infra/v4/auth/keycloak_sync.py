@@ -979,6 +979,180 @@ async def sync_identity_provider_for_org(
         logger.warning(f"Failed to sync org-scoped IdP '{unique_alias}': {e}", exc_info=True)
 
 
+def get_idp_base_url() -> str:
+    """Get the base URL for the IdP based on environment.
+    
+    Uses same pattern as mcp/oauth.py:
+    - Local dev: http://localhost:8000 (direct backend access)
+    - Production: ORIGIN (public domain, nginx proxies to backend)
+    
+    Path is at root level: /default-idp/ (not /api/v4/auth/default-idp/)
+    """
+    origin = os.getenv("ORIGIN", "http://localhost:3000")
+    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
+    
+    # Detect local dev (same pattern as mcp/oauth.py)
+    is_local_dev = "localhost" in origin.lower()
+    
+    if is_local_dev:
+        # Local dev: use direct backend URL (backend accessible on localhost:8000)
+        base = "http://localhost:8000"
+    else:
+        # Production: use public ORIGIN (nginx will proxy /default-idp/ to backend)
+        base = origin
+    
+    if app_prefix:
+        return f"{base}/{app_prefix}/default-idp"
+    return f"{base}/default-idp"
+
+
+async def sync_default_idp(kc_admin: Any) -> None:
+    """Sync default-idp Identity Provider to master realm.
+    
+    This IdP handles guest and default-account authentication flows.
+    It's hidden from the login page and only accessible via kc_idp_hint.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    try:
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Get IdP base URL using environment detection
+        idp_base_url = get_idp_base_url()
+        
+        # Generate or retrieve client secret (should be stored securely in production)
+        # For now, use AUTH_SECRET as the client secret (shared secret between Keycloak and IdP)
+        client_secret = os.getenv("AUTH_SECRET")
+        if not client_secret:
+            logger.warning("AUTH_SECRET not found, cannot create default-idp")
+            return
+        
+        # Legacy single default-idp (kept for backward compatibility)
+        # Uses mode=guest as default (can be overridden via state token)
+        payload = {
+            "alias": "default-idp",
+            "providerId": "oidc",
+            "displayName": "Default Account / Guest",
+            "enabled": True,
+            "trustEmail": True,
+            "hideOnLogin": False,  # Must be False so it appears in social.providers for theme rendering
+            "config": {
+                "authorizationUrl": f"{idp_base_url}/authorize?mode=guest",  # Default to guest mode
+                "tokenUrl": f"{idp_base_url}/token",
+                "jwksUrl": f"{idp_base_url}/jwks",
+                "issuer": idp_base_url,
+                "clientId": "keycloak-broker",  # Keycloak acts as client
+                "clientSecret": client_secret,
+                "useJwksUrl": "true",
+                "syncMode": "FORCE",
+            }
+        }
+        
+        # Create or update IdP
+        try:
+            kc_admin.get_idp(idp_alias="default-idp")
+            # IdP exists, update it
+            kc_admin.update_idp(idp_alias="default-idp", payload=payload)
+            logger.info("✅ Updated default-idp Identity Provider")
+        except Exception:
+            # IdP doesn't exist, create it
+            kc_admin.create_idp(payload=payload)
+            logger.info("✅ Created default-idp Identity Provider")
+    except Exception as e:
+        logger.warning(f"Failed to sync default-idp: {e}", exc_info=True)
+
+
+async def sync_default_idp_for_department(
+    department_id: str | None,
+    mode: str,  # "guest" or "default-account"
+    kc_admin: Any,
+) -> str:
+    """Sync a default-idp instance for a specific department/mode combination.
+    
+    Returns the IdP alias (e.g., "default-idp-guest-dept-123" or "default-idp-default-platform")
+    
+    All IdP instances use the same OIDC endpoints (/default-idp/authorize, etc.)
+    The state token encodes department_id + mode, so backend can differentiate.
+    
+    Args:
+        department_id: Department ID (UUID string) or None for platform-level
+        mode: "guest" or "default-account"
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    
+    Returns:
+        IdP alias string
+    """
+    try:
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Generate alias based on department and mode
+        if department_id:
+            alias = f"default-idp-{mode}-dept-{department_id}"
+            display_name = f"Default Account / Guest - {mode} - Department {department_id}"
+        else:
+            alias = f"default-idp-{mode}-platform"
+            display_name = f"Default Account / Guest - {mode} - Platform"
+        
+        # All IdPs use the same base URL (state token handles differentiation)
+        idp_base_url = get_idp_base_url()
+        
+        # Generate or retrieve client secret (should be stored securely in production)
+        client_secret = os.getenv("AUTH_SECRET")
+        if not client_secret:
+            logger.warning(f"AUTH_SECRET not found, cannot create {alias}")
+            return alias
+        
+        # Extract mode and department_id from alias to pass as query params
+        # This allows the /authorize endpoint to know which flow to use
+        # Format: default-idp-{mode}-dept-{department_id} or default-idp-{mode}-platform
+        mode_param = "guest" if "guest" in alias else "default-account"
+        dept_param = department_id if department_id else ""
+        
+        # Build authorizationUrl with mode and department_id as query params
+        # Keycloak will append its own state parameter, so we use & to chain params
+        auth_url = f"{idp_base_url}/authorize?mode={mode_param}"
+        if dept_param:
+            auth_url += f"&department_id={dept_param}"
+        
+        payload = {
+            "alias": alias,
+            "providerId": "oidc",
+            "displayName": display_name,
+            "enabled": True,
+            "trustEmail": True,
+            "hideOnLogin": False,  # Must be False so it appears in social.providers for theme rendering
+            "config": {
+                "authorizationUrl": auth_url,  # Includes mode and department_id as query params
+                "tokenUrl": f"{idp_base_url}/token",
+                "jwksUrl": f"{idp_base_url}/jwks",
+                "issuer": idp_base_url,
+                "clientId": "keycloak-broker",  # Keycloak acts as client
+                "clientSecret": client_secret,
+                "useJwksUrl": "true",
+                "syncMode": "FORCE",
+            }
+        }
+        
+        # Create or update IdP
+        try:
+            kc_admin.get_idp(idp_alias=alias)
+            # IdP exists, update it
+            kc_admin.update_idp(idp_alias=alias, payload=payload)
+            logger.info(f"✅ Updated {alias} Identity Provider")
+        except Exception:
+            # IdP doesn't exist, create it
+            kc_admin.create_idp(payload=payload)
+            logger.info(f"✅ Created {alias} Identity Provider")
+        
+        return alias
+    except Exception as e:
+        logger.warning(f"Failed to sync {alias if 'alias' in locals() else 'default-idp'}: {e}", exc_info=True)
+        return alias if 'alias' in locals() else "default-idp"
+
+
 async def sync_identity_providers(
     kc_admin: Any,
     pool: Any,
@@ -987,8 +1161,12 @@ async def sync_identity_providers(
     
     - Realm-level: Auths from default settings (platform login) - alias: slug
     - Department-scoped: Auths from department settings - alias: auth_{slug}_{auth_id} (1:1 mapping)
+    - Default-idp: Custom OIDC IdP instances for guest/default-account flows
+      - Platform-level: default-idp-guest-platform, default-idp-default-platform
+      - Department-level: default-idp-guest-dept-{id}, default-idp-default-dept-{id}
     
-    All IdPs are hidden (hideOnLogin=true), theme controls visibility based on client_id.
+    All IdPs have hideOnLogin=False so they appear in social.providers for theme filtering.
+    Theme controls visibility based on department selection and authorization checks.
     
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
@@ -999,6 +1177,31 @@ async def sync_identity_providers(
     try:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
+        
+        # Step 0: Sync default-idp instances (custom OIDC IdP for guest/default-account)
+        # Create IdP instances per department/mode combination
+        logger.info("Syncing default-idp Identity Provider instances...")
+        
+        # Sync platform-level default-idp instances (no department)
+        await sync_default_idp_for_department(None, "guest", kc_admin)
+        await sync_default_idp_for_department(None, "default-account", kc_admin)
+        
+        # Sync department-level default-idp instances
+        async with pool.acquire() as conn:
+            dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+            dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
+            
+            if dept_is_function and dept_function_name:
+                dept_function_call_sql = f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
+                departments = await conn.fetch(dept_function_call_sql)
+                
+                for dept_row in departments:
+                    dept = dict(dept_row)
+                    dept_id = str(dept["department_id"])
+                    
+                    # Sync guest and default-account IdPs for each department
+                    await sync_default_idp_for_department(dept_id, "guest", kc_admin)
+                    await sync_default_idp_for_department(dept_id, "default-account", kc_admin)
         
         # Step 1: Sync realm-level IdPs (from default settings)
         logger.info("Syncing realm-level IdPs (platform login)...")

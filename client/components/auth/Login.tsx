@@ -332,37 +332,45 @@ export default function Login({
     }
   };
 
+  /**
+   * @deprecated Guest access is now handled automatically by Keycloak via the custom OIDC IdP.
+   * The "Continue as Guest" button in the Keycloak login theme redirects directly to the OIDC flow.
+   * This function is kept for backward compatibility but should not be used.
+   */
   const handleGuestAccess = async () => {
     try {
       setLoadingGuest(true);
+      toast.warning(
+        "Guest access should be initiated from the Keycloak login page"
+      );
 
-      // Import server action dynamically to avoid SSR issues
-      const { setGuestSession } = await import("@/app/(main)/layout-server");
-
-      // Set guest session cookies server-side (department-id + auth-mode)
-      // Pass selectedDepartmentId (can be null for default settings)
-      const result = await setGuestSession(selectedDepartmentId);
-
-      if (!result.ok) {
-        toast.error(result.reason || "Failed to set guest session");
-        return;
-      }
-
-      // Clear localStorage - cookies are now the source of truth
-      localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedProfileId");
-      localStorage.removeItem("defaultAccountMode");
-      localStorage.removeItem("defaultAccountProfileId");
-
+      // Redirect to Keycloak login page where guest access is available
+      const keycloakPublicUrl =
+        process.env["NEXT_PUBLIC_KEYCLOAK_URL"] ||
+        process.env["KEYCLOAK_PUBLIC_URL"] ||
+        "http://localhost:8080";
+      const keycloakClientId =
+        process.env["NEXT_PUBLIC_KEYCLOAK_CLIENT_ID"] ||
+        process.env["AUTH_KEYCLOAK_ID"] ||
+        "glow-client";
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      // Redirect to redirectPath if provided, otherwise practice
-      const guestRedirect = redirectPath
-        ? `${appPrefix}${redirectPath}`
-        : `${appPrefix}/practice`;
+      const keycloakAuthUrl = new URL(
+        `${keycloakPublicUrl}/realms/master/protocol/openid-connect/auth`
+      );
+      keycloakAuthUrl.searchParams.set("client_id", keycloakClientId);
+      keycloakAuthUrl.searchParams.set(
+        "redirect_uri",
+        `${window.location.origin}${appPrefix}/api/auth/callback/keycloak`
+      );
+      keycloakAuthUrl.searchParams.set("response_type", "code");
+      keycloakAuthUrl.searchParams.set("scope", "openid profile email");
 
-      toast.success("Accessing as guest!");
-      router.push(guestRedirect);
+      if (selectedDepartmentId) {
+        keycloakAuthUrl.searchParams.set("department", selectedDepartmentId);
+      }
+
+      window.location.href = keycloakAuthUrl.toString();
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (!errorMessage.toLowerCase().includes("load failed")) {

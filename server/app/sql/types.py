@@ -5818,6 +5818,42 @@ class PatchAuthDraftApiResponse(BaseModel):
 
 
 
+# Generated from: resolve_default_idp_profile
+
+class ResolveDefaultIdpProfileSqlParams(BaseModel):
+
+    department_id: str
+    auth_mode: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.auth_mode,
+        )
+
+class ResolveDefaultIdpProfileSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    primary_email: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    role: str | None = None
+
+class ResolveDefaultIdpProfileApiRequest(BaseModel):
+
+    department_id: str
+    auth_mode: str
+
+class ResolveDefaultIdpProfileApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    primary_email: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    role: str | None = None
+
+
+
 # Generated from: save_auth
 
 class ISaveAuthV4AuthItem(BaseModel):
@@ -36739,6 +36775,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchAuthDraftApiRequest",
         "PatchAuthDraftApiResponse",
     ),
+    "app/sql/v4/auth/resolve_default_idp_profile_complete.sql": (
+        "ResolveDefaultIdpProfileSqlParams",
+        "ResolveDefaultIdpProfileSqlRow",
+        "ResolveDefaultIdpProfileApiRequest",
+        "ResolveDefaultIdpProfileApiResponse",
+    ),
     "app/sql/v4/auth/save_auth_complete.sql": (
         "SaveAuthSqlParams",
         "SaveAuthSqlRow",
@@ -40371,6 +40413,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/patch_auth_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/resolve_default_idp_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload

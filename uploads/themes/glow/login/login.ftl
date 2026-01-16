@@ -130,6 +130,7 @@
                       : platformProviders;
 
                     // Filter action buttons (provider buttons) - show/hide based on department selection
+                    // Includes regular IdPs and default-idp instances
                     var actionButtons = document.querySelectorAll(".action-button[id^='social-']");
                     var visibleProviders = [];
                     actionButtons.forEach(function (btn) {
@@ -138,32 +139,6 @@
                       btn.style.display = show ? "" : "none";
                       if (show) visibleProviders.push(btn);
                     });
-                    
-                    // Show/hide guest button and default account button based on visible providers
-                    var guestBtn = document.getElementById("guest-link");
-                    var defaultAccountBtn = document.getElementById("default-account-button");
-                    
-                    if (visibleProviders.length > 0) {
-                      // Providers exist - show guest button, hide default account button
-                      if (guestBtn) guestBtn.style.display = "";
-                      if (defaultAccountBtn) defaultAccountBtn.style.display = "none";
-                    } else {
-                      // No providers - hide guest button, show default account button
-                      if (guestBtn) guestBtn.style.display = "none";
-                      if (defaultAccountBtn) defaultAccountBtn.style.display = "";
-                    }
-
-                    // Update guest link
-                    var guest = document.getElementById("guest-link");
-                    if (guest) {
-                      var gb = new URL(guest.getAttribute("data-base"), window.location.origin);
-                      if (dept) {
-                        gb.searchParams.set("department", dept);
-                      } else {
-                        gb.searchParams.delete("department");
-                      }
-                      guest.href = gb.toString();
-                    }
                   }
 
                   select.addEventListener("change", function () {
@@ -237,6 +212,7 @@
             <#-- Provider buttons and action buttons (all styled consistently) -->
             <div class="action-buttons-section">
               <#-- Provider buttons (all rendered, filtered client-side by JavaScript) -->
+              <#-- Includes regular IdPs (Google, Microsoft, etc.) and default-idp instances -->
               <#if social.providers?? && social.providers?size gt 0>
                 <#list social.providers as p>
                   <a id="social-${p.alias}" class="action-button" href="${p.loginUrl}" <#if !allowed?seq_contains(p.alias)>style="display: none;"</#if>>
@@ -246,40 +222,24 @@
                       <#if p.iconClasses?has_content>
                         <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
                       </#if>
-                      <span class="action-button-text">Continue with ${p.displayName!}</span>
+                      <#-- Default-idp instances have specific display names, regular IdPs use their displayName -->
+                      <#if p.alias?starts_with("default-idp-")>
+                        <#if p.alias?contains("guest")>
+                          <span class="action-button-text">Continue as Guest</span>
+                        <#elseif p.alias?contains("default")>
+                          <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                          </svg>
+                          <span class="action-button-text">Continue as Default Account</span>
+                        <#else>
+                          <span class="action-button-text">${p.displayName!}</span>
+                        </#if>
+                      <#else>
+                        <span class="action-button-text">Continue with ${p.displayName!}</span>
+                      </#if>
                     </div>
                   </a>
                 </#list>
-              </#if>
-              
-              <#-- Continue as Guest button (always show if appBase exists and providers exist) -->
-              <#if appBase?has_content && social.providers?? && social.providers?size gt 0>
-                <#assign guestUrl = appBase + "/login" />
-                <#if departmentId?has_content>
-                  <#assign guestUrl = guestUrl + "?department=" + departmentId />
-                </#if>
-                
-                <a id="guest-link" data-base="${appBase}/login" class="action-button" href="${guestUrl}">
-                  <div class="action-button-shine-1"></div>
-                  <div class="action-button-shine-2"></div>
-                  <div class="action-button-content">
-                    <span class="action-button-text">Continue as Guest</span>
-                  </div>
-                </a>
-              </#if>
-              
-              <#-- Continue as Default Account button (only show if no providers) -->
-              <#if !(social.providers?? && social.providers?size gt 0)>
-                <button type="button" id="default-account-button" class="action-button" onclick="document.getElementById('kc-form-login').submit();">
-                  <div class="action-button-shine-1"></div>
-                  <div class="action-button-shine-2"></div>
-                  <div class="action-button-content">
-                    <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span class="action-button-text">Continue as Default Account</span>
-                  </div>
-                </button>
               </#if>
             </div>
           </div>

@@ -5644,6 +5644,151 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/default-idp/.well-known/openid-configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openid Configuration
+         * @description OIDC discovery endpoint.
+         */
+        get: operations["openid_configuration_default_idp__well_known_openid_configuration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/default-idp/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Authorize
+         * @description Authorization endpoint - handles Keycloak broker redirects.
+         */
+        get: operations["authorize_default_idp_authorize_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/default-idp/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Token
+         * @description Token endpoint - exchanges authorization codes for tokens.
+         */
+        post: operations["token_default_idp_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/default-idp/userinfo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Userinfo
+         * @description UserInfo endpoint - returns user claims from access token.
+         */
+        get: operations["userinfo_default_idp_userinfo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/default-idp/jwks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Jwks Endpoint
+         * @description JWKS endpoint for public key exposure.
+         */
+        get: operations["jwks_endpoint_default_idp_jwks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/default-idp/initiate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Initiate Guest Login
+         * @description Initiate guest/default-account login flow.
+         *
+         *     This endpoint generates a state token and redirects to Keycloak OAuth with kc_idp_hint.
+         *     Called directly from Keycloak theme login.ftl.
+         */
+        get: operations["initiate_guest_login_default_idp_initiate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/default-idp/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate State Token
+         * @description Generate signed state token for default-idp authentication.
+         *
+         *     Validates that department + mode combination is allowed before signing.
+         */
+        post: operations["generate_state_token_default_idp_state_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/oauth-authorization-server": {
         parameters: {
             query?: never;
@@ -7514,6 +7659,26 @@ export interface components {
         FlagsApiResponse: {
             /** Flag Id */
             flag_id?: string | null;
+        };
+        /**
+         * GenerateStateRequest
+         * @description Request model for state token generation.
+         */
+        GenerateStateRequest: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Mode */
+            mode: string;
+        };
+        /**
+         * GenerateStateResponse
+         * @description Response model for state token generation.
+         */
+        GenerateStateResponse: {
+            /** State */
+            state: string;
+            /** Nonce */
+            nonce: string;
         };
         /** GetActivityBundleApiRequest */
         GetActivityBundleApiRequest: Record<string, never>;
@@ -30607,6 +30772,220 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openid_configuration_default_idp__well_known_openid_configuration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    authorize_default_idp_authorize_get: {
+        parameters: {
+            query: {
+                client_id: string;
+                redirect_uri: string;
+                response_type: string;
+                state: string;
+                scope?: string;
+                mode?: string | null;
+                department_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    token_default_idp_token_post: {
+        parameters: {
+            query: {
+                grant_type: string;
+                code: string;
+                redirect_uri: string;
+                client_id: string;
+                client_secret?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    userinfo_default_idp_userinfo_get: {
+        parameters: {
+            query?: {
+                authorization?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jwks_endpoint_default_idp_jwks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    initiate_guest_login_default_idp_initiate_get: {
+        parameters: {
+            query?: {
+                department_id?: string | null;
+                mode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_state_token_default_idp_state_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateStateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateStateResponse"];
                 };
             };
             /** @description Validation Error */

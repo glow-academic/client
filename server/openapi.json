@@ -24575,6 +24575,395 @@
         ]
       }
     },
+    "/default-idp/.well-known/openid-configuration": {
+      "get": {
+        "tags": [
+          "default-idp"
+        ],
+        "summary": "Openid Configuration",
+        "description": "OIDC discovery endpoint.",
+        "operationId": "openid_configuration_default_idp__well_known_openid_configuration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Openid Configuration Default Idp  Well Known Openid Configuration Get"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
+      }
+    },
+    "/default-idp/authorize": {
+      "get": {
+        "tags": [
+          "default-idp"
+        ],
+        "summary": "Authorize",
+        "description": "Authorization endpoint - handles Keycloak broker redirects.",
+        "operationId": "authorize_default_idp_authorize_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Redirect Uri"
+            }
+          },
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Response Type"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "State"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "openid profile email",
+              "title": "Scope"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mode"
+            }
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
+      }
+    },
+    "/default-idp/token": {
+      "post": {
+        "tags": [
+          "default-idp"
+        ],
+        "summary": "Token",
+        "description": "Token endpoint - exchanges authorization codes for tokens.",
+        "operationId": "token_default_idp_token_post",
+        "parameters": [
+          {
+            "name": "grant_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Grant Type"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Redirect Uri"
+            }
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "client_secret",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Client Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Token Default Idp Token Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
+      }
+    },
+    "/default-idp/userinfo": {
+      "get": {
+        "tags": [
+          "default-idp"
+        ],
+        "summary": "Userinfo",
+        "description": "UserInfo endpoint - returns user claims from access token.",
+        "operationId": "userinfo_default_idp_userinfo_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Userinfo Default Idp Userinfo Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
+      }
+    },
+    "/default-idp/jwks": {
+      "get": {
+        "tags": [
+          "default-idp"
+        ],
+        "summary": "Jwks Endpoint",
+        "description": "JWKS endpoint for public key exposure.",
+        "operationId": "jwks_endpoint_default_idp_jwks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
+      }
+    },
+    "/default-idp/initiate": {
+      "get": {
+        "summary": "Initiate Guest Login",
+        "description": "Initiate guest/default-account login flow.\n\nThis endpoint generates a state token and redirects to Keycloak OAuth with kc_idp_hint.\nCalled directly from Keycloak theme login.ftl.",
+        "operationId": "initiate_guest_login_default_idp_initiate_get",
+        "parameters": [
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department Id"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "guest",
+              "title": "Mode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/default-idp/state": {
+      "post": {
+        "summary": "Generate State Token",
+        "description": "Generate signed state token for default-idp authentication.\n\nValidates that department + mode combination is allowed before signing.",
+        "operationId": "generate_state_token_default_idp_state_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateStateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateStateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/.well-known/oauth-authorization-server": {
       "get": {
         "summary": "Oauth Authorization Server Metadata",
@@ -29609,6 +29998,50 @@
         },
         "type": "object",
         "title": "FlagsApiResponse"
+      },
+      "GenerateStateRequest": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "title": "GenerateStateRequest",
+        "description": "Request model for state token generation."
+      },
+      "GenerateStateResponse": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "nonce": {
+            "type": "string",
+            "title": "Nonce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "nonce"
+        ],
+        "title": "GenerateStateResponse",
+        "description": "Response model for state token generation."
       },
       "GetActivityBundleApiRequest": {
         "properties": {},

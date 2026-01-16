@@ -746,6 +746,12 @@ fastapi_app.include_router(socket_v4_router)
 
 # Root-level endpoints (must be registered before MCP mount to avoid route interception)
 
+# Default-IdP OIDC endpoints (infrastructure-level, not versioned)
+from app.infra.v4.auth.default_idp import \
+    router as default_idp_router  # noqa: E402
+
+fastapi_app.include_router(default_idp_router)  # /default-idp/... (OIDC endpoints)
+
 # RFC 8414 OAuth Authorization Server Metadata endpoint (REQUIRED for ChatGPT Dev Mode)
 # This must be a FastAPI route, not just middleware, to ensure it's accessible
 @fastapi_app.get("/.well-known/oauth-authorization-server")
