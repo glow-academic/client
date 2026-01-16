@@ -165,40 +165,44 @@
     wrapper.appendChild(dropdownMenu);
 
     var isOpen = false;
+    var isInternalUpdate = false; // Guard flag to prevent feedback loop
 
     function updateSelected(value) {
       var option = departments.find(function (d) {
         return d.id === value;
       });
-      if (option) {
-        selectedText.textContent = option.title;
-        select.value = value;
+      if (!option) return;
 
-        // Update selected state in menu
-        var options = dropdownMenu.querySelectorAll(
-          ".department-select-option"
-        );
-        options.forEach(function (opt) {
-          opt.classList.remove("selected");
-          var checkmark = opt.querySelector(".department-select-checkmark svg");
+      // IMPORTANT: update currentValue so comparisons work
+      currentValue = value;
+
+      selectedText.textContent = option.title;
+
+      isInternalUpdate = true;
+      select.value = value;
+      isInternalUpdate = false;
+
+      // Update selected state in menu
+      var options = dropdownMenu.querySelectorAll(".department-select-option");
+      options.forEach(function (opt) {
+        opt.classList.remove("selected");
+        var checkmark = opt.querySelector(".department-select-checkmark svg");
+        if (checkmark) {
+          checkmark.style.display = "none"; // Hide checkmark
+        }
+        if (opt.getAttribute("data-value") === value) {
+          opt.classList.add("selected");
           if (checkmark) {
-            checkmark.style.display = "none"; // Hide checkmark
+            checkmark.style.display = "block"; // Show checkmark for selected
           }
-          if (opt.getAttribute("data-value") === value) {
-            opt.classList.add("selected");
-            if (checkmark) {
-              checkmark.style.display = "block"; // Show checkmark for selected
-            }
-          }
-        });
+        }
+      });
 
-        // Update URL and filter providers (shallow refresh - replaceState, no reload)
-        applyDept(value);
+      // Update URL and filter providers (shallow refresh - replaceState, no reload)
+      applyDept(value);
 
-        // Trigger change event on native select (for any other listeners)
-        var event = new Event("change", { bubbles: true });
-        select.dispatchEvent(event);
-      }
+      // Don't dispatch change event - custom UI is source of truth
+      // If external code needs to listen, they can watch the select.value directly
     }
 
     function toggleDropdown() {
@@ -236,11 +240,17 @@
     // Option click handler
     dropdownMenu.addEventListener("click", function (e) {
       var option = e.target.closest(".department-select-option");
-      if (option) {
-        var value = option.getAttribute("data-value");
+      if (!option) return;
+
+      var value = option.getAttribute("data-value");
+
+      // Close first to start animation immediately
+      closeDropdown();
+
+      // Then do heavy DOM updates in next frame
+      requestAnimationFrame(function () {
         updateSelected(value);
-        closeDropdown();
-      }
+      });
     });
 
     // Close on outside click
@@ -252,6 +262,9 @@
 
     // Listen to native select changes (from other code or programmatic changes)
     select.addEventListener("change", function () {
+      // Skip if this change was triggered internally
+      if (isInternalUpdate) return;
+
       // Only update if value actually changed to avoid loops
       var newValue = select.value;
       if (newValue !== currentValue) {

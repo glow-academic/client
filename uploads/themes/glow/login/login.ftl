@@ -201,7 +201,8 @@
                       <#-- Icon (hidden when loading) -->
                       <#if p.iconClasses?has_content>
                         <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!} action-button-icon" aria-hidden="true"></i>
-                      <#elseif p.alias?contains("default") && !p.alias?contains("guest")>
+                      <#elseif p.alias?starts_with("default-idp-")>
+                        <#-- User icon for Default Account and Guest -->
                         <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
@@ -264,6 +265,11 @@
                       <#-- Icon (hidden when loading) -->
                       <#if p.iconClasses?has_content>
                         <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!} action-button-icon" aria-hidden="true"></i>
+                      <#else>
+                        <#-- User icon for Guest -->
+                        <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
                       </#if>
                       <#-- Spinner (hidden by default, shown when loading) -->
                       <div class="action-button-spinner"></div>
