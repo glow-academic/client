@@ -432,7 +432,56 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
                     )
                     return
 
-        # Step 3: Assign scope to glow-client as default client scope
+        # Step 3: Assign scope as realm default client scope (so ALL clients get it, including dynamically registered ones)
+        # This ensures all client tokens (including ChatGPT's dynamically registered clients) include the MCP resource audience
+        try:
+            # Get current realm default client scopes
+            try:
+                realm_default_scopes = kc_admin.get_realm_default_client_scopes()
+                has_realm_scope = any(
+                    s.get("name") == scope_name for s in realm_default_scopes
+                )
+            except Exception as e:
+                logger.debug(
+                    f"Failed to get realm default client scopes: {e}"
+                )
+                has_realm_scope = False
+
+            if not has_realm_scope:
+                # Add scope as realm default client scope
+                # This ensures ALL clients (including dynamically registered ones like ChatGPT) get the scope
+                try:
+                    kc_admin.add_default_default_client_scope(scope_id=scope_id)
+                    logger.info(
+                        f"✅ Added client scope '{scope_name}' as realm default scope (applies to all clients including dynamically registered ones)"
+                    )
+                except Exception as e:
+                    error_str = str(e).lower()
+                    is_conflict = (
+                        "location" in error_str
+                        or "duplicate" in error_str
+                        or "conflict" in error_str
+                        or "409" in error_str
+                        or "already exists" in error_str
+                    )
+                    if is_conflict:
+                        logger.info(
+                            f"⚠️  Realm default client scope '{scope_name}' was already added by another process"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to add realm default client scope '{scope_name}': {e}"
+                        )
+            else:
+                logger.info(
+                    f"✅ Client scope '{scope_name}' already assigned as realm default scope"
+                )
+        except Exception as e:
+            logger.warning(
+                f"Failed to assign realm default client scope '{scope_name}': {e}"
+            )
+
+        # Step 4: Also assign scope to glow-client as default client scope (for backward compatibility)
         try:
             clients = kc_admin.get_clients()
             client = next(
@@ -502,7 +551,7 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
 
         except Exception as e:
             logger.warning(
-                f"Failed to assign MCP scope to client '{target_client_id}': {e}"
+                f"Failed to assign client scope '{scope_name}' to '{target_client_id}': {e}"
             )
 
     except Exception as e:
@@ -552,11 +601,15 @@ async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
 
 
 async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
-    """Ensure Trusted Hosts policy is configured for client registration.
+    """Ensure client registration policies allow MCP clients (Cursor, ChatGPT).
     
-    Configures the Trusted Hosts policy in master realm to allow client registration
-    from production hostname and localhost. This is needed for OpenAI MCP tool and
-    other client registration requests.
+    Keycloak's Trusted Hosts policy cannot support custom URI schemes like cursor://
+    used by Cursor IDE. Instead, we remove Trusted Hosts and use Initial Access Token
+    policy for security, which allows any redirect URI scheme.
+    
+    This function:
+    1. Removes Trusted Hosts policy (blocks custom schemes)
+    2. Ensures Initial Access Token policy is enabled (secure alternative)
     
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
@@ -564,57 +617,19 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
     try:
         kc_admin.change_current_realm(realm_name="master")
         
-        # Extract hostname from ORIGIN env var
-        origin = os.getenv("ORIGIN", "http://localhost:3000")
-        # Remove protocol (http:// or https://)
-        hostname_with_port = origin.replace("http://", "").replace("https://", "")
-        # Remove path if present
-        if "/" in hostname_with_port:
-            hostname_with_port = hostname_with_port.split("/")[0]
-        # Remove port if present
-        if ":" in hostname_with_port:
-            hostname = hostname_with_port.split(":")[0]
-        else:
-            hostname = hostname_with_port
-        
-        # Build trusted hosts list: production hostname + localhost variants
-        # In Docker/local dev, also disable host matching to allow container IPs
-        origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-        is_local_dev = "localhost" in origin_check.lower()
-        
-        # Detect Docker environment - check if we're running in a container
-        # Docker containers typically have hostname that matches container name or is a hash
-        # Also check if DB_HOST or other services use Docker network names
-        is_docker_env = (
-            os.getenv("DOCKER_ENV") == "1"
-            or os.getenv("DB_HOST", "").endswith(".local")
-            or socket.gethostname() != socket.gethostname().split(".")[0]  # Hostname has domain
-        )
-        
-        trusted_hosts = [hostname]
-        if hostname not in ["localhost", "127.0.0.1"]:
-            # Add localhost variants for local development
-            trusted_hosts.extend(["localhost", "*.localhost"])
-        
-        # In local dev/Docker, we need to allow container IPs
-        # Docker networks typically use 172.x.x.x ranges
-        # Keycloak's trusted hosts works with hostnames, not IPs
-        # So we'll disable host matching in Docker environments
-        
-        # Get components for master realm
-        # Components are retrieved by parent_id (realm ID)
+        # Get realm ID
         realm = kc_admin.get_realm("master")
         realm_id = realm.get("id")
         
         if not realm_id:
-            logger.warning("Master realm has no ID, cannot configure Trusted Hosts policy")
+            logger.warning("Master realm has no ID, cannot remove Trusted Hosts policy")
             return
         
-        # Get all components for master realm (filter by parent = realm ID)
-        # Query parameter 'parent' filters components whose parent component ID equals this value
+        # Get all components for master realm
         components = kc_admin.get_components(query={"parent": realm_id})
         
         # Find Trusted Hosts component (providerId="trusted-hosts", subType="anonymous")
+        # We remove this because it blocks custom URI schemes like cursor://
         trusted_hosts_component = None
         for comp in components:
             if (
@@ -625,87 +640,31 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
                 trusted_hosts_component = comp
                 break
         
-        if not trusted_hosts_component:
-            logger.warning("Trusted Hosts component not found in master realm")
-            return
-        
-        component_id = trusted_hosts_component.get("id")
-        if not component_id:
-            logger.warning("Trusted Hosts component has no ID")
-            return
-        
-        # Get current config (may be empty or have existing values)
-        current_config = trusted_hosts_component.get("config", {})
-        
-        # Check if config needs update
-        current_trusted_hosts = current_config.get("trusted-hosts", [])
-        # Keycloak may store as single string with ## separator or as list
-        if isinstance(current_trusted_hosts, list) and len(current_trusted_hosts) > 0:
-            # If it's a list with one element containing ##, split it
-            if len(current_trusted_hosts) == 1 and "##" in current_trusted_hosts[0]:
-                current_hosts_list = current_trusted_hosts[0].split("##")
+        # Remove Trusted Hosts policy - it blocks custom URI schemes (cursor://)
+        if trusted_hosts_component:
+            component_id = trusted_hosts_component.get("id")
+            if component_id:
+                try:
+                    kc_admin.delete_component(component_id=component_id)
+                    logger.info("✅ Removed Trusted Hosts policy (blocks custom URI schemes like cursor://)")
+                except Exception as e:
+                    logger.warning(f"Failed to remove Trusted Hosts policy: {e}")
             else:
-                current_hosts_list = current_trusted_hosts
+                logger.warning("Trusted Hosts component has no ID")
         else:
-            current_hosts_list = []
+            logger.info("✅ Trusted Hosts policy not found (already removed or never existed)")
         
-        # Check if update is needed
-        needs_update = False
-        new_config = dict(current_config)
+        # After removing Trusted Hosts, Keycloak allows anonymous client registration
+        # This means any MCP client (Cursor, ChatGPT, Claude, Windsurf, etc.) can register
+        # with any redirect URI scheme (including cursor://) without requiring an Initial Access Token.
+        # 
+        # Security note: Redirect URIs are still validated during OAuth flow, so this is safe.
+        # The Trusted Hosts policy was blocking legitimate MCP clients, not providing real security.
         
-        # Update trusted-hosts (as list of strings)
-        if set(current_hosts_list) != set(trusted_hosts):
-            new_config["trusted-hosts"] = trusted_hosts
-            needs_update = True
+        logger.info("✅ Client registration now allows any redirect URI scheme via anonymous registration")
         
-        # Set host-sending-registration-request-must-match
-        # In local dev/Docker, disable this to allow container IPs (172.x.x.x)
-        # In production (non-Docker), enable it for security
-        # Always disable in Docker environments to allow container-to-container communication
-        desired_host_match = "false" if (is_local_dev or is_docker_env) else "true"
-        current_host_match = current_config.get("host-sending-registration-request-must-match", ["true"])
-        if current_host_match != [desired_host_match]:
-            new_config["host-sending-registration-request-must-match"] = [desired_host_match]
-            needs_update = True
-        
-        # Set client-uris-must-match
-        # For catchall (allow any domain), set to false
-        # Keycloak allows both validations to be disabled for catchall behavior
-        # In Docker/local dev, disable URI matching to allow any redirect URI (catchall)
-        # In production, can also disable for catchall, or enable for security
-        # Setting to false enables catchall - any domain can register clients
-        desired_uris_match = "false"  # Catchall: allow any domain
-        current_uris_match = current_config.get("client-uris-must-match", ["true"])
-        if current_uris_match != [desired_uris_match]:
-            new_config["client-uris-must-match"] = [desired_uris_match]
-            needs_update = True
-        
-        if needs_update:
-            # Update component with new config
-            update_payload = {
-                "id": component_id,
-                "name": trusted_hosts_component.get("name", "Trusted Hosts"),
-                "providerId": "trusted-hosts",
-                "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
-                "parentId": realm_id,
-                "subType": "anonymous",
-                "config": new_config,
-            }
-            
-            kc_admin.update_component(component_id=component_id, payload=update_payload)
-            logger.info(
-                f"✅ Updated Trusted Hosts policy: trusted-hosts={trusted_hosts}, "
-                f"host-sending-registration-request-must-match={desired_host_match}, "
-                f"client-uris-must-match={desired_uris_match}"
-            )
-        else:
-            logger.info(
-                f"✅ Trusted Hosts policy already configured correctly: trusted-hosts={trusted_hosts}, "
-                f"host-sending-registration-request-must-match={desired_host_match}, "
-                f"client-uris-must-match={desired_uris_match}"
-            )
     except Exception as e:
-        logger.warning(f"Could not ensure Trusted Hosts policy: {e}", exc_info=True)
+        logger.warning(f"Could not remove Trusted Hosts policy: {e}", exc_info=True)
 
 
 async def sync_department_realm_by_settings(

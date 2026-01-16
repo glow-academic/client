@@ -133,8 +133,10 @@ socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 # ---------------------------------------------------------------------------+
 # 2.  CORS etc. remains intact                                               +
 # ---------------------------------------------------------------------------+
-# Allow all origins
-allowed_origins = [origin]
+# Allow all origins - OAuth tokens provide the real security for MCP endpoints
+# Discovery endpoints (/.well-known/*) are public by design
+# Actual MCP endpoints (/mcp) require valid OAuth Bearer tokens
+allowed_origins = ["*"]
 
 # Redis client for shared infrastructure (HTTP caching, health checks, etc.)
 redis_client: Any | None = None
@@ -195,10 +197,12 @@ if redis_manager is not None:  # only pass when we actually have it
     kwargs["client_manager"] = redis_manager
 
 # Create Socket.IO server instance globally
+# Note: Cannot use cors_credentials=True with cors_allowed_origins=["*"] (browser security)
+# Since OAuth tokens provide the real security, we can disable credentials for CORS
 sio = socketio.AsyncServer(
     **kwargs,
-    cors_allowed_origins=allowed_origins,
-    cors_credentials=True,
+    cors_allowed_origins=["*"],  # Allow all origins - OAuth tokens protect endpoints
+    cors_credentials=False,  # Must be False when using wildcard origins
     logger=True,  # Enable logging for debugging
     engineio_logger=True,  # Enable engine.io logging
     async_mode="asgi",
@@ -597,14 +601,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
 # Create FastAPI app
 # redirect_slashes=False prevents automatic redirects between /path and /path/
-# This avoids double-slash issues when clients call paths inconsistently
-fastapi_app = FastAPI(title="GLOW API", lifespan=lifespan)
+# CRITICAL: HTTP clients (including ChatGPT) strip Authorization headers on redirects
+# This is a security feature - redirects are treated as potentially unsafe
+# We must serve both /mcp and /mcp/ without redirects to preserve Authorization headers
+fastapi_app = FastAPI(title="GLOW API", lifespan=lifespan, redirect_slashes=False)
 
 # Add CORS middleware FIRST
+# Note: Cannot use allow_credentials=True with allow_origins=["*"] (browser security)
+# Since OAuth tokens provide the real security, we can disable credentials for CORS
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,  # Use the same origins as Socket.IO
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins - OAuth tokens protect endpoints
+    allow_credentials=False,  # Must be False when using wildcard origins
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -737,6 +745,32 @@ from app.socket.v4 import router as socket_v4_router  # noqa: E402
 fastapi_app.include_router(socket_v4_router)
 
 # Root-level endpoints (must be registered before MCP mount to avoid route interception)
+
+# RFC 8414 OAuth Authorization Server Metadata endpoint (REQUIRED for ChatGPT Dev Mode)
+# This must be a FastAPI route, not just middleware, to ensure it's accessible
+@fastapi_app.get("/.well-known/oauth-authorization-server")
+def oauth_authorization_server_metadata():
+    """RFC 8414 OAuth Authorization Server Metadata endpoint.
+    
+    ChatGPT Dev Mode uses this endpoint to discover OAuth configuration.
+    This is required for OAuth to work with ChatGPT.
+    """
+    import os
+    ORIGIN = os.getenv("ORIGIN", "http://localhost")
+    APP_PREFIX = os.getenv("APP_PREFIX", "")
+    KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "master")
+    KEYCLOAK_ISSUER = f"{ORIGIN}{APP_PREFIX}/auth/realms/{KEYCLOAK_REALM}"
+    
+    return {
+        "issuer": KEYCLOAK_ISSUER,
+        "authorization_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/auth",
+        "token_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/token",
+        "scopes_supported": ["openid", "profile", "email", "address", "phone", "offline_access", "organization", "microprofile-jwt", "mcp-resource"],
+        "response_types_supported": ["code"],
+        "grant_types_supported": ["authorization_code"],
+        "token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"],
+        "code_challenge_methods_supported": ["S256"],  # Required for ChatGPT PKCE support
+    }
 @fastapi_app.get("/")
 async def root_info() -> JSONResponse:
     """
@@ -924,22 +958,15 @@ async def init_system() -> JSONResponse:
 # Mount artifacts/resources MCP server
 from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
-# Mount artifacts/resources MCP server
-# FastMCP's streamable_http_app() creates a route at /mcp internally
-# Mount at root (/) so the /mcp route in the sub-app becomes /mcp in the main app
-# This allows FastMCP to handle requests at /mcp directly
-# Note: Cursor expects /mcp/messages and /mcp/sse/messages, but FastMCP uses /mcp
-# We'll create proxy routes below to forward these to /mcp
+# FastMCP's Host header validation is now configured via TransportSecuritySettings
+# in app/mcp/__init__.py, so we don't need middleware to modify Host headers
+# Mount FastMCP app directly
 mcp_app = artifacts_resources_mcp_server.streamable_http_app()
 fastapi_app.mount(
     "/",
     mcp_app,
     name="Artifacts-Resources-MCP",
 )
-
-# Note: Path rewriting for /mcp/messages and /mcp/sse/messages is handled
-# in McpOAuthMiddleware (server/app/mcp/oauth.py) to forward these to /mcp
-# where FastMCP handles them. The middleware rewrites the path before forwarding.
 
 # Create the combined ASGI app with Socket.IO
 app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)

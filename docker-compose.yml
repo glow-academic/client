@@ -72,7 +72,8 @@ services:
       KC_DB_SCHEMA: keycloak
 
       # IMPORTANT: run behind nginx at ${APP_PREFIX}/auth
-      KC_PROXY: edge
+      # Keycloak 26.0: Use KC_PROXY_HEADERS instead of deprecated KC_PROXY
+      KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
       KC_HTTP_RELATIVE_PATH: ${APP_PREFIX}/auth
 

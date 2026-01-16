@@ -1,5 +1,6 @@
 """OAuth middleware for MCP server - Keycloak integration."""
 
+import json
 import logging
 import os
 import socket
@@ -253,11 +254,30 @@ def verify_token(token: str) -> dict[str, Any]:
 
 
 def oauth_401() -> Response:
-    """Return 401 with WWW-Authenticate header pointing to PRM."""
+    """Return 401 with WWW-Authenticate header pointing to PRM endpoint and Keycloak authorization endpoint.
+    
+    Per RFC 9728 and MCP spec, ChatGPT will use resource_metadata from WWW-Authenticate header
+    if present, otherwise it constructs the well-known URL by inserting .well-known/oauth-protected-resource
+    between host and path.
+    
+    The scope parameter helps ChatGPT understand what scopes are required for this resource.
+    
+    Per RFC 9728, the resource parameter in WWW-Authenticate should match the resource identifier
+    that the client is calling. ChatGPT sends resource=https://company.ashoksaravanan.com/mcp in auth requests,
+    so we should include it in WWW-Authenticate to help ChatGPT recognize this as the protected resource.
+    """
+    # PRM endpoint URL - use root-level endpoint (works for both root and path-inserted discovery)
+    prm_endpoint = f"{ORIGIN}{APP_PREFIX}/.well-known/oauth-protected-resource"
+    # authorization_uri should point to the authorization server (Keycloak)
+    auth_endpoint = f"{KEYCLOAK_ISSUER}/protocol/openid-connect/auth"
+    # Include resource parameter to match what ChatGPT sends in authorization requests
+    # This helps ChatGPT recognize this endpoint as the protected resource
+    # Include scope to help ChatGPT understand what's required
+    # Using mcp-resource scope which includes the audience claim
     return Response(
         status_code=status.HTTP_401_UNAUTHORIZED,
         headers={
-            "WWW-Authenticate": f'Bearer realm="mcp", authorization_uri="{PRM_URL}"'
+            "WWW-Authenticate": f'Bearer realm="mcp", resource="{MCP_RESOURCE}", resource_metadata="{prm_endpoint}", authorization_uri="{auth_endpoint}", scope="mcp-resource"'
         },
     )
 
@@ -267,7 +287,61 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process MCP requests with OAuth and feature flag checks."""
+        # Allow OPTIONS requests (CORS preflight) to pass through without authentication
+        # Cursor IDE and other browsers need this for CORS preflight checks
+        if request.method == "OPTIONS":
+            return await call_next(request)
+        
         path = request.url.path
+        
+        # RFC 8414 OAuth Authorization Server Metadata (REQUIRED for ChatGPT Dev Mode)
+        # ChatGPT expects this endpoint to discover OAuth configuration
+        # Handle this BEFORE /mcp path checks since it's at root level
+        oauth_as_path = (
+            f"{APP_PREFIX}/.well-known/oauth-authorization-server"
+            if APP_PREFIX
+            else "/.well-known/oauth-authorization-server"
+        )
+        
+        # Handle RFC 8414 OAuth Authorization Server Metadata discovery (no auth required)
+        # This is what ChatGPT Dev Mode uses to discover OAuth endpoints
+        if path == oauth_as_path:
+            # Return OAuth Authorization Server Metadata per RFC 8414
+            # ChatGPT Dev Mode requires this to discover OAuth endpoints
+            return JSONResponse(
+                {
+                    "issuer": KEYCLOAK_ISSUER,
+                    "authorization_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/auth",
+                    "token_endpoint": f"{KEYCLOAK_ISSUER}/protocol/openid-connect/token",
+                    "scopes_supported": ["openid", "profile", "email", "address", "phone", "offline_access", "organization", "microprofile-jwt", "mcp-resource"],
+                    "response_types_supported": ["code"],
+                    "grant_types_supported": ["authorization_code"],
+                    "token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"],
+                    "code_challenge_methods_supported": ["S256"],  # Required for ChatGPT PKCE support
+                }
+            )
+        
+        # Log all incoming requests to /mcp for debugging
+        if path.startswith("/mcp") or path.startswith(f"{APP_PREFIX}/mcp"):
+            all_headers = dict(request.headers)
+            auth_header = all_headers.get("authorization", "NOT PRESENT")
+            # Log full request details for debugging ChatGPT behavior
+            # Also log ALL header values (not just keys) to see if token is in a different header
+            header_values = {k: (v[:100] + '...' if len(str(v)) > 100 else v) for k, v in all_headers.items()}
+            
+            # Also check query parameters and URL for tokens (in case ChatGPT sends it differently)
+            query_params = dict(request.query_params)
+            url_str = str(request.url)
+            
+            logger.info(
+                f"MCP request received: {request.method} {path}, "
+                f"Authorization header present: {auth_header != 'NOT PRESENT'}, "
+                f"Authorization value: {auth_header[:50] + '...' if len(str(auth_header)) > 50 and auth_header != 'NOT PRESENT' else auth_header}, "
+                f"User-Agent: {all_headers.get('user-agent', 'N/A')}, "
+                f"Query params: {list(query_params.keys())}, "
+                f"Full URL contains 'token' or 'bearer': {'token' in url_str.lower() or 'bearer' in url_str.lower()}, "
+                f"All headers and values: {json.dumps(header_values, indent=2)}"
+            )
 
         # Build expected MCP paths
         mcp_path = f"{APP_PREFIX}/mcp" if APP_PREFIX else "/mcp"
@@ -279,21 +353,39 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
         mcp_prm_path = f"{mcp_path}/.well-known/oauth-protected-resource"
 
         # Handle PRM discovery endpoint (no auth required) - check both locations
+        # Per RFC 9728, ChatGPT may try path-insertion: /.well-known/oauth-protected-resource/mcp
+        # Also handle root-level: /.well-known/oauth-protected-resource
         if (
             path == prm_path
             or path == mcp_prm_path
             or path.endswith("/.well-known/oauth-protected-resource")
+            or path == "/.well-known/oauth-protected-resource/mcp"  # RFC 9728 path-insertion
+            or (path.startswith("/.well-known/oauth-protected-resource/") and path.endswith("/mcp"))  # Handle path variations
         ):
+            # Return PRM metadata per RFC 9728 and MCP spec
+            # ChatGPT requires code_challenge_methods_supported and scopes_supported
+            # Include mcp-resource in scopes_supported so ChatGPT knows this scope is available
             return JSONResponse(
                 {
                     "resource": MCP_RESOURCE,
                     "authorization_servers": [KEYCLOAK_ISSUER],
+                    "code_challenge_methods_supported": ["S256"],  # Required for ChatGPT PKCE support
+                    "scopes_supported": ["openid", "profile", "email", "address", "phone", "offline_access", "organization", "microprofile-jwt", "mcp-resource"],  # Include mcp-resource so ChatGPT knows it's available
                 }
             )
 
         # Only process /mcp paths
+        # ChatGPT expects /mcp/sse/ endpoint (per OpenAI docs)
+        # FastMCP handles SSE at /mcp, so /mcp/sse/ should also route to /mcp
         if not path.startswith(mcp_path) and not path.startswith("/mcp"):
             return await call_next(request)
+        
+        # Handle /mcp/sse/ path - ChatGPT expects this endpoint (per OpenAI docs)
+        # FastMCP handles SSE at /mcp, so rewrite /mcp/sse/ to /mcp
+        if path == f"{mcp_path}/sse/" or path == "/mcp/sse/":
+            request.scope["path"] = mcp_path
+            request.scope["raw_path"] = mcp_path.encode()
+            # Continue to FastMCP which handles SSE at /mcp
 
         # Check feature flag first
         if not is_mcp_enabled():
@@ -309,6 +401,15 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
         # Check for Bearer token
         token = bearer_from_request(request)
         if not token:
+            # Log all headers to debug why ChatGPT isn't sending Authorization
+            all_headers = dict(request.headers)
+            logger.info(
+                f"MCP request missing Authorization header. "
+                f"Request path: {request.url.path}, "
+                f"Method: {request.method}, "
+                f"Headers: {list(all_headers.keys())}, "
+                f"User-Agent: {all_headers.get('user-agent', 'N/A')}"
+            )
             return oauth_401()
 
         # Verify token
@@ -322,6 +423,7 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
             )
         except ValueError as e:
             logger.warning(f"MCP OAuth token validation failed: {e}")
+            logger.debug(f"Token validation error details: {e}", exc_info=True)
             return oauth_401()
 
         # Rewrite path for Cursor compatibility
