@@ -22,7 +22,6 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   PromptInfo,
   PromptPicker,
@@ -30,6 +29,13 @@ import {
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { VOICES } from "@/components/common/forms/voices";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Departments } from "@/components/resources/Departments";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Flags } from "@/components/resources/Flags";
+import { Names } from "@/components/resources/Names";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,8 +49,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -56,35 +60,32 @@ import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import type { ResourceType } from "@/lib/resources/types";
-import { Names } from "@/components/resources/Names";
-import { Descriptions } from "@/components/resources/Descriptions";
-import { Models } from "@/components/resources/Models";
-import { Prompts } from "@/components/resources/Prompts";
-import { Instructions } from "@/components/resources/Instructions";
-import { Flags } from "@/components/resources/Flags";
-import { Departments } from "@/components/resources/Departments";
-import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
-import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
-import { Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Bug, Check, Eye, Power, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Bug,
+  Check,
+  Eye,
+  Loader2,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { parseAsString, useQueryStates, type Parser, type Values } from "nuqs";
 import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
 import type {
-  GetAgentOut,
-  SaveAgentIn,
-  SaveAgentOut,
   DeleteAgentPromptIn,
   DeleteAgentPromptOut,
+  GetAgentOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
+  SaveAgentIn,
+  SaveAgentOut,
 } from "@/app/(main)/engine/agents/a/[agentId]/page";
 
 // Build model_mapping type from models array
@@ -1387,62 +1388,60 @@ export default function Agent({
               }
             }
           }
-
-          // Always create new prompt version if content differs from resolved prompt
-          // Never create default prompts - always create department-specific overrides
-          const shouldCreateNewPrompt = hasPromptChanges;
-
-          // Save agent using unified v4 API (handles both create and update)
-          // Ensure profileId exists - required for API calls
-          if (!effectiveProfile?.id) {
-            toast.error("Profile not loaded. Please refresh the page.");
-            throw new Error("Profile not loaded");
-          }
-
-          // Note: profileId is added by the server action
-          // Use input_agent_id = null for create, agent_id for update
-          // Extract name and description from resource IDs if available, otherwise use draftState text
-          const nameText =
-            agentData?.name_resource?.name || draftState.name || "New Agent";
-          const descriptionText =
-            agentData?.description_resource?.description ||
-            draftState.description ||
-            null;
-
-          await handleSaveAgent({
-            input_agent_id: isEditMode ? agentId : null,
-            name: nameText,
-            description: descriptionText,
-            model_id: draftState.modelId!.trim(),
-            prompt_id: shouldCreateNewPrompt
-              ? null
-              : draftState.promptId || null,
-            system_prompt: draftState.systemPrompt!,
-            instructions_id: agentData?.instructions_id || null,
-            active_flag_id: agentData?.active_flag_id || null,
-            department_ids: finalDepartmentIds,
-            artifact_name: draftState.role || "assistant",
-            temperature_level_id:
-              draftState.model_temperature_level_id || null,
-            reasoning_level_id:
-              draftState.model_reasoning_level_id || null,
-            voice_ids:
-              draftState.model_voice_ids &&
-              draftState.model_voice_ids.length > 0
-                ? draftState.model_voice_ids
-                : [],
-          });
-          toast.success(`Agent ${isEditMode ? "updated" : "created"} successfully!`);
-          resetFormAndState();
-          router.push("/engine/agents");
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : "Unknown error";
-          toast.error(
-            `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
-          );
-          throw error; // Re-throw for GenericForm to handle
         }
-      },
+
+        // Always create new prompt version if content differs from resolved prompt
+        // Never create default prompts - always create department-specific overrides
+        const shouldCreateNewPrompt = hasPromptChanges;
+
+        // Save agent using unified v4 API (handles both create and update)
+        // Ensure profileId exists - required for API calls
+        if (!effectiveProfile?.id) {
+          toast.error("Profile not loaded. Please refresh the page.");
+          throw new Error("Profile not loaded");
+        }
+
+        // Note: profileId is added by the server action
+        // Use input_agent_id = null for create, agent_id for update
+        // Extract name and description from resource IDs if available, otherwise use draftState text
+        const nameText =
+          agentData?.name_resource?.name || draftState.name || "New Agent";
+        const descriptionText =
+          agentData?.description_resource?.description ||
+          draftState.description ||
+          null;
+
+        await handleSaveAgent({
+          input_agent_id: isEditMode ? agentId : null,
+          name: nameText,
+          description: descriptionText,
+          model_id: draftState.modelId!.trim(),
+          prompt_id: shouldCreateNewPrompt ? null : draftState.promptId || null,
+          system_prompt: draftState.systemPrompt!,
+          instructions_id: agentData?.instructions_id || null,
+          active_flag_id: agentData?.active_flag_id || null,
+          department_ids: finalDepartmentIds,
+          artifact_name: draftState.role || "assistant",
+          temperature_level_id: draftState.model_temperature_level_id || null,
+          reasoning_level_id: draftState.model_reasoning_level_id || null,
+          voice_ids:
+            draftState.model_voice_ids && draftState.model_voice_ids.length > 0
+              ? draftState.model_voice_ids
+              : [],
+        });
+        toast.success(
+          `Agent ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        resetFormAndState();
+        router.push("/engine/agents");
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Unknown error";
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+        );
+        throw error; // Re-throw for GenericForm to handle
+      }
+    },
     [
       draftState,
       isEditMode,
@@ -1886,7 +1885,14 @@ export default function Agent({
       socket.off("agent_generation_complete", handleGenerationComplete);
       socket.off("agent_generation_error", handleGenerationError);
     };
-  }, [socket, isConnected, agentData?.group_id, agentData?.names, agentData?.descriptions, agentData?.instructions]);
+  }, [
+    socket,
+    isConnected,
+    agentData?.group_id,
+    agentData?.names,
+    agentData?.descriptions,
+    agentData?.instructions,
+  ]);
 
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
@@ -2080,7 +2086,9 @@ export default function Agent({
                                     ]!.some((rt) => canRegenerate(rt));
                                     handleOpenStepCardModal(
                                       "basic",
-                                      hasRegeneratable ? "regenerate" : "generate"
+                                      hasRegeneratable
+                                        ? "regenerate"
+                                        : "generate"
                                     );
                                   }}
                                   disabled={
@@ -2120,9 +2128,7 @@ export default function Agent({
                           description_resource={
                             agentData?.description_resource ?? null
                           }
-                          show_description={
-                            agentData?.show_description ?? true
-                          }
+                          show_description={agentData?.show_description ?? true}
                           description_suggestions={
                             agentData?.description_suggestions ?? []
                           }
@@ -2136,7 +2142,8 @@ export default function Agent({
                               );
                             setDraftState((prev) => ({
                               ...prev,
-                              description: descriptionResource?.description || "",
+                              description:
+                                descriptionResource?.description || "",
                             }));
                           }}
                           onGenerate={handleGenerateDescription}
@@ -2387,7 +2394,9 @@ export default function Agent({
                                     ]!.some((rt) => canRegenerate(rt));
                                     handleOpenStepCardModal(
                                       "model",
-                                      hasRegeneratable ? "regenerate" : "generate"
+                                      hasRegeneratable
+                                        ? "regenerate"
+                                        : "generate"
                                     );
                                   }}
                                   disabled={
