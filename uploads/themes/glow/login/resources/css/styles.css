@@ -296,29 +296,17 @@ body.login-pf .login-pf-page {
   position: relative;
 }
 
-/* Custom chevron - only show subtle icon, no hover effect to match Login.tsx */
-.department-picker-wrapper::after {
-  content: '';
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1rem;
-  height: 1rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  pointer-events: none;
-  opacity: 0.5;
-  z-index: 1;
+/* Hide native select */
+.department-select {
+  display: none;
 }
 
-.department-select {
+/* Custom dropdown button - exact match to Login.tsx SelectTrigger */
+.department-select-custom {
+  position: relative;
   width: 100%;
   height: 3rem;
   padding: 0 1rem;
-  padding-right: 2.5rem;
   background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -330,30 +318,109 @@ body.login-pf .login-pf-page {
   transition: all 0.3s ease;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   overflow: hidden;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  /* Hide native chevron */
-  background-image: none !important;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.department-select:hover {
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
-  border-color: rgba(255, 255, 255, 0.3);
+/* Liquid glass shine effects - exact match to Login.tsx (added via JavaScript) */
+.department-select-shine-1 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 45%);
+  pointer-events: none;
+  border-radius: 0.75rem;
+  z-index: 1;
 }
 
-.department-select:focus {
+.department-select-shine-2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.department-select-value {
+  flex: 1;
+  color: white;
+  position: relative;
+  z-index: 2;
+}
+
+.department-select-chevron {
+  width: 1rem;
+  height: 1rem;
+  color: white;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.department-select-custom:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.department-select-menu.open ~ .department-select-custom .department-select-chevron {
+  transform: rotate(180deg);
+}
+
+.department-select-custom:focus {
   outline: none;
   background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
   border-color: rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
-.department-select option {
-  background: #1a1a2e !important;
-  color: white !important;
-  padding: 0.5rem;
+/* Custom dropdown menu */
+.department-select-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+  z-index: 100;
+}
+
+.department-select-menu.open {
+  max-height: 300px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.department-select-option {
+  padding: 0.75rem 1rem;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 1rem;
+}
+
+.department-select-option:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.department-select-option.selected {
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
 }
 
 /* Action buttons section (all buttons styled consistently) */
@@ -383,6 +450,7 @@ body.login-pf .login-pf-page {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  /* Exact border styling from Login.tsx: box-shadow with inset border */
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   overflow: hidden;
   text-decoration: none;
@@ -433,9 +501,17 @@ body.login-pf .login-pf-page {
 
 .action-button:hover {
   background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  /* Exact hover border styling from Login.tsx */
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
+  color: white !important;
+}
+
+.action-button:hover .action-button-text,
+.action-button:hover .action-button-icon,
+.action-button:hover i {
+  color: white !important;
 }
 
 .action-button:active {

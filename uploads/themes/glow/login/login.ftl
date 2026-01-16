@@ -102,81 +102,20 @@
               </div>
               
               <script>
-                (function () {
-                  var select = document.getElementById("department");
-                  if (!select) return;
-                  
-                  // Departments array from FreeMarker
-                  var departments = [
-                    <#list departments as d>
-                    {id: "${d.id}", title: "${d.title}"}<#sep>,
-                    </#list>
-                  ];
-                  
-                  // Initialize: if no department selected and departments exist, select first
-                  var currentDept = select.value || "";
-                  if (!currentDept && departments.length > 0) {
-                    currentDept = departments[0].id;
-                    select.value = currentDept;
-                    // Update URL to reflect first department
-                    var url = new URL(window.location.href);
-                    url.searchParams.set("department", currentDept);
-                    window.history.replaceState({}, "", url.toString());
-                  }
-
-                  function applyDept(dept) {
-                    // Update URL without reload
-                    var url = new URL(window.location.href);
-                    if (dept) {
-                      url.searchParams.set("department", dept);
-                    } else {
-                      url.searchParams.delete("department");
-                    }
-                    window.history.replaceState({}, "", url.toString());
-
-                    // Filter provider buttons in DOM
-                    var allowedProvidersByDept = {
-                      <#list allowedProvidersByDept?keys as deptId>
-                      "${deptId}": [<#list allowedProvidersByDept[deptId] as alias>"${alias}"<#sep>, </#list>]<#sep>,
-                      </#list>
-                    };
-                    var platformProviders = [<#list platformProviders as p>"${p}"<#sep>, </#list>];
-
-                    var allowed = (dept && allowedProvidersByDept[dept] && allowedProvidersByDept[dept].length)
-                      ? allowedProvidersByDept[dept]
-                      : platformProviders;
-
-                    // Filter action buttons (provider buttons) - show/hide based on department selection
-                    // Includes regular IdPs and default-idp instances
-                    var actionButtons = document.querySelectorAll(".action-button[id^='social-']");
-                    var visibleProviders = [];
-                    actionButtons.forEach(function (btn) {
-                      var alias = btn.id.replace("social-", "");
-                      var show = allowed.indexOf(alias) !== -1;
-                      btn.style.display = show ? "" : "none";
-                      if (show) visibleProviders.push(btn);
-                    });
-                  }
-
-                  select.addEventListener("change", function () {
-                    applyDept(select.value || "");
-                  });
-
-                  // Apply initial state from URL or server-rendered departmentId
-                  // If no department selected and departments exist, default to first department
-                  var initial = "${departmentId}";
-                  if (!initial) {
-                    var urlParams = new URLSearchParams(window.location.search);
-                    initial = urlParams.get("department") || "";
-                  }
-                  // If still no initial and departments exist, use first department
-                  if (!initial && departments.length > 0) {
-                    initial = departments[0].id;
-                  }
-                  if (select.value !== initial) select.value = initial;
-                  applyDept(initial);
-                })();
+                // Expose data for department-select.js
+                window.departmentsData = [
+                  <#list departments as d>
+                  {id: "${d.id}", title: "${d.title}"}<#sep>,
+                  </#list>
+                ];
+                window.allowedProvidersByDept = {
+                  <#list allowedProvidersByDept?keys as deptId>
+                  "${deptId}": [<#list allowedProvidersByDept[deptId] as alias>"${alias}"<#sep>, </#list>]<#sep>,
+                  </#list>
+                };
+                window.platformProviders = [<#list platformProviders as p>"${p}"<#sep>, </#list>];
               </script>
+              <script src="${url.resourcesPath}/js/department-select.js"></script>
             </#if>
             
             <#-- Username/password form (hidden by default, shown if needed) -->
@@ -247,7 +186,7 @@
                   </#if>
                 </#list>
                 
-                <#-- Render non-guest providers first -->
+                <#-- Render non-guest providers first (all rendered, filtered client-side) -->
                 <#list nonGuestProviders as p>
                   <#assign loadingText = "Signing in..." />
                   <a id="social-${p.alias}" 
@@ -284,8 +223,24 @@
                   </a>
                 </#list>
                 
-                <#-- Add OR divider only if we have both non-guest and guest providers -->
-                <#if nonGuestProviders?size gt 0 && guestProviders?size gt 0>
+                <#-- Filter guest providers to only those allowed for current department (for OR divider check) -->
+                <#assign visibleGuestProviders = [] />
+                <#list guestProviders as p>
+                  <#if allowed?seq_contains(p.alias)>
+                    <#assign visibleGuestProviders = visibleGuestProviders + [p] />
+                  </#if>
+                </#list>
+                
+                <#-- Count visible non-guest providers (for OR divider check) -->
+                <#assign visibleNonGuestCount = 0 />
+                <#list nonGuestProviders as p>
+                  <#if allowed?seq_contains(p.alias)>
+                    <#assign visibleNonGuestCount = visibleNonGuestCount + 1 />
+                  </#if>
+                </#list>
+                
+                <#-- Add OR divider only if we have both visible non-guest and visible guest providers -->
+                <#if visibleNonGuestCount gt 0 && visibleGuestProviders?size gt 0>
                   <div class="or-divider">
                     <div class="or-divider-text">
                       <span>Or</span>
@@ -293,7 +248,7 @@
                   </div>
                 </#if>
                 
-                <#-- Render guest providers after the divider -->
+                <#-- Render guest providers (all rendered, filtered client-side) -->
                 <#list guestProviders as p>
                   <#assign loadingText = "Accessing..." />
                   <a id="social-${p.alias}" 

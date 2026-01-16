@@ -1256,13 +1256,31 @@ async def sync_identity_providers(
                 else:
                     # Departments exist: create department-level default-idp instances only
                     logger.info(f"Found {len(departments)} departments - creating department-level default-idp instances")
+                    
+                    # Get SQL for checking auth providers per department
+                    auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                    auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
+                    
+                    if not auths_is_function or not auths_function_name:
+                        raise ValueError("Expected function definition in get_auths_for_org_complete.sql")
+                    
                     for dept_row in departments:
                         dept = dict(dept_row)
                         dept_id = str(dept["department_id"])
                         
-                        # Sync guest and default-account IdPs for each department
+                        # Always sync guest IdP
                         await sync_default_idp_for_department(dept_id, "guest", kc_admin)
-                        await sync_default_idp_for_department(dept_id, "default-account", kc_admin)
+                        
+                        # Only sync default-account IdP if department has 0 auth providers
+                        import uuid
+                        auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
+                        dept_auths = await conn.fetch(auths_function_call_sql, uuid.UUID(dept_id))
+                        
+                        if len(dept_auths) == 0:
+                            logger.info(f"Department {dept_id} has 0 auth providers - creating default-account IdP")
+                            await sync_default_idp_for_department(dept_id, "default-account", kc_admin)
+                        else:
+                            logger.info(f"Department {dept_id} has {len(dept_auths)} auth providers - skipping default-account IdP")
         
         # Step 1: Sync realm-level IdPs (from default settings)
         logger.info("Syncing realm-level IdPs (platform login)...")
