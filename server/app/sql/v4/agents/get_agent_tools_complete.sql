@@ -91,7 +91,7 @@ WITH tool_schema_data AS (
           JOIN flags_resource f ON tf.flag_id = f.id 
           WHERE tf.tool_id = t.id 
             AND f.name = 'active' 
-            AND tf.type = 'active'::type_tool_flags 
+            AND f.name = 'active' 
             AND tf.value = true
       )
     GROUP BY t.id
@@ -116,7 +116,7 @@ SELECT DISTINCT ON (t.id)
         JOIN flags_resource f ON tf.flag_id = f.id 
         WHERE tf.tool_id = t.id 
           AND f.name = 'active' 
-          AND tf.type = 'active'::type_tool_flags 
+          AND f.name = 'active' 
           AND tf.value = true
     ) as active
 FROM agent_tools at
@@ -138,7 +138,7 @@ WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
       JOIN flags_resource f ON tf.flag_id = f.id 
       WHERE tf.tool_id = t.id 
         AND f.name = 'active' 
-        AND tf.type = 'active'::type_tool_flags 
+        AND f.name = 'active' 
         AND tf.value = true
   )
 ORDER BY t.id, COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)

@@ -52,7 +52,7 @@ run_info AS (
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
              WHERE rpf.run_id = x.run_id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
+            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) LIMIT 1)
         ) as department_id
     FROM params x
     JOIN runs r ON r.id = x.run_id
@@ -300,7 +300,7 @@ get_prompt_tool_id AS (
     INNER JOIN runs r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
     
     
-    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'prompt' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'prompt' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1
 ),
 system_tool_call AS (
@@ -439,7 +439,7 @@ get_instruct_tool_id AS (
     INNER JOIN runs r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
     
     
-    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'instruct' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'instruct' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1
 ),
 developer_calls_with_rn AS (

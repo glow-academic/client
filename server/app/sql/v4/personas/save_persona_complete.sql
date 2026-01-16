@@ -99,7 +99,7 @@ BEGIN
             value = CASE WHEN api_save_persona_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE persona_id = v_persona_id
-          AND type = 'active'::type_persona_flags;
+          ;
     END IF;
     
     -- Continue with persona save using SQL (persona already created/updated above)
@@ -225,9 +225,7 @@ BEGIN
     ),
     -- Insert or UPDATE persona_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_persona_active_flag AS (
-        INSERT INTO persona_flags (persona_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.persona_id,
+        INSERT INTO persona_flags (persona_id, flag_id, value, created_at, updated_at) SELECT x.persona_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_persona_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,

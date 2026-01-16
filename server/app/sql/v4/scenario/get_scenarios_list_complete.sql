@@ -151,10 +151,9 @@ scenario_simulations AS (
         ARRAY_AGG(DISTINCT ss.simulation_id::text) as simulation_ids,
         COUNT(DISTINCT ss.simulation_id) as num_simulations
     FROM simulation_scenarios ss
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
-      WHERE ssf.simulation_id = ss.simulation_id 
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
         AND ssf.scenario_id = ss.scenario_id 
-        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND f.name = 'active' 
         AND ssf.value = true)
     GROUP BY ss.scenario_id
 ),
@@ -171,10 +170,9 @@ scenario_cohorts AS (
         ARRAY_AGG(DISTINCT cs.cohort_id::text) as cohort_ids
     FROM simulation_scenarios ss
     JOIN cohort_simulations cs ON cs.simulation_id = ss.simulation_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
-      WHERE ssf.simulation_id = ss.simulation_id 
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
         AND ssf.scenario_id = ss.scenario_id 
-        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND f.name = 'active' 
         AND ssf.value = true) AND cs.active = true
     GROUP BY ss.scenario_id
 ),
@@ -208,18 +206,16 @@ scenario_departments_data AS (
 scenario_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
         ss.scenario_id,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
-          WHERE ssf.simulation_id = ss.simulation_id 
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
             AND ssf.scenario_id = ss.scenario_id 
-            AND ssf.type = 'hints_enabled'::type_simulation_scenario_flags), false) as hints_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = TRUE) as objectives_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE) as image_input_enabled
+            AND f.name = 'hints_enabled'), false) as hints_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) as objectives_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) as image_input_enabled
     FROM simulation_scenarios ss
     JOIN scenarios_resource s ON s.id = ss.scenario_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
-      WHERE ssf.simulation_id = ss.simulation_id 
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
         AND ssf.scenario_id = ss.scenario_id 
-        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND f.name = 'active' 
         AND ssf.value = true)
     ORDER BY ss.scenario_id, (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
@@ -229,7 +225,7 @@ scenario_data AS (
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as title,
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as problem_statement,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE) as active,
         false as generated,
         s.updated_at,
         st.parent_id as parent_scenario_id,
@@ -276,7 +272,7 @@ scenario_data AS (
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     LEFT JOIN scenario_attributes sa ON sa.scenario_id = s.id
     CROSS JOIN user_profile up
-    GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), s.updated_at, st.parent_id, 
+    GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE), s.updated_at, st.parent_id, 
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
              sc.cohort_ids, sdd.department_ids, sal.total_links, up.role,
              sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled
@@ -354,10 +350,9 @@ SELECT
                   JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
                   WHERE stl.simulation_id = s.id 
                AND stl.active = true 
-               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
-                 WHERE ssf.simulation_id = ss.simulation_id 
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
                    AND ssf.scenario_id = ss.scenario_id 
-                   AND ssf.type = 'active'::type_simulation_scenario_flags 
+                   AND f.name = 'active' 
                    AND ssf.value = true)),
                  0
              ),

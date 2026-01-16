@@ -150,7 +150,7 @@ flags_group_ids AS (
         'flags'::text as resource_type,
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM persona_flags pf WHERE pf.persona_id = (SELECT persona_id FROM params) AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
+            (SELECT pf.flag_id FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND f.name = 'active' AND pf.value = TRUE LIMIT 1)
         ) as resource_id,
         gr.group_id
     FROM params x
@@ -165,7 +165,7 @@ flags_group_ids AS (
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE (x.draft_id IS NOT NULL OR x.persona_id IS NOT NULL)
       AND ('flags' = ANY(x.resource_types) OR array_length(x.resource_types, 1) IS NULL)
-      AND (x.persona_id IS NULL OR (pf.type = 'active'::type_persona_flags AND pf.value = TRUE))
+      AND (x.persona_id IS NULL OR EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.persona_id = x.persona_id AND fl.name = 'active' AND pf.value = TRUE))
 ),
 -- Departments group_id lookup (for each selected department)
 departments_group_ids AS (

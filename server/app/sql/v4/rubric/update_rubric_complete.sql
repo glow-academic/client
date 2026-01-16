@@ -207,12 +207,11 @@ link_rubric_description AS (
 ),
 update_rubric_active_flag AS (
     -- Update active flag
-    INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
-    SELECT ur.rubric_id, gaf.flag_id, 'active'::type_rubric_flags, p.active, NOW(), NOW()
+    INSERT INTO rubric_flags (rubric_id, flag_id, value, created_at, updated_at) SELECT ur.rubric_id, gaf.flag_id, p.active, NOW(), NOW()
     FROM update_rubric ur
     CROSS JOIN get_active_flag gaf
     CROSS JOIN params p
-    ON CONFLICT (rubric_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    ON CONFLICT (rubric_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 update_rubric_points AS (
     -- UPDATE points_resource (delete old, insert new)

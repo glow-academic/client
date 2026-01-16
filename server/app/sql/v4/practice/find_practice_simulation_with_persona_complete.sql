@@ -38,11 +38,11 @@ WITH practice_simulations AS (
         ss.scenario_id,
         (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position_val
     FROM simulation_artifact sim
-    JOIN simulation_scenarios ss ON ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
-    JOIN scenarios_resource s ON s.id = ss.scenario_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN simulation_scenarios ss ON ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+    JOIN scenarios_resource s ON s.id = ss.scenario_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
     JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
-      AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags_resource f ON simf.flag_id = f.id WHERE simf.simulation_id = sim.id AND f.name = 'active' AND simf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE)
       AND sp.persona_id = api_find_practice_simulation_with_persona_v4.persona_id
 ),
 filtered_by_department AS (

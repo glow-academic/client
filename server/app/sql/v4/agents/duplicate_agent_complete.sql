@@ -130,18 +130,15 @@ link_agent_model AS (
 ),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (
-    INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        na.agent_id::uuid,
+    INSERT INTO agent_flags (agent_id, flag_id, value, created_at, updated_at) SELECT na.agent_id::uuid,
         f.id,
-        'active'::type_agent_flags,
         false,
         NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (agent_id, flag_id) DO UPDATE SET 
         value = false,
         updated_at = NOW()
 ),

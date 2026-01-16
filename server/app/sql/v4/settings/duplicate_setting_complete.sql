@@ -47,10 +47,12 @@ original_setting AS (
     JOIN setting_artifact s ON s.id = x.setting_id
 ),
 original_flags AS (
-    -- Get flag IDs from original setting
-    SELECT flag_id, type
+    -- Get flag IDs from original setting (excluding active flag which is handled separately)
+    SELECT sf.flag_id
     FROM params x
     JOIN setting_flags sf ON sf.setting_id = x.setting_id
+    JOIN flags_resource f ON sf.flag_id = f.id
+    WHERE f.name != 'active'
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -107,35 +109,30 @@ link_setting_description AS (
 ),
 -- Link setting active flag (set to false for duplicate)
 link_setting_active_flag AS (
-    INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ns.id,
+    INSERT INTO setting_flags (setting_id, flag_id, value, created_at, updated_at) SELECT ns.id,
         f.id,
-        'active'::type_setting_flags,
         FALSE,
         NOW(),
         NOW()
     FROM new_setting ns
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (setting_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (setting_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),
 -- Copy other flags from original setting
 copy_setting_flags AS (
-    INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO setting_flags (setting_id, flag_id, value, created_at, updated_at)
     SELECT 
         ns.id,
         of.flag_id,
-        of.type,
         FALSE,
         NOW(),
         NOW()
     FROM new_setting ns
     CROSS JOIN original_flags of
-    WHERE of.type != 'active'::type_setting_flags
-    ON CONFLICT (setting_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (setting_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 )

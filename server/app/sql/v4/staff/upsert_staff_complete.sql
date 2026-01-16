@@ -241,11 +241,8 @@ link_profile_last_names AS (
 ),
 -- Link profile active flags
 link_profile_active_flags AS (
-    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        pu.id,
+    INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT pu.id,
         f.id,
-        'active'::type_profile_flags,
         pwi.active,
         NOW(),
         NOW()
@@ -253,7 +250,7 @@ link_profile_active_flags AS (
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

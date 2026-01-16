@@ -255,9 +255,9 @@ default_settings_for_auth AS (
     -- Get settings with no department links (cross-department/default)
     SELECT 
         s.id as settings_id,
-        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -268,13 +268,13 @@ dept_specific_settings_for_auth AS (
     -- Get department-specific settings (if department_id provided)
     SELECT 
         s.id as settings_id,
-        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
     FROM setting_artifact s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
       AND ds.department_id = pn.department_id_uuid
-      AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
     LIMIT 1
 ),
 selected_settings_for_auth AS (
@@ -283,7 +283,7 @@ selected_settings_for_auth AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings_for_auth),
             (SELECT settings_id FROM default_settings_for_auth),
-            (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = setting_artifact.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'active' AND sf.value = TRUE) LIMIT 1)
         ) as settings_id,
         COALESCE(
             (SELECT guest_login_enabled FROM dept_specific_settings_for_auth),
@@ -295,7 +295,7 @@ active_departments_count AS (
     -- Count all active departments
     SELECT COUNT(*) as count
     FROM department_artifact
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = department_artifact.id AND df.type = 'active'::type_department_flags AND df.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = department_artifact.id AND f.name = 'active' AND df.value = true)
 ),
 department_exists_check AS (
     -- Check if the specified department exists and is active (if department_id provided)
@@ -305,7 +305,7 @@ department_exists_check AS (
                 EXISTS(
                     SELECT 1 FROM department_artifact d
                     WHERE d.id = pn.department_id_uuid
-                    AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+                    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
                 )
             ELSE false
         END as department_exists
@@ -316,13 +316,13 @@ department_auth_providers_count AS (
     SELECT COUNT(DISTINCT a.id) as count
     FROM department_artifact d
     JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
-    JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
       AND d.id = pn.department_id_uuid
-      AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 default_settings_auth_providers_count AS (
     -- Count auth providers for default settings (no department links)
@@ -330,19 +330,19 @@ default_settings_auth_providers_count AS (
     FROM default_settings_for_auth ds
     JOIN setting_artifact s ON s.id = ds.settings_id
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
 ),
 departments_without_auth_providers_count AS (
     -- Count departments that have no auth providers configured
     SELECT COUNT(DISTINCT d.id) as count
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
       AND NOT EXISTS (
           SELECT 1
           FROM department_settings ds
-          JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+          JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
           JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-          JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+          JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
           WHERE ds.department_id = d.id
             AND ds.active = true
       )
@@ -368,14 +368,14 @@ resolve_profile_from_department AS (
                                      FROM setting_artifact s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                      JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
-                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                      LIMIT 1)
                                 WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
                                     (SELECT sda.profile_id
                                      FROM setting_artifact s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                      JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                      LIMIT 1)
                             END
                         ELSE NULL::uuid
@@ -386,7 +386,7 @@ resolve_profile_from_department AS (
                             (SELECT sdg.profile_id
                              FROM setting_artifact s
                              JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
-                             WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+                             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                AND NOT EXISTS (
                                    SELECT 1 FROM department_settings ds 
                                    WHERE ds.settings_id = s.id AND ds.active = true
@@ -396,7 +396,7 @@ resolve_profile_from_department AS (
                             (SELECT sda.profile_id
                              FROM setting_artifact s
                              JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-                             WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+                             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                AND NOT EXISTS (
                                    SELECT 1 FROM department_settings ds 
                                    WHERE ds.settings_id = s.id AND ds.active = true
@@ -484,7 +484,7 @@ actual_profile_data AS (
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
         (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1) as last_login,
         pa.last_active,
@@ -505,7 +505,7 @@ actual_profile_data AS (
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
-    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE), 
              rl.requests_per_day, (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
@@ -539,7 +539,7 @@ effective_profile_data AS (
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
         (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1) as last_login,
         pa.last_active,
@@ -560,7 +560,7 @@ effective_profile_data AS (
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
-    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE), 
              rl.requests_per_day, (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
@@ -587,13 +587,13 @@ dept_data AS (
         d.id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
         (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1),
-        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE),
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true),
         pd.is_primary
     FROM profile_departments pd
     JOIN departments_resource d ON d.id = pd.department_id
     WHERE pd.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd.active = true
-      AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 cohort_data AS (
     -- Cohorts for the effective profile
@@ -601,7 +601,7 @@ cohort_data AS (
         c.id,
         (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1),
         (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1),
-        EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE),
+        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'active' AND cf.value = TRUE),
         COALESCE(cdd.department_ids, ARRAY[]::text[]) as department_ids
     FROM cohort_profiles pc
     JOIN cohort_artifact c ON c.id = pc.cohort_id
@@ -615,7 +615,7 @@ cohort_data AS (
     ) cdd ON cdd.cohort_id = c.id
     WHERE pc.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pc.active = true
-      AND EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
+      AND EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'active' AND cf.value = true)
 ),
 sim_data AS (
     -- Simulations for the effective profile's cohorts
@@ -628,11 +628,11 @@ sim_data AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
+             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
             0
         ) as time_limit,
-        EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE),
-        EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'active' AND sf.value = TRUE),
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
     FROM simulation_artifact s
     JOIN cohort_simulations cs ON cs.simulation_id = s.id
     JOIN cohort_data cd ON cd.id = cs.cohort_id
@@ -644,14 +644,14 @@ sim_data AS (
         WHERE sd.active = true
         GROUP BY sd.simulation_id
     ) sdd ON sdd.simulation_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
 ),
 departments_aggregated AS (
     -- Aggregate departments into composite type array
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE), d.is_primary)::types.q_get_profile_context_v4_department
+                (d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true), d.is_primary)::types.q_get_profile_context_v4_department
                 ORDER BY d.is_primary DESC, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
             ),
             '{}'::types.q_get_profile_context_v4_department[]
@@ -663,7 +663,7 @@ cohorts_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (c.id, (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE), c.department_ids)::types.q_get_profile_context_v4_cohort
+                (c.id, (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'active' AND cf.value = TRUE), c.department_ids)::types.q_get_profile_context_v4_cohort
                 ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)
             ),
             '{}'::types.q_get_profile_context_v4_cohort[]
@@ -675,7 +675,7 @@ simulations_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), s.department_ids, s.time_limit, EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE), EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE))::types.q_get_profile_context_v4_simulation
+                (s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), s.department_ids, s.time_limit, EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'active' AND sf.value = TRUE), EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE))::types.q_get_profile_context_v4_simulation
                 ORDER BY (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
             ),
             '{}'::types.q_get_profile_context_v4_simulation[]
@@ -705,7 +705,7 @@ settings_resolution AS (
         -- Get settings with no department links (cross-department/default)
         SELECT s.id as settings_id
         FROM setting_artifact s
-        WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
           AND NOT EXISTS (
               SELECT 1 FROM department_settings sd 
               WHERE sd.settings_id = s.id AND sd.active = true
@@ -741,7 +741,7 @@ settings_resolution AS (
         CROSS JOIN resolved_department_id rdi
         WHERE rdi.department_id IS NOT NULL
           AND sd.department_id = rdi.department_id
-          AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
+          AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) 
           AND sd.active = true
         LIMIT 1
     ),
@@ -751,7 +751,7 @@ settings_resolution AS (
             COALESCE(
                 (SELECT settings_id FROM dept_specific_settings),
                 (SELECT settings_id FROM default_settings),
-                (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = setting_artifact.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+                (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'active' AND sf.value = TRUE) LIMIT 1)
             ) as settings_id
     ),
     settings_auths_data AS (
@@ -767,7 +767,7 @@ settings_resolution AS (
             ) as auths
         FROM selected_settings ss
         JOIN setting_auths sa ON sa.settings_id = ss.settings_id AND sa.active = true
-        JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+        JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
     ),
     settings_providers_data AS (
         -- Get linked providers for this settings (providers is now a resource table)
@@ -818,7 +818,7 @@ settings_resolution AS (
     SELECT 
         s.id::text as settings_id,
         s.created_at as settings_created_at,
-        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) as settings_active,
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) as settings_active,
         (SELECT n.name FROM setting_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1) as settings_name,
         (SELECT d.description FROM setting_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1) as settings_description,
         (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1) as primary_color,
@@ -835,7 +835,7 @@ settings_resolution AS (
         (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart3'::type_setting_colors LIMIT 1) as chart3,
         (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart4'::type_setting_colors LIMIT 1) as chart4,
         (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart5'::type_setting_colors LIMIT 1) as chart5,
-        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as settings_guest_login_enabled,
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as settings_guest_login_enabled,
         (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1) as success_threshold,
         (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1) as warning_threshold,
         (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1) as danger_threshold,

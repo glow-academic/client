@@ -123,7 +123,7 @@ BEGIN
             value = CASE WHEN api_save_auth_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE auth_id = v_auth_id
-          AND type = 'active'::type_auth_flags;
+          ;
     END IF;
     
     -- Continue with auth save using SQL (auth already created/updated above)
@@ -182,11 +182,8 @@ BEGIN
     ),
     -- Insert or UPDATE auth_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_auth_active_flag AS (
-        INSERT INTO auth_flags (auth_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.auth_id,
+        INSERT INTO auth_flags (auth_id, flag_id, value, created_at, updated_at) SELECT x.auth_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_auth_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

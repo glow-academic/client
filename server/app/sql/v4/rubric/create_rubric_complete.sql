@@ -166,8 +166,7 @@ link_description AS (
 ),
 link_active_flag AS (
     -- Link active flag to rubric
-    INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
-    SELECT nr.rubric_id, gaf.flag_id, 'active'::type_rubric_flags, p.active, NOW(), NOW()
+    INSERT INTO rubric_flags (rubric_id, flag_id, value, created_at, updated_at) SELECT nr.rubric_id, gaf.flag_id, p.active, NOW(), NOW()
     FROM new_rubric nr
     CROSS JOIN get_active_flag gaf
     CROSS JOIN params p

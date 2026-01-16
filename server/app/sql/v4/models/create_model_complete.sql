@@ -136,11 +136,8 @@ BEGIN
 
     -- Insert active flag into model_flags
     IF active IS NOT NULL THEN
-        INSERT INTO model_flags (model_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
-        SELECT 
-            new_model_id,
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id) SELECT new_model_id,
             f.id,
-            'active'::type_model_flags,
             active,
             NOW(),
             NOW(),
@@ -149,7 +146,7 @@ BEGIN
             NULL
         FROM flags_resource f
         WHERE f.name = 'active'
-        ON CONFLICT (model_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     -- Insert value into values_resource and link via model_values

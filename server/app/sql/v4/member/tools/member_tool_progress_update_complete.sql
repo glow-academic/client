@@ -50,7 +50,7 @@ get_tool_id AS (
     FROM tool_artifact t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
     WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = (SELECT tool_name FROM params LIMIT 1)
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1
 ),
 -- Determine message role - member agent only handles speak (assistant role)

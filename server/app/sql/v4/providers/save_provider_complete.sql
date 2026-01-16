@@ -81,7 +81,7 @@ BEGIN
             value = CASE WHEN api_save_provider_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE provider_flags.provider_id = v_provider_id
-          AND provider_flags.type = 'active'::type_provider_flags;
+          ;
     END IF;
     
     -- Continue with provider save using SQL (provider already created/updated above)
@@ -134,11 +134,8 @@ BEGIN
     ),
     -- Insert or UPDATE provider_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_provider_active_flag AS (
-        INSERT INTO provider_flags (provider_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.p_provider_id,
+        INSERT INTO provider_flags (provider_id, flag_id, value, created_at, updated_at) SELECT x.p_provider_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_provider_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

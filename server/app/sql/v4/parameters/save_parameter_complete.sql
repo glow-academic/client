@@ -208,22 +208,19 @@ BEGIN
             value = (SELECT active FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND type = 'active'::type_parameter_flags
+          
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_active_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.parameter_id,
+        INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at) SELECT x.parameter_id,
             f.id,
-            'active'::type_parameter_flags,
             x.active,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'active'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'active'::type_parameter_flags)
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'active')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -234,7 +231,7 @@ BEGIN
             value = (SELECT simulation_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND type = 'simulation_parameter'::type_parameter_flags
+          
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_simulation_flag AS (
@@ -242,14 +239,13 @@ BEGIN
         SELECT 
             x.parameter_id,
             f.id,
-            'simulation_parameter'::type_parameter_flags,
             x.simulation_parameter,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'simulation_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'simulation_parameter'::type_parameter_flags)
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'simulation_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -260,7 +256,7 @@ BEGIN
             value = (SELECT document_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND type = 'document_parameter'::type_parameter_flags
+          
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_document_flag AS (
@@ -268,14 +264,13 @@ BEGIN
         SELECT 
             x.parameter_id,
             f.id,
-            'document_parameter'::type_parameter_flags,
             x.document_parameter,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'document_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'document_parameter'::type_parameter_flags)
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'document_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -286,7 +281,7 @@ BEGIN
             value = (SELECT persona_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND type = 'persona_parameter'::type_parameter_flags
+          
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_persona_flag AS (
@@ -294,14 +289,13 @@ BEGIN
         SELECT 
             x.parameter_id,
             f.id,
-            'persona_parameter'::type_parameter_flags,
             x.persona_parameter,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'persona_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'persona_parameter'::type_parameter_flags)
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'persona_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -312,7 +306,7 @@ BEGIN
             value = (SELECT scenario_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND type = 'scenario_parameter'::type_parameter_flags
+          
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_scenario_flag AS (
@@ -320,14 +314,13 @@ BEGIN
         SELECT 
             x.parameter_id,
             f.id,
-            'scenario_parameter'::type_parameter_flags,
             x.scenario_parameter,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'scenario_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'scenario_parameter'::type_parameter_flags)
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'scenario_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -338,7 +331,7 @@ BEGIN
             value = (SELECT video_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
-          AND type = 'video_parameter'::type_parameter_flags
+          
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_video_flag AS (
@@ -346,14 +339,13 @@ BEGIN
         SELECT 
             x.parameter_id,
             f.id,
-            'video_parameter'::type_parameter_flags,
             x.video_parameter,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'video_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'video_parameter'::type_parameter_flags)
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'video_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -413,7 +405,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN field_connections_fixed fcf
-        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf WHERE fieldsf.field_id = fcf.field_id AND fieldsf.type = 'active'::type_field_flags AND fieldsf.value = true)
+        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'active' AND fieldsf.value = true)
           AND fcf.conn_active = true
         ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
     ),

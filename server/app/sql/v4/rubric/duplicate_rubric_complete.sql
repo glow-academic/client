@@ -161,18 +161,15 @@ link_rubric_description AS (
 ),
 -- Link rubric active flag (set to false for duplicate)
 link_rubric_active_flag AS (
-    INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        nr.rubric_id,
+    INSERT INTO rubric_flags (rubric_id, flag_id, value, created_at, updated_at) SELECT nr.rubric_id,
         f.id,
-        'active'::type_rubric_flags,
         FALSE,
         NOW(),
         NOW()
     FROM new_rubric nr
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (rubric_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (rubric_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),

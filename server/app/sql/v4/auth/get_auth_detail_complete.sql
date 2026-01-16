@@ -114,7 +114,7 @@ auth_data AS (
         ) as description,
         COALESCE(
             (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-            EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+            EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = TRUE)
         ) as active,
         CASE 
             WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true

@@ -22,7 +22,7 @@ AS $$
         d.id AS document_id,
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1) AS name,
         (SELECT d2.description FROM document_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.document_id = d.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active'  AND df.value = TRUE) AS active,
         d.created_at,
         d.updated_at
     FROM documents_resource d

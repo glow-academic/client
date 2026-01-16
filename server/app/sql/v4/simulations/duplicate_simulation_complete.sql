@@ -93,12 +93,11 @@ link_description AS (
     WHERE gocd.description_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
-    SELECT ns.simulation_id, gfi.active_flag_id, 'active'::type_simulation_flags, false, NOW(), NOW()
+    INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at) SELECT ns.simulation_id, gfi.active_flag_id, false, NOW(), NOW()
     FROM new_simulation ns
     CROSS JOIN get_flag_ids gfi
     UNION ALL
-    SELECT ns.simulation_id, gfi.practice_flag_id, 'practice'::type_simulation_flags, false, NOW(), NOW()
+    SELECT ns.simulation_id, gfi.practice_flag_id, false, NOW(), NOW()
     FROM new_simulation ns
     CROSS JOIN get_flag_ids gfi
 ),
@@ -129,12 +128,11 @@ copy_scenario_positions AS (
     CROSS JOIN new_simulation ns
 ),
 copy_scenario_flags AS (
-    INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+    INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, value, created_at, updated_at, generated, mcp)
     SELECT 
         ns.simulation_id,
         ssf.scenario_id,
         ssf.scenario_flag_id,
-        ssf.type,
         ssf.value,
         NOW(),
         NOW(),
@@ -143,7 +141,7 @@ copy_scenario_flags AS (
     FROM source_simulation ssim
     JOIN simulation_scenario_flags ssf ON ssf.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
-    ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO NOTHING
+    ON CONFLICT (simulation_id, scenario_id, scenario_flag_id) DO NOTHING
 ),
 copy_rubric_grade_agents AS (
     INSERT INTO simulation_scenarios_scenario_rubric_grade_agents (simulation_id, scenario_id, scenario_rubric_grade_agent_id, created_at, updated_at, generated, mcp)

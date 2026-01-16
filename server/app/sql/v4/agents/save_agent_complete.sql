@@ -103,7 +103,7 @@ BEGIN
             value = CASE WHEN api_save_agent_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE agent_id = v_agent_id
-          AND type = 'active'::type_agent_flags;
+          ;
         -- Deactivate existing temperature/reasoning/voice links
         UPDATE agent_temperature_levels SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
         UPDATE agent_reasoning_levels SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
@@ -290,11 +290,8 @@ BEGIN
     ),
     -- Insert or UPDATE agent_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_agent_active_flag AS (
-        INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.agent_id,
+        INSERT INTO agent_flags (agent_id, flag_id, value, created_at, updated_at) SELECT x.agent_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_agent_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

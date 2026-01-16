@@ -115,11 +115,8 @@ link_eval_description AS (
 ),
 -- Link eval active flag
 link_eval_active_flag AS (
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ne.eval_id,
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at) SELECT ne.eval_id,
         f.id,
-        'active'::type_eval_flags,
         x.active,
         NOW(),
         NOW()
@@ -127,17 +124,16 @@ link_eval_active_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link eval dynamic flag
 link_eval_dynamic_flag AS (
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at)
     SELECT 
         ne.eval_id,
         f.id,
-        'dynamic'::type_eval_flags,
         x.dynamic,
         NOW(),
         NOW()
@@ -145,17 +141,16 @@ link_eval_dynamic_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'dynamic'
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link eval use_groups flag (renamed to groups)
 link_eval_groups_flag AS (
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at)
     SELECT 
         ne.eval_id,
         f.id,
-        'groups'::type_eval_flags,
         x.use_groups,
         NOW(),
         NOW()
@@ -163,7 +158,7 @@ link_eval_groups_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'groups'
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

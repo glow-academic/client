@@ -84,7 +84,7 @@ BEGIN
             value = CASE WHEN api_save_setting_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE setting_id = v_setting_id
-          AND type = 'active'::type_setting_flags;
+          ;
     END IF;
     
     -- Continue with setting save using SQL (setting already created/updated above)
@@ -187,11 +187,8 @@ BEGIN
     ),
     -- Insert or UPDATE setting_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_setting_active_flag AS (
-        INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.setting_id,
+        INSERT INTO setting_flags (setting_id, flag_id, value, created_at, updated_at) SELECT x.setting_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_setting_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

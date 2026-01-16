@@ -153,14 +153,11 @@ update_key_active_flag AS (
         value = (SELECT active FROM params),
         updated_at = NOW()
     WHERE key_id = (SELECT key_id FROM params)
-      AND type = 'active'::type_key_flags
+      
 ),
 insert_key_active_flag AS (
-    INSERT INTO key_flags (key_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        uk.key_id,
+    INSERT INTO key_flags (key_id, flag_id, value, created_at, updated_at) SELECT uk.key_id,
         f.id,
-        'active'::type_key_flags,
         x.active,
         NOW(),
         NOW()
@@ -168,8 +165,8 @@ insert_key_active_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-      AND NOT EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = uk.key_id AND kf.type = 'active'::type_key_flags)
-    ON CONFLICT (key_id, flag_id, type) DO UPDATE SET 
+      AND NOT EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = uk.key_id AND f.name = 'active')
+    ON CONFLICT (key_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

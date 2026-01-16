@@ -20,7 +20,7 @@ AS $$
                (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
                NULL::uuid as provider_id  -- Providers are now enums, not UUIDs
         FROM models_resource m
-        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active'  AND mf.value = TRUE)
         LIMIT 1
     ),
     name_resource AS (
@@ -65,8 +65,8 @@ AS $$
         RETURNING model_id
     ),
     new_model_flag_link AS (
-        INSERT INTO model_flags(model_id, flag_id, type, value)
-        SELECT nm.id, af.id, 'active'::type_model_flags, true
+        INSERT INTO model_flags (model_id, flag_id, value)
+        SELECT nm.id, af.id, true
         FROM new_model nm, active_flag af
         WHERE NOT EXISTS (SELECT 1 FROM existing_model)
         RETURNING model_id

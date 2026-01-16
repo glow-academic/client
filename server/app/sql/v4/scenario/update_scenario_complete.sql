@@ -310,38 +310,37 @@ update_flags AS (
       AND EXISTS (SELECT 1 FROM scenario_exists)
 ),
 link_flags AS (
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT p.scenario_id, gfi.active_flag_id, 'active'::type_scenario_flags, p.active, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at) SELECT p.scenario_id, gfi.active_flag_id, p.active, NOW(), NOW()
     FROM params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.active IS NOT NULL
       AND EXISTS (SELECT 1 FROM scenario_exists)
     UNION ALL
-    SELECT p.scenario_id, gfi.objectives_enabled_flag_id, 'objectives_enabled'::type_scenario_flags, p.objectives_enabled, NOW(), NOW()
+    SELECT p.scenario_id, gfi.objectives_enabled_flag_id, p.objectives_enabled, NOW(), NOW()
     FROM params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.objectives_enabled IS NOT NULL
       AND EXISTS (SELECT 1 FROM scenario_exists)
     UNION ALL
-    SELECT p.scenario_id, gfi.images_enabled_flag_id, 'images_enabled'::type_scenario_flags, p.images_enabled, NOW(), NOW()
+    SELECT p.scenario_id, gfi.images_enabled_flag_id, p.images_enabled, NOW(), NOW()
     FROM params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.images_enabled IS NOT NULL
       AND EXISTS (SELECT 1 FROM scenario_exists)
     UNION ALL
-    SELECT p.scenario_id, gfi.video_enabled_flag_id, 'video_enabled'::type_scenario_flags, p.video_enabled, NOW(), NOW()
+    SELECT p.scenario_id, gfi.video_enabled_flag_id, p.video_enabled, NOW(), NOW()
     FROM params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.video_enabled IS NOT NULL
       AND EXISTS (SELECT 1 FROM scenario_exists)
     UNION ALL
-    SELECT p.scenario_id, gfi.questions_enabled_flag_id, 'questions_enabled'::type_scenario_flags, p.questions_enabled, NOW(), NOW()
+    SELECT p.scenario_id, gfi.questions_enabled_flag_id, p.questions_enabled, NOW(), NOW()
     FROM params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.questions_enabled IS NOT NULL
       AND EXISTS (SELECT 1 FROM scenario_exists)
     UNION ALL
-    SELECT p.scenario_id, gfi.problem_statement_enabled_flag_id, 'problem_statement_enabled'::type_scenario_flags, p.problem_statement_enabled, NOW(), NOW()
+    SELECT p.scenario_id, gfi.problem_statement_enabled_flag_id, p.problem_statement_enabled, NOW(), NOW()
     FROM params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.problem_statement_enabled IS NOT NULL

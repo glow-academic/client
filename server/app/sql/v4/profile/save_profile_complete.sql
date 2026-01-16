@@ -224,9 +224,7 @@ BEGIN
     ),
     -- Link/update profile active flag
     link_profile_active_flag AS (
-        INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.target_profile_id,
+        INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT x.target_profile_id,
             f.id,
             'active'::type_profile_flags,
             x.active,

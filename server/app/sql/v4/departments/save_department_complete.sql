@@ -81,7 +81,7 @@ BEGIN
             value = CASE WHEN api_save_department_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE department_id = v_department_id
-          AND type = 'active'::type_department_flags;
+          ;
     END IF;
     
     -- Continue with department save using SQL (department already created/updated above)
@@ -142,9 +142,7 @@ BEGIN
     ),
     -- Insert or UPDATE department_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_department_active_flag AS (
-        INSERT INTO department_flags (department_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.department_id,
+        INSERT INTO department_flags (department_id, flag_id, value, created_at, updated_at) SELECT x.department_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_department_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,

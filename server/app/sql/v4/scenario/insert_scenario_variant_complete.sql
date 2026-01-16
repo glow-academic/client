@@ -80,20 +80,19 @@ link_name AS (
     WHERE gocn.name_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT ns.id, gfi.active_flag_id, 'active'::type_scenario_flags, p.active, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gfi.active_flag_id, p.active, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.active IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.objectives_enabled_flag_id, 'objectives_enabled'::type_scenario_flags, p.objectives_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.objectives_enabled_flag_id, p.objectives_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.objectives_enabled IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.images_enabled_flag_id, 'images_enabled'::type_scenario_flags, p.images_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.images_enabled_flag_id, p.images_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi

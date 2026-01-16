@@ -88,11 +88,8 @@ BEGIN
 
     -- Handle active flag (insert/update via tool_flags junction)
     IF active IS NOT NULL THEN
-        INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp)
-        SELECT 
-            v_tool_id,
+        INSERT INTO tool_flags (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT v_tool_id,
             f.id,
-            'active'::type_tool_flags,
             active,
             NOW(),
             NOW(),

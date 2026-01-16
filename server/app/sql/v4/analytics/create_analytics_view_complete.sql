@@ -74,8 +74,9 @@ active_sims AS (
   SELECT s.* FROM simulation_artifact s
   WHERE EXISTS (
     SELECT 1 FROM simulation_flags sf
+    JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = s.id
-      AND sf.type = 'active'::type_simulation_flags
+      AND f.name = 'active'
       AND sf.value = TRUE
   )
 ),
@@ -83,21 +84,17 @@ active_sims AS (
 active_scenarios AS (
   SELECT s.* FROM scenario_artifact s
   WHERE EXISTS (
-    SELECT 1 FROM scenario_flags sf
+    SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.scenario_id = s.id
-      AND sf.type = 'active'::type_scenario_flags
+      AND f.name = 'active'
       AND sf.value = TRUE
   )
 ),
 -- expand cohorts; we'll filter active where needed
 cohorts_expanded AS (
   SELECT c.id, 
-    EXISTS (
-      SELECT 1 FROM cohort_flags cf
-      WHERE cf.cohort_id = c.id
-        AND cf.type = 'active'::type_cohort_flags
-        AND cf.value = TRUE
-    ) AS active
+    EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+        AND f.name = 'active' AND cf.value = TRUE) AS active
   FROM cohort_artifact c
 ),
 -- sims -> active cohorts using junction table
@@ -105,12 +102,8 @@ cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
          ARRAY(SELECT DISTINCT c.id FROM cohort_artifact c
                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
-               WHERE EXISTS (
-                 SELECT 1 FROM cohort_flags cf
-                 WHERE cf.cohort_id = c.id
-                   AND cf.type = 'active'::type_cohort_flags
-                   AND cf.value = TRUE
-               )) AS cohort_ids
+               WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+                   AND f.name = 'active' AND cf.value = TRUE)) AS cohort_ids
   FROM active_sims s
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
@@ -121,12 +114,8 @@ profile_cohorts_for_sim AS (
            FROM cohort_artifact c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
            JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
-           WHERE EXISTS (
-             SELECT 1 FROM cohort_flags cf
-             WHERE cf.cohort_id = c.id
-               AND cf.type = 'active'::type_cohort_flags
-               AND cf.value = TRUE
-           )
+           WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+               AND f.name = 'active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
   FROM simulation_attempts sa
   LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -265,15 +254,17 @@ SELECT
 
   EXISTS (
     SELECT 1 FROM simulation_flags sf
+    JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
-      AND sf.type = 'practice'::type_simulation_flags
+      AND f.name = 'practice'
       AND sf.value = TRUE
   ) AS is_practice,
   sa.archived                   AS is_archived,
   (NOT EXISTS (
     SELECT 1 FROM simulation_flags sf
+    JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
-      AND sf.type = 'practice'::type_simulation_flags
+      AND f.name = 'practice'
       AND sf.value = TRUE
   ) AND NOT sa.archived) AS is_general,
   (SELECT r.role FROM profile_roles pr_j 

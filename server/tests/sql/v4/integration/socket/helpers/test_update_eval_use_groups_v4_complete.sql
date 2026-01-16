@@ -22,6 +22,6 @@ AS $$
     FROM groups_flag gf
     WHERE ef.eval_id = test_update_eval_use_groups_v4.eval_id
       AND ef.flag_id = gf.id
-      AND ef.type = 'groups'::type_eval_flags
+      
     RETURNING ef.eval_id as eval_id;
 $$;

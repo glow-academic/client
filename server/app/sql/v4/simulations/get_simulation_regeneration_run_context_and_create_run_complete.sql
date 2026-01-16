@@ -185,14 +185,14 @@ profile_dept AS (
     CROSS JOIN params p
     WHERE ac.chat_id = p.chat_id 
       AND ap.active = true 
-      AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
     LIMIT 1
 ),
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT d.id as department_id
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
     LIMIT 1
 ),
 resolved_dept AS (
@@ -244,7 +244,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -266,7 +266,7 @@ dept_specific_settings AS (
     FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -275,7 +275,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys_resource kr ON kr.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -284,7 +284,7 @@ dept_specific_settings_with_keys AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) AND sd.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -292,7 +292,7 @@ default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -309,7 +309,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
             (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
             (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) LIMIT 1)  -- Last resort
         ) as settings_id
 ),
 context_data AS (
@@ -367,11 +367,10 @@ context_data AS (
         a_voice.id::text as voice_agent_id,
         
         -- Scenario settings (flags moved FROM scenario_artifact to simulation_scenarios)
-        COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), false) as image_input_enabled,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
-          WHERE ssf.simulation_id = ss.simulation_id 
+        COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), false) as image_input_enabled,
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
             AND ssf.scenario_id = ss.scenario_id 
-            AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false) as copy_paste_allowed,
+            AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
         
         -- Profile data (via attempt_profiles junction)
         ap.profile_id::text as profile_id,
@@ -401,7 +400,7 @@ context_data AS (
     -- Text agent (use simulation agent - fallback to persona agent if persona_text_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
     
-    LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
     
     
     -- Try department-specific prompt first, fall back to default prompt
@@ -432,13 +431,13 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
     -- Voice agent (use simulation voice agent - fallback to persona agent if persona_voice_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
     
     
     LEFT JOIN agents_resource a_voice ON a_voice.id = NULL::uuid 
-        AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a_voice.id AND f.name = 'active' AND af.value = true)
     -- Try department-specific voice prompt first, fall back to default voice prompt
     LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id AND adp_prompt_voice.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt_voice.active = true
     LEFT JOIN prompts_resource pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
@@ -467,7 +466,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
         AND spk_voice.settings_id = act_s_voice.settings_id 
         AND spk_voice.active = true
     LEFT JOIN keys_resource kr_voice ON kr_voice.id = spk_voice.key_id 
-        AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = true)
+        AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr_voice.id AND f.name = 'active' AND kf.value = true)
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -488,11 +487,10 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
              pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(tl_voice.temperature, 0.0), rl_voice.reasoning_level,
              m_voice.id, m_voice.value, n_voice_prov.name, kr_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
              -- Other fields
-             EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), 
-             COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
-               WHERE ssf.simulation_id = ss.simulation_id 
+             EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), 
+             COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
                  AND ssf.scenario_id = ss.scenario_id 
-                 AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false),
+                 AND f.name = 'copy_paste_allowed'), false),
              ap.profile_id,
              prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 ),

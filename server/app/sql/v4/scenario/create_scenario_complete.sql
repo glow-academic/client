@@ -306,38 +306,37 @@ link_description AS (
 ),
 link_flags AS (
     -- Link all scenario flags
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT ns.id, gfi.active_flag_id, 'active'::type_scenario_flags, p.active, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gfi.active_flag_id, p.active, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.active IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.objectives_enabled_flag_id, 'objectives_enabled'::type_scenario_flags, p.objectives_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.objectives_enabled_flag_id, p.objectives_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.objectives_enabled IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.images_enabled_flag_id, 'images_enabled'::type_scenario_flags, p.images_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.images_enabled_flag_id, p.images_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.images_enabled IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.video_enabled_flag_id, 'video_enabled'::type_scenario_flags, p.video_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.video_enabled_flag_id, p.video_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.video_enabled IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.questions_enabled_flag_id, 'questions_enabled'::type_scenario_flags, p.questions_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.questions_enabled_flag_id, p.questions_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.questions_enabled IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.problem_statement_enabled_flag_id, 'problem_statement_enabled'::type_scenario_flags, p.problem_statement_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.problem_statement_enabled_flag_id, p.problem_statement_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p

@@ -168,22 +168,19 @@ update_agent_active_flag AS (
         value = (SELECT active FROM params),
         updated_at = NOW()
     WHERE agent_id = (SELECT agent_id FROM params)
-      AND type = 'active'::type_agent_flags
+      
 ),
 insert_agent_active_flag AS (
-    INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ua.agent_id::uuid,
+    INSERT INTO agent_flags (agent_id, flag_id, value, created_at, updated_at) SELECT ua.agent_id::uuid,
         f.id,
-        'active'::type_agent_flags,
         (SELECT active FROM params),
         NOW(),
         NOW()
     FROM update_agent ua
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-      AND NOT EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = ua.agent_id::uuid AND af.type = 'active'::type_agent_flags)
-    ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
+      AND NOT EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = ua.agent_id::uuid AND af.flag_id = f.id)
+    ON CONFLICT (agent_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM params),
         updated_at = NOW()
 ),

@@ -96,8 +96,8 @@ AS $$
         RETURNING persona_id
     ),
     persona_flag_link AS (
-        INSERT INTO persona_flags(persona_id, flag_id, type, value)
-        SELECT np.id, af.id, 'active'::type_persona_flags, COALESCE(test_create_test_persona_v4.active, true)
+        INSERT INTO persona_flags (persona_id, flag_id, value)
+        SELECT np.id, af.id, COALESCE(test_create_test_persona_v4.active, true)
         FROM new_persona np, active_flag af
         RETURNING persona_id
     )
@@ -107,7 +107,7 @@ AS $$
         (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = np.id LIMIT 1) as description,
         (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = np.id LIMIT 1) as color,
         (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = np.id LIMIT 1) as icon,
-        EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.persona_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.persona_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) as active,
         (SELECT i.template FROM persona_instructions pi JOIN instructions_resource i ON pi.instruction_id = i.id WHERE pi.persona_id = np.id LIMIT 1) as instructions,
         np.created_at
     FROM new_persona np;

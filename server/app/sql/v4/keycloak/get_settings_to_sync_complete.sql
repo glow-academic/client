@@ -28,7 +28,7 @@ AS $$
     WHERE EXISTS (
         SELECT 1 FROM setting_artifact s
         JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-        WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
+        WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
           AND NOT EXISTS (
               SELECT 1 FROM department_settings sd 
               WHERE sd.settings_id = s.id AND sd.active = true
@@ -40,7 +40,7 @@ AS $$
     FROM setting_artifact s
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
       AND EXISTS (
           SELECT 1 FROM setting_auth_keys sak
           WHERE sak.settings_id = s.id AND sak.active = true

@@ -62,9 +62,9 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT 
         s.id as settings_id,
-        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -75,13 +75,13 @@ dept_specific_settings AS (
     -- Get department-specific settings (if department_id provided)
     SELECT 
         s.id as settings_id,
-        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
     FROM setting_artifact s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
       AND ds.department_id = pn.department_id_uuid
-      AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
     LIMIT 1
 ),
 selected_settings AS (
@@ -90,7 +90,7 @@ selected_settings AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = setting_artifact.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'active' AND sf.value = TRUE) LIMIT 1)
         ) as settings_id,
         COALESCE(
             (SELECT guest_login_enabled FROM dept_specific_settings),
@@ -102,7 +102,7 @@ active_departments_count AS (
     -- Count all active departments
     SELECT COUNT(*) as count
     FROM department_artifact
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = department_artifact.id AND df.type = 'active'::type_department_flags AND df.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = department_artifact.id AND f.name = 'active' AND df.value = true)
 ),
 department_exists_check AS (
     -- Check if the specified department exists and is active (if department_id provided)
@@ -113,7 +113,7 @@ department_exists_check AS (
                     SELECT 1 FROM department_artifact d
                     CROSS JOIN params_normalized pn
                     WHERE d.id = pn.department_id_uuid
-                    AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+                    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
                 )
             ELSE false
         END as department_exists
@@ -124,13 +124,13 @@ department_auth_providers_count AS (
     SELECT COUNT(DISTINCT a.id) as count
     FROM department_artifact d
     JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
-    JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
       AND d.id = pn.department_id_uuid
-      AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 default_settings_auth_providers_count AS (
     -- Count auth providers for default settings (no department links)
@@ -138,19 +138,19 @@ default_settings_auth_providers_count AS (
     FROM default_settings ds
     JOIN setting_artifact s ON s.id = ds.settings_id
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
 ),
 departments_without_auth_providers_count AS (
     -- Count departments that have no auth providers configured
     SELECT COUNT(DISTINCT d.id) as count
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
       AND NOT EXISTS (
           SELECT 1
           FROM department_settings ds
-          JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+          JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
           JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-          JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+          JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
           WHERE ds.department_id = d.id
             AND ds.active = true
       )

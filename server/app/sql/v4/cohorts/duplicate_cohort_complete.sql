@@ -101,18 +101,15 @@ link_cohort_description AS (
 ),
 -- Link cohort active flag (set to false for duplicate)
 link_cohort_active_flag AS (
-    INSERT INTO cohort_flags (cohort_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        nc.id,
+    INSERT INTO cohort_flags (cohort_id, flag_id, value, created_at, updated_at) SELECT nc.id,
         f.id,
-        'active'::type_cohort_flags,
         FALSE,
         NOW(),
         NOW()
     FROM new_cohort nc
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (cohort_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (cohort_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),

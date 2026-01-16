@@ -37,8 +37,8 @@ AS $$
         RETURNING scenario_id
     ),
     scenario_flag_link AS (
-        INSERT INTO scenario_flags(scenario_id, flag_id, type, value)
-        SELECT ns.scenario_id, af.id, 'active'::type_scenario_flags, true
+        INSERT INTO scenario_flags (scenario_id, flag_id, value)
+        SELECT ns.scenario_id, af.id, true
         FROM new_scenario ns, active_flag af
         RETURNING scenario_id
     ),
@@ -51,7 +51,7 @@ AS $$
     SELECT 
         ns.scenario_id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ns.scenario_id LIMIT 1) as name,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active'  AND sf.value = TRUE) as active,
         nl.parameter_id AS parameter_item_id,
         nl.link_active,
         ns.created_at

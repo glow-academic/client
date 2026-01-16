@@ -53,8 +53,8 @@ AS $$
         RETURNING profile_id
     ),
     profile_flag_link AS (
-        INSERT INTO profile_flags(profile_id, flag_id, type, value)
-        SELECT np.id, af.id, 'active'::type_profile_flags, profile_active
+        INSERT INTO profile_flags (profile_id, flag_id, value)
+        SELECT np.id, af.id, profile_active
         FROM new_profile np, active_flag af
         RETURNING profile_id
     )
@@ -63,7 +63,7 @@ AS $$
         (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'first' LIMIT 1) AS first_name,
         (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'last' LIMIT 1) AS last_name,
         (SELECT role::text FROM profiles_resource p WHERE p.id = np.id) AS role,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         np.created_at,
         np.updated_at
     FROM new_profile np;

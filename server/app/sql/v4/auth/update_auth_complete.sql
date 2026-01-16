@@ -232,22 +232,19 @@ update_auth_active_flag AS (
         value = (SELECT active FROM params),
         updated_at = NOW()
     WHERE auth_id = (SELECT auth_id FROM auth_id_resolved)
-      AND type = 'active'::type_auth_flags
+      
 ),
 insert_auth_active_flag AS (
-    INSERT INTO auth_flags (auth_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ua.auth_id,
+    INSERT INTO auth_flags (auth_id, flag_id, value, created_at, updated_at) SELECT ua.auth_id,
         f.id,
-        'active'::type_auth_flags,
         (SELECT active FROM params),
         NOW(),
         NOW()
     FROM update_auth ua
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-      AND NOT EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = ua.auth_id AND af.type = 'active'::type_auth_flags)
-    ON CONFLICT (auth_id, flag_id, type) DO UPDATE SET 
+      AND NOT EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = ua.auth_id AND af.flag_id = f.id)
+    ON CONFLICT (auth_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM params),
         updated_at = NOW()
 ),

@@ -197,11 +197,8 @@ link_profile_last_name AS (
 ),
 -- Update active flag if provided
 update_profile_active_flag AS (
-    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        pu.id,
+    INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT pu.id,
         f.id,
-        'active'::type_profile_flags,
         (SELECT active FROM params),
         NOW(),
         NOW()
@@ -210,7 +207,7 @@ update_profile_active_flag AS (
     WHERE f.name = 'active'
       AND EXISTS (SELECT 1 FROM profile_update)
       AND (SELECT active FROM params) IS NOT NULL
-    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM params),
         updated_at = NOW()
 ),

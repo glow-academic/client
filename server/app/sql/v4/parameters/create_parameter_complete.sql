@@ -121,11 +121,8 @@ link_parameter_description AS (
 ),
 -- Link parameter active flag
 link_parameter_active_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        np.parameter_id,
+    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at) SELECT np.parameter_id,
         f.id,
-        'active'::type_parameter_flags,
         x.active,
         NOW(),
         NOW()
@@ -133,17 +130,16 @@ link_parameter_active_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link parameter simulation_parameter flag
 link_parameter_simulation_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
-        'simulation_parameter'::type_parameter_flags,
         x.simulation_parameter,
         NOW(),
         NOW()
@@ -151,17 +147,16 @@ link_parameter_simulation_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'simulation_parameter'
-    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link parameter document_parameter flag
 link_parameter_document_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
-        'document_parameter'::type_parameter_flags,
         x.document_parameter,
         NOW(),
         NOW()
@@ -169,17 +164,16 @@ link_parameter_document_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_parameter'
-    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link parameter persona_parameter flag
 link_parameter_persona_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
-        'persona_parameter'::type_parameter_flags,
         x.persona_parameter,
         NOW(),
         NOW()
@@ -187,17 +181,16 @@ link_parameter_persona_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'persona_parameter'
-    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link parameter scenario_parameter flag
 link_parameter_scenario_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
-        'scenario_parameter'::type_parameter_flags,
         x.scenario_parameter,
         NOW(),
         NOW()
@@ -205,17 +198,16 @@ link_parameter_scenario_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'scenario_parameter'
-    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
 -- Link parameter video_parameter flag
 link_parameter_video_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
-        'video_parameter'::type_parameter_flags,
         x.video_parameter,
         NOW(),
         NOW()
@@ -223,7 +215,7 @@ link_parameter_video_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'video_parameter'
-    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
@@ -274,7 +266,7 @@ link_fields_to_parameter AS (
         NOW(),
         NOW()
     FROM field_connections_fixed fcf
-    WHERE EXISTS (SELECT 1 FROM field_flags fieldsf WHERE fieldsf.field_id = fcf.field_id AND fieldsf.type = 'active'::type_field_flags AND fieldsf.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'active' AND fieldsf.value = true)
       AND fcf.conn_active = true
     ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
 ),

@@ -100,11 +100,8 @@ link_field_description AS (
 ),
 -- Link field active flag
 link_field_active_flag AS (
-    INSERT INTO field_flags (field_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        nf.field_id,
+    INSERT INTO field_flags (field_id, flag_id, value, created_at, updated_at) SELECT nf.field_id,
         f.id,
-        'active'::type_field_flags,
         x.active,
         NOW(),
         NOW()
@@ -112,7 +109,7 @@ link_field_active_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (field_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

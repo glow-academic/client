@@ -25,7 +25,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT DISTINCT pf.parameter_id 
-    FROM fields_resource f
-    JOIN parameter_fields pf ON pf.field_id = f.field_id
+    FROM fields_resource f JOIN parameter_fields pf ON pf.field_id = f.id
     WHERE f.id = ANY($1)
 $$;

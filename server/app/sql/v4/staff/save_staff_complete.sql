@@ -94,7 +94,7 @@ BEGIN
             value = CASE WHEN active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE profile_id = v_staff_id
-          AND type = 'active'::type_profile_flags;
+          ;
         -- Update request limit if it exists
         UPDATE profile_request_limits SET
             request_limit_id = COALESCE(request_limit_id, profile_request_limits.request_limit_id),
@@ -191,11 +191,8 @@ BEGIN
     ),
     -- Insert or UPDATE profile_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_profile_active_flag AS (
-        INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.staff_id,
+        INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT x.staff_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_profile_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

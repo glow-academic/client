@@ -137,7 +137,7 @@ settings_colors AS (
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.setting_id = s.id
           AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
-          AND sf.type = 'active'::type_setting_flags
+          AND f.name = 'active'
           AND sf.value = TRUE
     )
     LIMIT 1
@@ -184,7 +184,7 @@ filt AS (
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
               AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
-              AND sf.type = 'active'::type_simulation_flags
+              AND f.name = 'active'
               AND sf.value = TRUE
           )
             AND (
@@ -196,7 +196,7 @@ filt AS (
                       AND cs.active = TRUE
                 )
                 OR
-                (EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+                (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
                  AND NOT EXISTS (
                      SELECT 1 
                      FROM cohort_simulations cs2 
@@ -319,7 +319,7 @@ simulation_data AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
+             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
             0
         )::int as time_limit,
         COALESCE(
@@ -335,7 +335,7 @@ simulation_data AS (
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
           AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
-          AND sf.type = 'active'::type_simulation_flags
+          AND f.name = 'active'
           AND sf.value = TRUE
     )
 ),
@@ -360,7 +360,7 @@ scenario_data AS (
         ) as description
     FROM all_scenario_ids asci
     LEFT JOIN scenarios_resource sc ON sc.id = asci.scenario_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = sc.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = sc.id AND f.name = 'active' AND sf.value = true)
 ),
 -- Get top 25% of profiles by highest score
 ranked_stats AS (

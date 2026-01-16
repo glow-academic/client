@@ -50,8 +50,8 @@ AS $$
         RETURNING document_id
     ),
     document_flag_link AS (
-        INSERT INTO document_flags(document_id, flag_id, type, value)
-        SELECT nd.id, af.id, 'active'::type_document_flags, COALESCE(document_active, true)
+        INSERT INTO document_flags (document_id, flag_id, value)
+        SELECT nd.id, af.id, COALESCE(document_active, true)
         FROM new_document nd, active_flag af
         RETURNING document_id
     )
@@ -59,7 +59,7 @@ AS $$
         nd.id AS document_id,
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = nd.id LIMIT 1) AS name,
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = nd.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource fl ON df.flag_id = fl.id WHERE df.document_id = nd.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource fl ON df.flag_id = fl.id WHERE df.document_id = nd.id AND fl.name = 'active'  AND df.value = TRUE) AS active,
         nd.created_at,
         nd.updated_at
     FROM new_document nd;

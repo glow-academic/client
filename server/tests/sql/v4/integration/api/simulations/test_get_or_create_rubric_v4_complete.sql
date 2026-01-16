@@ -61,7 +61,7 @@ AS $$
                (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as description,
                (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
                (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
-               EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) as active
+               EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active'  AND rf.value = TRUE) as active
         FROM rubrics_resource r
         LIMIT 1
     ),
@@ -98,8 +98,8 @@ AS $$
         RETURNING rubric_id
     ),
     new_rubric_flag_link AS (
-        INSERT INTO rubric_flags(rubric_id, flag_id, type, value)
-        SELECT nrf.id, af.id, 'active'::type_rubric_flags, true
+        INSERT INTO rubric_flags (rubric_id, flag_id, value)
+        SELECT nrf.id, af.id, true
         FROM new_rubric_filtered nrf, active_flag af
         RETURNING rubric_id
     )
@@ -118,7 +118,7 @@ AS $$
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = nrf.id LIMIT 1) as description,
         (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nrf.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
         (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nrf.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
-        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = nrf.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) as active
+        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = nrf.id AND fl.name = 'active'  AND rf.value = TRUE) as active
     FROM new_rubric_filtered nrf
     LIMIT 1;
 $$;

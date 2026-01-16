@@ -52,7 +52,7 @@ BEGIN
     WHERE at.agent_id = api_create_groups_rubric_grade_agents_v4.agent_id
       AND rt.resource = 'groups_rubric_grade_agents'::resources
       AND at.active = true
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
@@ -65,7 +65,7 @@ BEGIN
         IF NOT EXISTS (
             SELECT 1 FROM agent_flags 
             WHERE agent_id = api_create_groups_rubric_grade_agents_v4.agent_id 
-              AND type = 'mcp'::type_agent_flags 
+               
               AND value = true
         ) THEN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;

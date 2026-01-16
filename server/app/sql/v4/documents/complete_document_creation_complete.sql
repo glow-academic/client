@@ -69,35 +69,31 @@ link_document_description AS (
 ),
 -- Link document active flag
 link_document_active_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ccd.document_id,
+    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT ccd.document_id,
         f.id,
-        'active'::type_document_flags,
         true,
         NOW(),
         NOW()
     FROM create_child_document ccd
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
         value = true,
         updated_at = NOW()
 ),
 -- Link document template flag (defaults to false)
 link_document_template_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at)
     SELECT 
         ccd.document_id,
         f.id,
-        'template'::type_document_flags,
         false,
         NOW(),
         NOW()
     FROM create_child_document ccd
     CROSS JOIN flags_resource f
     WHERE f.name = 'template'
-    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
         value = false,
         updated_at = NOW()
 ),

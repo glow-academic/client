@@ -216,27 +216,27 @@ eval_data AS (
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
-        EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE) as dynamic,
+        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = TRUE) as dynamic,
         e.created_at,
         e.updated_at,
         (SELECT (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          JOIN rubrics_resource r ON r.id = rga.rubric_id
@@ -246,11 +246,11 @@ eval_data AS (
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          JOIN rubrics_resource r ON r.id = rga.rubric_id
@@ -337,11 +337,11 @@ attempts_with_eval AS (
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
@@ -350,11 +350,11 @@ attempts_with_eval AS (
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          JOIN rubrics_resource r ON r.id = rga.rubric_id
@@ -550,7 +550,7 @@ departments_array AS (
     ) as departments
     FROM all_department_ids adi
     LEFT JOIN departments_resource d ON d.id::text = adi.department_id
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true) AND d.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) AND d.id IS NOT NULL
 ),
 -- Build composite type arrays for agents
 agents_array AS (
@@ -564,7 +564,7 @@ agents_array AS (
     ) as agents
     FROM all_agent_ids aai
     LEFT JOIN agents_resource a ON a.id = aai.agent_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) AND a.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) AND a.id IS NOT NULL
 ),
 -- Build composite type arrays for standard groups
 standard_groups_array AS (
@@ -657,7 +657,7 @@ department_options_array AS (
     ) as department_options
     FROM assigned_department_ids adi
     LEFT JOIN departments_resource d ON d.id::text = adi.department_id
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true) AND d.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) AND d.id IS NOT NULL
 ),
 -- Collect all agent IDs actually assigned to evals
 assigned_agent_ids AS (
@@ -676,7 +676,7 @@ agent_options_array AS (
     ) as agent_options
     FROM assigned_agent_ids aai
     LEFT JOIN agents_resource a ON a.id = aai.agent_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) AND a.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) AND a.id IS NOT NULL
 )
 SELECT 
     (SELECT actor_name FROM actor_profile LIMIT 1)::text as actor_name,

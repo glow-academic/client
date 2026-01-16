@@ -26,7 +26,7 @@ AS $$
 SELECT sdd.department_id::text
 FROM setting_artifact s
 JOIN settings_default_department sdd ON sdd.settings_id = s.id
-WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
   AND sdd.active = true
 LIMIT 1
 $$;

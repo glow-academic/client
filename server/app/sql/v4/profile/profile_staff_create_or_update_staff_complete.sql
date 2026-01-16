@@ -162,11 +162,8 @@ link_profile_last_name AS (
 ),
 -- UPDATE profile_artifact active flag
 update_profile_active_flag AS (
-    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        pu.id,
+    INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT pu.id,
         f.id,
-        'active'::type_profile_flags,
         (SELECT active FROM params),
         NOW(),
         NOW()
@@ -174,7 +171,7 @@ update_profile_active_flag AS (
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM params),
         updated_at = NOW()
 ),

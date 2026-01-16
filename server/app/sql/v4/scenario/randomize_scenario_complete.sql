@@ -107,14 +107,14 @@ BEGIN
         JOIN profile_departments pd ON pd.department_id = d.id
         WHERE pd.profile_id = api_randomize_scenario_v4.profile_id 
           AND pd.active = true 
-          AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+          AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
     ),
     -- Get valid persona IDs (filtered by departments if provided)
     filtered_personas AS (
         SELECT DISTINCT p.id
         FROM persona_artifact p
         LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-        WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+        WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
         AND (
             -- If department_ids provided, filter by them
             (COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0 
@@ -144,7 +144,7 @@ BEGIN
         FROM document_artifact d
         INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
         LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
-        WHERE EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = true)
+        WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -169,9 +169,9 @@ BEGIN
     filtered_parameters AS (
         SELECT DISTINCT p.id
         FROM parameter_artifact p
-        JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+        JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'active' AND ff.value = true)
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-        WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+        WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -199,7 +199,7 @@ BEGIN
         SELECT DISTINCT f.id
         FROM field_artifact f
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-        WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
+        WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'active' AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -327,7 +327,7 @@ BEGIN
             SELECT ARRAY_AGG(f.id)
             INTO valid_items_for_param
             FROM field_artifact f
-            WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+            WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'active' AND ff.value = true)
               AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
               AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = param_id
               AND f.id = ANY(valid_field_ids);
@@ -403,7 +403,7 @@ BEGIN
         SELECT ARRAY_AGG(f.id)
         INTO valid_items_for_param
         FROM field_artifact f
-        WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+        WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'active' AND ff.value = true)
           AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = param_id
           AND f.id = ANY(valid_field_ids);
         

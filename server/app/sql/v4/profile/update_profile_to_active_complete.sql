@@ -41,14 +41,11 @@ WITH get_active_flag AS (
 ),
 insert_or_update_flag AS (
     -- Insert or update profile_flags to set active = true
-    INSERT INTO profile_flags (profile_id, flag_id, type, value)
-    SELECT 
-        profile_id,
+    INSERT INTO profile_flags (profile_id, flag_id, value) SELECT profile_id,
         (SELECT flag_id FROM get_active_flag),
-        'active'::type_profile_flags,
         true
     FROM get_active_flag
-    ON CONFLICT (profile_id, flag_id, type) 
+    ON CONFLICT (profile_id, flag_id) 
     DO UPDATE SET value = true
     RETURNING profile_id::uuid as profile_id
 ),

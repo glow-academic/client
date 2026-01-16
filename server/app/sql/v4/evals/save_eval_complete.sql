@@ -173,11 +173,8 @@ BEGIN
     ),
     -- Insert or UPDATE eval_artifact active flag
     insert_eval_active_flag AS (
-        INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.eval_id,
+        INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at) SELECT x.eval_id,
             f.id,
-            'active'::type_eval_flags,
             x.active,
             NOW(),
             NOW()
@@ -194,7 +191,6 @@ BEGIN
         SELECT 
             x.eval_id,
             f.id,
-            'dynamic'::type_eval_flags,
             x.dynamic,
             NOW(),
             NOW()
@@ -211,7 +207,6 @@ BEGIN
         SELECT 
             x.eval_id,
             f.id,
-            'groups'::type_eval_flags,
             x.use_groups,
             NOW(),
             NOW()

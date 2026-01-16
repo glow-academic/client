@@ -87,14 +87,14 @@ BEGIN
             value = CASE WHEN api_save_document_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE document_id = v_document_id
-          AND type = 'active'::type_document_flags;
+          ;
         -- Update existing template flag if it exists
         UPDATE document_flags SET
             flag_id = COALESCE(api_save_document_v4.template_flag_id, document_flags.flag_id),
             value = CASE WHEN api_save_document_v4.template_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE document_id = v_document_id
-          AND type = 'template'::type_document_flags;
+          ;
     END IF;
     
     -- Continue with document save using SQL (document already created/updated above)
@@ -186,11 +186,8 @@ BEGIN
     ),
     -- Insert or UPDATE document_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_document_active_flag AS (
-        INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.document_id,
+        INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT x.document_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_document_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()
@@ -208,7 +205,6 @@ BEGIN
         SELECT 
             x.document_id,
             COALESCE(x.template_flag_id, f.id),
-            'template'::type_document_flags,
             CASE WHEN x.template_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

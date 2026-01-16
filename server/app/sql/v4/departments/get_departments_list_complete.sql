@@ -259,7 +259,7 @@ departments_data AS (
         d.id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
         COALESCE((SELECT d2.description FROM department_descriptions dd2 JOIN descriptions_resource d2 ON dd2.description_id = d2.id WHERE dd2.department_id = d.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) as active,
         d.updated_at,
         COALESCE(dps.total_price_spent, 0) as total_price_spent,
         COALESCE(dpf.staff_count, 0) as staff_count,

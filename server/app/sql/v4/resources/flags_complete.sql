@@ -1,6 +1,6 @@
 -- Create flags resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), name (text), description (text), icon_id (uuid)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid), name (text), description (text), icon_id (uuid), type (flag_type, default 'active'), mcp (boolean, default false)
 -- Returns: flag_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION api_create_flags_v4(agent_id uuid,
     name text,
     description text,
     icon_id uuid,
+    type flag_type DEFAULT 'active'::flag_type,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
     flag_id uuid
@@ -55,7 +56,7 @@ BEGIN
     WHERE at.agent_id = api_create_flags_v4.agent_id
       AND rt.resource = 'flags'::resources
       AND at.active = true
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
@@ -65,10 +66,11 @@ BEGIN
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
-            SELECT 1 FROM agent_flags 
-            WHERE agent_id = api_create_flags_v4.agent_id 
-              AND type = 'mcp'::type_agent_flags 
-              AND value = true
+            SELECT 1 FROM agent_flags af
+            JOIN flags_resource f ON af.flag_id = f.id
+            WHERE af.agent_id = api_create_flags_v4.agent_id 
+              AND f.name = 'mcp'
+              AND af.value = true
         ) THEN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
@@ -124,8 +126,8 @@ BEGIN
     );
     
     -- INSERT INTO flags_resource table (always insert, never update)
-    INSERT INTO flags_resource(name, description, icon_id, active, call_id, mcp)
-    VALUES (name, description, icon_id, true, v_call_id, mcp)
+    INSERT INTO flags_resource(name, description, icon_id, active, call_id, mcp, type)
+    VALUES (name, description, icon_id, true, v_call_id, mcp, api_create_flags_v4.type)
     RETURNING id INTO v_flag_id;
     
         

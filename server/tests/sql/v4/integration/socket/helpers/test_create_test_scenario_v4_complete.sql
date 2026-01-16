@@ -32,8 +32,8 @@ AS $$
         RETURNING scenario_id
     ),
     scenario_flag_link AS (
-        INSERT INTO scenario_flags(scenario_id, flag_id, type, value)
-        SELECT ns.id, af.id, 'active'::type_scenario_flags, true
+        INSERT INTO scenario_flags (scenario_id, flag_id, value)
+        SELECT ns.id, af.id, true
         FROM new_scenario ns, active_flag af
         RETURNING scenario_id
     )

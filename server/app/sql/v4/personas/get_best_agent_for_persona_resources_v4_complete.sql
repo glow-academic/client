@@ -57,7 +57,7 @@ eligible_agents AS (
     CROSS JOIN params p
     CROSS JOIN selected_department sd
     -- Must be active
-    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
           AND af.value = true
     )
     -- Must have persona artifact (via agent_domains -> domain_artifacts)
@@ -92,7 +92,7 @@ agent_tool_resources AS (
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     GROUP BY ea.agent_id
 ),

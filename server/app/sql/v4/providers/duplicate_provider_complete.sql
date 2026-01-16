@@ -48,7 +48,7 @@ original_provider AS (
 ),
 original_flags AS (
     -- Get flag IDs from original provider
-    SELECT flag_id, type
+    SELECT flag_id
     FROM params x
     JOIN provider_flags pf ON pf.provider_id = x.provider_id
 ),
@@ -107,35 +107,30 @@ link_provider_description AS (
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
-    INSERT INTO provider_flags (provider_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        np.id,
+    INSERT INTO provider_flags (provider_id, flag_id, value, created_at, updated_at) SELECT np.id,
         f.id,
-        'active'::type_provider_flags,
         FALSE,
         NOW(),
         NOW()
     FROM new_provider np
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (provider_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),
 -- Copy other flags from original provider
 copy_provider_flags AS (
-    INSERT INTO provider_flags (provider_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO provider_flags (provider_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.id,
         of.flag_id,
-        of.type,
         FALSE,
         NOW(),
         NOW()
     FROM new_provider np
     CROSS JOIN original_flags of
-    WHERE of.type != 'active'::type_provider_flags
-    ON CONFLICT (provider_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 )

@@ -128,12 +128,11 @@ update_eval AS (
 ),
 update_eval_groups_flag AS (
     -- Update groups flag
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT ue.eval_id, ggf.flag_id, 'groups'::type_eval_flags, COALESCE(p.use_groups, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = ue.eval_id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at) SELECT ue.eval_id, ggf.flag_id, COALESCE(p.use_groups, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = ue.eval_id AND f.name = 'groups' AND ef.value = TRUE)), NOW(), NOW()
     FROM update_eval ue
     CROSS JOIN get_groups_flag ggf
     CROSS JOIN params p
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 update_eval_name AS (
     -- UPDATE eval_artifact name (delete old, insert new)
@@ -165,21 +164,21 @@ link_eval_description AS (
 ),
 update_eval_active_flag AS (
     -- Update active flag
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT ue.eval_id, gaf.flag_id, 'active'::type_eval_flags, COALESCE(p.active, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = ue.eval_id AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at)
+    SELECT ue.eval_id, gaf.flag_id, COALESCE(p.active, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = ue.eval_id AND f.name = 'active' AND ef.value = TRUE)), NOW(), NOW()
     FROM update_eval ue
     CROSS JOIN get_active_flag gaf
     CROSS JOIN params p
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 update_eval_dynamic_flag AS (
     -- Update dynamic flag
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT ue.eval_id, gdf.flag_id, 'dynamic'::type_eval_flags, COALESCE(p.dynamic, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = ue.eval_id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at)
+    SELECT ue.eval_id, gdf.flag_id, COALESCE(p.dynamic, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = ue.eval_id AND f.name = 'dynamic' AND ef.value = TRUE)), NOW(), NOW()
     FROM update_eval ue
     CROSS JOIN get_dynamic_flag gdf
     CROSS JOIN params p
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 eval_with_name AS (
     -- Get eval_id and name for RETURNING clause

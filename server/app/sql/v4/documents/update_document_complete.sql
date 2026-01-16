@@ -117,18 +117,15 @@ active_flag_id AS (
 ),
 -- Update active flag if provided
 update_document_active_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ud.id,
+    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT ud.id,
         afi.flag_id,
-        'active'::type_document_flags,
         (SELECT active FROM params),
         NOW(),
         NOW()
     FROM update_document ud
     CROSS JOIN active_flag_id afi
     WHERE (SELECT active FROM params) IS NOT NULL
-    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET
+    ON CONFLICT (document_id, flag_id) DO UPDATE SET
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

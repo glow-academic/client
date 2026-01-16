@@ -24,7 +24,7 @@ AS $$
         (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) AS name,
         kr.key,
         (SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource fl ON kf.flag_id = fl.id WHERE kf.key_id = kr.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource fl ON kf.flag_id = fl.id WHERE kf.key_id = kr.id AND fl.name = 'active'  AND kf.value = TRUE) AS active,
         kr.created_at,
         kr.updated_at
     FROM keys_resource kr

@@ -182,7 +182,6 @@ old_settings_id AS (
     JOIN flags_resource fl ON sf.flag_id = fl.id
     CROSS JOIN active_flag_id afi
     WHERE fl.name = 'active' 
-      AND sf.type = 'active'::type_setting_flags 
       AND sf.value = TRUE
       AND sf.flag_id = afi.flag_id
     LIMIT 1
@@ -195,7 +194,6 @@ deactivate_current AS (
     CROSS JOIN active_flag_id afi
     WHERE setting_flags.flag_id = fl.id
       AND fl.name = 'active'
-      AND setting_flags.type = 'active'::type_setting_flags
       AND setting_flags.value = TRUE
       AND setting_flags.flag_id = afi.flag_id
 ),
@@ -331,12 +329,11 @@ link_thresholds AS (
 ),
 link_guest_login_flag AS (
     -- Link guest_login_enabled flag to settings
-    INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
-    SELECT ins.settings_id, glf.flag_id, 'guest_login_enabled'::type_setting_flags, x.guest_login_enabled, NOW(), NOW()
+    INSERT INTO setting_flags (setting_id, flag_id, value, created_at, updated_at) SELECT ins.settings_id, glf.flag_id, x.guest_login_enabled, NOW(), NOW()
     FROM insert_new ins
     CROSS JOIN get_guest_login_flag glf
     CROSS JOIN params x
-    ON CONFLICT (setting_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    ON CONFLICT (setting_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 settings_with_name AS (
     -- Get settings_id and name for RETURNING clause
@@ -627,16 +624,15 @@ link_department_settings AS (
 ),
 activate_new_settings AS (
     -- Activate the new settings row by inserting into setting_flags
-    INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO setting_flags (setting_id, flag_id, value, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1),
         afi.flag_id,
-        'active'::type_setting_flags,
         TRUE,
         NOW(),
         NOW()
     FROM active_flag_id afi
-    ON CONFLICT (setting_id, flag_id, type) DO UPDATE SET
+    ON CONFLICT (setting_id, flag_id) DO UPDATE SET
         value = TRUE,
         updated_at = NOW()
 )

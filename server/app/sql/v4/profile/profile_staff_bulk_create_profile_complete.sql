@@ -154,18 +154,15 @@ link_profile_last_names AS (
 ),
 -- Link profile active flags
 link_profile_active_flags AS (
-    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        pi.id,
+    INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT pi.id,
         f.id,
-        'active'::type_profile_flags,
         TRUE,
         NOW(),
         NOW()
     FROM profile_insert pi
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
         value = TRUE,
         updated_at = NOW()
 ),

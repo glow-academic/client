@@ -177,18 +177,15 @@ link_persona_icon AS (
 ),
 -- Link persona active flag (set to false for duplicate)
 link_persona_active_flag AS (
-    INSERT INTO persona_flags (persona_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        np.id,
+    INSERT INTO persona_flags (persona_id, flag_id, value, created_at, updated_at) SELECT np.id,
         f.id,
-        'active'::type_persona_flags,
         FALSE,
         NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (persona_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (persona_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),

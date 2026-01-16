@@ -34,14 +34,14 @@ SELECT
         WHEN EXISTS (
             SELECT 1 
             FROM department_settings ds
-            JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
             JOIN setting_auth_keys sak ON sak.settings_id = s.id AND sak.active = true
             WHERE ds.department_id = api_get_realm_name_for_department_v4.department_id AND ds.active = true
         ) THEN (
             -- Department settings has keys → use settings_id as realm
             SELECT s.id::text
             FROM department_settings ds
-            JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
             WHERE ds.department_id = api_get_realm_name_for_department_v4.department_id AND ds.active = true
             LIMIT 1
         )

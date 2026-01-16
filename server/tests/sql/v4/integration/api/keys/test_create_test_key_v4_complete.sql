@@ -76,8 +76,8 @@ AS $$
         RETURNING key_id
     ),
     key_flag_link AS (
-        INSERT INTO key_flags(key_id, flag_id, type, value)
-        SELECT nk.id, af.id, 'active'::type_key_flags, COALESCE(key_active, true)
+        INSERT INTO key_flags (key_id, flag_id, value)
+        SELECT nk.id, af.id, COALESCE(key_active, true)
         FROM new_key nk, active_flag af
         RETURNING key_id
     )
@@ -86,7 +86,7 @@ AS $$
         (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = nk.id LIMIT 1) AS name,
         kr.key,
         (SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = nk.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource fl ON kf.flag_id = fl.id WHERE kf.key_id = nk.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource fl ON kf.flag_id = fl.id WHERE kf.key_id = nk.id AND fl.name = 'active'  AND kf.value = TRUE) AS active,
         nk.created_at,
         nk.updated_at
     FROM new_key nk

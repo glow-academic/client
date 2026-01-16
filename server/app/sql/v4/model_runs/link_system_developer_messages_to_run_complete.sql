@@ -60,7 +60,7 @@ WITH run_info AS (
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
              WHERE rpf.run_id = r.id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
+            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) LIMIT 1)
         ) as department_id
     FROM runs r
     WHERE r.id = run_id

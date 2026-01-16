@@ -43,7 +43,7 @@ original_tool AS (
         t.id,
         (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         (SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true) as active
+        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) as active
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),
@@ -129,11 +129,8 @@ link_new_tool_description AS (
 ),
 -- Insert active flag for new tool
 new_tool_active_flag AS (
-    INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp)
-    SELECT 
-        nt.id,
+    INSERT INTO tool_flags (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT nt.id,
         f.id,
-        'active'::type_tool_flags,
         ot.active,
         NOW(),
         NOW(),

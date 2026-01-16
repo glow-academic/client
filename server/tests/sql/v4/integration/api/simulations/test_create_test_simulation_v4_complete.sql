@@ -53,14 +53,14 @@ AS $$
         RETURNING simulation_id
     ),
     simulation_active_flag_link AS (
-        INSERT INTO simulation_flags(simulation_id, flag_id, type, value)
-        SELECT ns.id, af.id, 'active'::type_simulation_flags, true
+        INSERT INTO simulation_flags (simulation_id, flag_id, value)
+        SELECT ns.id, af.id, true
         FROM new_simulation ns, active_flag af
         RETURNING simulation_id
     ),
     simulation_practice_flag_link AS (
-        INSERT INTO simulation_flags(simulation_id, flag_id, type, value)
-        SELECT ns.id, pf.id, 'practice'::type_simulation_flags, COALESCE(test_create_test_simulation_v4.practice_simulation, false)
+        INSERT INTO simulation_flags (simulation_id, flag_id, value)
+        SELECT ns.id, pf.id, COALESCE(test_create_test_simulation_v4.practice_simulation, false)
         FROM new_simulation ns, practice_flag pf
         RETURNING simulation_id
     )
@@ -68,8 +68,8 @@ AS $$
         ns.id as simulation_id,
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) as title,
         (SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) as active,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active'  AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'practice'  AND sf.value = TRUE) as practice_simulation,
         ns.created_at
     FROM new_simulation ns;
 $$;

@@ -24,7 +24,7 @@ AS $$
                (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
                (SELECT am.model_id FROM agent_models am WHERE am.agent_id = a.id LIMIT 1) as model_id
         FROM agents_resource a
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active'  AND af.value = TRUE)
         LIMIT 1
     ),
     model_to_use AS (
@@ -35,7 +35,7 @@ AS $$
     ),
     fallback_model AS (
         SELECT id FROM models_resource m
-        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active'  AND mf.value = TRUE)
         LIMIT 1
     ),
     name_resource AS (
@@ -86,8 +86,8 @@ AS $$
         RETURNING agent_id
     ),
     new_agent_flag_link AS (
-        INSERT INTO agent_flags(agent_id, flag_id, type, value)
-        SELECT naf.id, af.id, 'active'::type_agent_flags, true
+        INSERT INTO agent_flags (agent_id, flag_id, value)
+        SELECT naf.id, af.id, true
         FROM new_agent_filtered naf, active_flag af
         RETURNING agent_id
     )

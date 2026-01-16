@@ -105,18 +105,15 @@ link_document_description AS (
 ),
 -- Link document active flag
 link_document_active_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        id.id,
+    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT id.id,
         f.id,
-        'active'::type_document_flags,
         true,
         NOW(),
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
         value = true,
         updated_at = NOW()
 ),

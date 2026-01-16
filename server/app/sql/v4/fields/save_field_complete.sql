@@ -174,14 +174,12 @@ BEGIN
             value = (SELECT active FROM params),
             updated_at = NOW()
         WHERE field_id = (SELECT field_id FROM params)
-          AND type = 'active'::type_field_flags
+          
           AND NOT (SELECT is_create FROM params)
     ),
     -- Insert field active flag (for create or if doesn't exist in update)
     insert_field_active_flag AS (
-        INSERT INTO field_flags (field_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.field_id,
+        INSERT INTO field_flags (field_id, flag_id, value, created_at, updated_at) SELECT x.field_id,
             f.id,
             'active'::type_field_flags,
             x.active,
@@ -192,7 +190,7 @@ BEGIN
         WHERE f.name = 'active'
           AND (
               (SELECT is_create FROM params)
-              OR NOT EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = x.field_id AND ff.type = 'active'::type_field_flags)
+              OR NOT EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'active')
           )
         ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,

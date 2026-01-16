@@ -59,10 +59,12 @@ original_agents AS (
     JOIN eval_agents ea ON ea.eval_id = x.eval_id
 ),
 original_flags AS (
-    -- Get flag IDs from original eval
-    SELECT flag_id, type
+    -- Get flag IDs from original eval (excluding active flag which is handled separately)
+    SELECT ef.flag_id
     FROM params x
     JOIN eval_flags ef ON ef.eval_id = x.eval_id
+    JOIN flags_resource f ON ef.flag_id = f.id
+    WHERE f.name != 'active'
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -119,35 +121,30 @@ link_eval_description AS (
 ),
 -- Link eval active flag (set to false for duplicate)
 link_eval_active_flag AS (
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        ne.id,
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at) SELECT ne.id,
         f.id,
-        'active'::type_eval_flags,
         FALSE,
         NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),
 -- Copy other flags from original eval
 copy_eval_flags AS (
-    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at)
     SELECT 
         ne.id,
         of.flag_id,
-        of.type,
         FALSE,
         NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN original_flags of
-    WHERE of.type != 'active'::type_eval_flags
-    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()
 ),

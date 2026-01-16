@@ -63,8 +63,8 @@ AS $$
         RETURNING department_id
     ),
     new_dept_flag_link AS (
-        INSERT INTO department_flags(department_id, flag_id, type, value)
-        SELECT ndf.id, af.id, 'active'::type_department_flags, true
+        INSERT INTO department_flags (department_id, flag_id, value)
+        SELECT ndf.id, af.id, true
         FROM new_dept_filtered ndf, active_flag af
         RETURNING department_id
     )

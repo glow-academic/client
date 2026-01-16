@@ -20,7 +20,7 @@ AS $$
     SELECT 
         s.id as scenario_id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active'  AND sf.value = TRUE) as active,
         s.created_at,
         s.updated_at
     FROM scenarios_resource s

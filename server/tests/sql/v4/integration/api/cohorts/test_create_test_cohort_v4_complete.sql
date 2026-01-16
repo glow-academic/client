@@ -49,8 +49,8 @@ AS $$
         RETURNING cohort_id
     ),
     cohort_flag_link AS (
-        INSERT INTO cohort_flags(cohort_id, flag_id, type, value)
-        SELECT nc.id, af.id, 'active'::type_cohort_flags, COALESCE(test_create_test_cohort_v4.active, true)
+        INSERT INTO cohort_flags (cohort_id, flag_id, value)
+        SELECT nc.id, af.id, COALESCE(test_create_test_cohort_v4.active, true)
         FROM new_cohort nc, active_flag af
         RETURNING cohort_id
     )
@@ -58,7 +58,7 @@ AS $$
         nc.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = nc.id LIMIT 1) as title,
         (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = nc.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource fl ON cf.flag_id = fl.id WHERE cf.cohort_id = nc.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource fl ON cf.flag_id = fl.id WHERE cf.cohort_id = nc.id AND fl.name = 'active'  AND cf.value = TRUE) as active,
         nc.created_at
     FROM new_cohort nc;
 $$;

@@ -166,7 +166,7 @@ document_data AS (
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         d.updated_at,
         du.upload_id,
-        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = TRUE) as active,
         CASE 
             WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
             ELSE NULL
@@ -185,7 +185,7 @@ document_data AS (
     LEFT JOIN document_fields_cte dfc ON dfc.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
-    GROUP BY d.id, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), d.updated_at, du.upload_id, u.file_path, EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE), 
+    GROUP BY d.id, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), d.updated_at, du.upload_id, u.file_path, EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = TRUE), 
              ddd.department_ids, ds.scenario_ids, dfc.field_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -210,7 +210,7 @@ scenario_data AS (
         s.id as scenario_id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE) as active
     FROM all_scenario_ids asi
     LEFT JOIN scenarios_resource s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -229,7 +229,7 @@ field_data AS (
     LEFT JOIN parameter_fields pf_link ON pf_link.field_id = f.id
     LEFT JOIN parameters_resource p ON p.id = pf_link.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE) AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = TRUE) AND pf_link.parameter_id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.value = TRUE) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl2 ON ff.flag_id = fl2.id WHERE ff.field_id = f.id AND fl2.name = 'active' AND ff.value = TRUE) AND pf_link.parameter_id IS NOT NULL
     GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -240,21 +240,21 @@ department_parameter_ids AS (
         d.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM department_artifact d
-    LEFT JOIN parameters_resource p ON EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+    LEFT JOIN parameters_resource p ON EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.value = TRUE)
     LEFT JOIN parameter_fields pf_link ON pf_link.parameter_id = p.id
-    LEFT JOIN fields_resource f_pf ON f_pf.id = pf_link.field_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f_pf.id AND ff.type = 'active'::type_field_flags AND ff.value = TRUE)
+    LEFT JOIN fields_resource f_pf ON f_pf.id = pf_link.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl3 ON ff.flag_id = fl3.id WHERE ff.field_id = f_pf.id AND fl3.name = 'active' AND ff.value = TRUE)
     LEFT JOIN field_departments fd ON fd.field_id = f_pf.id AND fd.active = true
     WHERE d.id IN (SELECT department_id FROM user_departments)
     AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                                                  JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
-                                                 WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 WHERE ff2.field_id = pf2.field_id AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true))
+                                                 WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags_resource fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = pf2.field_id AND fl2.name = 'active' AND ff2.value = TRUE) AND fd2.active = true))
     GROUP BY d.id
 ),
 cross_department_items AS (
     -- Fields with no department restrictions (available to all)
     SELECT DISTINCT f.id
     FROM field_artifact f
-    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
     WHERE NOT EXISTS (
         SELECT 1 FROM field_departments fd 
         WHERE fd.field_id = f.id 
@@ -271,7 +271,7 @@ department_field_ids AS (
         SELECT DISTINCT fd.department_id, f.id
         FROM field_departments fd
         JOIN fields_resource f ON f.id = fd.field_id
-        JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+        JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.value = true)
         WHERE fd.active = true
         UNION
         -- Cross-department fields (available to all user departments)
@@ -300,20 +300,20 @@ parameter_data AS (
         p.id as parameter_id,
         (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'document_parameter'::type_parameter_flags AND paf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'persona_parameter'::type_parameter_flags AND paf.value = TRUE) as persona_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'document_parameter' AND paf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'persona_parameter' AND paf.value = TRUE) as persona_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'video_parameter'::type_parameter_flags AND paf.value = TRUE) as video_parameter
+        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'video_parameter' AND paf.value = TRUE) as video_parameter
     FROM parameter_artifact p
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl2 ON ff.flag_id = fl2.id WHERE ff.field_id = f.id AND fl2.name = 'active' AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.value = TRUE)
     GROUP BY p.id, (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id
-                      WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 WHERE ff2.field_id = pf2.field_id AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true)
+                      WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags_resource fl4 ON ff2.flag_id = fl4.id WHERE ff2.field_id = pf2.field_id AND fl4.name = 'active' AND ff2.value = TRUE) AND fd2.active = true)
     ORDER BY (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
 ),
 document_valid_fields AS (
@@ -324,7 +324,7 @@ document_valid_fields AS (
             ARRAY[]::text[]
         ) as valid_field_ids
     FROM document_data dd
-    LEFT JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IN (SELECT p.id FROM parameter_artifact p WHERE EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)) AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    LEFT JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IN (SELECT p.id FROM parameter_artifact p WHERE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.value = TRUE)) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl2 ON ff.flag_id = fl2.id WHERE ff.field_id = f.id AND fl2.name = 'active' AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (
         -- If document has no departments, include only cross-department fields

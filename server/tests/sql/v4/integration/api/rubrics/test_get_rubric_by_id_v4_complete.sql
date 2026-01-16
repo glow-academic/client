@@ -26,7 +26,7 @@ AS $$
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) AS description,
         (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS points,
         (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS pass_points,
-        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active'  AND rf.value = TRUE) AS active,
         r.created_at,
         r.updated_at
     FROM rubrics_resource r

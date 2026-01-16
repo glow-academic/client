@@ -53,8 +53,8 @@ AS $$
         RETURNING agent_id, description_id
     ),
     agent_flag_link AS (
-        INSERT INTO agent_flags(agent_id, flag_id, type, value)
-        SELECT na.id, af.id, 'active'::type_agent_flags, COALESCE(test_create_test_agent_v4.active, true)
+        INSERT INTO agent_flags (agent_id, flag_id, value)
+        SELECT na.id, af.id, COALESCE(test_create_test_agent_v4.active, true)
         FROM new_agent na, active_flag af
         RETURNING agent_id
     ),
@@ -70,7 +70,7 @@ AS $$
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = na.id LIMIT 1) as name,
         (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = na.id LIMIT 1) as description,
         (SELECT am.model_id FROM agent_models am WHERE am.agent_id = na.id LIMIT 1) as model_id,
-        EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = na.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = na.id AND fl.name = 'active'  AND af.value = TRUE) as active,
         COALESCE(test_create_test_agent_v4.role, 'assistant') as role,
         na.created_at
     FROM new_agent na;

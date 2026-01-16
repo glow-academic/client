@@ -111,7 +111,7 @@ BEGIN
             value = CASE WHEN api_save_simulation_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE simulation_id = v_simulation_id
-          AND type = 'active'::type_simulation_flags;
+          ;
     END IF;
     
     -- Continue with simulation save using SQL (simulation already created/updated above)
@@ -214,11 +214,8 @@ BEGIN
     ),
     -- Link simulation active flag (resource ID already validated)
     link_simulation_active_flag AS (
-        INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.simulation_id,
+        INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at) SELECT x.simulation_id,
             x.active_flag_id,
-            'active'::type_simulation_flags,
             true,
             NOW(),
             NOW()
@@ -233,7 +230,7 @@ BEGIN
     update_simulation_practice_flag AS (
         DELETE FROM simulation_flags 
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-          AND type = 'practice'::type_simulation_flags
+          
         AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
     ),
     link_simulation_practice_flag AS (
@@ -241,7 +238,6 @@ BEGIN
         SELECT 
             x.simulation_id,
             (SELECT id FROM flags_resource WHERE name = 'practice' LIMIT 1),
-            'practice'::type_simulation_flags,
             x.practice_simulation,
             NOW(),
             NOW()
@@ -425,7 +421,6 @@ BEGIN
             x.simulation_id,
             swo.scenario_id,
             gfri.active_flag_id,
-            'active'::type_simulation_scenario_flags,
             swo.active_flag,
             NOW(),
             NOW(),
@@ -445,7 +440,6 @@ BEGIN
             x.simulation_id,
             swo.scenario_id,
             gfri.hints_enabled_flag_id,
-            'hints_enabled'::type_simulation_scenario_flags,
             swo.hints_enabled,
             NOW(),
             NOW(),
@@ -465,7 +459,6 @@ BEGIN
             x.simulation_id,
             swo.scenario_id,
             gfri.audio_enabled_flag_id,
-            'audio_enabled'::type_simulation_scenario_flags,
             swo.audio_enabled,
             NOW(),
             NOW(),
@@ -485,7 +478,6 @@ BEGIN
             x.simulation_id,
             swo.scenario_id,
             gfri.text_enabled_flag_id,
-            'text_enabled'::type_simulation_scenario_flags,
             swo.text_enabled,
             NOW(),
             NOW(),
@@ -507,8 +499,8 @@ BEGIN
         SELECT DISTINCT
             (srga).rubric_id,
             COALESCE(
-                (SELECT id FROM agent_artifact a WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) ORDER BY a.created_at LIMIT 1),
-                (SELECT id FROM agent_artifact WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = agent_artifact.id AND af.type = 'active'::type_agent_flags AND af.value = true) ORDER BY created_at LIMIT 1)
+                (SELECT id FROM agent_artifact a WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) ORDER BY a.created_at LIMIT 1),
+                (SELECT id FROM agent_artifact WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = agent_artifact.id AND f.name = 'active' AND af.value = true) ORDER BY created_at LIMIT 1)
             ) as agent_id
         FROM params x
         CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga

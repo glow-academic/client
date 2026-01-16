@@ -48,8 +48,8 @@ source_scenario AS (
     SELECT 
         s.id as source_id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = TRUE) as objectives_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE) as images_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) as objectives_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) as images_enabled,
         ps.problem_statement,
         ps.id as problem_statement_id,
         ps.name as problem_statement_name
@@ -104,15 +104,14 @@ link_name AS (
 ),
 link_active_flag AS (
     -- Link active flag to new scenario (set to false for duplicate)
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT ns.id, gaf.flag_id, 'active'::type_scenario_flags, false, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gaf.flag_id, false, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_active_flag gaf
 ),
 link_objectives_enabled_flag AS (
     -- Link objectives_enabled flag to new scenario
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT ns.id, goef.flag_id, 'objectives_enabled'::type_scenario_flags, ss.objectives_enabled, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+    SELECT ns.id, goef.flag_id, ss.objectives_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN source_scenario ss
     CROSS JOIN get_objectives_enabled_flag goef
@@ -120,8 +119,8 @@ link_objectives_enabled_flag AS (
 ),
 link_images_enabled_flag AS (
     -- Link images_enabled flag to new scenario
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT ns.id, gief.flag_id, 'images_enabled'::type_scenario_flags, ss.images_enabled, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+    SELECT ns.id, gief.flag_id, ss.images_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN source_scenario ss
     CROSS JOIN get_images_enabled_flag gief

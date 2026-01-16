@@ -142,11 +142,8 @@ link_key_description AS (
 ),
 -- Link key active flag
 link_key_active_flag AS (
-    INSERT INTO key_flags (key_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        nk.key_id,
+    INSERT INTO key_flags (key_id, flag_id, value, created_at, updated_at) SELECT nk.key_id,
         f.id,
-        'active'::type_key_flags,
         x.active,
         NOW(),
         NOW()
@@ -154,7 +151,7 @@ link_key_active_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (key_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (key_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

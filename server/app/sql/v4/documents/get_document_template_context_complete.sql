@@ -63,6 +63,6 @@ SELECT COALESCE(
 ) as fields
 FROM field_artifact f
 JOIN parameter_fields pf ON pf.field_id = f.id
-JOIN parameters_resource pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = pa.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+JOIN parameters_resource pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource f ON paf.flag_id = f.id WHERE paf.parameter_id = pa.id AND f.name = 'active' AND paf.value = TRUE)
 WHERE f.id = ANY($1)
 $$;

@@ -133,14 +133,11 @@ update_field_active_flag AS (
         value = (SELECT active FROM params),
         updated_at = NOW()
     WHERE field_id = (SELECT field_id FROM params)
-      AND type = 'active'::type_field_flags
+      
 ),
 insert_field_active_flag AS (
-    INSERT INTO field_flags (field_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        uf.field_id,
+    INSERT INTO field_flags (field_id, flag_id, value, created_at, updated_at) SELECT uf.field_id,
         f.id,
-        'active'::type_field_flags,
         x.active,
         NOW(),
         NOW()
@@ -148,8 +145,8 @@ insert_field_active_flag AS (
     CROSS JOIN params x
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-      AND NOT EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = uf.field_id AND ff.type = 'active'::type_field_flags)
-    ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
+      AND NOT EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = uf.field_id AND f.name = 'active')
+    ON CONFLICT (field_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()
 ),

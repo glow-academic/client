@@ -42,10 +42,10 @@ simulation_scenarios_list AS (
     FROM simulation_scenarios ss
     CROSS JOIN attempt_base ab
     WHERE ss.simulation_id = ab.simulation_id
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id 
         WHERE ssf.simulation_id = ss.simulation_id 
           AND ssf.scenario_id = ss.scenario_id 
-          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND f.name = 'active' 
           AND ssf.value = true)
     ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
@@ -135,10 +135,10 @@ scenarios_with_grades AS (
     JOIN chats c ON c.id = cg.chat_id AND c.id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id 
         WHERE ssf.simulation_id = ss.simulation_id 
           AND ssf.scenario_id = ss.scenario_id 
-          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND f.name = 'active' 
           AND ssf.value = true)
       AND (
         COALESCE(rs.root_scenario_id, sc.scenario_id) = ss.scenario_id

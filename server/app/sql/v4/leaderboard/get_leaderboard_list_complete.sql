@@ -121,7 +121,7 @@ filt AS (
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
               AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
-              AND sf.type = 'active'::type_simulation_flags
+              AND f.name = 'active'
               AND sf.value = TRUE
           )
             AND (
@@ -133,7 +133,7 @@ filt AS (
                       AND cs.active = TRUE
                 )
                 OR
-                (EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+                (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
                  AND NOT EXISTS (
                      SELECT 1 
                      FROM cohort_simulations cs2 

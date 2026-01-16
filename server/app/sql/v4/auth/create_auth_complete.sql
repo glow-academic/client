@@ -174,11 +174,8 @@ link_auth_description AS (
 ),
 -- Link auth active flag
 link_auth_active_flag AS (
-    INSERT INTO auth_flags (auth_id, flag_id, type, value, created_at, updated_at)
-    SELECT 
-        na.auth_id,
+    INSERT INTO auth_flags (auth_id, flag_id, value, created_at, updated_at) SELECT na.auth_id,
         f.id,
-        'active'::type_auth_flags,
         (SELECT active FROM params),
         NOW(),
         NOW()
@@ -186,7 +183,7 @@ link_auth_active_flag AS (
     CROSS JOIN params p
     CROSS JOIN flags_resource f
     WHERE f.name = 'active'
-    ON CONFLICT (auth_id, flag_id, type) DO UPDATE SET 
+    ON CONFLICT (auth_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM params),
         updated_at = NOW()
 ),

@@ -49,8 +49,8 @@ AS $$
         RETURNING profile_id
     ),
     profile_flag_link AS (
-        INSERT INTO profile_flags(profile_id, flag_id, type, value)
-        SELECT np.id, af.id, 'active'::type_profile_flags, true
+        INSERT INTO profile_flags (profile_id, flag_id, value)
+        SELECT np.id, af.id, true
         FROM new_profile np, active_flag af
         RETURNING profile_id
     ),

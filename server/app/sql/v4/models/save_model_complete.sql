@@ -173,9 +173,7 @@ BEGIN
 
     -- Handle active flag (insert/update via model_flags junction)
     IF active IS NOT NULL THEN
-        INSERT INTO model_flags (model_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
-        SELECT 
-            v_model_id,
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id) SELECT v_model_id,
             f.id,
             'active'::type_model_flags,
             active,

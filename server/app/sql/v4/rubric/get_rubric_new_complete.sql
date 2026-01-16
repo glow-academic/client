@@ -147,7 +147,7 @@ valid_depts AS (
     FROM department_artifact d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 primary_department_id AS (
     SELECT department_id
@@ -236,7 +236,7 @@ valid_agents_data AS (
     
     
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad2 

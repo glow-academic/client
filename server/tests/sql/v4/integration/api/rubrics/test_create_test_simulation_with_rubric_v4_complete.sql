@@ -51,8 +51,8 @@ AS $$
         RETURNING simulation_id
     ),
     simulation_flag_link AS (
-        INSERT INTO simulation_flags(simulation_id, flag_id, type, value)
-        SELECT ns.id, af.id, 'active'::type_simulation_flags, simulation_active
+        INSERT INTO simulation_flags (simulation_id, flag_id, value)
+        SELECT ns.id, af.id, simulation_active
         FROM new_simulation ns, active_flag af
         RETURNING simulation_id
     )
@@ -60,7 +60,7 @@ AS $$
         ns.id AS simulation_id,
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) AS name,
         (SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active'  AND sf.value = TRUE) AS active,
         NULL::uuid AS rubric_id,
         ns.created_at
     FROM new_simulation ns;

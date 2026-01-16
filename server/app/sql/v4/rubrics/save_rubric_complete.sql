@@ -103,7 +103,7 @@ BEGIN
             value = CASE WHEN api_save_rubric_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE rubric_id = v_rubric_id
-          AND type = 'active'::type_rubric_flags;
+          ;
     END IF;
     
     -- Continue with rubric save using SQL (rubric already created/updated above)
@@ -191,11 +191,8 @@ BEGIN
     ),
     -- Insert or UPDATE rubric_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_rubric_active_flag AS (
-        INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.rubric_id,
+        INSERT INTO rubric_flags (rubric_id, flag_id, value, created_at, updated_at) SELECT x.rubric_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_rubric_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()

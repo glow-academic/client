@@ -76,8 +76,8 @@ AS $$
         RETURNING rubric_id
     ),
     rubric_flag_link AS (
-        INSERT INTO rubric_flags(rubric_id, flag_id, type, value)
-        SELECT nr.id, af.id, 'active'::type_rubric_flags, true
+        INSERT INTO rubric_flags (rubric_id, flag_id, value)
+        SELECT nr.id, af.id, true
         FROM new_rubric nr, active_flag af
         RETURNING rubric_id
     )

@@ -79,7 +79,7 @@ BEGIN
             value = CASE WHEN api_save_cohort_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE cohort_id = v_cohort_id
-          AND type = 'active'::type_cohort_flags;
+          ;
     END IF;
     
     -- Continue with cohort save using SQL (cohort already created/updated above)
@@ -168,9 +168,7 @@ BEGIN
     ),
     -- Insert or UPDATE cohort_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_cohort_active_flag AS (
-        INSERT INTO cohort_flags (cohort_id, flag_id, type, value, created_at, updated_at)
-        SELECT 
-            x.cohort_id,
+        INSERT INTO cohort_flags (cohort_id, flag_id, value, created_at, updated_at) SELECT x.cohort_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_cohort_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
