@@ -130,22 +130,14 @@
                       : platformProviders;
 
                     var links = document.querySelectorAll("#kc-social-providers a[id^='social-']");
-                    var visible = [];
                     links.forEach(function (a) {
                       var alias = a.id.replace("social-", "");
                       var show = allowed.indexOf(alias) !== -1;
                       var li = a.closest("li");
                       if (li) {
                         li.style.display = show ? "" : "none";
-                        if (show) visible.push(a);
                       }
                     });
-
-                    // Auto-redirect if only one visible
-                    if (visible.length === 1) {
-                      window.location.href = visible[0].href;
-                      return;
-                    }
 
                     // Update continue button text
                     var continueBtn = document.getElementById("continue-button");
@@ -220,42 +212,14 @@
                 if (!continueBtn) return;
                 
                 continueBtn.addEventListener('click', function() {
-                  // Find first visible provider button
-                  var visibleProviders = document.querySelectorAll('#kc-social-providers a[id^="social-"]:not([style*="display: none"])');
-                  if (visibleProviders.length > 0) {
-                    // Redirect to first visible provider
-                    window.location.href = visibleProviders[0].href;
-                  } else {
-                    // If no providers visible, scroll to provider section or refresh
-                    var providerSection = document.getElementById('kc-social-providers');
-                    if (providerSection) {
-                      providerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+                  // Scroll to provider section so user can choose
+                  var providerSection = document.getElementById('kc-social-providers');
+                  if (providerSection) {
+                    providerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }
                 });
               })();
             </script>
-            
-            <#-- Auto-redirect if only one provider for selected department (server-side check) -->
-            <#if social.providers?? && allowed?size == 1>
-              <#assign targetAlias = allowed[0] />
-              <#list social.providers as p>
-                <#if p.alias == targetAlias>
-                  <script>
-                    // Only auto-redirect on initial page load, not on department change
-                    (function() {
-                      var urlParams = new URLSearchParams(window.location.search);
-                      var deptFromUrl = urlParams.get("department") || "";
-                      var deptFromServer = "${departmentId}";
-                      // Only redirect if URL param matches server-rendered department (initial load)
-                      if (deptFromUrl === deptFromServer) {
-                        window.location.href = "${p.loginUrl}";
-                      }
-                    })();
-                  </script>
-                </#if>
-              </#list>
-            </#if>
             
             <#-- Username/password form (hidden by default, shown if needed) -->
             <#if realm.password>
