@@ -199,8 +199,27 @@
                     <div class="action-button-shine-2"></div>
                     <div class="action-button-content">
                       <#-- Icon (hidden when loading) -->
+                      <#-- Keycloak determines iconClasses based on alias matching well-known provider names -->
+                      <#-- For realm-level providers: alias="microsoft" → Keycloak provides iconClasses="kc-social-icon-microsoft" -->
+                      <#-- For department-scoped: alias="auth_microsoft_..." → Keycloak doesn't recognize it, so iconClasses is empty -->
+                      <#-- Solution: We store iconClasses in IdP config, and extract slug from alias as fallback -->
+                      <#assign iconClassToUse = "" />
                       <#if p.iconClasses?has_content>
-                        <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!} action-button-icon" aria-hidden="true"></i>
+                        <#-- Keycloak provided iconClasses (works for realm-level providers with well-known aliases) -->
+                        <#assign iconClassToUse = p.iconClasses />
+                      <#elseif p.config?? && p.config.iconClasses??>
+                        <#-- Try to read iconClasses from IdP config (set via Admin API) -->
+                        <#assign iconClassToUse = p.config.iconClasses />
+                      <#elseif p.alias?starts_with("auth_")>
+                        <#-- Fallback: Extract slug from pattern auth_{slug}_{auth_id} -->
+                        <#assign aliasParts = p.alias?split("_") />
+                        <#if (aliasParts?size >= 2)>
+                          <#assign iconClassToUse = "kc-social-icon-${aliasParts[1]}" />
+                        </#if>
+                      </#if>
+                      
+                      <#if iconClassToUse?has_content>
+                        <i class="${properties.kcCommonLogoIdP!} ${iconClassToUse} action-button-icon" aria-hidden="true"></i>
                       <#elseif p.alias?starts_with("default-idp-")>
                         <#-- User icon for Default Account and Guest -->
                         <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -965,6 +965,13 @@ async def sync_identity_provider_for_org(
             if "useJwksUrl" not in payload["config"]:
                 payload["config"]["useJwksUrl"] = "true"
         
+        # Store iconClasses in config for department-scoped providers
+        # Keycloak doesn't provide iconClasses for custom aliases, so we store it in config
+        # The theme can access this via p.config.iconClasses if FreeMarker exposes config
+        # Fallback: Theme extracts slug from alias pattern auth_{slug}_{auth_id}
+        icon_class = f"kc-social-icon-{slug}"
+        payload["config"]["iconClasses"] = icon_class
+        
         # Create or update IdP (department-scoped, shared across departments)
         try:
             kc_admin.get_idp(idp_alias=unique_alias)
