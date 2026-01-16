@@ -551,6 +551,133 @@ async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
         logger.warning(f"Could not ensure MCP token lifespan: {e}")
 
 
+async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
+    """Ensure Trusted Hosts policy is configured for client registration.
+    
+    Configures the Trusted Hosts policy in master realm to allow client registration
+    from production hostname and localhost. This is needed for OpenAI MCP tool and
+    other client registration requests.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    try:
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Extract hostname from ORIGIN env var
+        origin = os.getenv("ORIGIN", "http://localhost:3000")
+        # Remove protocol (http:// or https://)
+        hostname_with_port = origin.replace("http://", "").replace("https://", "")
+        # Remove path if present
+        if "/" in hostname_with_port:
+            hostname_with_port = hostname_with_port.split("/")[0]
+        # Remove port if present
+        if ":" in hostname_with_port:
+            hostname = hostname_with_port.split(":")[0]
+        else:
+            hostname = hostname_with_port
+        
+        # Build trusted hosts list: production hostname + localhost variants
+        trusted_hosts = [hostname]
+        if hostname not in ["localhost", "127.0.0.1"]:
+            # Add localhost variants for local development
+            trusted_hosts.extend(["localhost", "*.localhost"])
+        
+        # Get components for master realm
+        # Components are retrieved by parent_id (realm ID)
+        realm = kc_admin.get_realm("master")
+        realm_id = realm.get("id")
+        
+        if not realm_id:
+            logger.warning("Master realm has no ID, cannot configure Trusted Hosts policy")
+            return
+        
+        # Get all components for master realm (filter by parent = realm ID)
+        # Query parameter 'parent' filters components whose parent component ID equals this value
+        components = kc_admin.get_components(query={"parent": realm_id})
+        
+        # Find Trusted Hosts component (providerId="trusted-hosts", subType="anonymous")
+        trusted_hosts_component = None
+        for comp in components:
+            if (
+                comp.get("providerId") == "trusted-hosts"
+                and comp.get("subType") == "anonymous"
+                and comp.get("providerType") == "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy"
+            ):
+                trusted_hosts_component = comp
+                break
+        
+        if not trusted_hosts_component:
+            logger.warning("Trusted Hosts component not found in master realm")
+            return
+        
+        component_id = trusted_hosts_component.get("id")
+        if not component_id:
+            logger.warning("Trusted Hosts component has no ID")
+            return
+        
+        # Get current config (may be empty or have existing values)
+        current_config = trusted_hosts_component.get("config", {})
+        
+        # Check if config needs update
+        current_trusted_hosts = current_config.get("trusted-hosts", [])
+        # Keycloak may store as single string with ## separator or as list
+        if isinstance(current_trusted_hosts, list) and len(current_trusted_hosts) > 0:
+            # If it's a list with one element containing ##, split it
+            if len(current_trusted_hosts) == 1 and "##" in current_trusted_hosts[0]:
+                current_hosts_list = current_trusted_hosts[0].split("##")
+            else:
+                current_hosts_list = current_trusted_hosts
+        else:
+            current_hosts_list = []
+        
+        # Check if update is needed
+        needs_update = False
+        new_config = dict(current_config)
+        
+        # Update trusted-hosts (as list of strings)
+        if set(current_hosts_list) != set(trusted_hosts):
+            new_config["trusted-hosts"] = trusted_hosts
+            needs_update = True
+        
+        # Set host-sending-registration-request-must-match to true
+        current_host_match = current_config.get("host-sending-registration-request-must-match", ["true"])
+        if current_host_match != ["true"]:
+            new_config["host-sending-registration-request-must-match"] = ["true"]
+            needs_update = True
+        
+        # Set client-uris-must-match to false (user doesn't need this for MCP)
+        current_uris_match = current_config.get("client-uris-must-match", ["true"])
+        if current_uris_match != ["false"]:
+            new_config["client-uris-must-match"] = ["false"]
+            needs_update = True
+        
+        if needs_update:
+            # Update component with new config
+            update_payload = {
+                "id": component_id,
+                "name": trusted_hosts_component.get("name", "Trusted Hosts"),
+                "providerId": "trusted-hosts",
+                "providerType": "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
+                "parentId": realm_id,
+                "subType": "anonymous",
+                "config": new_config,
+            }
+            
+            kc_admin.update_component(component_id=component_id, payload=update_payload)
+            logger.info(
+                f"✅ Updated Trusted Hosts policy: trusted-hosts={trusted_hosts}, "
+                f"host-sending-registration-request-must-match=true, "
+                f"client-uris-must-match=false"
+            )
+        else:
+            logger.debug(
+                f"Trusted Hosts policy already configured correctly: trusted-hosts={trusted_hosts}"
+            )
+    except Exception as e:
+        logger.warning(f"Could not ensure Trusted Hosts policy: {e}", exc_info=True)
+
+
 async def sync_department_realm_by_settings(
     realm_name: str, department_id: str | None, kc_admin: Any, pool: Any
 ) -> None:
@@ -1146,6 +1273,9 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         
         # Ensure MCP token lifespan is configured (after client scope)
         await ensure_mcp_token_lifespan(kc_admin)
+        
+        # Ensure Trusted Hosts policy is configured for client registration
+        await ensure_trusted_hosts_policy(kc_admin)
 
         # Determine which settings to sync (settings-based realms, not department-based)
         # Sync each settings that has providers with keys
@@ -1158,7 +1288,8 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             async with pool.acquire() as conn:
                 # Simplified: Get all settings with providers and keys
                 # Master realm for default settings, settings_id for department-specific
-                from app.utils.sql_helper import _detect_function_in_sql, load_sql
+                from app.utils.sql_helper import (_detect_function_in_sql,
+                                                  load_sql)
 
                 sql_text = load_sql("app/sql/v4/keycloak/get_settings_to_sync_complete.sql")
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)

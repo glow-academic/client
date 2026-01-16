@@ -156,7 +156,7 @@ async def generate_composite_model(
     Returns:
         Tuple of (class_name, model_code)
     """
-    from scripts.sql_introspect import fetch_composite_fields
+    from app.infra.v4.sql.sql_introspect import fetch_composite_fields
 
     # Fetch composite type fields
     fields = await fetch_composite_fields(conn, full_type_name)
@@ -496,7 +496,7 @@ async def generate_request_model(
         # Track composite array parameters that need conversion
         composite_array_conversions = {}
         if conn:
-            from scripts.sql_introspect import fetch_composite_fields
+            from app.infra.v4.sql.sql_introspect import fetch_composite_fields
 
             for param in metadata.parameters:
                 field_name = _sanitize_field_name(param.name)
