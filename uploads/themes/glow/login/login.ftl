@@ -129,26 +129,28 @@
                       ? allowedProvidersByDept[dept]
                       : platformProviders;
 
-                    var links = document.querySelectorAll("#kc-social-providers a[id^='social-']");
-                    links.forEach(function (a) {
-                      var alias = a.id.replace("social-", "");
+                    // Filter action buttons (provider buttons) - show/hide based on department selection
+                    var actionButtons = document.querySelectorAll(".action-button[id^='social-']");
+                    var visibleProviders = [];
+                    actionButtons.forEach(function (btn) {
+                      var alias = btn.id.replace("social-", "");
                       var show = allowed.indexOf(alias) !== -1;
-                      var li = a.closest("li");
-                      if (li) {
-                        li.style.display = show ? "" : "none";
-                      }
+                      btn.style.display = show ? "" : "none";
+                      if (show) visibleProviders.push(btn);
                     });
-
-                    // Update continue button text
-                    var continueBtn = document.getElementById("continue-button");
-                    if (continueBtn) {
-                      var deptName = "Default Account";
-                      if (dept) {
-                        var option = select.querySelector('option[value="' + dept + '"]');
-                        if (option) deptName = option.textContent;
-                      }
-                      var btnText = continueBtn.querySelector('.continue-button-text');
-                      if (btnText) btnText.textContent = 'Continue with ' + deptName;
+                    
+                    // Show/hide guest button and default account button based on visible providers
+                    var guestBtn = document.getElementById("guest-link");
+                    var defaultAccountBtn = document.getElementById("default-account-button");
+                    
+                    if (visibleProviders.length > 0) {
+                      // Providers exist - show guest button, hide default account button
+                      if (guestBtn) guestBtn.style.display = "";
+                      if (defaultAccountBtn) defaultAccountBtn.style.display = "none";
+                    } else {
+                      // No providers - hide guest button, show default account button
+                      if (guestBtn) guestBtn.style.display = "none";
+                      if (defaultAccountBtn) defaultAccountBtn.style.display = "";
                     }
 
                     // Update guest link
@@ -176,50 +178,9 @@
                   }
                   if (select.value !== initial) select.value = initial;
                   applyDept(initial);
-                  
-                  // Update continue button text on initial load
-                  var continueBtn = document.getElementById("continue-button");
-                  if (continueBtn) {
-                    var deptName = "Default Account";
-                    if (initial) {
-                      var option = select.querySelector('option[value="' + initial + '"]');
-                      if (option) deptName = option.textContent;
-                    }
-                    var btnText = continueBtn.querySelector('.continue-button-text');
-                    if (btnText) btnText.textContent = 'Continue with ' + deptName;
-                  }
                 })();
               </script>
             </#if>
-            
-            <#-- Continue with Department button -->
-            <div class="continue-button-wrapper">
-              <button type="button" id="continue-button" class="continue-button">
-                <div class="continue-button-shine-1"></div>
-                <div class="continue-button-shine-2"></div>
-                <div class="continue-button-content">
-                  <svg class="continue-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                  </svg>
-                  <span class="continue-button-text">Continue with ${selectedDeptName}</span>
-                </div>
-              </button>
-            </div>
-            
-            <script>
-              (function() {
-                var continueBtn = document.getElementById('continue-button');
-                if (!continueBtn) return;
-                
-                continueBtn.addEventListener('click', function() {
-                  // Scroll to provider section so user can choose
-                  var providerSection = document.getElementById('kc-social-providers');
-                  if (providerSection) {
-                    providerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                });
-              })();
-            </script>
             
             <#-- Username/password form (hidden by default, shown if needed) -->
             <#if realm.password>
@@ -273,41 +234,54 @@
               </form>
             </#if>
             
-            <#-- Provider buttons (all rendered, filtered client-side by JavaScript) -->
-            <#if social.providers?? && social.providers?size gt 0>
-              <div id="kc-social-providers" class="social-providers-section">
-                <ul class="social-providers-list">
-                  <#list social.providers as p>
-                    <li <#if !allowed?seq_contains(p.alias)>style="display: none;"</#if>>
-                      <a id="social-${p.alias}" class="social-provider-button" href="${p.loginUrl}">
-                        <#if p.iconClasses?has_content>
-                          <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
-                          <span class="social-provider-name">${p.displayName!}</span>
-                        <#else>
-                          <span class="social-provider-name">${p.displayName!}</span>
-                        </#if>
-                      </a>
-                    </li>
-                  </#list>
-                </ul>
-              </div>
-            </#if>
-            
-            <#-- Continue as Guest button -->
-            <#if appBase?has_content>
-              <#assign guestUrl = appBase + "/login" />
-              <#if departmentId?has_content>
-                <#assign guestUrl = guestUrl + "?department=" + departmentId />
+            <#-- Provider buttons and action buttons (all styled consistently) -->
+            <div class="action-buttons-section">
+              <#-- Provider buttons (all rendered, filtered client-side by JavaScript) -->
+              <#if social.providers?? && social.providers?size gt 0>
+                <#list social.providers as p>
+                  <a id="social-${p.alias}" class="action-button" href="${p.loginUrl}" <#if !allowed?seq_contains(p.alias)>style="display: none;"</#if>>
+                    <div class="action-button-shine-1"></div>
+                    <div class="action-button-shine-2"></div>
+                    <div class="action-button-content">
+                      <#if p.iconClasses?has_content>
+                        <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
+                      </#if>
+                      <span class="action-button-text">Continue with ${p.displayName!}</span>
+                    </div>
+                  </a>
+                </#list>
               </#if>
               
-              <div class="guest-button-wrapper">
-                <a id="guest-link" data-base="${appBase}/login" class="guest-button" href="${guestUrl}">
-                  <div class="guest-button-shine-1"></div>
-                  <div class="guest-button-shine-2"></div>
-                  <span class="guest-button-text">Continue as Guest</span>
+              <#-- Continue as Guest button (always show if appBase exists and providers exist) -->
+              <#if appBase?has_content && social.providers?? && social.providers?size gt 0>
+                <#assign guestUrl = appBase + "/login" />
+                <#if departmentId?has_content>
+                  <#assign guestUrl = guestUrl + "?department=" + departmentId />
+                </#if>
+                
+                <a id="guest-link" data-base="${appBase}/login" class="action-button" href="${guestUrl}">
+                  <div class="action-button-shine-1"></div>
+                  <div class="action-button-shine-2"></div>
+                  <div class="action-button-content">
+                    <span class="action-button-text">Continue as Guest</span>
+                  </div>
                 </a>
-              </div>
-            </#if>
+              </#if>
+              
+              <#-- Continue as Default Account button (only show if no providers) -->
+              <#if !(social.providers?? && social.providers?size gt 0)>
+                <button type="button" id="default-account-button" class="action-button" onclick="document.getElementById('kc-form-login').submit();">
+                  <div class="action-button-shine-1"></div>
+                  <div class="action-button-shine-2"></div>
+                  <div class="action-button-content">
+                    <svg class="action-button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    <span class="action-button-text">Continue as Default Account</span>
+                  </div>
+                </button>
+              </#if>
+            </div>
           </div>
         </div>
       </div>
