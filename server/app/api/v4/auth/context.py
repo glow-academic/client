@@ -3,22 +3,17 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
-from app.utils.sql_helper import execute_sql_typed
-from app.utils.theme.color_utils import ensure_contrast, shade, tint
-from app.utils.theme.oklch_to_hex import hex_to_oklch
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetProfileContextApiRequest,
-    GetProfileContextApiResponse,
-    GetProfileContextSqlParams,
-    GetProfileContextSqlRow,
-    QGetProfileContextV4ThemeTokens,
-    load_sql_query,
-)
+from app.sql.types import (GetProfileContextApiRequest,
+                           GetProfileContextApiResponse,
+                           GetProfileContextSqlParams, GetProfileContextSqlRow,
+                           QGetProfileContextV4ThemeTokens, load_sql_query)
+from app.utils.sql_helper import execute_sql_typed
+from app.utils.theme.color_utils import ensure_contrast, shade, tint
+from app.utils.theme.oklch_to_hex import hex_to_oklch
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/profile/get_profile_context_complete.sql"
@@ -49,7 +44,7 @@ async def get_profile_context(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        from utils.logging.db_logger import get_logger
+        from app.utils.logging.db_logger import get_logger
 
         logger = get_logger(__name__)
 

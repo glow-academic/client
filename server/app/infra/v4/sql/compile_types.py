@@ -917,7 +917,7 @@ def write_consolidated_types_file(
     lines.append("        ```")
     lines.append('    """')
     lines.append("    # Import here to avoid circular imports")
-    lines.append("    from utils.sql_helper import load_sql")
+    lines.append("    from app.utils.sql_helper import load_sql")
     lines.append("")
     lines.append("    return load_sql(file_path)")
 

@@ -202,10 +202,19 @@ async def sync_organization_for_department(
                 return None
         
         # Create new org
+        # Note: Keycloak 26.0 API requires at least one domain object
+        # We use a placeholder domain that won't match real emails
+        # This allows org creation without domain restrictions
         org_payload: dict[str, Any] = {
             "name": department_name,
             "alias": department_id,  # Use department_id as alias for uniqueness
             "enabled": True,
+            "domains": [
+                {
+                    "name": f"placeholder-{department_id}.local",  # Placeholder domain that won't match real emails
+                    "verified": False,
+                }
+            ],
         }
         
         org_id = kc_admin.create_organization(payload=org_payload)
