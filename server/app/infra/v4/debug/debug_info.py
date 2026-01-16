@@ -1,14 +1,11 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 import asyncpg  # type: ignore
-from agents import RunContextWrapper, function_tool
+from app.sql.types import InfrastructureDebugInsertDebugInfoSqlParams
 from utils.sql_helper import execute_sql_typed
-
-from app.sql.types import (
-    InfrastructureDebugInsertDebugInfoSqlParams,
-)
 
 SQL_PATH = (
     "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
@@ -21,8 +18,7 @@ class DebugContext:
     run_id: uuid.UUID
 
 
-@function_tool
-def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
+async def debug_info(ctx: Any, content: str) -> str:
     """
     Meta-prompting/debug tool for the assistant.
 
@@ -40,8 +36,20 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
     This tool does not reply to the user; it only logs context and returns a
     confirmation string.
     """
-    run_id = ctx.context.run_id
-    conn = ctx.context.conn
+    # Extract run_id and conn from context (context structure may vary)
+    if hasattr(ctx, 'context'):
+        run_id = ctx.context.run_id
+        conn = ctx.context.conn
+    elif isinstance(ctx, dict):
+        run_id = ctx.get('run_id')
+        conn = ctx.get('conn')
+    else:
+        # Fallback: try to get from attributes directly
+        run_id = getattr(ctx, 'run_id', None)
+        conn = getattr(ctx, 'conn', None)
+    
+    if not run_id or not conn:
+        return "Error: Missing run_id or conn in context"
 
     try:
         # Insert debug info asynchronously (fire-and-forget)

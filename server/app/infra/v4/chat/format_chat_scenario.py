@@ -1,6 +1,6 @@
 """Format problem statement as chat scenario message."""
 
-from agents.items import TResponseInputItem
+from app.infra.v4.agents.types import TResponseInputItem
 
 
 def format_chat_scenario(problem_statement: str | None) -> TResponseInputItem:

@@ -5,8 +5,11 @@ import uuid
 from typing import Any, cast
 
 import asyncpg  # type: ignore
-from agents import Runner, trace
-from agents.items import TResponseInputItem
+from contextlib import contextmanager
+from typing import Any
+
+from app.infra.v4.agents.run_agent import run_agent_with_tools
+from app.infra.v4.agents.types import TResponseInputItem
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -38,6 +41,17 @@ GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/infrastructure/evals/get_rubric_detail
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+
+@contextmanager
+def trace(name: str, trace_id: str | None = None, group_id: str | None = None):
+    """No-op trace context manager (replaces agents.trace)."""
+    # Log trace start for debugging
+    logger.debug(f"Trace start: {name} (trace_id={trace_id}, group_id={group_id})")
+    try:
+        yield
+    finally:
+        logger.debug(f"Trace end: {name}")
 
 
 async def run_eval_single_run(
@@ -298,10 +312,25 @@ async def run_eval_single_run(
                 trace_id=f"dynamic_{attempt_id}_{run_id}",
                 group_id=str(attempt_id),
             ):
-                agent_result = await Runner.run(
-                    agent.agent(),
-                    input=agent_input_items,
-                    context=DebugContext(conn=conn, run_id=uuid.UUID(agent_run_id)),
+                # Convert input items to message format
+                messages = [
+                    {"role": item.get("role", "user"), "content": item.get("content", "")}
+                    for item in agent_input_items
+                ]
+                
+                # Get model config from agent
+                model_config = agent.get_model_config()
+                
+                # Run agent with tools
+                agent_result = await run_agent_with_tools(
+                    messages=messages,
+                    tools=None,  # Dynamic eval agents don't use tools
+                    tool_functions=agent.get_tool_functions(),
+                    model=model_config["model"],
+                    api_key=model_config["api_key"],
+                    base_url=model_config.get("base_url"),
+                    temperature=model_config["temperature"],
+                    system_prompt=agent.get_system_prompt(),
                 )
 
             # Save assistant output from agent run
@@ -572,10 +601,25 @@ async def run_eval_single_run(
             trace_id=f"eval_{attempt_id}_{run_id}",
             group_id=str(attempt_id),
         ):
-            result = await Runner.run(
-                eval_agent.agent(),
-                input=input_items,
-                context=DebugContext(conn=conn, run_id=uuid.UUID(eval_run_id)),
+            # Convert input items to message format
+            messages = [
+                {"role": item.get("role", "user"), "content": item.get("content", "")}
+                for item in input_items
+            ]
+            
+            # Get model config from agent
+            model_config = eval_agent.get_model_config()
+            
+            # Run agent with tools
+            result = await run_agent_with_tools(
+                messages=messages,
+                tools=None,  # Eval agents don't use tools
+                tool_functions=eval_agent.get_tool_functions(),
+                model=model_config["model"],
+                api_key=model_config["api_key"],
+                base_url=model_config.get("base_url"),
+                temperature=model_config["temperature"],
+                system_prompt=eval_agent.get_system_prompt(),
             )
 
         # 13. Save assistant output message

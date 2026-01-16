@@ -1,8 +1,7 @@
-"""Build function_tool objects dynamically from database tool configs."""
+"""Build tool functions dynamically from database tool configs."""
 
-from typing import Any
+from typing import Any, Callable
 
-from agents import Tool, function_tool
 from app.infra.v4.tools.build_pydantic_fields import build_function_signature_string
 from pydantic import Field
 from utils.logging.db_logger import get_logger
@@ -10,8 +9,8 @@ from utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
-def build_tool_from_config(tool_config: dict[str, Any]) -> Tool:
-    """Build a function_tool object from a database tool config.
+def build_tool_from_config(tool_config: dict[str, Any]) -> Callable[..., Any]:
+    """Build a tool function from a database tool config.
 
     Args:
         tool_config: Tool config dict from database with keys:
@@ -22,7 +21,7 @@ def build_tool_from_config(tool_config: dict[str, Any]) -> Tool:
             - argument_defaults: JSONB with default values
 
     Returns:
-        A function_tool wrapped function ready to use with agents
+        An async function ready to use for tool calling
 
     Example:
         >>> tool_config = {
@@ -83,8 +82,8 @@ def build_tool_from_config(tool_config: dict[str, Any]) -> Tool:
         logger.error(f"Failed to build tool {tool_name}: {e}")
         raise ValueError(f"Failed to build tool {tool_name}: {e}") from e
 
-    # Wrap with function_tool
-    return function_tool(tool_func)
+    # Return the function directly (no wrapper needed - tools are simple)
+    return tool_func
 
 
 def _generate_return_message(tool_name: str, tool_description: str) -> str:

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from agents.items import TResponseInputItem
+from app.infra.v4.agents.types import TResponseInputItem
 
 
 def format_messages_for_litellm(

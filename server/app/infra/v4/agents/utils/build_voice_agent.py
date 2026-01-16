@@ -2,9 +2,8 @@
 
 from typing import Any
 
-from agents import FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
-
-from app.infra.v4.agents.generic_agent import DEBUG_INFO_TOOL_SUFFIX, GenericAgent
+from app.infra.v4.agents.generic_agent import (DEBUG_INFO_TOOL_SUFFIX,
+                                               GenericAgent)
 from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,30 +31,9 @@ def build_voice_agent(
         The instructions string should be sent to RealtimeAgent's instructions field
     """
 
-    # Create tool use behavior - voice agent must call the speak tool
-    # Never respond directly, always use tools
-    def tool_use_behavior(
-        tool_context: RunContextWrapper[Any],
-        tool_results: list[FunctionToolResult],
-    ) -> ToolsToFinalOutputResult:
-        # Check if the speak tool has been called
-        # FunctionToolResult may have 'name' attribute at runtime (from agents library)
-        persona_tool_called = False
-        for result in tool_results:
-            # Access name attribute dynamically since type checker doesn't see it
-            tool_name = getattr(result, "name", None)  # type: ignore[misc]
-            if tool_name and isinstance(tool_name, str) and tool_name == "speak":
-                persona_tool_called = True
-                break
-
-        logger.info(
-            f"Voice agent tool use check: persona_tool_called={persona_tool_called}, "
-            f"tool_results_count={len(tool_results)}"
-        )
-
-        # If the speak tool was called, we're done (persona will handle response)
-        # Otherwise, continue to allow voice agent to call a tool
-        return ToolsToFinalOutputResult(is_final_output=persona_tool_called)
+    # Note: tool_use_behavior is no longer used with direct litellm calls
+    # Tool calling loop will continue until no more tool calls are made
+    # The voice agent should call the speak tool, which will be handled by the tool calling loop
 
     # Extract persona names from persona_instructions_map
     persona_names = list(persona_instructions_map.keys())
@@ -129,7 +107,7 @@ Example: To make the "{persona_names[0] if persona_names else "persona"}" person
         api_key=context["api_key"],
         tools=persona_tools,
         parallel_tool_calls=False,  # Call one persona at a time
-        tool_use_behavior=tool_use_behavior,
+        tool_use_behavior=None,  # Not used with direct litellm calls
     )
 
     return (agent, complete_instructions)

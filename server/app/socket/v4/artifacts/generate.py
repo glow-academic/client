@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator, cast
 
 import httpx
 import websockets
-from agents.items import TResponseInputItem
+from app.infra.v4.agents.types import TResponseInputItem
 from app.infra.v4.artifacts import (convert_tools_to_openai_format,
                                     convert_tools_to_responses_format,
                                     format_messages_for_litellm,

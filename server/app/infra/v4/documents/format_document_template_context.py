@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from agents.items import TResponseInputItem
+from app.infra.v4.agents.types import TResponseInputItem
 
 
 def format_document_template_context(

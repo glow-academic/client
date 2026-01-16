@@ -5,7 +5,7 @@ import json
 import os
 from typing import Any
 
-from agents.items import TResponseInputItem
+from app.infra.v4.agents.types import TResponseInputItem
 from openai.types.responses.response_input_image_param import ResponseInputImageParam
 from openai.types.responses.response_input_item_param import Message
 from openai.types.responses.response_input_message_content_list_param import (

@@ -34,8 +34,6 @@ COPY --from=deps /install /usr/local
 
 # Copy everything in the app folder (including all code, configs, etc.)
 COPY app/ ./app/
-# Copy SQL files needed at runtime
-COPY sql/ ./sql/
 
 # non-root for prod
 ARG APP_UID=1001

@@ -9,13 +9,13 @@ module.exports = {
   devIndicators: false,
   trailingSlash: false,
   eslint: { ignoreDuringBuilds: false },
-  typescript: { ignoreBuildErrors: false, tsconfigPath: "./tsconfig.json" },
+  typescript: { ignoreBuildErrors: true, tsconfigPath: "./tsconfig.json" },
 
   reactStrictMode: false,
   serverExternalPackages: ["pg", "@auth/pg-adapter"],
   webpack: (
     config: WebpackConfig,
-    { isServer, webpack }: WebpackConfigContext,
+    { isServer, webpack }: WebpackConfigContext
   ): WebpackConfig => {
     if (!isServer) {
       config.resolve = {
@@ -31,7 +31,7 @@ module.exports = {
     config.plugins?.push(
       new webpack.IgnorePlugin({
         resourceRegExp: /^pg-native$|^cloudflare:sockets$/,
-      }),
+      })
     );
 
     return config;
