@@ -20,9 +20,10 @@
     select.style.display = "none";
 
     // Create custom dropdown button
-    var dropdownButton = document.createElement("div");
+    var dropdownButton = document.createElement("button");
+    dropdownButton.type = "button";
     dropdownButton.className = "department-select-custom";
-    dropdownButton.setAttribute("role", "button");
+    dropdownButton.setAttribute("role", "combobox");
     dropdownButton.setAttribute("tabindex", "0");
     dropdownButton.setAttribute("aria-haspopup", "listbox");
     dropdownButton.setAttribute("aria-expanded", "false");
@@ -38,20 +39,40 @@
       ? currentOption.title
       : "Select department...";
 
-    var chevronIcon = document.createElement("svg");
+    // Create SVG in proper namespace (critical fix!)
+    var SVG_NS = "http://www.w3.org/2000/svg";
+
+    var chevronIcon = document.createElementNS(SVG_NS, "svg");
     chevronIcon.setAttribute("width", "16");
     chevronIcon.setAttribute("height", "16");
     chevronIcon.setAttribute("viewBox", "0 0 24 24");
     chevronIcon.setAttribute("fill", "none");
-    chevronIcon.setAttribute("stroke", "currentColor");
-    chevronIcon.setAttribute("stroke-width", "2");
+    chevronIcon.setAttribute("stroke", "white");
+    chevronIcon.setAttribute("stroke-width", "2.5");
     chevronIcon.setAttribute("stroke-linecap", "round");
     chevronIcon.setAttribute("stroke-linejoin", "round");
-    chevronIcon.className = "department-select-chevron";
-    chevronIcon.innerHTML = '<path d="m6 9 6 6 6-6"></path>';
+    chevronIcon.classList.add("department-select-chevron");
+
+    // Create path element in SVG namespace
+    var path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", "m6 9 6 6 6-6");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "white");
+
+    chevronIcon.appendChild(path);
+
+    // Apply styles
     chevronIcon.style.width = "1rem";
     chevronIcon.style.height = "1rem";
-    chevronIcon.style.opacity = "0.5";
+    chevronIcon.style.opacity = "1"; /* Fully opaque chevron */
+    chevronIcon.style.display = "block"; /* Ensure it's displayed */
+    chevronIcon.style.visibility = "visible"; /* Force visibility */
+    chevronIcon.style.zIndex = "20"; /* Ensure it's above shine effects */
+    chevronIcon.style.position = "relative"; /* Ensure positioning context */
+    chevronIcon.style.color = "white"; /* Ensure white color */
+    chevronIcon.style.verticalAlign = "middle"; /* Center vertically */
+    chevronIcon.style.minWidth = "1rem"; /* Ensure minimum width */
+    chevronIcon.style.minHeight = "1rem"; /* Ensure minimum height */
 
     // Add liquid glass shine effects (matching Login.tsx)
     var shine1 = document.createElement("div");
@@ -86,15 +107,57 @@
     dropdownMenu.className = "department-select-menu";
     dropdownMenu.setAttribute("role", "listbox");
 
+    // Create checkmark icon SVG (for selected items)
+    var SVG_NS = "http://www.w3.org/2000/svg";
+
     departments.forEach(function (dept) {
       var option = document.createElement("div");
       option.className = "department-select-option";
       option.setAttribute("role", "option");
       option.setAttribute("data-value", dept.id);
-      option.textContent = dept.title;
+
+      // Create text span
+      var optionText = document.createElement("span");
+      optionText.className = "department-select-option-text";
+      optionText.textContent = dept.title;
+      option.appendChild(optionText);
+
+      // Create checkmark icon container (positioned absolutely on the right)
+      var checkmarkContainer = document.createElement("span");
+      checkmarkContainer.className = "department-select-checkmark";
+      checkmarkContainer.style.position = "absolute";
+      checkmarkContainer.style.right = "0.875rem";
+      checkmarkContainer.style.display = "flex";
+      checkmarkContainer.style.alignItems = "center";
+      checkmarkContainer.style.justifyContent = "center";
+      checkmarkContainer.style.width = "0.875rem";
+      checkmarkContainer.style.height = "0.875rem";
+
+      // Create checkmark SVG icon
+      var checkmarkSvg = document.createElementNS(SVG_NS, "svg");
+      checkmarkSvg.setAttribute("width", "16");
+      checkmarkSvg.setAttribute("height", "16");
+      checkmarkSvg.setAttribute("viewBox", "0 0 24 24");
+      checkmarkSvg.setAttribute("fill", "none");
+      checkmarkSvg.setAttribute("stroke", "white");
+      checkmarkSvg.setAttribute("stroke-width", "3");
+      checkmarkSvg.setAttribute("stroke-linecap", "round");
+      checkmarkSvg.setAttribute("stroke-linejoin", "round");
+      checkmarkSvg.style.width = "1rem";
+      checkmarkSvg.style.height = "1rem";
+      checkmarkSvg.style.display = "none"; // Hidden by default, shown for selected
+
+      var checkmarkPath = document.createElementNS(SVG_NS, "path");
+      checkmarkPath.setAttribute("d", "M20 6L9 17l-5-5");
+      checkmarkSvg.appendChild(checkmarkPath);
+      checkmarkContainer.appendChild(checkmarkSvg);
+      option.appendChild(checkmarkContainer);
+
       if (dept.id === currentValue) {
         option.classList.add("selected");
+        checkmarkSvg.style.display = "block"; // Show checkmark for selected item
       }
+
       dropdownMenu.appendChild(option);
     });
 
@@ -117,8 +180,15 @@
         );
         options.forEach(function (opt) {
           opt.classList.remove("selected");
+          var checkmark = opt.querySelector(".department-select-checkmark svg");
+          if (checkmark) {
+            checkmark.style.display = "none"; // Hide checkmark
+          }
           if (opt.getAttribute("data-value") === value) {
             opt.classList.add("selected");
+            if (checkmark) {
+              checkmark.style.display = "block"; // Show checkmark for selected
+            }
           }
         });
 
