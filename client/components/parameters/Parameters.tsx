@@ -14,8 +14,6 @@ import {
   Eye,
   List,
   MapPin,
-  Plus,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -68,10 +66,10 @@ export interface ParametersProps {
   listData: ParametersListOut;
   // Server actions (replaces useMutation)
   duplicateParameterAction?: (
-    input: DuplicateParameterIn,
+    input: DuplicateParameterIn
   ) => Promise<DuplicateParameterOut>;
   deleteParameterAction?: (
-    input: DeleteParameterIn,
+    input: DeleteParameterIn
   ) => Promise<DeleteParameterOut>;
 }
 
@@ -102,7 +100,7 @@ export default function Parameters({
 
   const parameters = useMemo(
     () => parametersData?.parameters || [],
-    [parametersData],
+    [parametersData]
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -114,7 +112,7 @@ export default function Parameters({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.scenario_options],
+    [parametersData?.scenario_options]
   );
   const departmentOptions = useMemo(() => {
     const departments = parametersData?.departments || [];
@@ -123,8 +121,9 @@ export default function Parameters({
         value: dept.department_id,
         label: dept.name,
       }))
-      .filter((item): item is { value: string; label: string } => 
-        item.value !== null && item.label !== null
+      .filter(
+        (item): item is { value: string; label: string } =>
+          item.value !== null && item.label !== null
       );
   }, [parametersData?.departments]);
   const documentOptions = useMemo(
@@ -135,7 +134,7 @@ export default function Parameters({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.document_options],
+    [parametersData?.document_options]
   );
 
   // Column definitions for TanStack Table
@@ -212,7 +211,7 @@ export default function Parameters({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -287,13 +286,13 @@ export default function Parameters({
         },
       });
       // profileId comes from X-Profile-Id header automatically
-      toast.success(`Parameter "${parameter.name || "Unknown Parameter"}" duplicated successfully`);
+      toast.success(
+        `Parameter "${parameter.name || "Unknown Parameter"}" duplicated successfully`
+      );
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to duplicate parameter",
+        error instanceof Error ? error.message : "Failed to duplicate parameter"
       );
     } finally {
       setIsDuplicating(null);
@@ -320,7 +319,7 @@ export default function Parameters({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete parameter",
+        error instanceof Error ? error.message : "Failed to delete parameter"
       );
     } finally {
       setShowDeleteDialog(false);
@@ -349,7 +348,7 @@ export default function Parameters({
 
   const renderPreview = (
     items: NonNullable<ParametersListOut["parameters"]>[number]["sample_items"],
-    totalCount: number,
+    totalCount: number
   ) => {
     // Show name + description
     if (!items || items.length === 0) {
@@ -421,7 +420,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`,
+                      `/management/parameters/p/${parameter.parameter_id}`
                     )
                   }
                   aria-label={`Edit ${parameter.name}`}
@@ -438,7 +437,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`,
+                      `/management/parameters/p/${parameter.parameter_id}`
                     )
                   }
                   aria-label={`View ${parameter.name}`}
@@ -485,7 +484,10 @@ export default function Parameters({
                       toast.error("Parameter ID is missing");
                       return;
                     }
-                    handleDeleteClick(parameter.parameter_id, parameter.name || "Unknown Parameter");
+                    handleDeleteClick(
+                      parameter.parameter_id,
+                      parameter.name || "Unknown Parameter"
+                    );
                   }}
                   aria-label={`Delete ${parameter.name || "Unknown Parameter"}`}
                   data-testid="btn-delete-parameter"
@@ -510,24 +512,6 @@ export default function Parameters({
     );
   };
 
-  const renderEmptyState = () => (
-    <div className="col-span-full">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No parameters yet</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            Create your first parameter to organize configuration options
-          </p>
-          <Button onClick={() => router.push("/management/parameters/new")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Your First Parameter
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const scenarioColumn = table.getColumn("scenarios");
@@ -538,7 +522,9 @@ export default function Parameters({
   return (
     <div className="space-y-8">
       {parameters.length === 0 ? (
-        renderEmptyState()
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground">No parameters found</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* Toolbar */}

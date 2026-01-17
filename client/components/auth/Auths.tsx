@@ -3,7 +3,7 @@
  * Auth component showing overview of auth entries
  */
 "use client";
-import { Copy, Edit, Eye, Key, Plus, Trash2 } from "lucide-react";
+import { Copy, Edit, Eye, Key, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -83,7 +83,7 @@ export default function Auths({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to duplicate auth entry",
+          : "Failed to duplicate auth entry"
       );
     } finally {
       setIsDuplicating(null);
@@ -109,7 +109,7 @@ export default function Auths({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete auth entry",
+        error instanceof Error ? error.message : "Failed to delete auth entry"
       );
     } finally {
       setShowDeleteDialog(false);
@@ -123,8 +123,10 @@ export default function Auths({
   };
 
   const renderPreview = (
-    items: NonNullable<NonNullable<AuthListOut["auths"]>[number]>["sample_items"],
-    totalCount: number,
+    items: NonNullable<
+      NonNullable<AuthListOut["auths"]>[number]
+    >["sample_items"],
+    totalCount: number
   ) => {
     if (!items) return null;
     return (
@@ -237,7 +239,9 @@ export default function Auths({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDeleteClick(auth.auth_id || "", auth.name || "")}
+                  onClick={() =>
+                    handleDeleteClick(auth.auth_id || "", auth.name || "")
+                  }
                   aria-label={`Delete ${auth.name}`}
                   data-testid="btn-delete-auth"
                   title={`Delete ${auth.name}`}
@@ -254,14 +258,17 @@ export default function Auths({
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {auth.description}
           </p>
-          {count && count > 0 && auth.sample_items && auth.sample_items.length > 0 && (
-            <div>
-              <p className="text-xs font-medium mb-2 text-muted-foreground">
-                Sample Items:
-              </p>
-              {renderPreview(auth.sample_items, count ?? 0)}
-            </div>
-          )}
+          {count &&
+            count > 0 &&
+            auth.sample_items &&
+            auth.sample_items.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-2 text-muted-foreground">
+                  Sample Items:
+                </p>
+                {renderPreview(auth.sample_items, count ?? 0)}
+              </div>
+            )}
         </CardContent>
       </Card>
     );
@@ -271,19 +278,8 @@ export default function Auths({
     <div className="space-y-6">
       {/* Auth Cards Grid */}
       {auths.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 border rounded-lg">
-          <Key className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium mb-2">No auth entries yet</p>
-          <p className="text-sm text-muted-foreground mb-4">
-            Get started by creating your first authentication method
-          </p>
-          <Button
-            onClick={() => router.push("/system/auth/new")}
-            aria-label="Create new auth entry"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Auth
-          </Button>
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground">No auth entries found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

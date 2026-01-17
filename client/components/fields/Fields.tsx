@@ -5,17 +5,17 @@
  * 12/05/2025
  */
 "use client";
-import { Copy, Edit, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Copy, Edit, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
-  FieldsListOut,
   DeleteFieldIn,
   DeleteFieldOut,
   DuplicateFieldIn,
   DuplicateFieldOut,
+  FieldsListOut,
 } from "@/app/(main)/management/fields/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -54,7 +54,7 @@ export interface FieldsProps {
   listData: FieldsListOut;
   // Server actions (replaces useMutation)
   duplicateFieldAction?: (
-    input: DuplicateFieldIn,
+    input: DuplicateFieldIn
   ) => Promise<DuplicateFieldOut>;
   deleteFieldAction?: (input: DeleteFieldIn) => Promise<DeleteFieldOut>;
 }
@@ -97,7 +97,7 @@ export default function Fields({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.parameter_options],
+    [fieldsData?.parameter_options]
   );
   const departmentOptions = useMemo(
     () =>
@@ -107,7 +107,7 @@ export default function Fields({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [fieldsData?.department_options],
+    [fieldsData?.department_options]
   );
 
   // Define table columns inline
@@ -156,7 +156,7 @@ export default function Fields({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -203,7 +203,7 @@ export default function Fields({
     return Object.fromEntries(
       parameters.map((param) => [
         param.parameter_id,
-        { name: param.name, description: param.description || undefined }
+        { name: param.name, description: param.description || undefined },
       ])
     ) as Record<string, { name: string; description?: string }>;
   }, [fieldsData?.parameters]);
@@ -213,7 +213,7 @@ export default function Fields({
     return Object.fromEntries(
       departments.map((dept) => [
         dept.department_id,
-        { name: dept.name, description: dept.description || undefined }
+        { name: dept.name, description: dept.description || undefined },
       ])
     ) as Record<string, { name: string; description?: string }>;
   }, [fieldsData?.departments]);
@@ -278,7 +278,7 @@ export default function Fields({
       router.refresh();
     } catch (error) {
       toast.error(
-        `Failed to delete field: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete field: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsDeleting(false);
@@ -305,7 +305,7 @@ export default function Fields({
       router.refresh();
     } catch (error) {
       toast.error(
-        `Failed to duplicate field: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to duplicate field: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsDuplicating(null);
@@ -321,7 +321,6 @@ export default function Fields({
   };
 
   const renderFieldCard = (field: (typeof fields)[number]) => {
-
     return (
       <Card
         key={field.field_id}
@@ -430,24 +429,6 @@ export default function Fields({
     );
   };
 
-  const renderEmptyState = () => (
-    <div className="col-span-full">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No fields yet</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            Create your first field to organize parameter values
-          </p>
-          <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Your First Field
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const parameterColumn = table.getColumn("parameters");
@@ -457,7 +438,9 @@ export default function Fields({
   return (
     <div className="space-y-6">
       {fields.length === 0 ? (
-        renderEmptyState()
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground">No fields found</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* Toolbar */}

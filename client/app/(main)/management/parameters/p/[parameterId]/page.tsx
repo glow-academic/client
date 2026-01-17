@@ -74,15 +74,12 @@ async function saveParameter(
   return api.post("/parameters/save", input);
 }
 
-async function patchParameterDraft(
-  input: PatchParameterDraftIn
-): Promise<PatchParameterDraftOut> {
+async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // TODO: Investigate - parameters/draft endpoint doesn't exist on server
-  throw new Error("parameters/draft endpoint doesn't exist on server");
-  // return api.patch("/parameters/draft", input);
+  return api.patch("/parameters/draft", input);
 }
+
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ParameterEditPage({
@@ -136,7 +133,7 @@ export default async function ParameterEditPage({
         <Parameter
           parameterId={parameterId}
           mode="edit"
-          parameterDetail={parameterDetail}
+          parameterData={parameterDetail}
           saveParameterAction={saveParameter}
           patchParameterDraftAction={patchParameterDraft}
         />

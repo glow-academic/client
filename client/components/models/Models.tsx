@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Cpu, Edit, Sparkles, Trash2, X } from "lucide-react";
+import { Copy, Cpu, Edit, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -24,7 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -62,7 +61,7 @@ export interface ModelsProps {
   listData: ModelsListOut;
   // Server actions (replaces useMutation)
   duplicateModelAction?: (
-    input: DuplicateModelIn,
+    input: DuplicateModelIn
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
 }
@@ -97,7 +96,7 @@ export default function Models({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [modelsData?.provider_options],
+    [modelsData?.provider_options]
   );
   const statusOptions = useMemo(
     () =>
@@ -107,7 +106,7 @@ export default function Models({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [modelsData?.status_options],
+    [modelsData?.status_options]
   );
 
   // Table state
@@ -176,7 +175,8 @@ export default function Models({
         header: "Updated",
         cell: ({ row }) => {
           const updatedAt = row.original.updated_at;
-          if (!updatedAt) return <div className="text-sm text-muted-foreground">—</div>;
+          if (!updatedAt)
+            return <div className="text-sm text-muted-foreground">—</div>;
           const date = new Date(updatedAt);
           return (
             <div className="text-sm text-muted-foreground">
@@ -186,7 +186,7 @@ export default function Models({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -289,7 +289,9 @@ export default function Models({
         },
       });
       // profileId comes from X-Profile-Id header automatically
-      toast.success(`Model '${model.name || "Unknown Model"}' duplicated successfully`);
+      toast.success(
+        `Model '${model.name || "Unknown Model"}' duplicated successfully`
+      );
       router.refresh();
     } catch {
       toast.error("Failed to duplicate model");
@@ -391,25 +393,13 @@ export default function Models({
     </Card>
   );
 
-  const renderEmptyState = () => (
-    <div className="col-span-full">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No models yet</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            Create your first model to get started
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   return (
     <TooltipProvider>
       <div className="space-y-6">
         {models.length === 0 ? (
-          renderEmptyState()
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground">No models found</p>
+          </div>
         ) : (
           <div className="space-y-4">
             {/* Toolbar */}

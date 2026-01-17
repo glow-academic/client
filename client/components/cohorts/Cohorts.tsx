@@ -5,18 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import {
-  Copy,
-  Edit,
-  Eye,
-  LogOut,
-  Play,
-  Plus,
-  Sparkles,
-  Trash2,
-  Users,
-  X,
-} from "lucide-react";
+import { Copy, Edit, Eye, LogOut, Play, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -576,24 +565,6 @@ export default function Cohorts({
     </Card>
   );
 
-  const renderEmptyState = () => (
-    <div className="col-span-full">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No cohorts yet</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            Create your first cohort to organize students into groups
-          </p>
-          <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Your First Cohort
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const profileColumn = table.getColumn("profile_ids");
@@ -604,7 +575,9 @@ export default function Cohorts({
   return (
     <div className="space-y-6">
       {cohorts.length === 0 ? (
-        renderEmptyState()
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground">No cohorts found</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* Toolbar */}

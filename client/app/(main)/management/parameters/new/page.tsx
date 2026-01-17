@@ -42,14 +42,11 @@ async function saveParameter(
   return api.post("/parameters/save", input);
 }
 
-async function patchParameterDraft(
-  input: PatchParameterDraftIn
-): Promise<PatchParameterDraftOut> {
+
+async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // TODO: Investigate - parameters/draft endpoint doesn't exist on server
-  throw new Error("parameters/draft endpoint doesn't exist on server");
-  // return api.patch("/parameters/draft", input);
+  return api.patch("/parameters/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -104,7 +101,7 @@ export default async function NewParameterPage({
       <Parameter
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         mode="create"
-        parameterDetailDefault={parameterDetailDefault}
+        parameterData={parameterDetailDefault}
         saveParameterAction={saveParameter}
         patchParameterDraftAction={patchParameterDraft}
       />

@@ -16,6 +16,8 @@ type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
 type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
 type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
+type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
+type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
 type CreateDraftReasoningLevelsIn = InputOf<
   "/api/v4/resources/reasoning_levels",
   "post"
@@ -55,6 +57,30 @@ async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   return api.post("/agents/save", input);
 }
 
+async function patchAgentDraft(input: PatchAgentDraftIn): Promise<PatchAgentDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/agents/draft", input);
+}
+
+
+async function createDraftReasoningLevels(input: CreateDraftReasoningLevelsIn): Promise<CreateDraftReasoningLevelsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/reasoning_levels", input);
+}
+
+async function createDraftTemperatureLevels(input: CreateDraftTemperatureLevelsIn): Promise<CreateDraftTemperatureLevelsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/temperature_levels", input);
+}
+
+async function createDraftVoices(input: CreateDraftVoicesIn): Promise<CreateDraftVoicesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/voices", input);
+}
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Agent",
@@ -109,7 +135,7 @@ export default async function NewAgentPage({
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         agentDetailDefault={agentDetailDefault}
         saveAgentAction={saveAgent}
-        patchAgentDraftAction={undefined}
+        patchAgentDraftAction={patchAgentDraft}
         createReasoningLevelsAction={createDraftReasoningLevels}
         createTemperatureLevelsAction={createDraftTemperatureLevels}
         createVoicesAction={createDraftVoices}

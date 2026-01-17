@@ -3,7 +3,7 @@
  * Used to display the providers page with table-based filtering and card layout.
  */
 "use client";
-import { Edit, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Edit, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ export interface ProvidersProps {
   listData: ProvidersListOut;
   // Server actions (replaces useMutation)
   deleteProviderAction?: (
-    input: DeleteProviderIn,
+    input: DeleteProviderIn
   ) => Promise<DeleteProviderOut>;
 }
 
@@ -81,7 +81,7 @@ export default function Providers({
   // Extract data from response
   const providers = useMemo(
     () => providersData?.providers || [],
-    [providersData?.providers],
+    [providersData?.providers]
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -93,7 +93,7 @@ export default function Providers({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [providersData?.provider_options],
+    [providersData?.provider_options]
   );
   const statusOptions = useMemo(
     () =>
@@ -103,7 +103,7 @@ export default function Providers({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [providersData?.status_options],
+    [providersData?.status_options]
   );
 
   // Define table columns inline
@@ -169,7 +169,7 @@ export default function Providers({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -306,67 +306,69 @@ export default function Providers({
     const providerId = provider.provider_id;
     const providerName = provider.name;
     if (!providerId) return null;
-    
+
     return (
-    <Card
-      key={providerId}
-      aria-label={providerName ?? undefined}
-      data-testid="provider-card"
-      data-provider-id={providerId}
-      className="relative flex flex-col h-full"
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{provider.name}</CardTitle>
-            <div className="mt-1 space-y-2">
-              <div className="flex items-center gap-2">
-                {!provider.active && (
-                  <Badge variant="secondary">Inactive</Badge>
-                )}
-                <Badge variant="outline">{provider.value}</Badge>
+      <Card
+        key={providerId}
+        aria-label={providerName ?? undefined}
+        data-testid="provider-card"
+        data-provider-id={providerId}
+        className="relative flex flex-col h-full"
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-lg">{provider.name}</CardTitle>
+              <div className="mt-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  {!provider.active && (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
+                  <Badge variant="outline">{provider.value}</Badge>
+                </div>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              {provider.can_edit && providerId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEdit(providerId)}
+                  aria-label={providerName ? `Edit ${providerName}` : undefined}
+                  data-testid={`btn-edit-provider-${providerId}`}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {provider.can_delete && providerId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    handleDeleteClick(providerId, providerName ?? "")
+                  }
+                  aria-label={
+                    providerName ? `Delete ${providerName}` : undefined
+                  }
+                  data-testid={`btn-delete-provider-${providerId}`}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {provider.can_edit && providerId && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleEdit(providerId)}
-                aria-label={providerName ? `Edit ${providerName}` : undefined}
-                data-testid={`btn-edit-provider-${providerId}`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            {provider.can_delete && providerId && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  handleDeleteClick(providerId, providerName ?? "")
-                }
-                aria-label={providerName ? `Delete ${providerName}` : undefined}
-                data-testid={`btn-delete-provider-${providerId}`}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 flex-1 flex flex-col">
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-          {provider.description || "No description"}
-        </p>
-        {provider.base_url && (
-          <p className="text-xs text-muted-foreground mt-auto">
-            <span className="font-medium">Base URL:</span> {provider.base_url}
+        </CardHeader>
+        <CardContent className="pt-0 flex-1 flex flex-col">
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+            {provider.description || "No description"}
           </p>
-        )}
-      </CardContent>
-    </Card>
+          {provider.base_url && (
+            <p className="text-xs text-muted-foreground mt-auto">
+              <span className="font-medium">Base URL:</span> {provider.base_url}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 
@@ -413,23 +415,9 @@ export default function Providers({
 
       {/* Providers Grid */}
       {tableRows.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No providers found</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {table.getState().columnFilters.length > 0
-                ? "Try adjusting your filters"
-                : "Get started by creating a new provider"}
-            </p>
-            {table.getState().columnFilters.length === 0 && (
-              <Button onClick={handleCreateNew} variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Provider
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-muted-foreground">No providers found</p>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

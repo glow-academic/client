@@ -75,10 +75,7 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
-  const {
-    effectiveProfile,
-    activeProfile,
-  } = useProfile();
+  const { effectiveProfile, activeProfile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff management pages (but not on /new page)
@@ -294,6 +291,15 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/system/evals") {
+      return (
+        <Button onClick={() => router.push("/system/evals/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          New Eval
+        </Button>
+      );
+    }
+
     if (pathname === "/system/departments") {
       return (
         <Button
@@ -380,7 +386,9 @@ function MainLayoutContent({
 
   // Normalize URL path segment from plural form to singular artifact enum value
   const artifactType = useMemo(() => {
-    return urlPathSegment ? normalizeUrlPathToArtifactType(urlPathSegment) : null;
+    return urlPathSegment
+      ? normalizeUrlPathToArtifactType(urlPathSegment)
+      : null;
   }, [urlPathSegment]);
 
   return (
@@ -538,7 +546,9 @@ export function MainLayoutClient({
                 switchEffectiveProfileAction={switchEffectiveProfileAction}
                 createFeedbackAction={createFeedbackAction}
                 refreshAnalyticsAction={refreshAnalyticsAction}
-                searchSimulatableProfilesAction={searchSimulatableProfilesAction}
+                searchSimulatableProfilesAction={
+                  searchSimulatableProfilesAction
+                }
               >
                 {children}
               </MainLayoutContent>

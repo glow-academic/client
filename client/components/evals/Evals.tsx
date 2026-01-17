@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { AlertCircle, CheckCircle2, Clock, Eye, Trash2, X } from "lucide-react";
+import { Edit, Eye, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -264,99 +264,89 @@ export default function Evals({
     pageSize,
   ]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "running":
-        return (
-          <Badge variant="default" className="bg-blue-500">
-            <Clock className="h-3 w-3 mr-1" />
-            Running
-          </Badge>
-        );
-      case "completed":
-        return (
-          <Badge variant="default" className="bg-green-500">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
-            Completed
-          </Badge>
-        );
-      case "pending":
-      default:
-        return (
-          <Badge variant="secondary">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        );
-    }
-  };
-
   const renderEvalCard = (evalItem: (typeof evalsListArray)[number]) => {
     const evalId = evalItem.eval_id ?? "";
     const evalName = evalItem.name ?? "";
-    const evalStatus = evalItem.status ?? "";
 
     if (!evalId) return null;
 
     return (
       <Card
         key={evalId}
-        className="hover:shadow-md transition-shadow cursor-pointer"
-        onClick={() => router.push(`/system/evals/e/${evalId}`)}
+        className="relative flex flex-col h-full hover:shadow-md transition-shadow"
         data-testid="eval-card"
         data-eval-id={evalId}
+        role="gridcell"
+        aria-label={`eval card ${evalName}`}
       >
         <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg truncate">{evalName}</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {evalItem.description ?? ""}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {getStatusBadge(evalStatus)}
-                <Badge variant="outline">
-                  {evalItem.total_runs}{" "}
-                  {evalItem.total_runs === 1 ? "run" : "runs"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {evalItem.rubric_name}
-                </Badge>
+              <CardTitle className="text-lg line-clamp-2">{evalName}</CardTitle>
+              <div className="mt-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">
+                    {evalItem.total_runs}{" "}
+                    {evalItem.total_runs === 1 ? "run" : "runs"}
+                  </Badge>
+                </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const evalId = evalItem.eval_id ?? "";
-                  if (evalId) router.push(`/system/evals/e/${evalId}`);
-                }}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                View
-              </Button>
-              {evalItem.can_delete && deleteEvalAction && (
+            <div className="flex items-center gap-2">
+              {evalItem.can_edit && evalId ? (
                 <Button
-                  variant="ghost"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/system/evals/e/${evalId}`)}
+                  aria-label={`Edit ${evalName}`}
+                  data-testid={`btn-edit-eval-${evalId}`}
+                  title={`Edit ${evalName}`}
+                  className="h-9 px-3"
+                >
+                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Edit</span>
+                </Button>
+              ) : evalId ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/system/evals/e/${evalId}`)}
+                  aria-label={`View ${evalName}`}
+                  data-testid={`btn-view-eval-${evalId}`}
+                  title={`View ${evalName}`}
+                  className="h-9 px-3"
+                >
+                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">View</span>
+                </Button>
+              ) : null}
+              {evalItem.can_delete && deleteEvalAction && evalId && (
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const evalId = evalItem.eval_id ?? "";
                     const evalName = evalItem.name ?? "";
-                    if (evalId) {
-                      setDeleteItem({ id: evalId, name: evalName });
-                      setShowDeleteDialog(true);
-                    }
+                    setDeleteItem({ id: evalId, name: evalName });
+                    setShowDeleteDialog(true);
                   }}
+                  aria-label={`Delete ${evalName}`}
+                  data-testid={`btn-delete-eval-${evalId}`}
+                  title={`Delete ${evalName}`}
+                  className="h-9 px-3"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Delete</span>
                 </Button>
               )}
             </div>
           </div>
         </CardHeader>
+        <CardContent className="pt-0 flex-1 flex flex-col">
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {evalItem.description || "No description"}
+          </p>
+        </CardContent>
       </Card>
     );
   };

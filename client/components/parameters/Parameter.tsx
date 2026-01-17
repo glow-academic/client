@@ -49,7 +49,7 @@ import {
 
 // Type-only import from server page
 import type {
-  GetParameterOut,
+  ParameterGetOut,
   PatchParameterDraftIn,
   PatchParameterDraftOut,
   SaveParameterIn,
@@ -62,7 +62,7 @@ export interface ParameterProps {
   parameterId?: string;
   mode?: "create" | "edit";
   // Server-provided data (for server-side rendering) - unified data prop
-  parameterData?: GetParameterOut;
+  parameterData?: ParameterGetOut;
   // Server actions (replaces useMutation) - unified save action
   saveParameterAction?: (input: SaveParameterIn) => Promise<SaveParameterOut>;
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
@@ -303,7 +303,7 @@ function ParameterComponent({
   // Initialize draft state from server data or draft payload
   // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
   const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? parameterDetail : parameterDetailDefault;
+    const data = isEditMode ? parameterData : undefined;
 
     if (!data) {
       return {
@@ -374,12 +374,12 @@ function ParameterComponent({
     if (
       fieldIds.length === 0 &&
       isEditMode &&
-      parameterDetail &&
-      "field_connections" in parameterDetail &&
-      parameterDetail.field_connections
+      parameterData &&
+      "field_connections" in parameterData &&
+      parameterData.field_connections
     ) {
       // Extract from field_connections array
-      parameterDetail.field_connections.forEach((conn) => {
+      parameterData.field_connections?.forEach((conn) => {
         const fieldId = conn.field_id;
         if (fieldId) {
           fieldIds.push(fieldId);
@@ -408,39 +408,24 @@ function ParameterComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isEditMode,
-    parameterDetail,
-    parameterDetailDefault,
-    parameterDetailId,
-    parameterDetailDefaultId,
+    parameterData,
+    parameterDataId,
     draftId,
     urlDraftId,
     defaultDepartmentIds,
     // Include actual content fields so it recomputes when server data changes
-    parameterDetailDefault?.name,
-    parameterDetailDefault?.description,
-    parameterDetailDefault?.active,
-    parameterDetailDefault?.simulation_parameter,
-    parameterDetailDefault?.document_parameter,
-    parameterDetailDefault?.persona_parameter,
-    parameterDetailDefault?.scenario_parameter,
-    parameterDetailDefault?.video_parameter,
-    parameterDetailDefault?.department_ids,
-    parameterDetailDefault?.field_ids,
-    parameterDetailDefault?.field_active_states,
-    parameterDetailDefault?.field_default_states,
-    parameterDetail?.name,
-    parameterDetail?.description,
-    parameterDetail?.active,
-    parameterDetail?.simulation_parameter,
-    parameterDetail?.document_parameter,
-    parameterDetail?.persona_parameter,
-    parameterDetail?.scenario_parameter,
-    parameterDetail?.video_parameter,
-    parameterDetail?.department_ids,
-    parameterDetail?.field_connections,
-    parameterDetail?.field_ids,
-    parameterDetail?.field_active_states,
-    parameterDetail?.field_default_states,
+    parameterData?.name,
+    parameterData?.description,
+    parameterData?.active,
+    parameterData?.simulation_parameter,
+    parameterData?.document_parameter,
+    parameterData?.persona_parameter,
+    parameterData?.scenario_parameter,
+    parameterData?.video_parameter,
+    parameterData?.department_ids,
+    parameterData?.field_ids,
+    parameterData?.field_active_states,
+    parameterData?.field_default_states,
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -709,7 +694,7 @@ function ParameterComponent({
         return {};
       }
 
-      const parameterData = serverData as GetParameterOut;
+      const parameterData = serverData as ParameterGetOut;
       const deptIds = parameterData.department_ids || [];
       const fieldIds: string[] = [];
       const fieldActiveStates: Record<string, boolean> = {};
@@ -1805,7 +1790,7 @@ function ParameterComponent({
 
 // Helper function to generate stable ID from server prop
 function getStableServerPropId(
-  data: GetParameterOut | undefined
+  data: ParameterGetOut | undefined
 ): string | null {
   if (!data) return null;
   if (typeof data === "object" && data !== null) {

@@ -45,7 +45,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Building2, Edit, Eye, Trash2, UploadCloud, X } from "lucide-react";
+import { Building2, Edit, Eye, Trash2, X } from "lucide-react";
 
 import type {
   DeleteDocumentIn,
@@ -69,7 +69,7 @@ export interface DocumentsProps {
   listData: DocumentsListOut;
   // Server actions (replaces useMutation)
   deleteDocumentAction?: (
-    input: DeleteDocumentIn,
+    input: DeleteDocumentIn
   ) => Promise<DeleteDocumentOut>;
 }
 
@@ -101,19 +101,16 @@ export default function Documents({
   // Extract data from V3 response - arrays directly (composite types)
   const documents = useMemo(
     () => documentsData?.documents || [],
-    [documentsData],
+    [documentsData]
   );
   const scenarios = useMemo(
     () => documentsData?.scenarios || [],
-    [documentsData],
+    [documentsData]
   );
-  const fields = useMemo(
-    () => documentsData?.fields || [],
-    [documentsData],
-  );
+  const fields = useMemo(() => documentsData?.fields || [], [documentsData]);
   const departments = useMemo(
     () => documentsData?.departments || [],
-    [documentsData],
+    [documentsData]
   );
 
   // Create lookup maps from arrays for performance (replacing old mappings)
@@ -156,7 +153,7 @@ export default function Documents({
           value: opt.value!,
           label: opt.label!,
         })),
-    [documentsData?.scenario_options],
+    [documentsData?.scenario_options]
   );
   const departmentOptions = useMemo(
     () =>
@@ -166,7 +163,7 @@ export default function Documents({
           value: opt.value!,
           label: opt.label!,
         })),
-    [documentsData?.department_options],
+    [documentsData?.department_options]
   );
 
   // Handle document preview
@@ -303,7 +300,7 @@ export default function Documents({
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, fieldMapping],
+    [scenarioMapping, fieldMapping]
   );
 
   // Permission checking using server-provided flags
@@ -312,7 +309,7 @@ export default function Documents({
       const doc = documents.find((d) => d.document_id === documentId);
       return doc?.can_delete ?? false;
     },
-    [documents],
+    [documents]
   );
 
   // Handle document edit - navigate to edit page
@@ -320,7 +317,7 @@ export default function Documents({
     (document: (typeof documents)[number]) => {
       router.push(`/management/documents/d/${document.document_id}`);
     },
-    [router],
+    [router]
   );
 
   // Handle single document delete
@@ -329,7 +326,7 @@ export default function Documents({
       setDeletingDocument(document);
       setShowDeleteDialog(true);
     },
-    [],
+    []
   );
 
   // Create table instance for filtering and sorting (cards are rendered from rows)
@@ -381,7 +378,7 @@ export default function Documents({
 
     if (!canDeleteDocument(deletingDocument.document_id)) {
       toast.error(
-        "This document cannot be deleted as it is used in active scenarios",
+        "This document cannot be deleted as it is used in active scenarios"
       );
       setShowDeleteDialog(false);
       setDeletingDocument(null);
@@ -400,7 +397,7 @@ export default function Documents({
       setDeletingDocument(null);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete document",
+        error instanceof Error ? error.message : "Failed to delete document"
       );
     } finally {
       setIsDeleting(false);
@@ -411,16 +408,8 @@ export default function Documents({
     <TooltipProvider>
       <div className="space-y-6">
         {documents.length === 0 ? (
-          <div className="col-span-full">
-            <div className="border-dashed border-2 rounded-lg">
-              <div className="flex flex-col items-center justify-center py-12">
-                <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No documents yet</h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  Documents will appear here once uploaded
-                </p>
-              </div>
-            </div>
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground">No documents found</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -556,18 +545,19 @@ export default function Documents({
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            {document.document_id && canDeleteDocument(document.document_id) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                data-testid={`delete-${document.document_id}`}
-                                onClick={() => handleSingleDelete(document)}
-                                aria-label={`Delete ${document.name}`}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                            {document.document_id &&
+                              canDeleteDocument(document.document_id) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  data-testid={`delete-${document.document_id}`}
+                                  onClick={() => handleSingleDelete(document)}
+                                  aria-label={`Delete ${document.name}`}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                           </div>
                         </div>
                       </CardHeader>
@@ -601,7 +591,9 @@ export default function Documents({
                           )}
                         <div className="text-xs text-muted-foreground">
                           Updated{" "}
-                          {document.updated_at ? new Date(document.updated_at).toLocaleDateString() : "-"}
+                          {document.updated_at
+                            ? new Date(document.updated_at).toLocaleDateString()
+                            : "-"}
                         </div>
                       </CardContent>
                     </Card>
@@ -697,8 +689,10 @@ export default function Documents({
                     upload_id: previewDocument.upload_id ?? null,
                     field_ids: previewDocument.field_ids ?? null,
                     valid_field_ids: previewDocument.valid_field_ids ?? null,
-                    active_scenario_count: previewDocument.active_scenario_count ?? null,
-                    total_scenario_links: previewDocument.total_scenario_links ?? null,
+                    active_scenario_count:
+                      previewDocument.active_scenario_count ?? null,
+                    total_scenario_links:
+                      previewDocument.total_scenario_links ?? null,
                   }}
                   bare={true}
                   isFormDocument={false}
