@@ -1,0 +1,211 @@
+/**
+ * GenericChatInterface.tsx
+ * Main orchestrator component (like Persona.tsx)
+ * Accepts pluggable components as props and manages layout
+ * All data and handlers flow through props - no database dependencies
+ */
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import React from "react";
+
+// Import component prop types (each component defines its own)
+import type { GradedMessagesViewProps } from "../chatAreas/GradedMessagesView";
+import type { MessagesViewProps } from "../chatAreas/MessagesView";
+import type { RubricViewProps } from "../chatAreas/RubricView";
+import type { VideoViewProps } from "../chatAreas/VideoView";
+import type { ChatHeaderProps } from "../chatHeaders/AttemptChatHeader";
+import type { DocumentAreaProps } from "../documentAreas/AttemptDocumentArea";
+import type { QuestionResponsesInputProps } from "../inputAreas/QuestionResponsesInput";
+import type { TextInputProps } from "../inputAreas/TextInput";
+import type { VoiceInputProps } from "../inputAreas/VoiceInput";
+
+export type ChatAreaViewMode =
+  | "messages"
+  | "graded-messages"
+  | "video"
+  | "rubric";
+
+export interface GenericChatInterfaceProps {
+  // Pluggable components (like resource components in Persona.tsx)
+  chat_header: React.ComponentType<ChatHeaderProps>;
+  chat_area: React.ComponentType<
+    | MessagesViewProps
+    | GradedMessagesViewProps
+    | VideoViewProps
+    | RubricViewProps
+  >;
+  document_area?: React.ComponentType<DocumentAreaProps>;
+  input_area: React.ComponentType<
+    TextInputProps | VoiceInputProps | QuestionResponsesInputProps
+  >;
+
+  // View mode for chat area
+  chat_area_view_mode: ChatAreaViewMode;
+
+  // Handler props (WebSocket orchestration callbacks)
+  on_send_message: (message: string) => void;
+  on_stop_message: () => void;
+  on_voice_start?: () => Promise<void>;
+  on_voice_stop?: () => Promise<void>;
+
+  // Configuration props
+  layout?: "default" | "custom";
+  show_documents?: boolean;
+  show_document_modal?: boolean;
+  show_objectives_modal?: boolean;
+  input_panel_height?: number;
+
+  // Standard props
+  disabled?: boolean;
+
+  // Data props are passed via render props - each component receives its own data
+  // These are passed to child components by the setup file
+  chat_header_props: ChatHeaderProps;
+  chat_area_props:
+    | MessagesViewProps
+    | GradedMessagesViewProps
+    | VideoViewProps
+    | RubricViewProps;
+  document_area_props?: DocumentAreaProps;
+  input_area_props:
+    | TextInputProps
+    | VoiceInputProps
+    | QuestionResponsesInputProps;
+}
+
+export function GenericChatInterface({
+  chat_header: ChatHeader,
+  chat_area: ChatArea,
+  document_area: DocumentArea,
+  input_area: InputArea,
+  chat_area_view_mode,
+  on_send_message,
+  on_stop_message,
+  on_voice_start,
+  on_voice_stop,
+  layout = "default",
+  show_documents = false,
+  show_document_modal = false,
+  show_objectives_modal = false,
+  input_panel_height = 70,
+  disabled = false,
+  chat_header_props,
+  chat_area_props,
+  document_area_props,
+  input_area_props,
+}: GenericChatInterfaceProps) {
+  return (
+    <div className="h-[calc(100vh-4rem)]" data-testid="generic-chat-interface">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Main Chat Area */}
+        <ResizablePanel
+          defaultSize={show_documents && document_area_props ? 70 : 100}
+          className="md:flex-none"
+        >
+          <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none">
+            <div className="h-full flex flex-col">
+              {/* Header */}
+              <ChatHeader {...chat_header_props} disabled={disabled} />
+
+              {/* Messages/Rubric/Video Area */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <ScrollArea className="flex-1 px-1 min-h-0">
+                  <ChatArea {...(chat_area_props as any)} />
+                </ScrollArea>
+              </div>
+
+              {/* Input Area */}
+              <div
+                style={{
+                  height: `${input_panel_height}px`,
+                  minHeight: "70px",
+                  maxHeight: "160px",
+                }}
+              >
+                <InputArea {...(input_area_props as any)} />
+              </div>
+            </div>
+          </Card>
+        </ResizablePanel>
+
+        {/* Document Area */}
+        {show_documents && DocumentArea && document_area_props && (
+          <DocumentArea {...document_area_props} disabled={disabled} />
+        )}
+      </ResizablePanelGroup>
+
+      {/* Document Modal - Mobile Only */}
+      {show_document_modal && document_area_props && (
+        <Dialog open={show_document_modal} onOpenChange={() => {}}>
+          <DialogContent
+            className="sm:max-w-4xl max-h-[80vh] md:overflow-hidden overflow-auto flex flex-col"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {document_area_props.documents.find(
+                  (doc) =>
+                    doc.document_id === document_area_props.selected_document_id
+                )?.name || "Document"}
+              </DialogTitle>
+              <DialogDescription>View scenario document</DialogDescription>
+            </DialogHeader>
+            {/* Document content would be rendered here */}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {}}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Objectives Modal - Mobile Only */}
+      {show_objectives_modal && chat_header_props.objectives && (
+        <Dialog open={show_objectives_modal} onOpenChange={() => {}}>
+          <DialogContent
+            className="sm:max-w-2xl max-h-[80vh] overflow-auto flex flex-col"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <DialogHeader>
+              <DialogTitle>Learning Objectives</DialogTitle>
+              <DialogDescription>
+                View the learning objectives for this scenario
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto py-4">
+              <ul className="space-y-2 list-none">
+                {chat_header_props.objectives.map((objective, index) => (
+                  <li
+                    key={index}
+                    className="font-normal flex items-start gap-2"
+                  >
+                    <span className="text-primary mt-1.5 flex-shrink-0">•</span>
+                    <span className="flex-1">{objective}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {}}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
