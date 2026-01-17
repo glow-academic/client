@@ -44,6 +44,10 @@ router.include_router(conversations_router)
 from app.api.v4.resources.debug_info.create import router as debug_info_router
 
 router.include_router(debug_info_router)
+from app.api.v4.resources.default_accounts.create import \
+    router as default_accounts_router
+
+router.include_router(default_accounts_router)
 from app.api.v4.resources.departments.create import \
     router as departments_router
 
@@ -187,9 +191,6 @@ from app.api.v4.resources.runs_rubric_grade_agents.create import \
     router as runs_rubric_grade_agents_router
 
 router.include_router(runs_rubric_grade_agents_router)
-from app.api.v4.resources.ranges.create import router as ranges_router
-
-router.include_router(ranges_router)
 from app.api.v4.resources.scenario_flags.create import \
     router as scenario_flags_router
 

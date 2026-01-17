@@ -24504,43 +24504,6 @@ class QuestionsApiResponse(BaseModel):
 
 
 
-# Generated from: ranges
-
-class RangesSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    min_count: int
-    max_count: int
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.min_count,
-            self.max_count,
-            self.mcp,
-        )
-
-class RangesSqlRow(BaseModel):
-
-    range_id: UUID | None = None
-
-class RangesApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    min_count: int
-    max_count: int
-    mcp: bool | None = False
-
-class RangesApiResponse(BaseModel):
-
-    range_id: UUID | None = None
-
-
-
 # Generated from: reasoning_levels
 
 class ReasoningLevelsSqlParams(BaseModel):
@@ -38699,12 +38662,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "QuestionsApiRequest",
         "QuestionsApiResponse",
     ),
-    "app/sql/v4/resources/ranges_complete.sql": (
-        "RangesSqlParams",
-        "RangesSqlRow",
-        "RangesApiRequest",
-        "RangesApiResponse",
-    ),
     "app/sql/v4/resources/reasoning_levels_complete.sql": (
         "ReasoningLevelsSqlParams",
         "ReasoningLevelsSqlRow",
@@ -41992,11 +41949,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/questions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/ranges_complete.sql"]
     ) -> SqlString: ...
 
     @overload

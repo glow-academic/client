@@ -2318,6 +2318,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/default_accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Default Accounts
+         * @description Create default_accounts resource (always INSERT).
+         */
+        post: operations["create_default_accounts_api_v4_resources_default_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/departments": {
         parameters: {
             query?: never;
@@ -3192,26 +3212,6 @@ export interface paths {
          * @description Create runs_rubric_grade_agents resource (always INSERT).
          */
         post: operations["create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/ranges": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Ranges
-         * @description Create ranges resource (always INSERT).
-         */
-        post: operations["create_ranges_api_v4_resources_ranges_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6729,6 +6729,31 @@ export interface components {
         DebugInfoApiResponse: {
             /** Debug Info Id */
             debug_info_id?: string | null;
+        };
+        /** DefaultAccountsApiRequest */
+        DefaultAccountsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Type */
+            type: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** DefaultAccountsApiResponse */
+        DefaultAccountsApiResponse: {
+            /** Id */
+            id?: string | null;
         };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
@@ -19200,33 +19225,6 @@ export interface components {
             /** Question Id */
             question_id?: string | null;
         };
-        /** RangesApiRequest */
-        RangesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Min Count */
-            min_count: number;
-            /** Max Count */
-            max_count: number;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** RangesApiResponse */
-        RangesApiResponse: {
-            /** Range Id */
-            range_id?: string | null;
-        };
         /** ReasoningLevelsApiRequest */
         ReasoningLevelsApiRequest: {
             /**
@@ -25045,6 +25043,43 @@ export interface operations {
             };
         };
     };
+    create_default_accounts_api_v4_resources_default_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefaultAccountsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefaultAccountsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_department_api_v4_resources_departments_post: {
         parameters: {
             query?: never;
@@ -26660,43 +26695,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunsRubricGradeAgentsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_ranges_api_v4_resources_ranges_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RangesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RangesApiResponse"];
                 };
             };
             /** @description Validation Error */

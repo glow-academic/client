@@ -1,4 +1,4 @@
-"""ranges resource endpoints."""
+"""default_accounts resource endpoints."""
 
 from .create import router
 
