@@ -11,7 +11,6 @@
 ## Agent Tables
 
 - `agent_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
-- `agent_department_prompts`(active, created_at, updated_at, <u>agent_id</u>, <u>department_id</u>, <u>prompt_id</u>, generated, mcp)
 - `agent_departments`(active, created_at, updated_at, <u>agent_id</u>, <u>department_id</u>, generated, mcp)
 - `agent_descriptions`(<u>agent_id</u>, <u>description_id</u>, created_at, updated_at, generated, mcp, active)
 - `agent_flags`(<u>agent_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
@@ -41,7 +40,7 @@
 - `args_outputs_resource`(<u>id</u>, args_id, name, template, created_at, updated_at, active, generated, call_id, mcp)
 - `args_outputs_values`(<u>id</u>, call_id, args_outputs_id, string_value, number_value, boolean_value, created_at, updated_at)
 - `args_resource`(<u>id</u>, name, description, field_type, required, default_value, position, created_at, updated_at, active, generated, call_id, mcp, type)
-- `args_values`(<u>id</u>, call_id, args_id, string_value, number_value, boolean_value, created_at, updated_at)
+- `args_values`(<u>id</u>, call_id (nullable), args_id, string_value, number_value, boolean_value, created_at, updated_at)
 
 ## Artifact Tables
 
@@ -452,7 +451,7 @@
 
 ## Prompt Tables
 
-- `prompt_departments`(active, created_at, updated_at, <u>department_id</u>, <u>prompt_id</u>, generated, mcp)
+(No tables - prompts are linked directly via agent_prompts)
 
 ## Prompts Tables
 

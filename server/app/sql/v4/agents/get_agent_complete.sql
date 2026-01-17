@@ -129,6 +129,14 @@ CREATE TYPE types.q_get_agent_v4_voice_resource AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_agent_v4_tool AS (
+    tool_id uuid,
+    name text,
+    description text,
+    generated boolean,
+    group_id uuid
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_agent_v4(
     profile_id uuid,
@@ -221,9 +229,18 @@ RETURNS TABLE (
     voices_required boolean,
     voice_suggestions uuid[],
     voices types.q_get_agent_v4_voice_resource[],
+    -- Multi-select resources: tools
+    tool_ids uuid[],
+    tool_resources types.q_get_agent_v4_tool[],
+    show_tools boolean,
+    tools_agent_id uuid,
+    tools_required boolean,
+    tool_suggestions uuid[],
+    tools types.q_get_agent_v4_tool[],
     -- Agent-specific fields
     system_prompt text,
     active boolean,
+    -- Backward compatibility: role field (deprecated, use tools resource instead)
     role text,
     -- Note: temperature_level_id, reasoning_level_id, voice_ids are now in resource fields above
     -- These backward compatibility fields are kept in SELECT clause only (not in RETURNS TABLE)
@@ -410,7 +427,11 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'voices'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        ) as voices_has_tools
+        ) as voices_has_tools,
+        EXISTS (
+            SELECT 1 FROM tool_artifact t
+            WHERE EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        ) as tools_has_tools
     FROM params x
 ),
 -- Missing tools check for can_edit and disabled_reason
@@ -477,7 +498,8 @@ ui_flags AS (
         CASE 
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
-        END as show_departments
+        END as show_departments,
+        true as show_tools  -- Always show tools picker if tools exist (checked later in SELECT)
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -747,6 +769,86 @@ department_suggestions_data AS (
     FROM params
     -- Always return at least one row
     LIMIT 1
+),
+-- Tool mapping data (selected tools for agent)
+tool_mapping_data AS (
+    SELECT 
+        t.id as tool_id,
+        (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), '') as description,
+        COALESCE(at.generated, false) as generated,
+        COALESCE(t.group_id, NULL) as group_id
+    FROM params x
+    LEFT JOIN agent_tools at ON at.agent_id = x.agent_id AND at.active = true
+    LEFT JOIN tool_artifact t ON t.id = at.tool_id
+    WHERE x.agent_id IS NOT NULL
+      AND t.id IS NOT NULL
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+),
+-- Tool IDs (selected tool IDs for agent)
+tool_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT agent_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(at.tool_id ORDER BY at.created_at)
+                 FROM agent_tools at
+                 JOIN tool_artifact t ON t.id = at.tool_id
+                 WHERE at.agent_id = (SELECT agent_id FROM params)
+                   AND at.active = true
+                   AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)),
+                ARRAY[]::uuid[]
+            )
+        END as tool_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Tool suggestions: linked to agents via agent_tools OR same group with generated=true
+tool_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(at.tool_id ORDER BY at.created_at DESC)
+             FROM (
+                 SELECT DISTINCT at.tool_id, MAX(at.created_at) as created_at
+                 FROM agent_tools at
+                 JOIN tool_artifact t ON t.id = at.tool_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE at.tool_id IS NOT NULL
+                   AND at.active = true
+                   AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+                   AND (
+                       -- Option 1: Linked to agents via agent_tools (validated by usage)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       at.generated = false
+                       OR
+                       (
+                           at.generated = true
+                           AND t.generated = true
+                           AND t.group_id = dgd.group_id
+                       )
+                   )
+                 GROUP BY at.tool_id
+                 ORDER BY MAX(at.created_at) DESC
+                 LIMIT 20
+             ) at),
+            ARRAY[]::uuid[]
+        ) as tool_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- All available tools (filtered by active flag)
+tools_data AS (
+    SELECT 
+        t.id as tool_id,
+        (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), '') as description,
+        COALESCE(t.generated, false) as generated,
+        COALESCE(t.group_id, NULL) as group_id
+    FROM params x
+    JOIN tool_artifact t ON EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+    ORDER BY t.created_at DESC
 ),
 -- Suggested resource objects CTEs - fetch full resource objects for suggestions
 names_suggestions_objects AS (
@@ -1798,6 +1900,12 @@ voices_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'tools' resource (tools are selected manually, not generated, so returns NULL)
+tools_agent_data AS (
+    SELECT NULL::uuid as agent_id
+    FROM params
+    LIMIT 1
+),
 -- Agent selection for 'flags' resource
 flag_agent_data AS (
     WITH eligible_agents AS (
@@ -2139,6 +2247,25 @@ voices_suggestions_objects AS (
     -- Always return at least one row, even if no options exist
     LIMIT 1
 ),
+tools_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (td.tool_id, td.name, td.description, COALESCE(td.generated, false), COALESCE(td.group_id, NULL))::types.q_get_agent_v4_tool
+                    ORDER BY array_position(tsd.tool_suggestions, td.tool_id)
+                )
+                FROM tool_suggestions_data tsd
+                CROSS JOIN LATERAL unnest(tsd.tool_suggestions) AS suggestion_id
+                JOIN tools_data td ON td.tool_id = suggestion_id
+                WHERE td.name IS NOT NULL AND td.name != ''
+            ),
+            ARRAY[]::types.q_get_agent_v4_tool[]
+        ) as tools
+    FROM params
+    -- Always return at least one row, even if no suggestions exist
+    LIMIT 1
+),
 -- Valid model IDs CTE (ensure always returns uuid[])
 valid_model_ids_data AS (
     SELECT 
@@ -2374,9 +2501,36 @@ SELECT
     -- Voices array: all available options from selected model (model-dependent)
     -- Use suggestions objects CTE for consistency, but in practice this will be populated from model
     COALESCE(vso.voices, ARRAY[]::types.q_get_agent_v4_voice_resource[]) as voices,
+    -- Multi-select resources: tools
+    COALESCE(tid.tool_ids, ARRAY[]::uuid[])::uuid[] as tool_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (tmd.tool_id, tmd.name, tmd.description, COALESCE(tmd.generated, false), COALESCE(tmd.group_id, NULL))::types.q_get_agent_v4_tool
+            ORDER BY tmd.name
+        ) FROM tool_mapping_data tmd WHERE tmd.tool_id = ANY(COALESCE(tid.tool_ids, ARRAY[]::uuid[]))),
+        ARRAY[]::types.q_get_agent_v4_tool[]
+    ) as tool_resources,
+    CASE 
+        WHEN NOT tec.tools_has_tools THEN false
+        ELSE CASE 
+            WHEN (SELECT COUNT(*) FROM tools_data) > 0 THEN true
+            ELSE false
+        END
+    END as show_tools,
+    (SELECT agent_id FROM tools_agent_data)::uuid as tools_agent_id,
+    false::boolean as tools_required,
+    COALESCE(tsd.tool_suggestions, ARRAY[]::uuid[]) as tool_suggestions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (td.tool_id, td.name, td.description, COALESCE(td.generated, false), COALESCE(td.group_id, NULL))::types.q_get_agent_v4_tool
+            ORDER BY td.name
+        ) FROM tools_data td),
+        ARRAY[]::types.q_get_agent_v4_tool[]
+    ) as tools,
     -- Agent-specific fields
     COALESCE(aap.system_prompt, '')::text as system_prompt,
     COALESCE(ai.active, true)::boolean as active,
+    -- Backward compatibility: role field (deprecated, use tools resource instead)
     COALESCE(ai.role, 'assistant')::text as role,
     -- Note: temperature_level_id, reasoning_level_id, voice_ids are now in resource fields above
     -- These backward compatibility fields are kept for API compatibility but should use resource fields instead
@@ -2425,6 +2579,9 @@ CROSS JOIN voice_suggestions_data vsd
 CROSS JOIN reasoning_levels_suggestions_objects rlso
 CROSS JOIN temperature_levels_suggestions_objects tlso
 CROSS JOIN voices_suggestions_objects vso
+CROSS JOIN tool_ids_data tid
+CROSS JOIN tool_suggestions_data tsd
+CROSS JOIN tools_suggestions_objects tso
 CROSS JOIN valid_model_ids_data vmid
 CROSS JOIN valid_department_ids_data vdid
 LEFT JOIN agent_info ai ON ai.agent_id = (SELECT agent_id FROM params)

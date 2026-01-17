@@ -316,8 +316,8 @@ LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
 LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap.prompt_id
+LEFT JOIN agent_prompts ap_prompt ON ap_prompt.agent_id = a.id AND ap_prompt.active = true
+LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_prompt.prompt_id
 LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
 LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
 -- Get keys via settings system: provider -> active settings -> setting_provider_keys

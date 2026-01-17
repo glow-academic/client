@@ -16,7 +16,6 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 
-import { AGENT_ROLES } from "@/components/common/forms/AgentRolePicker";
 import {
   GenericForm,
   type StepStatus,
@@ -29,10 +28,12 @@ import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
+import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
 import { Prompts } from "@/components/resources/Prompts";
 import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
 import { Button } from "@/components/ui/button";
 import {
@@ -290,7 +291,6 @@ export default function Agent({
     // Draft ID (URL-backed, updated when draft is created)
     draftId: parseAsString,
     // Search params for filtering (URL-backed for browser back/forward)
-    roleSearch: parseAsString,
     modelSearch: parseAsString,
     reasoningSearch: parseAsString,
     voiceSearch: parseAsString,
@@ -322,11 +322,12 @@ export default function Agent({
     prompt_id: string | null;
     modelId: string;
     active: boolean;
-    role: string;
+    tool_ids: string[];
     departmentIds: string[];
     temperature_level_id: string | null;
     reasoning_level_id: string | null;
     voice_ids: string[];
+    instructions_id: string | null;
   };
 
   const defaultDepartmentIds = useMemo(
@@ -348,11 +349,12 @@ export default function Agent({
         prompt_id: null,
         modelId: "",
         active: true,
-        role: "assistant",
+        tool_ids: [],
         departmentIds: defaultDepartmentIds,
         temperature_level_id: null,
         reasoning_level_id: null,
         voice_ids: [],
+        instructions_id: null,
       };
     }
 
@@ -364,11 +366,12 @@ export default function Agent({
       prompt_id: data.prompt_id || null,
       modelId: data.model_id || "",
       active: data.active ?? true,
-      role: data.role || "assistant",
+      tool_ids: data.tool_ids || [],
       departmentIds: data.department_ids || [],
       temperature_level_id: data.temperature_level_id || null,
       reasoning_level_id: data.reasoning_level_id || null,
       voice_ids: data.voice_ids || [],
+      instructions_id: data.instructions_id || null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -385,17 +388,19 @@ export default function Agent({
     agentDetailDefault?.description,
     agentDetailDefault?.system_prompt,
     agentDetailDefault?.model_id,
-    agentDetailDefault?.role,
+    agentDetailDefault?.tool_ids,
     agentDetailDefault?.department_ids,
+    agentDetailDefault?.instructions_id,
     agentDetail?.name,
     agentDetail?.description,
     agentDetail?.system_prompt,
     agentDetail?.model_id,
-    agentDetail?.role,
+    agentDetail?.tool_ids,
     agentDetail?.department_ids,
     agentDetail?.temperature_level_id,
     agentDetail?.reasoning_level_id,
     agentDetail?.voice_ids,
+    agentDetail?.instructions_id,
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -507,38 +512,6 @@ export default function Agent({
 
   // formData is no longer needed - form fields are in draftState, URL params are in urlParams
 
-  // Helper function to get required modalities based on agent_type
-  const getRequiredModalities = useCallback(
-    (
-      agentType: string
-    ): {
-      input: string[];
-      output: string[];
-    } => {
-      switch (agentType) {
-        case "simulation":
-        case "hint":
-        case "question":
-        case "scenario":
-        case "grade":
-        case "document":
-        case "classify":
-        case "eval":
-          return { input: ["text"], output: ["text"] };
-        case "voice":
-        case "audio":
-          return { input: ["text", "audio"], output: ["text", "audio"] };
-        case "image":
-          return { input: [], output: ["image"] };
-        case "video":
-          return { input: [], output: ["video"] };
-        default:
-          return { input: ["text"], output: ["text"] };
-      }
-    },
-    []
-  );
-
   // Helper to extract modalities from model info
   // The API returns input_modalities and output_modalities as separate fields
   const getModelModalities = useCallback(
@@ -579,61 +552,10 @@ export default function Agent({
     []
   );
 
-  // Filter valid_model_ids based on agent_type modality requirements
+  // Filter valid_model_ids - tools don't determine model capabilities, so return all valid models
   const filteredValidModelIds = useMemo(() => {
-    if (!draftState.role || !agentData?.valid_model_ids || !modelMapping) {
-      return agentData?.valid_model_ids || [];
-    }
-
-    const requiredModalities = getRequiredModalities(draftState.role);
-    const filtered: string[] = [];
-
-    for (const modelId of agentData.valid_model_ids) {
-      const modelInfo = modelMapping[modelId];
-      if (!modelInfo) continue;
-
-      const { input: modelInputMods, output: modelOutputMods } =
-        getModelModalities(modelInfo);
-
-      // Special rule: Models with audio input AND output should ONLY be available for simulation-voice role
-      const hasAudioInput = modelInputMods.includes("audio");
-      const hasAudioOutput = modelOutputMods.includes("audio");
-      const isAudioModel = hasAudioInput && hasAudioOutput;
-
-      if (isAudioModel && draftState.role !== "simulation-voice") {
-        // Skip audio models for non-voice roles
-        continue;
-      }
-
-      // If no modalities configured, include the model (backward compatibility)
-      // Otherwise, check if it has required modalities
-      if (modelInputMods.length === 0 && modelOutputMods.length === 0) {
-        // No modalities configured - include all models for backward compatibility
-        filtered.push(modelId);
-      } else {
-        const hasRequiredInput =
-          requiredModalities.input.length === 0 ||
-          requiredModalities.input.every((mod) => modelInputMods.includes(mod));
-        const hasRequiredOutput =
-          requiredModalities.output.length === 0 ||
-          requiredModalities.output.every((mod) =>
-            modelOutputMods.includes(mod)
-          );
-
-        if (hasRequiredInput && hasRequiredOutput) {
-          filtered.push(modelId);
-        }
-      }
-    }
-
-    return filtered;
-  }, [
-    draftState.role,
-    agentData?.valid_model_ids,
-    modelMapping,
-    getRequiredModalities,
-    getModelModalities,
-  ]);
+    return agentData?.valid_model_ids || [];
+  }, [agentData?.valid_model_ids]);
 
   // Get selected model capabilities
   const selectedModelCapabilities = useMemo(() => {
@@ -775,10 +697,11 @@ export default function Agent({
         ] as string[],
       },
       {
-        id: "role",
-        title: "Role",
-        description: "Select the agent role that defines its capabilities.",
-        resetFields: ["role"] as string[],
+        id: "tools",
+        title: "Tools",
+        description:
+          "Select the tools this agent can use. Tools define what operations the agent can perform.",
+        resetFields: ["tool_ids"] as string[],
       },
       {
         id: "model",
@@ -832,7 +755,15 @@ export default function Agent({
       resetFields: ["prompt_id"] as string[],
     };
 
-    return [...baseSteps, ...configSteps, promptStep];
+    const instructionsStep = {
+      id: "instructions",
+      title: "Instructions",
+      description: "Define instructions for the agent's behavior.",
+      optional: true,
+      resetFields: ["instructions_id"] as string[],
+    };
+
+    return [...baseSteps, ...configSteps, promptStep, instructionsStep];
   }, [selectedModelCapabilities]);
 
   // Reset handler for GenericForm - resets draftState fields
@@ -857,8 +788,8 @@ export default function Agent({
           case "departmentIds":
             resetUpdates.departmentIds = initialDraftState.departmentIds;
             break;
-          case "role":
-            resetUpdates.role = initialDraftState.role;
+          case "tool_ids":
+            resetUpdates.tool_ids = initialDraftState.tool_ids;
             break;
           case "modelId":
             resetUpdates.modelId = initialDraftState.modelId;
@@ -876,6 +807,9 @@ export default function Agent({
             break;
           case "prompt_id":
             resetUpdates.prompt_id = initialDraftState.prompt_id;
+            break;
+          case "instructions_id":
+            resetUpdates.instructions_id = initialDraftState.instructions_id;
             break;
         }
       });
@@ -953,15 +887,19 @@ export default function Agent({
           model_id: draftState.modelId!.trim(),
           prompt_id: draftState.prompt_id || null,
           system_prompt: null, // Prompts component handles system_prompt via prompt_id
-          instructions_id: agentData?.instructions_id || null,
+          instructions_id: draftState.instructions_id || null,
           active_flag_id: agentData?.active_flag_id || null,
           department_ids: finalDepartmentIds,
-          artifact_name: draftState.role || "assistant",
+          artifact_name: "assistant", // Default artifact name (tools replace role)
           temperature_level_id: draftState.temperature_level_id || null,
           reasoning_level_id: draftState.reasoning_level_id || null,
           voice_ids:
             draftState.voice_ids && draftState.voice_ids.length > 0
               ? draftState.voice_ids
+              : [],
+          tool_ids:
+            draftState.tool_ids && draftState.tool_ids.length > 0
+              ? draftState.tool_ids
               : [],
         });
         toast.success(
@@ -1008,19 +946,18 @@ export default function Agent({
       stepId: string,
       _formData: Values<Record<string, Parser<unknown>>>
     ): StepStatus => {
-      const hasRole = !!draftState.role;
       const hasModel = !!draftState.modelId?.trim();
       const hasName = !!draftState.name?.trim();
       const hasDescription = !!draftState.description?.trim();
+      const hasTools = draftState.tool_ids && draftState.tool_ids.length > 0;
 
       switch (stepId) {
         case "basic":
           return hasName && hasDescription ? "completed" : "active";
-        case "role":
+        case "tools":
           if (!hasName || !hasDescription) return "pending";
-          return hasRole ? "completed" : "active";
+          return hasTools ? "completed" : "active";
         case "model":
-          if (!hasRole) return "pending";
           return hasModel ? "completed" : "active";
         case "temperature":
           if (!hasModel) return "pending";
@@ -1037,99 +974,15 @@ export default function Agent({
         case "prompt":
           if (!hasModel) return "pending";
           return draftState.prompt_id ? "completed" : "active";
+        case "instructions":
+          // Instructions are optional, always completed if model selected
+          if (!hasModel) return "pending";
+          return "completed";
         default:
           return "pending";
       }
     },
     [draftState]
-  );
-
-  // Handle role change - do NOT reset model when role is unselected
-  const handleRoleChange = useCallback(
-    (roleId: string) => {
-      setDraftState((prev) => ({ ...prev, role: roleId }));
-
-      // If unselecting role (empty string), do NOT reset model - just update role
-      if (!roleId || roleId === "") {
-        return;
-      }
-
-      // If a role is selected, check if current model matches role requirements
-      const requiredModalities = getRequiredModalities(roleId);
-      const currentModelId = draftState.modelId;
-      if (currentModelId && modelMapping) {
-        const modelInfo = modelMapping[currentModelId];
-        if (modelInfo) {
-          const { input: modelInputMods, output: modelOutputMods } =
-            getModelModalities(modelInfo);
-
-          // Special rule: Audio models (with both audio input and output) should only work with voice role
-          const hasAudioInput = modelInputMods.includes("audio");
-          const hasAudioOutput = modelOutputMods.includes("audio");
-          const isAudioModel = hasAudioInput && hasAudioOutput;
-
-          if (isAudioModel && roleId !== "voice") {
-            // Reset model if audio model selected but role is not voice
-            setDraftState((prev) => ({ ...prev, modelId: "" }));
-            return;
-          }
-
-          const hasRequiredInput = requiredModalities.input.every((mod) =>
-            modelInputMods.includes(mod)
-          );
-          const hasRequiredOutput = requiredModalities.output.every((mod) =>
-            modelOutputMods.includes(mod)
-          );
-          if (!hasRequiredInput || !hasRequiredOutput) {
-            // Reset to first valid model or empty
-            const filteredIds =
-              agentData?.valid_model_ids?.filter((id) => {
-                const info = modelMapping[id];
-                if (!info) return false;
-                const { input: inputMods, output: outputMods } =
-                  getModelModalities(info);
-
-                // Special rule: Audio models only for voice
-                const modelHasAudioInput = inputMods.includes("audio");
-                const modelHasAudioOutput = outputMods.includes("audio");
-                const modelIsAudio = modelHasAudioInput && modelHasAudioOutput;
-
-                if (modelIsAudio && roleId !== "voice") {
-                  return false;
-                }
-
-                return (
-                  requiredModalities.input.every((mod) =>
-                    inputMods.includes(mod)
-                  ) &&
-                  requiredModalities.output.every((mod) =>
-                    outputMods.includes(mod)
-                  )
-                );
-              }) || [];
-            setDraftState((prev) => ({
-              ...prev,
-              modelId: filteredIds[0] || "",
-            }));
-          }
-        }
-      }
-    },
-    [
-      draftState.modelId,
-      modelMapping,
-      agentData?.valid_model_ids,
-      getRequiredModalities,
-      getModelModalities,
-    ]
-  );
-
-  // Helper to get required modalities for a role (for role filtering)
-  const getRequiredModalitiesForRole = useCallback(
-    (roleId: string): { input: string[]; output: string[] } => {
-      return getRequiredModalities(roleId);
-    },
-    [getRequiredModalities]
   );
 
   // Helper to check if a resource type can be regenerated
@@ -1161,6 +1014,8 @@ export default function Agent({
           return agentData.temperature_level_resource?.generated ?? false;
         case "voices":
           return agentData.voice_resources?.some((v) => v.generated) ?? false;
+        case "tools":
+          return agentData.tool_resources?.some((t) => t.generated) ?? false;
         default:
           return false;
       }
@@ -1183,6 +1038,7 @@ export default function Agent({
           reasoning_levels: "reasoning_levels",
           temperature_levels: "temperature_levels",
           voices: "voices",
+          tools: "tools",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap && agentTypeMap[firstType]) {
@@ -1282,6 +1138,15 @@ export default function Agent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateInstructions = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["instructions"],
+        determineAgentType(["instructions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
@@ -1292,6 +1157,7 @@ export default function Agent({
       voice: ["voices"],
       prompt: ["prompts"],
       instructions: ["instructions"],
+      tools: ["tools"],
       all: [
         "names",
         "descriptions",
@@ -1303,6 +1169,7 @@ export default function Agent({
         "reasoning_levels",
         "temperature_levels",
         "voices",
+        "tools",
       ],
     }),
     []
@@ -1321,6 +1188,7 @@ export default function Agent({
       reasoning_levels: "Reasoning Levels",
       temperature_levels: "Temperature Levels",
       voices: "Voices",
+      tools: "Tools",
     }),
     []
   );
@@ -1376,6 +1244,7 @@ export default function Agent({
       instructions_id?: string | null;
       active_flag_id?: string | null;
       department_ids?: string[];
+      tool_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -1458,6 +1327,23 @@ export default function Agent({
           if (data.department_ids && data.department_ids.length > 0) {
             updates.departmentIds = [
               ...new Set([...prev.departmentIds, ...data.department_ids]),
+            ];
+          }
+          if (data.instructions_id) {
+            updates.instructions_id = data.instructions_id;
+          }
+          if (
+            data.tool_ids &&
+            Array.isArray(data.tool_ids) &&
+            data.tool_ids.length > 0
+          ) {
+            updates.tool_ids = [
+              ...new Set([
+                ...prev.tool_ids,
+                ...data.tool_ids.filter(
+                  (id): id is string => typeof id === "string"
+                ),
+              ]),
             ];
           }
           return { ...prev, ...updates };
@@ -1594,8 +1480,8 @@ export default function Agent({
               switch (stepId) {
                 case "basic":
                   return "Basic information reset";
-                case "role":
-                  return "Role reset";
+                case "tools":
+                  return "Tools reset";
                 case "model":
                   return "Model reset";
                 case "temperature":
@@ -1606,6 +1492,8 @@ export default function Agent({
                   return "Voices reset";
                 case "prompt":
                   return "Prompt reset";
+                case "instructions":
+                  return "Instructions reset";
                 default:
                   return "Reset";
               }
@@ -1817,66 +1705,7 @@ export default function Agent({
                   );
                 }
 
-                case "role": {
-                  const roleSearch =
-                    (stepFormData["roleSearch"] as string) || "";
-
-                  // Filter roles based on selected model capabilities (computed directly, not with useMemo inside callback)
-                  let filteredRoles = [...AGENT_ROLES];
-
-                  // If a model is selected, filter roles based on model capabilities
-                  if (
-                    draftState.modelId &&
-                    modelMapping &&
-                    draftState.modelId in modelMapping
-                  ) {
-                    const modelInfo = modelMapping[draftState.modelId];
-                    if (modelInfo) {
-                      const { input: modelInputMods, output: modelOutputMods } =
-                        getModelModalities(modelInfo);
-                      const hasAudioInput = modelInputMods.includes("audio");
-                      const hasAudioOutput = modelOutputMods.includes("audio");
-                      const isAudioModel = hasAudioInput && hasAudioOutput;
-
-                      filteredRoles = filteredRoles.filter((role) => {
-                        if (isAudioModel) {
-                          return role.id === "voice";
-                        }
-                        const requiredModalities = getRequiredModalitiesForRole(
-                          role.id
-                        );
-                        const hasRequiredInput =
-                          requiredModalities.input.length === 0 ||
-                          requiredModalities.input.every((mod) =>
-                            modelInputMods.includes(mod)
-                          );
-                        const hasRequiredOutput =
-                          requiredModalities.output.length === 0 ||
-                          requiredModalities.output.every((mod) =>
-                            modelOutputMods.includes(mod)
-                          );
-                        return hasRequiredInput && hasRequiredOutput;
-                      });
-                    }
-                  }
-
-                  // Filter by search term
-                  if (roleSearch.trim()) {
-                    const searchLower = roleSearch.toLowerCase();
-                    filteredRoles = filteredRoles.filter(
-                      (role) =>
-                        role.name?.toLowerCase().includes(searchLower) ||
-                        role.description?.toLowerCase().includes(searchLower)
-                    );
-                  }
-
-                  // Sort: selected role first, then by name
-                  filteredRoles = filteredRoles.sort((a, b) => {
-                    if (a.id === draftState.role) return -1;
-                    if (b.id === draftState.role) return 1;
-                    return (a.name || "").localeCompare(b.name || "");
-                  });
-
+                case "tools": {
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1885,57 +1714,22 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={roleSearch}
-                      onSearchChange={(term) =>
-                        setStepFormData({ roleSearch: term || null })
-                      }
-                      searchPlaceholder="Search roles..."
-                      resetFields={["role"]}
-                      {...(onReset ? { onReset } : {})}
-                      resetLabel="Reset"
                     >
-                      <SelectableGrid
-                        items={filteredRoles}
-                        selectedId={draftState.role || null}
-                        onSelect={(roleId) => {
-                          // Allow unselecting by clicking the same role again
-                          if (roleId === draftState.role) {
-                            handleRoleChange("");
-                          } else {
-                            handleRoleChange(roleId);
-                          }
-                        }}
-                        getId={(role) => role.id}
-                        renderItem={(role, isSelected) => (
-                          <div
-                            className={cn(
-                              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                              "hover:shadow-md hover:bg-accent/50",
-                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                              isSelected && "ring-2 ring-primary bg-accent"
-                            )}
-                          >
-                            {isSelected && (
-                              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                                <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                              </div>
-                            )}
-                            <div className="flex items-start gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-sm leading-tight">
-                                  {role.name}
-                                </h3>
-                                {role.description && (
-                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                    {role.description}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        emptyMessage="No roles found. Try adjusting your search."
-                        disabled={isReadonly}
+                      <Tools
+                        tool_ids={agentData?.tool_ids ?? []}
+                        tool_resources={agentData?.tool_resources ?? []}
+                        show_tools={agentData?.show_tools ?? false}
+                        tool_suggestions={agentData?.tool_suggestions ?? []}
+                        tools={agentData?.tools ?? []}
+                        disabled={disabled}
+                        onChange={(ids) =>
+                          setDraftState((prev) => ({ ...prev, tool_ids: ids }))
+                        }
+                        label="Tools"
+                        description="Select the tools this agent can use. Tools define what operations the agent can perform."
+                        required={agentData?.tools_required ?? false}
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.tools_agent_id ?? null}
                       />
                     </StepCard>
                   );
@@ -2036,11 +1830,10 @@ export default function Agent({
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
-                      {filteredValidModelIds.length === 0 && draftState.role ? (
+                      {filteredValidModelIds.length === 0 ? (
                         <p className="text-xs text-muted-foreground">
-                          No models available for this agent type. Please select
-                          a different role or configure models with the required
-                          modalities.
+                          No models available. Please configure models in the
+                          system.
                         </p>
                       ) : (
                         <>
@@ -2068,19 +1861,7 @@ export default function Agent({
                                     input: modelInputMods,
                                     output: modelOutputMods,
                                   } = getModelModalities(modelInfo);
-                                  const hasAudioInput =
-                                    modelInputMods.includes("audio");
-                                  const hasAudioOutput =
-                                    modelOutputMods.includes("audio");
-                                  const isAudioModel =
-                                    hasAudioInput && hasAudioOutput;
-
-                                  if (
-                                    isAudioModel &&
-                                    draftState.role !== "voice"
-                                  ) {
-                                    handleRoleChange("voice");
-                                  }
+                                  // Audio models are valid for any agent (no role-based filtering)
                                 }
                               }
                               if (errors.modelId) {
@@ -2337,6 +2118,80 @@ export default function Agent({
                           {errors.prompt_id}
                         </p>
                       )}
+                    </StepCard>
+                  );
+                }
+
+                case "instructions": {
+                  return (
+                    <StepCard
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                      isEditMode={isEditMode}
+                      resetFields={["instructions_id"]}
+                      {...(onReset ? { onReset } : {})}
+                      resetLabel="Reset"
+                      actions={
+                        stepResources["instructions"] &&
+                        stepResources["instructions"].length > 0 &&
+                        agentData?.instructions_agent_id ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleOpenStepCardModal(
+                                      "instructions",
+                                      "generate"
+                                    )
+                                  }
+                                  disabled={
+                                    disabled || isGenerating("instructions")
+                                  }
+                                >
+                                  {isGenerating("instructions") ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Generate Instructions</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : undefined
+                      }
+                    >
+                      <Instructions
+                        instructions_id={draftState.instructions_id}
+                        instructions_resource={
+                          agentData?.instructions_resource ?? null
+                        }
+                        show_instructions={agentData?.show_instructions ?? true}
+                        instructions_suggestions={
+                          agentData?.instructions_suggestions ?? []
+                        }
+                        instructions={agentData?.instructions ?? []}
+                        disabled={disabled}
+                        onInstructionsIdChange={(id) =>
+                          setDraftState((prev) => ({
+                            ...prev,
+                            instructions_id: id,
+                          }))
+                        }
+                        onGenerate={handleGenerateInstructions}
+                        isGenerating={isGenerating("instructions")}
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.instructions_agent_id ?? null}
+                      />
                     </StepCard>
                   );
                 }

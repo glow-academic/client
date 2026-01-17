@@ -229,9 +229,9 @@ persona_system_prompt AS (
     SELECT 
         CASE 
             WHEN pi_inst.template IS NOT NULL AND pi_inst.template != '' THEN
-                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || pi_inst.template
+                pr_default.system_prompt || E'\n\n' || pi_inst.template
             ELSE
-                COALESCE(pr_dept.system_prompt, pr_default.system_prompt)
+                pr_default.system_prompt
         END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true

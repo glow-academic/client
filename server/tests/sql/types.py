@@ -59,45 +59,6 @@ class CreateAgentDepartmentLinkApiResponse(BaseModel):
 
 
 
-# Generated from: create_agent_department_prompt_link
-
-class CreateAgentDepartmentPromptLinkSqlParams(BaseModel):
-
-    agent_id: UUID
-    department_id: UUID
-    prompt_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.department_id,
-            self.prompt_id,
-        )
-
-class CreateAgentDepartmentPromptLinkSqlRow(BaseModel):
-
-    agent_id: UUID | None = None
-    department_id: UUID | None = None
-    prompt_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-
-class CreateAgentDepartmentPromptLinkApiRequest(BaseModel):
-
-    agent_id: UUID
-    department_id: UUID
-    prompt_id: UUID
-
-class CreateAgentDepartmentPromptLinkApiResponse(BaseModel):
-
-    agent_id: UUID | None = None
-    department_id: UUID | None = None
-    prompt_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-
-
-
 # Generated from: create_agent_prompt_link_inactive
 
 class CreateAgentPromptLinkInactiveSqlParams(BaseModel):
@@ -406,37 +367,6 @@ class GetAgentDepartmentLinksApiResponse(BaseModel):
 
     agent_id: UUID | None = None
     department_id: UUID | None = None
-    active: bool | None = None
-
-
-
-# Generated from: get_agent_department_prompt_link_status
-
-class GetAgentDepartmentPromptLinkStatusSqlParams(BaseModel):
-
-    input_agent_id: UUID
-    input_department_id: UUID
-    input_prompt_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_agent_id,
-            self.input_department_id,
-            self.input_prompt_id,
-        )
-
-class GetAgentDepartmentPromptLinkStatusSqlRow(BaseModel):
-
-    active: bool | None = None
-
-class GetAgentDepartmentPromptLinkStatusApiRequest(BaseModel):
-
-    input_agent_id: UUID
-    input_department_id: UUID
-    input_prompt_id: UUID
-
-class GetAgentDepartmentPromptLinkStatusApiResponse(BaseModel):
-
     active: bool | None = None
 
 
@@ -3802,12 +3732,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateAgentDepartmentLinkApiRequest",
         "CreateAgentDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_agent_department_prompt_link_v4_complete.sql": (
-        "CreateAgentDepartmentPromptLinkSqlParams",
-        "CreateAgentDepartmentPromptLinkSqlRow",
-        "CreateAgentDepartmentPromptLinkApiRequest",
-        "CreateAgentDepartmentPromptLinkApiResponse",
-    ),
     "tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql": (
         "CreateAgentPromptLinkInactiveSqlParams",
         "CreateAgentPromptLinkInactiveSqlRow",
@@ -3861,12 +3785,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAgentDepartmentLinksSqlRow",
         "GetAgentDepartmentLinksApiRequest",
         "GetAgentDepartmentLinksApiResponse",
-    ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_department_prompt_link_status_v4_complete.sql": (
-        "GetAgentDepartmentPromptLinkStatusSqlParams",
-        "GetAgentDepartmentPromptLinkStatusSqlRow",
-        "GetAgentDepartmentPromptLinkStatusApiRequest",
-        "GetAgentDepartmentPromptLinkStatusApiResponse",
     ),
     "tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql": (
         "GetAgentPromptLinkStatusSqlParams",
@@ -4561,11 +4479,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_department_prompt_link_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4607,11 +4520,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_department_links_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_department_prompt_link_status_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

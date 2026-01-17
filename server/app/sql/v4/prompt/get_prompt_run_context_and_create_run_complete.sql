@@ -275,7 +275,7 @@ context_data AS (
         
         -- Prompt agent/model data
         COALESCE(
-            COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
+            pr_prompt_default.system_prompt,
             ''
         ) as system_prompt,
         COALESCE(tl.temperature, 0.0) as temperature,

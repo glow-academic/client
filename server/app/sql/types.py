@@ -3013,6 +3013,17 @@ class QGetAgentV4TemperatureLevelResource(BaseModel):
 
 
 
+class QGetAgentV4Tool(BaseModel):
+
+    tool_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
 class QGetAgentV4VoiceResource(BaseModel):
 
     id: UUID | None
@@ -3094,6 +3105,13 @@ class GetAgentSqlRow(BaseModel):
     voices_required: bool | None = None
     voice_suggestions: list[UUID] | None = None
     voices: list[QGetAgentV4VoiceResource] | None = None
+    tool_ids: list[UUID] | None = None
+    tool_resources: list[QGetAgentV4Tool] | None = None
+    show_tools: bool | None = None
+    tools_agent_id: UUID | None = None
+    tools_required: bool | None = None
+    tool_suggestions: list[UUID] | None = None
+    tools: list[QGetAgentV4Tool] | None = None
     system_prompt: str | None = None
     active: bool | None = None
     role: str | None = None
@@ -3187,6 +3205,13 @@ class GetAgentApiResponse(BaseModel):
     voices_required: bool | None = None
     voice_suggestions: list[UUID] | None = None
     voices: list[QGetAgentV4VoiceResource] | None = None
+    tool_ids: list[UUID] | None = None
+    tool_resources: list[QGetAgentV4Tool] | None = None
+    show_tools: bool | None = None
+    tools_agent_id: UUID | None = None
+    tools_required: bool | None = None
+    tool_suggestions: list[UUID] | None = None
+    tools: list[QGetAgentV4Tool] | None = None
     system_prompt: str | None = None
     active: bool | None = None
     role: str | None = None
@@ -3851,6 +3876,7 @@ class SaveAgentSqlParams(BaseModel):
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
     voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -3868,6 +3894,7 @@ class SaveAgentSqlParams(BaseModel):
             self.temperature_level_id,
             self.reasoning_level_id,
             self.voice_ids,
+            self.tool_ids,
         )
 
 class SaveAgentSqlRow(BaseModel):
@@ -3890,6 +3917,7 @@ class SaveAgentApiRequest(BaseModel):
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
     voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    tool_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SaveAgentApiResponse(BaseModel):
 
@@ -3912,7 +3940,6 @@ class UpdateAgentSqlParams(BaseModel):
     prompt_id: UUID | None = None
     system_prompt: str | None = None
     department_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids_for_prompt: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
     voice_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -3929,7 +3956,6 @@ class UpdateAgentSqlParams(BaseModel):
             self.prompt_id,
             self.system_prompt,
             self.department_ids,
-            self.department_ids_for_prompt,
             self.temperature_level_id,
             self.reasoning_level_id,
             self.voice_ids,
@@ -3951,7 +3977,6 @@ class UpdateAgentApiRequest(BaseModel):
     prompt_id: UUID | None = None
     system_prompt: str | None = None
     department_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids_for_prompt: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
     voice_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -35164,9 +35189,7 @@ class PatchToolDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    schema_ids: list[UUID] | None = None
     template_ids: list[UUID] | None = None
-    schema_field_item_ids: list[UUID] | None = None
     template_array_item_ids: list[UUID] | None = None
     template_value_ids: list[UUID] | None = None
     expected_version: int | None = 0
@@ -35175,9 +35198,7 @@ class PatchToolDraftSqlParams(BaseModel):
         return (
             self.profile_id,
             self.input_draft_id,
-            self.schema_ids,
             self.template_ids,
-            self.schema_field_item_ids,
             self.template_array_item_ids,
             self.template_value_ids,
             self.expected_version,
@@ -35192,9 +35213,7 @@ class PatchToolDraftSqlRow(BaseModel):
 class PatchToolDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    schema_ids: list[UUID] | None = None
     template_ids: list[UUID] | None = None
-    schema_field_item_ids: list[UUID] | None = None
     template_array_item_ids: list[UUID] | None = None
     template_value_ids: list[UUID] | None = None
     expected_version: int | None = 0

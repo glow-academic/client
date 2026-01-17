@@ -31,7 +31,8 @@ CREATE OR REPLACE FUNCTION api_save_agent_v4(
     input_agent_id uuid DEFAULT NULL,
     temperature_level_id uuid DEFAULT NULL,
     reasoning_level_id uuid DEFAULT NULL,
-    voice_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    voice_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    tool_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     agent_id uuid,
@@ -97,6 +98,7 @@ BEGIN
         DELETE FROM agent_descriptions WHERE agent_id = v_agent_id;
         DELETE FROM agent_departments WHERE agent_id = v_agent_id;
         DELETE FROM agent_instructions WHERE agent_id = v_agent_id;
+        DELETE FROM agent_tools WHERE agent_id = v_agent_id;
         -- Update existing active flag if it exists
         UPDATE agent_flags SET
             flag_id = COALESCE(api_save_agent_v4.active_flag_id, agent_flags.flag_id),
@@ -127,7 +129,8 @@ BEGIN
             artifact_name,
             temperature_level_id,
             reasoning_level_id,
-            COALESCE(voice_ids, ARRAY[]::uuid[]) AS voice_ids
+            COALESCE(voice_ids, ARRAY[]::uuid[]) AS voice_ids,
+            COALESCE(tool_ids, ARRAY[]::uuid[]) AS tool_ids
     ),
     -- Insert/update name in names table
     name_resource AS (
@@ -362,6 +365,23 @@ BEGIN
         CROSS JOIN UNNEST(x.voice_ids) as voice_id
         WHERE COALESCE(array_length(x.voice_ids, 1), 0) > 0
         ON CONFLICT (agent_id, voice_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+    ),
+    -- Link tools if provided
+    link_tools AS (
+        INSERT INTO agent_tools (agent_id, tool_id, active, created_at, updated_at)
+        SELECT 
+            x.agent_id,
+            tool_id,
+            true,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.tool_ids) as tool_id
+        WHERE COALESCE(array_length(x.tool_ids, 1), 0) > 0
+          AND EXISTS (SELECT 1 FROM tool_artifact t WHERE t.id = tool_id)
+        ON CONFLICT (agent_id, tool_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
     )

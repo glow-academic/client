@@ -22,4 +22,5 @@ export type ResourceType =
   | "prompts"
   | "reasoning_levels"
   | "temperature_levels"
-  | "voices";
+  | "voices"
+  | "tools";
