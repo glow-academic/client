@@ -419,12 +419,8 @@ context_data AS (
          WHERE false 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a_voice.id AND f.name = 'active' AND af.value = true)) as voice_api_key,
         -- Voice prompt/temperature/reasoning (FROM agent_artifact)
-        (SELECT COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, '')
+        (SELECT COALESCE(pr_prompt_voice_default.system_prompt, '')
          FROM agent_artifact a_voice
-         LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id 
-             AND adp_prompt_voice.department_id = (SELECT department_id FROM resolved_dept) 
-             AND adp_prompt_voice.active = true
-         LEFT JOIN prompts_resource pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
          LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
          LEFT JOIN prompts_resource pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
          

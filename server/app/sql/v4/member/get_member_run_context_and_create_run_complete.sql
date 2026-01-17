@@ -292,7 +292,7 @@ context_data AS (
         
         -- Member agent/model data
         COALESCE(
-            COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
+            pr_prompt_default.system_prompt,
             ''
         ) as system_prompt,
         COALESCE(tl.temperature, 0.0) as temperature,
@@ -352,10 +352,6 @@ LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
 LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
-        AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
-        AND adp_prompt.active = true
-    LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
@@ -385,7 +381,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
              first_persona.persona_id, first_persona.persona_name,
              n_prov.name,
              -- Member agent fields
-             pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
+             pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
              m.id, (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name, kr.key, e.base_url, ma.agent_id, act_s.settings_id,
              -- Other fields
              EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), 

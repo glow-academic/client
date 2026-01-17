@@ -239,32 +239,24 @@ persona_system_prompt AS (
     LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
     LEFT JOIN instructions_resource pi_inst ON pi_inst.id = pi.instruction_id
     JOIN agents_resource a ON a.id = ri.agent_id
-    LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
-        AND adp.department_id = ri.department_id
-        AND adp.active = true
-    LEFT JOIN prompts_resource pr_dept ON pr_dept.id = adp.prompt_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.persona_id IS NOT NULL
-    AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
-    AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) != ''
+    AND pr_default.system_prompt IS NOT NULL
+    AND pr_default.system_prompt != ''
 ),
 -- Get system prompt for agent runs
 agent_system_prompt AS (
     SELECT 
-        COALESCE(pr_dept.system_prompt, pr_default.system_prompt) as system_prompt
+        pr_default.system_prompt as system_prompt
     FROM run_info ri
     JOIN agents_resource a ON a.id = ri.agent_id
-    LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
-        AND adp.department_id = ri.department_id
-        AND adp.active = true
-    LEFT JOIN prompts_resource pr_dept ON pr_dept.id = adp.prompt_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.agent_id IS NOT NULL
     AND ri.persona_id IS NULL
-    AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
-    AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) != ''
+    AND pr_default.system_prompt IS NOT NULL
+    AND pr_default.system_prompt != ''
 ),
 -- Get or create system message with MD5 deduplication
 system_message_content AS (

@@ -67,21 +67,14 @@ prompt_name_lookup AS (
     JOIN prompts_resource p ON p.id = x.prompt_id
 ),
 prompt_info AS (
-    -- Check if this prompt is active (default or department-specific)
+    -- Check if this prompt is active
     SELECT 
         CASE WHEN EXISTS (
             SELECT 1 FROM agent_prompts 
             WHERE agent_id = (SELECT agent_id FROM params) 
             AND prompt_id = (SELECT prompt_id FROM params) 
             AND active = true
-        ) THEN 'default' ELSE 'none' END as default_status,
-        CASE WHEN (SELECT department_id FROM params) IS NOT NULL AND EXISTS (
-            SELECT 1 FROM agent_department_prompts 
-            WHERE agent_id = (SELECT agent_id FROM params) 
-            AND prompt_id = (SELECT prompt_id FROM params) 
-            AND department_id = (SELECT department_id FROM params) 
-            AND active = true
-        ) THEN true ELSE false END as is_dept_active
+        ) THEN 'default' ELSE 'none' END as default_status
 ),
 latest_default_prompt AS (
     -- Get the latest default prompt (by updated_at) for fallback
@@ -111,16 +104,6 @@ activate_latest_default AS (
     AND prompt_id = (SELECT prompt_id::uuid FROM latest_default_prompt)
     AND EXISTS (SELECT 1 FROM deactivate_and_fallback)
 ),
-deactivate_dept_prompt AS (
-    -- Deactivate department-specific prompt link
-    UPDATE agent_department_prompts
-    SET active = false, updated_at = NOW()
-    WHERE agent_id = (SELECT agent_id FROM params)
-    AND prompt_id = (SELECT prompt_id FROM params)
-    AND ((SELECT department_id FROM params) IS NULL OR department_id = (SELECT department_id FROM params))
-    AND active = true
-    RETURNING prompt_id
-),
 delete_agent_prompt_links AS (
     -- Delete default prompt link (if not already deactivated)
     DELETE FROM agent_prompts
@@ -128,25 +111,11 @@ delete_agent_prompt_links AS (
     AND prompt_id = (SELECT prompt_id FROM params)
     AND NOT EXISTS (SELECT 1 FROM deactivate_and_fallback)
 ),
-delete_dept_prompt_links AS (
-    -- Delete department-specific prompt links
-    -- Delete if already inactive OR if we just deactivated them
-    DELETE FROM agent_department_prompts
-    WHERE agent_id = (SELECT agent_id FROM params)
-    AND prompt_id = (SELECT prompt_id FROM params)
-    AND ((SELECT department_id FROM params) IS NULL OR department_id = (SELECT department_id FROM params))
-    AND (
-        active = false 
-        OR EXISTS (SELECT 1 FROM deactivate_dept_prompt)
-    )
-),
 check_other_links AS (
-    -- Check if prompt is linked elsewhere (other agents or persona tables)
+    -- Check if prompt is linked elsewhere (other agents)
     SELECT 
         CASE WHEN EXISTS (
             SELECT 1 FROM agent_prompts WHERE prompt_id = (SELECT prompt_id FROM params)
-            UNION ALL
-            SELECT 1 FROM agent_department_prompts WHERE prompt_id = (SELECT prompt_id FROM params) AND active = true
         ) THEN false ELSE true END as can_delete_prompt
 ),
 deleted_prompt AS (

@@ -232,10 +232,7 @@ SELECT
     first_persona.persona_name as persona_name,
     
     -- Text agent/model data (backward compatibility - existing fields)
-    COALESCE(
-        COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
-        ''
-    ) as system_prompt,
+    COALESCE(pr_prompt_default.system_prompt, '') as system_prompt,
     COALESCE(tl.temperature, 0.0) as temperature,
     rl.reasoning_level as reasoning,
     m.id::text as model_id,
@@ -249,10 +246,7 @@ SELECT
     a.id::text as agent_id,
     
     -- Voice agent/model data (prefixed with voice_*)
-    COALESCE(
-        COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt),
-        ''
-    ) as voice_system_prompt,
+    COALESCE(pr_prompt_voice_default.system_prompt, '') as voice_system_prompt,
     COALESCE(tl_voice.temperature, 0.0) as voice_temperature,
     rl_voice.reasoning_level as voice_reasoning,
     m_voice.id::text as voice_model_id,
@@ -322,12 +316,8 @@ LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
 LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
-    AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
-    AND adp_prompt.active = true
-LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
-LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
+LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap.prompt_id
 LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
 LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
 -- Get keys via settings system: provider -> active settings -> setting_provider_keys
@@ -353,12 +343,8 @@ LEFT JOIN temperature_levels_resource tl_voice ON tl_voice.id = mtl_voice.temper
 LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
 LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.reasoning_level_id = arl_voice.reasoning_level_id AND mrl_voice.model_id = m_voice.id
 LEFT JOIN reasoning_levels_resource rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
-LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id 
-    AND adp_prompt_voice.department_id = (SELECT department_id FROM resolved_dept)
-    AND adp_prompt_voice.active = true
-LEFT JOIN prompts_resource pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
-LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
-LEFT JOIN prompts_resource pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
+LEFT JOIN agent_prompts ap_voice ON ap_voice.agent_id = a_voice.id AND ap_voice.active = true
+LEFT JOIN prompts_resource pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice.prompt_id
 LEFT JOIN model_endpoints me_voice_j ON me_voice_j.model_id = m_voice.id
 LEFT JOIN endpoints_resource e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
 -- Get voice keys via settings system: provider -> active settings -> setting_provider_keys
@@ -388,10 +374,10 @@ GROUP BY sc.id, sc.title,
          first_persona.persona_id, first_persona.persona_name,
          n_prov.name,
          -- Text agent fields
-         pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
+         pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
          m.id, (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name, kr.key, e.base_url, a.id, act_s.settings_id,
          -- Voice agent fields
-         pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(tl_voice.temperature, 0.0), rl_voice.reasoning_level,
+         pr_prompt_voice_default.system_prompt, COALESCE(tl_voice.temperature, 0.0), rl_voice.reasoning_level,
          m_voice.id, m_voice.value, n_voice_prov.name, kr_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
          -- Other fields
          EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), 

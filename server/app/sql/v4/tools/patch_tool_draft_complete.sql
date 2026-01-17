@@ -20,9 +20,7 @@ END $$;
 CREATE OR REPLACE FUNCTION api_patch_tool_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
-    schema_ids uuid[] DEFAULT NULL,
     template_ids uuid[] DEFAULT NULL,
-    schema_field_item_ids uuid[] DEFAULT NULL,
     template_array_item_ids uuid[] DEFAULT NULL,
     template_value_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
@@ -42,16 +40,6 @@ DECLARE
     v_profile_id uuid := profile_id;
     v_group_id uuid;
 BEGIN
-    -- Validate schema IDs exist (error if missing and provided)
-    IF schema_ids IS NOT NULL AND COALESCE(array_length(schema_ids, 1), 0) > 0 THEN
-        IF EXISTS (
-            SELECT 1 FROM UNNEST(schema_ids) AS schema_id
-            WHERE NOT EXISTS (SELECT 1 FROM schemas_resource WHERE id = schema_id)
-        ) THEN
-            RAISE EXCEPTION 'One or more schema resources not found';
-        END IF;
-    END IF;
-    
     -- Validate template IDs exist (error if missing and provided)
     IF template_ids IS NOT NULL AND COALESCE(array_length(template_ids, 1), 0) > 0 THEN
         IF EXISTS (
@@ -59,16 +47,6 @@ BEGIN
             WHERE NOT EXISTS (SELECT 1 FROM templates_resource WHERE id = template_id)
         ) THEN
             RAISE EXCEPTION 'One or more template resources not found';
-        END IF;
-    END IF;
-    
-    -- Validate schema_field_item IDs exist (error if missing and provided)
-    IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
-        IF EXISTS (
-            SELECT 1 FROM UNNEST(schema_field_item_ids) AS schema_field_item_id
-            WHERE NOT EXISTS (SELECT 1 FROM schema_field_items_resource WHERE id = schema_field_item_id)
-        ) THEN
-            RAISE EXCEPTION 'One or more schema_field_item resources not found';
         END IF;
     END IF;
     
@@ -117,36 +95,16 @@ BEGIN
             v_draft_exists := true;
             
             -- Delete old resource links
-            DELETE FROM draft_schemas WHERE draft_schemas.draft_id = v_draft_id;
             DELETE FROM draft_templates WHERE draft_templates.draft_id = v_draft_id;
-            DELETE FROM draft_schema_field_items WHERE draft_schema_field_items.draft_id = v_draft_id;
             DELETE FROM draft_template_array_items WHERE draft_template_array_items.draft_id = v_draft_id;
             DELETE FROM draft_template_values WHERE draft_template_values.draft_id = v_draft_id;
             
             -- Insert new resource links
-            IF schema_ids IS NOT NULL AND COALESCE(array_length(schema_ids, 1), 0) > 0 THEN
-                INSERT INTO draft_schemas (draft_id, schemas_id, version, generated, mcp)
-                SELECT v_draft_id, schema_id, v_new_version, false, false
-                FROM UNNEST(schema_ids) as schema_id
-                ON CONFLICT ON CONSTRAINT draft_schemas_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
-            END IF;
-            
             IF template_ids IS NOT NULL AND COALESCE(array_length(template_ids, 1), 0) > 0 THEN
                 INSERT INTO draft_templates (draft_id, templates_id, version, generated, mcp)
                 SELECT v_draft_id, template_id, v_new_version, false, false
                 FROM UNNEST(template_ids) as template_id
                 ON CONFLICT ON CONSTRAINT draft_templates_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
-            END IF;
-            
-            IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
-                INSERT INTO draft_schema_field_items (draft_id, schema_field_items_id, version, generated, mcp)
-                SELECT v_draft_id, schema_field_item_id, v_new_version, false, false
-                FROM UNNEST(schema_field_item_ids) as schema_field_item_id
-                ON CONFLICT ON CONSTRAINT draft_schema_field_items_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -186,29 +144,11 @@ BEGIN
     RETURNING id, version INTO v_draft_id, v_new_version;
     
     -- Link resources to draft
-    IF schema_ids IS NOT NULL AND COALESCE(array_length(schema_ids, 1), 0) > 0 THEN
-        INSERT INTO draft_schemas (draft_id, schemas_id, version, generated, mcp)
-        SELECT v_draft_id, schema_id, v_new_version, false, false
-        FROM UNNEST(schema_ids) as schema_id
-        ON CONFLICT ON CONSTRAINT draft_schemas_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
-    END IF;
-    
     IF template_ids IS NOT NULL AND COALESCE(array_length(template_ids, 1), 0) > 0 THEN
         INSERT INTO draft_templates (draft_id, templates_id, version, generated, mcp)
         SELECT v_draft_id, template_id, v_new_version, false, false
         FROM UNNEST(template_ids) as template_id
         ON CONFLICT ON CONSTRAINT draft_templates_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
-    END IF;
-    
-    IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
-        INSERT INTO draft_schema_field_items (draft_id, schema_field_items_id, version, generated, mcp)
-        SELECT v_draft_id, schema_field_item_id, v_new_version, false, false
-        FROM UNNEST(schema_field_item_ids) as schema_field_item_id
-        ON CONFLICT ON CONSTRAINT draft_schema_field_items_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

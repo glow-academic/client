@@ -13,7 +13,6 @@ CREATE OR REPLACE FUNCTION api_update_agent_v4(
     prompt_id uuid DEFAULT NULL,
     system_prompt text DEFAULT NULL,
     department_ids text[] DEFAULT ARRAY[]::text[],
-    department_ids_for_prompt text[] DEFAULT ARRAY[]::text[],
     temperature_level_id uuid DEFAULT NULL,
     reasoning_level_id uuid DEFAULT NULL,
     voice_ids text[] DEFAULT ARRAY[]::text[]
@@ -35,7 +34,6 @@ WITH params AS (
         prompt_id AS prompt_id,
         NULLIF(system_prompt, '') AS system_prompt,
         COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
-        COALESCE(department_ids_for_prompt, ARRAY[]::text[]) AS department_ids_for_prompt,
         temperature_level_id AS temperature_level_id,
         reasoning_level_id AS reasoning_level_id,
         COALESCE(voice_ids, ARRAY[]::text[]) AS voice_ids,
@@ -200,50 +198,6 @@ selected_prompt_id AS (
     ) as prompt_id
     FROM params x
     WHERE x.prompt_id IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
-),
-deactivate_department_prompts AS (
-    -- Deactivate existing department-specific prompts for departments in the array
-    UPDATE agent_department_prompts
-    SET active = false, updated_at = NOW()
-    FROM params x
-    WHERE agent_department_prompts.agent_id = x.agent_id 
-    AND agent_department_prompts.department_id = ANY(SELECT dept_id::uuid FROM UNNEST(x.department_ids_for_prompt) as dept_id)
-    AND agent_department_prompts.active = true
-    RETURNING agent_department_prompts.agent_id
-),
-handle_department_prompts AS (
-    -- Handle department-specific prompts for all departments in array (never create default prompts)
-    INSERT INTO agent_department_prompts (agent_id, department_id, prompt_id, active, created_at, updated_at)
-    SELECT x.agent_id, dept_id::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
-    FROM params x
-    CROSS JOIN selected_prompt_id sp
-    CROSS JOIN UNNEST(x.department_ids_for_prompt) as dept_id
-    WHERE COALESCE(array_length(x.department_ids_for_prompt, 1), 0) > 0 AND sp.prompt_id IS NOT NULL
-    ON CONFLICT (agent_id, department_id, prompt_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
-get_default_prompt_content AS (
-    -- Get the default prompt content for comparison (for pruning)
-    SELECT pr.system_prompt
-    FROM params x
-    JOIN agent_prompts ap ON ap.agent_id = x.agent_id AND ap.active = true
-    JOIN prompts_resource pr ON pr.id = ap.prompt_id
-    LIMIT 1
-),
-prune_duplicate_prompts AS (
-    -- Prune department-specific prompts that match the default prompt content
-    DELETE FROM agent_department_prompts adp
-    USING params x
-    WHERE adp.agent_id = x.agent_id
-    AND adp.department_id = ANY(SELECT dept_id::uuid FROM UNNEST(x.department_ids_for_prompt) as dept_id)
-    AND EXISTS (
-        SELECT 1 FROM get_default_prompt_content gdc
-        JOIN selected_prompt_id sp ON sp.prompt_id IS NOT NULL
-        JOIN prompts_resource pr ON pr.id = sp.prompt_id::uuid
-        WHERE pr.system_prompt = gdc.system_prompt
-    )
-    RETURNING adp.agent_id
 ),
 replace_departments AS (
     -- Delete all existing department links

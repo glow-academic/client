@@ -339,11 +339,8 @@ context_data AS (
     CROSS JOIN runs_today rt
     CROSS JOIN params p_params
     INNER JOIN agents_resource a ON a.id = ba.agent_id
-    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p_params.department_id AND adp_prompt.active = true
-    LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
+    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
     INNER JOIN agent_models am ON am.agent_id = a.id
     INNER JOIN models_resource m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true

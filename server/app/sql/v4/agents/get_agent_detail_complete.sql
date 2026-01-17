@@ -196,7 +196,7 @@ agent_active_prompt AS (
     LIMIT 1
 ),
 agent_all_prompts AS (
-    -- Get all prompts from agent_prompts (default prompts)
+    -- Get all prompts from agent_prompts
     SELECT 
         ap.agent_id::text as agent_id,
         ap.prompt_id::text as prompt_id,
@@ -208,30 +208,9 @@ agent_all_prompts AS (
     FROM params x
     JOIN agent_prompts ap ON ap.agent_id = x.agent_id
     JOIN prompts_resource pr ON pr.id = ap.prompt_id
-    UNION
-    -- Also get all prompts from agent_department_prompts (department-specific prompts)
-    SELECT DISTINCT
-        adp.agent_id::text as agent_id,
-        adp.prompt_id::text as prompt_id,
-        pr.system_prompt,
-        pr.name as prompt_name,
-        pr.description as prompt_description,
-        pr.created_at as prompt_created_at,
-        pr.updated_at as prompt_updated_at
-    FROM params x
-    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
-    JOIN prompts_resource pr ON pr.id = adp.prompt_id
-),
-prompt_departments_data AS (
-    SELECT 
-        adp.prompt_id::text as prompt_id,
-        ARRAY_AGG(adp.department_id::text ORDER BY adp.created_at) as department_ids
-    FROM params x
-    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
-    GROUP BY adp.prompt_id
 ),
 default_prompt_count AS (
-    -- Count default prompts (from agent_prompts, not department-specific)
+    -- Count prompts (from agent_prompts)
     -- Always return at least one row with count (0 if no prompts)
     SELECT COALESCE(COUNT(DISTINCT ap.prompt_id), 0)::integer as count
     FROM params x
@@ -245,17 +224,14 @@ prompt_mapping_data AS (
         COALESCE(ap.prompt_description, '')::text as prompt_description,
         ap.prompt_created_at::timestamptz as prompt_created_at,
         ap.prompt_updated_at::timestamptz as prompt_updated_at,
-        COALESCE(pdd.department_ids, NULL)::text[] as department_ids,
+        NULL::text[] as department_ids,
         CASE
-            -- Department-specific prompts can always be deleted (fall back to default)
-            WHEN pdd.department_ids IS NOT NULL THEN true::boolean
-            -- Default prompts can be deleted if there's more than one
-            WHEN pdd.department_ids IS NULL AND COALESCE(dpc.count, 0) > 1 THEN true::boolean
-            -- Otherwise cannot delete (only one default prompt)
+            -- Prompts can be deleted if there's more than one
+            WHEN COALESCE(dpc.count, 0) > 1 THEN true::boolean
+            -- Otherwise cannot delete (only one prompt)
             ELSE false::boolean
         END as can_delete
     FROM agent_all_prompts ap
-    LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = ap.prompt_id
     CROSS JOIN default_prompt_count dpc
 ),
 agent_departments_data AS (
@@ -265,13 +241,6 @@ agent_departments_data AS (
     FROM params x
     JOIN agent_departments ad ON NULL::uuid = x.agent_id AND ad.active = true
     GROUP BY NULL::uuid
-),
-agent_department_prompt_links_data AS (
-    SELECT 
-        adp.department_id::text as department_id,
-        adp.prompt_id::text as prompt_id
-    FROM params x
-    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
 ),
 debug_data AS (
     SELECT 
@@ -563,14 +532,7 @@ SELECT
         ) FILTER (WHERE uhaa.has_access = true),
         '{}'::types.q_get_agent_detail_v4_prompt[]
     ) as prompts,
-    COALESCE(
-        ARRAY_AGG(
-            (adpl.department_id, adpl.prompt_id
-            )::types.q_get_agent_detail_v4_department_prompt_link
-            ORDER BY adpl.department_id, adpl.prompt_id
-        ) FILTER (WHERE uhaa.has_access = true AND adpl.department_id IS NOT NULL),
-        '{}'::types.q_get_agent_detail_v4_department_prompt_link[]
-    ) as department_prompt_links,
+    '{}'::types.q_get_agent_detail_v4_department_prompt_link[] as department_prompt_links,
     COALESCE(
         ARRAY_AGG(
             (dd.created_at::text, dd.model_id, dd.content
@@ -625,7 +587,6 @@ LEFT JOIN agent_selected_temperature ast ON ast.agent_id = ai.agent_id AND uhaa.
 LEFT JOIN agent_selected_reasoning asr ON asr.agent_id = ai.agent_id AND uhaa.has_access = true
 LEFT JOIN valid_departments_data vdd ON uhaa.has_access = true
 LEFT JOIN prompt_mapping_data pmd ON uhaa.has_access = true
-LEFT JOIN agent_department_prompt_links_data adpl ON uhaa.has_access = true
 LEFT JOIN debug_data dd ON uhaa.has_access = true
 LEFT JOIN models_agg ma ON uhaa.has_access = true
 LEFT JOIN model_reasoning_levels_data_with_ids mrl_selected ON mrl_selected.model_id = ai.model_id AND uhaa.has_access = true

@@ -1047,7 +1047,7 @@ models_agg AS (
 ),
 -- Prompts data (all available prompts for agent)
 agent_all_prompts AS (
-    -- Get all prompts from agent_prompts (default prompts)
+    -- Get all prompts from agent_prompts
     SELECT 
         ap.agent_id::uuid as agent_id,
         ap.prompt_id::uuid as prompt_id,
@@ -1061,30 +1061,6 @@ agent_all_prompts AS (
     JOIN agent_prompts ap ON ap.agent_id = x.agent_id
     JOIN prompts_resource pr ON pr.id = ap.prompt_id
     WHERE x.agent_id IS NOT NULL
-    UNION
-    -- Also get all prompts from agent_department_prompts (department-specific prompts)
-    SELECT DISTINCT
-        adp.agent_id::uuid as agent_id,
-        adp.prompt_id::uuid as prompt_id,
-        pr.system_prompt,
-        pr.name as prompt_name,
-        pr.description as prompt_description,
-        pr.created_at as prompt_created_at,
-        pr.updated_at as prompt_updated_at,
-        COALESCE(pr.generated, false) as generated
-    FROM params x
-    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
-    JOIN prompts_resource pr ON pr.id = adp.prompt_id
-    WHERE x.agent_id IS NOT NULL
-),
-prompt_departments_data AS (
-    SELECT 
-        adp.prompt_id::uuid as prompt_id,
-        ARRAY_AGG(adp.department_id::uuid ORDER BY adp.created_at) as department_ids
-    FROM params x
-    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
-    WHERE x.agent_id IS NOT NULL
-    GROUP BY adp.prompt_id
 ),
 default_prompt_count AS (
     -- Count default prompts (from agent_prompts, not department-specific)
@@ -1103,19 +1079,16 @@ prompt_mapping_data AS (
         COALESCE(ap.prompt_description, '')::text as prompt_description,
         ap.prompt_created_at::timestamptz as prompt_created_at,
         ap.prompt_updated_at::timestamptz as prompt_updated_at,
-        COALESCE(pdd.department_ids, NULL)::uuid[] as department_ids,
+        NULL::uuid[] as department_ids,
         COALESCE(ap.generated, false) as generated,
         CASE
-            -- Department-specific prompts can always be deleted (fall back to default)
-            WHEN pdd.department_ids IS NOT NULL THEN true::boolean
-            -- Default prompts can be deleted if there's more than one
-            WHEN pdd.department_ids IS NULL AND COALESCE(dpc.count, 0) > 1 THEN true::boolean
-            -- Otherwise cannot delete (only one default prompt)
+            -- Prompts can be deleted if there's more than one
+            WHEN COALESCE(dpc.count, 0) > 1 THEN true::boolean
+            -- Otherwise cannot delete (only one prompt)
             ELSE false::boolean
         END as can_delete
     FROM params x
     LEFT JOIN agent_all_prompts ap ON ap.agent_id = x.agent_id
-    LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = ap.prompt_id
     CROSS JOIN default_prompt_count dpc
     WHERE x.agent_id IS NOT NULL AND ap.prompt_id IS NOT NULL
 ),
