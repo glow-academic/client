@@ -20,7 +20,6 @@ MAX_RETRIES = 10
 INITIAL_RETRY_DELAY = 2.0  # seconds
 MAX_RETRY_DELAY = 30.0  # seconds
 
-
 # ============================================================================
 # Helper functions for raw Keycloak Admin REST API calls
 # ============================================================================
@@ -142,6 +141,54 @@ def get_flow_executions(kc_admin: Any, realm: str, flow_alias: str) -> list[dict
     return kc_raw_get(kc_admin, path)
 
 
+async def get_flow_alias_by_id(kc_admin: Any, realm: str, flow_id: str) -> str | None:
+    """Get flow alias by flow ID.
+    
+    This is needed because list_authentication_flows() doesn't return nested subflows,
+    but we can query the database or use a different API endpoint to get the alias.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_id: Flow ID (UUID)
+    
+    Returns:
+        Flow alias if found, None otherwise
+    """
+    # Query database directly since Admin API doesn't expose this easily
+    try:
+        # #region agent log
+        _debug_log("C", "get_flow_alias_by_id:entry", "Looking up flow alias by ID", {
+            "flow_id": flow_id,
+            "realm": realm
+        })
+        # #endregion
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await conn.fetchval(
+                "SELECT alias FROM keycloak.authentication_flow WHERE id = $1 AND realm_id = (SELECT id FROM keycloak.realm WHERE name = $2)",
+                flow_id,
+                realm
+            )
+            # #region agent log
+            _debug_log("C", "get_flow_alias_by_id:result", "Database query result", {
+                "flow_id": flow_id,
+                "alias": result
+            })
+            # #endregion
+            return result
+    except Exception as e:
+        # #region agent log
+        _debug_log("C", "get_flow_alias_by_id:error", "Database query failed", {
+            "flow_id": flow_id,
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        # #endregion
+        logger.warning(f"Failed to get flow alias by ID {flow_id}: {e}")
+        return None
+
+
 def set_execution_requirement(kc_admin: Any, realm: str, flow_alias: str, execution_id: str, requirement: str, priority: int | None = None) -> None:
     """Set the requirement for an execution (REQUIRED, OPTIONAL, DISABLED, ALTERNATIVE).
     
@@ -153,6 +200,16 @@ def set_execution_requirement(kc_admin: Any, realm: str, flow_alias: str, execut
         requirement: Requirement level (REQUIRED, OPTIONAL, DISABLED, ALTERNATIVE)
         priority: Optional priority to set (lower numbers execute first)
     """
+    # #region agent log
+    _debug_log("A", "set_execution_requirement:entry", "Setting execution requirement", {
+        "realm": realm,
+        "flow_alias": flow_alias,
+        "execution_id": execution_id,
+        "requirement": requirement,
+        "priority": priority
+    })
+    # #endregion
+    
     import urllib.parse
     encoded_flow = urllib.parse.quote(flow_alias, safe="")
     # Use flow-based endpoint: PUT /admin/realms/{realm}/authentication/flows/{flowAlias}/executions
@@ -161,7 +218,143 @@ def set_execution_requirement(kc_admin: Any, realm: str, flow_alias: str, execut
     payload = {"id": execution_id, "requirement": requirement}
     if priority is not None:
         payload["priority"] = priority
-    kc_raw_put(kc_admin, path, payload)
+    
+    # #region agent log
+    _debug_log("A", "set_execution_requirement:before_api", "Before API call", {
+        "path": path,
+        "payload": payload
+    })
+    # #endregion
+    
+    try:
+        kc_raw_put(kc_admin, path, payload)
+        # #region agent log
+        _debug_log("A", "set_execution_requirement:after_api", "API call succeeded", {
+            "path": path,
+            "payload": payload
+        })
+        # #endregion
+        
+        # Immediately verify via API (source of truth) - don't trust DB queries
+        verify_result = verify_execution_requirement_api(kc_admin, realm, flow_alias, execution_id, requirement)
+        if verify_result:
+            if verify_result["status"] == "mismatch":
+                # #region agent log
+                _debug_log("A", "set_execution_requirement:verification_mismatch", "API verification shows mismatch - change may not have persisted", {
+                    "execution_id": execution_id,
+                    "expected_requirement": requirement,
+                    "actual_requirement": verify_result["actual_requirement"],
+                    "display_name": verify_result["execution"].get("display_name") if verify_result["execution"] else None
+                })
+                # #endregion
+            elif verify_result["status"] == "not_found":
+                # #region agent log
+                _debug_log("A", "set_execution_requirement:verification_not_found", "Execution not found in API response after change", {
+                    "execution_id": execution_id,
+                    "flow_alias": flow_alias
+                })
+                # #endregion
+            # If status == "ok", verification passed - no additional logging needed
+    except Exception as e:
+        # #region agent log
+        _debug_log("A", "set_execution_requirement:api_error", "API call failed", {
+            "path": path,
+            "payload": payload,
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        # #endregion
+        raise
+
+
+def verify_execution_requirement_api(kc_admin: Any, realm: str, flow_alias: str, execution_id: str, expected_requirement: str) -> dict[str, Any] | None:
+    """Verify execution requirement using Admin API (source of truth).
+    
+    Fetches executions from Admin API, finds execution by ID, and returns its actual state.
+    This is the ONLY reliable way to verify changes - database queries may be wrong DB/wrong realm/cached.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias
+        execution_id: Execution ID to verify
+        expected_requirement: Expected requirement level
+        
+    Returns:
+        Dict with verification result: {"status": "ok"|"mismatch"|"not_found", "actual_requirement": str, "execution": dict}
+        None if API call failed
+    """
+    # #region agent log
+    _debug_log("A", "verify_execution_requirement_api:entry", "Verifying execution requirement via API", {
+        "realm": realm,
+        "flow_alias": flow_alias,
+        "execution_id": execution_id,
+        "expected_requirement": expected_requirement
+    })
+    # #endregion
+    
+    try:
+        execs = get_flow_executions(kc_admin, realm, flow_alias)
+        
+        # Find execution by ID (not name/provider - IDs are unique)
+        execution = None
+        for ex in execs:
+            if ex.get("id") == execution_id:
+                execution = ex
+                break
+        
+        if not execution:
+            # #region agent log
+            _debug_log("A", "verify_execution_requirement_api:not_found", "Execution not found in API response", {
+                "realm": realm,
+                "flow_alias": flow_alias,
+                "execution_id": execution_id,
+                "total_executions": len(execs)
+            })
+            # #endregion
+            return {"status": "not_found", "actual_requirement": None, "execution": None}
+        
+        actual_requirement = execution.get("requirement", "N/A")
+        status = "ok" if actual_requirement == expected_requirement else "mismatch"
+        
+        result = {
+            "status": status,
+            "actual_requirement": actual_requirement,
+            "execution": {
+                "id": execution.get("id"),
+                "display_name": execution.get("displayName"),
+                "provider_id": execution.get("providerId"),
+                "requirement": actual_requirement,
+                "is_subflow": execution.get("authenticationFlow", False)
+            }
+        }
+        
+        # #region agent log
+        _debug_log("A", "verify_execution_requirement_api:result", f"API verification {status}", {
+            "realm": realm,
+            "flow_alias": flow_alias,
+            "execution_id": execution_id,
+            "expected_requirement": expected_requirement,
+            "actual_requirement": actual_requirement,
+            "status": status,
+            "display_name": execution.get("displayName"),
+            "provider_id": execution.get("providerId")
+        })
+        # #endregion
+        
+        return result
+        
+    except Exception as e:
+        # #region agent log
+        _debug_log("A", "verify_execution_requirement_api:error", "API verification failed", {
+            "realm": realm,
+            "flow_alias": flow_alias,
+            "execution_id": execution_id,
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        # #endregion
+        return None
 
 
 def disable_confirm_link_step(kc_admin: Any, realm: str, flow_alias: str) -> bool:
@@ -290,67 +483,926 @@ def enable_handle_existing_account_subflow(kc_admin: Any, realm: str, flow_alias
     return True
 
 
-def enable_auto_link_step(kc_admin: Any, realm: str, flow_alias: str) -> bool:
-    """Enable auto-link execution in a flow.
+def ensure_create_user_if_unique(kc_admin: Any, realm: str, flow_alias: str, visited: set[str] | None = None) -> bool:
+    """Ensure idp-create-user-if-unique is ALTERNATIVE (not REQUIRED) recursively in all subflows.
     
     In Keycloak, when "Confirm link existing account" is disabled, the "Create User If Unique" 
     execution handles auto-linking: if a user with matching email exists, it links automatically;
-    otherwise it creates a new user. Setting this to REQUIRED ensures it runs.
+    otherwise it creates a new user.
+    
+    Must be ALTERNATIVE (not REQUIRED) because it can fail when user exists and can't link.
+    This execution handles both new user creation and auto-linking existing users by email.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias (checked recursively for subflows)
+        visited: Set of visited flow aliases to prevent infinite recursion
     
     Returns:
-        True if found and enabled, False otherwise
+        True if found and configured in any flow/subflow, False otherwise
     """
-    execs = get_flow_executions(kc_admin, realm, flow_alias)
+    if visited is None:
+        visited = set()
     
-    # Look for "Create User If Unique" - this handles auto-linking when confirm is disabled
-    for e in execs:
-        display = (e.get("displayName") or "").lower()
-        provider = (e.get("providerId") or "").lower()
+    if flow_alias in visited:
+        return False
+    
+    visited.add(flow_alias)
+    
+    execs = get_flow_executions(kc_admin, realm, flow_alias)
+    logger.info(f"🔍 [ensure_create_user_if_unique] Checking flow '{flow_alias}' with {len(execs)} executions")
+    
+    # Log the structure of the first execution to understand API response format
+    if execs:
+        import json
+        first_exec = execs[0]
+        logger.info(
+            f"🔍 [ensure_create_user_if_unique] Sample execution structure (first execution):\n"
+            f"  Type: {type(first_exec)}\n"
+            f"  All keys: {list(first_exec.keys())}\n"
+            f"  Full JSON: {json.dumps(first_exec, indent=2)}"
+        )
+    
+    # Get all flows to map flowId to alias for recursive sub-flow checking
+    flows = list_authentication_flows(kc_admin, realm)
+    flow_id_to_alias = {f.get("id"): f.get("alias") for f in flows if f.get("id") and f.get("alias")}
+    logger.info(
+        f"🔍 [ensure_create_user_if_unique] Flow ID to alias mapping: "
+        f"{len(flow_id_to_alias)} flows mapped"
+    )
+    
+    found_any = False
+    
+    # Look for "Create User If Unique" in current flow
+    for idx, e in enumerate(execs):
+        display = e.get("displayName", "")
+        display_lower = display.lower()
+        provider = e.get("providerId", "")
+        provider_lower = provider.lower()
+        flow_id = e.get("flowId")  # Points to the subflow for subflow executions
+        # Keycloak API uses "authenticationFlow" (camelCase) for subflow executions
+        is_subflow = e.get("authenticationFlow", False)
+        exec_id = e.get("id")
+        requirement = e.get("requirement", "N/A")
         
-        # "Create User If Unique" is the execution that auto-links when email matches
-        looks_like_auto = (
-            provider == "idp-create-user-if-unique" or
-            ("create" in display and "unique" in display) or
-            ("auto" in display and "link" in display) or
-            ("auto" in provider and "link" in provider) or
-            "idp-auto-link" in provider
+        logger.info(
+            f"🔍 [ensure_create_user_if_unique] Execution {idx+1}/{len(execs)} in '{flow_alias}': "
+            f"id={exec_id}, displayName='{display}', providerId='{provider}', "
+            f"flowId={flow_id}, authenticationFlow={is_subflow}, "
+            f"requirement={requirement}"
         )
         
-        if looks_like_auto:
-            exec_id = e.get("id")
+        # Only match idp-create-user-if-unique (not idp-auto-link)
+        if provider_lower == "idp-create-user-if-unique" or ("create" in display_lower and "unique" in display_lower):
             if exec_id:
-                # Set to ALTERNATIVE (not REQUIRED) so it doesn't conflict with idp-auto-link
-                # Both "Create User If Unique" and "Automatically Set Existing User" must be ALTERNATIVE
-                # so Keycloak can choose the appropriate one based on whether user exists
+                logger.info(
+                    f"🎯 [ensure_create_user_if_unique] MATCHED 'Create User If Unique'! "
+                    f"Current requirement: {requirement}, will set to ALTERNATIVE"
+                )
+                # Set to ALTERNATIVE (not REQUIRED) because it can fail when user exists and can't link
                 set_execution_requirement(kc_admin, realm, flow_alias, exec_id, "ALTERNATIVE")
-                logger.info(f"✅ Enabled auto-link execution '{e.get('displayName')}' (ProviderId: {e.get('providerId', 'N/A')}, ID: {exec_id})")
-                return True
+                logger.info(f"✅ Ensured 'Create User If Unique' is ALTERNATIVE in flow '{flow_alias}' (ProviderId: {provider}, ID: {exec_id})")
+                found_any = True
+        
+        # Recursively check sub-flows (flowId points to the subflow when authenticationFlow=true)
+        subflow_id_to_check = flow_id if is_subflow else None
+        if subflow_id_to_check and subflow_id_to_check in flow_id_to_alias:
+            subflow_alias = flow_id_to_alias[subflow_id_to_check]
+            logger.info(f"🔍 [ensure_create_user_if_unique] Recursing into subflow '{subflow_alias}'")
+            if ensure_create_user_if_unique(kc_admin, realm, subflow_alias, visited):
+                found_any = True
     
-    logger.warning(f"No auto-link execution found in flow '{flow_alias}' - 'Create User If Unique' may need to be enabled manually")
-    return False
+    if not found_any and len(visited) == 1:
+        # Only log warning if we checked the top-level flow and found nothing
+        logger.warning(f"No 'Create User If Unique' execution found in flow '{flow_alias}' - may need to be enabled manually")
+    
+    return found_any
+
+
+async def configure_handle_existing_account_for_autolink(kc_admin: Any, realm: str, flow_alias: str) -> bool:
+    """Configure 'Handle Existing Account' subflow for silent auto-linking.
+    
+    Instead of disabling the subflow entirely, we enable it and configure it to:
+    1. Enable the "Handle Existing Account" subflow execution (ALTERNATIVE)
+    2. Inside it, enable idp-auto-link as ALTERNATIVE (silent auto-linking)
+    3. Disable idp-confirm-link (no prompts)
+    4. Disable password/re-auth prompts
+    
+    This handles the case where a user already exists (e.g., redacted@purdue.edu)
+    and needs to be linked to the IdP account silently.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias containing the Handle Existing Account subflow
+        
+    Returns:
+        True if configured successfully, False otherwise
+    """
+    # #region agent log
+    _debug_log("E", "configure_handle_existing_account_for_autolink:entry", "Configuring Handle Existing Account for auto-linking", {
+        "realm": realm,
+        "flow_alias": flow_alias
+    })
+    # #endregion
+    
+    execs = get_flow_executions(kc_admin, realm, flow_alias)
+    handle_existing_exec_id = None
+    handle_existing_flow_id = None
+    
+    # Find the "Handle Existing Account" subflow execution
+    for e in execs:
+        display = (e.get("displayName") or "").lower()
+        flow_id = e.get("flowId")
+        is_subflow = e.get("authenticationFlow", False)
+        
+        if is_subflow and "handle" in display and "existing" in display and "account" in display:
+            handle_existing_exec_id = e.get("id")
+            handle_existing_flow_id = flow_id
+            current_requirement = e.get("requirement", "N/A")
+            # #region agent log
+            _debug_log("E", "configure_handle_existing_account_for_autolink:found", "Found Handle Existing Account subflow", {
+                "exec_id": handle_existing_exec_id,
+                "flow_id": handle_existing_flow_id,
+                "current_requirement": current_requirement,
+                "display_name": e.get("displayName")
+            })
+            # #endregion
+            break
+    
+    if not handle_existing_exec_id or not handle_existing_flow_id:
+        # #region agent log
+        _debug_log("E", "configure_handle_existing_account_for_autolink:not_found", "Handle Existing Account subflow not found", {
+            "flow_alias": flow_alias
+        })
+        # #endregion
+        logger.warning(f"No Handle Existing Account subflow found in flow '{flow_alias}'")
+        return False
+    
+    # Enable the subflow execution (make it ALTERNATIVE so it can run but doesn't block flow)
+    set_execution_requirement(kc_admin, realm, flow_alias, handle_existing_exec_id, "ALTERNATIVE")
+    # #region agent log
+    _debug_log("E", "configure_handle_existing_account_for_autolink:enabled_subflow", "Enabled Handle Existing Account subflow execution", {
+        "exec_id": handle_existing_exec_id
+    })
+    # #endregion
+    logger.info(f"✅ Enabled Handle Existing Account subflow execution (ID: {handle_existing_exec_id})")
+    
+    # Get the subflow alias
+    flows_map = {f.get("id"): f.get("alias") for f in list_authentication_flows(kc_admin, realm) if f.get("id") and f.get("alias")}
+    subflow_alias = flows_map.get(handle_existing_flow_id)
+    if not subflow_alias:
+        subflow_alias = await get_flow_alias_by_id(kc_admin, realm, handle_existing_flow_id)
+    
+    if not subflow_alias:
+        # #region agent log
+        _debug_log("E", "configure_handle_existing_account_for_autolink:no_subflow_alias", "Could not find subflow alias", {
+            "flow_id": handle_existing_flow_id
+        })
+        # #endregion
+        logger.warning(f"Could not find alias for Handle Existing Account subflow (flow_id: {handle_existing_flow_id})")
+        return False
+    
+    # Get executions inside the Handle Existing Account subflow
+    subflow_execs = get_flow_executions(kc_admin, realm, subflow_alias)
+    # #region agent log
+    _debug_log("E", "configure_handle_existing_account_for_autolink:subflow_execs", "Executions inside Handle Existing Account subflow", {
+        "subflow_alias": subflow_alias,
+        "exec_count": len(subflow_execs),
+        "executions": [{
+            "id": ex.get("id"),
+            "display_name": ex.get("displayName"),
+            "provider_id": ex.get("providerId"),
+            "requirement": ex.get("requirement"),
+            "is_subflow": ex.get("authenticationFlow", False)
+        } for ex in subflow_execs]
+    })
+    # #endregion
+    
+    configured_any = False
+    found_autolink = False
+    
+    # First pass: check if idp-auto-link exists and configure it
+    for ex in subflow_execs:
+        exec_id = ex.get("id")
+        provider = (ex.get("providerId") or "").lower()
+        requirement = ex.get("requirement", "N/A")
+        display = (ex.get("displayName") or "").lower()
+        is_subflow = ex.get("authenticationFlow", False)
+        
+        # Enable idp-auto-link (silent auto-linking for existing users)
+        if provider == "idp-auto-link":
+            found_autolink = True
+            if requirement != "ALTERNATIVE":
+                # #region agent log
+                _debug_log("E", "configure_handle_existing_account_for_autolink:enabling_autolink", "Enabling idp-auto-link", {
+                    "exec_id": exec_id,
+                    "current_requirement": requirement
+                })
+                # #endregion
+                set_execution_requirement(kc_admin, realm, subflow_alias, exec_id, "ALTERNATIVE")
+                configured_any = True
+                logger.info(f"✅ Enabled idp-auto-link in Handle Existing Account subflow (ID: {exec_id})")
+    
+    # If idp-auto-link doesn't exist, add it
+    if not found_autolink:
+        # #region agent log
+        _debug_log("E", "configure_handle_existing_account_for_autolink:adding_autolink", "Adding idp-auto-link to Handle Existing Account subflow", {
+            "subflow_alias": subflow_alias
+        })
+        # #endregion
+        if add_execution_to_flow(kc_admin, realm, subflow_alias, "idp-auto-link", "ALTERNATIVE"):
+            configured_any = True
+            logger.info(f"✅ Added idp-auto-link to Handle Existing Account subflow '{subflow_alias}'")
+        else:
+            # #region agent log
+            _debug_log("E", "configure_handle_existing_account_for_autolink:failed_to_add_autolink", "Failed to add idp-auto-link", {
+                "subflow_alias": subflow_alias
+            })
+            # #endregion
+            logger.warning(f"⚠️  Failed to add idp-auto-link to Handle Existing Account subflow '{subflow_alias}' - existing users may fail to link")
+    
+    # Second pass: configure other executions (skip idp-auto-link since we handled it above)
+    for ex in subflow_execs:
+        exec_id = ex.get("id")
+        provider = (ex.get("providerId") or "").lower()
+        requirement = ex.get("requirement", "N/A")
+        display = (ex.get("displayName") or "").lower()
+        is_subflow = ex.get("authenticationFlow", False)
+        
+        # Skip idp-auto-link (already handled in first pass)
+        if provider == "idp-auto-link":
+            continue
+        
+        # Disable idp-confirm-link (no prompts)
+        if provider == "idp-confirm-link":
+            if requirement != "DISABLED":
+                # #region agent log
+                _debug_log("E", "configure_handle_existing_account_for_autolink:disabling_confirm_link", "Disabling idp-confirm-link", {
+                    "exec_id": exec_id,
+                    "current_requirement": requirement
+                })
+                # #endregion
+                set_execution_requirement(kc_admin, realm, subflow_alias, exec_id, "DISABLED")
+                configured_any = True
+                logger.info(f"✅ Disabled idp-confirm-link in Handle Existing Account subflow (ID: {exec_id})")
+        
+        # Disable password/re-auth prompts (nested subflows)
+        elif is_subflow and ("verification" in display or "re-authentication" in display or "reauth" in display):
+            if requirement != "DISABLED":
+                # #region agent log
+                _debug_log("E", "configure_handle_existing_account_for_autolink:disabling_reauth", "Disabling re-authentication subflow", {
+                    "exec_id": exec_id,
+                    "display_name": ex.get("displayName"),
+                    "current_requirement": requirement
+                })
+                # #endregion
+                set_execution_requirement(kc_admin, realm, subflow_alias, exec_id, "DISABLED")
+                configured_any = True
+                logger.info(f"✅ Disabled re-authentication subflow '{ex.get('displayName')}' (ID: {exec_id})")
+        
+        # Disable password form prompts
+        elif not is_subflow and ("password" in display and "form" in display):
+            if requirement != "DISABLED":
+                # #region agent log
+                _debug_log("E", "configure_handle_existing_account_for_autolink:disabling_password_form", "Disabling password form", {
+                    "exec_id": exec_id,
+                    "display_name": ex.get("displayName"),
+                    "current_requirement": requirement
+                })
+                # #endregion
+                set_execution_requirement(kc_admin, realm, subflow_alias, exec_id, "DISABLED")
+                configured_any = True
+                logger.info(f"✅ Disabled password form '{ex.get('displayName')}' (ID: {exec_id})")
+    
+    # #region agent log
+    _debug_log("E", "configure_handle_existing_account_for_autolink:return", "Function returning", {
+        "flow_alias": flow_alias,
+        "subflow_alias": subflow_alias,
+        "configured_any": configured_any
+    })
+    # #endregion
+    return configured_any
+
+
+async def disable_handle_existing_account_subflow(kc_admin: Any, realm: str, flow_alias: str, visited: set[str] | None = None) -> bool:
+    """Disable 'Handle Existing Account' subflow execution recursively.
+    
+    This prevents the subflow from running, which prevents authentication prompts.
+    The subflow execution itself is disabled, not the subflow's internal executions.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias (checked recursively for subflows)
+        visited: Set of visited flow aliases to prevent infinite recursion
+    
+    Returns:
+        True if found and disabled, False otherwise
+    """
+    if visited is None:
+        visited = set()
+    
+    if flow_alias in visited:
+        return False
+    
+    visited.add(flow_alias)
+    
+    execs = get_flow_executions(kc_admin, realm, flow_alias)
+    logger.info(f"🔍 [disable_handle_existing_account_subflow] Checking flow '{flow_alias}' with {len(execs)} executions")
+    
+    # Log the structure of the first execution to understand API response format
+    if execs:
+        import json
+        first_exec = execs[0]
+        logger.info(
+            f"🔍 [disable_handle_existing_account_subflow] Sample execution structure (first execution):\n"
+            f"  Type: {type(first_exec)}\n"
+            f"  All keys: {list(first_exec.keys())}\n"
+            f"  Full JSON: {json.dumps(first_exec, indent=2)}"
+        )
+    
+    # Get all flows to map flowId to alias for recursive sub-flow checking
+    flows = list_authentication_flows(kc_admin, realm)
+    flow_id_to_alias = {f.get("id"): f.get("alias") for f in flows if f.get("id") and f.get("alias")}
+    logger.info(
+        f"🔍 [disable_handle_existing_account_subflow] Flow ID to alias mapping: "
+        f"{len(flow_id_to_alias)} flows mapped"
+    )
+    
+    # Log all flows to see what we have
+    import json
+    logger.info(
+        f"🔍 [disable_handle_existing_account_subflow] All flows in realm '{realm}':\n"
+        f"{json.dumps([{'id': f.get('id'), 'alias': f.get('alias')} for f in flows], indent=2)}"
+    )
+    
+    disabled_any = False
+    
+    for idx, e in enumerate(execs):
+        display = e.get("displayName", "")
+        display_lower = display.lower()
+        flow_id = e.get("flowId")  # Points to the subflow for subflow executions
+        exec_id = e.get("id")
+        provider = e.get("providerId", "")
+        # Keycloak API uses "authenticationFlow" (camelCase) for subflow executions
+        is_subflow = e.get("authenticationFlow", False)
+        
+        logger.info(
+            f"🔍 [disable_handle_existing_account_subflow] Execution {idx+1}/{len(execs)} in '{flow_alias}': "
+            f"id={exec_id}, displayName='{display}', providerId='{provider}', "
+            f"flowId={flow_id}, authenticationFlow={is_subflow}, "
+            f"requirement={e.get('requirement', 'N/A')}"
+        )
+        
+        # Check if this is a "Handle Existing Account" subflow execution
+        # A subflow execution has authenticationFlow=true and displayName contains "Handle Existing Account"
+        # Note: list_authentication_flows() only returns top-level flows, not subflows, so we match by displayName
+        if is_subflow:
+            logger.info(
+                f"🔍 [disable_handle_existing_account_subflow] Execution {idx+1} is a subflow execution: "
+                f"flowId={flow_id}, displayName='{display}', "
+                f"display_lower='{display_lower}'"
+            )
+            
+            # Match subflows that can trigger authentication prompts:
+            # 1. "Handle Existing Account" - main subflow that handles existing account logic
+            # 2. "Account verification options" - nested subflow that prompts for verification
+            # 3. "Verify Existing Account by Re-authentication" - nested subflow that prompts for re-auth
+            match_handle_existing = "handle" in display_lower and "existing" in display_lower and "account" in display_lower
+            match_account_verification = "account" in display_lower and "verification" in display_lower and "options" in display_lower
+            match_verify_reauth = "verify" in display_lower and "existing" in display_lower and "account" in display_lower and "re-authentication" in display_lower
+            
+            should_disable = match_handle_existing or match_account_verification or match_verify_reauth
+            
+            logger.info(
+                f"🔍 [disable_handle_existing_account_subflow] Matching check: "
+                f"match_handle_existing={match_handle_existing}, "
+                f"match_account_verification={match_account_verification}, "
+                f"match_verify_reauth={match_verify_reauth}, "
+                f"should_disable={should_disable}"
+            )
+            
+            if should_disable:
+                if exec_id:
+                    current_requirement = e.get("requirement", "N/A")
+                    subflow_name = "Handle Existing Account" if match_handle_existing else ("Account verification options" if match_account_verification else "Verify Existing Account by Re-authentication")
+                    logger.info(
+                        f"🎯 [disable_handle_existing_account_subflow] MATCHED '{subflow_name}' subflow! "
+                        f"Current requirement: {current_requirement}, will set to DISABLED"
+                    )
+                    # #region agent log
+                    _debug_log("C", "disable_handle_existing_account_subflow:before_disable", "Before disabling subflow", {
+                        "flow_alias": flow_alias,
+                        "exec_id": exec_id,
+                        "flow_id": flow_id,
+                        "subflow_name": subflow_name,
+                        "current_requirement": current_requirement,
+                        "display_name": display
+                    })
+                    # #endregion
+                    # Disable the subflow execution (prevents it from running)
+                    set_execution_requirement(kc_admin, realm, flow_alias, exec_id, "DISABLED")
+                    # #region agent log
+                    _debug_log("C", "disable_handle_existing_account_subflow:after_disable", "After disabling subflow", {
+                        "flow_alias": flow_alias,
+                        "exec_id": exec_id,
+                        "subflow_name": subflow_name
+                    })
+                    # #endregion
+                    logger.info(f"✅ Disabled '{subflow_name}' subflow execution in flow '{flow_alias}' (ID: {exec_id}, flowId: {flow_id})")
+                    disabled_any = True
+        
+        # Recursively check sub-flows
+        # Note: Subflows may not be in flow_id_to_alias if list_authentication_flows() doesn't return them
+        # So we query the database directly to get the alias by flow_id
+        if is_subflow and flow_id:
+            # #region agent log
+            _debug_log("C", "disable_handle_existing_account_subflow:check_recursion", "Checking if subflow can be recursed", {
+                "flow_alias": flow_alias,
+                "flow_id": flow_id,
+                "in_flow_id_to_alias": flow_id in flow_id_to_alias,
+                "display_name": display
+            })
+            # #endregion
+            
+            # Try flow_id_to_alias first (fast path)
+            if flow_id in flow_id_to_alias:
+                subflow_alias = flow_id_to_alias[flow_id]
+                logger.info(f"🔍 [disable_handle_existing_account_subflow] Recursing into subflow '{subflow_alias}'")
+                # #region agent log
+                _debug_log("C", "disable_handle_existing_account_subflow:recursing", "Recursing into subflow", {
+                    "parent_flow": flow_alias,
+                    "subflow_alias": subflow_alias,
+                    "subflow_id": flow_id
+                })
+                # #endregion
+                if await disable_handle_existing_account_subflow(kc_admin, realm, subflow_alias, visited):
+                    disabled_any = True
+            else:
+                # Fallback: Query database to get alias by flow_id (for nested subflows)
+                subflow_alias = await get_flow_alias_by_id(kc_admin, realm, flow_id)
+                if subflow_alias:
+                    logger.info(f"🔍 [disable_handle_existing_account_subflow] Found nested subflow alias '{subflow_alias}' via database lookup (flow_id: {flow_id})")
+                    # #region agent log
+                    _debug_log("C", "disable_handle_existing_account_subflow:recursing_db", "Recursing into subflow found via DB", {
+                        "parent_flow": flow_alias,
+                        "subflow_alias": subflow_alias,
+                        "subflow_id": flow_id
+                    })
+                    # #endregion
+                    if await disable_handle_existing_account_subflow(kc_admin, realm, subflow_alias, visited):
+                        disabled_any = True
+                else:
+                    # #region agent log
+                    _debug_log("C", "disable_handle_existing_account_subflow:no_recursion", "Subflow not found in mapping or DB", {
+                        "flow_alias": flow_alias,
+                        "flow_id": flow_id,
+                        "display_name": display,
+                        "available_flows": list(flow_id_to_alias.keys())[:5]  # First 5 for debugging
+                    })
+                    # #endregion
+    
+    # #region agent log
+    _debug_log("C", "disable_handle_existing_account_subflow:return", "Function returning", {
+        "flow_alias": flow_alias,
+        "disabled_any": disabled_any
+    })
+    # #endregion
+    return disabled_any
 
 
 def set_idp_first_broker_flow(kc_admin: Any, realm: str, idp_alias: str, flow_alias: str) -> None:
     """Set the firstBrokerLoginFlowAlias for an IdP."""
+    # #region agent log
+    _debug_log("D", "set_idp_first_broker_flow:entry", "Setting IdP first broker flow", {
+        "realm": realm,
+        "idp_alias": idp_alias,
+        "flow_alias": flow_alias
+    })
+    # #endregion
     # Include /auth in path because connection object strips it from base_url for /admin paths
     path = f"/auth/admin/realms/{realm}/identity-provider/instances/{idp_alias}"
     idp = kc_raw_get(kc_admin, path)
+    old_flow = idp.get("firstBrokerLoginFlowAlias", "N/A")
+    # #region agent log
+    _debug_log("D", "set_idp_first_broker_flow:before_update", "Before updating IdP", {
+        "idp_alias": idp_alias,
+        "old_flow": old_flow,
+        "new_flow": flow_alias
+    })
+    # #endregion
     idp["firstBrokerLoginFlowAlias"] = flow_alias
     kc_raw_put(kc_admin, path, idp)
+    # Verify it was actually set
+    idp_after = kc_raw_get(kc_admin, path)
+    actual_flow = idp_after.get("firstBrokerLoginFlowAlias", "N/A")
+    # #region agent log
+    _debug_log("D", "set_idp_first_broker_flow:after_update", "After updating IdP", {
+        "idp_alias": idp_alias,
+        "expected_flow": flow_alias,
+        "actual_flow": actual_flow,
+        "matches": actual_flow == flow_alias
+    })
+    # #endregion
     logger.info(f"✅ Set firstBrokerLoginFlowAlias='{flow_alias}' for IdP '{idp_alias}'")
 
 
+def verify_idp_flow_assignment(kc_admin: Any, realm: str, idp_alias: str, expected_flow_alias: str) -> dict[str, Any]:
+    """Verify IdP flow assignment via Admin API (source of truth).
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        idp_alias: IdP alias to verify (e.g., "auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294")
+        expected_flow_alias: Expected flow alias
+        
+    Returns:
+        Dict with verification result
+    """
+    # #region agent log
+    _debug_log("A", "verify_idp_flow_assignment:entry", "Verifying IdP flow assignment via API", {
+        "realm": realm,
+        "idp_alias": idp_alias,
+        "expected_flow_alias": expected_flow_alias
+    })
+    # #endregion
+    
+    try:
+        path = f"/auth/admin/realms/{realm}/identity-provider/instances/{idp_alias}"
+        idp = kc_raw_get(kc_admin, path)
+        actual_flow = idp.get("firstBrokerLoginFlowAlias", "N/A")
+        matches = actual_flow == expected_flow_alias
+        
+        result = {
+            "idp_alias": idp_alias,
+            "expected_flow": expected_flow_alias,
+            "actual_flow": actual_flow,
+            "matches": matches,
+            "idp_enabled": idp.get("enabled", False),
+            "provider_id": idp.get("providerId", "N/A")
+        }
+        
+        # #region agent log
+        _debug_log("A", "verify_idp_flow_assignment:result", f"IdP flow assignment {'matches' if matches else 'mismatch'}", {
+            "realm": realm,
+            "idp_alias": idp_alias,
+            "expected_flow": expected_flow_alias,
+            "actual_flow": actual_flow,
+            "matches": matches
+        })
+        # #endregion
+        
+        return result
+    except Exception as e:
+        # #region agent log
+        _debug_log("A", "verify_idp_flow_assignment:error", "IdP flow assignment verification failed", {
+            "realm": realm,
+            "idp_alias": idp_alias,
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        # #endregion
+        return {
+            "idp_alias": idp_alias,
+            "error": str(e),
+            "matches": False
+        }
+
+
+async def verify_flow_configuration_complete(kc_admin: Any, realm: str, flow_alias: str) -> dict[str, Any]:
+    """Verify complete flow configuration via Admin API (source of truth).
+    
+    Checks all critical executions and their requirements.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance
+        realm: Realm name
+        flow_alias: Flow alias to verify
+        
+    Returns:
+        Dict with verification results for all critical executions
+    """
+    # #region agent log
+    _debug_log("A", "verify_flow_configuration_complete:entry", "Verifying complete flow configuration via API", {
+        "realm": realm,
+        "flow_alias": flow_alias
+    })
+    # #endregion
+    
+    try:
+        execs = get_flow_executions(kc_admin, realm, flow_alias)
+        
+        results: dict[str, Any] = {
+            "flow_alias": flow_alias,
+            "executions": [],
+            "issues": []
+        }
+        
+        # Check critical executions
+        for ex in execs:
+            exec_id = ex.get("id")
+            provider = ex.get("providerId", "")
+            requirement = ex.get("requirement", "N/A")
+            display = ex.get("displayName", "")
+            is_subflow = ex.get("authenticationFlow", False)
+            
+            exec_result = {
+                "id": exec_id,
+                "display_name": display,
+                "provider_id": provider,
+                "requirement": requirement,
+                "is_subflow": is_subflow
+            }
+            
+            # Check for issues
+            display_lower = display.lower()
+            
+            # Review Profile should be ALTERNATIVE
+            if provider == "idp-review-profile" and requirement != "ALTERNATIVE":
+                results["issues"].append(f"Review Profile ({exec_id}) is {requirement}, should be ALTERNATIVE")
+            
+            # User creation or linking subflow should be ALTERNATIVE
+            if is_subflow and "user creation or linking" in display_lower and requirement != "ALTERNATIVE":
+                results["issues"].append(f"User creation or linking subflow ({exec_id}) is {requirement}, should be ALTERNATIVE")
+            
+            # Handle Existing Account should be ALTERNATIVE (not DISABLED)
+            if is_subflow and "handle" in display_lower and "existing" in display_lower and "account" in display_lower:
+                if requirement == "DISABLED":
+                    results["issues"].append(f"Handle Existing Account subflow ({exec_id}) is DISABLED, should be ALTERNATIVE for auto-linking")
+                elif requirement != "ALTERNATIVE":
+                    results["issues"].append(f"Handle Existing Account subflow ({exec_id}) is {requirement}, should be ALTERNATIVE")
+            
+            # Account verification options should be DISABLED
+            if is_subflow and "account" in display_lower and "verification" in display_lower and "options" in display_lower and requirement != "DISABLED":
+                results["issues"].append(f"Account verification options subflow ({exec_id}) is {requirement}, should be DISABLED")
+            
+            # Verify Existing Account by Re-authentication should be DISABLED
+            if is_subflow and "verify" in display_lower and "existing" in display_lower and "account" in display_lower and "re-authentication" in display_lower and requirement != "DISABLED":
+                results["issues"].append(f"Verify Existing Account by Re-authentication subflow ({exec_id}) is {requirement}, should be DISABLED")
+            
+            # idp-confirm-link should be DISABLED
+            if provider == "idp-confirm-link" and requirement != "DISABLED":
+                results["issues"].append(f"idp-confirm-link ({exec_id}) is {requirement}, should be DISABLED")
+            
+            # idp-create-user-if-unique should be ALTERNATIVE
+            if provider == "idp-create-user-if-unique" and requirement != "ALTERNATIVE":
+                results["issues"].append(f"idp-create-user-if-unique ({exec_id}) is {requirement}, should be ALTERNATIVE")
+            
+            # idp-auto-link should be ALTERNATIVE (inside Handle Existing Account)
+            if provider == "idp-auto-link" and requirement != "ALTERNATIVE":
+                results["issues"].append(f"idp-auto-link ({exec_id}) is {requirement}, should be ALTERNATIVE for auto-linking")
+            
+            results["executions"].append(exec_result)
+            
+            # Recursively check Handle Existing Account subflow for idp-auto-link
+            if is_subflow and "handle" in display_lower and "existing" in display_lower and "account" in display_lower:
+                flow_id = ex.get("flowId")
+                if flow_id:
+                    # Get subflow alias
+                    flows_map = {f.get("id"): f.get("alias") for f in list_authentication_flows(kc_admin, realm) if f.get("id") and f.get("alias")}
+                    subflow_alias = flows_map.get(flow_id)
+                    if not subflow_alias:
+                        # Try database lookup
+                        subflow_alias = await get_flow_alias_by_id(kc_admin, realm, flow_id)
+                    
+                    if subflow_alias:
+                        subflow_execs = get_flow_executions(kc_admin, realm, subflow_alias)
+                        found_autolink = False
+                        for sub_ex in subflow_execs:
+                            sub_provider = sub_ex.get("providerId", "")
+                            sub_requirement = sub_ex.get("requirement", "N/A")
+                            
+                            if sub_provider == "idp-auto-link":
+                                found_autolink = True
+                                if sub_requirement != "ALTERNATIVE":
+                                    results["issues"].append(
+                                        f"idp-auto-link inside Handle Existing Account subflow ({sub_ex.get('id')}) "
+                                        f"is {sub_requirement}, should be ALTERNATIVE"
+                                    )
+                                break
+                        
+                        if not found_autolink:
+                            results["issues"].append(
+                                f"Handle Existing Account subflow ({subflow_alias}) does not contain idp-auto-link - "
+                                f"existing users cannot be auto-linked"
+                            )
+        
+        # #region agent log
+        _debug_log("A", "verify_flow_configuration_complete:result", f"Flow configuration verification complete - {len(results['issues'])} issues found", {
+            "realm": realm,
+            "flow_alias": flow_alias,
+            "execution_count": len(results["executions"]),
+            "issue_count": len(results["issues"]),
+            "issues": results["issues"]
+        })
+        # #endregion
+        
+        return results
+    except Exception as e:
+        # #region agent log
+        _debug_log("A", "verify_flow_configuration_complete:error", "Flow configuration verification failed", {
+            "realm": realm,
+            "flow_alias": flow_alias,
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        # #endregion
+        return {
+            "flow_alias": flow_alias,
+            "error": str(e),
+            "issues": [f"Verification failed: {str(e)}"]
+        }
+
+
+def validate_broker_flow_invariants(kc_admin: Any, realm: str, flow_alias: str) -> None:
+    """Validate flow invariants and raise exception if validation fails.
+    
+    Validates that the broker-first-login flow is correctly configured:
+    - idp-create-user-if-unique must exist and be ALTERNATIVE (not REQUIRED)
+    - idp-confirm-link must be DISABLED (recursively checks sub-flows)
+    - idp-auto-link should not exist (logs warning if found, but doesn't fail)
+    - No REQUIRED executions in the linking/creation branch
+    
+    Raises:
+        ValueError: If flow invariants are violated (REQUIRED where ALTERNATIVE needed, etc.)
+    """
+    violations: list[str] = []
+    warnings: list[str] = []
+    found_create_user_if_unique = False
+    
+    # Get all flows to map flowId to alias for recursive sub-flow checking
+    flows = list_authentication_flows(kc_admin, realm)
+    flow_id_to_alias = {f.get("id"): f.get("alias") for f in flows if f.get("id") and f.get("alias")}
+    
+    def check_flow_recursive(target_flow_alias: str, visited: set[str]) -> None:
+        """Recursively check flow and sub-flows."""
+        if target_flow_alias in visited:
+            return
+        visited.add(target_flow_alias)
+        
+        execs = get_flow_executions(kc_admin, realm, target_flow_alias)
+        subflow_aliases: list[str] = []
+        
+        for e in execs:
+            exec_id = e.get("id")
+            provider = (e.get("providerId") or "").lower()
+            display = (e.get("displayName") or "").lower()
+            requirement = e.get("requirement", "").upper()
+            flow_id = e.get("flowId")
+            
+            # Track sub-flows for recursive checking
+            if flow_id and flow_id in flow_id_to_alias:
+                subflow_alias = flow_id_to_alias[flow_id]
+                if subflow_alias not in subflow_aliases:
+                    subflow_aliases.append(subflow_alias)
+            
+            # Check idp-create-user-if-unique: must exist and be ALTERNATIVE (not REQUIRED)
+            if provider == "idp-create-user-if-unique":
+                nonlocal found_create_user_if_unique
+                found_create_user_if_unique = True
+                if requirement == "REQUIRED":
+                    violations.append(
+                        f"Flow '{target_flow_alias}': execution '{e.get('displayName', 'N/A')}' "
+                        f"(idp-create-user-if-unique, ID: {exec_id}) is REQUIRED but must be ALTERNATIVE. "
+                        f"This execution can fail when user exists and can't link, so it cannot be REQUIRED."
+                    )
+                elif requirement != "ALTERNATIVE":
+                    violations.append(
+                        f"Flow '{target_flow_alias}': execution '{e.get('displayName', 'N/A')}' "
+                        f"(idp-create-user-if-unique, ID: {exec_id}) has requirement '{requirement}' "
+                        f"but must be ALTERNATIVE."
+                    )
+            
+            # Check idp-confirm-link: must be DISABLED
+            if provider == "idp-confirm-link" or (provider and "confirm" in provider and "link" in provider):
+                if requirement != "DISABLED":
+                    violations.append(
+                        f"Flow '{target_flow_alias}': execution '{e.get('displayName', 'N/A')}' "
+                        f"(idp-confirm-link, ID: {exec_id}) has requirement '{requirement}' "
+                        f"but must be DISABLED for silent auto-link."
+                    )
+            
+            # Check for idp-auto-link: should exist and be ALTERNATIVE inside Handle Existing Account
+            # This is required for silent auto-linking of existing users
+            if provider == "idp-auto-link":
+                # Check if we're inside Handle Existing Account subflow
+                # If so, idp-auto-link should be ALTERNATIVE
+                if requirement != "ALTERNATIVE":
+                    violations.append(
+                        f"Flow '{target_flow_alias}': execution '{e.get('displayName', 'N/A')}' "
+                        f"(idp-auto-link, ID: {exec_id}) has requirement '{requirement}' "
+                        f"but must be ALTERNATIVE for silent auto-linking of existing users."
+                    )
+            
+            # Check subflow executions that can trigger authentication prompts: must be DISABLED
+            # This prevents authentication prompts when linking accounts
+            # Keycloak API uses "authenticationFlow" (camelCase) for subflow executions
+            is_subflow = e.get("authenticationFlow", False)
+            subflow_id_to_check = flow_id if is_subflow else None
+            
+            if is_subflow:
+                display_lower = display.lower()
+                
+                # Match subflows that should be disabled:
+                # 1. "Handle Existing Account" - main subflow
+                # 2. "Account verification options" - prompts for verification
+                # 3. "Verify Existing Account by Re-authentication" - prompts for re-auth
+                match_handle_existing = "handle" in display_lower and "existing" in display_lower and "account" in display_lower
+                match_account_verification = "account" in display_lower and "verification" in display_lower and "options" in display_lower
+                match_verify_reauth = "verify" in display_lower and "existing" in display_lower and "account" in display_lower and "re-authentication" in display_lower
+                
+                should_be_disabled = match_handle_existing or match_account_verification or match_verify_reauth
+                
+                if should_be_disabled:
+                    # "Account verification options" and "Verify Existing Account by Re-authentication" should be DISABLED
+                    # But "Handle Existing Account" should be ENABLED (ALTERNATIVE) for auto-linking
+                    if match_handle_existing:
+                        # Handle Existing Account should be ALTERNATIVE (enabled for auto-linking)
+                        if requirement != "ALTERNATIVE":
+                            violations.append(
+                                f"Flow '{target_flow_alias}': 'Handle Existing Account' subflow execution "
+                                f"(ID: {exec_id}, displayName: {display}) has requirement '{requirement}' but must be ALTERNATIVE. "
+                                f"This is required for silent auto-linking of existing users."
+                            )
+                    else:
+                        # Account verification and re-authentication subflows should be DISABLED
+                        subflow_name = "Account verification options" if match_account_verification else "Verify Existing Account by Re-authentication"
+                        if requirement != "DISABLED":
+                            violations.append(
+                                f"Flow '{target_flow_alias}': '{subflow_name}' subflow execution "
+                                f"(ID: {exec_id}, displayName: {display}) has requirement '{requirement}' but must be DISABLED. "
+                                f"This prevents authentication prompts when linking accounts."
+                            )
+            
+            # Check for any REQUIRED executions in linking/creation branch
+            # (This is a general check - if we find REQUIRED executions that can fail, flag them)
+            if requirement == "REQUIRED" and exec_id:
+                # Log details for debugging
+                logger.debug(
+                    f"Flow '{target_flow_alias}': execution '{e.get('displayName', 'N/A')}' "
+                    f"(provider: {provider}, ID: {exec_id}) is REQUIRED"
+                )
+        
+        # Recursively check sub-flows
+        for subflow_alias in subflow_aliases:
+            check_flow_recursive(subflow_alias, visited)
+    
+    # Start recursive validation
+    visited: set[str] = set()
+    check_flow_recursive(flow_alias, visited)
+    
+    # Check if idp-create-user-if-unique exists (required for simplified strategy)
+    if not found_create_user_if_unique:
+        violations.append(
+            f"Flow '{flow_alias}': idp-create-user-if-unique execution not found. "
+            f"This execution is required for the simplified linking strategy."
+        )
+    
+    # Log warnings (non-blocking)
+    for warning in warnings:
+        logger.warning(warning)
+    
+    # Build detailed validation report
+    if violations:
+        # Get full execution details for error message
+        execs = get_flow_executions(kc_admin, realm, flow_alias)
+        exec_details = []
+        for e in execs:
+            exec_details.append(
+                f"  - {e.get('displayName', 'N/A')} "
+                f"(provider: {e.get('providerId', 'N/A')}, "
+                f"requirement: {e.get('requirement', 'N/A')}, "
+                f"ID: {e.get('id', 'N/A')})"
+            )
+        
+        error_msg = (
+            f"Flow validation failed for '{flow_alias}':\n"
+            + "\n".join(violations)
+            + f"\n\nCurrent flow executions:\n" + "\n".join(exec_details)
+        )
+        
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    
+    logger.info(f"✅ Flow '{flow_alias}' validation passed: all invariants satisfied")
+
+
 async def configure_silent_email_autolink(kc_admin: Any, realm: str) -> None:
-    """Configure silent email auto-link for all IdPs.
+    """Configure silent email auto-link using only idp-create-user-if-unique.
+    
+    Simplified strategy: Only use idp-create-user-if-unique (ALTERNATIVE).
+    This handles both new user creation and auto-linking existing users by email.
     
     This function:
     1. Copies the built-in 'first broker login' flow
     2. Disables the confirm-link prompt
-    3. Enables auto-link execution
+    3. Ensures idp-create-user-if-unique is ALTERNATIVE (not REQUIRED)
     4. Assigns the flow to all IdPs
     
     Security note: Silent auto-link by email is safe only if:
-    - IdP email is verified
+    - IdP email is verified (trustEmail=true only for trusted providers)
     - IdP is trusted (Google/Microsoft are generally safe)
     - Custom IdPs (like default-idp) must properly verify email ownership
     
@@ -378,45 +1430,202 @@ async def configure_silent_email_autolink(kc_admin: Any, realm: str) -> None:
         if not disabled:
             logger.warning("Could not disable confirm-link step - flow may still prompt")
         
-        # 3) Enable "Handle Existing Account" sub-flow (needed for auto-linking existing accounts)
-        # This sub-flow handles existing accounts, but with confirm-link disabled inside it
-        handle_existing_enabled = enable_handle_existing_account_subflow(kc_admin, realm, new_flow_name)
-        if not handle_existing_enabled:
-            logger.warning("Could not enable Handle Existing Account sub-flow - existing accounts may not auto-link")
-        
-        # 4) Ensure "Create User If Unique" is ALTERNATIVE (handles new users)
-        # Must be ALTERNATIVE, not REQUIRED, so it doesn't conflict with idp-auto-link
-        # Both need to be ALTERNATIVE so Keycloak can choose the right one
-        enabled = enable_auto_link_step(kc_admin, realm, new_flow_name)
+        # 3) Ensure "Create User If Unique" is ALTERNATIVE (not REQUIRED)
+        # Must be ALTERNATIVE because it can fail when user exists and can't link.
+        # This execution handles both new user creation and auto-linking existing users by email.
+        enabled = ensure_create_user_if_unique(kc_admin, realm, new_flow_name)
         if not enabled:
-            logger.warning("Could not enable auto-link step - manual configuration may be needed")
+            logger.warning("Could not ensure 'Create User If Unique' is ALTERNATIVE - manual configuration may be needed")
         
-        # 5) Add "Automatically Set Existing User" authenticator (handles existing accounts by email)
-        # Check if it already exists
-        execs = get_flow_executions(kc_admin, realm, new_flow_name)
-        has_auto_link = any(e.get("providerId") == "idp-auto-link" for e in execs)
-        if not has_auto_link:
-            auto_link_added = add_execution_to_flow(kc_admin, realm, new_flow_name, "idp-auto-link", "ALTERNATIVE")
-            if not auto_link_added:
-                logger.warning("Could not add 'Automatically Set Existing User' authenticator - existing accounts may not auto-link")
-        else:
-            logger.info("'Automatically Set Existing User' authenticator already exists in flow")
+        # 4) Configure "Handle Existing Account" subflow for silent auto-linking
+        # Instead of disabling it entirely, we enable auto-linking for existing users
+        # This handles the case where a user already exists (e.g., redacted@purdue.edu)
+        # and needs to be linked to the IdP account silently without prompts
+        # #region agent log
+        _debug_log("E", "configure_silent_email_autolink:before_configure_handle_existing", "Before configuring Handle Existing Account subflow for auto-linking", {
+            "flow_alias": new_flow_name
+        })
+        # #endregion
+        configured_auto_link = await configure_handle_existing_account_for_autolink(kc_admin, realm, new_flow_name)
+        # #region agent log
+        _debug_log("E", "configure_silent_email_autolink:after_configure_handle_existing", "After configuring Handle Existing Account subflow", {
+            "flow_alias": new_flow_name,
+            "configured_auto_link": configured_auto_link
+        })
+        # #endregion
+        if not configured_auto_link:
+            logger.warning("Could not configure 'Handle Existing Account' subflow for auto-linking - existing users may fail to link")
         
-        # 6) Set correct priorities: idp-auto-link should come AFTER idp-create-user-if-unique
-        # Order: Create User If Unique (priority -10) -> Automatically Set Existing User (priority -5)
-        # This ensures: new users get created first, existing users get auto-linked second
-        execs = get_flow_executions(kc_admin, realm, new_flow_name)
-        for e in execs:
-            provider = e.get("providerId")
+        # Check "User creation or linking" subflow for any problematic executions (Hypothesis E)
+        # This subflow is REQUIRED and contains nested executions that might trigger prompts
+        execs_check = get_flow_executions(kc_admin, realm, new_flow_name)
+        
+        # Keycloak doesn't allow REQUIRED and ALTERNATIVE at the same level - ALTERNATIVE will be ignored
+        # So we need to make all top-level executions ALTERNATIVE (or ensure no REQUIRED conflicts)
+        # Make "Review Profile" ALTERNATIVE to avoid conflict with "User creation or linking" (ALTERNATIVE)
+        for e in execs_check:
             exec_id = e.get("id")
-            if provider == "idp-create-user-if-unique" and exec_id:
-                set_execution_requirement(kc_admin, realm, new_flow_name, exec_id, "ALTERNATIVE", priority=-10)
-                logger.info("✅ Set 'Create User If Unique' priority to -10 (runs first)")
-            elif provider == "idp-auto-link" and exec_id:
-                set_execution_requirement(kc_admin, realm, new_flow_name, exec_id, "ALTERNATIVE", priority=-5)
-                logger.info("✅ Set 'Automatically Set Existing User' priority to -5 (runs second)")
+            provider = (e.get("providerId") or "").lower()
+            requirement = e.get("requirement", "N/A")
+            display = e.get("displayName", "")
+            
+            # Make "Review Profile" ALTERNATIVE to avoid REQUIRED/ALTERNATIVE conflict
+            if provider == "idp-review-profile" and requirement == "REQUIRED":
+                # #region agent log
+                _debug_log("E", "configure_silent_email_autolink:making_review_profile_alternative", "Making Review Profile ALTERNATIVE to avoid conflict", {
+                    "exec_id": exec_id,
+                    "current_requirement": requirement,
+                    "display_name": display
+                })
+                # #endregion
+                set_execution_requirement(kc_admin, realm, new_flow_name, exec_id, "ALTERNATIVE")
+                # #region agent log
+                _debug_log("E", "configure_silent_email_autolink:made_review_profile_alternative", "Made Review Profile ALTERNATIVE", {
+                    "exec_id": exec_id
+                })
+                # #endregion
         
-        # 4) Assign flow to all IdPs
+        for e in execs_check:
+            display = e.get("displayName", "")
+            display_lower = display.lower()
+            is_subflow = e.get("authenticationFlow", False)
+            requirement = e.get("requirement", "N/A")
+            if is_subflow and "user creation or linking" in display_lower:
+                flow_id = e.get("flowId")
+                exec_id = e.get("id")
+                # #region agent log
+                _debug_log("E", "configure_silent_email_autolink:found_user_creation_subflow", "Found User creation or linking subflow", {
+                    "exec_id": exec_id,
+                    "flow_id": flow_id,
+                    "requirement": requirement,
+                    "display_name": display
+                })
+                # #endregion
+                
+                # Make the "User creation or linking" subflow execution ALTERNATIVE (not REQUIRED)
+                # This prevents the entire flow from failing if idp-create-user-if-unique can't link
+                # Check both "REQUIRED" string and database state to ensure it's changed
+                if exec_id:
+                    # Always set to ALTERNATIVE (even if API says it's already ALTERNATIVE, database might differ)
+                    # #region agent log
+                    _debug_log("E", "configure_silent_email_autolink:making_user_creation_alternative", "Making User creation or linking subflow ALTERNATIVE", {
+                        "exec_id": exec_id,
+                        "current_requirement": requirement
+                    })
+                    # #endregion
+                    set_execution_requirement(kc_admin, realm, new_flow_name, exec_id, "ALTERNATIVE")
+                    # #region agent log
+                    _debug_log("E", "configure_silent_email_autolink:made_user_creation_alternative", "Made User creation or linking subflow ALTERNATIVE", {
+                        "exec_id": exec_id
+                    })
+                    # #endregion
+                    # Verification is now automatic in set_execution_requirement() - uses Admin API as source of truth
+                
+                # Get executions inside this subflow using database lookup if needed
+                if flow_id:
+                    # Try flow_id_to_alias first
+                    flows_map = {f.get("id"): f.get("alias") for f in list_authentication_flows(kc_admin, realm) if f.get("id") and f.get("alias")}
+                    subflow_alias = flows_map.get(flow_id)
+                    if not subflow_alias:
+                        # Fallback to database lookup
+                        subflow_alias = await get_flow_alias_by_id(kc_admin, realm, flow_id)
+                    
+                    if subflow_alias:
+                        subflow_execs = get_flow_executions(kc_admin, realm, subflow_alias)
+                        # #region agent log
+                        _debug_log("E", "configure_silent_email_autolink:user_creation_subflow_execs", "Executions inside User creation or linking subflow", {
+                            "subflow_alias": subflow_alias,
+                            "exec_count": len(subflow_execs),
+                            "executions": [{
+                                "id": ex.get("id"),
+                                "display_name": ex.get("displayName"),
+                                "requirement": ex.get("requirement"),
+                                "provider_id": ex.get("providerId"),
+                                "is_subflow": ex.get("authenticationFlow", False)
+                            } for ex in subflow_execs]
+                        })
+                        # #endregion
+                        
+                        # Check for problematic executions nested inside this subflow
+                        for sub_exec in subflow_execs:
+                            sub_display = sub_exec.get("displayName", "").lower()
+                            sub_is_subflow = sub_exec.get("authenticationFlow", False)
+                            sub_requirement = sub_exec.get("requirement", "N/A")
+                            sub_provider = (sub_exec.get("providerId") or "").lower()
+                            sub_exec_id = sub_exec.get("id")
+                            
+                            # Check if "Handle Existing Account" subflow is nested inside this subflow
+                            # Configure it for auto-linking instead of disabling it
+                            if sub_is_subflow and "handle" in sub_display and "existing" in sub_display and "account" in sub_display:
+                                # #region agent log
+                                _debug_log("E", "configure_silent_email_autolink:found_nested_handle_existing", "Found nested Handle Existing Account in User creation subflow", {
+                                    "subflow_alias": subflow_alias,
+                                    "exec_id": sub_exec_id,
+                                    "requirement": sub_requirement,
+                                    "display_name": sub_exec.get("displayName")
+                                })
+                                # #endregion
+                                # Configure it for auto-linking (don't disable - existing users need this)
+                                if sub_exec_id:
+                                    # Enable the subflow execution (make it ALTERNATIVE so it can run)
+                                    set_execution_requirement(kc_admin, realm, subflow_alias, sub_exec_id, "ALTERNATIVE")
+                                    # Get the subflow's flow_id and configure its internals for auto-linking
+                                    sub_subflow_flow_id = sub_exec.get("flowId")
+                                    if sub_subflow_flow_id:
+                                        # Get the subflow alias
+                                        sub_subflow_alias = await get_flow_alias_by_id(kc_admin, realm, sub_subflow_flow_id)
+                                        if sub_subflow_alias:
+                                            # Configure the subflow's internal executions for auto-linking
+                                            sub_subflow_execs = get_flow_executions(kc_admin, realm, sub_subflow_alias)
+                                            for sub_sub_exec in sub_subflow_execs:
+                                                sub_sub_provider = (sub_sub_exec.get("providerId") or "").lower()
+                                                sub_sub_exec_id = sub_sub_exec.get("id")
+                                                sub_sub_requirement = sub_sub_exec.get("requirement", "N/A")
+                                                
+                                                # Enable idp-auto-link
+                                                if sub_sub_provider == "idp-auto-link" and sub_sub_requirement != "ALTERNATIVE":
+                                                    set_execution_requirement(kc_admin, realm, sub_subflow_alias, sub_sub_exec_id, "ALTERNATIVE")
+                                                # Disable idp-confirm-link
+                                                elif sub_sub_provider == "idp-confirm-link" and sub_sub_requirement != "DISABLED":
+                                                    set_execution_requirement(kc_admin, realm, sub_subflow_alias, sub_sub_exec_id, "DISABLED")
+                                    # #region agent log
+                                    _debug_log("E", "configure_silent_email_autolink:configured_nested_handle_existing", "Configured nested Handle Existing Account for auto-linking", {
+                                        "subflow_alias": subflow_alias,
+                                        "exec_id": sub_exec_id
+                                    })
+                                    # #endregion
+                            
+                            # Also disable any REQUIRED authentication form executions that could trigger prompts
+                            # These include username/password forms, email verification forms, etc.
+                            if not sub_is_subflow and sub_requirement == "REQUIRED":
+                                is_auth_form = (
+                                    "idp-username-password-form" in sub_provider or
+                                    "idp-email-verification" in sub_provider or
+                                    ("password" in sub_display and "form" in sub_display) or
+                                    ("username" in sub_display and "password" in sub_display)
+                                )
+                                if is_auth_form:
+                                    # #region agent log
+                                    _debug_log("E", "configure_silent_email_autolink:found_auth_form", "Found REQUIRED authentication form execution", {
+                                        "subflow_alias": subflow_alias,
+                                        "exec_id": sub_exec_id,
+                                        "provider_id": sub_exec.get("providerId"),
+                                        "display_name": sub_exec.get("displayName"),
+                                        "requirement": sub_requirement
+                                    })
+                                    # #endregion
+                                    # Disable it to prevent authentication prompts
+                                    if sub_exec_id:
+                                        set_execution_requirement(kc_admin, realm, subflow_alias, sub_exec_id, "DISABLED")
+                                        # #region agent log
+                                        _debug_log("E", "configure_silent_email_autolink:disabled_auth_form", "Disabled authentication form execution", {
+                                            "subflow_alias": subflow_alias,
+                                            "exec_id": sub_exec_id,
+                                            "display_name": sub_exec.get("displayName")
+                                        })
+                                        # #endregion
+        
+        # 5) Assign flow to all IdPs
         idps = kc_admin.get_idps()
         assigned_count = 0
         for idp in idps:
@@ -430,9 +1639,201 @@ async def configure_silent_email_autolink(kc_admin: Any, realm: str) -> None:
         
         logger.info(f"✅ Configured silent email auto-link: assigned flow to {assigned_count} IdPs")
         
+        # Verify IdP flow assignments via API (especially the Microsoft IdP from the error log)
+        microsoft_idp_alias = "auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294"
+        idp_verification = verify_idp_flow_assignment(kc_admin, realm, microsoft_idp_alias, new_flow_name)
+        if not idp_verification.get("matches"):
+            logger.warning(
+                f"⚠️  Microsoft IdP '{microsoft_idp_alias}' flow assignment mismatch: "
+                f"expected '{new_flow_name}', got '{idp_verification.get('actual_flow', 'N/A')}'"
+            )
+        else:
+            logger.info(f"✅ Verified Microsoft IdP '{microsoft_idp_alias}' has flow '{new_flow_name}' assigned")
+        
+        # Verify complete flow configuration via API
+        flow_verification = await verify_flow_configuration_complete(kc_admin, realm, new_flow_name)
+        if flow_verification.get("issues"):
+            logger.warning(
+                f"⚠️  Flow configuration issues found:\n" + "\n".join(f"  - {issue}" for issue in flow_verification["issues"])
+            )
+        else:
+            logger.info(f"✅ Flow configuration verified: all critical executions configured correctly")
+        
+        # Verify actual state after changes using Admin API (source of truth)
+        # NOTE: We use Admin API for verification, NOT database queries, because:
+        # - Database may be wrong DB/wrong realm/cached/stale
+        # - Admin API is what Keycloak actually uses at runtime
+        # - Each set_execution_requirement() call already verifies via API automatically
+        # This final check is just to detect any REQUIRED/ALTERNATIVE conflicts that remain
+        # #region agent log
+        _debug_log("A", "configure_silent_email_autolink:before_verify", "Verifying actual state after changes (using Admin API as source of truth)", {
+            "flow_alias": new_flow_name,
+            "realm": realm
+        })
+        # #endregion
+        execs_after = get_flow_executions(kc_admin, realm, new_flow_name)
+        
+        # Log ALL top-level executions to check for REQUIRED/ALTERNATIVE conflicts
+        # #region agent log
+        _debug_log("A", "configure_silent_email_autolink:all_top_level_execs", "All top-level executions in flow", {
+            "flow_alias": new_flow_name,
+            "exec_count": len(execs_after),
+            "executions": [{
+                "id": ex.get("id"),
+                "display_name": ex.get("displayName"),
+                "requirement": ex.get("requirement"),
+                "provider_id": ex.get("providerId"),
+                "is_subflow": ex.get("authenticationFlow", False),
+                "priority": ex.get("priority")
+            } for ex in execs_after]
+        })
+        # #endregion
+        
+        # Check for REQUIRED executions at top level that might conflict with ALTERNATIVE
+        # Filter out nested executions (those inside subflows) - only check true top-level executions
+        # Keycloak's get_flow_executions() returns ALL executions including nested ones, so we need to filter properly
+        # Top-level executions are those that belong directly to the main flow (not nested in subflows)
+        # We identify them by checking if they're subflows OR if they're authenticators at the top level
+        # The issue is that nested authenticators also appear in the list, so we need to exclude them
+        # by checking if their parent is a subflow execution
+        
+        # Get all subflow execution IDs to exclude nested executions
+        subflow_exec_ids = {ex.get("id") for ex in execs_after if ex.get("authenticationFlow", False)}
+        
+        # Top-level executions are those that are either:
+        # 1. Subflow executions themselves (they're at top level)
+        # 2. Authenticator executions that are NOT nested inside subflows
+        # Since get_flow_executions() returns flat list, we can't easily determine nesting,
+        # so we'll use a simpler approach: only check subflow executions and direct authenticators
+        # that we know should be at top level (like idp-review-profile)
+        top_level_execs = [
+            ex for ex in execs_after 
+            if ex.get("authenticationFlow", False) or  # Subflows are top-level
+            (not ex.get("authenticationFlow", False) and ex.get("providerId") in ["idp-review-profile"])  # Known top-level authenticators
+        ]
+        required_execs = [ex for ex in top_level_execs if ex.get("requirement") == "REQUIRED"]
+        alternative_execs = [ex for ex in top_level_execs if ex.get("requirement") == "ALTERNATIVE"]
+        
+        # Also check for REQUIRED executions inside Conditional OTP subflow (these can cause conflicts)
+        conditional_otp_subflow = None
+        for ex in execs_after:
+            if ex.get("authenticationFlow", False) and "conditional" in ex.get("displayName", "").lower() and "otp" in ex.get("displayName", "").lower():
+                conditional_otp_subflow = ex
+                break
+        
+        if conditional_otp_subflow:
+            otp_flow_id = conditional_otp_subflow.get("flowId")
+            if otp_flow_id:
+                otp_subflow_alias = await get_flow_alias_by_id(kc_admin, realm, otp_flow_id)
+                if otp_subflow_alias:
+                    otp_execs = get_flow_executions(kc_admin, realm, otp_subflow_alias)
+                    otp_required = [ex for ex in otp_execs if ex.get("requirement") == "REQUIRED"]
+                    if otp_required:
+                        # #region agent log
+                        _debug_log("E", "configure_silent_email_autolink:found_otp_required", "Found REQUIRED executions in Conditional OTP subflow", {
+                            "otp_subflow_alias": otp_subflow_alias,
+                            "required_executions": [{
+                                "id": ex.get("id"),
+                                "display_name": ex.get("displayName"),
+                                "provider_id": ex.get("providerId")
+                            } for ex in otp_required]
+                        })
+                        # #endregion
+                        # Make them ALTERNATIVE to avoid conflicts
+                        for otp_ex in otp_required:
+                            otp_ex_id = otp_ex.get("id")
+                            if otp_ex_id:
+                                # #region agent log
+                                _debug_log("E", "configure_silent_email_autolink:making_otp_exec_alternative", "Making Conditional OTP execution ALTERNATIVE", {
+                                    "otp_subflow_alias": otp_subflow_alias,
+                                    "exec_id": otp_ex_id,
+                                    "display_name": otp_ex.get("displayName"),
+                                    "provider_id": otp_ex.get("providerId")
+                                })
+                                # #endregion
+                                set_execution_requirement(kc_admin, realm, otp_subflow_alias, otp_ex_id, "ALTERNATIVE")
+                                # #region agent log
+                                _debug_log("E", "configure_silent_email_autolink:made_otp_exec_alternative", "Made Conditional OTP execution ALTERNATIVE", {
+                                    "otp_subflow_alias": otp_subflow_alias,
+                                    "exec_id": otp_ex_id
+                                })
+                                # #endregion
+        
+        if required_execs and alternative_execs:
+            # #region agent log
+            _debug_log("A", "configure_silent_email_autolink:required_alternative_conflict", "REQUIRED and ALTERNATIVE at same level detected", {
+                "flow_alias": new_flow_name,
+                "required_executions": [{
+                    "id": ex.get("id"),
+                    "display_name": ex.get("displayName"),
+                    "provider_id": ex.get("providerId"),
+                    "is_subflow": ex.get("authenticationFlow", False)
+                } for ex in required_execs],
+                "alternative_executions": [{
+                    "id": ex.get("id"),
+                    "display_name": ex.get("displayName"),
+                    "provider_id": ex.get("providerId"),
+                    "is_subflow": ex.get("authenticationFlow", False)
+                } for ex in alternative_execs]
+            })
+            # #endregion
+            # Make remaining REQUIRED top-level executions ALTERNATIVE
+            for req_ex in required_execs:
+                req_ex_id = req_ex.get("id")
+                req_provider = req_ex.get("providerId", "")
+                # Skip if it's a critical execution that must be REQUIRED (but we want all ALTERNATIVE for silent flow)
+                if req_ex_id and req_provider != "idp-review-profile":  # Already handled above
+                    # #region agent log
+                    _debug_log("E", "configure_silent_email_autolink:making_remaining_required_alternative", "Making remaining REQUIRED execution ALTERNATIVE", {
+                        "exec_id": req_ex_id,
+                        "display_name": req_ex.get("displayName"),
+                        "provider_id": req_provider
+                    })
+                    # #endregion
+                    set_execution_requirement(kc_admin, realm, new_flow_name, req_ex_id, "ALTERNATIVE")
+                    # #region agent log
+                    _debug_log("E", "configure_silent_email_autolink:made_remaining_required_alternative", "Made remaining REQUIRED execution ALTERNATIVE", {
+                        "exec_id": req_ex_id
+                    })
+                    # #endregion
+        for e in execs_after:
+            exec_id = e.get("id")
+            display = e.get("displayName", "")
+            requirement = e.get("requirement", "N/A")
+            is_subflow = e.get("authenticationFlow", False)
+            display_lower = display.lower()
+            match_handle_existing = "handle" in display_lower and "existing" in display_lower and "account" in display_lower
+            match_account_verification = "account" in display_lower and "verification" in display_lower and "options" in display_lower
+            match_verify_reauth = "verify" in display_lower and "existing" in display_lower and "account" in display_lower and "re-authentication" in display_lower
+            should_be_disabled = match_handle_existing or match_account_verification or match_verify_reauth
+            if should_be_disabled or (is_subflow and ("handle" in display_lower or "verification" in display_lower or "re-authentication" in display_lower)):
+                # #region agent log
+                _debug_log("A", "configure_silent_email_autolink:verify_execution", "Verifying execution state", {
+                    "exec_id": exec_id,
+                    "display_name": display,
+                    "requirement": requirement,
+                    "is_subflow": is_subflow,
+                    "should_be_disabled": should_be_disabled,
+                    "match_handle_existing": match_handle_existing,
+                    "match_account_verification": match_account_verification,
+                    "match_verify_reauth": match_verify_reauth
+                })
+                # #endregion
+        
+        # 6) Validate flow invariants (fail fast if misconfigured)
+        try:
+            validate_broker_flow_invariants(kc_admin, realm, new_flow_name)
+        except ValueError as validation_error:
+            # Validation failures should fail the entire sync (don't silently continue with broken auth)
+            logger.error(f"Flow validation failed - authentication may be broken: {validation_error}")
+            raise
+        
     except Exception as e:
         logger.warning(f"Failed to configure silent email auto-link: {e}", exc_info=True)
-        # Don't fail the entire sync if flow configuration fails
+        # Re-raise validation errors (they indicate broken auth)
+        if isinstance(e, ValueError):
+            raise
+        # Don't fail the entire sync for other configuration failures
 
 
 @dataclass
@@ -1964,6 +3365,10 @@ async def sync_identity_providers(
         await configure_silent_email_autolink(kc_admin, "master")
         
         logger.info("✅ Identity provider sync completed")
+    except ValueError as validation_error:
+        # Validation errors indicate broken auth configuration - fail fast
+        logger.error(f"Flow validation failed - authentication configuration is broken: {validation_error}")
+        raise
     except Exception as e:
         logger.error(f"Failed to sync identity providers: {e}", exc_info=True)
 

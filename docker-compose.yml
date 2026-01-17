@@ -42,13 +42,20 @@ services:
       volume-init:
         condition: service_completed_successfully
     healthcheck:
-      # Check PostgreSQL readiness AND that restore/init scripts completed
+      # Ensure PostgreSQL is stable AFTER initialization restart
+      # When DB_OPERATION is set, wait for .restore_complete AND verify queries work
+      # When DB_OPERATION is empty, just check PostgreSQL readiness
       # The restore script creates /var/lib/postgresql/data/.restore_complete when done
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} && (test -f /var/lib/postgresql/data/.restore_complete || psql -U ${DB_USER} -d ${DB_NAME} -tc 'SELECT 1' >/dev/null 2>&1)"]
+      test: >
+        if [ -n "${DB_OPERATION:-}" ] && [ ! -f /var/lib/postgresql/data/.restore_complete ]; then
+          exit 1
+        fi &&
+        pg_isready -U ${DB_USER} -d ${DB_NAME} &&
+        psql -U ${DB_USER} -d ${DB_NAME} -tc 'SELECT 1' >/dev/null 2>&1
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 15
+      start_period: 60s
     networks:
       - internal
 
