@@ -28,7 +28,6 @@ import {
 } from "@/components/common/forms/PromptPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { VOICES } from "@/components/common/forms/voices";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
@@ -48,7 +47,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
   TooltipContent,
@@ -76,6 +74,9 @@ import {
 } from "lucide-react";
 import { parseAsString, useQueryStates, type Parser, type Values } from "nuqs";
 import AgentDebugInfo from "./AgentDebugInfo";
+import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { Voices } from "@/components/resources/Voices";
 
 // Type-only import from server page
 import type {
@@ -85,6 +86,15 @@ import type {
   SaveAgentIn,
   SaveAgentOut,
 } from "@/app/(main)/engine/agents/a/[agentId]/page";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+
+// Resource creation action types
+type CreateDraftReasoningLevelsIn = InputOf<"/api/v4/resources/reasoning_levels", "post">;
+type CreateDraftReasoningLevelsOut = OutputOf<"/api/v4/resources/reasoning_levels", "post">;
+type CreateDraftTemperatureLevelsIn = InputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftTemperatureLevelsOut = OutputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
 // Build model_mapping type from models array
 // The API returns models array, we build a mapping from model_id to model info
@@ -113,13 +123,21 @@ export interface AgentProps {
   agentDetail?: GetAgentOut; // For edit mode (agent_id provided)
   agentDetailDefault?: GetAgentOut; // For new mode (agent_id = null)
   saveAgentAction?: (input: SaveAgentIn) => Promise<SaveAgentOut>;
-  // Prompts delete removed - no prompts delete functionality needed
-  deleteAgentPromptAction?: undefined;
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   // See Z-DOCS.md "Draft Autosave Pattern" section for migration guide
   patchAgentDraftAction?: (
     input: PatchAgentDraftIn
   ) => Promise<PatchAgentDraftOut>;
+  // Resource creation actions
+  createReasoningLevelsAction?: (
+    input: CreateDraftReasoningLevelsIn
+  ) => Promise<CreateDraftReasoningLevelsOut>;
+  createTemperatureLevelsAction?: (
+    input: CreateDraftTemperatureLevelsIn
+  ) => Promise<CreateDraftTemperatureLevelsOut>;
+  createVoicesAction?: (
+    input: CreateDraftVoicesIn
+  ) => Promise<CreateDraftVoicesOut>;
 }
 
 interface FormErrors {
@@ -134,8 +152,10 @@ export default function Agent({
   agentDetail: serverAgentDetail,
   agentDetailDefault: serverAgentDetailDefault,
   saveAgentAction,
-  deleteAgentPromptAction,
   patchAgentDraftAction,
+  createReasoningLevelsAction,
+  createTemperatureLevelsAction,
+  createVoicesAction,
 }: AgentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -319,9 +339,9 @@ export default function Agent({
     active: boolean;
     role: string;
     departmentIds: string[];
-    model_temperature_level_id: string | null;
-    model_reasoning_level_id: string | null;
-    model_voice_ids: string[];
+    temperature_level_id: string | null;
+    reasoning_level_id: string | null;
+    voice_ids: string[];
   };
 
   const defaultDepartmentIds = useMemo(
@@ -346,9 +366,9 @@ export default function Agent({
         active: true,
         role: "assistant",
         departmentIds: defaultDepartmentIds,
-        model_temperature_level_id: null,
-        model_reasoning_level_id: null,
-        model_voice_ids: [],
+        temperature_level_id: null,
+        reasoning_level_id: null,
+        voice_ids: [],
       };
     }
 
@@ -363,18 +383,9 @@ export default function Agent({
       active: data.active ?? true,
       role: data.role || "assistant",
       departmentIds: data.department_ids || [],
-      model_temperature_level_id:
-        (
-          data as typeof data & {
-            selected_temperature_level_id?: string | null;
-          }
-        ).selected_temperature_level_id || null,
-      model_reasoning_level_id:
-        (data as typeof data & { selected_reasoning_level_id?: string | null })
-          .selected_reasoning_level_id || null,
-      model_voice_ids:
-        (data as typeof data & { selected_voice_ids?: string[] | null })
-          .selected_voice_ids || [],
+      temperature_level_id: data.temperature_level_id || null,
+      reasoning_level_id: data.reasoning_level_id || null,
+      voice_ids: data.voice_ids || [],
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -485,12 +496,6 @@ export default function Agent({
     [saveAgentAction]
   );
 
-  // Prompts delete removed - no prompts delete functionality needed
-  const handleDeleteAgentPrompt = async (_body: DeleteAgentPromptBody) => {
-    // No-op - prompts delete functionality removed
-    throw new Error("Prompts delete functionality has been removed");
-  };
-
   // Build model mapping from models array
   // Define this BEFORE temperatureBounds since temperatureBounds depends on it
   const modelMapping = useMemo((): AgentModelMapping => {
@@ -541,176 +546,6 @@ export default function Agent({
     });
     return mapping;
   }, [agentData?.departments]);
-
-  // Compute reasoning_mapping from reasoning_options array
-  const reasoningMapping = useMemo(() => {
-    if (
-      !agentDetail?.reasoning_options ||
-      !Array.isArray(agentDetail.reasoning_options)
-    ) {
-      return {} as Record<
-        string,
-        { id: string; name: string; description?: string }
-      >;
-    }
-    const mapping: Record<
-      string,
-      { id: string; name: string; description?: string }
-    > = {};
-    agentDetail.reasoning_options.forEach((opt) => {
-      if (opt.id) {
-        mapping[opt.id] = {
-          id: opt.id,
-          name: opt.reasoning_level || "",
-        };
-      }
-    });
-    return mapping;
-  }, [agentDetail?.reasoning_options]);
-
-  // Get temperature bounds and levels from selected model
-  const temperatureBounds = useMemo(() => {
-    // Get temperature bounds from selected model in model_mapping, fallback to agentDetail
-    const selectedModelId = draftState.modelId;
-    let lower = 0.0;
-    let upper = 1.0;
-    let levels: Array<{ id: string; temperature: string; is_upper: boolean }> =
-      [];
-
-    if (selectedModelId && modelMapping && selectedModelId in modelMapping) {
-      const modelInfo = modelMapping[selectedModelId];
-      if (modelInfo) {
-        // Read temperature bounds and levels from model_mapping (type-safe)
-        lower =
-          typeof modelInfo.temperature_lower === "number"
-            ? modelInfo.temperature_lower
-            : 0.0;
-        upper =
-          typeof modelInfo.temperature_upper === "number"
-            ? modelInfo.temperature_upper
-            : 1.0;
-        const tempLevels = modelInfo.temperature_levels;
-        // Handle both dict and array formats (backward compatibility)
-        if (tempLevels && typeof tempLevels === "object") {
-          const levelsArray = Array.isArray(tempLevels)
-            ? tempLevels
-            : Object.values(tempLevels);
-          if (levelsArray.length > 0) {
-            levels = levelsArray.map((l) => {
-              const levelObj = l as Record<string, string | boolean>;
-              return {
-                id: String(levelObj["id"] || ""),
-                temperature: String(levelObj["temperature"] || ""),
-                is_upper: Boolean(levelObj["is_upper"] || false),
-              };
-            });
-          }
-        }
-      }
-    }
-
-    // Fallback to agentDetail if no model selected or model doesn't have data
-    if (levels.length === 0) {
-      const agentDetailData = isEditMode ? agentDetail : agentDetailDefault;
-      const agentDetailWithLevels =
-        agentDetailData as typeof agentDetailData & {
-          temperature_levels?: Array<{
-            id: string;
-            temperature: string;
-            is_upper: boolean;
-          }>;
-        };
-      const tempLevels = agentDetailWithLevels?.temperature_levels;
-      // Handle both dict and array formats (backward compatibility)
-      levels = Array.isArray(tempLevels)
-        ? (tempLevels as Array<{
-            id: string;
-            temperature: string;
-            is_upper: boolean;
-          }>)
-        : tempLevels && typeof tempLevels === "object"
-          ? (Object.values(tempLevels) as Array<{
-              id: string;
-              temperature: string;
-              is_upper: boolean;
-            }>)
-          : [];
-      const agentDetailWithTemp = agentDetailData as typeof agentDetailData & {
-        temperature_lower?: number | null;
-        temperature_upper?: number | null;
-      };
-      lower = agentDetailWithTemp?.temperature_lower ?? 0.0;
-      upper = agentDetailWithTemp?.temperature_upper ?? 1.0;
-    }
-
-    const values = levels
-      .filter((l) => !l.is_upper)
-      .map((l) => l.temperature?.toString() || "")
-      .filter(Boolean);
-
-    return {
-      lower,
-      upper,
-      values: values.length > 0 ? values : [],
-      levels: levels,
-    };
-  }, [
-    isEditMode,
-    agentDetail,
-    agentDetailDefault,
-    draftState.modelId,
-    modelMapping,
-  ]);
-
-  // Helper to get available voice IDs and names
-  const availableVoices = useMemo(() => {
-    // Get voices from selected model in model_mapping, not from agentDetail
-    const selectedModelId = draftState.modelId;
-    let voices: Array<{ id: string; voice: string }> = [];
-
-    if (selectedModelId && modelMapping && selectedModelId in modelMapping) {
-      const modelInfo = modelMapping[selectedModelId];
-      if (modelInfo && "available_voices" in modelInfo) {
-        const modelVoices = (
-          modelInfo as typeof modelInfo & {
-            available_voices?:
-              | Array<{ id: string; voice: string }>
-              | Record<string, { id: string; voice: string }>;
-          }
-        ).available_voices;
-        // Handle both dict and array formats (backward compatibility)
-        if (modelVoices && typeof modelVoices === "object") {
-          const voicesArray = Array.isArray(modelVoices)
-            ? modelVoices
-            : Object.values(modelVoices);
-          voices = voicesArray.map((v) => ({
-            id: String(v["id"] || ""),
-            voice: String(v["voice"] || ""),
-          }));
-        }
-      }
-    }
-
-    // Fallback to agentDetail if no model selected or model doesn't have voices
-    if (voices.length === 0 && agentDetail?.available_voices) {
-      const agentVoices = agentDetail.available_voices;
-      // Handle both dict and array formats (backward compatibility)
-      const voicesArray = Array.isArray(agentVoices)
-        ? agentVoices
-        : agentVoices && typeof agentVoices === "object"
-          ? Object.values(agentVoices)
-          : [];
-      voices = voicesArray.map((v) => {
-        const voiceItem = v as { id?: string; voice?: string };
-        return {
-          id: voiceItem.id || "",
-          voice: voiceItem.voice || "",
-        };
-      });
-    }
-
-    return voices;
-  }, [draftState.modelId, modelMapping, agentDetail?.available_voices]);
 
   // Build prompt_mapping from prompts array and department_prompt_links
   const promptMapping = useMemo(() => {
@@ -1187,7 +1022,7 @@ export default function Agent({
         title: "Temperature",
         description: "Configure the temperature setting for the model.",
         optional: true,
-        resetFields: ["model_temperature_level_id"] as string[],
+        resetFields: ["temperature_level_id"] as string[],
       });
 
       if (selectedModelCapabilities.has_text_output) {
@@ -1196,7 +1031,7 @@ export default function Agent({
           title: "Reasoning Effort",
           description: "Configure the reasoning effort level.",
           optional: true,
-          resetFields: ["model_reasoning_level_id"] as string[],
+          resetFields: ["reasoning_level_id"] as string[],
         });
       }
 
@@ -1210,7 +1045,7 @@ export default function Agent({
           title: "Voices",
           description: "Select voices for audio output.",
           optional: true,
-          resetFields: ["model_voice_ids"] as string[],
+          resetFields: ["voice_ids"] as string[],
         });
       }
     }
@@ -1253,16 +1088,16 @@ export default function Agent({
           case "modelId":
             resetUpdates.modelId = initialDraftState.modelId;
             break;
-          case "model_temperature_level_id":
-            resetUpdates.model_temperature_level_id =
-              initialDraftState.model_temperature_level_id;
+          case "temperature_level_id":
+            resetUpdates.temperature_level_id =
+              initialDraftState.temperature_level_id;
             break;
-          case "model_reasoning_level_id":
-            resetUpdates.model_reasoning_level_id =
-              initialDraftState.model_reasoning_level_id;
+          case "reasoning_level_id":
+            resetUpdates.reasoning_level_id =
+              initialDraftState.reasoning_level_id;
             break;
-          case "model_voice_ids":
-            resetUpdates.model_voice_ids = initialDraftState.model_voice_ids;
+          case "voice_ids":
+            resetUpdates.voice_ids = initialDraftState.voice_ids;
             break;
           case "systemPrompt":
             resetUpdates.systemPrompt = initialDraftState.systemPrompt;
@@ -1416,11 +1251,11 @@ export default function Agent({
           active_flag_id: agentData?.active_flag_id || null,
           department_ids: finalDepartmentIds,
           artifact_name: draftState.role || "assistant",
-          temperature_level_id: draftState.model_temperature_level_id || null,
-          reasoning_level_id: draftState.model_reasoning_level_id || null,
+          temperature_level_id: draftState.temperature_level_id || null,
+          reasoning_level_id: draftState.reasoning_level_id || null,
           voice_ids:
-            draftState.model_voice_ids && draftState.model_voice_ids.length > 0
-              ? draftState.model_voice_ids
+            draftState.voice_ids && draftState.voice_ids.length > 0
+              ? draftState.voice_ids
               : [],
         });
         toast.success(
@@ -1612,6 +1447,12 @@ export default function Agent({
           return agentData.flag_resource?.generated ?? false;
         case "departments":
           return agentData.departments?.some((d) => d.generated) ?? false;
+        case "reasoning_levels":
+          return agentData.reasoning_level_resource?.generated ?? false;
+        case "temperature_levels":
+          return agentData.temperature_level_resource?.generated ?? false;
+        case "voices":
+          return agentData.voice_resources?.some((v) => v.generated) ?? false;
         default:
           return false;
       }
@@ -1631,6 +1472,9 @@ export default function Agent({
           instructions: "instructions",
           flags: "flags",
           departments: "departments",
+          reasoning_levels: "reasoning_levels",
+          temperature_levels: "temperature_levels",
+          voices: "voices",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
@@ -1715,6 +1559,30 @@ export default function Agent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateReasoningLevels = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["reasoning_levels"],
+        determineAgentType(["reasoning_levels"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateTemperatureLevels = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["temperature_levels"],
+        determineAgentType(["temperature_levels"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateVoices = useCallback(
+    async () =>
+      handleGenerateResources(["voices"], determineAgentType(["voices"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = () => {
@@ -1766,6 +1634,9 @@ export default function Agent({
         "instructions",
         "flags",
         "departments",
+        "reasoning_levels",
+        "temperature_levels",
+        "voices",
       ];
       if (
         data.resource_type &&
@@ -1794,6 +1665,13 @@ export default function Agent({
           }
           if (data.model_id) updates.modelId = data.model_id;
           if (data.prompt_id) updates.promptId = data.prompt_id;
+          if (data.reasoning_level_id) updates.reasoning_level_id = data.reasoning_level_id;
+          if (data.temperature_level_id) updates.temperature_level_id = data.temperature_level_id;
+          if (data.voice_ids && data.voice_ids.length > 0) {
+            updates.voice_ids = [
+              ...new Set([...prev.voice_ids, ...data.voice_ids]),
+            ];
+          }
           if (data.instructions_id) {
             // Find instructions text from agentData instructions array
             const instructionsResource = agentData?.instructions?.find(
@@ -1869,6 +1747,9 @@ export default function Agent({
         "instructions",
         "flags",
         "departments",
+        "reasoning_levels",
+        "temperature_levels",
+        "voices",
       ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
@@ -1907,6 +1788,9 @@ export default function Agent({
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
       model: ["models"],
+      temperature: ["temperature_levels"],
+      reasoning: ["reasoning_levels"],
+      voice: ["voices"],
       prompt: ["prompts"],
       instructions: ["instructions"],
       all: [
@@ -1917,6 +1801,9 @@ export default function Agent({
         "instructions",
         "flags",
         "departments",
+        "reasoning_levels",
+        "temperature_levels",
+        "voices",
       ],
     }),
     []
@@ -1932,6 +1819,9 @@ export default function Agent({
       instructions: "Instructions",
       flags: "Flags",
       departments: "Departments",
+      reasoning_levels: "Reasoning Levels",
+      temperature_levels: "Temperature Levels",
+      voices: "Voices",
     }),
     []
   );
@@ -2537,34 +2427,9 @@ export default function Agent({
                 case "temperature": {
                   if (!selectedModelCapabilities) return null;
 
-                  // Compute current temperature from level_id (computed directly, not with useMemo inside callback)
-                  let currentTemperature = 0.7;
-                  if (
-                    draftState.modelId &&
-                    draftState.model_temperature_level_id &&
-                    temperatureBounds.levels.length > 0
-                  ) {
-                    const level = temperatureBounds.levels.find(
-                      (l) =>
-                        l.id === draftState.model_temperature_level_id &&
-                        !l.is_upper
-                    );
-                    if (level) {
-                      currentTemperature = parseFloat(level.temperature);
-                    }
-                  }
-
-                  // Helper to get temperature level ID from temperature value
-                  const getTemperatureLevelId = (
-                    temp: number
-                  ): string | null => {
-                    const matchingLevel = temperatureBounds.levels.find(
-                      (l) =>
-                        !l.is_upper &&
-                        Math.abs(parseFloat(l.temperature) - temp) < 0.001
-                    );
-                    return matchingLevel?.id || null;
-                  };
+                  const selectedModel = agentData?.models?.find(
+                    (m) => m.model_id === draftState.modelId
+                  );
 
                   return (
                     <StepCard
@@ -2574,79 +2439,27 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      resetFields={["model_temperature_level_id"]}
+                      resetFields={["temperature_level_id"]}
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
-                      <div className="space-y-2">
-                        <Label htmlFor="temperature">
-                          Temperature: {currentTemperature.toFixed(2)}
-                        </Label>
-                        {temperatureBounds.lower === temperatureBounds.upper ? (
-                          <>
-                            <Slider
-                              id="temperature"
-                              data-testid="temperature-slider"
-                              min={temperatureBounds.lower}
-                              max={temperatureBounds.upper}
-                              step={0.01}
-                              value={[currentTemperature]}
-                              onValueChange={(value) => {
-                                const tempValue =
-                                  value[0] || temperatureBounds.lower;
-                                const levelId =
-                                  getTemperatureLevelId(tempValue);
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  model_temperature_level_id: levelId,
-                                }));
-                              }}
-                              className="w-full"
-                              disabled={isReadonly}
-                            />
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>
-                                {temperatureBounds.lower.toFixed(2)}{" "}
-                                (Deterministic)
-                              </span>
-                              <span>
-                                {temperatureBounds.upper.toFixed(2)} (Creative)
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Slider
-                              id="temperature"
-                              data-testid="temperature-slider"
-                              min={temperatureBounds.lower}
-                              max={temperatureBounds.upper}
-                              step={0.01}
-                              value={[currentTemperature]}
-                              onValueChange={(value) => {
-                                const tempValue = value[0] || 0;
-                                const levelId =
-                                  getTemperatureLevelId(tempValue);
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  model_temperature_level_id: levelId,
-                                }));
-                              }}
-                              className="w-full"
-                              disabled={isReadonly}
-                            />
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>
-                                {temperatureBounds.lower.toFixed(2)}{" "}
-                                (Deterministic)
-                              </span>
-                              <span>
-                                {temperatureBounds.upper.toFixed(2)} (Creative)
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      <TemperatureLevels
+                        temperature_level_id={draftState.temperature_level_id}
+                        temperature_level_resource={agentData?.temperature_level_resource ?? null}
+                        show_temperature_levels={agentData?.show_temperature_levels ?? true}
+                        temperature_level_suggestions={agentData?.temperature_level_suggestions ?? []}
+                        temperature_levels={agentData?.temperature_levels ?? []}
+                        temperature_lower={selectedModel?.temperature_lower ?? null}
+                        temperature_upper={selectedModel?.temperature_upper ?? null}
+                        disabled={isReadonly}
+                        onTemperatureLevelIdChange={(id) => setDraftState(prev => ({ ...prev, temperature_level_id: id }))}
+                        onGenerate={handleGenerateTemperatureLevels}
+                        isGenerating={isGenerating("temperature_levels")}
+                        showSlider={true}
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.temperature_levels_agent_id ?? null}
+                        createTemperatureLevelsAction={createTemperatureLevelsAction}
+                      />
                     </StepCard>
                   );
                 }
@@ -2654,128 +2467,6 @@ export default function Agent({
                 case "reasoning": {
                   if (!selectedModelCapabilities?.has_text_output) return null;
 
-                  const reasoningSearch =
-                    (stepFormData["reasoningSearch"] as string) || "";
-
-                  // Get reasoning options from selected model in model_mapping, fallback to agentDetail
-                  // Get reasoning options from selected model in model_mapping, fallback to agentDetail (computed directly, not with useMemo inside callback)
-                  let reasoningOptions: Array<{
-                    id: string;
-                    reasoning_level: string;
-                  }> = [];
-                  const selectedModelId = draftState.modelId;
-                  if (
-                    selectedModelId &&
-                    modelMapping &&
-                    selectedModelId in modelMapping
-                  ) {
-                    const modelInfo = modelMapping[selectedModelId];
-                    if (
-                      modelInfo?.reasoning_options &&
-                      typeof modelInfo.reasoning_options === "object"
-                    ) {
-                      const reasoningOptionsArray = Array.isArray(
-                        modelInfo.reasoning_options
-                      )
-                        ? modelInfo.reasoning_options
-                        : Object.values(modelInfo.reasoning_options);
-                      if (reasoningOptionsArray.length > 0) {
-                        reasoningOptions = reasoningOptionsArray.map((opt) => {
-                          const optObj = opt as Record<string, string>;
-                          return {
-                            id: String(optObj["id"] || ""),
-                            reasoning_level: String(
-                              optObj["reasoning_level"] || ""
-                            ),
-                          };
-                        }) as Array<{
-                          id: string;
-                          reasoning_level: string;
-                        }>;
-                      }
-                    }
-                  }
-                  // Fallback to agentDetail
-                  if (reasoningOptions.length === 0) {
-                    const agentReasoningOptions =
-                      agentDetail?.reasoning_options;
-                    if (
-                      agentReasoningOptions &&
-                      typeof agentReasoningOptions === "object"
-                    ) {
-                      const reasoningOptionsArray = Array.isArray(
-                        agentReasoningOptions
-                      )
-                        ? agentReasoningOptions
-                        : Object.values(agentReasoningOptions);
-                      reasoningOptions = reasoningOptionsArray.map((opt) => {
-                        const optObj = opt as Record<string, string>;
-                        return {
-                          id: String(optObj["id"] || ""),
-                          reasoning_level: String(
-                            optObj["reasoning_level"] || ""
-                          ),
-                        };
-                      }) as Array<{
-                        id: string;
-                        reasoning_level: string;
-                      }>;
-                    }
-                  }
-
-                  // Helper to get reasoning option ID from reasoning level value
-                  const getReasoningOptionId = (
-                    reasoningLevel: string
-                  ): string | null => {
-                    const mapping = new Map<string, string>();
-                    reasoningOptions.forEach((opt) => {
-                      if (opt.id && opt.reasoning_level) {
-                        mapping.set(opt.reasoning_level, opt.id);
-                      }
-                    });
-                    return mapping.get(reasoningLevel) || null;
-                  };
-
-                  // Helper to get reasoning level value from option ID
-                  const getReasoningLevelFromId = (
-                    optionId: string
-                  ): string => {
-                    const mapping = new Map<string, string>();
-                    reasoningOptions.forEach((opt) => {
-                      if (opt.id && opt.reasoning_level) {
-                        mapping.set(opt.id, opt.reasoning_level);
-                      }
-                    });
-                    return mapping.get(optionId) || "none";
-                  };
-
-                  const selectedReasoningLevel: string | null =
-                    draftState.model_reasoning_level_id
-                      ? getReasoningLevelFromId(
-                          draftState.model_reasoning_level_id
-                        )
-                      : "none";
-
-                  // Filter reasoning levels based on search term (computed directly, not with useMemo inside callback)
-                  const availableReasoningLevels =
-                    reasoningOptions && reasoningOptions.length > 0
-                      ? reasoningOptions.map((opt) => opt.reasoning_level)
-                      : ["none", "minimal", "low", "medium", "high"];
-
-                  let filteredReasoningLevels = availableReasoningLevels;
-                  if (reasoningSearch.trim()) {
-                    const searchLower = reasoningSearch.toLowerCase();
-                    filteredReasoningLevels = availableReasoningLevels.filter(
-                      (level) => {
-                        const mappingItem = reasoningMapping[level];
-                        if (!mappingItem) return false;
-                        const searchText =
-                          `${mappingItem.name} ${mappingItem.description || ""}`.toLowerCase();
-                        return searchText.includes(searchLower);
-                      }
-                    );
-                  }
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2784,70 +2475,24 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={reasoningSearch}
-                      onSearchChange={(term) =>
-                        setStepFormData({ reasoningSearch: term || null })
-                      }
-                      searchPlaceholder="Search reasoning effort..."
-                      resetFields={["model_reasoning_level_id"]}
+                      resetFields={["reasoning_level_id"]}
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
-                      <div className="grid grid-cols-4 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2">
-                        {filteredReasoningLevels.map((level) => {
-                          const mappingItem = reasoningMapping[level];
-                          if (!mappingItem) return null;
-
-                          const isSelected =
-                            selectedReasoningLevel !== null &&
-                            selectedReasoningLevel === level;
-
-                          return (
-                            <button
-                              key={level}
-                              type="button"
-                              onClick={() => {
-                                if (isReadonly) return;
-                                const newLevel =
-                                  selectedReasoningLevel === level
-                                    ? null
-                                    : level;
-                                const optionId = newLevel
-                                  ? getReasoningOptionId(newLevel)
-                                  : null;
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  model_reasoning_level_id: optionId,
-                                }));
-                              }}
-                              disabled={isReadonly}
-                              className={cn(
-                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                                "hover:shadow-md hover:bg-accent/50",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                "disabled:pointer-events-none disabled:opacity-50",
-                                isSelected && "ring-2 ring-primary bg-accent"
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm">
-                                    {mappingItem.name}
-                                  </div>
-                                  {mappingItem.description && (
-                                    <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                      {mappingItem.description}
-                                    </div>
-                                  )}
-                                </div>
-                                {isSelected && (
-                                  <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <ReasoningLevels
+                        reasoning_level_id={draftState.reasoning_level_id}
+                        reasoning_level_resource={agentData?.reasoning_level_resource ?? null}
+                        show_reasoning_levels={agentData?.show_reasoning_levels ?? true}
+                        reasoning_level_suggestions={agentData?.reasoning_level_suggestions ?? []}
+                        reasoning_levels={agentData?.reasoning_levels ?? []}
+                        disabled={isReadonly}
+                        onReasoningLevelIdChange={(id) => setDraftState(prev => ({ ...prev, reasoning_level_id: id }))}
+                        onGenerate={handleGenerateReasoningLevels}
+                        isGenerating={isGenerating("reasoning_levels")}
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.reasoning_levels_agent_id ?? null}
+                        createReasoningLevelsAction={createReasoningLevelsAction}
+                      />
                     </StepCard>
                   );
                 }
@@ -2861,39 +2506,6 @@ export default function Agent({
                     return null;
                   }
 
-                  const voiceSearch =
-                    (stepFormData["voiceSearch"] as string) || "";
-
-                  // Compute selected voice IDs (computed directly, not with useMemo inside callback)
-                  const selectedVoiceIds =
-                    draftState.model_voice_ids &&
-                    draftState.model_voice_ids.length > 0
-                      ? availableVoices
-                          .filter((v) =>
-                            draftState.model_voice_ids.includes(v.id)
-                          )
-                          .map((v) => v.voice)
-                      : [];
-
-                  // Get available voice names from availableVoices
-                  const availableVoiceNames = availableVoices.map(
-                    (v) => v.voice
-                  );
-
-                  // Filter voices based on search term and availability
-                  let filteredVoices = VOICES.filter((voice) =>
-                    availableVoiceNames.includes(voice.id)
-                  );
-
-                  if (voiceSearch.trim()) {
-                    const searchLower = voiceSearch.toLowerCase();
-                    filteredVoices = filteredVoices.filter(
-                      (voice) =>
-                        voice.name.toLowerCase().includes(searchLower) ||
-                        voice.id.toLowerCase().includes(searchLower)
-                    );
-                  }
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2902,66 +2514,24 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      searchTerm={voiceSearch}
-                      onSearchChange={(term) =>
-                        setStepFormData({ voiceSearch: term || null })
-                      }
-                      searchPlaceholder="Search voices..."
-                      resetFields={["model_voice_ids"]}
+                      resetFields={["voice_ids"]}
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
-                      <div className="grid grid-cols-4 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2">
-                        {filteredVoices.map((voice) => {
-                          const isSelected = selectedVoiceIds.includes(
-                            voice.id
-                          );
-
-                          return (
-                            <button
-                              key={voice.id}
-                              type="button"
-                              onClick={() => {
-                                if (isReadonly) return;
-                                const newVoiceIds = isSelected
-                                  ? selectedVoiceIds.filter(
-                                      (id) => id !== voice.id
-                                    )
-                                  : [...selectedVoiceIds, voice.id];
-
-                                // Map voice IDs back to option IDs
-                                const selectedIds = availableVoices
-                                  .filter((v) => newVoiceIds.includes(v.voice))
-                                  .map((v) => v.id);
-
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  model_voice_ids: selectedIds,
-                                }));
-                              }}
-                              disabled={isReadonly}
-                              className={cn(
-                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                                "hover:shadow-md hover:bg-accent/50",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                "disabled:pointer-events-none disabled:opacity-50",
-                                isSelected && "ring-2 ring-primary bg-accent"
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm">
-                                    {voice.name}
-                                  </div>
-                                </div>
-                                {isSelected && (
-                                  <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <Voices
+                        voice_ids={draftState.voice_ids}
+                        voice_resources={agentData?.voice_resources ?? []}
+                        show_voices={agentData?.show_voices ?? true}
+                        voice_suggestions={agentData?.voice_suggestions ?? []}
+                        voices={agentData?.voices ?? []}
+                        disabled={isReadonly}
+                        onVoiceIdsChange={(ids) => setDraftState(prev => ({ ...prev, voice_ids: ids }))}
+                        onGenerate={handleGenerateVoices}
+                        isGenerating={isGenerating("voices")}
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.voices_agent_id ?? null}
+                        createVoicesAction={createVoicesAction}
+                      />
                     </StepCard>
                   );
                 }

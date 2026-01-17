@@ -16,16 +16,17 @@ type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
 type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
 type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
-// Prompts delete removed - no prompts delete functionality needed
-type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
-type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
+type CreateDraftReasoningLevelsIn = InputOf<"/api/v4/resources/reasoning_levels", "post">;
+type CreateDraftReasoningLevelsOut = OutputOf<"/api/v4/resources/reasoning_levels", "post">;
+type CreateDraftTemperatureLevelsIn = InputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftTemperatureLevelsOut = OutputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAgent = async (
-  input: GetAgentIn
-): Promise<GetAgentOut> => {
+const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
   return api.post("/agents/get", input, {
     cache: "no-store",
     headers: {
@@ -41,17 +42,6 @@ async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/agents/save", input);
 }
-
-// Prompts delete removed - no prompts delete functionality needed
-
-// TODO: Investigate - agents/draft endpoint doesn't exist on server
-// async function patchAgentDraft(
-//   input: PatchAgentDraftIn
-// ): Promise<PatchAgentDraftOut> {
-//   "use server";
-//   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-//   return api.patch("/agents/draft", input);
-// }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -107,19 +97,14 @@ export default async function NewAgentPage({
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         agentDetailDefault={agentDetailDefault}
         saveAgentAction={saveAgent}
-        deleteAgentPromptAction={deleteAgentPrompt}
         patchAgentDraftAction={undefined}
+        createReasoningLevelsAction={createDraftReasoningLevels}
+        createTemperatureLevelsAction={createDraftTemperatureLevels}
+        createVoicesAction={createDraftVoices}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  GetAgentIn,
-  GetAgentOut,
-  SaveAgentIn,
-  SaveAgentOut,
-  PatchAgentDraftIn,
-  PatchAgentDraftOut,
-};
+export type { GetAgentIn, GetAgentOut, SaveAgentIn, SaveAgentOut };

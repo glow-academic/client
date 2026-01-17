@@ -20,13 +20,17 @@ type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
 // Prompts delete removed - no prompts delete functionality needed
 type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
+type CreateDraftReasoningLevelsIn = InputOf<"/api/v4/resources/reasoning_levels", "post">;
+type CreateDraftReasoningLevelsOut = OutputOf<"/api/v4/resources/reasoning_levels", "post">;
+type CreateDraftTemperatureLevelsIn = InputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftTemperatureLevelsOut = OutputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAgent = async (
-  input: GetAgentIn
-): Promise<GetAgentOut> => {
+const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
   return api.post("/agents/get", input, {
     cache: "no-store",
     headers: {
@@ -38,7 +42,7 @@ const getAgent = async (
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { agentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
@@ -80,6 +84,30 @@ async function patchAgentDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/agents/draft", input);
+}
+
+async function createDraftReasoningLevels(
+  input: CreateDraftReasoningLevelsIn
+): Promise<CreateDraftReasoningLevelsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/reasoning_levels", input);
+}
+
+async function createDraftTemperatureLevels(
+  input: CreateDraftTemperatureLevelsIn
+): Promise<CreateDraftTemperatureLevelsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/temperature_levels", input);
+}
+
+async function createDraftVoices(
+  input: CreateDraftVoicesIn
+): Promise<CreateDraftVoicesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/voices", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -129,8 +157,10 @@ export default async function AgentEditPage({
           agentId={agentId}
           {...(agentDetail && { agentDetail })}
           saveAgentAction={saveAgent}
-          deleteAgentPromptAction={undefined}
           patchAgentDraftAction={undefined}
+          createReasoningLevelsAction={createDraftReasoningLevels}
+          createTemperatureLevelsAction={createDraftTemperatureLevels}
+          createVoicesAction={createDraftVoices}
         />
       </div>
     );
@@ -159,8 +189,8 @@ export default async function AgentEditPage({
 export type {
   GetAgentIn,
   GetAgentOut,
-  SaveAgentIn,
-  SaveAgentOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
+  SaveAgentIn,
+  SaveAgentOut,
 };

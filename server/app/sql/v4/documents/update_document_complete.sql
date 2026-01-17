@@ -184,7 +184,7 @@ link_uploads AS (
     FROM params p
     CROSS JOIN unnest(p.upload_ids) as uploads_id
     WHERE COALESCE(array_length(p.upload_ids, 1), 0) > 0
-    ON CONFLICT ON CONSTRAINT document_uploads_resource_pkey DO UPDATE SET
+    ON CONFLICT (document_id, uploads_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 )

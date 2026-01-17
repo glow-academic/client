@@ -2991,6 +2991,34 @@ class QGetAgentV4PromptResource(BaseModel):
     description: str | None
     generated: bool | None
 
+
+
+
+class QGetAgentV4ReasoningLevelResource(BaseModel):
+
+    id: UUID | None
+    reasoning_level: str | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4TemperatureLevelResource(BaseModel):
+
+    id: UUID | None
+    temperature: float | None
+    is_upper: bool | None
+    generated: bool | None
+
+
+
+
+class QGetAgentV4VoiceResource(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
 class GetAgentSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -3045,17 +3073,35 @@ class GetAgentSqlRow(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetAgentV4Department] | None = None
+    reasoning_level_id: UUID | None = None
+    reasoning_level_resource: QGetAgentV4ReasoningLevelResource | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetAgentV4ReasoningLevelResource] | None = None
+    temperature_level_id: UUID | None = None
+    temperature_level_resource: QGetAgentV4TemperatureLevelResource | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetAgentV4TemperatureLevelResource] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetAgentV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetAgentV4VoiceResource] | None = None
     system_prompt: str | None = None
     active: bool | None = None
     role: str | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    voice_ids: list[UUID] | None = None
     valid_model_ids: list[UUID] | None = None
     valid_department_ids: list[UUID] | None = None
-    temperature_levels: Any | None = None
-    reasoning_options: Any | None = None
-    available_voices: Any | None = None
+    temperature_levels_jsonb: Any | None = None
+    reasoning_options_jsonb: Any | None = None
+    available_voices_jsonb: Any | None = None
     debug_info: list[dict[str, Any]] | None = None
     name: str | None = None
     description: str | None = None
@@ -3120,17 +3166,35 @@ class GetAgentApiResponse(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetAgentV4Department] | None = None
+    reasoning_level_id: UUID | None = None
+    reasoning_level_resource: QGetAgentV4ReasoningLevelResource | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetAgentV4ReasoningLevelResource] | None = None
+    temperature_level_id: UUID | None = None
+    temperature_level_resource: QGetAgentV4TemperatureLevelResource | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetAgentV4TemperatureLevelResource] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetAgentV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetAgentV4VoiceResource] | None = None
     system_prompt: str | None = None
     active: bool | None = None
     role: str | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    voice_ids: list[UUID] | None = None
     valid_model_ids: list[UUID] | None = None
     valid_department_ids: list[UUID] | None = None
-    temperature_levels: Any | None = None
-    reasoning_options: Any | None = None
-    available_voices: Any | None = None
+    temperature_levels_jsonb: Any | None = None
+    reasoning_options_jsonb: Any | None = None
+    available_voices_jsonb: Any | None = None
     debug_info: list[dict[str, Any]] | None = None
     name: str | None = None
     description: str | None = None

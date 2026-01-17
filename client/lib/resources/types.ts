@@ -17,4 +17,9 @@ export type ResourceType =
   | "scenario_positions"
   | "scenario_rubric_grade_agents"
   | "templates"
-  | "uploads";
+  | "uploads"
+  | "models"
+  | "prompts"
+  | "reasoning_levels"
+  | "temperature_levels"
+  | "voices";

@@ -110,6 +110,25 @@ CREATE TYPE types.q_get_agent_v4_prompt_resource AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_agent_v4_reasoning_level_resource AS (
+    id uuid,
+    reasoning_level text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_agent_v4_temperature_level_resource AS (
+    id uuid,
+    temperature real,
+    is_upper boolean,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_agent_v4_voice_resource AS (
+    id uuid,
+    voice text,
+    generated boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_agent_v4(
     profile_id uuid,
@@ -178,18 +197,43 @@ RETURNS TABLE (
     departments_required boolean,
     department_suggestions uuid[],
     departments types.q_get_agent_v4_department[],
+    -- Single-select resources: reasoning_levels
+    reasoning_level_id uuid,
+    reasoning_level_resource types.q_get_agent_v4_reasoning_level_resource,
+    show_reasoning_levels boolean,
+    reasoning_levels_agent_id uuid,
+    reasoning_levels_required boolean,
+    reasoning_level_suggestions uuid[],
+    reasoning_levels types.q_get_agent_v4_reasoning_level_resource[],
+    -- Single-select resources: temperature_levels
+    temperature_level_id uuid,
+    temperature_level_resource types.q_get_agent_v4_temperature_level_resource,
+    show_temperature_levels boolean,
+    temperature_levels_agent_id uuid,
+    temperature_levels_required boolean,
+    temperature_level_suggestions uuid[],
+    temperature_levels types.q_get_agent_v4_temperature_level_resource[],
+    -- Multi-select resources: voices
+    voice_ids uuid[],
+    voice_resources types.q_get_agent_v4_voice_resource[],
+    show_voices boolean,
+    voices_agent_id uuid,
+    voices_required boolean,
+    voice_suggestions uuid[],
+    voices types.q_get_agent_v4_voice_resource[],
     -- Agent-specific fields
     system_prompt text,
     active boolean,
     role text,
-    temperature_level_id uuid,
-    reasoning_level_id uuid,
-    voice_ids uuid[],
+    -- Note: temperature_level_id, reasoning_level_id, voice_ids are now in resource fields above
+    -- These backward compatibility fields are kept in SELECT clause only (not in RETURNS TABLE)
     valid_model_ids uuid[],
     valid_department_ids uuid[],
-    temperature_levels jsonb,
-    reasoning_options jsonb,
-    available_voices jsonb,
+    -- Note: temperature_levels_jsonb, reasoning_options_jsonb, available_voices_jsonb kept for backward compatibility
+    -- The resource arrays (reasoning_levels, temperature_levels, voices) contain the same data in structured format
+    temperature_levels_jsonb jsonb,
+    reasoning_options_jsonb jsonb,
+    available_voices_jsonb jsonb,
     debug_info jsonb[],
     -- Backward compatibility: top-level name and description
     name text,
@@ -348,7 +392,25 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        ) as departments_has_tools
+        ) as departments_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'reasoning_levels'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        ) as reasoning_levels_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'temperature_levels'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        ) as temperature_levels_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'voices'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        ) as voices_has_tools
     FROM params x
 ),
 -- Missing tools check for can_edit and disabled_reason
@@ -408,6 +470,9 @@ ui_flags AS (
         true as show_prompts,  -- Always show prompts picker
         true as show_instructions,  -- Always show instructions picker
         true as show_flag,  -- Flag is a boolean toggle that should be shown
+        true as show_reasoning_levels,  -- Show if model has reasoning options
+        true as show_temperature_levels,  -- Show if model has temperature levels
+        true as show_voices,  -- Show if model has voices
         -- Multi-select resource flags (based on business logic)
         CASE 
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
@@ -1538,6 +1603,228 @@ departments_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'reasoning_levels' resource
+reasoning_levels_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'agent'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE NULL::uuid = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'reasoning_levels'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id
+                WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'temperature_levels' resource
+temperature_levels_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'agent'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE NULL::uuid = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'temperature_levels'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id
+                WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'voices' resource
+voices_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'agent'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE NULL::uuid = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'voices'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id
+                WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Agent selection for 'flags' resource
 flag_agent_data AS (
     WITH eligible_agents AS (
@@ -1610,6 +1897,295 @@ flag_agent_data AS (
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
+    LIMIT 1
+),
+-- Reasoning level resource data (for detail mode and draft mode)
+reasoning_level_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT arl.reasoning_level_id FROM agent_reasoning_levels arl WHERE arl.agent_id = (SELECT agent_id FROM params) AND arl.active = true LIMIT 1),
+            NULL
+        ) as reasoning_level_id,
+        (SELECT ROW(rl.id, rl.reasoning_level, COALESCE(rl.generated, false))::types.q_get_agent_v4_reasoning_level_resource FROM agent_reasoning_levels arl JOIN reasoning_levels_resource rl ON arl.reasoning_level_id = rl.id WHERE arl.agent_id = (SELECT agent_id FROM params) AND arl.active = true LIMIT 1) as agent_reasoning_level_resource
+    FROM params
+),
+-- Temperature level resource data (for detail mode and draft mode)
+temperature_level_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT atl.temperature_level_id FROM agent_temperature_levels atl WHERE atl.agent_id = (SELECT agent_id FROM params) AND atl.active = true LIMIT 1),
+            NULL
+        ) as temperature_level_id,
+        (SELECT ROW(tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_agent_v4_temperature_level_resource FROM agent_temperature_levels atl JOIN temperature_levels_resource tl ON atl.temperature_level_id = tl.id WHERE atl.agent_id = (SELECT agent_id FROM params) AND atl.active = true LIMIT 1) as agent_temperature_level_resource
+    FROM params
+),
+-- Voice resource data (for detail mode and draft mode)
+voice_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(av.voice_id ORDER BY av.created_at) FROM agent_voices av WHERE av.agent_id = (SELECT agent_id FROM params) AND av.active = true),
+            ARRAY[]::uuid[]
+        )::uuid[] as voice_ids,
+        COALESCE(
+            (SELECT ARRAY_AGG(ROW(v.id, v.voice, COALESCE(v.generated, false))::types.q_get_agent_v4_voice_resource ORDER BY v.voice) FROM agent_voices av JOIN voices_resource v ON av.voice_id = v.id WHERE av.agent_id = (SELECT agent_id FROM params) AND av.active = true),
+            ARRAY[]::types.q_get_agent_v4_voice_resource[]
+        )::types.q_get_agent_v4_voice_resource[] as agent_voice_resources
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Reasoning level suggestions: linked to agents OR same group with generated=true
+reasoning_level_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(arl.reasoning_level_id ORDER BY arl.created_at DESC)
+             FROM (
+                 SELECT DISTINCT arl.reasoning_level_id, MAX(arl.created_at) as created_at
+                 FROM agent_reasoning_levels arl
+                 JOIN reasoning_levels_resource rl ON rl.id = arl.reasoning_level_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE arl.reasoning_level_id IS NOT NULL
+                   AND rl.reasoning_level IS NOT NULL
+                   AND rl.reasoning_level != ''
+                   AND rl.active = true
+                   AND (
+                       -- Option 1: Linked to agents (agent_reasoning_levels junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       arl.generated = false
+                       OR
+                       (
+                           arl.generated = true
+                           AND rl.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = rl.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY arl.reasoning_level_id
+                 ORDER BY MAX(arl.created_at) DESC
+                 LIMIT 20
+             ) arl),
+            ARRAY[]::uuid[]
+        ) as reasoning_level_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Temperature level suggestions: linked to agents OR same group with generated=true
+temperature_level_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(atl.temperature_level_id ORDER BY atl.created_at DESC)
+             FROM (
+                 SELECT DISTINCT atl.temperature_level_id, MAX(atl.created_at) as created_at
+                 FROM agent_temperature_levels atl
+                 JOIN temperature_levels_resource tl ON tl.id = atl.temperature_level_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE atl.temperature_level_id IS NOT NULL
+                   AND tl.temperature IS NOT NULL
+                   AND tl.active = true
+                   AND (
+                       -- Option 1: Linked to agents (agent_temperature_levels junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       atl.generated = false
+                       OR
+                       (
+                           atl.generated = true
+                           AND tl.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = tl.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY atl.temperature_level_id
+                 ORDER BY MAX(atl.created_at) DESC
+                 LIMIT 20
+             ) atl),
+            ARRAY[]::uuid[]
+        ) as temperature_level_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Voice suggestions: linked to agents OR same group with generated=true
+voice_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(av.voice_id ORDER BY av.created_at DESC)
+             FROM (
+                 SELECT DISTINCT av.voice_id, MAX(av.created_at) as created_at
+                 FROM agent_voices av
+                 JOIN voices_resource v ON v.id = av.voice_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE av.voice_id IS NOT NULL
+                   AND v.voice IS NOT NULL
+                   AND v.voice != ''
+                   AND v.active = true
+                   AND (
+                       -- Option 1: Linked to agents (agent_voices junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       av.generated = false
+                       OR
+                       (
+                           av.generated = true
+                           AND v.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = v.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY av.voice_id
+                 ORDER BY MAX(av.created_at) DESC
+                 LIMIT 20
+             ) av),
+            ARRAY[]::uuid[]
+        ) as voice_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Reasoning levels data: from selected model's reasoning_options (model-dependent resource)
+-- Note: Options come from model_reasoning_levels junction table, filtered by selected model
+-- In new mode (no model selected), return empty array - frontend will populate when model is selected
+reasoning_levels_data AS (
+    SELECT DISTINCT
+        rl.id,
+        rl.reasoning_level,
+        COALESCE(mrl.generated, false) as generated
+    FROM params p
+    JOIN agent_info ai_selected ON ai_selected.agent_id = (SELECT agent_id FROM params)
+    JOIN model_reasoning_levels mrl ON mrl.model_id = ai_selected.model_id
+    JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
+    WHERE 
+        rl.active = true
+        AND rl.reasoning_level IS NOT NULL
+        AND rl.reasoning_level != ''
+        AND ai_selected.model_id IS NOT NULL
+    ORDER BY rl.reasoning_level
+),
+-- Temperature levels data: from selected model's temperature_levels (model-dependent resource)
+-- Note: Options come from model_temperature_levels junction table, filtered by selected model
+-- In new mode (no model selected), return empty array - frontend will populate when model is selected
+temperature_levels_data AS (
+    SELECT DISTINCT
+        tl.id,
+        tl.temperature,
+        tl.is_upper,
+        COALESCE(mtl.generated, false) as generated
+    FROM params p
+    JOIN agent_info ai_selected ON ai_selected.agent_id = (SELECT agent_id FROM params)
+    JOIN model_temperature_levels mtl ON mtl.model_id = ai_selected.model_id
+    JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
+    WHERE 
+        tl.active = true
+        AND tl.temperature IS NOT NULL
+        AND ai_selected.model_id IS NOT NULL
+    ORDER BY tl.temperature, tl.is_upper
+),
+-- Voices data: from selected model's available_voices (model-dependent resource)
+-- Note: Options come from model_voices junction table, filtered by selected model
+-- In new mode (no model selected), return empty array - frontend will populate when model is selected
+voices_data AS (
+    SELECT DISTINCT
+        v.id,
+        v.voice,
+        COALESCE(mv.generated, false) as generated
+    FROM params p
+    JOIN agent_info ai_selected ON ai_selected.agent_id = (SELECT agent_id FROM params)
+    JOIN model_voices mv ON mv.model_id = ai_selected.model_id
+    JOIN voices_resource v ON v.id = mv.voice_id
+    WHERE 
+        v.active = true
+        AND v.voice IS NOT NULL
+        AND v.voice != ''
+        AND ai_selected.model_id IS NOT NULL
+    ORDER BY v.voice
+),
+-- Suggested resource objects CTEs - fetch full resource objects for suggestions
+-- For reasoning_levels, temperature_levels, and voices: return all options from selected model (model-dependent resources)
+reasoning_levels_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (rld.id, rld.reasoning_level, rld.generated)::types.q_get_agent_v4_reasoning_level_resource
+                    ORDER BY rld.reasoning_level
+                )
+                FROM reasoning_levels_data rld
+            ),
+            ARRAY[]::types.q_get_agent_v4_reasoning_level_resource[]
+        ) as reasoning_levels
+    FROM params
+    -- Always return at least one row, even if no options exist
+    LIMIT 1
+),
+temperature_levels_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (tld.id, tld.temperature, tld.is_upper, tld.generated)::types.q_get_agent_v4_temperature_level_resource
+                    ORDER BY tld.temperature, tld.is_upper
+                )
+                FROM temperature_levels_data tld
+            ),
+            ARRAY[]::types.q_get_agent_v4_temperature_level_resource[]
+        ) as temperature_levels
+    FROM params
+    -- Always return at least one row, even if no options exist
+    LIMIT 1
+),
+voices_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (vd.id, vd.voice, vd.generated)::types.q_get_agent_v4_voice_resource
+                    ORDER BY vd.voice
+                )
+                FROM voices_data vd
+            ),
+            ARRAY[]::types.q_get_agent_v4_voice_resource[]
+        ) as voices
+    FROM params
+    -- Always return at least one row, even if no options exist
+    LIMIT 1
+),
+-- Valid model IDs CTE (ensure always returns uuid[])
+valid_model_ids_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT array_agg(ma2.model_id ORDER BY ma2.name) FROM models_agg ma2),
+            ARRAY[]::uuid[]
+        )::uuid[] as valid_model_ids
+    FROM params
+    CROSS JOIN (SELECT 1) dummy
+    LIMIT 1
+),
+-- Valid department IDs CTE (ensure always returns uuid[])
+valid_department_ids_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT array_agg(dmd2.department_id ORDER BY dmd2.name) FROM department_mapping_data dmd2),
+            ARRAY[]::uuid[]
+        )::uuid[] as valid_department_ids
+    FROM params
+    CROSS JOIN (SELECT 1) dummy
     LIMIT 1
 ),
 -- Agent-specific data (temperature_level_id, reasoning_level_id, voice_ids)
@@ -1786,18 +2362,58 @@ SELECT
         ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_agent_v4_department[]
     ) as departments,
+    -- Single-select resources: reasoning_levels
+    COALESCE(rlrd.reasoning_level_id, NULL)::uuid as reasoning_level_id,
+    COALESCE(rlrd.agent_reasoning_level_resource, NULL)::types.q_get_agent_v4_reasoning_level_resource as reasoning_level_resource,
+    CASE 
+        WHEN NOT tec.reasoning_levels_has_tools THEN false
+        ELSE uf.show_reasoning_levels
+    END as show_reasoning_levels,
+    (SELECT agent_id FROM reasoning_levels_agent_data)::uuid as reasoning_levels_agent_id,
+    false::boolean as reasoning_levels_required,
+    COALESCE(rlsd.reasoning_level_suggestions, ARRAY[]::uuid[]) as reasoning_level_suggestions,
+    -- Reasoning levels array: all available options from selected model (model-dependent)
+    -- Use suggestions objects CTE for consistency, but in practice this will be populated from model
+    COALESCE(rlso.reasoning_levels, ARRAY[]::types.q_get_agent_v4_reasoning_level_resource[]) as reasoning_levels,
+    -- Single-select resources: temperature_levels
+    COALESCE(tlrd.temperature_level_id, NULL)::uuid as temperature_level_id,
+    COALESCE(tlrd.agent_temperature_level_resource, NULL)::types.q_get_agent_v4_temperature_level_resource as temperature_level_resource,
+    CASE 
+        WHEN NOT tec.temperature_levels_has_tools THEN false
+        ELSE uf.show_temperature_levels
+    END as show_temperature_levels,
+    (SELECT agent_id FROM temperature_levels_agent_data)::uuid as temperature_levels_agent_id,
+    false::boolean as temperature_levels_required,
+    COALESCE(tlsd.temperature_level_suggestions, ARRAY[]::uuid[]) as temperature_level_suggestions,
+    -- Temperature levels array: all available options from selected model (model-dependent)
+    -- Use suggestions objects CTE for consistency, but in practice this will be populated from model
+    COALESCE(tlso.temperature_levels, ARRAY[]::types.q_get_agent_v4_temperature_level_resource[]) as temperature_levels,
+    -- Multi-select resources: voices
+    COALESCE(vrd.voice_ids, ARRAY[]::uuid[])::uuid[] as voice_ids,
+    COALESCE(vrd.agent_voice_resources, ARRAY[]::types.q_get_agent_v4_voice_resource[])::types.q_get_agent_v4_voice_resource[] as voice_resources,
+    CASE 
+        WHEN NOT tec.voices_has_tools THEN false
+        ELSE uf.show_voices
+    END as show_voices,
+    (SELECT agent_id FROM voices_agent_data)::uuid as voices_agent_id,
+    false::boolean as voices_required,
+    COALESCE(vsd.voice_suggestions, ARRAY[]::uuid[]) as voice_suggestions,
+    -- Voices array: all available options from selected model (model-dependent)
+    -- Use suggestions objects CTE for consistency, but in practice this will be populated from model
+    COALESCE(vso.voices, ARRAY[]::types.q_get_agent_v4_voice_resource[]) as voices,
     -- Agent-specific fields
     COALESCE(aap.system_prompt, '')::text as system_prompt,
     COALESCE(ai.active, true)::boolean as active,
     COALESCE(ai.role, 'assistant')::text as role,
-    COALESCE(ast.selected_temperature_level_id, NULL)::uuid as temperature_level_id,
-    COALESCE(asr.selected_reasoning_level_id, NULL)::uuid as reasoning_level_id,
-    COALESCE(asv.selected_voice_ids, ARRAY[]::uuid[]) as voice_ids,
-    COALESCE((SELECT array_agg(ma2.model_id ORDER BY ma2.name) FROM models_agg ma2), ARRAY[]::uuid[]) as valid_model_ids,
-    COALESCE((SELECT array_agg(dmd2.department_id ORDER BY dmd2.name) FROM department_mapping_data dmd2), ARRAY[]::uuid[]) as valid_department_ids,
-    COALESCE((SELECT temperature_levels FROM models_agg ma3 WHERE ma3.model_id = ai.model_id LIMIT 1), '{}'::jsonb) as temperature_levels,
-    COALESCE((SELECT reasoning_options FROM models_agg ma4 WHERE ma4.model_id = ai.model_id LIMIT 1), '{}'::jsonb) as reasoning_options,
-    COALESCE((SELECT available_voices FROM models_agg ma5 WHERE ma5.model_id = ai.model_id LIMIT 1), '{}'::jsonb) as available_voices,
+    -- Note: temperature_level_id, reasoning_level_id, voice_ids are now in resource fields above
+    -- These backward compatibility fields are kept for API compatibility but should use resource fields instead
+    -- Valid model IDs: from CTE (ensures uuid[] type)
+    COALESCE(vmid.valid_model_ids, ARRAY[]::uuid[])::uuid[] as valid_model_ids,
+    -- Valid department IDs: from CTE (ensures uuid[] type)
+    COALESCE(vdid.valid_department_ids, ARRAY[]::uuid[])::uuid[] as valid_department_ids,
+    COALESCE((SELECT temperature_levels FROM models_agg ma3 WHERE ma3.model_id = ai.model_id LIMIT 1), '{}'::jsonb) as temperature_levels_jsonb,
+    COALESCE((SELECT reasoning_options FROM models_agg ma4 WHERE ma4.model_id = ai.model_id LIMIT 1), '{}'::jsonb) as reasoning_options_jsonb,
+    COALESCE((SELECT available_voices FROM models_agg ma5 WHERE ma5.model_id = ai.model_id LIMIT 1), '{}'::jsonb) as available_voices_jsonb,
     COALESCE(dd.debug_info, ARRAY[]::jsonb[]) as debug_info,
     -- Backward compatibility: top-level name and description (extracted from resources)
     COALESCE(
@@ -1827,6 +2443,17 @@ CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN names_suggestions_objects nso
 CROSS JOIN descriptions_suggestions_objects dso
 CROSS JOIN instructions_suggestions_objects iso
+CROSS JOIN reasoning_level_resource_data rlrd
+CROSS JOIN temperature_level_resource_data tlrd
+CROSS JOIN voice_resource_data vrd
+CROSS JOIN reasoning_level_suggestions_data rlsd
+CROSS JOIN temperature_level_suggestions_data tlsd
+CROSS JOIN voice_suggestions_data vsd
+CROSS JOIN reasoning_levels_suggestions_objects rlso
+CROSS JOIN temperature_levels_suggestions_objects tlso
+CROSS JOIN voices_suggestions_objects vso
+CROSS JOIN valid_model_ids_data vmid
+CROSS JOIN valid_department_ids_data vdid
 LEFT JOIN agent_info ai ON ai.agent_id = (SELECT agent_id FROM params)
 LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id
 LEFT JOIN agent_departments_data add_agent ON add_agent.agent_id = ai.agent_id

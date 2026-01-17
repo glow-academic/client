@@ -262,7 +262,7 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.upload_ids) as uploads_id
         WHERE COALESCE(array_length(x.upload_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT document_uploads_resource_pkey DO UPDATE SET
+        ON CONFLICT (document_id, uploads_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),
