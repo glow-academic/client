@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION api_save_document_v4(
     input_document_id uuid DEFAULT NULL,
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
-    template_flag_id uuid DEFAULT NULL,
+    upload_ids uuid[] DEFAULT ARRAY[]::uuid[],
     html_id uuid DEFAULT NULL,
     schema_id uuid DEFAULT NULL
 )
@@ -81,6 +81,7 @@ BEGIN
         DELETE FROM document_descriptions WHERE document_id = v_document_id;
         DELETE FROM document_departments WHERE document_id = v_document_id;
         DELETE FROM document_fields WHERE document_id = v_document_id;
+        DELETE FROM document_uploads_resource WHERE document_id = v_document_id;
         -- Update existing active flag if it exists
         UPDATE document_flags SET
             flag_id = COALESCE(api_save_document_v4.active_flag_id, document_flags.flag_id),
@@ -109,6 +110,7 @@ BEGIN
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
             profile_id,
             COALESCE(field_ids, ARRAY[]::uuid[]) AS field_ids,
+            COALESCE(upload_ids, ARRAY[]::uuid[]) AS upload_ids,
             html_id,
             schema_id
     ),
@@ -245,6 +247,22 @@ BEGIN
         CROSS JOIN UNNEST(x.field_ids) as field_id
         WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT document_fields_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+    ),
+    -- Link uploads (old ones already deleted above if update)
+    link_uploads AS (
+        INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
+        SELECT 
+            x.document_id,
+            uploads_id,
+            true,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.upload_ids) as uploads_id
+        WHERE COALESCE(array_length(x.upload_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT document_uploads_resource_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),

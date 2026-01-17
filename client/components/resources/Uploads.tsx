@@ -1,0 +1,505 @@
+/**
+ * Uploads.tsx
+ * Resource component for file uploads
+ * Handles file upload via dropzone, creates uploads_resource entries
+ * Uses GenericPicker to select existing uploads
+ */
+
+"use client";
+
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
+import { inferMimeFromName } from "@/utils/mime-map";
+import { Check, Loader2, Sparkles, UploadCloud } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
+
+type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
+
+export interface UploadsProps {
+  upload_ids?: string[]; // Current uploads_resource IDs (standardized prop name)
+  upload_resources?: Array<{
+    uploads_id: string | null;
+    upload_id: string | null;
+    file_path: string | null;
+    mime_type: string | null;
+    size: number | null;
+    generated?: boolean | null;
+  }>; // Selected upload resources (each includes generated field)
+  show_uploads?: boolean; // Whether to show this resource picker
+  upload_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  uploads?: Array<{
+    uploads_id: string | null;
+    upload_id: string | null;
+    file_path: string | null;
+    mime_type: string | null;
+    size: number | null;
+    generated?: boolean | null;
+  }>; // All available uploads from API (each includes generated field)
+  disabled?: boolean; // Based on can_edit flag
+  onChange: (ids: string[]) => void; // Update upload_ids in form state
+  label?: string;
+  id?: string;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+  group_id?: string | null; // Group ID for linking resources
+  uploads_agent_id?: string | null; // Agent ID for resource creation
+  createUploadsAction?:
+    | ((input: CreateDraftUploadsIn) => Promise<CreateDraftUploadsOut>)
+    | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
+  finalizeUploadAction?: (uploadId: string) => Promise<{
+    success: boolean;
+    upload_id?: string;
+    message?: string;
+  }>;
+}
+
+export function Uploads({
+  upload_ids,
+  upload_resources,
+  show_uploads = true,
+  upload_suggestions,
+  uploads,
+  disabled = false,
+  onChange,
+  label = "Files",
+  id = "uploads",
+  required = false,
+  placeholder = "Select files...",
+  description,
+  group_id,
+  uploads_agent_id,
+  createUploadsAction,
+  onGenerate,
+  isGenerating = false,
+  finalizeUploadAction,
+}: UploadsProps) {
+  const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
+  const show = show_uploads ?? true;
+  const allUploads = useMemo(() => uploads ?? [], [uploads]);
+  const suggestionsList = useMemo(
+    () => upload_suggestions ?? [],
+    [upload_suggestions]
+  );
+
+  // File upload state
+  const [activeUploads, setActiveUploads] = useState<
+    Map<
+      string,
+      {
+        file: File;
+        progress: number;
+        toastId: string;
+        status: "uploading" | "finalizing" | "completed" | "error";
+      }
+    >
+  >(new Map());
+
+  // Track which upload IDs have already had resources created
+  const createdUploadIdsRef = useRef<Set<string>>(new Set());
+
+  // Initialize createdUploadIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdUploadIdsRef.current.add(id));
+  }, [ids]);
+
+  // Convert uploads array to items format for GenericPicker
+  const uploadItems = useMemo(() => {
+    return allUploads
+      .filter((u) => u.uploads_id && u.file_path) // Filter out nulls
+      .map((u) => ({
+        id: u.uploads_id!,
+        name: u.file_path!.split("/").pop() || "Unknown file",
+        description: u.mime_type || undefined,
+      }));
+  }, [allUploads]);
+
+  // Check if an upload is suggested
+  const isSuggested = useCallback(
+    (uploadsId: string) => suggestionsList.includes(uploadsId),
+    [suggestionsList]
+  );
+
+  // Handle file upload
+  const uploadFile = useCallback(
+    async (file: File) => {
+      if (!finalizeUploadAction || !createUploadsAction || !group_id) {
+        toast.error("Upload functionality not available");
+        return;
+      }
+
+      const fileId = uuidv4();
+      const toastId = toast.loading(`Preparing upload: ${file.name}`, {
+        description: "0% complete",
+        dismissible: true,
+      });
+
+      setActiveUploads((prev) =>
+        new Map(prev).set(fileId, {
+          file,
+          progress: 0,
+          toastId: toastId as string,
+          status: "uploading",
+        })
+      );
+
+      let tusUploadInstance: tus.Upload | null = null;
+      try {
+        tusUploadInstance = new tus.Upload(file, {
+          endpoint: `/api/uploads/upload`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type || inferMimeFromName(file.name),
+            fileId: fileId,
+          },
+          onError: (error) => {
+            toast.error(`Upload failed: ${file.name}`, {
+              description: error.message || "An error occurred during upload",
+              id: toastId,
+            });
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              const upload = newMap.get(fileId);
+              if (upload) {
+                newMap.set(fileId, {
+                  ...upload,
+                  progress,
+                });
+              }
+              return newMap;
+            });
+
+            toast.loading(`Uploading ${file.name}... ${progress}%`, {
+              description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
+              id: toastId,
+              dismissible: true,
+            });
+          },
+          onSuccess: async () => {
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              const upload = newMap.get(fileId);
+              if (upload) {
+                newMap.set(fileId, {
+                  ...upload,
+                  status: "finalizing",
+                });
+              }
+              return newMap;
+            });
+
+            try {
+              const uploadUrl = tusUploadInstance?.url || "";
+              const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+              if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+                throw new Error("Failed to extract upload ID from upload URL");
+              }
+              const tusUploadId = tusUploadIdMatch[1];
+
+              // Finalize upload to get database upload_id
+              const finalizeResult = await finalizeUploadAction(tusUploadId);
+
+              if (!finalizeResult.success || !finalizeResult.upload_id) {
+                throw new Error(
+                  finalizeResult.message || "Failed to finalize upload"
+                );
+              }
+
+              const databaseUploadId = finalizeResult.upload_id;
+
+              // Create uploads_resource entry
+              const createResult = await createUploadsAction({
+                body: {
+                  agent_id: uploads_agent_id || "",
+                  group_id: group_id,
+                  upload_id: databaseUploadId,
+                  mcp: false,
+                },
+              });
+
+              if (!createResult.uploads_id) {
+                throw new Error("Failed to create uploads resource");
+              }
+
+              const uploadsResourceId = createResult.uploads_id;
+              createdUploadIdsRef.current.add(uploadsResourceId);
+
+              // Add to selection
+              onChange([...ids, uploadsResourceId]);
+
+              toast.success(`Upload completed: ${file.name}!`, {
+                description: "File uploaded successfully",
+                id: toastId,
+              });
+
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                const upload = newMap.get(fileId);
+                if (upload) {
+                  newMap.set(fileId, {
+                    ...upload,
+                    status: "completed",
+                  });
+                }
+                return newMap;
+              });
+
+              // Remove completed upload from state after delay
+              setTimeout(() => {
+                setActiveUploads((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(fileId);
+                  return newMap;
+                });
+              }, 2000);
+            } catch (error) {
+              toast.error(`Upload processing failed: ${file.name}`, {
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to process uploaded file",
+                id: toastId,
+              });
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(fileId);
+                return newMap;
+              });
+            }
+          },
+        });
+
+        await tusUploadInstance.start();
+      } catch {
+        toast.error(`Upload failed: ${file.name}`, {
+          description: "An error occurred during upload",
+          id: toastId,
+        });
+        setActiveUploads((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(fileId);
+          return newMap;
+        });
+      }
+    },
+    [
+      finalizeUploadAction,
+      createUploadsAction,
+      group_id,
+      uploads_agent_id,
+      ids,
+      onChange,
+    ]
+  );
+
+  // Dropzone configuration
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        acceptedFiles.forEach((file) => {
+          uploadFile(file);
+        });
+      }
+    },
+    accept: {
+      "application/pdf": [".pdf"],
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+      "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
+      "text/plain": [".txt"],
+      "application/zip": [".zip"],
+      "text/html": [".html"],
+    },
+    multiple: true,
+    disabled: disabled || activeUploads.size > 0,
+  });
+
+  const handleSelect = useCallback(
+    async (selectedIds: string[]) => {
+      // Find newly selected IDs
+      const newlySelected = selectedIds.filter(
+        (id) => !ids.includes(id) && !createdUploadIdsRef.current.has(id)
+      );
+
+      // Create resources for newly selected uploads (if needed)
+      // Note: If uploads_resource already exists, we can just use it
+      // This is mainly for backward compatibility or manual selection
+      if (
+        newlySelected.length > 0 &&
+        createUploadsAction &&
+        uploads_agent_id &&
+        group_id
+      ) {
+        // For existing uploads, we might need to create resources
+        // But typically they should already exist
+        // Just update selection
+        onChange(selectedIds);
+      } else {
+        onChange(selectedIds);
+      }
+    },
+    [ids, createUploadsAction, uploads_agent_id, group_id, onChange]
+  );
+
+  if (!show) {
+    return null;
+  }
+
+  const hasActiveUploads = activeUploads.size > 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Label
+            htmlFor={id}
+            className={cn(
+              required &&
+                "after:content-['*'] after:ml-0.5 after:text-destructive"
+            )}
+          >
+            {label}
+          </Label>
+          {description && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-muted-foreground text-sm cursor-help">
+                    (i)
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{description}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+        {onGenerate && uploads_agent_id && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                  className="h-8 w-8 p-0"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Generate files with AI</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+
+      {/* File upload dropzone */}
+      <div
+        {...getRootProps()}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+          isDragActive
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25 hover:border-muted-foreground/50",
+          disabled && "opacity-50 cursor-not-allowed",
+          hasActiveUploads && "opacity-50 cursor-not-allowed"
+        )}
+      >
+        <input {...getInputProps()} />
+        <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">
+          {isDragActive
+            ? "Drop files here"
+            : "Drag & drop files here, or click to select"}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          PDF, Images, Word, Text, HTML, ZIP
+        </p>
+      </div>
+
+      {/* Active uploads progress */}
+      {activeUploads.size > 0 && (
+        <div className="space-y-2">
+          {Array.from(activeUploads.values()).map((upload) => (
+            <div
+              key={upload.toastId}
+              className="flex items-center gap-2 p-2 bg-muted rounded"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {upload.file.name}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${upload.progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {upload.progress}%
+                  </span>
+                </div>
+                {upload.status === "finalizing" && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Finalizing...
+                  </p>
+                )}
+              </div>
+              {upload.status === "completed" && (
+                <Check className="h-4 w-4 text-green-500" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upload picker */}
+      {uploadItems.length > 0 && (
+        <GenericPicker
+          items={uploadItems}
+          itemIds={ids}
+          onChange={handleSelect}
+          getId={(item) => item.id}
+          getLabel={(item) => item.name}
+          getDescription={(item) => item.description}
+          placeholder={placeholder}
+          disabled={disabled || hasActiveUploads}
+          isSuggested={isSuggested}
+          showSelectedBadge={true}
+        />
+      )}
+    </div>
+  );
+}

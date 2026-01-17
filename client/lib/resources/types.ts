@@ -16,8 +16,5 @@ export type ResourceType =
   | "scenario_flags"
   | "scenario_positions"
   | "scenario_rubric_grade_agents"
-  | "schemas"
   | "templates"
-  | "schema_field_items"
-  | "template_array_items"
-  | "template_values";
+  | "uploads";

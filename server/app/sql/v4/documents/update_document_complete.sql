@@ -25,7 +25,8 @@ CREATE OR REPLACE FUNCTION api_update_document_v4(
     description text DEFAULT NULL,
     active boolean DEFAULT NULL,
     department_id uuid DEFAULT NULL,
-    field_ids text[] DEFAULT ARRAY[]::text[]
+    field_ids text[] DEFAULT ARRAY[]::text[],
+    upload_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     success boolean,
@@ -45,7 +46,8 @@ WITH params AS (
         description AS description,
         active AS active,
         department_id AS department_id,
-        COALESCE(field_ids, ARRAY[]::text[]) AS field_ids
+        COALESCE(field_ids, ARRAY[]::text[]) AS field_ids,
+        COALESCE(upload_ids, ARRAY[]::uuid[]) AS upload_ids
 ),
 actor_profile AS (
     SELECT 
@@ -162,6 +164,27 @@ link_fields AS (
     CROSS JOIN unnest(p.field_ids) as field_id
     WHERE COALESCE(array_length(p.field_ids, 1), 0) > 0
     ON CONFLICT (document_id, field_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
+),
+replace_uploads AS (
+    -- Delete all existing upload links
+    DELETE FROM document_uploads_resource 
+    WHERE document_id = (SELECT document_id FROM params)
+),
+link_uploads AS (
+    -- Insert new upload links if provided (array is never NULL, but may be empty)
+    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
+    SELECT 
+        p.document_id,
+        uploads_id,
+        true,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN unnest(p.upload_ids) as uploads_id
+    WHERE COALESCE(array_length(p.upload_ids, 1), 0) > 0
+    ON CONFLICT ON CONSTRAINT document_uploads_resource_pkey DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 )

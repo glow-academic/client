@@ -205,17 +205,6 @@ router.include_router(scenario_rubric_grade_agents_router)
 from app.api.v4.resources.scenarios.create import router as scenarios_router
 
 router.include_router(scenarios_router)
-from app.api.v4.resources.schema_field_items.create import \
-    router as schema_field_items_router
-
-router.include_router(schema_field_items_router)
-from app.api.v4.resources.schema_fields.create import \
-    router as schema_fields_router
-
-router.include_router(schema_fields_router)
-from app.api.v4.resources.schemas.create import router as schemas_router
-
-router.include_router(schemas_router)
 from app.api.v4.resources.settings.create import router as settings_router
 
 router.include_router(settings_router)
@@ -241,14 +230,6 @@ from app.api.v4.resources.temperature_levels.create import \
     router as temperature_levels_router
 
 router.include_router(temperature_levels_router)
-from app.api.v4.resources.template_array_items.create import \
-    router as template_array_items_router
-
-router.include_router(template_array_items_router)
-from app.api.v4.resources.template_values.create import \
-    router as template_values_router
-
-router.include_router(template_values_router)
 from app.api.v4.resources.templates.create import router as templates_router
 
 router.include_router(templates_router)
@@ -273,3 +254,6 @@ router.include_router(videos_router)
 from app.api.v4.resources.voices.create import router as voices_router
 
 router.include_router(voices_router)
+from app.api.v4.resources.uploads.create import router as uploads_router
+
+router.include_router(uploads_router)

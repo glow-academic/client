@@ -11,8 +11,6 @@ import type {
   DocumentDetailOut,
   PatchDocumentDraftIn,
   PatchDocumentDraftOut,
-  RenderTemplateIn,
-  RenderTemplateOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
 } from "@/app/(main)/management/documents/d/[documentId]/page";
@@ -31,11 +29,12 @@ import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { DocumentFieldsSection } from "@/components/documents/DocumentFieldsSection";
-import TemplateForm, {
-  isTemplateSchema,
-  type TemplateSchema,
-} from "@/components/documents/TemplateForm";
-import TemplatePreview from "@/components/documents/TemplatePreview";
+import { Departments } from "@/components/resources/Departments";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Fields } from "@/components/resources/Fields";
+import { Flags } from "@/components/resources/Flags";
+import { Names } from "@/components/resources/Names";
+import { Uploads } from "@/components/resources/Uploads";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,7 +71,6 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import {
   Building2,
   Check,
@@ -118,13 +116,12 @@ export interface DocumentProps {
     input: UpdateDocumentIn
   ) => Promise<UpdateDocumentOut>;
   finalizeUploadAction?: (uploadId: string) => Promise<FinalizeUploadOut>;
-  renderTemplateAction?: (
-    input: RenderTemplateIn
-  ) => Promise<RenderTemplateOut>;
+  createNamesAction?: (input: any) => Promise<any>;
+  createDescriptionsAction?: (input: any) => Promise<any>;
+  createUploadsAction?: (input: any) => Promise<any>;
   patchDocumentDraftAction?: (
     input: PatchDocumentDraftIn
   ) => Promise<PatchDocumentDraftOut>;
-  renderedHtml?: string | null;
 }
 
 export default function Document({
@@ -164,73 +161,10 @@ export default function Document({
   type UpdateDocumentBody = UpdateDocumentIn extends { body: infer B }
     ? B
     : never;
-  // GenerateTemplateBody type for WebSocket event (GenerateTemplateIn is never for WebSocket)
-  type GenerateTemplateBody = {
-    departmentId: string;
-    profileId?: string;
-    documentId?: string;
-    documentName?: string;
-    documentDescription?: string;
-    fieldIds?: string[];
-  };
 
   // Form state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Template state
-  const [isTemplateMode, setIsTemplateMode] = useState(false);
-  const [templateHtml, setTemplateHtml] = useState<string | null>(null);
-  const [templateSchema, setTemplateSchema] = useState<TemplateSchema | null>(
-    null
-  );
-  const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
-  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    null
-  );
-  // Build templateMapping from templates array (composite types - no JSONB)
-  // Note: templates now use schema_id, but we keep template_args for backward compatibility during migration
-  const templateMapping = useMemo(() => {
-    if (!isEditMode || !documentDetail?.templates) return {};
-    const mapping: Record<
-      string,
-      {
-        template_id: string;
-        schema_id: string | null;
-        template_schema: TemplateSchema | null;
-        active: boolean;
-        created_at: string;
-        updated_at: string;
-      }
-    > = {};
-    documentDetail.templates.forEach((template) => {
-      if (template.template_id) {
-        // Use template_schema from documentDetail if available, otherwise fall back to template_args
-        // Note: template_schema is added dynamically by the API, so we need type assertion
-        const docDetail = documentDetail as DocumentDetailOut & { template_schema?: TemplateSchema | null };
-        const templateWithArgs = template as typeof template & { template_args?: TemplateSchema | null };
-        let templateSchema: TemplateSchema | null = null;
-        if (docDetail.template_schema && isTemplateSchema(docDetail.template_schema)) {
-          templateSchema = docDetail.template_schema;
-        } else if (templateWithArgs.template_args && isTemplateSchema(templateWithArgs.template_args)) {
-          templateSchema = templateWithArgs.template_args;
-        }
-        
-        mapping[template.template_id] = {
-          template_id: template.template_id,
-          schema_id: template.schema_id || null,
-          template_schema: templateSchema,
-          active: template.active ?? false,
-          created_at: template.created_at || "",
-          updated_at: template.updated_at || "",
-        };
-      }
-    });
-    return mapping;
-  }, [isEditMode, documentDetail]);
-  const [clientRenderedHtml, setClientRenderedHtml] = useState<string | null>(
-    renderedHtml
-  );
   const searchParams = useSearchParams();
 
   // nuqs for URL-backed state (draftId, fieldSearch)
@@ -243,62 +177,56 @@ export default function Document({
     shallow: false,
   });
 
-  // Draft state type
-  type DraftState = {
-    name: string;
-    description: string;
-    active: boolean;
-    departmentIds: string[];
-    parameterItemIds: string[];
-    parameterIds: string[];
-    : string | null;
-    documentDomainId: string | null;
+  // Form state type - using resource IDs (like Persona pattern)
+  type FormState = {
+    name_id: string | null;
+    description_id: string | null;
+    active_flag_id: string | null;
+    department_ids: string[];
+    field_ids: string[];
+    upload_ids: string[];
   };
 
-  // Initialize draft state from server data
-  const initialDraftState = useMemo<DraftState>(() => {
+  // Initialize form state from server data (resource IDs)
+  const initialFormState = useMemo<FormState>(() => {
     if (isEditMode && documentDetail) {
       return {
-        name: documentDetail.name || "",
-        description: documentDetail.description || "",
-        active: documentDetail.active ?? true,
-        departmentIds: documentDetail.department_ids || [],
-        parameterItemIds: documentDetail.field_ids || [],
-        parameterIds: documentDetail.linked_parameter_ids || [],
-        : documentDetail. || null,
-        documentDomainId: documentDetail.document_domain_id || null,
+        name_id: documentDetail.name_resource?.id || null,
+        description_id: documentDetail.description_resource?.id || null,
+        active_flag_id: documentDetail.flag_resource?.id || null,
+        department_ids: documentDetail.department_ids || [],
+        field_ids: documentDetail.field_ids || [],
+        upload_ids: documentDetail.upload_ids || [],
       };
     }
     return {
-      name: "",
-      description: "",
-      active: true,
-      departmentIds: [],
-      parameterItemIds: [],
-      parameterIds: [],
-      : null,
-      documentDomainId: null,
+      name_id: null,
+      description_id: null,
+      active_flag_id: null,
+      department_ids: [],
+      field_ids: [],
+      upload_ids: [],
     };
   }, [isEditMode, documentDetail]);
 
-  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+  const [formState, setFormState] = useState<FormState>(initialFormState);
 
-  // Sync draftState when initialDraftState changes (server data updates)
+  // Sync formState when initialFormState changes (server data updates)
   React.useEffect(() => {
-    setDraftState((currentDraftState) => {
-      // Only sync if initialDraftState actually changed (not just object reference)
-      const currentKeys = Object.keys(currentDraftState) as Array<
-        keyof DraftState
+    setFormState((currentFormState) => {
+      // Only sync if initialFormState actually changed (not just object reference)
+      const currentKeys = Object.keys(currentFormState) as Array<
+        keyof FormState
       >;
       const hasChanges = currentKeys.some(
-        (key) => currentDraftState[key] !== initialDraftState[key]
+        (key) => currentFormState[key] !== initialFormState[key]
       );
       if (!hasChanges) {
-        return currentDraftState;
+        return currentFormState;
       }
-      return initialDraftState;
+      return initialFormState;
     });
-  }, [initialDraftState]);
+  }, [initialFormState]);
 
   // Get draftId from URL
   const draftId = urlParams.draftId || null;

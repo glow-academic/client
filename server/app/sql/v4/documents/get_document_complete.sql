@@ -69,6 +69,16 @@ CREATE TYPE types.q_get_document_v4_flag_resource AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_document_v4_upload AS (
+    uploads_id uuid,
+    upload_id uuid,
+    file_path text,
+    mime_type text,
+    size bigint,
+    generated boolean,
+    group_id uuid
+);
+
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_document_v4(
@@ -116,6 +126,14 @@ RETURNS TABLE (
     fields_required boolean,
     field_suggestions uuid[],
     fields types.q_get_document_v4_field[],
+    -- Multi-select resources: uploads
+    upload_ids uuid[],
+    upload_resources types.q_get_document_v4_upload[],
+    show_uploads boolean,
+    uploads_agent_id uuid,
+    uploads_required boolean,
+    upload_suggestions uuid[],
+    uploads types.q_get_document_v4_upload[],
     -- Single-select resources: active flag
     active_flag_id uuid,
     flag_resource types.q_get_document_v4_flag_resource,
@@ -379,7 +397,9 @@ ui_flags AS (
                     WHEN (SELECT COUNT(*) FROM field_mapping_data) > 0 THEN true
                     ELSE false
                 END
-        END as show_fields
+        END as show_fields,
+        -- Uploads: always show if tools exist (uploads are always available)
+        true as show_uploads
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -400,6 +420,81 @@ field_ids_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
+-- Upload IDs (selected upload IDs for document)
+upload_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(dur.uploads_id ORDER BY dur.created_at)
+                 FROM document_uploads_resource dur
+                 WHERE dur.document_id = (SELECT document_id FROM params)
+                   AND dur.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as upload_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Upload mapping data (uploads_resource + uploads join)
+upload_mapping_data AS (
+    SELECT 
+        ur.id as uploads_id,
+        ur.upload_id,
+        u.file_path,
+        u.mime_type,
+        u.size,
+        COALESCE(ur.generated, false) as generated,
+        ur.group_id
+    FROM uploads_resource ur
+    JOIN uploads u ON u.id = ur.upload_id
+    WHERE ur.active = true
+      AND u.active = true
+),
+-- Upload suggestions: linked to documents OR same group with generated=true
+upload_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(dur.uploads_id ORDER BY dur.created_at DESC)
+             FROM (
+                 SELECT DISTINCT dur.uploads_id, MAX(dur.created_at) as created_at
+                 FROM document_uploads_resource dur
+                 JOIN uploads_resource ur ON ur.id = dur.uploads_id
+                 JOIN uploads u ON u.id = ur.upload_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE dur.uploads_id IS NOT NULL
+                   AND u.file_path IS NOT NULL
+                   AND (
+                       -- Option 1: Linked to documents (document_uploads_resource junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       dur.active = true
+                       AND (
+                           ur.generated = false
+                           OR
+                           (
+                               ur.generated = true
+                               AND EXISTS (
+                                   SELECT 1 FROM calls c
+                                   JOIN message_calls mc ON mc.call_id = c.id
+                                   JOIN message_runs mr ON mr.message_id = mc.message_id
+                                   JOIN group_runs gr ON gr.run_id = mr.run_id
+                                   WHERE c.id = ur.call_id
+                                     AND gr.group_id = dgd.group_id
+                               )
+                           )
+                       )
+                   )
+                 GROUP BY dur.uploads_id
+                 ORDER BY MAX(dur.created_at) DESC
+                 LIMIT 20
+             ) dur),
+            ARRAY[]::uuid[]
+        ) as upload_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
 -- Document data CTE
 document_data AS (
     SELECT 
@@ -407,10 +502,6 @@ document_data AS (
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = TRUE) as active,
-        (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT u.file_path FROM document_uploads du 
-         JOIN uploads u ON u.id = du.upload_id 
-         WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id AND sd.active = true) as active_scenario_count,
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id) as total_scenario_links
     FROM params x
@@ -906,6 +997,69 @@ fields_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'uploads' resource
+uploads_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE NULL::uuid = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'uploads'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Agent selection for 'flags' resource
 flag_agent_data AS (
     WITH eligible_agents AS (
@@ -1081,7 +1235,13 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'fields'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        ) as fields_has_tools
+        ) as fields_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'uploads'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        ) as uploads_has_tools
     FROM params x
 ),
 missing_tools_check AS (
@@ -1090,7 +1250,8 @@ missing_tools_check AS (
             -- Check if tools exist (not agents). Error only if NO tools exist.
             CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
-            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END
+            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END,
+            CASE WHEN NOT tec.uploads_has_tools AND uf.show_uploads THEN 'uploads' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
@@ -1273,6 +1434,42 @@ SELECT
         END,
         '{}'::types.q_get_document_v4_field[]
     ) as fields,
+    -- Multi-select resources: uploads
+    uid.upload_ids,
+    -- Upload resources (selected uploads filtered by upload_ids)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (umd.uploads_id, umd.upload_id, umd.file_path, umd.mime_type, umd.size, umd.generated, umd.group_id)::types.q_get_document_v4_upload
+            ORDER BY umd.upload_id
+        )
+        FROM (SELECT DISTINCT uploads_id, upload_id, file_path, mime_type, size, generated, group_id FROM upload_mapping_data WHERE uploads_id = ANY(uid.upload_ids)) umd),
+        '{}'::types.q_get_document_v4_upload[]
+    ) as upload_resources,
+    CASE 
+        WHEN NOT tec.uploads_has_tools AND uf.show_uploads THEN false
+        ELSE uf.show_uploads
+    END as show_uploads,
+    (SELECT agent_id FROM uploads_agent_data) as uploads_agent_id,
+    CASE 
+        WHEN uf.show_uploads THEN true
+        ELSE false
+    END as uploads_required,
+    COALESCE((SELECT upload_suggestions FROM upload_suggestions_data), ARRAY[]::uuid[]) as upload_suggestions,
+    COALESCE(
+        -- All available uploads (all uploads_resource entries that are active)
+        (SELECT ARRAY_AGG(
+            (umd.uploads_id, umd.upload_id, umd.file_path, umd.mime_type, umd.size, umd.generated, umd.group_id)::types.q_get_document_v4_upload
+            ORDER BY 
+                CASE WHEN umd.uploads_id = ANY(usd.upload_suggestions) THEN 1 ELSE 2 END,
+                umd.upload_id
+        ) FROM (
+            SELECT DISTINCT uploads_id, upload_id, file_path, mime_type, size, generated, group_id
+            FROM upload_mapping_data
+            WHERE uploads_id IS NOT NULL
+        ) umd
+        CROSS JOIN upload_suggestions_data usd),
+        '{}'::types.q_get_document_v4_upload[]
+    ) as uploads,
     -- Single-select resources: active flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.document_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
@@ -1297,5 +1494,7 @@ CROSS JOIN names_suggestions_objects nso
 CROSS JOIN descriptions_suggestions_objects dso
 CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN field_ids_data fid
+CROSS JOIN upload_ids_data uid
+CROSS JOIN upload_suggestions_data usd
 CROSS JOIN field_suggestions_data fsd
 $$;

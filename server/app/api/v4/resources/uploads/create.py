@@ -1,4 +1,4 @@
-"""schema_fields endpoint - v4 API following DHH principles."""
+"""uploads endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -6,42 +6,37 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    SchemaFieldsApiRequest,
-    SchemaFieldsApiResponse,
-    SchemaFieldsSqlParams,
-    SchemaFieldsSqlRow,
-    load_sql_query,
-)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (UploadsApiRequest, UploadsApiResponse,
+                           UploadsSqlParams, UploadsSqlRow, load_sql_query)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/resources/schema_fields_complete.sql"
+SQL_PATH = "app/sql/v4/resources/uploads_complete.sql"
 
 
 router = APIRouter()
 
 
 @router.post(
-    "/schema_fields",
-    response_model=SchemaFieldsApiResponse,
+    "/uploads",
+    response_model=UploadsApiResponse,
     dependencies=[
         audit_activity(
-            "schema_fields.created",
-            "{{ actor.name }} created schema_fields",
+            "uploads.created",
+            "{{ actor.name }} created uploads",
         )
     ],
 )
-async def create_schema_field(
-    request: SchemaFieldsApiRequest,
+async def create_upload(
+    request: UploadsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> SchemaFieldsApiResponse:
-    """Create schema_fields resource (always INSERT)."""
-    tags = ["resources", "schema_fields"]
+) -> UploadsApiResponse:
+    """Create uploads resource (always INSERT)."""
+    tags = ["resources", "uploads"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -56,21 +51,20 @@ async def create_schema_field(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (use double star pattern)
-            # Frontend sends snake_case (schema_id, name, field_type, required, position_value, template, description, default_value) - auto-generated types match SQL function signature
             # Get mcp flag from header (set by router-level dependency)
             mcp = getattr(http_request.state, "mcp", False) or False
 
             # Convert API request to SQL params (use double star pattern)
+            # Frontend sends snake_case (upload_id) - auto-generated types match SQL function signature
             # Add mcp from header (not in request body)
             request_dict = request.model_dump()
             request_dict["mcp"] = mcp
-            params = SchemaFieldsSqlParams(**request_dict)
+            params = UploadsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
-                SchemaFieldsSqlRow,
+                UploadsSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH,
@@ -78,18 +72,18 @@ async def create_schema_field(
                 ),
             )
 
-            if not result or not result.schema_field_id:
-                raise ValueError("Failed to create schema_fields")
+            if not result or not result.uploads_id:
+                raise ValueError("Failed to create uploads")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                schema_fields={"id": str(result.schema_field_id)},
+                uploads={"id": str(result.uploads_id)},
             )
 
         # Convert SQL result to API response (auto-generated types)
-        api_response = SchemaFieldsApiResponse.model_validate(result.model_dump())
+        api_response = UploadsApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -104,7 +98,7 @@ async def create_schema_field(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_schema_field",
+            operation="create_upload",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
