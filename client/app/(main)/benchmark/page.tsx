@@ -15,18 +15,24 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/api/v4/analytics/benchmark/overview", "post">;
-type BenchmarkOverviewOut = OutputOf<"/api/v4/analytics/benchmark/overview", "post">;
-type BenchmarkHistoryIn = InputOf<"/api/v4/analytics/benchmark/history", "post">;
-type BenchmarkHistoryOut = OutputOf<"/api/v4/analytics/benchmark/history", "post">;
+type BenchmarkOverviewIn = InputOf<"/api/v4/analytics/benchmark/get", "post">;
+type BenchmarkOverviewOut = OutputOf<"/api/v4/analytics/benchmark/get", "post">;
+type BenchmarkHistoryIn = InputOf<"/api/v4/analytics/benchmark/list", "post">;
+type BenchmarkHistoryOut = OutputOf<"/api/v4/analytics/benchmark/list", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
   rubric_mapping: Record<string, Record<string, unknown>>;
   department_mapping: Record<string, { name: string; description: string }>;
   agent_mapping: Record<string, Record<string, unknown>>;
-  standard_groups_mapping: Record<string, { name: string; description: string; points: number; passPoints: number }>;
-  standards_mapping: Record<string, { name: string; description: string; points: number }>;
+  standard_groups_mapping: Record<
+    string,
+    { name: string; description: string; points: number; passPoints: number }
+  >;
+  standards_mapping: Record<
+    string,
+    { name: string; description: string; points: number }
+  >;
   rubric_standard_groups_mapping: Record<string, Record<string, string[]>>;
   rubric_options: BenchmarkOverviewOut["rubric_options"];
   department_options: BenchmarkOverviewOut["department_options"];
@@ -38,7 +44,7 @@ type EvalsListOut = {
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getBenchmarkOverview = async (
-  input: BenchmarkOverviewIn,
+  input: BenchmarkOverviewIn
 ): Promise<BenchmarkOverviewOut> => {
   "use server";
   const bypassCache = await isHardRefresh();
@@ -64,7 +70,7 @@ const getBenchmarkHistory = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/benchmark/history", input, {
+  return api.post("/analytics/benchmark/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -73,7 +79,6 @@ const getBenchmarkHistory = async (
     }),
   });
 };
-
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -178,7 +183,10 @@ export default async function BenchmarkPage({
     }
   }
 
-  const departmentMapping: Record<string, { name: string; description: string }> = {};
+  const departmentMapping: Record<
+    string,
+    { name: string; description: string }
+  > = {};
   for (const dept of overviewData.departments || []) {
     if (dept.department_id) {
       departmentMapping[dept.department_id] = {
@@ -198,7 +206,10 @@ export default async function BenchmarkPage({
     }
   }
 
-  const standardGroupsMapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
+  const standardGroupsMapping: Record<
+    string,
+    { name: string; description: string; points: number; passPoints: number }
+  > = {};
   for (const sg of overviewData.standard_groups || []) {
     if (sg.standard_group_id) {
       standardGroupsMapping[sg.standard_group_id] = {
@@ -210,7 +221,10 @@ export default async function BenchmarkPage({
     }
   }
 
-  const standardsMapping: Record<string, { name: string; description: string; points: number }> = {};
+  const standardsMapping: Record<
+    string,
+    { name: string; description: string; points: number }
+  > = {};
   for (const std of overviewData.standards || []) {
     if (std.standard_id) {
       standardsMapping[std.standard_id] = {
@@ -222,7 +236,10 @@ export default async function BenchmarkPage({
   }
 
   // Build rubric_standard_groups_mapping from array
-  const rubricStandardGroupsMapping: Record<string, Record<string, string[]>> = {};
+  const rubricStandardGroupsMapping: Record<
+    string,
+    Record<string, string[]>
+  > = {};
   for (const rsg of overviewData.rubric_standard_groups || []) {
     if (rsg.rubric_id && rsg.standard_group_id) {
       if (!rubricStandardGroupsMapping[rsg.rubric_id]) {
@@ -231,8 +248,9 @@ export default async function BenchmarkPage({
       const standardIds = rsg.standard_ids || [];
       const rubricMapping = rubricStandardGroupsMapping[rsg.rubric_id];
       if (rubricMapping) {
-        rubricMapping[rsg.standard_group_id] = 
-          standardIds.map(id => id.toString());
+        rubricMapping[rsg.standard_group_id] = standardIds.map((id) =>
+          id.toString()
+        );
       }
     }
   }
@@ -287,7 +305,11 @@ export default async function BenchmarkPage({
 
   // Build rubric mappings for each unique rubric_id
   const uniqueRubricIds = Array.from(
-    new Set((evalsData.evals || []).map((evalItem) => evalItem.rubric_id).filter((id): id is string => id !== null))
+    new Set(
+      (evalsData.evals || [])
+        .map((evalItem) => evalItem.rubric_id)
+        .filter((id): id is string => id !== null)
+    )
   );
 
   for (const rubricId of uniqueRubricIds) {
@@ -431,4 +453,10 @@ async function BenchmarkHistorySection({
 }
 
 /** ---- Export types for client component ---- */
-export type { BenchmarkOverviewIn, BenchmarkOverviewOut, BenchmarkHistoryIn, BenchmarkHistoryOut, EvalsListOut };
+export type {
+  BenchmarkHistoryIn,
+  BenchmarkHistoryOut,
+  BenchmarkOverviewIn,
+  BenchmarkOverviewOut,
+  EvalsListOut,
+};

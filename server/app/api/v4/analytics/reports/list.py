@@ -25,10 +25,10 @@ router.include_router(export_router)
 
 
 @router.post(
-    "",
+    "/list",
     response_model=GetReportsBundleApiResponse,
     dependencies=[
-        audit_activity("reports.bundle", "{{ actor.name }} viewed reports bundle")
+        audit_activity("reports.list", "{{ actor.name }} viewed reports bundle")
     ],
 )
 async def get_reports(

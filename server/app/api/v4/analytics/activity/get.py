@@ -28,10 +28,10 @@ router = APIRouter()
 
 
 @router.post(
-    "/bundle",
+    "/get",
     response_model=GetActivityBundleApiResponse,
     dependencies=[
-        audit_activity("activity.bundle", "{{ actor.name }} viewed activity metrics")
+        audit_activity("activity.get", "{{ actor.name }} viewed activity metrics")
     ],
 )
 async def get_activity_bundle(

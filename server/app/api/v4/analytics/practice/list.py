@@ -3,21 +3,18 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.infra.v4.activity.audit import audit_activity
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (GetPracticeHistoryApiRequest,
+                           GetPracticeHistoryApiResponse,
+                           GetPracticeHistorySqlParams,
+                           GetPracticeHistorySqlRow)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-from app.infra.v4.activity.audit import audit_activity
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    GetPracticeHistoryApiRequest,
-    GetPracticeHistoryApiResponse,
-    GetPracticeHistorySqlParams,
-    GetPracticeHistorySqlRow,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/practice/get_practice_history_complete.sql"
@@ -26,10 +23,10 @@ router = APIRouter()
 
 
 @router.post(
-    "/history",
+    "/list",
     response_model=GetPracticeHistoryApiResponse,
     dependencies=[
-        audit_activity("practice.history", "{{ actor.name }} viewed practice history")
+        audit_activity("practice.list", "{{ actor.name }} viewed practice history")
     ],
 )
 async def get_practice_history(

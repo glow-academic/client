@@ -8,22 +8,18 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetPerSimulationMetricsSqlParams,
-    GetPerSimulationMetricsSqlRow,
-    GetReportsBundleApiRequest,
-    GetReportsBundleApiResponse,
-    GetReportsBundleSqlParams,
-    GetReportsBundleSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (GetPerSimulationMetricsSqlParams,
+                           GetPerSimulationMetricsSqlRow,
+                           GetReportsBundleApiRequest,
+                           GetReportsBundleApiResponse,
+                           GetReportsBundleSqlParams, GetReportsBundleSqlRow,
+                           load_sql_query)
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 logger = get_logger(__name__)
 
@@ -102,7 +98,7 @@ async def _get_per_simulation_metrics(
 
 
 @router.post(
-    "/export",
+    "/report",
     dependencies=[
         audit_activity("reports.exported", "{{ actor.name }} exported reports")
     ],

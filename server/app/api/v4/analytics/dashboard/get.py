@@ -3,22 +3,18 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (GetDashboardBundleApiRequest,
+                           GetDashboardBundleApiResponse,
+                           GetDashboardBundleSqlParams,
+                           GetDashboardBundleSqlRow, load_sql_query)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    GetDashboardBundleApiRequest,
-    GetDashboardBundleApiResponse,
-    GetDashboardBundleSqlParams,
-    GetDashboardBundleSqlRow,
-    load_sql_query,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/dashboard/get_dashboard_bundle_complete.sql"
@@ -28,10 +24,10 @@ router = APIRouter()
 
 
 @router.post(
-    "/overview",
+    "/get",
     response_model=GetDashboardBundleApiResponse,
     dependencies=[
-        audit_activity("dashboard.bundle", "{{ actor.name }} viewed dashboard")
+        audit_activity("dashboard.get", "{{ actor.name }} viewed dashboard")
     ],
 )
 async def get_dashboard(

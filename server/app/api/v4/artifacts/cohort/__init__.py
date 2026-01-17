@@ -1,6 +1,7 @@
 """Cohort v4 router."""
 
 from app.api.v4.artifacts.cohort.delete import router as delete_router
+from app.api.v4.artifacts.cohort.draft import router as draft_router
 from app.api.v4.artifacts.cohort.duplicate import router as duplicate_router
 from app.api.v4.artifacts.cohort.get import router as get_router
 from app.api.v4.artifacts.cohort.list import router as list_router
@@ -15,3 +16,4 @@ router.include_router(get_router)
 router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
+router.include_router(draft_router)

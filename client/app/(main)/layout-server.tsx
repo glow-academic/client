@@ -14,12 +14,12 @@ type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
 type AuthorizeEmulationIn = InputOf<"/api/v4/auth/emulate", "post">;
 type AuthorizeEmulationOut = OutputOf<"/api/v4/auth/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v4/debug", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v4/debug", "post">;
+type CreateFeedbackIn = InputOf<"/api/v4/debug/debug", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v4/debug/debug", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v4/analytics/refresh", "post">;
-type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/simulation", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/simulation", "post">;
+type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
 type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
@@ -125,7 +125,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation/simulation", input, {
+  return api.post("/attempts/simulation/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -602,7 +602,7 @@ export async function clearGuestSessionCookies(): Promise<void> {
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/debug", input);
+  return api.post("/debug/debug", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */

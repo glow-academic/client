@@ -27,7 +27,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/eval",
+    "/get",
     response_model=GetEvalAttemptApiResponse,
     dependencies=[
         audit_activity(

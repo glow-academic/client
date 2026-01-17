@@ -30,7 +30,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/download/{upload_id}",
+    "/get/{upload_id}",
     response_model=None,
     dependencies=[
         audit_activity(

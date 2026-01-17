@@ -13,8 +13,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ActivityBundleIn = InputOf<"/api/v4/analytics/activity/bundle", "post">;
-type ActivityBundleOut = OutputOf<"/api/v4/analytics/activity/bundle", "post">;
+type ActivityBundleIn = InputOf<"/api/v4/analytics/activity/get", "post">;
+type ActivityBundleOut = OutputOf<"/api/v4/analytics/activity/get", "post">;
 type ActivityListIn = InputOf<"/api/v4/analytics/activity/list", "post">;
 type ActivityListOut = OutputOf<"/api/v4/analytics/activity/list", "post">;
 
@@ -30,7 +30,7 @@ const getActivityBundle = async (
 ): Promise<ActivityBundleOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/activity/bundle", input, {
+  return api.post("/analytics/activity/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

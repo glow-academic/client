@@ -26,10 +26,10 @@ router = APIRouter()
 
 
 @router.post(
-    "/history",
+    "/list",
     response_model=GetBenchmarkHistoryApiResponse,
     dependencies=[
-        audit_activity("benchmark.history", "{{ actor.name }} viewed benchmark history")
+        audit_activity("benchmark.list", "{{ actor.name }} viewed benchmark history")
     ],
 )
 async def get_benchmark_history(

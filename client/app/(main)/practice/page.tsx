@@ -15,10 +15,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/analytics/practice/overview", "post">;
-type PracticeOut = OutputOf<"/api/v4/analytics/practice/overview", "post">;
-type PracticeHistoryIn = InputOf<"/api/v4/analytics/practice/history", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v4/analytics/practice/history", "post">;
+type PracticeIn = InputOf<"/api/v4/analytics/practice/get", "post">;
+type PracticeOut = OutputOf<"/api/v4/analytics/practice/get", "post">;
+type PracticeHistoryIn = InputOf<"/api/v4/analytics/practice/list", "post">;
+type PracticeHistoryOut = OutputOf<"/api/v4/analytics/practice/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.
@@ -49,7 +49,7 @@ const getPracticeHistory = async (
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/practice/history", input, {
+  return api.post("/analytics/practice/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -165,8 +165,7 @@ export default async function PracticePage({
   const effectiveProfileId = profileContext.id;
 
   // Check if user is a guest
-  const isGuest =
-    !effectiveProfileId || profileContext.role === "guest";
+  const isGuest = !effectiveProfileId || profileContext.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
@@ -305,12 +304,8 @@ async function PracticeHistorySection({
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter(
-    (item) => item.is_archived
-  ).length;
-  const unarchivedCount = dataArray.filter(
-    (item) => !item.is_archived
-  ).length;
+  const archivedCount = dataArray.filter((item) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item) => !item.is_archived).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
@@ -322,14 +317,16 @@ async function PracticeHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulation_options || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt) => {
+      const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+      return {
+        value: String(opt["value"] || ""),
+        label: String(opt["label"] || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
   const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {

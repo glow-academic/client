@@ -25,16 +25,6 @@ import {
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
-  AlertCircle,
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  X,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import * as React from "react";
-import {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
@@ -44,10 +34,14 @@ import {
   getFacetedUniqueValues,
   useReactTable,
 } from "@tanstack/react-table";
+import { AlertCircle, ArrowRight, CheckCircle2, Clock, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import * as React from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkBundleIn = InputOf<"/api/v4/analytics/benchmark/overview", "post">;
-type BenchmarkBundleOut = OutputOf<"/api/v4/analytics/benchmark/overview", "post">;
+type BenchmarkBundleIn = InputOf<"/api/v4/analytics/benchmark/get", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v4/analytics/benchmark/get", "post">;
 type AttemptsArray = NonNullable<BenchmarkBundleOut["attempts"]>;
 type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 
@@ -55,7 +49,7 @@ type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 const getBenchmarkBundle = async (
   input: BenchmarkBundleIn
 ): Promise<BenchmarkBundleOut> => {
-  return api.post("/analytics/benchmark/overview", input, {
+  return api.post("/analytics/benchmark/get", input, {
     cache: "no-store",
   });
 };
@@ -135,14 +129,13 @@ export default function EvalAttemptsTable({
       try {
         const statusFilter = columnFilters.find((f) => f.id === "status")
           ?.value as string[] | undefined;
-        const status = statusFilter && statusFilter.length > 0 
-          ? statusFilter[0] 
-          : undefined;
+        const status =
+          statusFilter && statusFilter.length > 0 ? statusFilter[0] : undefined;
 
         const filters: BenchmarkBundleIn = {
           body: {
             page,
-            page_size: pageSize,  // snake_case
+            page_size: pageSize, // snake_case
             ...(status && { status }),
             ...(searchTerm && { search: searchTerm }),
           },
@@ -283,8 +276,9 @@ export default function EvalAttemptsTable({
       setColumnFilters(newFilters);
 
       // Extract status filter value and update URL
-      const statusFilter = newFilters.find((f) => f.id === "status")
-        ?.value as string[] | undefined;
+      const statusFilter = newFilters.find((f) => f.id === "status")?.value as
+        | string[]
+        | undefined;
       const status =
         statusFilter && statusFilter.length > 0 ? statusFilter[0] : null;
 

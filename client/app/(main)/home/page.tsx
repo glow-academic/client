@@ -16,10 +16,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v4/analytics/home/overview", "post">;
-type HomeOut = OutputOf<"/api/v4/analytics/home/overview", "post">;
-type HomeHistoryIn = InputOf<"/api/v4/analytics/home/history", "post">;
-type HomeHistoryOut = OutputOf<"/api/v4/analytics/home/history", "post">;
+type HomeIn = InputOf<"/api/v4/analytics/home/get", "post">;
+type HomeOut = OutputOf<"/api/v4/analytics/home/get", "post">;
+type HomeHistoryIn = InputOf<"/api/v4/analytics/home/list", "post">;
+type HomeHistoryOut = OutputOf<"/api/v4/analytics/home/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Home overview responses can get large and exceed Next.js 2MB cache limit.
@@ -49,7 +49,7 @@ const getHomeHistory = async (
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/home/history", input, {
+  return api.post("/analytics/home/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -349,12 +349,8 @@ async function HomeHistorySection({
 
   // Calculate archived/unarchived counts from data (home history API doesn't provide these)
   const dataArray = historyData.data || [];
-  const archivedCount = dataArray.filter(
-    (item) => item.is_archived
-  ).length;
-  const unarchivedCount = dataArray.filter(
-    (item) => !item.is_archived
-  ).length;
+  const archivedCount = dataArray.filter((item) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item) => !item.is_archived).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
@@ -366,14 +362,16 @@ async function HomeHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulation_options || []).map((opt) => {
-    const count = typeof opt.count === "number" ? opt.count : undefined;
-    return {
-      value: String(opt.value || ""),
-      label: String(opt.label || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
   const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
     const count = typeof opt.count === "number" ? opt.count : undefined;
     return {

@@ -22,10 +22,10 @@ router = APIRouter()
 
 
 @router.post(
-    "/overview",
+    "/get",
     response_model=GetHomeOverviewApiResponse,
     dependencies=[
-        audit_activity("home.overview", "{{ actor.name }} viewed home overview")
+        audit_activity("home.get", "{{ actor.name }} viewed home overview")
     ],
 )
 async def get_home_overview(

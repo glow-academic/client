@@ -13,7 +13,7 @@ export async function GET(
 
     // Build URL with preview parameter if present
     const url = new URL(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/download/${upload_id}`,
+      `${INTERNAL_HTTP_BASE}/api/v4/uploads/get/${upload_id}`,
     );
     if (preview) {
       url.searchParams.set("preview", "true");

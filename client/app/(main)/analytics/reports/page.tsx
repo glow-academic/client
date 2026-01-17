@@ -15,8 +15,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/api/v4/analytics/reports/reports", "post">;
-type ReportsOut = OutputOf<"/api/v4/analytics/reports/reports", "post">;
+type ReportsIn = InputOf<"/api/v4/analytics/reports/list", "post">;
+type ReportsOut = OutputOf<"/api/v4/analytics/reports/list", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -26,7 +26,7 @@ type ReportsOut = OutputOf<"/api/v4/analytics/reports/reports", "post">;
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/reports/reports", input, {
+  return api.post("/analytics/reports/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

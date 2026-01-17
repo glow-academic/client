@@ -27,7 +27,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/simulation",
+    "/get",
     response_model=GetSimulationAttemptApiResponse,
     dependencies=[
         audit_activity(

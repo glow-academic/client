@@ -14,8 +14,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { getLayoutContext, type ProfileItem } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/analytics/practice/overview", "post">;
-type PracticeOut = OutputOf<"/api/v4/analytics/practice/overview", "post">;
+type PracticeIn = InputOf<"/api/v4/analytics/practice/get", "post">;
+type PracticeOut = OutputOf<"/api/v4/analytics/practice/get", "post">;
 type PatchPracticeDraftIn = InputOf<"/api/v4/practice/draft", "patch">;
 type PatchPracticeDraftOut = OutputOf<"/api/v4/practice/draft", "patch">;
 
@@ -27,7 +27,7 @@ type PatchPracticeDraftOut = OutputOf<"/api/v4/practice/draft", "patch">;
 const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/practice/overview", input, {
+  return api.post("/analytics/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

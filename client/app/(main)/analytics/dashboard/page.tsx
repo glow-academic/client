@@ -16,10 +16,10 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v4/analytics/dashboard/overview", "post">;
-type DashboardOut = OutputOf<"/api/v4/analytics/dashboard/overview", "post">;
-type DashboardHistoryIn = InputOf<"/api/v4/analytics/dashboard/history", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v4/analytics/dashboard/history", "post">;
+type DashboardIn = InputOf<"/api/v4/analytics/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v4/analytics/dashboard/get", "post">;
+type DashboardHistoryIn = InputOf<"/api/v4/analytics/dashboard/list", "post">;
+type DashboardHistoryOut = OutputOf<"/api/v4/analytics/dashboard/list", "post">;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v4/attempts/simulation/archive",
   "post"
@@ -61,7 +61,7 @@ const getDashboardHistory = async (
   const bypassCache = await isHardRefresh();
 
   // InputOf types have body property with snake_case fields
-  return api.post("/analytics/dashboard/history", input, {
+  return api.post("/analytics/dashboard/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
