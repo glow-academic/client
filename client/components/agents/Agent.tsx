@@ -16,16 +16,11 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 
-import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import { AGENT_ROLES } from "@/components/common/forms/AgentRolePicker";
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import {
-  PromptInfo,
-  PromptPicker,
-} from "@/components/common/forms/PromptPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
@@ -35,21 +30,11 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
+import { Prompts } from "@/components/resources/Prompts";
 import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Voices } from "@/components/resources/Voices";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
@@ -66,17 +51,8 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import {
-  Bug,
-  Check,
-  Eye,
-  Loader2,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { parseAsString, useQueryStates, type Parser, type Values } from "nuqs";
-import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
 import type {
@@ -107,6 +83,8 @@ type CreateDraftTemperatureLevelsOut = OutputOf<
 >;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
+type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
 
 // Build model_mapping type from models array
 // The API returns models array, we build a mapping from model_id to model info
@@ -150,12 +128,15 @@ export interface AgentProps {
   createVoicesAction?: (
     input: CreateDraftVoicesIn
   ) => Promise<CreateDraftVoicesOut>;
+  createPromptsAction?: (
+    input: CreateDraftPromptsIn
+  ) => Promise<CreateDraftPromptsOut>;
 }
 
 interface FormErrors {
   name?: string;
   description?: string;
-  systemPrompt?: string;
+  prompt_id?: string;
   modelId?: string;
 }
 
@@ -168,6 +149,7 @@ export default function Agent({
   createReasoningLevelsAction,
   createTemperatureLevelsAction,
   createVoicesAction,
+  createPromptsAction,
 }: AgentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -185,15 +167,7 @@ export default function Agent({
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
-  );
   const prevDepartmentIdsRef = React.useRef<string[]>([]);
-  const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
-  const [promptToDelete, setPromptToDelete] = useState<{
-    promptId: string;
-    isDepartmentSpecific: boolean;
-  } | null>(null);
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -345,8 +319,7 @@ export default function Agent({
   type DraftState = {
     name: string;
     description: string;
-    systemPrompt: string;
-    promptId: string | null;
+    prompt_id: string | null;
     modelId: string;
     active: boolean;
     role: string;
@@ -372,8 +345,7 @@ export default function Agent({
       return {
         name: "New Agent",
         description: "",
-        systemPrompt: "",
-        promptId: null,
+        prompt_id: null,
         modelId: "",
         active: true,
         role: "assistant",
@@ -389,8 +361,7 @@ export default function Agent({
     return {
       name: data.name || "New Agent",
       description: data.description || "",
-      systemPrompt: data.system_prompt || "",
-      promptId: data.prompt_id || null,
+      prompt_id: data.prompt_id || null,
       modelId: data.model_id || "",
       active: data.active ?? true,
       role: data.role || "assistant",
@@ -422,9 +393,9 @@ export default function Agent({
     agentDetail?.model_id,
     agentDetail?.role,
     agentDetail?.department_ids,
-    agentDetail?.selected_temperature_level_id,
-    agentDetail?.selected_reasoning_level_id,
-    agentDetail?.selected_voice_ids,
+    agentDetail?.temperature_level_id,
+    agentDetail?.reasoning_level_id,
+    agentDetail?.voice_ids,
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
@@ -533,194 +504,6 @@ export default function Agent({
     });
     return mapping;
   }, [agentData?.models]);
-
-  // Compute department_mapping from departments array
-  const departmentMapping = useMemo(() => {
-    if (!agentData?.departments || !Array.isArray(agentData.departments)) {
-      return {} as Record<
-        string,
-        { id: string; name: string; description?: string }
-      >;
-    }
-    const mapping: Record<
-      string,
-      { id: string; name: string; description?: string }
-    > = {};
-    agentData.departments.forEach((dept) => {
-      if (dept.department_id) {
-        const desc = dept.description || undefined;
-        mapping[dept.department_id] = {
-          id: dept.department_id,
-          name: dept.name || "",
-          ...(desc !== undefined ? { description: desc } : {}),
-        };
-      }
-    });
-    return mapping;
-  }, [agentData?.departments]);
-
-  // Build prompt_mapping from prompts array and department_prompt_links
-  const promptMapping = useMemo(() => {
-    if (!agentDetail?.prompts || !Array.isArray(agentDetail.prompts)) {
-      return {} as Record<string, PromptInfo>;
-    }
-    const mapping: Record<string, PromptInfo> = {};
-    agentDetail.prompts.forEach((prompt) => {
-      if (prompt.prompt_id) {
-        // Get department_ids from department_prompt_links
-        const deptIds: string[] = [];
-        if (
-          agentDetail.department_prompt_links &&
-          Array.isArray(agentDetail.department_prompt_links)
-        ) {
-          agentDetail.department_prompt_links.forEach((link) => {
-            if (link.prompt_id === prompt.prompt_id && link.department_id) {
-              deptIds.push(link.department_id);
-            }
-          });
-        }
-        mapping[prompt.prompt_id] = {
-          system_prompt: prompt.system_prompt || "",
-          name: prompt.name || "",
-          description: prompt.description || "",
-          created_at: prompt.created_at || "",
-          updated_at: prompt.updated_at || "",
-          department_ids: deptIds.length > 0 ? deptIds : null,
-          can_delete: prompt.can_delete ?? false,
-        };
-      }
-    });
-    return mapping;
-  }, [agentDetail?.prompts, agentDetail?.department_prompt_links]);
-
-  // Filter prompt_mapping client-side based on selected departments from form
-  // API returns all prompts user has access to, then we filter by selected departments
-  // When "All Departments" selected (empty array): Show ALL prompts (default + all department-specific)
-  // When specific departments selected: Show default + prompts for those departments
-  const filteredPromptMapping = useMemo(() => {
-    if (!isEditMode || Object.keys(promptMapping).length === 0) {
-      return promptMapping;
-    }
-
-    const selectedDeptIds = draftState.departmentIds || [];
-    const filtered: Record<string, PromptInfo> = {};
-
-    for (const [promptId, promptInfoRaw] of Object.entries(promptMapping)) {
-      // Add default values for name and description if missing (for backward compatibility)
-      // Type assertion needed because API schema may not be fully updated in TypeScript types
-      const rawInfo = promptInfoRaw as PromptInfo & {
-        name?: string;
-        description?: string;
-      };
-      const promptInfo: PromptInfo = {
-        ...promptInfoRaw,
-        name: rawInfo.name || "",
-        description: rawInfo.description || "",
-      };
-
-      // Always include default prompt (no department_ids)
-      if (
-        !promptInfo.department_ids ||
-        promptInfo.department_ids.length === 0
-      ) {
-        filtered[promptId] = promptInfo;
-      } else if (selectedDeptIds.length === 0) {
-        // "All Departments" selected - show ALL prompts including department-specific ones
-        filtered[promptId] = promptInfo;
-      } else {
-        // Specific departments selected - show prompts for those departments
-        if (
-          promptInfo.department_ids.some((deptId) =>
-            selectedDeptIds.includes(deptId)
-          )
-        ) {
-          filtered[promptId] = promptInfo;
-        }
-      }
-    }
-    return filtered;
-  }, [draftState.departmentIds, promptMapping, isEditMode]);
-
-  // Get default prompt content (from agent_prompts table)
-  const defaultPromptContent = useMemo(() => {
-    if (
-      !isEditMode ||
-      !agentDetail?.prompt_id ||
-      Object.keys(promptMapping).length === 0
-    )
-      return "";
-    const defaultPrompt = promptMapping[agentDetail.prompt_id];
-    return defaultPrompt?.system_prompt || "";
-  }, [agentDetail, isEditMode, promptMapping]);
-
-  // Get resolved prompt (what's actually saved/configured for selected departments from form)
-  // This is what would be used in production for the selected department(s)
-  const resolvedPrompt = useMemo(() => {
-    if (
-      !isEditMode ||
-      !agentDetail ||
-      Object.keys(promptMapping).length === 0
-    ) {
-      return { promptId: null, content: "" };
-    }
-
-    const selectedDeptIds = draftState.departmentIds || [];
-    if (selectedDeptIds.length === 0) {
-      // "All Departments" - use default prompt
-      return {
-        promptId: agentDetail.prompt_id || null,
-        content: defaultPromptContent,
-      };
-    }
-
-    // For multiple departments, check if all have the same prompt
-    const firstDeptId = selectedDeptIds[0]!;
-    // Find prompt_id for first department from department_prompt_links array
-    const firstLink = agentDetail.department_prompt_links?.find(
-      (link) => link.department_id === firstDeptId
-    );
-    const firstPromptId = firstLink?.prompt_id || agentDetail.prompt_id || null;
-
-    // Check if all selected departments have the same prompt
-    const allSamePrompt = selectedDeptIds.every((deptId) => {
-      const link = agentDetail.department_prompt_links?.find(
-        (l) => l.department_id === deptId
-      );
-      const promptId = link?.prompt_id || agentDetail.prompt_id || null;
-      return promptId === firstPromptId;
-    });
-
-    if (allSamePrompt && firstPromptId) {
-      const promptInfo = promptMapping[firstPromptId];
-      return {
-        promptId: firstPromptId,
-        content: promptInfo?.system_prompt || defaultPromptContent,
-      };
-    }
-
-    // Mixed prompts - return default
-    return {
-      promptId: agentDetail.prompt_id || null,
-      content: defaultPromptContent,
-    };
-  }, [
-    draftState.departmentIds,
-    promptMapping,
-    agentDetail,
-    defaultPromptContent,
-    isEditMode,
-  ]);
-
-  // Get resolved prompt content for change detection
-  const resolvedPromptContent = useMemo(() => {
-    return resolvedPrompt.content;
-  }, [resolvedPrompt]);
-
-  // Check if current prompt content differs from resolved prompt
-  const hasPromptChanges = useMemo(() => {
-    if (!draftState.systemPrompt) return false;
-    return draftState.systemPrompt !== resolvedPromptContent;
-  }, [draftState.systemPrompt, resolvedPromptContent]);
 
   // formData is no longer needed - form fields are in draftState, URL params are in urlParams
 
@@ -942,10 +725,8 @@ export default function Agent({
     prevDepartmentIdsRef.current = [...draftState.departmentIds];
   }, [draftState.departmentIds]);
 
-  // Update prompt when department selection changes
+  // Track department changes (for future use if needed)
   useEffect(() => {
-    if (!isEditMode || !agentDetail || !draftState.departmentIds) return;
-
     // Track department changes - compare arrays
     const prevIds = prevDepartmentIdsRef.current;
     const currentIds = draftState.departmentIds || [];
@@ -956,25 +737,7 @@ export default function Agent({
     if (departmentChanged) {
       prevDepartmentIdsRef.current = [...currentIds];
     }
-
-    // Only auto-set if user hasn't made changes (compare content to resolved prompt)
-    if (hasPromptChanges && !departmentChanged) return;
-
-    // Only auto-set when department changes - use resolvedPrompt which is computed for current selection
-    if (departmentChanged) {
-      setDraftState((prev) => ({
-        ...prev,
-        promptId: resolvedPrompt.promptId,
-        systemPrompt: resolvedPrompt.content,
-      }));
-    }
-  }, [
-    draftState.departmentIds,
-    agentDetail,
-    isEditMode,
-    resolvedPrompt,
-    hasPromptChanges,
-  ]);
+  }, [draftState.departmentIds]);
 
   // handleInputChange removed - use setDraftState directly
 
@@ -1066,7 +829,7 @@ export default function Agent({
       id: "prompt",
       title: "Prompt Instructions",
       description: "Define the system prompt that controls agent behavior.",
-      resetFields: ["systemPrompt", "promptId"] as string[],
+      resetFields: ["prompt_id"] as string[],
     };
 
     return [...baseSteps, ...configSteps, promptStep];
@@ -1111,11 +874,8 @@ export default function Agent({
           case "voice_ids":
             resetUpdates.voice_ids = initialDraftState.voice_ids;
             break;
-          case "systemPrompt":
-            resetUpdates.systemPrompt = initialDraftState.systemPrompt;
-            break;
-          case "promptId":
-            resetUpdates.promptId = initialDraftState.promptId;
+          case "prompt_id":
+            resetUpdates.prompt_id = initialDraftState.prompt_id;
             break;
         }
       });
@@ -1145,12 +905,12 @@ export default function Agent({
         throw new Error("Agent description is required");
       }
 
-      if (!draftState.systemPrompt) {
+      if (!draftState.prompt_id) {
         setErrors((prev) => ({
           ...prev,
-          systemPrompt: "System prompt is required",
+          prompt_id: "Prompt selection is required",
         }));
-        throw new Error("System prompt is required");
+        throw new Error("Prompt selection is required");
       }
 
       if (!draftState.modelId || draftState.modelId.trim().length === 0) {
@@ -1168,72 +928,6 @@ export default function Agent({
           isSuperadmin,
           validDepartmentIds
         );
-
-        if (isEditMode && agentId && agentDetail) {
-          // Safety check: Only create/update overrides for departments that:
-          // 1. Don't have an override yet (use default), OR
-          // 2. Are the only department selected, OR
-          // 3. All selected departments share the same existing override prompt
-          const selectedDeptIds = draftState.departmentIds || [];
-          let departmentsForPromptOverride: string[] = [];
-
-          if (hasPromptChanges) {
-            const targetDeptIds =
-              selectedDeptIds.length === 0
-                ? agentDetail?.valid_department_ids || []
-                : selectedDeptIds;
-
-            if (targetDeptIds.length > 0) {
-              // If only one department selected, always allow update
-              if (targetDeptIds.length === 1) {
-                departmentsForPromptOverride = targetDeptIds;
-              } else {
-                // For multiple departments, check which ones are safe to update
-                // Convert department_prompt_links array to Record<department_id, prompt_id>
-                const departmentPromptLinksArray =
-                  agentDetail?.department_prompt_links ?? [];
-                const departmentPromptLinks: Record<
-                  string,
-                  string | undefined
-                > = {};
-                departmentPromptLinksArray.forEach((link) => {
-                  if (link.department_id) {
-                    departmentPromptLinks[link.department_id] =
-                      link.prompt_id ?? undefined;
-                  }
-                });
-                const existingPromptIds = targetDeptIds
-                  .map((deptId) => departmentPromptLinks[deptId])
-                  .filter((promptId) => promptId !== undefined);
-
-                const allShareSamePrompt =
-                  existingPromptIds.length > 0 &&
-                  existingPromptIds.every(
-                    (promptId) => promptId === existingPromptIds[0]
-                  );
-
-                if (allShareSamePrompt) {
-                  // All departments share the same override - safe to update all
-                  departmentsForPromptOverride = targetDeptIds;
-                } else {
-                  // Not all share same prompt - only update departments without overrides
-                  const safeToUpdate: string[] = [];
-                  for (const deptId of targetDeptIds) {
-                    if (!departmentPromptLinks[deptId]) {
-                      // Department doesn't have an override - safe to create one
-                      safeToUpdate.push(deptId);
-                    }
-                  }
-                  departmentsForPromptOverride = safeToUpdate;
-                }
-              }
-            }
-          }
-        }
-
-        // Always create new prompt version if content differs from resolved prompt
-        // Never create default prompts - always create department-specific overrides
-        const shouldCreateNewPrompt = hasPromptChanges;
 
         // Save agent using unified v4 API (handles both create and update)
         // Ensure profileId exists - required for API calls
@@ -1257,8 +951,8 @@ export default function Agent({
           name: nameText,
           description: descriptionText,
           model_id: draftState.modelId!.trim(),
-          prompt_id: shouldCreateNewPrompt ? null : draftState.promptId || null,
-          system_prompt: draftState.systemPrompt!,
+          prompt_id: draftState.prompt_id || null,
+          system_prompt: null, // Prompts component handles system_prompt via prompt_id
           instructions_id: agentData?.instructions_id || null,
           active_flag_id: agentData?.active_flag_id || null,
           department_ids: finalDepartmentIds,
@@ -1287,11 +981,9 @@ export default function Agent({
       draftState,
       isEditMode,
       agentId,
-      agentDetail,
       agentData,
       isSuperadmin,
       effectiveProfile,
-      hasPromptChanges,
       handleSaveAgent,
       resetFormAndState,
       router,
@@ -1344,7 +1036,7 @@ export default function Agent({
           return "completed";
         case "prompt":
           if (!hasModel) return "pending";
-          return draftState.systemPrompt?.trim() ? "completed" : "active";
+          return draftState.prompt_id ? "completed" : "active";
         default:
           return "pending";
       }
@@ -1450,7 +1142,11 @@ export default function Agent({
         case "descriptions":
           return agentData.description_resource?.generated ?? false;
         case "models":
-          return agentData.models?.some((m) => m.generated) ?? false;
+          return (
+            agentData.models?.some(
+              (m) => (m as { generated?: boolean }).generated
+            ) ?? false
+          );
         case "prompts":
           return agentData.prompts?.some((p) => p.generated) ?? false;
         case "instructions":
@@ -1476,7 +1172,7 @@ export default function Agent({
   const determineAgentType = useCallback(
     (resourceTypes: ResourceType[]): string | null => {
       if (resourceTypes.length === 1) {
-        const agentTypeMap: Record<ResourceType, string> = {
+        const agentTypeMap: Partial<Record<ResourceType, string>> = {
           names: "name",
           descriptions: "description",
           models: "models",
@@ -1489,8 +1185,8 @@ export default function Agent({
           voices: "voices",
         };
         const firstType = resourceTypes[0];
-        if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType];
+        if (firstType && firstType in agentTypeMap && agentTypeMap[firstType]) {
+          return agentTypeMap[firstType]!;
         }
       }
       // For multiple resources, use "general" or find first available agent
@@ -1547,15 +1243,6 @@ export default function Agent({
     [handleGenerateResources, determineAgentType]
   );
 
-  const handleGenerateInstructions = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["instructions"],
-        determineAgentType(["instructions"])
-      ),
-    [handleGenerateResources, determineAgentType]
-  );
-
   const handleGenerateDepartments = useCallback(
     async () =>
       handleGenerateResources(
@@ -1589,17 +1276,80 @@ export default function Agent({
     [handleGenerateResources, determineAgentType]
   );
 
-  const handleGenerateVoices = useCallback(
+  const handleGeneratePrompts = useCallback(
     async () =>
-      handleGenerateResources(["voices"], determineAgentType(["voices"])),
+      handleGenerateResources(["prompts"], determineAgentType(["prompts"])),
     [handleGenerateResources, determineAgentType]
+  );
+
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      model: ["models"],
+      temperature: ["temperature_levels"],
+      reasoning: ["reasoning_levels"],
+      voice: ["voices"],
+      prompt: ["prompts"],
+      instructions: ["instructions"],
+      all: [
+        "names",
+        "descriptions",
+        "models",
+        "prompts",
+        "instructions",
+        "flags",
+        "departments",
+        "reasoning_levels",
+        "temperature_levels",
+        "voices",
+      ],
+    }),
+    []
+  );
+
+  // Resource labels for display (only for resources used in this component)
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      models: "Models",
+      prompts: "Prompts",
+      instructions: "Instructions",
+      flags: "Flags",
+      departments: "Departments",
+      reasoning_levels: "Reasoning Levels",
+      temperature_levels: "Temperature Levels",
+      voices: "Voices",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt] || rt,
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
   );
 
   // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = () => {
       // Check if generation is available (agent has generation capability)
-      if (agentData?.general_agent_id || agentId) {
+      if (agentId) {
         // Open modal instead of directly generating
         handleOpenStepCardModal("all", "generate");
       }
@@ -1607,7 +1357,7 @@ export default function Agent({
     window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [agentData?.general_agent_id, agentId, handleOpenStepCardModal]);
+  }, [agentId, handleOpenStepCardModal]);
 
   // WebSocket handlers for AI generation
   useEffect(() => {
@@ -1676,23 +1426,31 @@ export default function Agent({
             }
           }
           if (data.model_id) updates.modelId = data.model_id;
-          if (data.prompt_id) updates.promptId = data.prompt_id;
-          if (data.reasoning_level_id)
-            updates.reasoning_level_id = data.reasoning_level_id;
-          if (data.temperature_level_id)
-            updates.temperature_level_id = data.temperature_level_id;
-          if (data.voice_ids && data.voice_ids.length > 0) {
-            updates.voice_ids = [
-              ...new Set([...prev.voice_ids, ...data.voice_ids]),
-            ];
+          if (data.prompt_id) updates.prompt_id = data.prompt_id;
+          if (data["reasoning_level_id"]) {
+            const reasoningLevelId = data["reasoning_level_id"];
+            if (typeof reasoningLevelId === "string") {
+              updates.reasoning_level_id = reasoningLevelId;
+            }
           }
-          if (data.instructions_id) {
-            // Find instructions text from agentData instructions array
-            const instructionsResource = agentData?.instructions?.find(
-              (inst) => inst.id === data.instructions_id
-            );
-            // Note: Instructions are stored separately, not in draftState.systemPrompt
-            // The systemPrompt is for prompts, not instructions
+          if (data["temperature_level_id"]) {
+            const temperatureLevelId = data["temperature_level_id"];
+            if (typeof temperatureLevelId === "string") {
+              updates.temperature_level_id = temperatureLevelId;
+            }
+          }
+          if (data["voice_ids"]) {
+            const voiceIds = data["voice_ids"];
+            if (Array.isArray(voiceIds) && voiceIds.length > 0) {
+              updates.voice_ids = [
+                ...new Set([
+                  ...prev.voice_ids,
+                  ...voiceIds.filter(
+                    (id): id is string => typeof id === "string"
+                  ),
+                ]),
+              ];
+            }
           }
           if (data.active_flag_id) {
             updates.active = true; // Flag ID means active
@@ -1796,69 +1554,6 @@ export default function Agent({
     agentData?.descriptions,
     agentData?.instructions,
   ]);
-
-  // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
-    () => ({
-      basic: ["names", "descriptions", "departments", "flags"],
-      model: ["models"],
-      temperature: ["temperature_levels"],
-      reasoning: ["reasoning_levels"],
-      voice: ["voices"],
-      prompt: ["prompts"],
-      instructions: ["instructions"],
-      all: [
-        "names",
-        "descriptions",
-        "models",
-        "prompts",
-        "instructions",
-        "flags",
-        "departments",
-        "reasoning_levels",
-        "temperature_levels",
-        "voices",
-      ],
-    }),
-    []
-  );
-
-  // Resource labels for display
-  const resourceLabels: Record<ResourceType, string> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      models: "Models",
-      prompts: "Prompts",
-      instructions: "Instructions",
-      flags: "Flags",
-      departments: "Departments",
-      reasoning_levels: "Reasoning Levels",
-      temperature_levels: "Temperature Levels",
-      voices: "Voices",
-    }),
-    []
-  );
-
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt],
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
-  );
 
   // Handler for modal generate/regenerate action
   const handleModalGenerate = useCallback(
@@ -2460,7 +2155,19 @@ export default function Agent({
                       <TemperatureLevels
                         temperature_level_id={draftState.temperature_level_id}
                         temperature_level_resource={
-                          agentData?.temperature_level_resource ?? null
+                          agentData?.temperature_level_resource
+                            ? {
+                                ...agentData.temperature_level_resource,
+                                temperature:
+                                  agentData.temperature_level_resource
+                                    .temperature !== null
+                                    ? String(
+                                        agentData.temperature_level_resource
+                                          .temperature
+                                      )
+                                    : null,
+                              }
+                            : null
                         }
                         show_temperature_levels={
                           agentData?.show_temperature_levels ?? true
@@ -2468,7 +2175,15 @@ export default function Agent({
                         temperature_level_suggestions={
                           agentData?.temperature_level_suggestions ?? []
                         }
-                        temperature_levels={agentData?.temperature_levels ?? []}
+                        temperature_levels={
+                          agentData?.temperature_levels?.map((tl) => ({
+                            ...tl,
+                            temperature:
+                              tl.temperature !== null
+                                ? String(tl.temperature)
+                                : null,
+                          })) ?? []
+                        }
                         temperature_lower={
                           selectedModel?.temperature_lower ?? null
                         }
@@ -2574,8 +2289,6 @@ export default function Agent({
                         onVoiceIdsChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
                         }
-                        onGenerate={handleGenerateVoices}
-                        isGenerating={isGenerating("voices")}
                         group_id={agentData?.group_id ?? null}
                         agent_id={agentData?.voices_agent_id ?? null}
                         createVoicesAction={createVoicesAction}
@@ -2593,239 +2306,37 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
-                      resetFields={["systemPrompt", "promptId"]}
+                      resetFields={["prompt_id"]}
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
-                      actions={
-                        <div className="flex gap-2">
-                          {isEditMode &&
-                            agentDetail &&
-                            filteredPromptMapping &&
-                            Object.keys(filteredPromptMapping).length > 0 && (
-                              <PromptPicker
-                                promptMapping={filteredPromptMapping}
-                                selectedPromptId={draftState.promptId || null}
-                                defaultPromptId={agentDetail?.prompt_id || null}
-                                onSelect={(selectedPromptId) => {
-                                  if (
-                                    selectedPromptId &&
-                                    filteredPromptMapping[selectedPromptId]
-                                  ) {
-                                    const prompt =
-                                      filteredPromptMapping[selectedPromptId];
-                                    setDraftState((prev) => ({
-                                      ...prev,
-                                      promptId: selectedPromptId,
-                                      systemPrompt: prompt.system_prompt,
-                                    }));
-                                  } else {
-                                    setDraftState((prev) => ({
-                                      ...prev,
-                                      promptId: null,
-                                    }));
-                                  }
-                                }}
-                                placeholder="Select prompt..."
-                                disabled={isReadonly}
-                                buttonClassName="h-8"
-                              />
-                            )}
-                          {hasPromptChanges && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setDraftState((prev) => ({
-                                      ...prev,
-                                      systemPrompt: resolvedPromptContent,
-                                      promptId: resolvedPrompt.promptId,
-                                    }));
-                                  }}
-                                  className="h-8 w-8 p-0"
-                                  data-testid="btn-reset-changes"
-                                >
-                                  <RotateCcw className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Reset to saved prompt</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant={
-                                  editorMode === "preview"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  setEditorMode(
-                                    editorMode === "preview"
-                                      ? "editor"
-                                      : "preview"
-                                  )
-                                }
-                                className="h-8 w-8 p-0"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Preview</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          {isEditMode && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant={
-                                    editorMode === "debug"
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                  size="sm"
-                                  onClick={() =>
-                                    setEditorMode(
-                                      editorMode === "debug"
-                                        ? "editor"
-                                        : "debug"
-                                    )
-                                  }
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <Bug className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Debug</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          {isEditMode &&
-                            !isReadonly &&
-                            draftState.promptId &&
-                            filteredPromptMapping[draftState.promptId]
-                              ?.can_delete && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => {
-                                      const promptInfo =
-                                        filteredPromptMapping[
-                                          draftState.promptId!
-                                        ];
-                                      if (!promptInfo) return;
-                                      setPromptToDelete({
-                                        promptId: draftState.promptId!,
-                                        isDepartmentSpecific: !!(
-                                          promptInfo.department_ids &&
-                                          promptInfo.department_ids.length > 0
-                                        ),
-                                      });
-                                      setShowDeletePromptDialog(true);
-                                    }}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Delete</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                        </div>
-                      }
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="systemPrompt">System Prompt *</Label>
-                        </div>
-                        <div
-                          className="h-[500px]"
-                          data-testid="editor-system-prompt"
-                        >
-                          <UnifiedPromptEditor
-                            value={draftState.systemPrompt || ""}
-                            onChange={(value) => {
-                              setDraftState((prev) => ({
-                                ...prev,
-                                systemPrompt: value,
-                                promptId: null, // Clear promptId when editing, indicating new prompt
-                              }));
-                              if (errors.systemPrompt) {
-                                setErrors((prev) => {
-                                  const { systemPrompt: _, ...rest } = prev;
-                                  return rest;
-                                });
-                              }
-                            }}
-                            placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
-                            className="h-full"
-                            debugContent={
-                              isEditMode &&
-                              agentDetail &&
-                              effectiveProfile?.role === "superadmin" &&
-                              agentDetail.debug_info &&
-                              Array.isArray(agentDetail.debug_info) ? (
-                                <AgentDebugInfo
-                                  debugInfo={agentDetail.debug_info
-                                    .filter(
-                                      (
-                                        item
-                                      ): item is {
-                                        created_at: string;
-                                        model_id: string;
-                                        content: string;
-                                      } =>
-                                        !!item.created_at &&
-                                        !!item.model_id &&
-                                        !!item.content
-                                    )
-                                    .map((item) => ({
-                                      created_at: item.created_at,
-                                      model_id: item.model_id,
-                                      content: item.content,
-                                    }))}
-                                  modelMapping={Object.fromEntries(
-                                    Object.entries(modelMapping).map(
-                                      ([id, model]) => [
-                                        id,
-                                        {
-                                          name: model.name ?? "",
-                                          description: model.description ?? "",
-                                        },
-                                      ]
-                                    )
-                                  )}
-                                />
-                              ) : undefined
-                            }
-                            activeMode={editorMode}
-                          />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          This prompt defines the agent's behavior and
-                          personality in conversations. You can use markdown
-                          formatting for better organization.
+                      <Prompts
+                        prompt_id={draftState.prompt_id}
+                        prompt_resource={agentData?.prompt_resource ?? null}
+                        show_prompts={agentData?.show_prompts ?? true}
+                        prompt_suggestions={agentData?.prompt_suggestions ?? []}
+                        prompts={agentData?.prompts ?? []}
+                        disabled={isReadonly}
+                        onPromptIdChange={(id) => {
+                          setDraftState((prev) => ({ ...prev, prompt_id: id }));
+                          if (errors.prompt_id) {
+                            setErrors((prev) => {
+                              const { prompt_id: _, ...rest } = prev;
+                              return rest;
+                            });
+                          }
+                        }}
+                        onGenerate={handleGeneratePrompts}
+                        isGenerating={isGenerating("prompts")}
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.prompts_agent_id ?? null}
+                        createPromptsAction={createPromptsAction}
+                      />
+                      {errors?.prompt_id && (
+                        <p className="text-sm text-destructive">
+                          {errors.prompt_id}
                         </p>
-                        {errors?.systemPrompt && (
-                          <p className="text-sm text-destructive">
-                            {errors.systemPrompt}
-                          </p>
-                        )}
-                      </div>
+                      )}
                     </StepCard>
                   );
                 }
@@ -2852,72 +2363,6 @@ export default function Agent({
             mode={modalMode}
           />
         )}
-
-        {/* Delete Prompt Confirmation Dialog */}
-        <AlertDialog
-          open={showDeletePromptDialog}
-          onOpenChange={setShowDeletePromptDialog}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
-              <AlertDialogDescription>
-                {promptToDelete?.isDepartmentSpecific ? (
-                  <>
-                    Are you sure you want to delete this department-specific
-                    prompt? This will delete the prompt and fall back to the
-                    default prompt for this department.
-                  </>
-                ) : (
-                  <>
-                    Are you sure you want to delete this prompt? This will
-                    delete the prompt and set the latest prompt as active.
-                  </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setShowDeletePromptDialog(false);
-                  setPromptToDelete(null);
-                }}
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  if (!promptToDelete || !agentId) return;
-
-                  try {
-                    await handleDeleteAgentPrompt({
-                      agent_id: agentId,
-                      prompt_id: promptToDelete.promptId,
-                      department_id: promptToDelete.isDepartmentSpecific
-                        ? draftState.departmentIds &&
-                          draftState.departmentIds.length > 0
-                          ? draftState.departmentIds[0]!
-                          : null
-                        : null,
-                    });
-                    toast.success("Prompt deleted successfully");
-                    setShowDeletePromptDialog(false);
-                    setPromptToDelete(null);
-                    // Refresh the page to get updated data
-                    router.refresh();
-                  } catch (error) {
-                    const msg =
-                      error instanceof Error ? error.message : "Unknown error";
-                    toast.error(`Failed to delete prompt: ${msg}`);
-                  }
-                }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </TooltipProvider>
   );

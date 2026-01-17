@@ -38,6 +38,8 @@ type CreateDraftTemperatureLevelsOut = OutputOf<
 >;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
+type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -122,6 +124,13 @@ async function createDraftVoices(
   return api.post("/resources/voices", input);
 }
 
+async function createDraftPrompts(
+  input: CreateDraftPromptsIn
+): Promise<CreateDraftPromptsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/prompts", input);
+}
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AgentEditPage({
   params,
@@ -169,10 +178,11 @@ export default async function AgentEditPage({
           agentId={agentId}
           {...(agentDetail && { agentDetail })}
           saveAgentAction={saveAgent}
-          patchAgentDraftAction={undefined}
+          patchAgentDraftAction={patchAgentDraft}
           createReasoningLevelsAction={createDraftReasoningLevels}
           createTemperatureLevelsAction={createDraftTemperatureLevels}
           createVoicesAction={createDraftVoices}
+          createPromptsAction={createDraftPrompts}
         />
       </div>
     );
