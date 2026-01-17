@@ -58,9 +58,20 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     restart: unless-stopped
-    command: ["start-dev"] # switch to "start" + TLS in real prod
+    # Override entrypoint to copy themes from Docker volume before starting Keycloak
+    entrypoint: >
+      /bin/sh -c "
+        # Copy themes from Docker volume to Keycloak's themes directory
+        # This ensures Keycloak can find themes; restart Keycloak after theme updates
+        if [ -d /opt/keycloak/data/uploads/themes ]; then
+          cp -r /opt/keycloak/data/uploads/themes/* /opt/keycloak/themes/ 2>/dev/null || true
+        fi &&
+        # Execute original Keycloak entrypoint
+        exec /opt/keycloak/bin/kc.sh start-dev
+      "
     volumes:
-      - ./uploads/themes:/opt/keycloak/themes:ro
+      # Mount the same Docker volume that server uses
+      - uploads:/opt/keycloak/data/uploads:ro
     environment:
       # Admin bootstrap (Keycloak 26.0 uses KC_BOOTSTRAP_* instead of KEYCLOAK_*)
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
@@ -89,6 +100,8 @@ services:
       # Enable health endpoints for readiness checks
       KC_HEALTH_ENABLED: "true"
     depends_on:
+      volume-init:
+        condition: service_completed_successfully
       database:
         condition: service_healthy
     healthcheck:

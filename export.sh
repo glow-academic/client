@@ -330,6 +330,12 @@ if [ -d "uploads" ]; then
         mkdir -p "$EXPORT_DIR/uploads/audio"
         rsync -av "uploads/audio/" "$EXPORT_DIR/uploads/audio/" || true
     fi
+    
+    # Copy themes subfolder
+    if [ -d "uploads/themes" ]; then
+        mkdir -p "$EXPORT_DIR/uploads/themes"
+        rsync -av "uploads/themes/" "$EXPORT_DIR/uploads/themes/" || true
+    fi
 else
     warning "uploads directory does not exist, skipping..."
 fi
