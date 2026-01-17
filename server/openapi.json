@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema",
+    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -96,7 +96,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/list": {
@@ -189,7 +193,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/save": {
@@ -282,7 +290,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/duplicate": {
@@ -375,7 +387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/delete": {
@@ -468,7 +484,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/personas/draft": {
@@ -561,7 +581,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
       }
     },
     "/api/v4/scenarios/get": {
@@ -654,7 +678,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/list": {
@@ -747,7 +775,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/save": {
@@ -840,7 +872,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/duplicate": {
@@ -933,7 +969,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/scenarios/delete": {
@@ -1026,7 +1066,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
+      }
+    },
+    "/api/v4/scenarios/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "scenarios"
+        ],
+        "summary": "Patch Scenario Draft",
+        "description": "Patch scenario draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_scenario_draft_api_v4_scenarios_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchScenarioDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchScenarioDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "scenarios"
+        ]
       }
     },
     "/api/v4/simulations/get": {
@@ -1119,7 +1260,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/list": {
@@ -1212,7 +1357,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/save": {
@@ -1305,7 +1454,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/duplicate": {
@@ -1398,7 +1551,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/simulations/delete": {
@@ -1491,7 +1648,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
+      }
+    },
+    "/api/v4/simulations/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "simulations"
+        ],
+        "summary": "Patch Simulation Draft",
+        "description": "Patch simulation draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_simulation_draft_api_v4_simulations_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchSimulationDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchSimulationDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "simulations"
+        ]
       }
     },
     "/api/v4/documents/list": {
@@ -1584,7 +1842,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/get": {
@@ -1677,7 +1939,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/save": {
@@ -1770,7 +2036,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/duplicate": {
@@ -1863,7 +2133,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/delete": {
@@ -1956,7 +2230,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/documents/draft": {
@@ -2049,7 +2327,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "documents"
+        ]
       }
     },
     "/api/v4/departments/get": {
@@ -2142,7 +2424,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/list": {
@@ -2235,7 +2521,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/save": {
@@ -2328,7 +2618,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/duplicate": {
@@ -2421,7 +2715,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/departments/delete": {
@@ -2514,7 +2812,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
+      }
+    },
+    "/api/v4/departments/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "departments"
+        ],
+        "summary": "Patch Department Draft",
+        "description": "Patch department draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_department_draft_api_v4_departments_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchDepartmentDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchDepartmentDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "departments"
+        ]
       }
     },
     "/api/v4/cohorts/list": {
@@ -2607,7 +3006,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/get": {
@@ -2700,7 +3103,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/save": {
@@ -2793,7 +3200,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/duplicate": {
@@ -2886,7 +3297,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/cohorts/delete": {
@@ -2979,7 +3394,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
+      }
+    },
+    "/api/v4/cohorts/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "cohorts"
+        ],
+        "summary": "Patch Cohort Draft",
+        "description": "Patch cohort draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_cohort_draft_api_v4_cohorts_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchCohortDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchCohortDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "cohorts"
+        ]
       }
     },
     "/api/v4/evals/list": {
@@ -3072,7 +3588,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/get": {
@@ -3165,7 +3685,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/save": {
@@ -3258,7 +3782,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/duplicate": {
@@ -3351,7 +3879,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/delete": {
@@ -3444,7 +3976,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/evals/draft": {
@@ -3537,7 +4073,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "evals"
+        ]
       }
     },
     "/api/v4/rubrics/get": {
@@ -3630,7 +4170,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/list": {
@@ -3723,7 +4267,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/save": {
@@ -3816,7 +4364,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/duplicate": {
@@ -3909,7 +4461,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/rubrics/delete": {
@@ -4002,7 +4558,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
+      }
+    },
+    "/api/v4/rubrics/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "rubrics"
+        ],
+        "summary": "Patch Rubric Draft",
+        "description": "Patch rubric draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_rubric_draft_api_v4_rubrics_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchRubricDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchRubricDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "rubrics"
+        ]
       }
     },
     "/api/v4/settings/list": {
@@ -4095,7 +4752,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/get": {
@@ -4188,7 +4849,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/save": {
@@ -4281,7 +4946,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/duplicate": {
@@ -4374,7 +5043,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/settings/draft": {
@@ -4467,7 +5140,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "settings"
+        ]
       }
     },
     "/api/v4/agents/get": {
@@ -4560,7 +5237,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/list": {
@@ -4653,7 +5334,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/save": {
@@ -4746,7 +5431,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/duplicate": {
@@ -4839,7 +5528,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/agents/delete": {
@@ -4932,7 +5625,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
+      }
+    },
+    "/api/v4/agents/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "agents"
+        ],
+        "summary": "Patch Agent Draft",
+        "description": "Patch agent draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_agent_draft_api_v4_agents_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchAgentDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchAgentDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "agents"
+        ]
       }
     },
     "/api/v4/models/get": {
@@ -5025,7 +5819,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/list": {
@@ -5118,7 +5916,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/save": {
@@ -5211,7 +6013,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/duplicate": {
@@ -5304,7 +6110,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/models/delete": {
@@ -5397,7 +6207,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
+      }
+    },
+    "/api/v4/models/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "models"
+        ],
+        "summary": "Patch Model Draft",
+        "description": "Patch model draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_model_draft_api_v4_models_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchModelDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchModelDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "models"
+        ]
       }
     },
     "/api/v4/providers/list": {
@@ -5490,7 +6401,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/get": {
@@ -5583,7 +6498,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/save": {
@@ -5676,7 +6595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/duplicate": {
@@ -5769,7 +6692,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/delete": {
@@ -5862,7 +6789,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/providers/draft": {
@@ -5955,7 +6886,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "providers"
+        ]
       }
     },
     "/api/v4/parameters/get": {
@@ -6048,7 +6983,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/list": {
@@ -6141,7 +7080,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/save": {
@@ -6234,7 +7177,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/duplicate": {
@@ -6327,7 +7274,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/parameters/delete": {
@@ -6420,7 +7371,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
+      }
+    },
+    "/api/v4/parameters/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "parameters"
+        ],
+        "summary": "Patch Parameter Draft",
+        "description": "Patch parameter draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_parameter_draft_api_v4_parameters_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchParameterDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchParameterDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "parameters"
+        ]
       }
     },
     "/api/v4/fields/get": {
@@ -6513,7 +7565,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/list": {
@@ -6606,7 +7662,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/save": {
@@ -6699,7 +7759,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/duplicate": {
@@ -6792,7 +7856,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/fields/delete": {
@@ -6885,7 +7953,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
+      }
+    },
+    "/api/v4/fields/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "fields"
+        ],
+        "summary": "Patch Field Draft",
+        "description": "Patch field draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_field_draft_api_v4_fields_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchFieldDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchFieldDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "fields"
+        ]
       }
     },
     "/api/v4/profiles/get": {
@@ -6978,7 +8147,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/list": {
@@ -7071,7 +8244,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/save": {
@@ -7164,7 +8341,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/profiles/delete": {
@@ -7257,7 +8438,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
       }
     },
     "/api/v4/auths/get": {
@@ -7350,7 +8535,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/list": {
@@ -7443,7 +8632,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/save": {
@@ -7536,7 +8729,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/duplicate": {
@@ -7629,7 +8826,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/auths/delete": {
@@ -7722,7 +8923,108 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
+      }
+    },
+    "/api/v4/auths/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "auths"
+        ],
+        "summary": "Patch Auth Draft",
+        "description": "Patch auth draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_auth_draft_api_v4_auths_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchAuthDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchAuthDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auths"
+        ]
       }
     },
     "/api/v4/tools/list": {
@@ -7815,7 +9117,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/get": {
@@ -7908,7 +9214,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/save": {
@@ -8001,7 +9311,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/duplicate": {
@@ -8094,7 +9408,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/delete": {
@@ -8187,7 +9505,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/tools/draft": {
@@ -8280,7 +9602,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "tools"
+        ]
       }
     },
     "/api/v4/group/get": {
@@ -8374,7 +9700,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v4/resources/agents": {
@@ -8467,7 +9798,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/analyses": {
@@ -8560,7 +9895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args": {
@@ -8653,7 +9992,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/args_outputs": {
@@ -8746,7 +10089,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/audios": {
@@ -8839,7 +10186,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/auths": {
@@ -8932,7 +10283,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/cohorts": {
@@ -9025,7 +10380,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/colors": {
@@ -9118,7 +10477,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/conditional_parameters": {
@@ -9211,7 +10574,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/contents": {
@@ -9304,7 +10671,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/conversations": {
@@ -9397,7 +10768,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/debug_info": {
@@ -9490,7 +10865,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/departments": {
@@ -9583,7 +10962,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/descriptions": {
@@ -9676,7 +11059,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/documents": {
@@ -9769,7 +11156,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/emails": {
@@ -9862,7 +11253,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/endpoints": {
@@ -9955,7 +11350,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/evals": {
@@ -10048,7 +11447,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/examples": {
@@ -10141,7 +11544,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/feedbacks": {
@@ -10234,7 +11641,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/fields": {
@@ -10327,7 +11738,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/flags": {
@@ -10420,7 +11835,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/group_positions": {
@@ -10513,7 +11932,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/groups": {
@@ -10606,7 +12029,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/groups_rubric_grade_agents": {
@@ -10699,7 +12126,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/hints": {
@@ -10792,7 +12223,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/html": {
@@ -10885,7 +12320,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/icons": {
@@ -10978,7 +12417,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/images": {
@@ -11071,7 +12514,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/improvements": {
@@ -11164,7 +12611,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/instructions": {
@@ -11257,7 +12708,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/items": {
@@ -11350,7 +12805,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/keys": {
@@ -11443,7 +12902,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/modalities": {
@@ -11536,7 +12999,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/models": {
@@ -11629,7 +13096,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/names": {
@@ -11722,7 +13193,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/objectives": {
@@ -11815,7 +13290,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/options": {
@@ -11908,7 +13387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/parameters": {
@@ -12001,7 +13484,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/personas": {
@@ -12094,7 +13581,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/points": {
@@ -12187,7 +13678,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/pricing": {
@@ -12280,7 +13775,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -12373,7 +13872,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/profiles": {
@@ -12466,7 +13969,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/prompts": {
@@ -12559,7 +14066,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/protocols": {
@@ -12652,7 +14163,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/providers": {
@@ -12745,7 +14260,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/qualities": {
@@ -12838,7 +14357,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/questions": {
@@ -12931,7 +14454,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/reasoning_levels": {
@@ -13024,7 +14551,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/request_limits": {
@@ -13117,7 +14648,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/responses": {
@@ -13210,7 +14745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/rubrics": {
@@ -13303,7 +14842,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/run_positions": {
@@ -13396,7 +14939,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/runs": {
@@ -13489,7 +15036,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/runs_rubric_grade_agents": {
@@ -13582,7 +15133,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/ranges": {
@@ -13675,7 +15230,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_flags": {
@@ -13768,7 +15327,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -13861,7 +15424,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenario_rubric_grade_agents": {
@@ -13954,7 +15521,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/scenarios": {
@@ -14047,7 +15618,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/schema_field_items": {
@@ -14140,7 +15715,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/schema_fields": {
@@ -14233,7 +15812,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/schemas": {
@@ -14326,7 +15909,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/settings": {
@@ -14419,7 +16006,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulation_scenario_flags": {
@@ -14512,7 +16103,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/simulations": {
@@ -14605,7 +16200,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/slugs": {
@@ -14698,7 +16297,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -14791,7 +16394,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/strengths": {
@@ -14884,7 +16491,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/temperature_levels": {
@@ -14977,7 +16588,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/template_array_items": {
@@ -15070,7 +16685,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/template_values": {
@@ -15163,7 +16782,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/templates": {
@@ -15256,7 +16879,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/texts": {
@@ -15349,7 +16976,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/thresholds": {
@@ -15442,7 +17073,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/times": {
@@ -15535,7 +17170,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/tools": {
@@ -15628,7 +17267,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/values": {
@@ -15721,7 +17364,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/videos": {
@@ -15814,7 +17461,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
     "/api/v4/resources/voices": {
@@ -15907,10 +17558,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
       }
     },
-    "/api/v4/analytics/home/overview": {
+    "/api/v4/analytics/home/get": {
       "post": {
         "tags": [
           "v4",
@@ -15920,7 +17575,7 @@
         ],
         "summary": "Get Home Overview",
         "description": "Get home overview with items and mappings.\n\nHome always shows general simulations only (no simulationFilters parameter).\nBundle only returns top half (items + mappings), history is separate endpoint.",
-        "operationId": "get_home_overview_api_v4_analytics_home_overview_post",
+        "operationId": "get_home_overview_api_v4_analytics_home_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16002,10 +17657,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "home"
+        ]
       }
     },
-    "/api/v4/analytics/home/history": {
+    "/api/v4/analytics/home/list": {
       "post": {
         "tags": [
           "v4",
@@ -16015,7 +17676,7 @@
         ],
         "summary": "Get Home History",
         "description": "Get paginated home history with search, filters, sorting, and pagination.",
-        "operationId": "get_home_history_api_v4_analytics_home_history_post",
+        "operationId": "get_home_history_api_v4_analytics_home_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16097,7 +17758,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "home"
+        ]
       }
     },
     "/api/v4/analytics/reports/get": {
@@ -16192,10 +17859,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "reports"
+        ]
       }
     },
-    "/api/v4/analytics/reports/reports/export": {
+    "/api/v4/analytics/reports/reports/report": {
       "post": {
         "tags": [
           "v4",
@@ -16207,7 +17880,7 @@
         ],
         "summary": "Export Reports",
         "description": "Export reports data as CSV or ZIP file.",
-        "operationId": "export_reports_api_v4_analytics_reports_reports_export_post",
+        "operationId": "export_reports_api_v4_analytics_reports_reports_report_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16287,10 +17960,18 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "reports",
+          "reports",
+          "reports"
+        ]
       }
     },
-    "/api/v4/analytics/reports/reports": {
+    "/api/v4/analytics/reports/reports/list": {
       "post": {
         "tags": [
           "v4",
@@ -16301,7 +17982,7 @@
         ],
         "summary": "Get Reports",
         "description": "Get reports bundle with aggregated metrics per profile and entity mappings.",
-        "operationId": "get_reports_api_v4_analytics_reports_reports_post",
+        "operationId": "get_reports_api_v4_analytics_reports_reports_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16383,10 +18064,17 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "reports",
+          "reports"
+        ]
       }
     },
-    "/api/v4/analytics/activity/bundle": {
+    "/api/v4/analytics/activity/get": {
       "post": {
         "tags": [
           "v4",
@@ -16396,7 +18084,7 @@
         ],
         "summary": "Get Activity Bundle",
         "description": "Get activity bundle with header metrics.",
-        "operationId": "get_activity_bundle_api_v4_analytics_activity_bundle_post",
+        "operationId": "get_activity_bundle_api_v4_analytics_activity_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16478,7 +18166,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "activity"
+        ]
       }
     },
     "/api/v4/analytics/activity/list": {
@@ -16573,10 +18267,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "activity"
+        ]
       }
     },
-    "/api/v4/analytics/dashboard/overview": {
+    "/api/v4/analytics/dashboard/get": {
       "post": {
         "tags": [
           "v4",
@@ -16586,7 +18286,7 @@
         ],
         "summary": "Get Dashboard",
         "description": "Get complete dashboard bundle with all metrics, history, insights, and mappings.",
-        "operationId": "get_dashboard_api_v4_analytics_dashboard_overview_post",
+        "operationId": "get_dashboard_api_v4_analytics_dashboard_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16668,10 +18368,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "dashboard"
+        ]
       }
     },
-    "/api/v4/analytics/dashboard/history": {
+    "/api/v4/analytics/dashboard/list": {
       "post": {
         "tags": [
           "v4",
@@ -16681,7 +18387,7 @@
         ],
         "summary": "Get Dashboard History",
         "description": "Get paginated dashboard history with search, filters, sorting, and pagination.",
-        "operationId": "get_dashboard_history_api_v4_analytics_dashboard_history_post",
+        "operationId": "get_dashboard_history_api_v4_analytics_dashboard_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16763,10 +18469,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "dashboard"
+        ]
       }
     },
-    "/api/v4/analytics/practice/overview": {
+    "/api/v4/analytics/practice/get": {
       "post": {
         "tags": [
           "v4",
@@ -16776,7 +18488,7 @@
         ],
         "summary": "Get Practice Overview",
         "description": "Get practice overview data with items and all entity mappings.\n\nPractice uses simplified filters: only profileId and departmentIds.\nNo cohort/role/date filtering for personal practice.\nNote: History is not included in overview - use /practice/history endpoint separately.",
-        "operationId": "get_practice_overview_api_v4_analytics_practice_overview_post",
+        "operationId": "get_practice_overview_api_v4_analytics_practice_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16858,10 +18570,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "practice"
+        ]
       }
     },
-    "/api/v4/analytics/practice/history": {
+    "/api/v4/analytics/practice/list": {
       "post": {
         "tags": [
           "v4",
@@ -16871,7 +18589,7 @@
         ],
         "summary": "Get Practice History",
         "description": "Get paginated practice history with search, filters, sorting, and pagination.",
-        "operationId": "get_practice_history_api_v4_analytics_practice_history_post",
+        "operationId": "get_practice_history_api_v4_analytics_practice_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16953,7 +18671,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "practice"
+        ]
       }
     },
     "/api/v4/analytics/leaderboard/get": {
@@ -17048,7 +18772,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/analytics/leaderboard/list": {
@@ -17143,7 +18873,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "leaderboard"
+        ]
       }
     },
     "/api/v4/analytics/pricing/get": {
@@ -17238,7 +18974,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "pricing"
+        ]
       }
     },
     "/api/v4/analytics/pricing/list": {
@@ -17333,10 +19075,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "pricing"
+        ]
       }
     },
-    "/api/v4/analytics/benchmark/overview": {
+    "/api/v4/analytics/benchmark/get": {
       "post": {
         "tags": [
           "v4",
@@ -17346,7 +19094,7 @@
         ],
         "summary": "Get Benchmark Overview",
         "description": "Get benchmark overview with evals list and all entity mappings.\n\nBenchmark uses department_ids filter (analytics endpoint pattern).\nNote: History is not included in overview - use /benchmark/history endpoint separately.",
-        "operationId": "get_benchmark_overview_api_v4_analytics_benchmark_overview_post",
+        "operationId": "get_benchmark_overview_api_v4_analytics_benchmark_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -17428,10 +19176,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "benchmark"
+        ]
       }
     },
-    "/api/v4/analytics/benchmark/history": {
+    "/api/v4/analytics/benchmark/list": {
       "post": {
         "tags": [
           "v4",
@@ -17441,7 +19195,7 @@
         ],
         "summary": "Get Benchmark History",
         "description": "Get paginated benchmark history with search, filters, sorting, and pagination.",
-        "operationId": "get_benchmark_history_api_v4_analytics_benchmark_history_post",
+        "operationId": "get_benchmark_history_api_v4_analytics_benchmark_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -17523,7 +19277,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/analytics/health/get": {
@@ -17618,7 +19378,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "health"
+        ]
       }
     },
     "/api/v4/analytics/health/list": {
@@ -17713,7 +19479,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics",
+          "analytics",
+          "health"
+        ]
       }
     },
     "/api/v4/analytics/refresh": {
@@ -17806,10 +19578,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "analytics"
+        ]
       }
     },
-    "/api/v4/attempts/simulation/simulation": {
+    "/api/v4/attempts/simulation/get": {
       "post": {
         "tags": [
           "v4",
@@ -17819,7 +19595,7 @@
         ],
         "summary": "Get Attempt Full",
         "description": "Get complete attempt data with all related entities and computed values.",
-        "operationId": "get_attempt_full_api_v4_attempts_simulation_simulation_post",
+        "operationId": "get_attempt_full_api_v4_attempts_simulation_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -17901,7 +19677,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "simulation"
+        ]
       }
     },
     "/api/v4/attempts/simulation/archive": {
@@ -17996,10 +19778,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "simulation"
+        ]
       }
     },
-    "/api/v4/attempts/benchmark/eval": {
+    "/api/v4/attempts/benchmark/get": {
       "post": {
         "tags": [
           "v4",
@@ -18009,7 +19797,7 @@
         ],
         "summary": "Get Eval Attempt Full",
         "description": "Get complete eval attempt data with all runs and status.",
-        "operationId": "get_eval_attempt_full_api_v4_attempts_benchmark_eval_post",
+        "operationId": "get_eval_attempt_full_api_v4_attempts_benchmark_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -18091,7 +19879,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/attempts/benchmark/archive": {
@@ -18186,7 +19980,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "attempts",
+          "attempts",
+          "benchmark"
+        ]
       }
     },
     "/api/v4/bulk/staff/process": {
@@ -18281,7 +20081,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/staff/search": {
@@ -18376,7 +20182,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/staff/save": {
@@ -18471,7 +20283,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/staff/delete": {
@@ -18566,7 +20384,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "staff"
+        ]
       }
     },
     "/api/v4/bulk/document/process": {
@@ -18661,7 +20485,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/bulk/document/search": {
@@ -18756,7 +20586,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/bulk/document/save": {
@@ -18851,7 +20687,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
     "/api/v4/bulk/document/delete": {
@@ -18946,10 +20788,16 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "bulk",
+          "bulk",
+          "document"
+        ]
       }
     },
-    "/api/v4/decrypt/decrypt": {
+    "/api/v4/decrypt/key": {
       "post": {
         "tags": [
           "v4",
@@ -18957,7 +20805,7 @@
         ],
         "summary": "Decrypt Key",
         "description": "Decrypt a key's encrypted value.",
-        "operationId": "decrypt_key_api_v4_decrypt_decrypt_post",
+        "operationId": "decrypt_key_api_v4_decrypt_key_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19039,7 +20887,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "decrypt"
+        ]
       }
     },
     "/api/v4/export/certificate": {
@@ -19130,10 +20982,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "export"
+        ]
       }
     },
-    "/api/v4/export/export": {
+    "/api/v4/export/report": {
       "post": {
         "tags": [
           "v4",
@@ -19142,7 +20998,7 @@
         ],
         "summary": "Export Reports",
         "description": "Export reports data as CSV or ZIP file.",
-        "operationId": "export_reports_api_v4_export_export_post",
+        "operationId": "export_reports_api_v4_export_report_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19222,10 +21078,15 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "export",
+          "reports"
+        ]
       }
     },
-    "/api/v4/uploads/download/{upload_id}": {
+    "/api/v4/uploads/get/{upload_id}": {
       "get": {
         "tags": [
           "v4",
@@ -19233,7 +21094,7 @@
         ],
         "summary": "Download Upload",
         "description": "Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.",
-        "operationId": "download_upload_api_v4_uploads_download__upload_id__get",
+        "operationId": "download_upload_api_v4_uploads_get__upload_id__get",
         "parameters": [
           {
             "name": "upload_id",
@@ -19324,10 +21185,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
-    "/api/v4/uploads/upload": {
+    "/api/v4/uploads/save": {
       "options": {
         "tags": [
           "v4",
@@ -19335,7 +21200,7 @@
         ],
         "summary": "Tus Options",
         "description": "Handle OPTIONS request for tus protocol discovery.",
-        "operationId": "tus_options_api_v4_uploads_upload_options",
+        "operationId": "tus_options_api_v4_uploads_save_options",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19405,7 +21270,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       },
       "post": {
         "tags": [
@@ -19414,7 +21283,7 @@
         ],
         "summary": "Tus Creation",
         "description": "Handle POST request for tus protocol - create upload.",
-        "operationId": "tus_creation_api_v4_uploads_upload_post",
+        "operationId": "tus_creation_api_v4_uploads_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19484,10 +21353,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
-    "/api/v4/uploads/upload/{upload_id}": {
+    "/api/v4/uploads/save/{upload_id}": {
       "options": {
         "tags": [
           "v4",
@@ -19495,7 +21368,7 @@
         ],
         "summary": "Tus Options Upload Id",
         "description": "Handle OPTIONS request for specific upload.",
-        "operationId": "tus_options_upload_id_api_v4_uploads_upload__upload_id__options",
+        "operationId": "tus_options_upload_id_api_v4_uploads_save__upload_id__options",
         "parameters": [
           {
             "name": "upload_id",
@@ -19574,7 +21447,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       },
       "head": {
         "tags": [
@@ -19583,7 +21460,7 @@
         ],
         "summary": "Tus Head",
         "description": "Handle HEAD request for tus protocol - get upload info.",
-        "operationId": "tus_head_api_v4_uploads_upload__upload_id__head",
+        "operationId": "tus_head_api_v4_uploads_save__upload_id__head",
         "parameters": [
           {
             "name": "upload_id",
@@ -19662,7 +21539,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       },
       "patch": {
         "tags": [
@@ -19671,7 +21552,7 @@
         ],
         "summary": "Tus Patch",
         "description": "Handle PATCH request for tus protocol - upload chunk.",
-        "operationId": "tus_patch_api_v4_uploads_upload__upload_id__patch",
+        "operationId": "tus_patch_api_v4_uploads_save__upload_id__patch",
         "parameters": [
           {
             "name": "upload_id",
@@ -19750,10 +21631,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
-    "/api/v4/uploads/upload/{upload_id}/finalize": {
+    "/api/v4/uploads/save/{upload_id}/finalize": {
       "post": {
         "tags": [
           "v4",
@@ -19761,7 +21646,7 @@
         ],
         "summary": "Tus Finalize",
         "description": "Finalize a TUS upload and create upload record.",
-        "operationId": "tus_finalize_api_v4_uploads_upload__upload_id__finalize_post",
+        "operationId": "tus_finalize_api_v4_uploads_save__upload_id__finalize_post",
         "parameters": [
           {
             "name": "upload_id",
@@ -19842,7 +21727,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "uploads"
+        ]
       }
     },
     "/api/v4/auth/login": {
@@ -19935,7 +21824,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/context": {
@@ -20028,7 +21921,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/email": {
@@ -20121,7 +22018,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/upsert": {
@@ -20214,7 +22115,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/simulatable": {
@@ -20307,7 +22212,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
     "/api/v4/auth/emulate": {
@@ -20400,10 +22309,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "auth"
+        ]
       }
     },
-    "/api/v4/debug": {
+    "/api/v4/debug/debug": {
       "post": {
         "tags": [
           "v4",
@@ -20411,7 +22324,7 @@
         ],
         "summary": "Create Feedback",
         "description": "Create new app feedback entry.",
-        "operationId": "create_feedback_api_v4_debug_post",
+        "operationId": "create_feedback_api_v4_debug_debug_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20493,7 +22406,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v4",
+          "debug"
+        ]
       }
     },
     "/socket/v4/client/connect": {
@@ -20520,7 +22437,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/disconnect": {
@@ -20547,7 +22468,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/enter": {
@@ -20595,7 +22520,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/join": {
@@ -20643,7 +22573,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/leave": {
@@ -20691,7 +22626,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/start": {
@@ -20739,7 +22679,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/end": {
@@ -20787,7 +22732,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/next": {
@@ -20835,7 +22785,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/advance": {
@@ -20883,7 +22838,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/stop": {
@@ -20931,7 +22891,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/voice_stop": {
@@ -20979,7 +22944,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/simulation/member/progress": {
@@ -21027,7 +22997,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/enter": {
@@ -21075,7 +23050,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/join": {
@@ -21123,7 +23103,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/leave": {
@@ -21171,7 +23156,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -21219,7 +23209,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/advance": {
@@ -21267,7 +23262,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/stop": {
@@ -21315,7 +23315,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/next": {
@@ -21363,7 +23368,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/end": {
@@ -21411,7 +23421,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/run_start": {
@@ -21459,7 +23474,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/client/benchmark/runs_start_all": {
@@ -21507,7 +23527,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -21554,7 +23579,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/generate_error": {
@@ -21601,7 +23630,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/enter_response": {
@@ -21649,7 +23682,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/enter_error": {
@@ -21697,7 +23735,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/joined": {
@@ -21745,7 +23788,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/join_error": {
@@ -21793,7 +23841,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/leave_error": {
@@ -21841,7 +23894,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/start_error": {
@@ -21889,7 +23947,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/started": {
@@ -21937,7 +24000,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/end_error": {
@@ -21985,7 +24053,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/ended": {
@@ -22033,7 +24106,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/end_all_started": {
@@ -22081,7 +24159,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/end_chat_started": {
@@ -22129,7 +24212,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/end_all_completed": {
@@ -22177,7 +24265,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/next_error": {
@@ -22225,7 +24318,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/advance_error": {
@@ -22273,7 +24371,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/advanced": {
@@ -22321,7 +24424,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/stopped": {
@@ -22369,7 +24477,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/message_cancelled": {
@@ -22417,7 +24530,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/stop_error": {
@@ -22465,7 +24583,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/voice_stop_response": {
@@ -22513,7 +24636,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/voice_stop_error": {
@@ -22561,7 +24689,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/simulation/member/progress_error": {
@@ -22609,7 +24742,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/enter_response": {
@@ -22657,7 +24795,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/enter_error": {
@@ -22705,7 +24848,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/joined": {
@@ -22753,7 +24901,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/join_error": {
@@ -22801,7 +24954,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/leave_error": {
@@ -22849,7 +25007,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/advance_error": {
@@ -22897,7 +25060,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/advanced": {
@@ -22945,7 +25113,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/stopped": {
@@ -22993,7 +25166,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/stop_error": {
@@ -23041,7 +25219,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/completed": {
@@ -23089,7 +25272,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/end_error": {
@@ -23137,7 +25325,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/run_started": {
@@ -23185,7 +25378,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/run_start_error": {
@@ -23233,7 +25431,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_started": {
@@ -23281,7 +25484,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_error": {
@@ -23329,7 +25537,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -23353,7 +25566,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/authorize": {
@@ -23479,7 +25695,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/token": {
@@ -23523,7 +25742,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/userinfo": {
@@ -23568,7 +25790,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/jwks": {
@@ -23588,7 +25813,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/.well-known/oauth-authorization-server": {
@@ -50309,6 +52537,475 @@
         "type": "object",
         "title": "ParametersApiResponse"
       },
+      "PatchAgentDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchAgentDraftApiRequest"
+      },
+      "PatchAgentDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchAgentDraftApiResponse"
+      },
+      "PatchAuthDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchAuthDraftApiRequest"
+      },
+      "PatchAuthDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchAuthDraftApiResponse"
+      },
+      "PatchCohortDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchCohortDraftApiRequest"
+      },
+      "PatchCohortDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchCohortDraftApiResponse"
+      },
+      "PatchDepartmentDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "setting_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setting Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchDepartmentDraftApiRequest"
+      },
+      "PatchDepartmentDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchDepartmentDraftApiResponse"
+      },
       "PatchDocumentDraftApiRequest": {
         "properties": {
           "input_draft_id": {
@@ -50580,6 +53277,396 @@
         },
         "type": "object",
         "title": "PatchEvalDraftApiResponse"
+      },
+      "PatchFieldDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchFieldDraftApiRequest"
+      },
+      "PatchFieldDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchFieldDraftApiResponse"
+      },
+      "PatchModelDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchModelDraftApiRequest"
+      },
+      "PatchModelDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchModelDraftApiResponse"
+      },
+      "PatchParameterDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchParameterDraftApiRequest"
+      },
+      "PatchParameterDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchParameterDraftApiResponse"
       },
       "PatchPersonaDraftApiRequest": {
         "properties": {
@@ -50874,6 +53961,383 @@
         "type": "object",
         "title": "PatchProviderDraftApiResponse"
       },
+      "PatchRubricDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "point_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point Ids"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchRubricDraftApiRequest"
+      },
+      "PatchRubricDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchRubricDraftApiResponse"
+      },
+      "PatchScenarioDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
+          "problem_statement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchScenarioDraftApiRequest"
+      },
+      "PatchScenarioDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchScenarioDraftApiResponse"
+      },
       "PatchSettingDraftApiRequest": {
         "properties": {
           "input_draft_id": {
@@ -51054,6 +54518,142 @@
         },
         "type": "object",
         "title": "PatchSettingDraftApiResponse"
+      },
+      "PatchSimulationDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchSimulationDraftApiRequest"
+      },
+      "PatchSimulationDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchSimulationDraftApiResponse"
       },
       "PatchToolDraftApiRequest": {
         "properties": {

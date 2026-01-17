@@ -233,6 +233,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/scenarios/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Scenario Draft
+         * @description Patch scenario draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_scenario_draft_api_v4_scenarios_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/simulations/get": {
         parameters: {
             query?: never;
@@ -336,6 +356,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/simulations/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Simulation Draft
+         * @description Patch simulation draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_simulation_draft_api_v4_simulations_draft_patch"];
         trace?: never;
     };
     "/api/v4/documents/list": {
@@ -568,6 +608,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/departments/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Department Draft
+         * @description Patch department draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_department_draft_api_v4_departments_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/cohorts/list": {
         parameters: {
             query?: never;
@@ -671,6 +731,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/cohorts/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Cohort Draft
+         * @description Patch cohort draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_cohort_draft_api_v4_cohorts_draft_patch"];
         trace?: never;
     };
     "/api/v4/evals/list": {
@@ -903,6 +983,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/rubrics/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Rubric Draft
+         * @description Patch rubric draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_rubric_draft_api_v4_rubrics_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/settings/list": {
         parameters: {
             query?: never;
@@ -1113,6 +1213,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/agents/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Agent Draft
+         * @description Patch agent draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_agent_draft_api_v4_agents_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/models/get": {
         parameters: {
             query?: never;
@@ -1216,6 +1336,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/models/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Model Draft
+         * @description Patch model draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_model_draft_api_v4_models_draft_patch"];
         trace?: never;
     };
     "/api/v4/providers/list": {
@@ -1448,6 +1588,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/parameters/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Parameter Draft
+         * @description Patch parameter draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_parameter_draft_api_v4_parameters_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/fields/get": {
         parameters: {
             query?: never;
@@ -1546,6 +1706,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/fields/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Field Draft
+         * @description Patch field draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_field_draft_api_v4_fields_draft_patch"];
         trace?: never;
     };
     "/api/v4/profiles/get": {
@@ -1731,6 +1911,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/auths/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Auth Draft
+         * @description Patch auth draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_auth_draft_api_v4_auths_draft_patch"];
         trace?: never;
     };
     "/api/v4/tools/list": {
@@ -3498,7 +3698,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/home/overview": {
+    "/api/v4/analytics/home/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3514,14 +3714,14 @@ export interface paths {
          *     Home always shows general simulations only (no simulationFilters parameter).
          *     Bundle only returns top half (items + mappings), history is separate endpoint.
          */
-        post: operations["get_home_overview_api_v4_analytics_home_overview_post"];
+        post: operations["get_home_overview_api_v4_analytics_home_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/home/history": {
+    "/api/v4/analytics/home/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3534,7 +3734,7 @@ export interface paths {
          * Get Home History
          * @description Get paginated home history with search, filters, sorting, and pagination.
          */
-        post: operations["get_home_history_api_v4_analytics_home_history_post"];
+        post: operations["get_home_history_api_v4_analytics_home_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3561,7 +3761,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/reports/reports/export": {
+    "/api/v4/analytics/reports/reports/report": {
         parameters: {
             query?: never;
             header?: never;
@@ -3574,14 +3774,14 @@ export interface paths {
          * Export Reports
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_reports_api_v4_analytics_reports_reports_export_post"];
+        post: operations["export_reports_api_v4_analytics_reports_reports_report_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/reports/reports": {
+    "/api/v4/analytics/reports/reports/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3594,14 +3794,14 @@ export interface paths {
          * Get Reports
          * @description Get reports bundle with aggregated metrics per profile and entity mappings.
          */
-        post: operations["get_reports_api_v4_analytics_reports_reports_post"];
+        post: operations["get_reports_api_v4_analytics_reports_reports_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/activity/bundle": {
+    "/api/v4/analytics/activity/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3614,7 +3814,7 @@ export interface paths {
          * Get Activity Bundle
          * @description Get activity bundle with header metrics.
          */
-        post: operations["get_activity_bundle_api_v4_analytics_activity_bundle_post"];
+        post: operations["get_activity_bundle_api_v4_analytics_activity_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3641,7 +3841,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/dashboard/overview": {
+    "/api/v4/analytics/dashboard/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3654,14 +3854,14 @@ export interface paths {
          * Get Dashboard
          * @description Get complete dashboard bundle with all metrics, history, insights, and mappings.
          */
-        post: operations["get_dashboard_api_v4_analytics_dashboard_overview_post"];
+        post: operations["get_dashboard_api_v4_analytics_dashboard_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/dashboard/history": {
+    "/api/v4/analytics/dashboard/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3674,14 +3874,14 @@ export interface paths {
          * Get Dashboard History
          * @description Get paginated dashboard history with search, filters, sorting, and pagination.
          */
-        post: operations["get_dashboard_history_api_v4_analytics_dashboard_history_post"];
+        post: operations["get_dashboard_history_api_v4_analytics_dashboard_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/practice/overview": {
+    "/api/v4/analytics/practice/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3698,14 +3898,14 @@ export interface paths {
          *     No cohort/role/date filtering for personal practice.
          *     Note: History is not included in overview - use /practice/history endpoint separately.
          */
-        post: operations["get_practice_overview_api_v4_analytics_practice_overview_post"];
+        post: operations["get_practice_overview_api_v4_analytics_practice_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/practice/history": {
+    "/api/v4/analytics/practice/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3718,7 +3918,7 @@ export interface paths {
          * Get Practice History
          * @description Get paginated practice history with search, filters, sorting, and pagination.
          */
-        post: operations["get_practice_history_api_v4_analytics_practice_history_post"];
+        post: operations["get_practice_history_api_v4_analytics_practice_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3805,7 +4005,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/benchmark/overview": {
+    "/api/v4/analytics/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3821,14 +4021,14 @@ export interface paths {
          *     Benchmark uses department_ids filter (analytics endpoint pattern).
          *     Note: History is not included in overview - use /benchmark/history endpoint separately.
          */
-        post: operations["get_benchmark_overview_api_v4_analytics_benchmark_overview_post"];
+        post: operations["get_benchmark_overview_api_v4_analytics_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/benchmark/history": {
+    "/api/v4/analytics/benchmark/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3841,7 +4041,7 @@ export interface paths {
          * Get Benchmark History
          * @description Get paginated benchmark history with search, filters, sorting, and pagination.
          */
-        post: operations["get_benchmark_history_api_v4_analytics_benchmark_history_post"];
+        post: operations["get_benchmark_history_api_v4_analytics_benchmark_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3908,7 +4108,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/simulation/simulation": {
+    "/api/v4/attempts/simulation/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3921,7 +4121,7 @@ export interface paths {
          * Get Attempt Full
          * @description Get complete attempt data with all related entities and computed values.
          */
-        post: operations["get_attempt_full_api_v4_attempts_simulation_simulation_post"];
+        post: operations["get_attempt_full_api_v4_attempts_simulation_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3948,7 +4148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/attempts/benchmark/eval": {
+    "/api/v4/attempts/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3961,7 +4161,7 @@ export interface paths {
          * Get Eval Attempt Full
          * @description Get complete eval attempt data with all runs and status.
          */
-        post: operations["get_eval_attempt_full_api_v4_attempts_benchmark_eval_post"];
+        post: operations["get_eval_attempt_full_api_v4_attempts_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4148,7 +4348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/decrypt/decrypt": {
+    "/api/v4/decrypt/key": {
         parameters: {
             query?: never;
             header?: never;
@@ -4161,7 +4361,7 @@ export interface paths {
          * Decrypt Key
          * @description Decrypt a key's encrypted value.
          */
-        post: operations["decrypt_key_api_v4_decrypt_decrypt_post"];
+        post: operations["decrypt_key_api_v4_decrypt_key_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4188,7 +4388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/export/export": {
+    "/api/v4/export/report": {
         parameters: {
             query?: never;
             header?: never;
@@ -4201,14 +4401,14 @@ export interface paths {
          * Export Reports
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_reports_api_v4_export_export_post"];
+        post: operations["export_reports_api_v4_export_report_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/download/{upload_id}": {
+    "/api/v4/uploads/get/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4219,7 +4419,7 @@ export interface paths {
          * Download Upload
          * @description Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.
          */
-        get: operations["download_upload_api_v4_uploads_download__upload_id__get"];
+        get: operations["download_upload_api_v4_uploads_get__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4228,7 +4428,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/upload": {
+    "/api/v4/uploads/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -4241,18 +4441,18 @@ export interface paths {
          * Tus Creation
          * @description Handle POST request for tus protocol - create upload.
          */
-        post: operations["tus_creation_api_v4_uploads_upload_post"];
+        post: operations["tus_creation_api_v4_uploads_save_post"];
         delete?: never;
         /**
          * Tus Options
          * @description Handle OPTIONS request for tus protocol discovery.
          */
-        options: operations["tus_options_api_v4_uploads_upload_options"];
+        options: operations["tus_options_api_v4_uploads_save_options"];
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/upload/{upload_id}": {
+    "/api/v4/uploads/save/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4267,20 +4467,20 @@ export interface paths {
          * Tus Options Upload Id
          * @description Handle OPTIONS request for specific upload.
          */
-        options: operations["tus_options_upload_id_api_v4_uploads_upload__upload_id__options"];
+        options: operations["tus_options_upload_id_api_v4_uploads_save__upload_id__options"];
         /**
          * Tus Head
          * @description Handle HEAD request for tus protocol - get upload info.
          */
-        head: operations["tus_head_api_v4_uploads_upload__upload_id__head"];
+        head: operations["tus_head_api_v4_uploads_save__upload_id__head"];
         /**
          * Tus Patch
          * @description Handle PATCH request for tus protocol - upload chunk.
          */
-        patch: operations["tus_patch_api_v4_uploads_upload__upload_id__patch"];
+        patch: operations["tus_patch_api_v4_uploads_save__upload_id__patch"];
         trace?: never;
     };
-    "/api/v4/uploads/upload/{upload_id}/finalize": {
+    "/api/v4/uploads/save/{upload_id}/finalize": {
         parameters: {
             query?: never;
             header?: never;
@@ -4293,7 +4493,7 @@ export interface paths {
          * Tus Finalize
          * @description Finalize a TUS upload and create upload record.
          */
-        post: operations["tus_finalize_api_v4_uploads_upload__upload_id__finalize_post"];
+        post: operations["tus_finalize_api_v4_uploads_save__upload_id__finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4424,7 +4624,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/debug": {
+    "/api/v4/debug/debug": {
         parameters: {
             query?: never;
             header?: never;
@@ -4437,7 +4637,7 @@ export interface paths {
          * Create Feedback
          * @description Create new app feedback entry.
          */
-        post: operations["create_feedback_api_v4_debug_post"];
+        post: operations["create_feedback_api_v4_debug_debug_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11750,6 +11950,112 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** PatchAgentDraftApiRequest */
+        PatchAgentDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchAgentDraftApiResponse */
+        PatchAgentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchAuthDraftApiRequest */
+        PatchAuthDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchAuthDraftApiResponse */
+        PatchAuthDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchCohortDraftApiRequest */
+        PatchCohortDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchCohortDraftApiResponse */
+        PatchCohortDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchDepartmentDraftApiRequest */
+        PatchDepartmentDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Setting Ids */
+            setting_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchDepartmentDraftApiResponse */
+        PatchDepartmentDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchDocumentDraftApiRequest */
         PatchDocumentDraftApiRequest: {
             /** Input Draft Id */
@@ -11801,6 +12107,91 @@ export interface components {
         };
         /** PatchEvalDraftApiResponse */
         PatchEvalDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchFieldDraftApiRequest */
+        PatchFieldDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchFieldDraftApiResponse */
+        PatchFieldDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchModelDraftApiRequest */
+        PatchModelDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchModelDraftApiResponse */
+        PatchModelDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchParameterDraftApiRequest */
+        PatchParameterDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchParameterDraftApiResponse */
+        PatchParameterDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -11870,6 +12261,78 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
+        /** PatchRubricDraftApiRequest */
+        PatchRubricDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Point Ids */
+            point_ids?: string[] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchRubricDraftApiResponse */
+        PatchRubricDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchScenarioDraftApiRequest */
+        PatchScenarioDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchScenarioDraftApiResponse */
+        PatchScenarioDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchSettingDraftApiRequest */
         PatchSettingDraftApiRequest: {
             /** Input Draft Id */
@@ -11898,6 +12361,35 @@ export interface components {
         };
         /** PatchSettingDraftApiResponse */
         PatchSettingDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchSimulationDraftApiRequest */
+        PatchSimulationDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchSimulationDraftApiResponse */
+        PatchSimulationDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -20941,6 +21433,43 @@ export interface operations {
             };
         };
     };
+    patch_scenario_draft_api_v4_scenarios_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchScenarioDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchScenarioDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_simulation_api_v4_simulations_get_post: {
         parameters: {
             query?: never;
@@ -21113,6 +21642,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteSimulationApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_simulation_draft_api_v4_simulations_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchSimulationDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21533,6 +22099,43 @@ export interface operations {
             };
         };
     };
+    patch_department_draft_api_v4_departments_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchDepartmentDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchDepartmentDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_cohorts_list_api_v4_cohorts_list_post: {
         parameters: {
             query?: never;
@@ -21705,6 +22308,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteCohortApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_cohort_draft_api_v4_cohorts_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchCohortDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchCohortDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22125,6 +22765,43 @@ export interface operations {
             };
         };
     };
+    patch_rubric_draft_api_v4_rubrics_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchRubricDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchRubricDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_settings_api_v4_settings_list_post: {
         parameters: {
             query?: never;
@@ -22495,6 +23172,43 @@ export interface operations {
             };
         };
     };
+    patch_agent_draft_api_v4_agents_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchAgentDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchAgentDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_model_api_v4_models_get_post: {
         parameters: {
             query?: never;
@@ -22667,6 +23381,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteModelApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_model_draft_api_v4_models_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchModelDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchModelDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23087,6 +23838,43 @@ export interface operations {
             };
         };
     };
+    patch_parameter_draft_api_v4_parameters_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchParameterDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchParameterDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_field_api_v4_fields_get_post: {
         parameters: {
             query?: never;
@@ -23259,6 +24047,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteFieldApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_field_draft_api_v4_fields_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchFieldDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchFieldDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23592,6 +24417,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteAuthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_auth_draft_api_v4_auths_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchAuthDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchAuthDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26861,7 +27723,7 @@ export interface operations {
             };
         };
     };
-    get_home_overview_api_v4_analytics_home_overview_post: {
+    get_home_overview_api_v4_analytics_home_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26898,7 +27760,7 @@ export interface operations {
             };
         };
     };
-    get_home_history_api_v4_analytics_home_history_post: {
+    get_home_history_api_v4_analytics_home_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26972,7 +27834,7 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v4_analytics_reports_reports_export_post: {
+    export_reports_api_v4_analytics_reports_reports_report_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27009,7 +27871,7 @@ export interface operations {
             };
         };
     };
-    get_reports_api_v4_analytics_reports_reports_post: {
+    get_reports_api_v4_analytics_reports_reports_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27046,7 +27908,7 @@ export interface operations {
             };
         };
     };
-    get_activity_bundle_api_v4_analytics_activity_bundle_post: {
+    get_activity_bundle_api_v4_analytics_activity_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27120,7 +27982,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_api_v4_analytics_dashboard_overview_post: {
+    get_dashboard_api_v4_analytics_dashboard_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27157,7 +28019,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_history_api_v4_analytics_dashboard_history_post: {
+    get_dashboard_history_api_v4_analytics_dashboard_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27194,7 +28056,7 @@ export interface operations {
             };
         };
     };
-    get_practice_overview_api_v4_analytics_practice_overview_post: {
+    get_practice_overview_api_v4_analytics_practice_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27231,7 +28093,7 @@ export interface operations {
             };
         };
     };
-    get_practice_history_api_v4_analytics_practice_history_post: {
+    get_practice_history_api_v4_analytics_practice_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27416,7 +28278,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_overview_api_v4_analytics_benchmark_overview_post: {
+    get_benchmark_overview_api_v4_analytics_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27453,7 +28315,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_history_api_v4_analytics_benchmark_history_post: {
+    get_benchmark_history_api_v4_analytics_benchmark_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27601,7 +28463,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_full_api_v4_attempts_simulation_simulation_post: {
+    get_attempt_full_api_v4_attempts_simulation_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27675,7 +28537,7 @@ export interface operations {
             };
         };
     };
-    get_eval_attempt_full_api_v4_attempts_benchmark_eval_post: {
+    get_eval_attempt_full_api_v4_attempts_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28045,7 +28907,7 @@ export interface operations {
             };
         };
     };
-    decrypt_key_api_v4_decrypt_decrypt_post: {
+    decrypt_key_api_v4_decrypt_key_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28119,7 +28981,7 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v4_export_export_post: {
+    export_reports_api_v4_export_report_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28156,7 +29018,7 @@ export interface operations {
             };
         };
     };
-    download_upload_api_v4_uploads_download__upload_id__get: {
+    download_upload_api_v4_uploads_get__upload_id__get: {
         parameters: {
             query?: {
                 /** @description Return preview image for PDFs */
@@ -28194,7 +29056,7 @@ export interface operations {
             };
         };
     };
-    tus_creation_api_v4_uploads_upload_post: {
+    tus_creation_api_v4_uploads_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28227,7 +29089,7 @@ export interface operations {
             };
         };
     };
-    tus_options_api_v4_uploads_upload_options: {
+    tus_options_api_v4_uploads_save_options: {
         parameters: {
             query?: never;
             header?: {
@@ -28260,7 +29122,7 @@ export interface operations {
             };
         };
     };
-    tus_options_upload_id_api_v4_uploads_upload__upload_id__options: {
+    tus_options_upload_id_api_v4_uploads_save__upload_id__options: {
         parameters: {
             query?: never;
             header?: {
@@ -28295,7 +29157,7 @@ export interface operations {
             };
         };
     };
-    tus_head_api_v4_uploads_upload__upload_id__head: {
+    tus_head_api_v4_uploads_save__upload_id__head: {
         parameters: {
             query?: never;
             header?: {
@@ -28330,7 +29192,7 @@ export interface operations {
             };
         };
     };
-    tus_patch_api_v4_uploads_upload__upload_id__patch: {
+    tus_patch_api_v4_uploads_save__upload_id__patch: {
         parameters: {
             query?: never;
             header?: {
@@ -28365,7 +29227,7 @@ export interface operations {
             };
         };
     };
-    tus_finalize_api_v4_uploads_upload__upload_id__finalize_post: {
+    tus_finalize_api_v4_uploads_save__upload_id__finalize_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28622,7 +29484,7 @@ export interface operations {
             };
         };
     };
-    create_feedback_api_v4_debug_post: {
+    create_feedback_api_v4_debug_debug_post: {
         parameters: {
             query?: never;
             header?: {
