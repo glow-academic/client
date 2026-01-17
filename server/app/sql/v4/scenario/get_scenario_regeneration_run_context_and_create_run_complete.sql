@@ -290,8 +290,9 @@ context_data AS (
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]
             FROM document_artifact d
-            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-            LEFT JOIN uploads u ON u.id = du.upload_id
+            LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+            LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+            LEFT JOIN uploads u ON u.id = ur.upload_id
             WHERE d.id = ANY(p.document_ids)
             ),
             ARRAY[]::types.i_get_scenario_regeneration_run_context_and_create_run_v4_doc[]

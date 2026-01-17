@@ -1452,7 +1452,7 @@ scenario_documents_data AS (
              ),
              u.file_path,
              u.mime_type,
-             du.upload_id,
+             ur.upload_id,
              COALESCE(
                  (SELECT array_agg(DISTINCT df.field_id::text)
                   FROM document_fields df
@@ -1464,8 +1464,9 @@ scenario_documents_data AS (
         '{}'::types.q_get_simulation_attempt_v4_scenario_document[]
     ) as scenario_documents
     FROM document_artifact d
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     JOIN scenario_documents sd ON sd.document_id = d.id
     CROSS JOIN scenario_ids_list sil
     WHERE sd.scenario_id = ANY(sil.scenario_ids) AND EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)

@@ -135,10 +135,13 @@ document_data AS (
         d.updated_at,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
-        (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT u.file_path FROM document_uploads du 
-         JOIN uploads u ON u.id = du.upload_id 
-         WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
+        (SELECT ur.upload_id FROM document_uploads_resource dur 
+         JOIN uploads_resource ur ON ur.id = dur.uploads_id 
+         WHERE dur.document_id = d.id AND dur.active = true ORDER BY dur.created_at DESC LIMIT 1) as upload_id,
+        (SELECT u.file_path FROM document_uploads_resource dur 
+         JOIN uploads_resource ur ON ur.id = dur.uploads_id
+         JOIN uploads u ON u.id = ur.upload_id 
+         WHERE dur.document_id = d.id AND dur.active = true ORDER BY dur.created_at DESC LIMIT 1) as file_path,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
          WHERE sd.document_id = d.id AND sd.active = true) as scenario_ids,

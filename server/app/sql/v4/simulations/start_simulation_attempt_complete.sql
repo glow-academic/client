@@ -268,8 +268,9 @@ document_data AS (
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN documents_resource d ON d.id = sd.document_id
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     WHERE s.id = csi.scenario_id
 ),
 -- Parameter item data for composite type aggregation

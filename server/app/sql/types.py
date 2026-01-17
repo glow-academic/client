@@ -10323,6 +10323,19 @@ class QGetDocumentV4NameResource(BaseModel):
     name: str | None
     generated: bool | None
 
+
+
+
+class QGetDocumentV4Upload(BaseModel):
+
+    uploads_id: UUID | None
+    upload_id: UUID | None
+    file_path: str | None
+    mime_type: str | None
+    size: int | None
+    generated: bool | None
+    group_id: UUID | None
+
 class GetDocumentSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -10358,6 +10371,13 @@ class GetDocumentSqlRow(BaseModel):
     fields_required: bool | None = None
     field_suggestions: list[UUID] | None = None
     fields: list[QGetDocumentV4Field] | None = None
+    upload_ids: list[UUID] | None = None
+    upload_resources: list[QGetDocumentV4Upload] | None = None
+    show_uploads: bool | None = None
+    uploads_agent_id: UUID | None = None
+    uploads_required: bool | None = None
+    upload_suggestions: list[UUID] | None = None
+    uploads: list[QGetDocumentV4Upload] | None = None
     active_flag_id: UUID | None = None
     flag_resource: QGetDocumentV4FlagResource | None = None
     show_flag: bool | None = None
@@ -10406,6 +10426,13 @@ class GetDocumentApiResponse(BaseModel):
     fields_required: bool | None = None
     field_suggestions: list[UUID] | None = None
     fields: list[QGetDocumentV4Field] | None = None
+    upload_ids: list[UUID] | None = None
+    upload_resources: list[QGetDocumentV4Upload] | None = None
+    show_uploads: bool | None = None
+    uploads_agent_id: UUID | None = None
+    uploads_required: bool | None = None
+    upload_suggestions: list[UUID] | None = None
+    uploads: list[QGetDocumentV4Upload] | None = None
     active_flag_id: UUID | None = None
     flag_resource: QGetDocumentV4FlagResource | None = None
     show_flag: bool | None = None
@@ -11151,7 +11178,7 @@ class SaveDocumentSqlParams(BaseModel):
     input_document_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
-    template_flag_id: UUID | None = None
+    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     html_id: UUID | None = None
     schema_id: UUID | None = None
 
@@ -11164,7 +11191,7 @@ class SaveDocumentSqlParams(BaseModel):
             self.input_document_id,
             self.description_id,
             self.active_flag_id,
-            self.template_flag_id,
+            self.upload_ids,
             self.html_id,
             self.schema_id,
         )
@@ -11182,7 +11209,7 @@ class SaveDocumentApiRequest(BaseModel):
     input_document_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
-    template_flag_id: UUID | None = None
+    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     html_id: UUID | None = None
     schema_id: UUID | None = None
 
@@ -11452,6 +11479,7 @@ class UpdateDocumentSqlParams(BaseModel):
     active: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11462,6 +11490,7 @@ class UpdateDocumentSqlParams(BaseModel):
             self.active,
             self.department_id,
             self.field_ids,
+            self.upload_ids,
         )
 
 class UpdateDocumentSqlRow(BaseModel):
@@ -11480,6 +11509,7 @@ class UpdateDocumentApiRequest(BaseModel):
     active: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class UpdateDocumentApiResponse(BaseModel):
 
@@ -24818,129 +24848,6 @@ class ScenariosApiResponse(BaseModel):
 
 
 
-# Generated from: schema_field_items
-
-class SchemaFieldItemsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    schema_field_id: UUID
-    item_schema_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.schema_field_id,
-            self.item_schema_id,
-            self.mcp,
-        )
-
-class SchemaFieldItemsSqlRow(BaseModel):
-
-    schema_field_item_id: UUID | None = None
-
-class SchemaFieldItemsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    schema_field_id: UUID
-    item_schema_id: UUID
-    mcp: bool | None = False
-
-class SchemaFieldItemsApiResponse(BaseModel):
-
-    schema_field_item_id: UUID | None = None
-
-
-
-# Generated from: schema_fields
-
-class SchemaFieldsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    schema_id: UUID
-    name: str
-    field_type: str
-    required: bool
-    position_value: int
-    template: str
-    description: str
-    default_value: str
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.schema_id,
-            self.name,
-            self.field_type,
-            self.required,
-            self.position_value,
-            self.template,
-            self.description,
-            self.default_value,
-            self.mcp,
-        )
-
-class SchemaFieldsSqlRow(BaseModel):
-
-    schema_field_id: UUID | None = None
-
-class SchemaFieldsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    schema_id: UUID
-    name: str
-    field_type: str
-    required: bool
-    position_value: int
-    template: str
-    description: str
-    default_value: str
-    mcp: bool | None = False
-
-class SchemaFieldsApiResponse(BaseModel):
-
-    schema_field_id: UUID | None = None
-
-
-
-# Generated from: schemas
-
-class SchemasSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.mcp,
-        )
-
-class SchemasSqlRow(BaseModel):
-
-    schema_id: UUID | None = None
-
-class SchemasApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-class SchemasApiResponse(BaseModel):
-
-    schema_id: UUID | None = None
-
-
-
 # Generated from: settings
 
 class SettingsSqlParams(BaseModel):
@@ -25197,95 +25104,6 @@ class TemperatureLevelsApiResponse(BaseModel):
 
 
 
-# Generated from: template_array_items
-
-class TemplateArrayItemsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    item_template_id: UUID
-    position_value: int
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.template_id,
-            self.schema_field_id,
-            self.item_template_id,
-            self.position_value,
-            self.mcp,
-        )
-
-class TemplateArrayItemsSqlRow(BaseModel):
-
-    template_array_item_id: UUID | None = None
-
-class TemplateArrayItemsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    item_template_id: UUID
-    position_value: int
-    mcp: bool | None = False
-
-class TemplateArrayItemsApiResponse(BaseModel):
-
-    template_array_item_id: UUID | None = None
-
-
-
-# Generated from: template_values
-
-class TemplateValuesSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    string_value: str
-    number_value: str
-    boolean_value: str
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.template_id,
-            self.schema_field_id,
-            self.string_value,
-            self.number_value,
-            self.boolean_value,
-            self.mcp,
-        )
-
-class TemplateValuesSqlRow(BaseModel):
-
-    template_value_id: UUID | None = None
-
-class TemplateValuesApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    string_value: str
-    number_value: str
-    boolean_value: str
-    mcp: bool | None = False
-
-class TemplateValuesApiResponse(BaseModel):
-
-    template_value_id: UUID | None = None
-
-
-
 # Generated from: templates
 
 class TemplatesSqlParams(BaseModel):
@@ -25447,6 +25265,40 @@ class ToolsApiRequest(BaseModel):
 class ToolsApiResponse(BaseModel):
 
     tools_id: UUID | None = None
+
+
+
+# Generated from: uploads
+
+class UploadsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    upload_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.upload_id,
+            self.mcp,
+        )
+
+class UploadsSqlRow(BaseModel):
+
+    uploads_id: UUID | None = None
+
+class UploadsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    upload_id: UUID
+    mcp: bool | None = False
+
+class UploadsApiResponse(BaseModel):
+
+    uploads_id: UUID | None = None
 
 
 
@@ -38855,24 +38707,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ScenariosApiRequest",
         "ScenariosApiResponse",
     ),
-    "app/sql/v4/resources/schema_field_items_complete.sql": (
-        "SchemaFieldItemsSqlParams",
-        "SchemaFieldItemsSqlRow",
-        "SchemaFieldItemsApiRequest",
-        "SchemaFieldItemsApiResponse",
-    ),
-    "app/sql/v4/resources/schema_fields_complete.sql": (
-        "SchemaFieldsSqlParams",
-        "SchemaFieldsSqlRow",
-        "SchemaFieldsApiRequest",
-        "SchemaFieldsApiResponse",
-    ),
-    "app/sql/v4/resources/schemas_complete.sql": (
-        "SchemasSqlParams",
-        "SchemasSqlRow",
-        "SchemasApiRequest",
-        "SchemasApiResponse",
-    ),
     "app/sql/v4/resources/settings_complete.sql": (
         "SettingsSqlParams",
         "SettingsSqlRow",
@@ -38915,18 +38749,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TemperatureLevelsApiRequest",
         "TemperatureLevelsApiResponse",
     ),
-    "app/sql/v4/resources/template_array_items_complete.sql": (
-        "TemplateArrayItemsSqlParams",
-        "TemplateArrayItemsSqlRow",
-        "TemplateArrayItemsApiRequest",
-        "TemplateArrayItemsApiResponse",
-    ),
-    "app/sql/v4/resources/template_values_complete.sql": (
-        "TemplateValuesSqlParams",
-        "TemplateValuesSqlRow",
-        "TemplateValuesApiRequest",
-        "TemplateValuesApiResponse",
-    ),
     "app/sql/v4/resources/templates_complete.sql": (
         "TemplatesSqlParams",
         "TemplatesSqlRow",
@@ -38956,6 +38778,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ToolsSqlRow",
         "ToolsApiRequest",
         "ToolsApiResponse",
+    ),
+    "app/sql/v4/resources/uploads_complete.sql": (
+        "UploadsSqlParams",
+        "UploadsSqlRow",
+        "UploadsApiRequest",
+        "UploadsApiResponse",
     ),
     "app/sql/v4/resources/values_complete.sql": (
         "ValuesSqlParams",
@@ -42164,21 +41992,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/schema_field_items_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/schema_fields_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/schemas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/settings_complete.sql"]
     ) -> SqlString: ...
 
@@ -42214,16 +42027,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/template_array_items_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/template_values_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/templates_complete.sql"]
     ) -> SqlString: ...
 
@@ -42245,6 +42048,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/tools_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/uploads_complete.sql"]
     ) -> SqlString: ...
 
     @overload

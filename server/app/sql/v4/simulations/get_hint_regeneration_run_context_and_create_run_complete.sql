@@ -288,8 +288,9 @@ document_data AS (
     FROM scenario_info si
     CROSS JOIN scenario_documents sd
     JOIN documents_resource d ON d.id = sd.document_id
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     WHERE sd.scenario_id = si.id AND sd.active = true
 ),
 -- Context data with rate limit info

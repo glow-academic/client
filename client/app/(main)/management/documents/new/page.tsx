@@ -5,7 +5,7 @@
  * 01/12/2026
  */
 
-import NewDocument from "@/components/documents/NewDocument";
+import Document from "@/components/documents/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -40,6 +40,8 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -111,6 +113,14 @@ async function createDraftDepartments(
   return api.post("/resources/departments", input);
 }
 
+async function createDraftUploads(
+  input: CreateDraftUploadsIn
+): Promise<CreateDraftUploadsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/uploads", input);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Document",
@@ -165,9 +175,10 @@ export default async function NewDocumentPage({
       data-page="document-new"
       aria-label="Create new document page"
     >
-      <NewDocument
+      <Document
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        documentData={documentDetailDefault}
+        mode="create"
+        documentDetailDefault={documentDetailDefault}
         saveDocumentAction={saveDocument}
         patchDocumentDraftAction={patchDocumentDraft}
         createNamesAction={createDraftNames}
@@ -175,6 +186,7 @@ export default async function NewDocumentPage({
         createFlagsAction={createDraftFlags}
         createFieldsAction={createDraftFields}
         createDepartmentsAction={createDraftDepartments}
+        createUploadsAction={createDraftUploads}
       />
     </div>
   );

@@ -142,7 +142,7 @@ BEGIN
     filtered_documents AS (
         SELECT DISTINCT d.id
         FROM document_artifact d
-        INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+        INNER JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
         LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
         WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
         AND (

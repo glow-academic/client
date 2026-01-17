@@ -116,12 +116,21 @@ link_document_template_flag AS (
         value = false,
         updated_at = NOW()
 ),
+get_uploads_resource_id AS (
+    -- Look up uploads_resource.id from upload_id
+    SELECT ur.id as uploads_id
+    FROM uploads_resource ur
+    WHERE ur.upload_id = api_insert_document_v4.upload_id
+    AND api_insert_document_v4.upload_id IS NOT NULL
+    LIMIT 1
+),
 insert_upload AS (
     -- Link regular upload if provided
-    INSERT INTO document_uploads (document_id, upload_id, active, created_at, updated_at)
-    SELECT document_id, upload_id, true, NOW(), NOW()
-    WHERE upload_id IS NOT NULL
-    ON CONFLICT (document_id, upload_id) DO UPDATE SET
+    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
+    SELECT id.document_id, gur.uploads_id, true, NOW(), NOW()
+    FROM insert_doc id
+    CROSS JOIN get_uploads_resource_id gur
+    ON CONFLICT (document_id, uploads_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

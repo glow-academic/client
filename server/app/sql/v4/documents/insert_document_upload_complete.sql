@@ -32,10 +32,17 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-INSERT INTO document_uploads (document_id, upload_id, active, created_at, updated_at)
-VALUES (api_insert_document_upload_v4.document_id, api_insert_document_upload_v4.upload_id, api_insert_document_upload_v4.active, NOW(), NOW())
-ON CONFLICT (document_id, upload_id) DO UPDATE SET
+WITH get_uploads_resource_id AS (
+    SELECT ur.id as uploads_id
+    FROM uploads_resource ur
+    WHERE ur.upload_id = api_insert_document_upload_v4.upload_id
+    LIMIT 1
+)
+INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
+SELECT api_insert_document_upload_v4.document_id, gur.uploads_id, api_insert_document_upload_v4.active, NOW(), NOW()
+FROM get_uploads_resource_id gur
+ON CONFLICT (document_id, uploads_id) DO UPDATE SET
     active = EXCLUDED.active,
     updated_at = NOW()
-RETURNING document_id, upload_id, active, created_at, updated_at
+RETURNING document_id, (SELECT ur.upload_id FROM uploads_resource ur WHERE ur.id = document_uploads_resource.uploads_id LIMIT 1) as upload_id, active, created_at, updated_at
 $$;

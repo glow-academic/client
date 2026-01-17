@@ -1,10 +1,9 @@
 /**
- * NewDocument.tsx
- * Implementation using modular resource components
- * Used to create and manage documents - supports both creation and editing
- * Follows Persona.tsx/NewCohort.tsx pattern, adapted for documents
- * @AshokSaravanan222
- * 01/12/2026
+ * DocumentNew.tsx
+ * Refactored Document component following Persona.tsx pattern
+ * Removed all template logic, converted to resource-based pattern
+ * @AshokSaravanan222 & @siladiea
+ * 01/21/2025
  */
 "use client";
 
@@ -25,6 +24,7 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
+import { Uploads } from "@/components/resources/Uploads";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -65,16 +65,21 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
 
 type DocumentData = OutputOf<"/api/v4/documents/get", "post">;
+type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
 
-export interface NewDocumentProps {
+export interface DocumentProps {
   documentId?: string;
-  // Server-provided data (for server-side rendering)
-  documentData?: DocumentData;
-  // Server actions (replaces useMutation)
+  mode?: "create" | "edit";
+  // Server-provided data
+  documentDetail?: DocumentData;
+  documentDetailDefault?: DocumentsListOut;
+  // Server actions
   saveDocumentAction?: (input: SaveDocumentIn) => Promise<SaveDocumentOut>;
   patchDocumentDraftAction?: (
     input: PatchDocumentDraftIn
@@ -86,30 +91,36 @@ export interface NewDocumentProps {
   createDescriptionsAction?: (
     input: CreateDraftDescriptionsIn
   ) => Promise<CreateDraftDescriptionsOut>;
+  createUploadsAction?: (
+    input: CreateDraftUploadsIn
+  ) => Promise<CreateDraftUploadsOut>;
   createFlagsAction?: (
     input: CreateDraftFlagsIn
   ) => Promise<CreateDraftFlagsOut>;
-  createDepartmentsAction?: (
-    input: CreateDraftDepartmentsIn
-  ) => Promise<CreateDraftDepartmentsOut>;
   createFieldsAction?: (
     input: CreateDraftFieldsIn
   ) => Promise<CreateDraftFieldsOut>;
+  createDepartmentsAction?: (
+    input: CreateDraftDepartmentsIn
+  ) => Promise<CreateDraftDepartmentsOut>;
 }
 
-function NewDocumentComponent({
+function DocumentComponent({
   documentId,
-  documentData,
+  mode = documentId ? "edit" : "create",
+  documentDetail: serverDocumentDetail,
+  documentDetailDefault: serverDocumentDetailDefault,
   saveDocumentAction,
   patchDocumentDraftAction,
   createNamesAction,
   createDescriptionsAction,
+  createUploadsAction,
   createFlagsAction,
-  createDepartmentsAction,
   createFieldsAction,
-}: NewDocumentProps) {
+  createDepartmentsAction,
+}: DocumentProps) {
   const router = useRouter();
-  const isEditMode = !!documentId;
+  const isEditMode = mode === "edit" && !!documentId;
   const {
     effectiveProfile,
     selectedDraftId,
@@ -120,6 +131,10 @@ function NewDocumentComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
+
+  // Use server-provided data directly
+  const documentDetail = serverDocumentDetail;
+  const documentDetailDefault = serverDocumentDetailDefault;
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -148,8 +163,8 @@ function NewDocumentComponent({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
       // Search params (URL-backed, updated via debounced callback in StepCard)
-      descriptionSearch: parseAsString,
       fieldSearch: parseAsString,
+      uploadSearch: parseAsString,
       // Filter params (URL-backed)
       fieldShowSelected: parseAsBoolean,
     }),
@@ -158,86 +173,106 @@ function NewDocumentComponent({
 
   // Local form state (not in URL) - stores only resource IDs
   // Display values are managed inside resource components
-  // Use ref to store documentData to prevent callback recreation on every render
-  const documentDataRef = React.useRef(documentData);
+  // Use ref to store documentDetail to prevent callback recreation on every render
+  const documentDetailRef = React.useRef(documentDetail);
   React.useEffect(() => {
-    documentDataRef.current = documentData;
-  }, [documentData]);
+    documentDetailRef.current = documentDetail;
+  }, [documentDetail]);
 
-  // Memoize documentData fields used in renderStep to prevent callback recreation
+  // Memoize documentDetail fields used in renderStep to prevent callback recreation
   // when only object reference changes (but content is same)
   const stableDocumentDataFields = React.useMemo(() => {
-    if (!documentData) return null;
+    if (!documentDetail) return null;
     return {
-      group_id: documentData.group_id,
-      name_resource: documentData.name_resource,
-      show_name: documentData.show_name,
-      name_suggestions: documentData.name_suggestions,
-      names: documentData.names,
-      name_required: documentData.name_required,
-      name_agent_id: documentData.name_agent_id,
-      description_resource: documentData.description_resource,
-      show_description: documentData.show_description,
-      description_suggestions: documentData.description_suggestions,
-      description_required: documentData.description_required,
-      description_agent_id: documentData.description_agent_id,
-      descriptions: documentData.descriptions,
-      department_resources: documentData.department_resources,
-      show_departments: documentData.show_departments,
-      department_suggestions: documentData.department_suggestions,
-      departments_required: documentData.departments_required,
-      departments_agent_id: documentData.departments_agent_id,
-      departments: documentData.departments,
-      flag_resource: documentData.flag_resource,
-      show_flag: documentData.show_flag,
-      flag_required: documentData.flag_required,
-      flag_agent_id: documentData.flag_agent_id,
-      field_resources: documentData.field_resources,
-      show_fields: documentData.show_fields,
-      field_suggestions: documentData.field_suggestions,
-      fields_required: documentData.fields_required,
-      fields_agent_id: documentData.fields_agent_id,
-      fields: documentData.fields,
-      general_agent_id: documentData.general_agent_id,
+      group_id: documentDetail.group_id,
+      name_resource: documentDetail.name_resource,
+      show_name: documentDetail.show_name,
+      name_suggestions: documentDetail.name_suggestions,
+      names: documentDetail.names,
+      name_required: documentDetail.name_required,
+      name_agent_id: documentDetail.name_agent_id,
+      description_resource: documentDetail.description_resource,
+      show_description: documentDetail.show_description,
+      description_suggestions: documentDetail.description_suggestions,
+      description_required: documentDetail.description_required,
+      description_agent_id: documentDetail.description_agent_id,
+      descriptions: documentDetail.descriptions,
+      department_resources: documentDetail.department_resources,
+      show_departments: documentDetail.show_departments,
+      department_suggestions: documentDetail.department_suggestions,
+      departments_required: documentDetail.departments_required,
+      departments_agent_id: documentDetail.departments_agent_id,
+      departments: documentDetail.departments,
+      flag_resource: documentDetail.flag_resource,
+      show_flag: documentDetail.show_flag,
+      flag_required: documentDetail.flag_required,
+      flag_agent_id: documentDetail.flag_agent_id,
+      field_resources: documentDetail.field_resources,
+      show_fields: documentDetail.show_fields,
+      field_suggestions: documentDetail.field_suggestions,
+      fields_required: documentDetail.fields_required,
+      fields_agent_id: documentDetail.fields_agent_id,
+      fields: documentDetail.fields,
+      upload_resources: documentDetail.upload_resources,
+      show_uploads: documentDetail.show_uploads,
+      upload_suggestions: documentDetail.upload_suggestions,
+      uploads_required: documentDetail.uploads_required,
+      uploads_agent_id: documentDetail.uploads_agent_id,
+      uploads: documentDetail.uploads,
+      basic_agent_id: documentDetail.basic_agent_id,
+      fields_agent_id: documentDetail.fields_agent_id,
+      uploads_agent_id: documentDetail.uploads_agent_id,
+      can_edit: documentDetail.can_edit,
+      disabled_reason: documentDetail.disabled_reason,
     };
-    // Intentionally depend on individual fields, not whole documentData object
+    // Intentionally depend on individual documentDetail fields, not whole object
     // to prevent recreation when only object reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    documentData?.group_id,
-    documentData?.name_resource,
-    documentData?.show_name,
-    documentData?.name_suggestions,
-    documentData?.names,
-    documentData?.name_required,
-    documentData?.name_agent_id,
-    documentData?.description_resource,
-    documentData?.show_description,
-    documentData?.description_suggestions,
-    documentData?.description_required,
-    documentData?.description_agent_id,
-    documentData?.descriptions,
-    documentData?.department_resources,
-    documentData?.show_departments,
-    documentData?.department_suggestions,
-    documentData?.departments_required,
-    documentData?.departments_agent_id,
-    documentData?.departments,
-    documentData?.flag_resource,
-    documentData?.show_flag,
-    documentData?.flag_required,
-    documentData?.flag_agent_id,
-    documentData?.field_resources,
-    documentData?.show_fields,
-    documentData?.field_suggestions,
-    documentData?.fields_required,
-    documentData?.fields_agent_id,
-    documentData?.fields,
-    documentData?.general_agent_id,
+    documentDetail?.group_id,
+    documentDetail?.name_resource,
+    documentDetail?.show_name,
+    documentDetail?.name_suggestions,
+    documentDetail?.names,
+    documentDetail?.name_required,
+    documentDetail?.name_agent_id,
+    documentDetail?.description_resource,
+    documentDetail?.show_description,
+    documentDetail?.description_suggestions,
+    documentDetail?.description_required,
+    documentDetail?.description_agent_id,
+    documentDetail?.descriptions,
+    documentDetail?.department_resources,
+    documentDetail?.show_departments,
+    documentDetail?.department_suggestions,
+    documentDetail?.departments_required,
+    documentDetail?.departments_agent_id,
+    documentDetail?.departments,
+    documentDetail?.flag_resource,
+    documentDetail?.show_flag,
+    documentDetail?.flag_required,
+    documentDetail?.flag_agent_id,
+    documentDetail?.field_resources,
+    documentDetail?.show_fields,
+    documentDetail?.field_suggestions,
+    documentDetail?.fields_required,
+    documentDetail?.fields_agent_id,
+    documentDetail?.fields,
+    documentDetail?.upload_resources,
+    documentDetail?.show_uploads,
+    documentDetail?.upload_suggestions,
+    documentDetail?.uploads_required,
+    documentDetail?.uploads_agent_id,
+    documentDetail?.uploads,
+    documentDetail?.basic_agent_id,
+    documentDetail?.fields_agent_id,
+    documentDetail?.uploads_agent_id,
+    documentDetail?.can_edit,
+    documentDetail?.disabled_reason,
   ]);
 
   // Helper to check if a resource type can be regenerated
-  // Use stableDocumentDataFields to prevent callback recreation when documentData object reference changes
+  // Use stableDocumentDataFields to prevent callback recreation when documentDetail object reference changes
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
       if (!stableDocumentDataFields) return false;
@@ -258,8 +293,15 @@ function NewDocumentComponent({
           );
         case "fields":
           return (
-            stableDocumentDataFields.field_resources?.some((f) => f.generated) ??
-            false
+            stableDocumentDataFields.field_resources?.some(
+              (f) => f.generated
+            ) ?? false
+          );
+        case "uploads":
+          return (
+            stableDocumentDataFields.upload_resources?.some(
+              (u) => u.generated
+            ) ?? false
           );
         default:
           return false;
@@ -269,7 +311,7 @@ function NewDocumentComponent({
   );
 
   const getInitialFormState = useCallback(() => {
-    const data = documentDataRef.current;
+    const data = documentDetailRef.current;
     if (!data) {
       return {
         name_id: null as string | null,
@@ -277,18 +319,20 @@ function NewDocumentComponent({
         active_flag_id: null as string | null,
         department_ids: [] as string[],
         field_ids: [] as string[],
+        upload_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
     return {
-      name_id: data.name_id ?? null,
-      description_id: data.description_id ?? null,
-      active_flag_id: data.active_flag_id ?? null,
+      name_id: data.name_resource?.id ?? null,
+      description_id: data.description_resource?.id ?? null,
+      active_flag_id: data.flag_resource?.id ?? null,
       department_ids: data.department_ids ?? [],
       field_ids: data.field_ids ?? [],
+      upload_ids: data.upload_ids ?? [],
     };
-    // Remove documentData from dependencies - use ref instead to prevent callback recreation
+    // Remove documentDetail from dependencies - use ref instead to prevent callback recreation
   }, []);
 
   const [formState, setFormState] = useState(getInitialFormState);
@@ -300,12 +344,16 @@ function NewDocumentComponent({
 
   // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
   const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(documentData?.department_ids ?? []),
-    [documentData?.department_ids]
+    () => JSON.stringify(documentDetail?.department_ids ?? []),
+    [documentDetail?.department_ids]
   );
   const fieldIdsStr = React.useMemo(
-    () => JSON.stringify(documentData?.field_ids ?? []),
-    [documentData?.field_ids]
+    () => JSON.stringify(documentDetail?.field_ids ?? []),
+    [documentDetail?.field_ids]
+  );
+  const uploadIdsStr = React.useMemo(
+    () => JSON.stringify(documentDetail?.upload_ids ?? []),
+    [documentDetail?.upload_ids]
   );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
@@ -317,9 +365,13 @@ function NewDocumentComponent({
     () => JSON.stringify(formState.field_ids),
     [formState.field_ids]
   );
+  const formStateUploadIdsStr = React.useMemo(
+    () => JSON.stringify(formState.upload_ids),
+    [formState.upload_ids]
+  );
 
   // Update form state when server data changes
-  // Use documentData directly in dependency array, not getInitialFormState
+  // Use documentDetail directly in dependency array, not getInitialFormState
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
@@ -330,7 +382,8 @@ function NewDocumentComponent({
         prev.active_flag_id !== newState.active_flag_id ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids)
+        JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
+        JSON.stringify(prev.upload_ids) !== JSON.stringify(newState.upload_ids)
       ) {
         return newState;
       }
@@ -340,11 +393,12 @@ function NewDocumentComponent({
     // Intentionally exclude formState and getInitialFormState to prevent infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    documentData?.name_id,
-    documentData?.description_id,
-    documentData?.active_flag_id,
+    documentDetail?.name_resource?.id,
+    documentDetail?.description_resource?.id,
+    documentDetail?.flag_resource?.id,
     departmentIdsStr,
     fieldIdsStr,
+    uploadIdsStr,
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -394,6 +448,7 @@ function NewDocumentComponent({
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
       field_ids: formState.field_ids,
+      upload_ids: formState.upload_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -404,6 +459,7 @@ function NewDocumentComponent({
     formState.active_flag_id,
     formStateDepartmentIdsStr,
     formStateFieldIdsStr,
+    formStateUploadIdsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -417,7 +473,8 @@ function NewDocumentComponent({
       formState.description_id ||
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
-      formState.field_ids.length > 0;
+      formState.field_ids.length > 0 ||
+      formState.upload_ids.length > 0;
 
     if (!hasResourceIds || !patchDocumentDraftActionRef.current) {
       return;
@@ -439,6 +496,7 @@ function NewDocumentComponent({
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
             field_ids: formState.field_ids,
+            upload_ids: formState.upload_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -476,12 +534,11 @@ function NewDocumentComponent({
   ]);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
-  // Note: Document generation events use artifact_generate pattern
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // Use single group_id from documentData (no need to track multiple)
-    const currentGroupId = documentData?.group_id;
+    // Use single group_id from documentDetail (no need to track multiple)
+    const currentGroupId = documentDetail?.group_id;
 
     const handleGenerationComplete = (data: {
       artifact_type?: string;
@@ -490,8 +547,9 @@ function NewDocumentComponent({
       name_id?: string | null;
       description_id?: string | null;
       active_flag_id?: string | null;
-      department_ids?: string[];
       field_ids?: string[];
+      department_ids?: string[];
+      upload_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -511,6 +569,7 @@ function NewDocumentComponent({
         "flags",
         "departments",
         "fields",
+        "uploads",
       ];
       if (
         data.resource_type &&
@@ -524,6 +583,13 @@ function NewDocumentComponent({
           if (data.name_id) updates.name_id = data.name_id;
           if (data.description_id) updates.description_id = data.description_id;
           if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.field_ids && data.field_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newFieldIds = data.field_ids.filter(
+              (id) => !prev.field_ids.includes(id)
+            );
+            updates.field_ids = [...prev.field_ids, ...newFieldIds];
+          }
           if (data.department_ids && data.department_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
             const newDeptIds = data.department_ids.filter(
@@ -531,12 +597,12 @@ function NewDocumentComponent({
             );
             updates.department_ids = [...prev.department_ids, ...newDeptIds];
           }
-          if (data.field_ids && data.field_ids.length > 0) {
+          if (data.upload_ids && data.upload_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
-            const newFieldIds = data.field_ids.filter(
-              (id) => !prev.field_ids.includes(id)
+            const newUploadIds = data.upload_ids.filter(
+              (id) => !prev.upload_ids.includes(id)
             );
-            updates.field_ids = [...prev.field_ids, ...newFieldIds];
+            updates.upload_ids = [...prev.upload_ids, ...newUploadIds];
           }
 
           return { ...prev, ...updates };
@@ -598,6 +664,7 @@ function NewDocumentComponent({
         "flags",
         "departments",
         "fields",
+        "uploads",
       ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
@@ -614,17 +681,16 @@ function NewDocumentComponent({
     };
 
     // Listen to document-specific events filtered by artifact_type and group_id
-    // Use artifact_generate pattern (not document_generate for resources)
-    socket.on("artifact_generation_progress", handleGenerationProgress);
-    socket.on("artifact_generation_complete", handleGenerationComplete);
-    socket.on("artifact_generation_error", handleGenerationError);
+    socket.on("document_generation_progress", handleGenerationProgress);
+    socket.on("document_generation_complete", handleGenerationComplete);
+    socket.on("document_generation_error", handleGenerationError);
 
     return () => {
-      socket.off("artifact_generation_progress", handleGenerationProgress);
-      socket.off("artifact_generation_complete", handleGenerationComplete);
-      socket.off("artifact_generation_error", handleGenerationError);
+      socket.off("document_generation_progress", handleGenerationProgress);
+      socket.off("document_generation_complete", handleGenerationComplete);
+      socket.off("document_generation_error", handleGenerationError);
     };
-  }, [socket, isConnected, documentData?.group_id]);
+  }, [socket, isConnected, documentDetail?.group_id]);
 
   // Multi-generation handler - accepts list of resource types and optional user instructions
   // Helper function to determine agent_type from resource types
@@ -642,6 +708,7 @@ function NewDocumentComponent({
         "flags",
         "departments",
         "fields",
+        "uploads",
       ];
 
       const isBasicCombo =
@@ -663,6 +730,7 @@ function NewDocumentComponent({
           flags: "flags",
           departments: "departments",
           fields: "fields",
+          uploads: "uploads",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
@@ -695,24 +763,22 @@ function NewDocumentComponent({
       // Read search params from formData
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
-      const descriptionSearch =
-        (formData["descriptionSearch"] as string | undefined) ?? null;
       const fieldSearch =
         (formData["fieldSearch"] as string | undefined) ?? null;
+      const uploadSearch =
+        (formData["uploadSearch"] as string | undefined) ?? null;
       const fieldShowSelected =
         (formData["fieldShowSelected"] as boolean | undefined) ?? false;
 
-      // Emit artifact_generate event with GetDocumentApiRequest fields
-      // Use artifact_generate pattern for resource generation
-      socket.emit("artifact_generate", {
-        artifact_type: "document",
+      // Emit document_generate event
+      socket.emit("document_generate", {
         resource_types: resourceTypes, // Simple array of strings
         agent_type: agentType,
         user_instructions: userInstructions ? [userInstructions] : null,
         // GetDocumentApiRequest fields from formData
         draft_id: draftId || null,
-        descriptions_search: descriptionSearch || null,
         field_search: fieldSearch || null,
+        upload_search: uploadSearch || null,
         field_show_selected: fieldShowSelected || false,
         mcp: false,
         document_id: documentId || null,
@@ -752,22 +818,16 @@ function NewDocumentComponent({
     [handleGenerateResources, determineAgentType]
   );
 
-  const handleGenerateFields = useCallback(
-    async () =>
-      handleGenerateResources(["fields"], determineAgentType(["fields"])),
-    [handleGenerateResources, determineAgentType]
-  );
-
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
-    if (!documentData) return false;
-    return !documentData.can_edit;
-  }, [documentData]);
+    if (!documentDetail) return false;
+    return !documentDetail.can_edit;
+  }, [documentDetail]);
 
   // Set breadcrumb context when document data is loaded
   useEffect(() => {
-    const documentName = documentData?.name_resource?.name;
+    const documentName = documentDetail?.name_resource?.name;
     if (documentName && documentId && isEditMode) {
       setEntityMetadata({
         entityId: documentId,
@@ -777,7 +837,7 @@ function NewDocumentComponent({
     }
     return () => clearEntityMetadata();
   }, [
-    documentData,
+    documentDetail,
     documentId,
     isEditMode,
     setEntityMetadata,
@@ -786,11 +846,11 @@ function NewDocumentComponent({
 
   // Set generation capability when document data is loaded
   useEffect(() => {
-    if (documentData?.general_agent_id) {
+    if (documentDetail?.basic_agent_id) {
       setGenerationCapability({
         artifactType: "document",
         canGenerate: true,
-        agentId: documentData.general_agent_id,
+        agentId: documentDetail.basic_agent_id,
       });
     } else {
       setGenerationCapability({
@@ -801,7 +861,7 @@ function NewDocumentComponent({
     }
     return () => clearGenerationCapability();
   }, [
-    documentData?.general_agent_id,
+    documentDetail?.basic_agent_id,
     setGenerationCapability,
     clearGenerationCapability,
   ]);
@@ -809,14 +869,14 @@ function NewDocumentComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      // Validate required resource IDs using {resource}_required flags from documentData
-      if (documentData?.name_required && !formState.name_id) {
+      // Validate required resource IDs using {resource}_required flags from documentDetail
+      if (documentDetail?.name_required && !formState.name_id) {
         toast.error("Document name is required");
         throw new Error("Document name is required");
       }
 
       if (
-        documentData?.departments_required &&
+        documentDetail?.departments_required &&
         (!formState.department_ids || formState.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
@@ -824,14 +884,12 @@ function NewDocumentComponent({
       }
 
       if (
-        documentData?.fields_required &&
+        documentDetail?.fields_required &&
         (!formState.field_ids || formState.field_ids.length === 0)
       ) {
         toast.error("Fields are required");
         throw new Error("Fields are required");
       }
-
-      // Pass department_ids and field_ids directly - SQL handles validation
 
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
@@ -859,11 +917,8 @@ function NewDocumentComponent({
             active_flag_id: formState.active_flag_id || null,
             department_ids: formState.department_ids || [],
             field_ids: formState.field_ids || [],
-            // Template fields (not in initial implementation, but structure ready)
-            template_flag_id: null,
-            html_id: null,
-            schema_id: null,
-            document_domain_id: null,
+            upload_ids: formState.upload_ids || [],
+            // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
           },
         });
         toast.success(
@@ -884,9 +939,9 @@ function NewDocumentComponent({
       effectiveProfile?.id,
       saveDocumentAction,
       router,
-      documentData?.name_required,
-      documentData?.departments_required,
-      documentData?.fields_required,
+      documentDetail?.name_required,
+      documentDetail?.departments_required,
+      documentDetail?.fields_required,
     ]
   );
 
@@ -897,6 +952,7 @@ function NewDocumentComponent({
       const hasName = !!formState.name_id;
       const hasDescription = !!formState.description_id;
       const hasFields = formState.field_ids.length > 0;
+      const hasUploads = formState.upload_ids.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -904,6 +960,9 @@ function NewDocumentComponent({
         case "fields":
           if (!hasName || !hasDescription) return "pending";
           return hasFields ? "completed" : "active";
+        case "uploads":
+          if (!hasName || !hasDescription) return "pending";
+          return hasUploads ? "completed" : "active";
         default:
           return "pending";
       }
@@ -916,12 +975,14 @@ function NewDocumentComponent({
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
       fields: ["fields"],
+      uploads: ["uploads"],
       all: [
         "names",
         "descriptions",
         "flags",
         "departments",
         "fields",
+        "uploads",
       ], // All resources for full-page generation
     }),
     []
@@ -935,11 +996,11 @@ function NewDocumentComponent({
       flags: "Flags",
       departments: "Departments",
       fields: "Fields",
+      uploads: "Uploads",
       colors: "Colors", // Not used but required by type
       icons: "Icons", // Not used but required by type
       instructions: "Instructions", // Not used but required by type
       examples: "Examples", // Not used but required by type
-      simulations: "Simulations", // Not used but required by type
     }),
     []
   );
@@ -983,7 +1044,7 @@ function NewDocumentComponent({
   // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = () => {
-      if (documentData?.general_agent_id) {
+      if (documentDetail?.basic_agent_id) {
         // Open modal instead of directly generating
         handleOpenStepCardModal("all", "generate");
       }
@@ -991,7 +1052,7 @@ function NewDocumentComponent({
     window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [documentData?.general_agent_id, handleOpenStepCardModal]);
+  }, [documentDetail?.basic_agent_id, handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -1006,8 +1067,14 @@ function NewDocumentComponent({
       {
         id: "fields",
         title: "Fields",
-        description: "Select fields for this document.",
+        description: "Select fields (parameter items) for this document.",
         resetFields: ["field_ids"],
+      },
+      {
+        id: "uploads",
+        title: "Files",
+        description: "Upload files for this document.",
+        resetFields: ["upload_ids"],
       },
     ],
     []
@@ -1016,11 +1083,12 @@ function NewDocumentComponent({
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
     () => [
-      "name",
-      "description",
-      "active",
+      "name_id",
+      "description_id",
+      "active_flag_id",
       "department_ids",
       "field_ids",
+      "upload_ids",
     ],
     []
   );
@@ -1032,6 +1100,8 @@ function NewDocumentComponent({
         return "Basic information reset";
       case "fields":
         return "Fields reset";
+      case "uploads":
+        return "Uploads reset";
       default:
         return "Reset";
     }
@@ -1076,7 +1146,7 @@ function NewDocumentComponent({
       }>;
       onReset?: () => void;
     }) => {
-      // Use memoized fields to avoid dependency on documentData object reference
+      // Use memoized fields to avoid dependency on documentDetail object reference
       const currentDocumentData = stableDocumentDataFields;
       switch (stepId) {
         case "basic":
@@ -1101,7 +1171,7 @@ function NewDocumentComponent({
                   }
                   onGenerate={handleGenerateName}
                   isGenerating={isGenerating("names")}
-                  placeholder="e.g., CS 101 Homework 1"
+                  placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
                   required={currentDocumentData?.name_required ?? false}
                   hideDescription={true}
@@ -1120,7 +1190,7 @@ function NewDocumentComponent({
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                currentDocumentData?.general_agent_id ? (
+                currentDocumentData?.basic_agent_id ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1186,19 +1256,12 @@ function NewDocumentComponent({
                       description_id: descriptionId,
                     }))
                   }
-                  searchTerm={
-                    (stepFormData["descriptionSearch"] as
-                      | string
-                      | null
-                      | undefined) || ""
-                  }
-                  onSearchChange={(term: string) =>
-                    setStepFormData({ descriptionSearch: term || null })
-                  }
+                  searchTerm=""
+                  onSearchChange={() => {}}
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
-                  placeholder="Detailed description of the document"
+                  placeholder="Document description and purpose"
                   required={currentDocumentData?.description_required ?? false}
                   rows={4}
                   data-testid="input-document-description"
@@ -1247,7 +1310,7 @@ function NewDocumentComponent({
                   onGenerate={handleGenerateFlags}
                   isGenerating={isGenerating("flags")}
                   label="Active"
-                  helpText="Inactive documents will not be available for selection"
+                  helpText="Inactive documents will not be available for scenarios"
                   required={currentDocumentData?.flag_required ?? false}
                   group_id={currentDocumentData?.group_id ?? null}
                   agent_id={currentDocumentData?.flag_agent_id ?? null}
@@ -1257,14 +1320,12 @@ function NewDocumentComponent({
             </StepCard>
           );
 
-        case "fields": {
+        case "fields":
           const fieldSearchTerm =
             (stepFormData["fieldSearch"] as string | null | undefined) || "";
           const fieldShowSelected =
-            (stepFormData["fieldShowSelected"] as
-              | boolean
-              | null
-              | undefined) ?? false;
+            (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
+            false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1288,11 +1349,7 @@ function NewDocumentComponent({
                     setStepFormData({ fieldShowSelected: value || null }),
                 },
               ]}
-              resetFields={[
-                "field_ids",
-                "fieldSearch",
-                "fieldShowSelected",
-              ]}
+              resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1363,14 +1420,94 @@ function NewDocumentComponent({
               />
             </StepCard>
           );
-        }
+
+        case "uploads":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["upload_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["uploads"] &&
+                stepResources["uploads"].length > 0 &&
+                currentDocumentData?.uploads_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "uploads"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "uploads",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["uploads"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["uploads"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["uploads"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
+            >
+              <Uploads
+                upload_ids={formState.upload_ids ?? []}
+                upload_resources={currentDocumentData?.upload_resources ?? []}
+                show_uploads={currentDocumentData?.show_uploads ?? false}
+                upload_suggestions={
+                  currentDocumentData?.upload_suggestions ?? []
+                }
+                uploads={currentDocumentData?.uploads ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, upload_ids: ids }))
+                }
+                label="Files"
+                required={currentDocumentData?.uploads_required ?? false}
+                group_id={currentDocumentData?.group_id ?? null}
+                agent_id={currentDocumentData?.uploads_agent_id ?? null}
+                createUploadsAction={createUploadsAction}
+              />
+            </StepCard>
+          );
 
         default:
           return null;
       }
     },
     [
-      // Use stableDocumentDataFields instead of documentData to prevent callback recreation
+      // Use stableDocumentDataFields instead of documentDetail to prevent callback recreation
       // when only object reference changes (but content is same)
       stableDocumentDataFields,
       disabled,
@@ -1379,7 +1516,6 @@ function NewDocumentComponent({
       handleGenerateDescription,
       handleGenerateDepartments,
       handleGenerateFlags,
-      handleGenerateFields,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation
@@ -1391,11 +1527,13 @@ function NewDocumentComponent({
       // they only change when content actually changes (not just reference)
       formState.department_ids,
       formState.field_ids,
+      formState.upload_ids,
       createNamesAction,
       createDescriptionsAction,
       createFlagsAction,
-      createDepartmentsAction,
       createFieldsAction,
+      createDepartmentsAction,
+      createUploadsAction,
       canRegenerate,
       handleOpenStepCardModal,
     ]
@@ -1409,7 +1547,7 @@ function NewDocumentComponent({
       >
         <ReadOnlyBanner
           disabled={disabled}
-          disabledReason={documentData?.disabled_reason ?? null}
+          disabledReason={documentDetail?.disabled_reason ?? null}
           entityType="document"
         />
 
@@ -1419,7 +1557,7 @@ function NewDocumentComponent({
           }
           steps={steps}
           getStepStatus={getStepStatus}
-          serverData={documentData}
+          serverData={documentDetail}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
@@ -1454,4 +1592,49 @@ function NewDocumentComponent({
   );
 }
 
-export default React.memo(NewDocumentComponent);
+// Memoize component to prevent re-renders when only prop references change (content is same)
+export default React.memo(DocumentComponent, (prevProps, nextProps) => {
+  // Compare documentDetail by resource IDs, not object reference
+  const prevIds = {
+    name_id: prevProps.documentDetail?.name_resource?.id,
+    description_id: prevProps.documentDetail?.description_resource?.id,
+    active_flag_id: prevProps.documentDetail?.flag_resource?.id,
+    department_ids: prevProps.documentDetail?.department_ids,
+    field_ids: prevProps.documentDetail?.field_ids,
+    upload_ids: prevProps.documentDetail?.upload_ids,
+  };
+  const nextIds = {
+    name_id: nextProps.documentDetail?.name_resource?.id,
+    description_id: nextProps.documentDetail?.description_resource?.id,
+    active_flag_id: nextProps.documentDetail?.flag_resource?.id,
+    department_ids: nextProps.documentDetail?.department_ids,
+    field_ids: nextProps.documentDetail?.field_ids,
+    upload_ids: nextProps.documentDetail?.upload_ids,
+  };
+
+  // Compare primitive props
+  if (
+    prevProps.documentId !== nextProps.documentId ||
+    prevProps.mode !== nextProps.mode ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.saveDocumentAction !== nextProps.saveDocumentAction ||
+    prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction ||
+    prevProps.createNamesAction !== nextProps.createNamesAction ||
+    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
+    prevProps.createUploadsAction !== nextProps.createUploadsAction ||
+    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
+    prevProps.createFieldsAction !== nextProps.createFieldsAction ||
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
+  ) {
+    return false; // Function props changed, re-render
+  }
+
+  // All props are equivalent, skip re-render
+  return true;
+});

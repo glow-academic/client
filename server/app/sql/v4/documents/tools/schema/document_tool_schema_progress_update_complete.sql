@@ -37,14 +37,12 @@ AS $$
 WITH params AS (
     SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
 ),
--- Get tool_id for schema tool (resource='schema', artifact='document')
+-- Get tool_id for schema tool (resource='schemas' was removed in migration 268)
+-- Note: This query will return NULL since 'schemas' resource no longer exists
+-- This function may be obsolete if schema tools were removed
 get_tool_id AS (
-    SELECT t.id as tool_id
-    FROM tool_artifact t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    WHERE rt.resource = 'schemas'::resources
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-    LIMIT 1
+    SELECT NULL::uuid as tool_id
+    WHERE false  -- Always return empty since schemas resource was removed
 ),
 -- Get or create tool_call
 existing_tool_call AS (

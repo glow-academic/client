@@ -911,8 +911,9 @@ all_documents_array AS (
         COALESCE(dfd.field_ids, ARRAY[]::uuid[]) as field_ids,
         dtd.parent_id as parent_document_id
     FROM document_data d
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     LEFT JOIN document_fields_data dfd ON dfd.document_id = d.id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
 ),
@@ -1332,8 +1333,9 @@ all_document_details_array AS (
         END as is_template,
         dtd.parent_id as parent_document_id
     FROM document_artifact d
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
     WHERE (
         d.id IN (SELECT id FROM document_data)

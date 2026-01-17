@@ -6,11 +6,9 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import NewDocument from "@/components/documents/NewDocument";
-import type { TemplateSchema } from "@/components/documents/TemplateForm";
+import Document from "@/components/documents/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
@@ -19,17 +17,6 @@ type GetDocumentIn = InputOf<"/api/v4/documents/get", "post">;
 type GetDocumentOut = OutputOf<"/api/v4/documents/get", "post">;
 type SaveDocumentIn = InputOf<"/api/v4/documents/save", "post">;
 type SaveDocumentOut = OutputOf<"/api/v4/documents/save", "post">;
-// Note: _render endpoint returns dict[str, Any], not a typed response
-type RenderTemplateIn = {
-  body: {
-    document_id: string;
-    template_args: Record<string, unknown>;
-    department_ids?: string[] | null;
-  };
-};
-type RenderTemplateOut = {
-  rendered_html: string;
-};
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
@@ -54,6 +41,8 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -104,21 +93,6 @@ async function saveDocument(input: SaveDocumentIn): Promise<SaveDocumentOut> {
   return api.post("/documents/save", input);
 }
 
-async function renderTemplate(
-  input: RenderTemplateIn
-): Promise<RenderTemplateOut> {
-  "use server";
-  // _render endpoint is not in OpenAPI schema, use type assertion for endpoint path
-  const result = await (
-    api.post as (
-      path: string,
-      input: RenderTemplateIn
-    ) => Promise<Record<string, unknown>>
-  )("/documents/_render", input);
-  // API returns dict[str, Any], assert to our expected type
-  return result as RenderTemplateOut;
-}
-
 async function patchDocumentDraft(
   input: PatchDocumentDraftIn
 ): Promise<PatchDocumentDraftOut> {
@@ -164,80 +138,17 @@ export default async function DocumentEditPage({
   try {
     const documentDetail = await getDocument(documentId, q.draftId ?? null);
 
-    // Parse search params for template args and render server-side if template document
-    let renderedHtml: string | null = null;
-    if (documentDetail.template === true) {
-      const params = await searchParams;
-      const searchParamsObj = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) {
-          if (Array.isArray(value)) {
-            value.forEach((v) => searchParamsObj.append(key, v));
-          } else {
-            searchParamsObj.set(key, value);
-          }
-        }
-      });
-
-      // Check if there are template arg params (JSON format)
-      // Use template_schema from API response, fallback to template_args for backward compatibility
-      // Note: template_schema is added dynamically by the API, so we need type assertion
-      const docDetail = documentDetail as GetDocumentOut & {
-        template_schema?: TemplateSchema | null;
-        template_args?: TemplateSchema | null;
-      };
-      const templateSchema =
-        (docDetail.template_schema as TemplateSchema | null) ||
-        (docDetail.template_args as TemplateSchema | null);
-      if (templateSchema) {
-        const hasTemplateParams = searchParamsObj.has("templateArgs");
-
-        if (hasTemplateParams) {
-          // Extract template args from search params
-          const templateArgs = searchParamsToTemplateArgs(
-            searchParamsObj,
-            templateSchema
-          );
-
-          // Call render endpoint server-side
-          // Use first departmentId from document for department-specific theme
-          const departmentIds =
-            documentDetail.department_ids &&
-            documentDetail.department_ids.length > 0
-              ? documentDetail.department_ids
-              : undefined;
-
-          try {
-            const renderResult = (await renderTemplate({
-              body: {
-                document_id: documentId,
-                template_args: templateArgs,
-                ...(departmentIds !== undefined && {
-                  department_ids: departmentIds || null,
-                }),
-              },
-            })) as unknown as RenderTemplateOut;
-            renderedHtml = renderResult.rendered_html;
-          } catch (error) {
-            // If rendering fails, renderedHtml stays null
-            // Component will handle this gracefully
-            // eslint-disable-next-line no-console
-            console.error("Failed to render template:", error);
-          }
-        }
-      }
-    }
-
     return (
       <div
         className="space-y-6"
         data-page="document-edit"
         data-document-id={documentId}
       >
-        <NewDocument
+        <Document
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           documentId={documentId}
-          documentData={documentDetail}
+          mode="edit"
+          documentDetail={documentDetail}
           saveDocumentAction={saveDocument}
           patchDocumentDraftAction={patchDocumentDraft}
           createNamesAction={createDraftNames}
@@ -245,6 +156,7 @@ export default async function DocumentEditPage({
           createFlagsAction={createDraftFlags}
           createFieldsAction={createDraftFields}
           createDepartmentsAction={createDraftDepartments}
+          createUploadsAction={createDraftUploads}
         />
       </div>
     );

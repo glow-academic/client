@@ -103,16 +103,23 @@ create_upload AS (
     VALUES (api_complete_document_creation_v4.file_path, api_complete_document_creation_v4.mime_type, api_complete_document_creation_v4.file_size, NOW(), NOW())
     RETURNING id
 ),
+get_uploads_resource_id AS (
+    -- Look up uploads_resource.id from upload_id
+    SELECT ur.id as uploads_id
+    FROM create_upload cu
+    JOIN uploads_resource ur ON ur.upload_id = cu.id
+    LIMIT 1
+),
 link_document_upload AS (
     -- Link document to upload (regular upload, not template upload)
-    INSERT INTO document_uploads (document_id, upload_id, active, created_at, updated_at)
-    SELECT ccd.document_id, cu.id, true, NOW(), NOW()
+    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
+    SELECT ccd.document_id, gur.uploads_id, true, NOW(), NOW()
     FROM create_child_document ccd
-    CROSS JOIN create_upload cu
-    ON CONFLICT (document_id, upload_id) DO UPDATE SET
+    CROSS JOIN get_uploads_resource_id gur
+    ON CONFLICT (document_id, uploads_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-    RETURNING document_id, upload_id
+    RETURNING document_id, uploads_id
 ),
 link_document_tree AS (
     -- Link parent→child in document_tree

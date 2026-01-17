@@ -938,8 +938,9 @@ valid_documents_filtered AS (
         u.file_path,
         u.mime_type
     FROM document_artifact d
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_departments ud
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
@@ -1076,8 +1077,9 @@ document_data_base AS (
     FROM scenario_documents_agg sda
     CROSS JOIN LATERAL unnest(sda.document_ids) as doc_id
     JOIN document_artifact d2 ON d2.id = doc_id::uuid
-    LEFT JOIN document_uploads du2 ON du2.document_id = d2.id AND du2.active = true
-    LEFT JOIN uploads u2 ON u2.id = du2.upload_id
+    LEFT JOIN document_uploads_resource dur2 ON dur2.document_id = d2.id AND dur2.active = true
+    LEFT JOIN uploads_resource ur2 ON ur2.id = dur2.uploads_id
+    LEFT JOIN uploads u2 ON u2.id = ur2.upload_id
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d2.id AND f.name = 'active' AND df.value = TRUE)
     UNION
     SELECT DISTINCT
@@ -1087,8 +1089,9 @@ document_data_base AS (
         u3.file_path,
         u3.mime_type
     FROM document_artifact d3
-    LEFT JOIN document_uploads du3 ON du3.document_id = d3.id AND du3.active = true
-    LEFT JOIN uploads u3 ON u3.id = du3.upload_id
+    LEFT JOIN document_uploads_resource dur3 ON dur3.document_id = d3.id AND dur3.active = true
+    LEFT JOIN uploads_resource ur3 ON ur3.id = dur3.uploads_id
+    LEFT JOIN uploads u3 ON u3.id = ur3.upload_id
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d3.id AND f.name = 'active' AND df.value = TRUE)
     AND (SELECT document_ids FROM params LIMIT 1) IS NOT NULL
     AND array_length((SELECT document_ids FROM params LIMIT 1), 1) > 0
@@ -1280,8 +1283,9 @@ scenario_documents_array AS (
         NULL::uuid as parent_document_id
     FROM scenario_documents sd
     JOIN documents_resource d ON d.id = sd.document_id
-    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    LEFT JOIN uploads u ON u.id = ur.upload_id
     WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 all_documents_array AS (
@@ -1310,7 +1314,7 @@ document_details_array AS (
         ), NULL::uuid[]) as department_ids,
         dd.file_path,
         dd.mime_type,
-        (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = dd.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
+        (SELECT ur.upload_id FROM document_uploads_resource dur JOIN uploads_resource ur ON ur.id = dur.uploads_id WHERE dur.document_id = dd.id AND dur.active = true ORDER BY dur.created_at DESC LIMIT 1) as upload_id,
         COALESCE((
             SELECT ARRAY_AGG(df.field_id ORDER BY df.field_id)
             FROM document_fields df

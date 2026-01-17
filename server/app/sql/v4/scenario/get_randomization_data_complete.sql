@@ -75,8 +75,9 @@ WITH filtered_personas AS (
 filtered_documents AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), NULL::text as type, u.file_path
     FROM document_artifact d
-    INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-    INNER JOIN uploads u ON u.id = du.upload_id AND u.file_path IS NOT NULL
+    INNER JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
+    INNER JOIN uploads_resource ur ON ur.id = dur.uploads_id
+    INNER JOIN uploads u ON u.id = ur.upload_id AND u.file_path IS NOT NULL
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
     GROUP BY d.id, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path

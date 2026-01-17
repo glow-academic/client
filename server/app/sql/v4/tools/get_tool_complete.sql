@@ -972,13 +972,15 @@ schemas_agent_data AS (
                 WHERE ad2.agent_id = a.id AND ad2.active = true
             )
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'schemas'::resources
-        )
+        -- Note: 'schemas' resource was removed in migration 268, so this filter is disabled
+        -- AND EXISTS (
+        --     SELECT 1 FROM agent_tools at
+        --     JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        --     JOIN resource_tools rt ON rt.tool_id = t.id
+        --     WHERE at.agent_id = a.id AND at.active = true
+        --       AND rt.resource = 'schemas'::resources
+        -- )
+        AND false  -- Always false since schemas resource no longer exists
         -- Filter by MCP flag when mcp=true
         AND (
             (SELECT mcp FROM params) = false
@@ -1253,7 +1255,9 @@ schema_fields_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'schema_fields'::resources
+              -- Note: 'schema_fields' resource was removed in migration 268, so this filter is disabled
+              -- AND rt.resource = 'schema_fields'::resources
+              AND false  -- Always false since schema_fields resource no longer exists
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1322,7 +1326,9 @@ schema_field_items_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'schema_field_items'::resources
+              -- Note: 'schema_field_items' resource was removed in migration 268, so this filter is disabled
+              -- AND rt.resource = 'schema_field_items'::resources
+              AND false  -- Always false since schema_field_items resource no longer exists
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1391,7 +1397,9 @@ template_array_items_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'template_array_items'::resources
+              -- Note: 'template_array_items' resource was removed in migration 268, so this filter is disabled
+              -- AND rt.resource = 'template_array_items'::resources
+              AND false  -- Always false since template_array_items resource no longer exists
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1460,7 +1468,9 @@ template_values_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'template_values'::resources
+              -- Note: 'template_values' resource was removed in migration 268, so this filter is disabled
+              -- AND rt.resource = 'template_values'::resources
+              AND false  -- Always false since template_values resource no longer exists
         )
         -- Filter by MCP flag when mcp=true
         AND (
