@@ -21,6 +21,8 @@ type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 export interface ColorItem {
   hex: string;
   name: string;
+  id?: string | null; // Include id for unique keys when available
+  index?: number; // Include index as fallback for uniqueness
 }
 
 export interface ColorsProps {
@@ -108,12 +110,18 @@ export function Colors({
     if (colors && colors.length > 0) {
       return colors
         .filter((c) => c.hex_code && c.name) // Filter out nulls
-        .map((c) => ({
+        .map((c, index) => ({
           hex: c.hex_code!,
           name: c.name!,
+          id: c.id ?? null, // Preserve id for unique keys
+          index, // Include index as fallback for uniqueness
         }));
     }
-    return presetColors ?? [];
+    // For presetColors (legacy), add index for uniqueness
+    return (presetColors ?? []).map((c, index) => ({
+      ...c,
+      index,
+    }));
   }, [colors, presetColors]);
 
   // Handle nullable resource properties
@@ -207,7 +215,14 @@ export function Colors({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, currentColor, createColorsAction, onColorIdChange, agent_id, group_id]);
+  }, [
+    internalValue,
+    currentColor,
+    createColorsAction,
+    onColorIdChange,
+    agent_id,
+    group_id,
+  ]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
@@ -266,12 +281,47 @@ export function Colors({
       {displayColors.length > 0 && (
         <SelectableGrid<ColorItem>
           items={displayColors}
-          selectedId={currentColor}
-          onSelect={(colorHex) => {
-            const normalizedCurrent = currentColor;
-            handleChange(colorHex === normalizedCurrent ? "" : colorHex);
+          selectedId={null} // Don't use selectedId since we're using unique IDs, not hex codes
+          onSelect={(selectedId) => {
+            // selectedId is the unique key, find the color item to get its hex
+            const selectedColor = displayColors.find((color) => {
+              const colorId = color.id
+                ? color.id
+                : `${color.hex.toLowerCase()}-${color.name}-${color.index ?? 0}`;
+              return colorId === selectedId;
+            });
+            if (selectedColor) {
+              const normalizedCurrent = currentColor;
+              const selectedHex = selectedColor.hex.toLowerCase();
+              handleChange(
+                selectedHex === normalizedCurrent ? "" : selectedHex
+              );
+            }
           }}
-          getId={(color) => color.hex.toLowerCase()}
+          getId={(color) => {
+            // Use id if available, otherwise use hex + name + index for uniqueness
+            // This ensures unique React keys even when hex codes are duplicated
+            if (color.id) {
+              return color.id;
+            }
+            return `${color.hex.toLowerCase()}-${color.name}-${color.index ?? 0}`;
+          }}
+          // Use selectedIds to mark all colors with matching hex as selected
+          selectedIds={
+            currentColor
+              ? displayColors
+                  .filter(
+                    (color) =>
+                      color.hex.toLowerCase() === currentColor.toLowerCase()
+                  )
+                  .map((color) => {
+                    // Map to the unique ID for each matching color
+                    return color.id
+                      ? color.id
+                      : `${color.hex.toLowerCase()}-${color.name}-${color.index ?? 0}`;
+                  })
+              : undefined
+          }
           renderItem={(color, isSelected) => (
             <div
               className={cn(

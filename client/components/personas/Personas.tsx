@@ -109,11 +109,15 @@ export default function Personas({
     { id: "updated_at", desc: true },
   ]);
 
-  // Use server-provided data directly
+  // Memoize personas data to prevent infinite re-renders
   const personasData = serverListData;
 
-  // Extract data from response
-  const personas = personasData?.personas || [];
+  // Extract personas array - use useMemo with stable dependency
+  // The key insight: serverListData.personas should be a stable reference from Next.js
+  // If it changes, we want to update, so we depend on it directly
+  const personas = useMemo(() => {
+    return personasData?.personas || [];
+  }, [personasData?.personas]);
 
   // Derive options from full arrays (server always returns arrays)
   const scenarioOptions = useMemo(() => {
@@ -411,7 +415,6 @@ export default function Personas({
 
     return (
       <Card
-        key={persona.persona_id}
         className="hover:shadow-md transition-shadow"
         data-testid="persona-card"
         data-persona-id={persona.persona_id}
@@ -662,7 +665,12 @@ export default function Personas({
           data-testid="personas-grid"
         >
           {tableRows.length ? (
-            tableRows.map((row) => renderPersonaCard(row.original))
+            tableRows.map((row) => {
+              const persona = row.original;
+              // Ensure unique key - use persona_id, fallback to index if missing
+              const key = persona.persona_id || `persona-${row.id}`;
+              return <div key={key}>{renderPersonaCard(persona)}</div>;
+            })
           ) : (
             <div className="col-span-full text-center py-8 text-muted-foreground">
               No personas match the current filters.
