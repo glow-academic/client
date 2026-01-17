@@ -1715,6 +1715,20 @@ export default function Agent({
     [handleGenerateResources, determineAgentType]
   );
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // Check if generation is available (agent has generation capability)
+      if (agentData?.general_agent_id || agentId) {
+        // Open modal instead of directly generating
+        handleOpenStepCardModal("all", "generate");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [agentData?.general_agent_id, agentId, handleOpenStepCardModal]);
+
   // WebSocket handlers for AI generation
   useEffect(() => {
     if (!socket || !isConnected) return;

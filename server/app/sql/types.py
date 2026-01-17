@@ -22625,6 +22625,11 @@ class QReportsOverviewV4Thresholds(BaseModel):
 class GetReportsOverviewSqlRow(BaseModel):
 
     actor_name: str | None = None
+    profile_name: str | None = None
+    profile_emails: list[str] | None = None
+    profile_primary_email: str | None = None
+    profile_role: str | None = None
+    profile_id: UUID | None = None
     header_metrics: QReportsOverviewV4HeaderMetrics | None = None
     primary_metrics: QReportsOverviewV4PrimaryMetrics | None = None
     secondary_metrics: QReportsOverviewV4SecondaryMetrics | None = None
@@ -22649,6 +22654,11 @@ class GetReportsOverviewApiRequest(BaseModel):
 class GetReportsOverviewApiResponse(BaseModel):
 
     actor_name: str | None = None
+    profile_name: str | None = None
+    profile_emails: list[str] | None = None
+    profile_primary_email: str | None = None
+    profile_role: str | None = None
+    profile_id: UUID | None = None
     header_metrics: QReportsOverviewV4HeaderMetrics | None = None
     primary_metrics: QReportsOverviewV4PrimaryMetrics | None = None
     secondary_metrics: QReportsOverviewV4SecondaryMetrics | None = None

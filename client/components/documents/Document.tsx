@@ -1322,6 +1322,30 @@ export default function Document({
     });
   };
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // Only trigger generation in edit mode when we have the necessary data
+      if (isEditMode && documentDetail) {
+        // Check if we have a department selected
+        const departmentId = selectedDepartmentIds[0] || validDepartmentIds[0];
+        if (departmentId && socket && isConnected) {
+          handleGenerateTemplate();
+        }
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [
+    isEditMode,
+    documentDetail,
+    selectedDepartmentIds,
+    validDepartmentIds,
+    socket,
+    isConnected,
+  ]);
+
   const handleGenerateTemplate = async () => {
     if (!socket || !isConnected) {
       toast.error("WebSocket not connected");

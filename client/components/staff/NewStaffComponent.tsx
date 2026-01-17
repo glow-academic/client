@@ -714,6 +714,21 @@ function NewStaffComponent({
     return () => clearEntityMetadata();
   }, [staffData, staffId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // Check if generation is available (staff has generation capability)
+      // Staff uses individual agent IDs, so check if any agent is available
+      if (staffData?.general_agent_id || staffId) {
+        // Open modal instead of directly generating
+        handleOpenStepCardModal("all", "generate");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [staffData?.general_agent_id, staffId, handleOpenStepCardModal]);
+
   // Set generation capability when staff data is loaded
   // Note: Staff doesn't have general_agent_id, so we'll use basic_agent_id or individual agent IDs
   useEffect(() => {

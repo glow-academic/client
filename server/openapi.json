@@ -17868,7 +17868,7 @@
         ]
       }
     },
-    "/api/v4/analytics/reports/reports/report": {
+    "/api/v4/analytics/reports/report": {
       "post": {
         "tags": [
           "v4",
@@ -17880,7 +17880,7 @@
         ],
         "summary": "Export Reports",
         "description": "Export reports data as CSV or ZIP file.",
-        "operationId": "export_reports_api_v4_analytics_reports_reports_report_post",
+        "operationId": "export_reports_api_v4_analytics_reports_report_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -17971,7 +17971,7 @@
         ]
       }
     },
-    "/api/v4/analytics/reports/reports/list": {
+    "/api/v4/analytics/reports/list": {
       "post": {
         "tags": [
           "v4",
@@ -17982,7 +17982,7 @@
         ],
         "summary": "Get Reports",
         "description": "Get reports bundle with aggregated metrics per profile and entity mappings.",
-        "operationId": "get_reports_api_v4_analytics_reports_reports_list_post",
+        "operationId": "get_reports_api_v4_analytics_reports_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -44105,6 +44105,65 @@
               }
             ],
             "title": "Actor Name"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "profile_emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Emails"
+          },
+          "profile_primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Primary Email"
+          },
+          "profile_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Role"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
           },
           "header_metrics": {
             "anyOf": [

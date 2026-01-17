@@ -9,7 +9,10 @@ import Reports from "@/components/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { searchParamsToFilters, type AnalyticsFilters } from "@/utils/analytics-filters";
+import {
+  searchParamsToFilters,
+  type AnalyticsFilters,
+} from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
@@ -104,7 +107,8 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   if (cohortIds.length > 0) result.cohortIds = cohortIds;
   if (departmentIds.length > 0) result.departmentIds = departmentIds;
   if (roles.length > 0) result.roles = roles;
-  if (filters.simulationFilters.length > 0) result.simulationFilters = filters.simulationFilters;
+  if (filters.simulationFilters.length > 0)
+    result.simulationFilters = filters.simulationFilters;
   return result;
 }
 
@@ -450,7 +454,11 @@ async function ReportsSection({
   const profileOptions =
     reportsData && "profile_options" in reportsData
       ? (reportsData.profile_options || []).map(
-          (opt: { value?: string | null; label?: string | null; count?: number | null }) => ({
+          (opt: {
+            value?: string | null;
+            label?: string | null;
+            count?: number | null;
+          }) => ({
             value: String(opt.value || ""),
             label: String(opt.label || ""),
             count: typeof opt.count === "number" ? opt.count : 0,
@@ -460,7 +468,11 @@ async function ReportsSection({
   const simulationOptions =
     reportsData && "simulation_options" in reportsData
       ? (reportsData.simulation_options || []).map(
-          (opt: { value?: string | null; label?: string | null; count?: number | null }) => ({
+          (opt: {
+            value?: string | null;
+            label?: string | null;
+            count?: number | null;
+          }) => ({
             value: String(opt.value || ""),
             label: String(opt.label || ""),
             count: typeof opt.count === "number" ? opt.count : 0,
@@ -470,7 +482,11 @@ async function ReportsSection({
   const scenarioOptions =
     reportsData && "scenario_options" in reportsData
       ? (reportsData.scenario_options || []).map(
-          (opt: { value?: string | null; label?: string | null; count?: number | null }) => ({
+          (opt: {
+            value?: string | null;
+            label?: string | null;
+            count?: number | null;
+          }) => ({
             value: String(opt.value || ""),
             label: String(opt.label || ""),
             count: typeof opt.count === "number" ? opt.count : 0,

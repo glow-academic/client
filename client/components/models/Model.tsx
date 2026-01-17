@@ -701,6 +701,22 @@ export default function Model({
     clearEntityMetadata,
   ]);
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // TODO: Implement generation logic for models
+      // For now, check if generation capability exists
+      if (modelData?.general_agent_id) {
+        // When generation is implemented, trigger it here
+        // handleGenerateResources([...]);
+        toast.info("Generation not yet implemented for models");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [modelData?.general_agent_id]);
+
   // Get units from model detail response (already included)
   // Map server units to Unit type expected by UnitCardGrid
   const units = useMemo(() => {

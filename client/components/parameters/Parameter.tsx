@@ -268,6 +268,22 @@ function ParameterComponent({
     };
   }, [urlParams.fieldSearch, urlParams.fieldShowSelected, router]);
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // TODO: Implement generation logic for parameters
+      // For now, check if generation capability exists
+      if (parameterData?.general_agent_id) {
+        // When generation is implemented, trigger it here
+        // handleGenerateResources([...]);
+        toast.info("Generation not yet implemented for parameters");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [parameterData?.general_agent_id]);
+
   // Local draft state (not in URL) - initialized from server data or draft payload
   type DraftState = {
     name: string;

@@ -12,12 +12,13 @@ from app.sql.types import (GetReportsHistoryApiRequest,
                            GetReportsOverviewApiRequest,
                            GetReportsOverviewApiResponse,
                            GetReportsOverviewSqlParams,
-                           GetReportsOverviewSqlRow, load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+                           GetReportsOverviewSqlRow,
+                           QReportsOverviewV4AttemptHistoryRow, load_sql_query)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 OVERVIEW_SQL_PATH = "app/sql/v4/reports/get_reports_overview_complete.sql"
@@ -123,8 +124,12 @@ async def get_reports(
         # Merge history data into overview response
         # Convert overview result to dict, replace history with history data
         overview_dict = overview_result.model_dump()
-        # Map history result data to overview history format (types are compatible)
-        overview_dict["history"] = history_result.data
+        # Convert history data to overview history format (types are structurally identical but Pydantic needs explicit conversion)
+        # Use model_dump(mode='json') to serialize, then validate as overview type
+        overview_dict["history"] = [
+            QReportsOverviewV4AttemptHistoryRow.model_validate(row.model_dump(mode="json"))
+            for row in (history_result.data or [])
+        ]
 
         # Convert merged result to API response
         api_response = GetReportsOverviewApiResponse.model_validate(overview_dict)

@@ -324,19 +324,6 @@ export default function Tools({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tools</h1>
-          <p className="text-muted-foreground">
-            Manage tools for teaching assistant training platform.
-          </p>
-        </div>
-        <Button onClick={() => router.push("/engine/tools/new")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Tool
-        </Button>
-      </div>
-
       {tools.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">

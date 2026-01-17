@@ -3761,7 +3761,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/reports/reports/report": {
+    "/api/v4/analytics/reports/report": {
         parameters: {
             query?: never;
             header?: never;
@@ -3774,14 +3774,14 @@ export interface paths {
          * Export Reports
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_reports_api_v4_analytics_reports_reports_report_post"];
+        post: operations["export_reports_api_v4_analytics_reports_report_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/analytics/reports/reports/list": {
+    "/api/v4/analytics/reports/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -3794,7 +3794,7 @@ export interface paths {
          * Get Reports
          * @description Get reports bundle with aggregated metrics per profile and entity mappings.
          */
-        post: operations["get_reports_api_v4_analytics_reports_reports_list_post"];
+        post: operations["get_reports_api_v4_analytics_reports_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10234,6 +10234,16 @@ export interface components {
         GetReportsOverviewApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Profile Emails */
+            profile_emails?: string[] | null;
+            /** Profile Primary Email */
+            profile_primary_email?: string | null;
+            /** Profile Role */
+            profile_role?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
             header_metrics?: components["schemas"]["QReportsOverviewV4HeaderMetrics"] | null;
             primary_metrics?: components["schemas"]["QReportsOverviewV4PrimaryMetrics"] | null;
             secondary_metrics?: components["schemas"]["QReportsOverviewV4SecondaryMetrics"] | null;
@@ -27834,7 +27844,7 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v4_analytics_reports_reports_report_post: {
+    export_reports_api_v4_analytics_reports_report_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27871,7 +27881,7 @@ export interface operations {
             };
         };
     };
-    get_reports_api_v4_analytics_reports_reports_list_post: {
+    get_reports_api_v4_analytics_reports_list_post: {
         parameters: {
             query?: never;
             header?: {

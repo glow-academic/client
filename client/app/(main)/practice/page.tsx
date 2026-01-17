@@ -28,7 +28,7 @@ type PracticeHistoryOut = OutputOf<"/api/v4/analytics/practice/list", "post">;
 const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/practice/overview", input, {
+  return api.post("/analytics/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

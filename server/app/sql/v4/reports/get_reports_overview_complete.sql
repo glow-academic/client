@@ -553,6 +553,11 @@ CREATE OR REPLACE FUNCTION api_get_reports_overview_v4(
 )
 RETURNS TABLE (
     actor_name text,
+    profile_name text,
+    profile_emails text[],
+    profile_primary_email text,
+    profile_role profile_role,
+    profile_id uuid,
     header_metrics types.q_reports_overview_v4_header_metrics,
     primary_metrics types.q_reports_overview_v4_primary_metrics,
     secondary_metrics types.q_reports_overview_v4_secondary_metrics,
@@ -588,6 +593,27 @@ user_profile AS (
         ) as actor_name
     FROM profile_artifact
     WHERE id = (SELECT profile_id FROM params)
+),
+-- Get profile data (name, emails, role) for the target profile
+profile_data AS (
+    SELECT 
+        pa.id as profile_id,
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = pa.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = pa.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as profile_name,
+        ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true AND e.email IS NOT NULL) as profile_emails,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = pa.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as profile_primary_email,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = pa.id 
+         LIMIT 1) as profile_role
+    FROM params x
+    JOIN profile_artifact pa ON pa.id = x.profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = pa.id AND pe.active = true
+    LEFT JOIN emails_resource e ON pe.email_id = e.id
+    GROUP BY pa.id
 ),
 -- Get thresholds from active settings (defaults if no settings found)
 settings_thresholds AS (
@@ -2115,6 +2141,11 @@ filt AS (
             )
 SELECT
     (SELECT actor_name FROM user_profile)::text as actor_name,
+    (SELECT profile_name FROM profile_data LIMIT 1)::text as profile_name,
+    (SELECT profile_emails FROM profile_data LIMIT 1)::text[] as profile_emails,
+    (SELECT profile_primary_email FROM profile_data LIMIT 1)::text as profile_primary_email,
+    (SELECT profile_role FROM profile_data LIMIT 1)::profile_role as profile_role,
+    (SELECT profile_id FROM profile_data LIMIT 1)::uuid as profile_id,
     (SELECT header_metrics FROM header_metrics_combined LIMIT 1) as header_metrics,
     (SELECT primary_metrics FROM primary_metrics_combined LIMIT 1) as primary_metrics,
     (SELECT secondary_metrics FROM secondary_metrics_combined LIMIT 1) as secondary_metrics,

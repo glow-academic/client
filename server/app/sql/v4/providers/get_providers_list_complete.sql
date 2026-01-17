@@ -81,20 +81,33 @@ user_profile AS (
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 provider_data AS (
-    -- Providers is now an enum, not a table - return empty results
     SELECT 
-        NULL::uuid as provider_id,
-        NULL::text as name,
-        NULL::text as description,
-        NULL::text as value,
-        false::boolean as active,
-        NULL::timestamptz as created_at,
-        NULL::timestamptz as updated_at,
+        pr.id as provider_id,
+        n.name as name,
+        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
+        n.name as value,
+        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'active' AND pf.value = TRUE) as active,
+        p.created_at,
+        p.updated_at,
         ''::text as base_url,
-        false::boolean as can_edit,
-        false::boolean as can_delete,
-        false::boolean as can_duplicate
-    WHERE false  -- Always return no rows
+        CASE 
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            ELSE false
+        END as can_edit,
+        CASE 
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            ELSE false
+        END as can_delete,
+        CASE 
+            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            ELSE false
+        END as can_duplicate
+    FROM providers_resource p
+    JOIN provider_artifact pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names_resource n ON n.id = pn.name_id
+    CROSS JOIN user_profile up
+    WHERE p.active = true
 ),
 providers_agg AS (
     SELECT 

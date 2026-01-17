@@ -1308,6 +1308,28 @@ export default function Rubric({
     setDraftState,
   ]);
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // Check if generation is available (rubric has domain_id and standards)
+      if (
+        draftState.rubricDomainId &&
+        draftState.standardGroups.length > 0 &&
+        draftState.standards.length > 0
+      ) {
+        handleGenerateRubric();
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [
+    draftState.rubricDomainId,
+    draftState.standardGroups.length,
+    draftState.standards.length,
+    handleGenerateRubric,
+  ]);
+
   // Group level names by uniqueness for column headers
   const levelNameGroups = useMemo(() => {
     const nameMap = new Map<

@@ -29,7 +29,7 @@ type HomeHistoryOut = OutputOf<"/api/v4/analytics/home/list", "post">;
 const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/home/overview", input, {
+  return api.post("/analytics/home/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

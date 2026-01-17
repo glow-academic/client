@@ -76,9 +76,9 @@ export default function Evals({
   const evalsData = serverListData;
 
   // Extract data from response - ensure it's always an array
-  const [evalsList, setEvalsList] = useState<NonNullable<EvalsListOut["evals"]>>(
-    Array.isArray(evalsData?.evals) ? evalsData.evals : [],
-  );
+  const [evalsList, setEvalsList] = useState<
+    NonNullable<EvalsListOut["evals"]>
+  >(Array.isArray(evalsData?.evals) ? evalsData.evals : []);
 
   useEffect(() => {
     const evalsArray = Array.isArray(evalsData?.evals) ? evalsData.evals : [];
@@ -94,7 +94,7 @@ export default function Evals({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [evalsData?.agent_options],
+    [evalsData?.agent_options]
   );
 
   // WebSocket integration for real-time status updates
@@ -113,8 +113,8 @@ export default function Evals({
         (prev || []).map((evalItem) =>
           evalItem.eval_id === data.eval_id
             ? { ...evalItem, status: data.status }
-            : evalItem,
-        ),
+            : evalItem
+        )
       );
     };
 
@@ -126,8 +126,8 @@ export default function Evals({
         (prev || []).map((evalItem) =>
           evalItem.eval_id === data.eval_id
             ? { ...evalItem, status: "completed" }
-            : evalItem,
-        ),
+            : evalItem
+        )
       );
     };
 
@@ -140,8 +140,8 @@ export default function Evals({
         (prev || []).map((evalItem) =>
           evalItem.eval_id === data.eval_id
             ? { ...evalItem, status: data.success ? "completed" : "pending" }
-            : evalItem,
-        ),
+            : evalItem
+        )
       );
     };
 
@@ -185,6 +185,17 @@ export default function Evals({
         accessorKey: "name",
         header: "Name",
       },
+      // Hidden column for sorting by updated_at
+      {
+        id: "updated_at",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: true,
+        accessorFn: (row: (typeof evalsListArray)[number]) => {
+          return row.updated_at ?? null;
+        },
+      },
       // Hidden faceting column for Agent (single ID)
       {
         id: "agent_id",
@@ -194,7 +205,9 @@ export default function Evals({
         enableSorting: false,
         accessorFn: (row: (typeof evalsListArray)[number]) => {
           const agentIds = row.agent_ids;
-          return Array.isArray(agentIds) && agentIds.length > 0 ? agentIds[0] ?? "" : "";
+          return Array.isArray(agentIds) && agentIds.length > 0
+            ? (agentIds[0] ?? "")
+            : "";
         },
         filterFn: (row, _id, value: string[]) => {
           const rowId = row.getValue("agent_id") as string;
@@ -204,7 +217,7 @@ export default function Evals({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -243,7 +256,13 @@ export default function Evals({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, evalsListArray.length, pageIndex, pageSize]);
+  }, [
+    sortingKey,
+    columnFiltersKey,
+    evalsListArray.length,
+    pageIndex,
+    pageSize,
+  ]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -276,69 +295,69 @@ export default function Evals({
     const evalId = evalItem.eval_id ?? "";
     const evalName = evalItem.name ?? "";
     const evalStatus = evalItem.status ?? "";
-    
+
     if (!evalId) return null;
-    
+
     return (
-    <Card
-      key={evalId}
-      className="hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => router.push(`/system/evals/e/${evalId}`)}
-      data-testid="eval-card"
-      data-eval-id={evalId}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{evalName}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {evalItem.description ?? ""}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              {getStatusBadge(evalStatus)}
-              <Badge variant="outline">
-                {evalItem.total_runs}{" "}
-                {evalItem.total_runs === 1 ? "run" : "runs"}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {evalItem.rubric_name}
-              </Badge>
+      <Card
+        key={evalId}
+        className="hover:shadow-md transition-shadow cursor-pointer"
+        onClick={() => router.push(`/system/evals/e/${evalId}`)}
+        data-testid="eval-card"
+        data-eval-id={evalId}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg truncate">{evalName}</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                {evalItem.description ?? ""}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {getStatusBadge(evalStatus)}
+                <Badge variant="outline">
+                  {evalItem.total_runs}{" "}
+                  {evalItem.total_runs === 1 ? "run" : "runs"}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {evalItem.rubric_name}
+                </Badge>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                const evalId = evalItem.eval_id ?? "";
-                if (evalId) router.push(`/system/evals/e/${evalId}`);
-              }}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              View
-            </Button>
-            {evalItem.can_delete && deleteEvalAction && (
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   const evalId = evalItem.eval_id ?? "";
-                  const evalName = evalItem.name ?? "";
-                  if (evalId) {
-                    setDeleteItem({ id: evalId, name: evalName });
-                    setShowDeleteDialog(true);
-                  }
+                  if (evalId) router.push(`/system/evals/e/${evalId}`);
                 }}
               >
-                <Trash2 className="h-4 w-4" />
+                <Eye className="h-4 w-4 mr-2" />
+                View
               </Button>
-            )}
+              {evalItem.can_delete && deleteEvalAction && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const evalId = evalItem.eval_id ?? "";
+                    const evalName = evalItem.name ?? "";
+                    if (evalId) {
+                      setDeleteItem({ id: evalId, name: evalName });
+                      setShowDeleteDialog(true);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </CardHeader>
-    </Card>
+        </CardHeader>
+      </Card>
     );
   };
 

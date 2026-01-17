@@ -315,6 +315,24 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/settings") {
+      return (
+        <Button onClick={() => router.push("/settings/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Setting
+        </Button>
+      );
+    }
+
+    if (pathname === "/engine/tools") {
+      return (
+        <Button onClick={() => router.push("/engine/tools/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Tool
+        </Button>
+      );
+    }
+
     // Practice page customize button
     if (pathname === "/practice") {
       return <PracticeCustomizeButton />;

@@ -40,7 +40,7 @@ const getDashboardOverview = async (
   const bypassCache = await isHardRefresh();
 
   // InputOf types have body property with snake_case fields
-  return api.post("/analytics/dashboard/overview", input, {
+  return api.post("/analytics/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

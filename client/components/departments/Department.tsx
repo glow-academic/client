@@ -270,6 +270,22 @@ function DepartmentComponent({
     }
   }, [draftId, selectedDraftId, setSelectedDraftId]);
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // TODO: Implement generation logic for departments
+      // For now, check if generation capability exists
+      if (departmentData?.general_agent_id) {
+        // When generation is implemented, trigger it here
+        // handleGenerateResources([...]);
+        toast.info("Generation not yet implemented for departments");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [departmentData?.general_agent_id]);
+
   // Use ref to stabilize patchDepartmentDraftAction to prevent effect recreation when prop reference changes
   const patchDepartmentDraftActionRef = React.useRef(patchDepartmentDraftAction);
   React.useEffect(() => {

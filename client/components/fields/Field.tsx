@@ -130,6 +130,22 @@ export default function Field({
 
   const fieldData = stableFieldDataRef.current.data;
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // TODO: Implement generation logic for fields
+      // For now, check if generation capability exists
+      if (fieldData?.general_agent_id) {
+        // When generation is implemented, trigger it here
+        // handleGenerateResources([...]);
+        toast.info("Generation not yet implemented for fields");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [fieldData?.general_agent_id]);
+
   // Get valid options from server data
   const validDepartmentIds = useMemo(() => {
     return fieldData?.valid_department_ids || [];

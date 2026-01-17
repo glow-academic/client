@@ -515,6 +515,20 @@ function ProviderComponent({
     [handleGenerateResources]
   );
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // Check if generation is available (provider has generation capability)
+      if (providerData?.general_agent_id) {
+        // Generate all available resources
+        handleGenerateResources(["names", "descriptions", "flags"]);
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [providerData?.general_agent_id, handleGenerateResources]);
+
   // Disabled logic based on can_edit flag - check in both new and edit modes
   const disabled = useMemo(() => {
     if (!providerData) return false;

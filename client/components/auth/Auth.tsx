@@ -226,6 +226,23 @@ function AuthComponent({
 
   const draftId = urlDraftId;
 
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // TODO: Implement generation logic for auth
+      // For now, check if generation capability exists
+      const authData = isEditMode ? authDetail : authDetailDefault;
+      if (authData?.general_agent_id) {
+        // When generation is implemented, trigger it here
+        // handleGenerateResources([...]);
+        toast.info("Generation not yet implemented for auth");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [isEditMode, authDetail?.general_agent_id, authDetailDefault?.general_agent_id]);
+
   // Local draft state (not in URL) - initialized from server data or draft payload
   type DraftState = {
     name: string;

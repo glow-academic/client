@@ -49,7 +49,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/benchmark/overview", input, {
+  return api.post("/analytics/benchmark/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

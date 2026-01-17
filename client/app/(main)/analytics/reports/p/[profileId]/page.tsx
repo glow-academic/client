@@ -16,37 +16,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
-// Keep old types for backward compatibility during migration
-type ProfileDetailIn = InputOf<"/api/v4/profile/detail", "post">;
-type ProfileDetailOut = OutputOf<"/api/v4/profile/detail", "post">;
 type ReportsOverviewIn = InputOf<"/api/v4/analytics/reports/get", "post">;
 type ReportsOverviewOut = OutputOf<"/api/v4/analytics/reports/get", "post">;
-type ReportsHistoryIn = InputOf<"/api/v4/analytics/reports/get", "post">;
-type ReportsHistoryOut = OutputOf<"/api/v4/analytics/reports/get", "post">;
-
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- * Uses unified get endpoint.
- */
-const getProfileDetail = async (
-  _profileId: string,
-  input: ProfileDetailIn
-): Promise<GetProfileOut> => {
-  // Convert to unified get endpoint format
-  const getInput: GetProfileIn = {
-    body: {
-      target_profile_id: input.body.target_profile_id,
-    },
-  };
-  return api.post("/profiles/get", getInput, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports overview responses exceed Next.js 2MB cache limit (~12.9MB).
@@ -56,26 +27,6 @@ const getProfileDetail = async (
 const getReportsOverview = async (
   input: ReportsOverviewIn
 ): Promise<ReportsOverviewOut> => {
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/analytics/reports/get", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-/** ---- Direct fetch (no Next.js cache) ----
- * Reports history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getReportsHistory = async (
-  input: ReportsHistoryIn
-): Promise<ReportsHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
   return api.post("/analytics/reports/get", input, {
@@ -165,12 +116,39 @@ export async function generateMetadata(
   const { profileId } = await params;
 
   try {
-    const profileData = await getProfileDetail(profileId, {
-      body: {
-        target_profile_id: profileId,
-      },
+    // Get profile data from reports endpoint instead of separate profile endpoint
+    const profileContext = await getLayoutContext({
+      body: {},
     });
-    const name = profileData.name || "";
+
+    // Compute startDate using same logic as analytics context
+    let startDate: Date;
+    if (profileContext.earliest_attempt_date) {
+      startDate = new Date(profileContext.earliest_attempt_date);
+      startDate.setHours(0, 0, 0, 0);
+    } else {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    const reportsData = await getReportsOverview({
+      body: {
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        cohort_ids: profileContext.cohort_ids || [],
+        department_ids: profileContext.department_ids || [],
+        roles: profileContext.scoped_roles || [],
+        simulation_filters: ["general"],
+        profile_id: profileId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+    });
+
+    const name = reportsData.profile_name || "";
     const firstName = name.split(" ")[0] || "";
     const lastName = name.split(" ").slice(1).join(" ") || "";
     return {
@@ -224,7 +202,8 @@ export default async function ReportsPage({
     roles: defaultFilters.roles,
     simulation_filters: defaultFilters.simulation_filters,
     profile_id: profileId, // Required for reports overview (snake_case for API)
-  };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
 
   // Extract pagination and filter params from search params for history
   const historyPage = searchParamsObj.get("historyPage")
@@ -280,17 +259,18 @@ export default async function ReportsPage({
     ).simulation_filters?.join(",") || "general",
   ].join("|");
 
-  // Fetch profile detail and reports overview data server-side
-  const [profileData, reportsData] = await Promise.all([
-    getProfileDetail(profileId, {
-      body: {
-        target_profile_id: profileId,
-      },
-    }),
-    getReportsOverview({
-      body: reportsFilters,
-    }),
-  ]);
+  // Fetch reports overview data server-side (includes profile data)
+  const reportsData = await getReportsOverview({
+    body: reportsFilters,
+  });
+
+  // Extract profile data from reports response (Report component only needs name, emails, role)
+  const profileData = {
+    name: reportsData.profile_name || null,
+    emails: reportsData.profile_emails || null,
+    primary_email: reportsData.profile_primary_email || null,
+    role: reportsData.profile_role || null,
+  };
 
   return (
     <div className="space-y-6">
@@ -330,17 +310,8 @@ export default async function ReportsPage({
           }
         >
           <ReportHistorySection
+            reportsData={reportsData}
             defaultFilters={defaultFilters}
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historyProfileIds={historyProfileIds}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-            profileId={profileId}
           />
         </Suspense>
       </div>
@@ -350,18 +321,10 @@ export default async function ReportsPage({
 
 /** ---- Inline history section component (only used here) ---- */
 async function ReportHistorySection({
+  reportsData,
   defaultFilters,
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historyProfileIds: _historyProfileIds,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
-  profileId,
 }: {
+  reportsData: ReportsOverviewOut;
   defaultFilters: {
     start_date: string;
     end_date: string;
@@ -370,84 +333,18 @@ async function ReportHistorySection({
     roles: string[];
     simulation_filters: string[];
   };
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historyProfileIds?: string[] | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-  profileId: string;
 }) {
-  // Build history filters - profileId is required for reports history (snake_case for API)
-  const historyFilters: ReportsHistoryIn = {
-    body: {
-      profile_ids: [profileId], // Required for reports history
-      start_date: defaultFilters.start_date,
-      end_date: defaultFilters.end_date,
-      cohort_ids: defaultFilters.cohort_ids,
-      department_ids: defaultFilters.department_ids,
-      roles: defaultFilters.roles,
-      simulation_filters: ["general", "practice", "archived"], // Show all types
-      page: historyPage,
-      page_size: historyPageSize,
-      ...(historySearch && { search: historySearch }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulation_ids: historySimulationIds,
-        }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          scenario_ids: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        infinite_mode: historyInfiniteMode,
-      }),
-      sort_by: historySortBy,
-      sort_order: historySortOrder,
-    },
-  };
-
-  const historyData = await getReportsHistory(historyFilters);
-
-  // Extract options from API response and cast to expected format (snake_case from server)
-  const profileOptions = (historyData.profile_options || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-  const simulationOptions = (historyData.simulation_options || []).map(
-    (opt) => {
-      const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-      return {
-        value: String(opt["value"] || ""),
-        label: String(opt["label"] || ""),
-        ...(count !== undefined && { count }),
-      };
-    }
-  );
-  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
+  // Use embedded history from reports overview response
+  const history = reportsData.history || [];
 
   return (
     <SimulationHistory
-      data={historyData.data || []}
-      totalCount={historyData.total_count || 0}
-      archivedCount={historyData.archived_count || 0}
-      unarchivedCount={historyData.unarchived_count || 0}
-      pageIndex={historyPage}
-      pageSize={historyPageSize}
+      data={history}
+      totalCount={history.length}
+      archivedCount={0}
+      unarchivedCount={history.length}
+      pageIndex={0}
+      pageSize={history.length}
       showExport={false}
       showArchive={false}
       singleProfile={true}
@@ -458,24 +355,12 @@ async function ReportHistorySection({
         departmentIds: defaultFilters.department_ids,
         roles: defaultFilters.roles,
       }}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
+      profileOptions={[]}
+      simulationOptions={[]}
+      scenarioOptions={[]}
     />
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  GetProfileIn,
-  GetProfileOut,
-  ProfileDetailIn,
-  ProfileDetailOut,
-  ReportsHistoryIn,
-  ReportsHistoryOut,
-  ReportsOverviewIn,
-  ReportsOverviewOut,
-};
-
-// Export ProfileItem type derived from server response
-export type ProfileItem = GetProfileOut;
+export type { ReportsOverviewIn, ReportsOverviewOut };
