@@ -11,10 +11,10 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAuthIn = InputOf<"/api/v4/auth/get", "post">;
-type GetAuthOut = OutputOf<"/api/v4/auth/get", "post">;
-type SaveAuthIn = InputOf<"/api/v4/auth/save", "post">;
-type SaveAuthOut = OutputOf<"/api/v4/auth/save", "post">;
+type GetAuthIn = InputOf<"/api/v4/auths/get", "post">;
+type GetAuthOut = OutputOf<"/api/v4/auths/get", "post">;
+type SaveAuthIn = InputOf<"/api/v4/auths/save", "post">;
+type SaveAuthOut = OutputOf<"/api/v4/auths/save", "post">;
 type PatchAuthDraftIn = InputOf<"/api/v4/auth/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/api/v4/auth/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
@@ -38,7 +38,7 @@ type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
-  return api.post("/auth/get", input, {
+  return api.post("/auths/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -81,7 +81,7 @@ async function saveAuth(input: SaveAuthIn): Promise<SaveAuthOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/save", input);
+  return api.post("/auths/save", input);
 }
 
 async function patchAuthDraft(
@@ -180,7 +180,7 @@ export default async function AuthEditPage({
           authId={authId}
           authData={authData}
           saveAuthAction={saveAuth}
-          patchAuthDraftAction={patchAuthDraft}
+          patchAuthDraftAction={undefined}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
           createFlagsAction={createDraftFlags}

@@ -453,81 +453,235 @@ copy_setting_auth_values_fallback AS (
         value = EXCLUDED.value,
         updated_at = NOW()
 ),
-copy_setting_default_account AS (
-    -- Copy default admin account from old settings to new (if not provided)
-    INSERT INTO settings_default_account (settings_id, profile_id, active, created_at, updated_at)
+old_admin_account_data AS (
+    -- Get admin account data from old settings
     SELECT 
-        (SELECT settings_id FROM insert_new LIMIT 1),
-        sda.profile_id,
-        CASE WHEN (SELECT default_admin_profile_id FROM params) IS NULL THEN sda.active ELSE false END,
-        NOW(),
-        NOW()
+        dar_old.profile_id,
+        dar_old.active,
+        dar_old.generated,
+        dar_old.mcp,
+        dar_old.call_id,
+        dar_old.group_id,
+        sda_old.active as junction_active
     FROM old_settings_id osi
-    CROSS JOIN settings_default_account sda
+    JOIN setting_default_accounts sda_old ON sda_old.setting_id = osi.old_id
+    JOIN default_accounts_resource dar_old ON dar_old.id = sda_old.default_account_id
     JOIN params x ON x.default_admin_profile_id IS NULL
-    WHERE sda.settings_id = osi.old_id AND sda.active = true
-    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        updated_at = NOW()
+    WHERE dar_old.type = 'admin'::default_account_type AND sda_old.active = true
+    LIMIT 1
+),
+find_existing_admin_resource AS (
+    SELECT dar_existing.id as default_account_id, oaad.junction_active, oaad.generated, oaad.mcp
+    FROM old_admin_account_data oaad
+    LEFT JOIN default_accounts_resource dar_existing ON dar_existing.profile_id = oaad.profile_id 
+        AND dar_existing.type = 'admin'::default_account_type
+),
+create_admin_resource_if_needed AS (
+    INSERT INTO default_accounts_resource (profile_id, type, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    SELECT oaad.profile_id, 'admin'::default_account_type, oaad.active, oaad.generated, oaad.mcp, oaad.call_id, oaad.group_id, NOW(), NOW()
+    FROM old_admin_account_data oaad
+    WHERE NOT EXISTS (SELECT 1 FROM find_existing_admin_resource WHERE default_account_id IS NOT NULL)
+    RETURNING id as default_account_id
+),
+get_admin_resource_id AS (
+    SELECT COALESCE(fear.default_account_id, car.default_account_id) as default_account_id,
+           COALESCE(fear.junction_active, oaad.junction_active) as junction_active,
+           COALESCE(fear.generated, oaad.generated) as generated,
+           COALESCE(fear.mcp, oaad.mcp) as mcp
+    FROM old_admin_account_data oaad
+    LEFT JOIN find_existing_admin_resource fear ON true
+    LEFT JOIN create_admin_resource_if_needed car ON true
+    LIMIT 1
+),
+copy_setting_default_account AS (
+    INSERT INTO setting_default_accounts (setting_id, default_account_id, active, created_at, updated_at, generated, mcp)
+    SELECT (SELECT settings_id FROM insert_new LIMIT 1), garid.default_account_id,
+           CASE WHEN (SELECT default_admin_profile_id FROM params) IS NULL THEN garid.junction_active ELSE false END,
+           NOW(), NOW(), garid.generated, garid.mcp
+    FROM get_admin_resource_id garid
+    WHERE garid.default_account_id IS NOT NULL
+    ON CONFLICT (setting_id, default_account_id) DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
+),
+old_guest_account_data AS (
+    SELECT dar_old.profile_id, dar_old.active, dar_old.generated, dar_old.mcp, dar_old.call_id, dar_old.group_id, sda_old.active as junction_active
+    FROM old_settings_id osi
+    JOIN setting_default_accounts sda_old ON sda_old.setting_id = osi.old_id
+    JOIN default_accounts_resource dar_old ON dar_old.id = sda_old.default_account_id
+    JOIN params x ON x.default_guest_profile_id IS NULL
+    WHERE dar_old.type = 'guest'::default_account_type AND sda_old.active = true
+    LIMIT 1
+),
+find_existing_guest_resource AS (
+    SELECT dar_existing.id as default_account_id, ogad.junction_active, ogad.generated, ogad.mcp
+    FROM old_guest_account_data ogad
+    LEFT JOIN default_accounts_resource dar_existing ON dar_existing.profile_id = ogad.profile_id 
+        AND dar_existing.type = 'guest'::default_account_type
+),
+create_guest_resource_if_needed AS (
+    INSERT INTO default_accounts_resource (profile_id, type, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    SELECT ogad.profile_id, 'guest'::default_account_type, ogad.active, ogad.generated, ogad.mcp, ogad.call_id, ogad.group_id, NOW(), NOW()
+    FROM old_guest_account_data ogad
+    WHERE NOT EXISTS (SELECT 1 FROM find_existing_guest_resource WHERE default_account_id IS NOT NULL)
+    RETURNING id as default_account_id
+),
+get_guest_resource_id AS (
+    SELECT COALESCE(fegr.default_account_id, cgr.default_account_id) as default_account_id,
+           COALESCE(fegr.junction_active, ogad.junction_active) as junction_active,
+           COALESCE(fegr.generated, ogad.generated) as generated,
+           COALESCE(fegr.mcp, ogad.mcp) as mcp
+    FROM old_guest_account_data ogad
+    LEFT JOIN find_existing_guest_resource fegr ON true
+    LEFT JOIN create_guest_resource_if_needed cgr ON true
+    LIMIT 1
 ),
 copy_setting_default_guest AS (
-    -- Copy default guest account from old settings to new (if not provided)
-    INSERT INTO settings_default_guest (settings_id, profile_id, active, created_at, updated_at)
-    SELECT 
-        (SELECT settings_id FROM insert_new LIMIT 1),
-        sdg.profile_id,
-        CASE WHEN (SELECT default_guest_profile_id FROM params) IS NULL THEN sdg.active ELSE false END,
-        NOW(),
-        NOW()
-    FROM old_settings_id osi
-    CROSS JOIN settings_default_guest sdg
-    JOIN params x ON x.default_guest_profile_id IS NULL
-    WHERE sdg.settings_id = osi.old_id AND sdg.active = true
-    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        updated_at = NOW()
+    INSERT INTO setting_default_accounts (setting_id, default_account_id, active, created_at, updated_at, generated, mcp)
+    SELECT (SELECT settings_id FROM insert_new LIMIT 1), grid.default_account_id,
+           CASE WHEN (SELECT default_guest_profile_id FROM params) IS NULL THEN grid.junction_active ELSE false END,
+           NOW(), NOW(), grid.generated, grid.mcp
+    FROM get_guest_resource_id grid
+    WHERE grid.default_account_id IS NOT NULL
+    ON CONFLICT (setting_id, default_account_id) DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
 ),
 apply_default_admin_account AS (
     -- Apply new default admin account (deactivate old, activate new)
-    UPDATE settings_default_account
+    UPDATE setting_default_accounts
     SET active = false, updated_at = NOW()
-    WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)
+    WHERE setting_id = (SELECT settings_id FROM insert_new LIMIT 1)
+      AND default_account_id IN (
+          SELECT dar.id FROM default_accounts_resource dar
+          WHERE dar.type = 'admin'::default_account_type
+      )
       AND (SELECT default_admin_profile_id FROM params) IS NOT NULL
+),
+new_admin_account_data AS (
+    -- Get new admin account profile_id from params
+    SELECT 
+        x.default_admin_profile_id as profile_id,
+        (SELECT group_id FROM setting_artifact WHERE id = (SELECT settings_id FROM insert_new LIMIT 1)) as group_id
+    FROM params x
+    WHERE x.default_admin_profile_id IS NOT NULL
+    LIMIT 1
+),
+find_existing_new_admin_resource AS (
+    -- Try to find existing default_accounts_resource
+    SELECT 
+        dar_existing.id as default_account_id
+    FROM new_admin_account_data naad
+    LEFT JOIN default_accounts_resource dar_existing ON dar_existing.profile_id = naad.profile_id 
+        AND dar_existing.type = 'admin'::default_account_type
+),
+create_new_admin_resource_if_needed AS (
+    -- Create default_accounts_resource if it doesn't exist
+    INSERT INTO default_accounts_resource (profile_id, type, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    SELECT 
+        naad.profile_id,
+        'admin'::default_account_type,
+        true,
+        false,
+        false,
+        (SELECT id FROM calls LIMIT 1), -- Placeholder call_id
+        naad.group_id,
+        NOW(),
+        NOW()
+    FROM new_admin_account_data naad
+    WHERE NOT EXISTS (SELECT 1 FROM find_existing_new_admin_resource WHERE default_account_id IS NOT NULL)
+    RETURNING id as default_account_id
+),
+get_new_admin_resource_id AS (
+    -- Get the resource ID (either existing or newly created)
+    SELECT 
+        COALESCE(fenar.default_account_id, cnar.default_account_id) as default_account_id
+    FROM new_admin_account_data naad
+    LEFT JOIN find_existing_new_admin_resource fenar ON true
+    LEFT JOIN create_new_admin_resource_if_needed cnar ON true
+    LIMIT 1
 ),
 insert_default_admin_account AS (
     -- Insert new default admin account
-    INSERT INTO settings_default_account (settings_id, profile_id, active, created_at, updated_at)
+    INSERT INTO setting_default_accounts (setting_id, default_account_id, active, created_at, updated_at, generated, mcp)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1),
-        default_admin_profile_id,
+        gnari.default_account_id,
         true,
         NOW(),
-        NOW()
-    FROM params
-    WHERE default_admin_profile_id IS NOT NULL
-    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
+        NOW(),
+        false,
+        false
+    FROM get_new_admin_resource_id gnari
+    WHERE gnari.default_account_id IS NOT NULL
+    ON CONFLICT (setting_id, default_account_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 apply_default_guest_account AS (
     -- Apply new default guest account (deactivate old, activate new)
-    UPDATE settings_default_guest
+    UPDATE setting_default_accounts
     SET active = false, updated_at = NOW()
-    WHERE settings_id = (SELECT settings_id FROM insert_new LIMIT 1)
+    WHERE setting_id = (SELECT settings_id FROM insert_new LIMIT 1)
+      AND default_account_id IN (
+          SELECT dar.id FROM default_accounts_resource dar
+          WHERE dar.type = 'guest'::default_account_type
+      )
       AND (SELECT default_guest_profile_id FROM params) IS NOT NULL
+),
+new_guest_account_data AS (
+    -- Get new guest account profile_id from params
+    SELECT 
+        x.default_guest_profile_id as profile_id,
+        (SELECT group_id FROM setting_artifact WHERE id = (SELECT settings_id FROM insert_new LIMIT 1)) as group_id
+    FROM params x
+    WHERE x.default_guest_profile_id IS NOT NULL
+    LIMIT 1
+),
+find_existing_new_guest_resource AS (
+    -- Try to find existing default_accounts_resource
+    SELECT 
+        dar_existing.id as default_account_id
+    FROM new_guest_account_data ngad
+    LEFT JOIN default_accounts_resource dar_existing ON dar_existing.profile_id = ngad.profile_id 
+        AND dar_existing.type = 'guest'::default_account_type
+),
+create_new_guest_resource_if_needed AS (
+    -- Create default_accounts_resource if it doesn't exist
+    INSERT INTO default_accounts_resource (profile_id, type, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    SELECT 
+        ngad.profile_id,
+        'guest'::default_account_type,
+        true,
+        false,
+        false,
+        (SELECT id FROM calls LIMIT 1), -- Placeholder call_id
+        ngad.group_id,
+        NOW(),
+        NOW()
+    FROM new_guest_account_data ngad
+    WHERE NOT EXISTS (SELECT 1 FROM find_existing_new_guest_resource WHERE default_account_id IS NOT NULL)
+    RETURNING id as default_account_id
+),
+get_new_guest_resource_id AS (
+    -- Get the resource ID (either existing or newly created)
+    SELECT 
+        COALESCE(fengr.default_account_id, cngr.default_account_id) as default_account_id
+    FROM new_guest_account_data ngad
+    LEFT JOIN find_existing_new_guest_resource fengr ON true
+    LEFT JOIN create_new_guest_resource_if_needed cngr ON true
+    LIMIT 1
 ),
 insert_default_guest_account AS (
     -- Insert new default guest account
-    INSERT INTO settings_default_guest (settings_id, profile_id, active, created_at, updated_at)
+    INSERT INTO setting_default_accounts (setting_id, default_account_id, active, created_at, updated_at, generated, mcp)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1),
-        default_guest_profile_id,
+        gngri.default_account_id,
         true,
         NOW(),
-        NOW()
-    FROM params
-    WHERE default_guest_profile_id IS NOT NULL
-    ON CONFLICT (settings_id, profile_id) DO UPDATE SET
+        NOW(),
+        false,
+        false
+    FROM get_new_guest_resource_id gngri
+    WHERE gngri.default_account_id IS NOT NULL
+    ON CONFLICT (setting_id, default_account_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

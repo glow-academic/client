@@ -32,8 +32,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveAuthIn = InputOf<"/api/v4/auth/save", "post">;
-type SaveAuthOut = OutputOf<"/api/v4/auth/save", "post">;
+type SaveAuthIn = InputOf<"/api/v4/auths/save", "post">;
+type SaveAuthOut = OutputOf<"/api/v4/auths/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -53,7 +53,7 @@ type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
 type PatchAuthDraftIn = InputOf<"/api/v4/auth/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/api/v4/auth/draft", "patch">;
 
-type AuthData = OutputOf<"/api/v4/auth/get", "post">;
+type AuthData = OutputOf<"/api/v4/auths/get", "post">;
 
 export interface NewAuthProps {
   authId?: string;

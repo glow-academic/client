@@ -94,7 +94,9 @@ async function patchDepartmentDraft(
 ): Promise<PatchDepartmentDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/departments/draft", input);
+  // TODO: Investigate - departments/draft endpoint doesn't exist on server
+  throw new Error("departments/draft endpoint doesn't exist on server");
+  // return api.patch("/departments/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

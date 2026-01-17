@@ -13,17 +13,11 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterDetailIn = InputOf<"/api/v4/parameters/detail", "post">;
-type ParameterDetailOut = OutputOf<"/api/v4/parameters/detail", "post">;
+type ParameterGetIn = InputOf<"/api/v4/parameters/get", "post">;
+type ParameterGetOut = OutputOf<"/api/v4/parameters/get", "post">;
 
-type ParameterNewIn = InputOf<"/api/v4/parameters/new", "post">;
-type ParameterNewOut = OutputOf<"/api/v4/parameters/new", "post">;
-
-type CreateParameterIn = InputOf<"/api/v4/parameters/create", "post">;
-type CreateParameterOut = OutputOf<"/api/v4/parameters/create", "post">;
-
-type UpdateParameterIn = InputOf<"/api/v4/parameters/update", "post">;
-type UpdateParameterOut = OutputOf<"/api/v4/parameters/update", "post">;
+type SaveParameterIn = InputOf<"/api/v4/parameters/save", "post">;
+type SaveParameterOut = OutputOf<"/api/v4/parameters/save", "post">;
 
 type PatchParameterDraftIn = InputOf<"/api/v4/parameters/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
@@ -32,9 +26,9 @@ type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getParameter = async (
-  input: ParameterDetailIn
-): Promise<ParameterDetailOut> => {
-  return api.post("/parameters/detail", input, {
+  input: ParameterGetIn
+): Promise<ParameterGetOut> => {
+  return api.post("/parameters/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -50,11 +44,11 @@ export async function generateMetadata(
   const { parameterId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: ParameterDetailIn = {
+    const input: ParameterGetIn = {
       body: {
         parameter_id: parameterId,
         draft_id: null,
-      } as ParameterDetailIn["body"],
+      } as ParameterGetIn["body"],
     };
     const parameter = await getParameter(input);
     return {
@@ -73,21 +67,11 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createParameter(
-  input: CreateParameterIn
-): Promise<CreateParameterOut> {
+async function saveParameter(
+  input: SaveParameterIn
+): Promise<SaveParameterOut> {
   "use server";
-  return api.post("/parameters/create", {
-    ...input,
-    body: { ...input.body },
-  });
-}
-
-async function updateParameter(
-  input: UpdateParameterIn
-): Promise<UpdateParameterOut> {
-  "use server";
-  return api.post("/parameters/update", input);
+  return api.post("/parameters/save", input);
 }
 
 async function patchParameterDraft(
@@ -95,7 +79,9 @@ async function patchParameterDraft(
 ): Promise<PatchParameterDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/parameters/draft", input);
+  // TODO: Investigate - parameters/draft endpoint doesn't exist on server
+  throw new Error("parameters/draft endpoint doesn't exist on server");
+  // return api.patch("/parameters/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -133,11 +119,11 @@ export default async function ParameterEditPage({
 
   // Fetch parameter detail (always fresh - source of truth) with filter params
   try {
-    const input: ParameterDetailIn = {
+    const input: ParameterGetIn = {
       body: {
         parameter_id: parameterId,
         draft_id: q.draftId ?? null,
-      } as ParameterDetailIn["body"],
+      } as ParameterGetIn["body"],
     };
     const parameterDetail = await getParameter(input);
 
@@ -151,8 +137,7 @@ export default async function ParameterEditPage({
           parameterId={parameterId}
           mode="edit"
           parameterDetail={parameterDetail}
-          createParameterAction={createParameter}
-          updateParameterAction={updateParameter}
+          saveParameterAction={saveParameter}
           patchParameterDraftAction={patchParameterDraft}
         />
       </div>
@@ -180,14 +165,10 @@ export default async function ParameterEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateParameterIn,
-  CreateParameterOut,
   PatchParameterDraftIn,
   PatchParameterDraftOut,
-  ParameterDetailIn,
-  ParameterDetailOut,
-  ParameterNewIn,
-  ParameterNewOut,
-  UpdateParameterIn,
-  UpdateParameterOut,
+  ParameterGetIn,
+  ParameterGetOut,
+  SaveParameterIn,
+  SaveParameterOut,
 };

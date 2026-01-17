@@ -458,21 +458,29 @@ settings_keys_data AS (
 settings_default_account_data AS (
     -- Get default admin/superadmin account for this settings
     SELECT 
-        sda.profile_id as default_admin_profile_id,
+        dar.profile_id as default_admin_profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as default_admin_name
-    FROM settings_default_account sda
-    JOIN profile_artifact p ON p.id = sda.profile_id
-    WHERE sda.settings_id = (SELECT settings_id FROM params) AND sda.active = true
+    FROM setting_default_accounts sda
+    JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+    JOIN profile_artifact p ON p.id = dar.profile_id
+    WHERE sda.setting_id = (SELECT settings_id FROM params) 
+    AND sda.active = true
+    AND dar.type = 'admin'::default_account_type
+    AND dar.active = true
     LIMIT 1
 ),
 settings_default_guest_data AS (
     -- Get default guest account for this settings
     SELECT 
-        sdg.profile_id as default_guest_profile_id,
+        dar.profile_id as default_guest_profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as default_guest_name
-    FROM settings_default_guest sdg
-    JOIN profile_artifact p ON p.id = sdg.profile_id
-    WHERE sdg.settings_id = (SELECT settings_id FROM params) AND sdg.active = true
+    FROM setting_default_accounts sda
+    JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+    JOIN profile_artifact p ON p.id = dar.profile_id
+    WHERE sda.setting_id = (SELECT settings_id FROM params) 
+    AND sda.active = true
+    AND dar.type = 'guest'::default_account_type
+    AND dar.active = true
     LIMIT 1
 ),
 settings_departments_data AS (

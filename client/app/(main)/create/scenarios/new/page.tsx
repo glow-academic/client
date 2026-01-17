@@ -130,7 +130,9 @@ async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.patch("/scenarios/draft", input);
+  // TODO: Investigate - scenarios/draft endpoint doesn't exist on server
+  throw new Error("scenarios/draft endpoint doesn't exist on server");
+  // return api.patch("/scenarios/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

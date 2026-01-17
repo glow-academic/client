@@ -105,7 +105,9 @@ async function patchCohortDraft(
 ): Promise<PatchCohortDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/cohorts/draft", input);
+  // TODO: Investigate - cohorts/draft endpoint doesn't exist on server
+  throw new Error("cohorts/draft endpoint doesn't exist on server");
+  // return api.patch("/cohorts/draft", input);
 }
 
 async function createDraftNames(

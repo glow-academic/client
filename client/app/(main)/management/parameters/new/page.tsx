@@ -12,12 +12,10 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterNewIn = InputOf<"/api/v4/parameters/new", "post">;
-type ParameterNewOut = OutputOf<"/api/v4/parameters/new", "post">;
-type CreateParameterIn = InputOf<"/api/v4/parameters/create", "post">;
-type CreateParameterOut = OutputOf<"/api/v4/parameters/create", "post">;
-type UpdateParameterIn = InputOf<"/api/v4/parameters/update", "post">;
-type UpdateParameterOut = OutputOf<"/api/v4/parameters/update", "post">;
+type ParameterGetIn = InputOf<"/api/v4/parameters/get", "post">;
+type ParameterGetOut = OutputOf<"/api/v4/parameters/get", "post">;
+type SaveParameterIn = InputOf<"/api/v4/parameters/save", "post">;
+type SaveParameterOut = OutputOf<"/api/v4/parameters/save", "post">;
 type PatchParameterDraftIn = InputOf<"/api/v4/parameters/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
 
@@ -25,9 +23,9 @@ type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getParameterDefault = async (
-  input: ParameterNewIn
-): Promise<ParameterNewOut> => {
-  return api.post("/parameters/new", input, {
+  input: ParameterGetIn
+): Promise<ParameterGetOut> => {
+  return api.post("/parameters/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -36,24 +34,12 @@ const getParameterDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createParameter(
-  input: CreateParameterIn,
-): Promise<CreateParameterOut> {
+async function saveParameter(
+  input: SaveParameterIn,
+): Promise<SaveParameterOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/create", {
-    ...input,
-    body: { ...input.body },
-  });
-}
-
-async function updateParameter(
-  input: UpdateParameterIn,
-): Promise<UpdateParameterOut> {
-  "use server";
-  // profileId removed - comes from X-Profile-Id header (auto-injected)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/update", input);
+  return api.post("/parameters/save", input);
 }
 
 async function patchParameterDraft(
@@ -61,7 +47,9 @@ async function patchParameterDraft(
 ): Promise<PatchParameterDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/parameters/draft", input);
+  // TODO: Investigate - parameters/draft endpoint doesn't exist on server
+  throw new Error("parameters/draft endpoint doesn't exist on server");
+  // return api.patch("/parameters/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -102,11 +90,12 @@ export default async function NewParameterPage({
   const loadParameterSearchParams = createLoader(parameterSearchParams);
   const q = loadParameterSearchParams(searchParamsObj);
 
-  // Fetch default parameter detail server-side with filter params and draft_id
-  const input: ParameterNewIn = {
+  // Fetch default parameter detail server-side with filter params and draft_id (parameter_id = null for new mode)
+  const input: ParameterGetIn = {
     body: {
+      parameter_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-    } as ParameterNewIn["body"],
+    } as ParameterGetIn["body"],
   };
   const parameterDetailDefault = await getParameterDefault(input);
 
@@ -116,8 +105,7 @@ export default async function NewParameterPage({
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         mode="create"
         parameterDetailDefault={parameterDetailDefault}
-        createParameterAction={createParameter}
-        updateParameterAction={updateParameter}
+        saveParameterAction={saveParameter}
         patchParameterDraftAction={patchParameterDraft}
       />
     </div>
@@ -126,12 +114,10 @@ export default async function NewParameterPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateParameterIn,
-  CreateParameterOut,
   PatchParameterDraftIn,
   PatchParameterDraftOut,
-  ParameterNewIn,
-  ParameterNewOut,
-  UpdateParameterIn,
-  UpdateParameterOut,
+  ParameterGetIn,
+  ParameterGetOut,
+  SaveParameterIn,
+  SaveParameterOut,
 };

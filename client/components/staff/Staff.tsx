@@ -108,10 +108,10 @@ import type {
   BulkCreateOrUpdateStaffOut,
   BulkDeleteStaffIn,
   BulkDeleteStaffOut,
-  CreateStaffDataOut,
   CSVColumnMapping,
   DeleteStaffIn,
   DeleteStaffOut,
+  GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
   ProcessedCSVRow,
@@ -123,23 +123,23 @@ import type {
 
 // Explicitly define server action types (matching the page exports)
 export type DeleteStaffAction = (
-  input: DeleteStaffIn,
+  input: DeleteStaffIn
 ) => Promise<DeleteStaffOut>;
 export type BulkDeleteStaffAction = (
-  input: BulkDeleteStaffIn,
+  input: BulkDeleteStaffIn
 ) => Promise<BulkDeleteStaffOut>;
 export type SearchStaffAction = (
-  input: SearchStaffIn,
+  input: SearchStaffIn
 ) => Promise<SearchStaffOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
 export type BulkCreateOrUpdateStaffAction = (
-  input: BulkCreateOrUpdateStaffIn,
+  input: BulkCreateOrUpdateStaffIn
 ) => Promise<BulkCreateOrUpdateStaffOut>;
 
 export interface StaffProps {
   // Server-provided data (fetched server-side, no client fetching)
   listData: StaffListOut;
-  initialCreateStaffData?: CreateStaffDataOut;
+  initialCreateStaffData?: GetProfileOut;
   // Server actions (pure server actions, no client-side mutations)
   deleteStaffAction?: DeleteStaffAction;
   bulkDeleteStaffAction?: BulkDeleteStaffAction;
@@ -191,7 +191,7 @@ const formatLastActive = (timestamp: string | null): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60),
+    (now.getTime() - date.getTime()) / (1000 * 60)
   );
 
   if (diffInMinutes < 1) return "Just now";
@@ -212,13 +212,13 @@ type CSVStage = "upload" | "mapping" | "review";
 
 const TARGET_FIELDS = [
   {
-    value: "first_name",  // snake_case
+    value: "first_name", // snake_case
     label: "First Name",
     description: "The staff member's first name",
     required: true,
   },
   {
-    value: "last_name",  // snake_case
+    value: "last_name", // snake_case
     label: "Last Name",
     description: "The staff member's last name",
     required: true,
@@ -267,7 +267,7 @@ const unparseCSV = (data: Record<string, string>[]): string => {
           }
           return value;
         })
-        .join(","),
+        .join(",")
     ),
   ];
   return csvContent.join("\n");
@@ -278,14 +278,14 @@ const autoMapColumn = (columnName: string): string | null => {
   if (
     ["first name", "firstname", "first_name", "fname", "first"].includes(lower)
   ) {
-    return "first_name";  // snake_case
+    return "first_name"; // snake_case
   }
   if (["last name", "lastname", "last_name", "lname", "last"].includes(lower)) {
-    return "last_name";  // snake_case
+    return "last_name"; // snake_case
   }
   if (
     ["email", "alias", "username", "user", "login", "email address"].includes(
-      lower,
+      lower
     )
   ) {
     return "email";
@@ -380,7 +380,7 @@ function ColumnPicker({
                     <Check
                       className={cn(
                         "ml-auto h-4 w-4 shrink-0",
-                        value === field.value ? "opacity-100" : "opacity-0",
+                        value === field.value ? "opacity-100" : "opacity-0"
                       )}
                     />
                   </div>
@@ -461,33 +461,68 @@ export default function Staff({
   // Extract data from server-provided data
   const staff = useMemo(
     () => serverListData?.staff || [],
-    [serverListData?.staff],
+    [serverListData?.staff]
   );
   const cohorts = useMemo(
     () => serverListData?.cohorts || [],
-    [serverListData?.cohorts],
+    [serverListData?.cohorts]
   );
   const departments = useMemo(
     () => serverListData?.departments || [],
-    [serverListData?.departments],
+    [serverListData?.departments]
   );
   const trendData = useMemo(
     () => ({
       active: (serverListData?.trend_data_active || [])
-        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
-        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+        .filter(
+          (item) =>
+            item.date !== null && item.value !== null && item.count !== null
+        )
+        .map((item) => ({
+          date: item.date!,
+          value: item.value!,
+          count: item.count!,
+        })),
       admin: (serverListData?.trend_data_admin || [])
-        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
-        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+        .filter(
+          (item) =>
+            item.date !== null && item.value !== null && item.count !== null
+        )
+        .map((item) => ({
+          date: item.date!,
+          value: item.value!,
+          count: item.count!,
+        })),
       instructional: (serverListData?.trend_data_instructional || [])
-        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
-        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+        .filter(
+          (item) =>
+            item.date !== null && item.value !== null && item.count !== null
+        )
+        .map((item) => ({
+          date: item.date!,
+          value: item.value!,
+          count: item.count!,
+        })),
       member: (serverListData?.trend_data_member || [])
-        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
-        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+        .filter(
+          (item) =>
+            item.date !== null && item.value !== null && item.count !== null
+        )
+        .map((item) => ({
+          date: item.date!,
+          value: item.value!,
+          count: item.count!,
+        })),
       total_requests: (serverListData?.trend_data_total_requests || [])
-        .filter((item) => item.date !== null && item.value !== null && item.count !== null)
-        .map((item) => ({ date: item.date!, value: item.value!, count: item.count! })),
+        .filter(
+          (item) =>
+            item.date !== null && item.value !== null && item.count !== null
+        )
+        .map((item) => ({
+          date: item.date!,
+          value: item.value!,
+          count: item.count!,
+        })),
     }),
     [
       serverListData?.trend_data_active,
@@ -495,7 +530,7 @@ export default function Staff({
       serverListData?.trend_data_instructional,
       serverListData?.trend_data_member,
       serverListData?.trend_data_total_requests,
-    ],
+    ]
   );
 
   // Calculate counts for KPI cards
@@ -535,7 +570,12 @@ export default function Staff({
     if (!options || !Array.isArray(options)) return [];
     return options
       .map((opt: unknown) => {
-        if (opt && typeof opt === "object" && "value" in opt && "label" in opt) {
+        if (
+          opt &&
+          typeof opt === "object" &&
+          "value" in opt &&
+          "label" in opt
+        ) {
           return {
             value: String(opt.value),
             label: String(opt.label),
@@ -543,7 +583,10 @@ export default function Staff({
         }
         return null;
       })
-      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
+      .filter(
+        (opt): opt is { value: string; label: string } =>
+          opt !== null && !!opt.value && !!opt.label
+      );
   }, [serverListData?.role_options]);
 
   const lastActiveOptions = useMemo(() => {
@@ -551,7 +594,12 @@ export default function Staff({
     if (!options || !Array.isArray(options)) return [];
     return options
       .map((opt: unknown) => {
-        if (opt && typeof opt === "object" && "value" in opt && "label" in opt) {
+        if (
+          opt &&
+          typeof opt === "object" &&
+          "value" in opt &&
+          "label" in opt
+        ) {
           return {
             value: String(opt.value),
             label: String(opt.label),
@@ -559,14 +607,21 @@ export default function Staff({
         }
         return null;
       })
-      .filter((opt): opt is { value: string; label: string } => opt !== null && !!opt.value && !!opt.label);
+      .filter(
+        (opt): opt is { value: string; label: string } =>
+          opt !== null && !!opt.value && !!opt.label
+      );
   }, [serverListData?.last_active_options]);
 
   // Transform mappings for CSV import
   const departmentMappingForCSV = useMemo(() => {
     const createStaffData = initialCreateStaffData;
     const mapping: Record<string, { name: string; description: string }> = {};
-    if (createStaffData && "departments" in createStaffData && Array.isArray(createStaffData.departments)) {
+    if (
+      createStaffData &&
+      "departments" in createStaffData &&
+      Array.isArray(createStaffData.departments)
+    ) {
       createStaffData.departments.forEach((dept) => {
         if (dept && dept.department_id) {
           mapping[dept.department_id] = {
@@ -582,7 +637,11 @@ export default function Staff({
   const cohortMappingForCSV = useMemo(() => {
     const createStaffData = initialCreateStaffData;
     const mapping: Record<string, { name: string; description: string }> = {};
-    if (createStaffData && "cohorts" in createStaffData && Array.isArray(createStaffData.cohorts)) {
+    if (
+      createStaffData &&
+      "cohorts" in createStaffData &&
+      Array.isArray(createStaffData.cohorts)
+    ) {
       createStaffData.cohorts.forEach((cohort) => {
         if (cohort && cohort.cohort_id) {
           mapping[cohort.cohort_id] = {
@@ -597,15 +656,15 @@ export default function Staff({
 
   const validDepartmentIdsForCSV = useMemo(
     () => Object.keys(departmentMappingForCSV),
-    [departmentMappingForCSV],
+    [departmentMappingForCSV]
   );
   const validCohortIdsForCSV = useMemo(
     () => Object.keys(cohortMappingForCSV),
-    [cohortMappingForCSV],
+    [cohortMappingForCSV]
   );
   const roleOptionsForCSV = useMemo(
     () => initialCreateStaffData?.role_options || [],
-    [initialCreateStaffData],
+    [initialCreateStaffData]
   );
 
   // CSV Import logic
@@ -642,7 +701,7 @@ export default function Staff({
 
   const hasErrors = useMemo(
     () => processedRows.some((row) => (row.errors?.length ?? 0) > 0),
-    [processedRows],
+    [processedRows]
   );
 
   React.useEffect(() => {
@@ -653,7 +712,7 @@ export default function Staff({
 
   const parseCSV = useCallback(
     (
-      csvText: string,
+      csvText: string
     ): { headers: string[]; rows: Record<string, string>[] } => {
       const lines = csvText.split("\n").filter((line) => line.trim());
       if (lines.length < 2) {
@@ -677,7 +736,7 @@ export default function Staff({
 
       return { headers, rows };
     },
-    [],
+    []
   );
 
   const handleFileUpload = useCallback(
@@ -703,7 +762,7 @@ export default function Staff({
           }));
           setColumnMappings(mappings);
 
-          const requiredFields = ["first_name", "last_name", "email"];  // snake_case
+          const requiredFields = ["first_name", "last_name", "email"]; // snake_case
           const initialIncludes: Record<string, boolean> = {};
           headers.forEach((header) => {
             const mappedField = autoMapColumn(header);
@@ -717,13 +776,13 @@ export default function Staff({
           toast.success(`CSV file loaded with ${rows.length} row(s).`);
         } catch (error) {
           toast.error(
-            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`,
+            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`
           );
         }
       };
       reader.readAsText(file);
     },
-    [parseCSV],
+    [parseCSV]
   );
 
   const onDrop = useCallback(
@@ -733,7 +792,7 @@ export default function Staff({
         handleFileUpload(file);
       }
     },
-    [handleFileUpload],
+    [handleFileUpload]
   );
 
   const {
@@ -752,24 +811,24 @@ export default function Staff({
   const downloadTemplate = useCallback(() => {
     const template = [
       {
-        first_name: "Sarah",  // snake_case
-        last_name: "Johnson",  // snake_case
+        first_name: "Sarah", // snake_case
+        last_name: "Johnson", // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
         cohort: "",
       },
       {
-        first_name: "Jane",  // snake_case
-        last_name: "Smith",  // snake_case
+        first_name: "Jane", // snake_case
+        last_name: "Smith", // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
         cohort: "",
       },
       {
-        first_name: "John",  // snake_case
-        last_name: "Doe",  // snake_case
+        first_name: "John", // snake_case
+        last_name: "Doe", // snake_case
         email: "redacted@purdue.edu",
         role: "member",
         department: "",
@@ -792,7 +851,7 @@ export default function Staff({
 
   const handleProcessCSV = useCallback(async () => {
     const activeMappings = columnMappings.filter(
-      (m) => m.csv_column && includedColumns[m.csv_column] !== false,
+      (m) => m.csv_column && includedColumns[m.csv_column] !== false
     );
 
     const requiredFields = ["firstName", "lastName", "email"];
@@ -801,11 +860,11 @@ export default function Staff({
       .filter((f): f is string => f !== null);
 
     const missingFields = requiredFields.filter(
-      (field) => !mappedFields.includes(field),
+      (field) => !mappedFields.includes(field)
     );
     if (missingFields.length > 0) {
       toast.error(
-        `Please map the following required fields: ${missingFields.join(", ")}`,
+        `Please map the following required fields: ${missingFields.join(", ")}`
       );
       return;
     }
@@ -896,7 +955,7 @@ export default function Staff({
         return { ...prev, [rowIndex]: updated };
       });
     },
-    [processedRows],
+    [processedRows]
   );
 
   const handleCSVSubmit = useCallback(async () => {
@@ -904,7 +963,9 @@ export default function Staff({
       return editableRows[index] || row;
     });
 
-    const validRows = finalRows.filter((row) => (row.errors?.length ?? 0) === 0);
+    const validRows = finalRows.filter(
+      (row) => (row.errors?.length ?? 0) === 0
+    );
 
     if (validRows.length === 0) {
       toast.error("No valid rows to process. Please fix errors.");
@@ -924,7 +985,7 @@ export default function Staff({
     if (invalidRoles.length > 0) {
       toast.error(
         `Invalid roles found: ${invalidRoles.map((r) => r.role).join(", ")}. ` +
-          `Allowed roles: ${validRoles.join(", ")}`,
+          `Allowed roles: ${validRoles.join(", ")}`
       );
       return;
     }
@@ -949,7 +1010,7 @@ export default function Staff({
 
     if (duplicateEmails.length > 0) {
       toast.error(
-        `Duplicate emails found in CSV: ${duplicateEmails.join(", ")}`,
+        `Duplicate emails found in CSV: ${duplicateEmails.join(", ")}`
       );
       return;
     }
@@ -965,7 +1026,7 @@ export default function Staff({
             }
             const found = Object.entries(departmentMappingForCSV).find(
               ([_, dept]) =>
-                dept.name.toLowerCase() === deptIdOrName.toLowerCase(),
+                dept.name.toLowerCase() === deptIdOrName.toLowerCase()
             );
             return found ? found[0] : null;
           })
@@ -979,7 +1040,7 @@ export default function Staff({
             }
             const found = Object.entries(cohortMappingForCSV).find(
               ([_, cohort]) =>
-                cohort.name.toLowerCase() === cohortIdOrName.toLowerCase(),
+                cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
             );
             return found ? found[0] : null;
           })
@@ -992,8 +1053,8 @@ export default function Staff({
           emails.push("");
         }
         return {
-          first_name: row.first_name ?? "",  // snake_case
-          last_name: row.last_name ?? "",  // snake_case
+          first_name: row.first_name ?? "", // snake_case
+          last_name: row.last_name ?? "", // snake_case
           emails: emails,
           primary_email_index:
             row.primary_email_index !== null &&
@@ -1002,7 +1063,7 @@ export default function Staff({
               ? row.primary_email_index
               : 0,
           role: row.role ?? "member",
-          active: true,  // Default to active for new staff
+          active: true, // Default to active for new staff
           department_ids: deptIds,
           cohort_ids: cohortIds,
         };
@@ -1027,7 +1088,7 @@ export default function Staff({
 
       router.refresh();
       toast.success(
-        `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`,
+        `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
       );
 
       setShowCSVImportModal(false);
@@ -1054,7 +1115,7 @@ export default function Staff({
   ]);
 
   const validRowCount = processedRows.filter(
-    (row) => (row.errors?.length ?? 0) === 0,
+    (row) => (row.errors?.length ?? 0) === 0
   ).length;
 
   // Table columns definition
@@ -1111,7 +1172,7 @@ export default function Staff({
           return Boolean(
             (staff.first_name ?? "").toLowerCase().includes(valueLower) ||
               (staff.last_name ?? "").toLowerCase().includes(valueLower) ||
-              emailMatch,
+              emailMatch
           );
         },
       },
@@ -1238,7 +1299,7 @@ export default function Staff({
           const date = new Date(lastActive);
           const now = new Date();
           const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
           );
 
           if (diffInDays < 7) return "recent";
@@ -1327,7 +1388,7 @@ export default function Staff({
         },
       },
     ],
-    [cohorts, departments],
+    [cohorts, departments]
   );
 
   // Build columns with checkbox + actions
@@ -1359,7 +1420,7 @@ export default function Staff({
                 });
               } else {
                 setSelectedStaffIds((prev) =>
-                  prev.filter((id) => !visibleRowIds.includes(id)),
+                  prev.filter((id) => !visibleRowIds.includes(id))
                 );
               }
             }}
@@ -1372,13 +1433,17 @@ export default function Staff({
       cell: ({ row }) => (
         <div className="pr-2">
           <Checkbox
-            checked={row.original.profile_id ? selectedStaffIds.includes(row.original.profile_id) : false}
+            checked={
+              row.original.profile_id
+                ? selectedStaffIds.includes(row.original.profile_id)
+                : false
+            }
             onCheckedChange={(value) => {
               if (!row.original.profile_id) return;
               setSelectedStaffIds((prev) =>
                 value
                   ? [...prev, row.original.profile_id!]
-                  : prev.filter((x) => x !== row.original.profile_id),
+                  : prev.filter((x) => x !== row.original.profile_id)
               );
             }}
             aria-label="Select row"
@@ -1412,7 +1477,7 @@ export default function Staff({
                     window.open(
                       `/analytics/reports/p/${staff.profile_id}`,
                       "_blank",
-                      "noopener,noreferrer",
+                      "noopener,noreferrer"
                     );
                   }}
                   disabled={!staff.profile_id}
@@ -1476,7 +1541,7 @@ export default function Staff({
     };
 
     const filtered = columns.filter(
-      (c) => c.id !== "select" && c.id !== "actions",
+      (c) => c.id !== "select" && c.id !== "actions"
     );
     return [checkboxColumn, ...filtered, actionsColumn];
   }, [columns, selectedStaffIds, router]);
@@ -1718,7 +1783,7 @@ export default function Staff({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext(),
+                                header.getContext()
                               )}
                         </TableHead>
                       );
@@ -1740,9 +1805,7 @@ export default function Staff({
                         .getVisibleCells()
                         .map(
                           (
-                            cell: ReturnType<
-                              typeof row.getVisibleCells
-                            >[number],
+                            cell: ReturnType<typeof row.getVisibleCells>[number]
                           ) => (
                             <TableCell
                               key={cell.id}
@@ -1750,10 +1813,10 @@ export default function Staff({
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
-                                cell.getContext(),
+                                cell.getContext()
                               )}
                             </TableCell>
-                          ),
+                          )
                         )}
                     </TableRow>
                   ))
@@ -1868,7 +1931,7 @@ export default function Staff({
                         "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative",
                         isDragActive
                           ? "border-primary bg-primary/5"
-                          : "border-muted-foreground/25 hover:border-primary/50",
+                          : "border-muted-foreground/25 hover:border-primary/50"
                       )}
                     >
                       <input
@@ -1982,7 +2045,7 @@ export default function Staff({
                         <TableBody>
                           {csvHeaders.map((header) => {
                             const mapping = columnMappings.find(
-                              (m) => m.csv_column === header,
+                              (m) => m.csv_column === header
                             );
                             const targetField = mapping?.target_field || null;
                             const sampleData = csvRows[0]?.[header] || "";
@@ -2012,8 +2075,8 @@ export default function Staff({
                                         prev.map((m) =>
                                           m.csv_column === header
                                             ? { ...m, target_field: newValue }
-                                            : m,
-                                        ),
+                                            : m
+                                        )
                                       );
                                     }}
                                     availableFields={availableTargetFields}
@@ -2113,30 +2176,30 @@ export default function Staff({
                               const editableRow = editableRows[index] || row;
                               const errors = editableRow.errors ?? [];
                               const hasFirstNameError = errors.some(
-                                (e) => e.field === "first_name",  // snake_case
+                                (e) => e.field === "first_name" // snake_case
                               );
                               const hasLastNameError = errors.some(
-                                (e) => e.field === "last_name",  // snake_case
+                                (e) => e.field === "last_name" // snake_case
                               );
                               const hasAliasError = errors.some(
-                                (e) => e.field === "email",
+                                (e) => e.field === "email"
                               );
                               const hasDuplicateAlias =
                                 duplicateAliasMap.has(index);
                               const hasRoleError = errors.some(
-                                (e) => e.field === "role",
+                                (e) => e.field === "role"
                               );
                               const hasDepartmentError =
                                 validDepartmentIdsForCSV.length > 1 &&
                                 errors.some(
                                   (e) =>
                                     e.field === "department_ids" ||
-                                    e.field === "department_id",
+                                    e.field === "department_id"
                                 );
                               const hasCohortError = errors.some(
                                 (e) =>
                                   e.field === "cohort_ids" ||
-                                  e.field === "cohort_id",
+                                  e.field === "cohort_id"
                               );
 
                               return (
@@ -2153,12 +2216,12 @@ export default function Staff({
                                     }
                                   >
                                     <Input
-                                      value={editableRow.first_name || ""}  // snake_case
+                                      value={editableRow.first_name || ""} // snake_case
                                       onChange={(e) =>
                                         updateEditableRow(
                                           index,
-                                          "first_name",  // snake_case
-                                          e.target.value || null,
+                                          "first_name", // snake_case
+                                          e.target.value || null
                                         )
                                       }
                                       className="h-8 w-full min-w-[120px]"
@@ -2172,12 +2235,12 @@ export default function Staff({
                                     }
                                   >
                                     <Input
-                                      value={editableRow.last_name || ""}  // snake_case
+                                      value={editableRow.last_name || ""} // snake_case
                                       onChange={(e) =>
                                         updateEditableRow(
                                           index,
-                                          "last_name",  // snake_case
-                                          e.target.value || null,
+                                          "last_name", // snake_case
+                                          e.target.value || null
                                         )
                                       }
                                       className="h-8 w-full min-w-[120px]"
@@ -2199,7 +2262,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "emails",
-                                          e.target.value || "",
+                                          e.target.value || ""
                                         )
                                       }
                                       placeholder="redacted@purdue.edu, redacted@purdue.edu"
@@ -2213,7 +2276,7 @@ export default function Staff({
                                   >
                                     <GenericPicker
                                       items={STAFF_ROLES.filter((r) =>
-                                        validRoles.includes(r.id),
+                                        validRoles.includes(r.id)
                                       )}
                                       selectedIds={
                                         editableRow.role
@@ -2224,7 +2287,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "role",
-                                          ids[0] || null,
+                                          ids[0] || null
                                         )
                                       }
                                       getId={(role) => role.id}
@@ -2238,32 +2301,32 @@ export default function Staff({
                                         const hexColor =
                                           role.color || "#64748b";
                                         const generateGradient = (
-                                          hex: string,
+                                          hex: string
                                         ) => {
                                           const cleanHex = hex.replace("#", "");
                                           const r = parseInt(
                                             cleanHex.substr(0, 2),
-                                            16,
+                                            16
                                           );
                                           const g = parseInt(
                                             cleanHex.substr(2, 2),
-                                            16,
+                                            16
                                           );
                                           const b = parseInt(
                                             cleanHex.substr(4, 2),
-                                            16,
+                                            16
                                           );
                                           const lighterR = Math.min(
                                             255,
-                                            r + 60,
+                                            r + 60
                                           );
                                           const lighterG = Math.min(
                                             255,
-                                            g + 60,
+                                            g + 60
                                           );
                                           const lighterB = Math.min(
                                             255,
-                                            b + 60,
+                                            b + 60
                                           );
                                           const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
                                           return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
@@ -2294,7 +2357,7 @@ export default function Staff({
                                                 "ml-auto",
                                                 isSelected
                                                   ? "opacity-100"
-                                                  : "opacity-0",
+                                                  : "opacity-0"
                                               )}
                                             />
                                           </div>
@@ -2309,32 +2372,32 @@ export default function Staff({
                                         const hexColor =
                                           role?.color || "#64748b";
                                         const generateGradient = (
-                                          hex: string,
+                                          hex: string
                                         ) => {
                                           const cleanHex = hex.replace("#", "");
                                           const r = parseInt(
                                             cleanHex.substr(0, 2),
-                                            16,
+                                            16
                                           );
                                           const g = parseInt(
                                             cleanHex.substr(2, 2),
-                                            16,
+                                            16
                                           );
                                           const b = parseInt(
                                             cleanHex.substr(4, 2),
-                                            16,
+                                            16
                                           );
                                           const lighterR = Math.min(
                                             255,
-                                            r + 60,
+                                            r + 60
                                           );
                                           const lighterG = Math.min(
                                             255,
-                                            g + 60,
+                                            g + 60
                                           );
                                           const lighterB = Math.min(
                                             255,
-                                            b + 60,
+                                            b + 60
                                           );
                                           const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
                                           return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
@@ -2383,7 +2446,7 @@ export default function Staff({
                                           updateEditableRow(
                                             index,
                                             "department_ids",
-                                            ids,
+                                            ids
                                           )
                                         }
                                         getId={(dept) =>
@@ -2417,7 +2480,7 @@ export default function Staff({
                                         updateEditableRow(
                                           index,
                                           "cohort_ids",
-                                          ids,
+                                          ids
                                         )
                                       }
                                       getId={(cohort) =>
@@ -2481,14 +2544,14 @@ export default function Staff({
               </AlertDialogDescription>
             </AlertDialogHeader>
             {(() => {
-              const selected = staff.filter((s) =>
-                s.profile_id && selectedStaffIds.includes(s.profile_id),
+              const selected = staff.filter(
+                (s) => s.profile_id && selectedStaffIds.includes(s.profile_id)
               );
               const nonDeletable = selected.filter((s) => !s.can_delete);
               const deletable = selected.filter((s) => s.can_delete);
               const impactedCohorts = deletable.map((s) => ({
                 staff: s,
-                cohortCount: (s.cohort_ids?.length ?? 0),
+                cohortCount: s.cohort_ids?.length ?? 0,
               }));
               return (
                 <div className="space-y-3">
@@ -2572,7 +2635,7 @@ export default function Staff({
                         (s) =>
                           s.profile_id &&
                           selectedStaffIds.includes(s.profile_id) &&
-                          s.can_delete,
+                          s.can_delete
                       )
                       .map((s) => s.profile_id!)
                       .filter((id): id is string => id !== null);
@@ -2619,7 +2682,7 @@ export default function Staff({
               (() => {
                 const staffMember = deleteStaffMember;
                 const canDelete = staffMember.can_delete;
-                const cohortCount = (staffMember.cohort_ids?.length ?? 0);
+                const cohortCount = staffMember.cohort_ids?.length ?? 0;
 
                 if (!canDelete) {
                   return (
@@ -2712,7 +2775,7 @@ export default function Staff({
                       return;
                     }
                     await deleteStaffAction({
-                      body: { 
+                      body: {
                         target_profile_id: deleteStaffMember.profile_id,
                         current_profile_id: effectiveProfile.id,
                       },

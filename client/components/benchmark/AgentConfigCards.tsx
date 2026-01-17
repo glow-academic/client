@@ -14,7 +14,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/get", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/eval", "post">;
 type AgentsListOut = OutputOf<"/api/v4/agents/list", "post">;
 type AgentDetailOut = OutputOf<"/api/v4/agents/detail", "post">;
 type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;
@@ -118,7 +118,7 @@ export function AgentConfigCards({
 
         setLoadingAgents((prev) => ({ ...prev, [agentId]: true }));
         try {
-          const detail = await api.post("/agents/detail", {
+          const detail = await api.post("/agents/get", {
             body: { agent_id: agentId },
           });
           setAgentDetails((prev) => ({ ...prev, [agentId]: detail }));

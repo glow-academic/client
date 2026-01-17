@@ -23089,6 +23089,42 @@ class DebugInfoApiResponse(BaseModel):
 
 
 
+# Generated from: default_accounts
+
+class DefaultAccountsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    profile_id: UUID
+    type: str
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.profile_id,
+            self.type,
+            self.mcp,
+        )
+
+class DefaultAccountsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class DefaultAccountsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    type: str
+    mcp: bool | None = False
+
+class DefaultAccountsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: departments
 
 class DepartmentsSqlParams(BaseModel):
@@ -38509,6 +38545,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DebugInfoApiRequest",
         "DebugInfoApiResponse",
     ),
+    "app/sql/v4/resources/default_accounts_complete.sql": (
+        "DefaultAccountsSqlParams",
+        "DefaultAccountsSqlRow",
+        "DefaultAccountsApiRequest",
+        "DefaultAccountsApiResponse",
+    ),
     "app/sql/v4/resources/departments_complete.sql": (
         "DepartmentsSqlParams",
         "DepartmentsSqlRow",
@@ -41858,6 +41900,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/debug_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/default_accounts_complete.sql"]
     ) -> SqlString: ...
 
     @overload

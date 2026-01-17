@@ -17,8 +17,7 @@ type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
 type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
 type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
-type DeleteAgentPromptIn = InputOf<"/api/v4/prompts/delete", "post">;
-type DeleteAgentPromptOut = OutputOf<"/api/v4/prompts/delete", "post">;
+// Prompts delete removed - no prompts delete functionality needed
 type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
 
@@ -73,13 +72,7 @@ async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   return api.post("/agents/save", input);
 }
 
-async function deleteAgentPrompt(
-  input: DeleteAgentPromptIn,
-): Promise<DeleteAgentPromptOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/prompts/delete", input);
-}
+// Prompts delete removed - no prompts delete functionality needed
 
 async function patchAgentDraft(
   input: PatchAgentDraftIn
@@ -136,8 +129,8 @@ export default async function AgentEditPage({
           agentId={agentId}
           {...(agentDetail && { agentDetail })}
           saveAgentAction={saveAgent}
-          deleteAgentPromptAction={deleteAgentPrompt}
-          patchAgentDraftAction={patchAgentDraft}
+          deleteAgentPromptAction={undefined}
+          patchAgentDraftAction={undefined}
         />
       </div>
     );
@@ -168,8 +161,6 @@ export type {
   GetAgentOut,
   SaveAgentIn,
   SaveAgentOut,
-  DeleteAgentPromptIn,
-  DeleteAgentPromptOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
 };

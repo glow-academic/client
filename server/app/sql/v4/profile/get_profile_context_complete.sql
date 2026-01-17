@@ -364,18 +364,26 @@ resolve_profile_from_department AS (
                              AND (SELECT department_id FROM params) != '' THEN
                             CASE 
                                 WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
-                                    (SELECT sdg.profile_id
+                                    (SELECT dar.profile_id
                                      FROM setting_artifact s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                                     JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
-                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+                                     JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
+                                     JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid 
+                                     AND dar.type = 'guest'::default_account_type
+                                     AND dar.active = true
+                                     AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                      LIMIT 1)
                                 WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
-                                    (SELECT sda.profile_id
+                                    (SELECT dar.profile_id
                                      FROM setting_artifact s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                                     JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+                                     JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
+                                     JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid 
+                                     AND dar.type = 'admin'::default_account_type
+                                     AND dar.active = true
+                                     AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                      LIMIT 1)
                             END
                         ELSE NULL::uuid
@@ -383,20 +391,26 @@ resolve_profile_from_department AS (
                     -- Fallback to default settings (no department links) - always try this
                     CASE 
                         WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
-                            (SELECT sdg.profile_id
+                            (SELECT dar.profile_id
                              FROM setting_artifact s
-                             JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
-                             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+                             JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
+                             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                             WHERE dar.type = 'guest'::default_account_type
+                             AND dar.active = true
+                             AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                AND NOT EXISTS (
                                    SELECT 1 FROM department_settings ds 
                                    WHERE ds.settings_id = s.id AND ds.active = true
                                )
                              LIMIT 1)
                         WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
-                            (SELECT sda.profile_id
+                            (SELECT dar.profile_id
                              FROM setting_artifact s
-                             JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-                             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+                             JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
+                             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                             WHERE dar.type = 'admin'::default_account_type
+                             AND dar.active = true
+                             AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
                                AND NOT EXISTS (
                                    SELECT 1 FROM department_settings ds 
                                    WHERE ds.settings_id = s.id AND ds.active = true
@@ -791,13 +805,17 @@ settings_resolution AS (
         -- Get default guest account: try selected settings first, fall back to default settings
         SELECT 
             COALESCE(
-                (SELECT sdg.profile_id::text
+                (SELECT dar.profile_id::text
                  FROM selected_settings ss
-                 JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
+                 JOIN setting_default_accounts sda ON sda.setting_id = ss.settings_id AND sda.active = true
+                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                 WHERE dar.type = 'guest'::default_account_type AND dar.active = true
                  LIMIT 1),
-                (SELECT sdg.profile_id::text
+                (SELECT dar.profile_id::text
                  FROM default_settings ds
-                 JOIN settings_default_guest sdg ON sdg.settings_id = ds.settings_id AND sdg.active = true
+                 JOIN setting_default_accounts sda ON sda.setting_id = ds.settings_id AND sda.active = true
+                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                 WHERE dar.type = 'guest'::default_account_type AND dar.active = true
                  LIMIT 1)
             ) as default_guest_profile_id
     ),
@@ -805,13 +823,17 @@ settings_resolution AS (
         -- Get default account: try selected settings first, fall back to default settings
         SELECT 
             COALESCE(
-                (SELECT sda.profile_id::text
+                (SELECT dar.profile_id::text
                  FROM selected_settings ss
-                 JOIN settings_default_account sda ON sda.settings_id = ss.settings_id AND sda.active = true
+                 JOIN setting_default_accounts sda ON sda.setting_id = ss.settings_id AND sda.active = true
+                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                 WHERE dar.type = 'admin'::default_account_type AND dar.active = true
                  LIMIT 1),
-                (SELECT sda.profile_id::text
+                (SELECT dar.profile_id::text
                  FROM default_settings ds
-                 JOIN settings_default_account sda ON sda.settings_id = ds.settings_id AND sda.active = true
+                 JOIN setting_default_accounts sda ON sda.setting_id = ds.settings_id AND sda.active = true
+                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
+                 WHERE dar.type = 'admin'::default_account_type AND dar.active = true
                  LIMIT 1)
             ) as default_account_profile_id
     )

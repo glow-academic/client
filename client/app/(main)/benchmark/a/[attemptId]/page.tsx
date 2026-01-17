@@ -12,8 +12,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalAttemptFullIn = InputOf<"/api/v4/attempts/benchmark/get", "post">;
-type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/get", "post">;
+type EvalAttemptFullIn = InputOf<"/api/v4/attempts/benchmark/eval", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/eval", "post">;
 type AgentsListOut = OutputOf<"/api/v4/agents/list", "post">;
 type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;
 type PatchAttemptDraftOut = OutputOf<"/api/v4/attempts/draft", "patch">;
@@ -25,7 +25,7 @@ const getEvalAttemptFull = async (
   _attemptId: string,
   input: EvalAttemptFullIn,
 ): Promise<EvalAttemptFullOut> => {
-  return api.post("/attempts/benchmark/get", input, {
+  return api.post("/attempts/benchmark/eval", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -95,7 +95,7 @@ export default async function BenchmarkAttemptPage({
           attemptId={attemptId}
           attemptData={attemptData}
           agentsList={agentsList}
-          patchAttemptDraftAction={patchAttemptDraft}
+          patchAttemptDraftAction={undefined}
         />
       </div>
     );

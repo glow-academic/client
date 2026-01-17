@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 
 import type {
   CreateStaffIn,
@@ -28,11 +29,6 @@ import type {
   PatchStaffDraftOut,
   StaffNewOut,
 } from "@/app/(main)/management/staff/new/page";
-import type {
-  StaffDetailOut,
-  UpdateStaffIn,
-  UpdateStaffOut,
-} from "@/app/(main)/management/staff/p/[profileId]/page";
 import {
   GenericForm,
   type StepStatus,
@@ -62,6 +58,10 @@ import {
   X,
 } from "lucide-react";
 import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
+// Types now use profiles/save (unified endpoint)
+type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/profiles/save", "post">;
+type StaffDetailOut = OutputOf<"/api/v4/profiles/get", "post">;
 
 export interface StaffNewEditProps {
   profileId?: string;
@@ -71,7 +71,7 @@ export interface StaffNewEditProps {
   staffDetailDefault?: StaffNewOut;
   // Server actions
   createStaffAction?: (input: CreateStaffIn) => Promise<CreateStaffOut>;
-  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
+  updateStaffAction?: (input: SaveStaffIn) => Promise<SaveStaffOut>;
   patchStaffDraftAction?: (
     input: PatchStaffDraftIn
   ) => Promise<PatchStaffDraftOut>;

@@ -41,8 +41,8 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveStaffIn = InputOf<"/api/v4/staff/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/staff/save", "post">;
+type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;

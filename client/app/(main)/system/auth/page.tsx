@@ -9,11 +9,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/api/v4/auth/list", "post">;
-type DuplicateAuthIn = InputOf<"/api/v4/auth/duplicate", "post">;
-type DuplicateAuthOut = OutputOf<"/api/v4/auth/duplicate", "post">;
-type DeleteAuthIn = InputOf<"/api/v4/auth/delete", "post">;
-type DeleteAuthOut = OutputOf<"/api/v4/auth/delete", "post">;
+type AuthListOut = OutputOf<"/api/v4/auths/list", "post">;
+type DuplicateAuthIn = InputOf<"/api/v4/auths/duplicate", "post">;
+type DuplicateAuthOut = OutputOf<"/api/v4/auths/duplicate", "post">;
+type DeleteAuthIn = InputOf<"/api/v4/auths/delete", "post">;
+type DeleteAuthOut = OutputOf<"/api/v4/auths/delete", "post">;
 type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
 type DecryptKeyIn = InputOf<"/api/v4/decrypt/key", "post">;
@@ -28,7 +28,7 @@ type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 const getAuthList = async (): Promise<AuthListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/auth/list",
+    "/auths/list",
     { body: {} },
     {
       cache: "no-store",
@@ -55,7 +55,7 @@ async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/delete", input);
+  return api.post("/auths/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

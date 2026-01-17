@@ -32,8 +32,6 @@ import type {
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
-  UpdateRubricIn,
-  UpdateRubricOut,
 } from "@/app/(main)/engine/rubrics/page";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -61,8 +59,7 @@ export interface RubricsProps {
     input: DuplicateRubricIn,
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
-  createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
-  updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
+  saveRubricAction?: (input: SaveRubricIn) => Promise<SaveRubricOut>;
 }
 
 export default function Rubrics({

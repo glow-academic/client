@@ -12,20 +12,22 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffListIn = InputOf<"/api/v4/staff/list", "post">;
-type StaffListOut = OutputOf<"/api/v4/staff/list", "post">;
-type DeleteStaffIn = InputOf<"/api/v4/profile/delete", "post">;
-type DeleteStaffOut = OutputOf<"/api/v4/profile/delete", "post">;
+type StaffListIn = InputOf<"/api/v4/profiles/list", "post">;
+type StaffListOut = OutputOf<"/api/v4/profiles/list", "post">;
+type DeleteStaffIn = InputOf<"/api/v4/profiles/delete", "post">;
+type DeleteStaffOut = OutputOf<"/api/v4/profiles/delete", "post">;
 type BulkDeleteStaffIn = InputOf<"/api/v4/bulk/staff/delete", "post">;
 type BulkDeleteStaffOut = OutputOf<"/api/v4/bulk/staff/delete", "post">;
-type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
-type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
+// profile/update doesn't exist - use profiles/save instead
+// type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
+// type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
 type BulkUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
 type BulkUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
 type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
-type CreateStaffDataIn = InputOf<"/api/v4/staff/data/create", "post">;
-type CreateStaffDataOut = OutputOf<"/api/v4/staff/data/create", "post">;
+// Use profiles/get with null profile_id to get create staff data
+type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
 type ProcessCSVOut = OutputOf<"/api/v4/bulk/staff/process", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
@@ -43,7 +45,7 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
  */
 const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/profile/list", input, {
+  return api.post("/profiles/list", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -57,7 +59,7 @@ const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
 async function deleteStaff(input: DeleteStaffIn): Promise<DeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/delete", input);
+  return api.post("/profiles/delete", input);
 }
 
 async function bulkDeleteStaff(
@@ -68,11 +70,17 @@ async function bulkDeleteStaff(
   return api.post("/bulk/staff/delete", input);
 }
 
+// Use profiles/get with null profile_id to get create staff data (replaces staff/data/create)
 async function getCreateStaffData(
-  input: CreateStaffDataIn,
-): Promise<CreateStaffDataOut> {
+  _input: GetProfileIn,
+): Promise<GetProfileOut> {
   "use server";
-  return api.post("/staff/data/create", input);
+  return api.post("/profiles/get", {
+    body: {
+      staff_id: null, // NULL for new mode - returns default data
+      draft_id: null,
+    },
+  });
 }
 
 async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
@@ -129,8 +137,8 @@ export type {
   BulkDeleteStaffOut,
   BulkUpdateStaffIn,
   BulkUpdateStaffOut,
-  CreateStaffDataIn,
-  CreateStaffDataOut,
+  GetProfileIn,
+  GetProfileOut,
   CSVColumnMapping,
   DeleteStaffIn,
   DeleteStaffOut,
@@ -143,6 +151,6 @@ export type {
   SearchStaffOut,
   StaffListIn,
   StaffListOut,
-  UpdateStaffIn,
-  UpdateStaffOut,
+  // UpdateStaffIn,
+  // UpdateStaffOut,
 };

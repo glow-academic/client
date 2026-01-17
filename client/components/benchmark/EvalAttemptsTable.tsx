@@ -46,8 +46,8 @@ import {
 } from "@tanstack/react-table";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkBundleIn = InputOf<"/api/v4/benchmark/bundle", "post">;
-type BenchmarkBundleOut = OutputOf<"/api/v4/benchmark/bundle", "post">;
+type BenchmarkBundleIn = InputOf<"/api/v4/analytics/benchmark/overview", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v4/analytics/benchmark/overview", "post">;
 type AttemptsArray = NonNullable<BenchmarkBundleOut["attempts"]>;
 type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 
@@ -55,7 +55,7 @@ type EvalAttemptItem = AttemptsArray extends Array<infer T> ? T : never;
 const getBenchmarkBundle = async (
   input: BenchmarkBundleIn
 ): Promise<BenchmarkBundleOut> => {
-  return api.post("/analytics/benchmark/get", input, {
+  return api.post("/analytics/benchmark/overview", input, {
     cache: "no-store",
   });
 };

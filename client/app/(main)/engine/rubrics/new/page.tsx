@@ -48,7 +48,9 @@ async function patchRubricDraft(
 ): Promise<PatchRubricDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/rubrics/draft", input);
+  // TODO: Investigate - rubrics/draft endpoint doesn't exist on server
+  throw new Error("rubrics/draft endpoint doesn't exist on server");
+  // return api.patch("/rubrics/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

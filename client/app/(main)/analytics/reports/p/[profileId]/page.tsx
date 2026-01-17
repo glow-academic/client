@@ -16,8 +16,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProfileIn = InputOf<"/api/v4/profile/get", "post">;
-type GetProfileOut = OutputOf<"/api/v4/profile/get", "post">;
+type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
 // Keep old types for backward compatibility during migration
 type ProfileDetailIn = InputOf<"/api/v4/profile/detail", "post">;
 type ProfileDetailOut = OutputOf<"/api/v4/profile/detail", "post">;
@@ -40,7 +40,7 @@ const getProfileDetail = async (
       target_profile_id: input.body.target_profile_id,
     },
   };
-  return api.post("/profile/get", getInput, {
+  return api.post("/profiles/get", getInput, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

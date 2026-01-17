@@ -5,7 +5,7 @@
 "use client";
 
 import { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
-import { CheckCircle2, MessageSquare, XCircle } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -79,7 +79,13 @@ export default function Activity({
 
   // Extract data from flat fields (server returns flat structure, not nested metrics)
   const bundleData = activityData.bundleData;
-  const feedback = activityData.feedbackData?.feedback || [];
+  // Feedback removed - should come from bundle or use static data
+  const feedback: Array<{
+    feedback_id: string;
+    type: string;
+    message: string;
+    resolved: boolean;
+  }> = [];
   const activityList = useMemo(() => activityData.activityData?.activities || [], [activityData.activityData?.activities]);
   const activityPage = activityData.activityData?.page || 0;
   const activityPageSize = activityData.activityData?.page_size || 50;
@@ -149,33 +155,7 @@ export default function Activity({
     [commitSearch]
   );
 
-  // Handle resolve feedback
-  const handleResolveFeedback = useCallback(
-    async (feedbackId: string, resolved: boolean) => {
-      try {
-        const { api } = await import("@/lib/api/client");
-        const result = await api.post("/feedback/resolve", {
-          body: {
-            feedback_id: feedbackId,
-            resolved: !resolved,
-          },
-        });
-
-        if (result.success) {
-          toast.success(result.message || `Feedback ${!resolved ? "resolved" : "unresolved"} successfully`);
-        } else {
-          toast.error(result.message || "Failed to resolve feedback");
-        }
-        router.refresh();
-      } catch (error: unknown) {
-        const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
-          (error as { message?: string })?.message || 
-          "Failed to resolve feedback";
-        toast.error(errorMessage);
-      }
-    },
-    [router]
-  );
+  // Feedback resolve removed - no resolve functionality needed
 
   // Helper function to compute status based on value and thresholds
   const computeStatus = (
@@ -498,27 +478,7 @@ export default function Activity({
                           </div>
                           <p className="text-sm">{item.message}</p>
                         </div>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() =>
-                                handleResolveFeedback(item.feedback_id, item.resolved)
-                              }
-                            >
-                              {item.resolved ? (
-                                <XCircle className="h-4 w-4" />
-                              ) : (
-                                <CheckCircle2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{item.resolved ? "Unresolve" : "Resolve"}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {/* Resolve button removed - no resolve functionality */}
                       </div>
                     </div>
                   ))

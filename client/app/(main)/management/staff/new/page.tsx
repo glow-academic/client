@@ -13,10 +13,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetStaffIn = InputOf<"/api/v4/staff/get", "post">;
-type GetStaffOut = OutputOf<"/api/v4/staff/get", "post">;
-type SaveStaffIn = InputOf<"/api/v4/staff/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/staff/save", "post">;
+type GetStaffIn = InputOf<"/api/v4/profiles/get", "post">;
+type GetStaffOut = OutputOf<"/api/v4/profiles/get", "post">;
+type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
@@ -43,7 +43,7 @@ type CreateDraftRequestLimitsOut = OutputOf<
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getStaffDefault = cache(
   async (input: GetStaffIn): Promise<GetStaffOut> => {
-    return api.post("/profile/get", input, {
+    return api.post("/profiles/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -57,7 +57,7 @@ async function saveStaff(input: SaveStaffIn): Promise<SaveStaffOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/save", input);
+  return api.post("/profiles/save", input);
 }
 
 async function createDraftNames(

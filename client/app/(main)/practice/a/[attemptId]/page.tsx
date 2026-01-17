@@ -21,7 +21,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation/get", input, {
+  return api.post("/attempts/simulation/simulation", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

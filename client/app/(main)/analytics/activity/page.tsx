@@ -13,16 +13,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ActivityBundleIn = InputOf<"/api/v4/analytics/activity/get", "post">;
-type ActivityBundleOut = OutputOf<"/api/v4/analytics/activity/get", "post">;
-type FeedbackListIn = InputOf<"/api/v4/feedback/list", "post">;
-type FeedbackListOut = OutputOf<"/api/v4/feedback/list", "post">;
+type ActivityBundleIn = InputOf<"/api/v4/analytics/activity/bundle", "post">;
+type ActivityBundleOut = OutputOf<"/api/v4/analytics/activity/bundle", "post">;
 type ActivityListIn = InputOf<"/api/v4/analytics/activity/list", "post">;
 type ActivityListOut = OutputOf<"/api/v4/analytics/activity/list", "post">;
 
 export type ActivityOut = {
   bundleData: ActivityBundleOut | null;
-  feedbackData: FeedbackListOut | null;
+  feedbackData: null; // Feedback removed - should come from bundle or use static data
   activityData: ActivityListOut | null;
 };
 
@@ -32,22 +30,7 @@ const getActivityBundle = async (
 ): Promise<ActivityBundleOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/analytics/activity/get", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-const getFeedbackList = async (
-  input: FeedbackListIn
-): Promise<FeedbackListOut> => {
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/feedback/list", input, {
+  return api.post("/analytics/activity/bundle", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -119,9 +102,10 @@ export default async function ActivityPage({
     activitySearch || "",
   ].join("|");
 
-  // Fetch bundle and feedback data server-side (no pagination)
+  // Fetch bundle data server-side (no pagination)
+  // Feedback removed - should come from bundle or use static data
   const bundleData = await getActivityBundle({ body: {} });
-  const feedbackData = await getFeedbackList({ body: {} });
+  const feedbackData = null;
 
   // Create empty activity data for loading state
   const emptyActivityData: ActivityListOut = {
@@ -169,7 +153,7 @@ async function ActivityListSection({
   activitySearch,
 }: {
   bundleData: ActivityBundleOut;
-  feedbackData: FeedbackListOut;
+  feedbackData: null;
   activityPage: number;
   activityPageSize: number;
   activitySearch?: string | undefined;
@@ -200,6 +184,4 @@ export type {
   ActivityBundleOut,
   ActivityListIn,
   ActivityListOut,
-  FeedbackListIn,
-  FeedbackListOut,
 };

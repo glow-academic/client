@@ -16,8 +16,9 @@ type DuplicateCohortIn = InputOf<"/api/v4/cohorts/duplicate", "post">;
 type DuplicateCohortOut = OutputOf<"/api/v4/cohorts/duplicate", "post">;
 type DeleteCohortIn = InputOf<"/api/v4/cohorts/delete", "post">;
 type DeleteCohortOut = OutputOf<"/api/v4/cohorts/delete", "post">;
-type LeaveCohortIn = InputOf<"/api/v4/cohorts/leave", "post">;
-type LeaveCohortOut = OutputOf<"/api/v4/cohorts/leave", "post">;
+// TODO: Investigate - cohorts/leave endpoint doesn't exist on server
+// type LeaveCohortIn = InputOf<"/api/v4/cohorts/leave", "post">;
+// type LeaveCohortOut = OutputOf<"/api/v4/cohorts/leave", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -35,13 +36,13 @@ const getCohortsList = async (): Promise<CohortsListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateCohort(
-  input: DuplicateCohortIn,
+  input: DuplicateCohortIn
 ): Promise<DuplicateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -54,11 +55,12 @@ async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   return api.post("/cohorts/delete", input);
 }
 
-async function leaveCohort(input: LeaveCohortIn): Promise<LeaveCohortOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/cohorts/leave", input);
-}
+// TODO: Investigate - cohorts/leave endpoint doesn't exist on server
+// async function leaveCohort(input: LeaveCohortIn): Promise<LeaveCohortOut> {
+//   "use server";
+//   // No revalidateTag needed - Redis cache handles invalidation
+//   return api.post("/cohorts/leave", input);
+// }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -80,7 +82,7 @@ export default async function CohortsPage() {
         listData={listData}
         duplicateCohortAction={duplicateCohort}
         deleteCohortAction={deleteCohort}
-        leaveCohortAction={leaveCohort}
+        leaveCohortAction={undefined}
       />
     </div>
   );
@@ -93,6 +95,4 @@ export type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
-  LeaveCohortIn,
-  LeaveCohortOut,
 };

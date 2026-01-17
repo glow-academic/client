@@ -16,10 +16,8 @@ type DuplicateRubricIn = InputOf<"/api/v4/rubrics/duplicate", "post">;
 type DuplicateRubricOut = OutputOf<"/api/v4/rubrics/duplicate", "post">;
 type DeleteRubricIn = InputOf<"/api/v4/rubrics/delete", "post">;
 type DeleteRubricOut = OutputOf<"/api/v4/rubrics/delete", "post">;
-type CreateRubricIn = InputOf<"/api/v4/rubrics/create", "post">;
-type CreateRubricOut = OutputOf<"/api/v4/rubrics/create", "post">;
-type UpdateRubricIn = InputOf<"/api/v4/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/api/v4/rubrics/update", "post">;
+type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -37,13 +35,13 @@ const getRubricsList = async (): Promise<RubricsListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateRubric(
-  input: DuplicateRubricIn,
+  input: DuplicateRubricIn
 ): Promise<DuplicateRubricOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
@@ -52,7 +50,7 @@ export async function duplicateRubric(
 }
 
 export async function deleteRubric(
-  input: DeleteRubricIn,
+  input: DeleteRubricIn
 ): Promise<DeleteRubricOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
@@ -60,22 +58,11 @@ export async function deleteRubric(
   return api.post("/rubrics/delete", input);
 }
 
-export async function createRubric(
-  input: CreateRubricIn,
-): Promise<CreateRubricOut> {
+export async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/create", input);
-}
-
-export async function updateRubric(
-  input: UpdateRubricIn,
-): Promise<UpdateRubricOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/update", input);
+  return api.post("/rubrics/save", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -98,8 +85,7 @@ export default async function RubricsPage() {
         listData={listData}
         duplicateRubricAction={duplicateRubric}
         deleteRubricAction={deleteRubric}
-        createRubricAction={createRubric}
-        updateRubricAction={updateRubric}
+        saveRubricAction={saveRubric}
       />
     </div>
   );
@@ -107,13 +93,11 @@ export default async function RubricsPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateRubricIn,
-  CreateRubricOut,
   DeleteRubricIn,
   DeleteRubricOut,
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
-  UpdateRubricIn,
-  UpdateRubricOut,
+  SaveRubricIn,
+  SaveRubricOut,
 };

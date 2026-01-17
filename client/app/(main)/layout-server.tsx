@@ -18,8 +18,8 @@ type CreateFeedbackIn = InputOf<"/api/v4/debug", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v4/debug", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v4/analytics/refresh", "post">;
-type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/get", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/get", "post">;
+type AttemptFullIn = InputOf<"/api/v4/attempts/simulation/simulation", "post">;
+type AttemptFullOut = OutputOf<"/api/v4/attempts/simulation/simulation", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
 type SearchSimulatableProfilesOut = OutputOf<
   "/api/v4/auth/simulatable",
@@ -27,8 +27,9 @@ type SearchSimulatableProfilesOut = OutputOf<
 >;
 type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
-type CreateStaffDataIn = InputOf<"/api/v4/staff/data/create", "post">;
-type CreateStaffDataOut = OutputOf<"/api/v4/staff/data/create", "post">;
+// Use profiles/get with null profile_id to get create staff data (replaces staff/data/create)
+type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
 type ProcessCSVOut = OutputOf<"/api/v4/bulk/staff/process", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
@@ -124,7 +125,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/simulation/get", input, {
+  return api.post("/attempts/simulation/simulation", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -654,8 +655,8 @@ export type {
   BulkCreateOrUpdateStaffOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  CreateStaffDataIn,
-  CreateStaffDataOut,
+  GetProfileIn,
+  GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
   RefreshAnalyticsIn,

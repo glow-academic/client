@@ -27,7 +27,7 @@ import type {
   AgentsListOut,
 } from "@/app/(main)/benchmark/a/[attemptId]/page";
 
-type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/get", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v4/attempts/benchmark/eval", "post">;
 type PatchAttemptDraftIn = InputOf<"/api/v4/attempts/draft", "patch">;
 type PatchAttemptDraftOut = OutputOf<"/api/v4/attempts/draft", "patch">;
 

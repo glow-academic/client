@@ -79,8 +79,6 @@ import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
 import type {
-  DeleteAgentPromptIn,
-  DeleteAgentPromptOut,
   GetAgentOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
@@ -115,9 +113,8 @@ export interface AgentProps {
   agentDetail?: GetAgentOut; // For edit mode (agent_id provided)
   agentDetailDefault?: GetAgentOut; // For new mode (agent_id = null)
   saveAgentAction?: (input: SaveAgentIn) => Promise<SaveAgentOut>;
-  deleteAgentPromptAction?: (
-    input: DeleteAgentPromptIn
-  ) => Promise<DeleteAgentPromptOut>;
+  // Prompts delete removed - no prompts delete functionality needed
+  deleteAgentPromptAction?: undefined;
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   // See Z-DOCS.md "Draft Autosave Pattern" section for migration guide
   patchAgentDraftAction?: (
@@ -475,9 +472,7 @@ export default function Agent({
 
   // Extract body types from server action types for type safety
   type SaveAgentBody = SaveAgentIn extends { body: infer B } ? B : never;
-  type DeleteAgentPromptBody = DeleteAgentPromptIn extends { body: infer B }
-    ? B
-    : never;
+  // Prompts delete removed - DeleteAgentPromptBody no longer needed
 
   // Use server actions directly (no mutations needed)
   const handleSaveAgent = useCallback(
@@ -490,11 +485,10 @@ export default function Agent({
     [saveAgentAction]
   );
 
-  const handleDeleteAgentPrompt = async (body: DeleteAgentPromptBody) => {
-    if (!deleteAgentPromptAction) {
-      throw new Error("deleteAgentPromptAction is required");
-    }
-    await deleteAgentPromptAction({ body });
+  // Prompts delete removed - no prompts delete functionality needed
+  const handleDeleteAgentPrompt = async (_body: DeleteAgentPromptBody) => {
+    // No-op - prompts delete functionality removed
+    throw new Error("Prompts delete functionality has been removed");
   };
 
   // Build model mapping from models array

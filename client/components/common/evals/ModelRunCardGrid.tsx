@@ -12,10 +12,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 
-type EvalNewIn = InputOf<"/api/v4/evals/new", "post">;
-type EvalNewOut = OutputOf<"/api/v4/evals/new", "post">;
-type EvalDetailIn = InputOf<"/api/v4/evals/detail", "post">;
-type EvalDetailOut = OutputOf<"/api/v4/evals/detail", "post">;
+type EvalGetIn = InputOf<"/api/v4/evals/get", "post">;
+type EvalGetOut = OutputOf<"/api/v4/evals/get", "post">;
 
 export interface ModelRunCardGridProps {
   profileId: string;
@@ -36,7 +34,7 @@ export function ModelRunCardGrid({
 }: ModelRunCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [modelRuns, setModelRuns] = React.useState<
-    EvalNewOut["available_model_runs"] | EvalDetailOut["available_model_runs"]
+    EvalGetOut["available_model_runs"]
   >([]);
   const [loading, setLoading] = React.useState(false);
 
@@ -45,31 +43,31 @@ export function ModelRunCardGrid({
     const fetchModelRuns = async () => {
       setLoading(true);
       try {
-        // Use /evals/detail if evalId provided, otherwise /evals/new
+        // Use /evals/get with eval_id if provided, otherwise with null eval_id for new mode
         if (evalId) {
-          const requestBody: EvalDetailIn["body"] = {
+          const requestBody: EvalGetIn["body"] = {
             eval_id: evalId,
             available_model_runs_search: searchTerm || null,
             available_model_runs_agent_ids: [], // Empty array to show all runs (not null)
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
-          const response = await api.post("/evals/detail", {
+          const response = await api.post("/evals/get", {
             body: requestBody,
           });
-          const typedResponse = response as EvalDetailOut;
+          const typedResponse = response as EvalGetOut;
           setModelRuns(typedResponse.available_model_runs || []);
         } else {
-          const requestBody: EvalNewIn["body"] = {
+          const requestBody: EvalGetIn["body"] = {
             available_model_runs_search: searchTerm || null,
             available_model_runs_agent_ids: [], // Empty array to show all runs (not null)
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
-          const response = await api.post("/evals/new", {
+          const response = await api.post("/evals/get", {
             body: requestBody,
           });
-          const typedResponse = response as EvalNewOut;
+          const typedResponse = response as EvalGetOut;
           setModelRuns(typedResponse.available_model_runs || []);
         }
       } catch (error) {

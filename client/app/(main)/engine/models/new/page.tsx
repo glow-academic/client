@@ -53,7 +53,9 @@ async function patchModelDraft(
 ): Promise<PatchModelDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/models/draft", input);
+  // TODO: Investigate - models/draft endpoint doesn't exist on server
+  throw new Error("models/draft endpoint doesn't exist on server");
+  // return api.patch("/models/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */

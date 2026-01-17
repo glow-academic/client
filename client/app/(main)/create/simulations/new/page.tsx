@@ -109,7 +109,9 @@ async function patchSimulationDraft(
 ): Promise<PatchSimulationDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/simulations/draft", input);
+  // TODO: Investigate - simulations/draft endpoint doesn't exist on server
+  throw new Error("simulations/draft endpoint doesn't exist on server");
+  // return api.patch("/simulations/draft", input);
 }
 
 async function createDraftNames(

@@ -16,8 +16,7 @@ type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
 type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
 type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
-type DeleteAgentPromptIn = InputOf<"/api/v4/prompts/delete", "post">;
-type DeleteAgentPromptOut = OutputOf<"/api/v4/prompts/delete", "post">;
+// Prompts delete removed - no prompts delete functionality needed
 type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
 
@@ -43,21 +42,16 @@ async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   return api.post("/agents/save", input);
 }
 
-async function deleteAgentPrompt(
-  input: DeleteAgentPromptIn,
-): Promise<DeleteAgentPromptOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/prompts/delete", input);
-}
+// Prompts delete removed - no prompts delete functionality needed
 
-async function patchAgentDraft(
-  input: PatchAgentDraftIn
-): Promise<PatchAgentDraftOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/agents/draft", input);
-}
+// TODO: Investigate - agents/draft endpoint doesn't exist on server
+// async function patchAgentDraft(
+//   input: PatchAgentDraftIn
+// ): Promise<PatchAgentDraftOut> {
+//   "use server";
+//   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+//   return api.patch("/agents/draft", input);
+// }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -114,7 +108,7 @@ export default async function NewAgentPage({
         agentDetailDefault={agentDetailDefault}
         saveAgentAction={saveAgent}
         deleteAgentPromptAction={deleteAgentPrompt}
-        patchAgentDraftAction={patchAgentDraft}
+        patchAgentDraftAction={undefined}
       />
     </div>
   );
@@ -126,8 +120,6 @@ export type {
   GetAgentOut,
   SaveAgentIn,
   SaveAgentOut,
-  DeleteAgentPromptIn,
-  DeleteAgentPromptOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
 };

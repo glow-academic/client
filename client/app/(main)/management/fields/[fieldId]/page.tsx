@@ -105,7 +105,9 @@ async function patchFieldDraft(
 ): Promise<PatchFieldDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/fields/draft", input);
+  // TODO: Investigate - fields/draft endpoint doesn't exist on server
+  throw new Error("fields/draft endpoint doesn't exist on server");
+  // return api.patch("/fields/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */

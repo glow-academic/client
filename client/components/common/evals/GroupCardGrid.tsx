@@ -12,10 +12,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 
-type EvalNewIn = InputOf<"/api/v4/evals/new", "post">;
-type EvalNewOut = OutputOf<"/api/v4/evals/new", "post">;
-type EvalDetailIn = InputOf<"/api/v4/evals/detail", "post">;
-type EvalDetailOut = OutputOf<"/api/v4/evals/detail", "post">;
+type EvalGetIn = InputOf<"/api/v4/evals/get", "post">;
+type EvalGetOut = OutputOf<"/api/v4/evals/get", "post">;
 
 export interface GroupCardGridProps {
   profileId: string;
@@ -34,7 +32,7 @@ export function GroupCardGrid({
 }: GroupCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [groups, setGroups] = React.useState<
-    EvalNewOut["available_groups"] | EvalDetailOut["available_groups"]
+    EvalGetOut["available_groups"]
   >([]);
   const [loading, setLoading] = React.useState(false);
 
@@ -45,27 +43,27 @@ export function GroupCardGrid({
       try {
         // Use /evals/detail if evalId provided, otherwise /evals/new
         if (evalId) {
-          const requestBody: EvalDetailIn["body"] = {
+          const requestBody: EvalGetIn["body"] = {
             eval_id: evalId,
             group_search: searchTerm || null,
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
-          const response = await api.post("/evals/detail", {
+          const response = await api.post("/evals/get", {
             body: requestBody,
           });
-          const typedResponse = response as EvalDetailOut;
+          const typedResponse = response as EvalGetOut;
           setGroups(typedResponse.available_groups || []);
         } else {
-          const requestBody: EvalNewIn["body"] = {
+          const requestBody: EvalGetIn["body"] = {
             group_search: searchTerm || null,
             available_model_runs_page: 1,
             available_model_runs_page_size: 50,
           };
-          const response = await api.post("/evals/new", {
+          const response = await api.post("/evals/get", {
             body: requestBody,
           });
-          const typedResponse = response as EvalNewOut;
+          const typedResponse = response as EvalGetOut;
           setGroups(typedResponse.available_groups || []);
         }
       } catch (error) {
