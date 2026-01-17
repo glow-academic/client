@@ -702,16 +702,17 @@ async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
         logger.warning(f"Could not ensure MCP token lifespan: {e}")
 
 
-async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
+async def ensure_client_registration_policies(kc_admin: Any) -> None:
     """Ensure client registration policies allow MCP clients (Cursor, ChatGPT).
     
-    Keycloak's Trusted Hosts policy cannot support custom URI schemes like cursor://
-    used by Cursor IDE. Instead, we remove Trusted Hosts and use Initial Access Token
-    policy for security, which allows any redirect URI scheme.
+    Keycloak's default client registration policies block MCP clients:
+    1. Trusted Hosts policy blocks custom URI schemes like cursor://
+    2. Consent Required policy forces consent for dynamically registered clients
     
     This function:
     1. Removes Trusted Hosts policy (blocks custom schemes)
-    2. Ensures Initial Access Token policy is enabled (secure alternative)
+    2. Removes Consent Required policy (forces consent screen)
+    3. Ensures Initial Access Token policy is enabled (secure alternative)
     
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
@@ -724,7 +725,7 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
         realm_id = realm.get("id")
         
         if not realm_id:
-            logger.warning("Master realm has no ID, cannot remove Trusted Hosts policy")
+            logger.warning("Master realm has no ID, cannot update client registration policies")
             return
         
         # Get all components for master realm
@@ -733,14 +734,25 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
         # Find Trusted Hosts component (providerId="trusted-hosts", subType="anonymous")
         # We remove this because it blocks custom URI schemes like cursor://
         trusted_hosts_component = None
+        consent_required_component = None
+        
         for comp in components:
+            provider_id = comp.get("providerId")
+            sub_type = comp.get("subType")
+            provider_type = comp.get("providerType")
+            
             if (
-                comp.get("providerId") == "trusted-hosts"
-                and comp.get("subType") == "anonymous"
-                and comp.get("providerType") == "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy"
+                provider_id == "trusted-hosts"
+                and sub_type == "anonymous"
+                and provider_type == "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy"
             ):
                 trusted_hosts_component = comp
-                break
+            elif (
+                provider_id == "consent-required"
+                and sub_type == "anonymous"
+                and provider_type == "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy"
+            ):
+                consent_required_component = comp
         
         # Remove Trusted Hosts policy - it blocks custom URI schemes (cursor://)
         if trusted_hosts_component:
@@ -756,17 +768,35 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
         else:
             logger.info("✅ Trusted Hosts policy not found (already removed or never existed)")
         
+        # Remove Consent Required policy - it forces consent for dynamically registered clients
+        if consent_required_component:
+            component_id = consent_required_component.get("id")
+            if component_id:
+                try:
+                    kc_admin.delete_component(component_id=component_id)
+                    logger.info("✅ Removed Consent Required policy (forces consent for dynamically registered clients)")
+                except Exception as e:
+                    logger.warning(f"Failed to remove Consent Required policy: {e}")
+            else:
+                logger.warning("Consent Required component has no ID")
+        else:
+            logger.info("✅ Consent Required policy not found (already removed or never existed)")
+        
         # After removing Trusted Hosts, Keycloak allows anonymous client registration
         # This means any MCP client (Cursor, ChatGPT, Claude, Windsurf, etc.) can register
         # with any redirect URI scheme (including cursor://) without requiring an Initial Access Token.
         # 
+        # After removing Consent Required, dynamically registered clients default to consentRequired=false
+        # This prevents the consent screen from appearing for MCP clients.
+        # 
         # Security note: Redirect URIs are still validated during OAuth flow, so this is safe.
         # The Trusted Hosts policy was blocking legitimate MCP clients, not providing real security.
+        # The Consent Required policy was forcing unnecessary consent screens.
         
-        logger.info("✅ Client registration now allows any redirect URI scheme via anonymous registration")
+        logger.info("✅ Client registration now allows any redirect URI scheme and disables consent by default")
         
     except Exception as e:
-        logger.warning(f"Could not remove Trusted Hosts policy: {e}", exc_info=True)
+        logger.warning(f"Could not update client registration policies: {e}", exc_info=True)
 
 
 async def ensure_dynamic_clients_no_consent(kc_admin: Any) -> None:
@@ -1893,8 +1923,8 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         # Ensure MCP token lifespan is configured (after client scope)
         await ensure_mcp_token_lifespan(kc_admin)
         
-        # Ensure Trusted Hosts policy is configured for client registration
-        await ensure_trusted_hosts_policy(kc_admin)
+        # Ensure client registration policies are configured (remove Trusted Hosts and Consent Required)
+        await ensure_client_registration_policies(kc_admin)
         
         # Disable consent screen display for all default client scopes
         # This is critical: even if clients have consentRequired=false, scopes can force consent
