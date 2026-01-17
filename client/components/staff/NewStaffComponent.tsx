@@ -27,6 +27,13 @@ import { RequestLimits } from "@/components/resources/RequestLimits";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -37,6 +44,7 @@ import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
+import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { parseAsString, type Parser } from "nuqs";
 
@@ -698,6 +706,49 @@ function NewStaffComponent({
     return !staffData.can_edit;
   }, [staffData]);
 
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "flags"],
+      contact: ["emails", "request_limits"],
+      organization: ["departments"],
+      all: ["names", "flags", "request_limits", "departments", "emails"], // All resources for full-page generation
+    }),
+    []
+  );
+
+  // Resource labels for display
+  const resourceLabels: Record<ResourceType, string> = useMemo(
+    () => ({
+      names: "Names",
+      flags: "Flags",
+      departments: "Departments",
+      emails: "Emails",
+      request_limits: "Request Limits",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt],
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
   // Set breadcrumb context when staff data is loaded
   useEffect(() => {
     const staffName =
@@ -839,7 +890,7 @@ function NewStaffComponent({
       staffData?.last_name_required,
       staffData?.departments_required,
       staffData?.emails_required,
-      staffData?.emails,
+      staffData?.email_resources,
     ]
   );
 
@@ -866,49 +917,6 @@ function NewStaffComponent({
       }
     },
     [formState]
-  );
-
-  // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
-    () => ({
-      basic: ["names", "flags"],
-      contact: ["emails", "request_limits"],
-      organization: ["departments"],
-      all: ["names", "flags", "request_limits", "departments", "emails"], // All resources for full-page generation
-    }),
-    []
-  );
-
-  // Resource labels for display
-  const resourceLabels: Record<ResourceType, string> = useMemo(
-    () => ({
-      names: "Names",
-      flags: "Flags",
-      departments: "Departments",
-      emails: "Emails",
-      request_limits: "Request Limits",
-    }),
-    []
-  );
-
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt],
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
   );
 
   // Handler for modal generate/regenerate action
