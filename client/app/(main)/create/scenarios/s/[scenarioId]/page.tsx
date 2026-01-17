@@ -58,8 +58,6 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftRangesIn = InputOf<"/api/v4/resources/ranges", "post">;
-type CreateDraftRangesOut = OutputOf<"/api/v4/resources/ranges", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/scenario_flags",
   "post"
@@ -287,14 +285,6 @@ async function createDraftObjectives(
   return api.post("/resources/objectives", input);
 }
 
-async function createDraftRanges(
-  input: CreateDraftRangesIn
-): Promise<CreateDraftRangesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/ranges", input);
-}
-
 async function createDraftScenarioFlags(
   input: CreateDraftScenarioFlagsIn
 ): Promise<CreateDraftScenarioFlagsOut> {
@@ -457,7 +447,6 @@ export default async function EditScenarioPage({
           createDescriptionsAction={createDraftDescriptions}
           createProblemStatementsAction={createDraftProblemStatements}
           createObjectivesAction={createDraftObjectives}
-          createRangesAction={createDraftRanges}
           createScenarioFlagsAction={createDraftScenarioFlags}
         />
       </div>

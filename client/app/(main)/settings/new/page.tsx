@@ -38,6 +38,18 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
+type CreateDraftAuthsIn = InputOf<"/api/v4/resources/auths", "post">;
+type CreateDraftAuthsOut = OutputOf<"/api/v4/resources/auths", "post">;
+type CreateDraftProvidersIn = InputOf<
+  "/api/v4/resources/providers",
+  "post"
+>;
+type CreateDraftProvidersOut = OutputOf<
+  "/api/v4/resources/providers",
+  "post"
+>;
+type CreateDraftKeysIn = InputOf<"/api/v4/resources/keys", "post">;
+type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -109,6 +121,30 @@ async function createDraftDepartments(
   return api.post("/resources/departments", input);
 }
 
+async function createDraftAuths(
+  input: CreateDraftAuthsIn
+): Promise<CreateDraftAuthsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/auths", input);
+}
+
+async function createDraftProviders(
+  input: CreateDraftProvidersIn
+): Promise<CreateDraftProvidersOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/providers", input);
+}
+
+async function createDraftKeys(
+  input: CreateDraftKeysIn
+): Promise<CreateDraftKeysOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/keys", input);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Settings",
@@ -172,6 +208,9 @@ export default async function NewSettingPage({
         createColorsAction={createDraftColors}
         createFlagsAction={createDraftFlags}
         createDepartmentsAction={createDraftDepartments}
+        createAuthsAction={createDraftAuths}
+        createProvidersAction={createDraftProviders}
+        createKeysAction={createDraftKeys}
       />
     </div>
   );

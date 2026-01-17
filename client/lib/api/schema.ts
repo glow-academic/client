@@ -7907,28 +7907,62 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetAgentV4Department"][] | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            reasoning_level_resource?: components["schemas"]["QGetAgentV4ReasoningLevelResource"] | null;
+            /** Show Reasoning Levels */
+            show_reasoning_levels?: boolean | null;
+            /** Reasoning Levels Agent Id */
+            reasoning_levels_agent_id?: string | null;
+            /** Reasoning Levels Required */
+            reasoning_levels_required?: boolean | null;
+            /** Reasoning Level Suggestions */
+            reasoning_level_suggestions?: string[] | null;
+            /** Reasoning Levels */
+            reasoning_levels?: components["schemas"]["QGetAgentV4ReasoningLevelResource"][] | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            temperature_level_resource?: components["schemas"]["QGetAgentV4TemperatureLevelResource"] | null;
+            /** Show Temperature Levels */
+            show_temperature_levels?: boolean | null;
+            /** Temperature Levels Agent Id */
+            temperature_levels_agent_id?: string | null;
+            /** Temperature Levels Required */
+            temperature_levels_required?: boolean | null;
+            /** Temperature Level Suggestions */
+            temperature_level_suggestions?: string[] | null;
+            /** Temperature Levels */
+            temperature_levels?: components["schemas"]["QGetAgentV4TemperatureLevelResource"][] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Voice Resources */
+            voice_resources?: components["schemas"]["QGetAgentV4VoiceResource"][] | null;
+            /** Show Voices */
+            show_voices?: boolean | null;
+            /** Voices Agent Id */
+            voices_agent_id?: string | null;
+            /** Voices Required */
+            voices_required?: boolean | null;
+            /** Voice Suggestions */
+            voice_suggestions?: string[] | null;
+            /** Voices */
+            voices?: components["schemas"]["QGetAgentV4VoiceResource"][] | null;
             /** System Prompt */
             system_prompt?: string | null;
             /** Active */
             active?: boolean | null;
             /** Role */
             role?: string | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
             /** Valid Model Ids */
             valid_model_ids?: string[] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
-            /** Temperature Levels */
-            temperature_levels?: unknown | null;
-            /** Reasoning Options */
-            reasoning_options?: unknown | null;
-            /** Available Voices */
-            available_voices?: unknown | null;
+            /** Temperature Levels Jsonb */
+            temperature_levels_jsonb?: unknown | null;
+            /** Reasoning Options Jsonb */
+            reasoning_options_jsonb?: unknown | null;
+            /** Available Voices Jsonb */
+            available_voices_jsonb?: unknown | null;
             /** Debug Info */
             debug_info?: {
                 [key: string]: unknown;
@@ -12755,6 +12789,35 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4ReasoningLevelResource */
+        QGetAgentV4ReasoningLevelResource: {
+            /** Id */
+            id: string | null;
+            /** Reasoning Level */
+            reasoning_level: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4TemperatureLevelResource */
+        QGetAgentV4TemperatureLevelResource: {
+            /** Id */
+            id: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Is Upper */
+            is_upper: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4VoiceResource */
+        QGetAgentV4VoiceResource: {
+            /** Id */
+            id: string | null;
+            /** Voice */
+            voice: string | null;
             /** Generated */
             generated: boolean | null;
         };

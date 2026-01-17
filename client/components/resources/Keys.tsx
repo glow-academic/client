@@ -7,10 +7,18 @@
 "use client";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Check } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftKeysIn = InputOf<"/api/v4/resources/keys", "post">;
 type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
@@ -46,7 +54,21 @@ export interface KeysProps {
     generated?: boolean | null;
   }>; // All available keys from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
-  onKeyIdChange: (keyId: string | null) => void; // Update key_id in parent form state
+  onKeyIdChange?: (keyId: string | null) => void; // Update key_id in parent form state (single-select)
+  key_ids?: string[]; // Current key resource IDs (multi-select)
+  key_resources?: Array<{
+    key_id: string | null;
+    name: string | null;
+    masked_key: string | null;
+    description: string | null;
+    active: boolean | null;
+    department_ids?: string[] | null;
+    generated?: boolean | null;
+  }>; // Selected key resources (multi-select)
+  onChange?: (ids: string[]) => void; // Update key_ids in parent form state (multi-select)
+  multiSelect?: boolean; // Whether to use multi-select mode
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   label?: string;
   id?: string;
   required?: boolean;
@@ -66,6 +88,12 @@ export function Keys({
   keys,
   disabled = false,
   onKeyIdChange,
+  key_ids,
+  key_resources,
+  onChange,
+  multiSelect = false,
+  onGenerate,
+  isGenerating = false,
   label = "Key",
   id = "key",
   required = false,
@@ -81,9 +109,36 @@ export function Keys({
     () => key_suggestions ?? [],
     [key_suggestions]
   );
+  const ids = useMemo(() => key_ids ?? [], [key_ids]);
+  
+  // Track which key IDs have already had resources created (multi-select)
+  const createdKeyIdsRef = useRef<Set<string>>(new Set());
+  
+  // Initialize createdKeyIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdKeyIdsRef.current.add(id));
+  }, [ids]);
+  
+  // Check if any key resource is generated (multi-select)
+  const hasGenerated = useMemo(() => {
+    return key_resources?.some((k) => k.generated) ?? false;
+  }, [key_resources]);
 
   // Convert keys array from API format to KeyItem format
   const keyItems = useMemo(() => {
+    if (multiSelect) {
+      // Multi-select: use key_id field
+      return (keys ?? [])
+        .filter((k) => k.key_id && k.name) // Filter out nulls
+        .map((k) => ({
+          id: k.key_id!,
+          name: k.name!,
+          ...(k.description ? { description: k.description } : {}),
+          ...(k.masked_key ? { key_masked: k.masked_key } : {}),
+          ...(k.active !== null ? { active: k.active } : {}),
+        }));
+    }
+    // Single-select: use id field
     return (keys ?? [])
       .filter((k) => k.id && k.name) // Filter out nulls
       .map((k) => ({
@@ -93,12 +148,53 @@ export function Keys({
         ...(k.key_masked ? { key_masked: k.key_masked } : {}),
         ...(k.active !== null ? { active: k.active } : {}),
       }));
-  }, [keys]);
+  }, [keys, multiSelect]);
 
   // Check if a key is suggested
   const isSuggested = useCallback(
     (keyId: string) => suggestionsList.includes(keyId),
     [suggestionsList]
+  );
+
+  const handleSelectMulti = useCallback(
+    async (selectedIds: string[]) => {
+      // Find newly selected IDs
+      const newlySelected = selectedIds.filter(
+        (id) => !ids.includes(id) && !createdKeyIdsRef.current.has(id)
+      );
+
+      // Create resources for newly selected keys
+      if (
+        newlySelected.length > 0 &&
+        createKeysAction &&
+        agent_id &&
+        group_id
+      ) {
+        for (const keyId of newlySelected) {
+          try {
+            await createKeysAction({
+              body: {
+                agent_id: agent_id,
+                group_id: group_id,
+                key_id: keyId,
+                mcp: false,
+              },
+            });
+            createdKeyIdsRef.current.add(keyId);
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error(`Failed to create key resource for ${keyId}:`, error);
+            // Don't block UI - still update selection
+          }
+        }
+      }
+
+      // Update parent state
+      if (onChange) {
+        onChange(selectedIds);
+      }
+    },
+    [ids, onChange, createKeysAction, agent_id, group_id]
   );
 
   // Don't render if show_key is false (AFTER all hooks)
@@ -108,18 +204,54 @@ export function Keys({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="flex items-center gap-1">
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
+      {label && (
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
+          {onGenerate && agent_id && multiSelect && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      )}
 
       <GenericPicker<KeyItem>
         items={keyItems}
-        selectedIds={resourceId ? [resourceId] : []}
-        onSelect={(selectedIds) => {
-          onKeyIdChange(selectedIds.length > 0 ? selectedIds[0] : null);
-        }}
-        multiSelect={false}
+        itemIds={multiSelect 
+          ? (keys?.map((k) => k.key_id).filter((id): id is string => id !== null) ?? [])
+          : (keys?.map((k) => k.id).filter((id): id is string => id !== null) ?? [])}
+        selectedIds={multiSelect ? ids : (resourceId ? [resourceId] : [])}
+        onSelect={multiSelect 
+          ? handleSelectMulti
+          : (selectedIds) => {
+              if (onKeyIdChange) {
+                onKeyIdChange(selectedIds.length > 0 ? selectedIds[0] : null);
+              }
+            }}
+        multiSelect={multiSelect}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
@@ -145,9 +277,10 @@ export function Keys({
               </div>
             </div>
             <Check
-              className={`ml-auto flex-shrink-0 h-4 w-4 ${
+              className={cn(
+                "ml-auto flex-shrink-0 h-4 w-4",
                 isSelected ? "opacity-100" : "opacity-0"
-              }`}
+              )}
             />
           </div>
         )}
@@ -155,6 +288,8 @@ export function Keys({
         disabled={disabled}
         placeholder={placeholder}
         showLabel={false}
+        hideSelectedChips={multiSelect ? false : true}
+        showClearAll={multiSelect ? true : false}
       />
     </div>
   );

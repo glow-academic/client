@@ -63,10 +63,6 @@ export type ScenarioFormState = {
   name_id: string | null;
   description_id: string | null;
   problem_statement_id: string | null;
-  // Single-select ranges
-  persona_range_id: string | null;
-  document_range_id: string | null;
-  parameter_range_id: string | null;
   // Single-select flags
   active_flag_id: string | null;
   objectives_enabled_flag_id: string | null;
@@ -83,8 +79,6 @@ export type ScenarioFormState = {
   field_ids: string[];
   image_ids: string[];
   objective_ids: string[];
-  // Multi-select ranges
-  field_range_ids: string[];
   // Other fields (not resources)
   video_length: number | null;
   scenario_domain_id: string | null;

@@ -53,8 +53,6 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftRangesIn = InputOf<"/api/v4/resources/ranges", "post">;
-type CreateDraftRangesOut = OutputOf<"/api/v4/resources/ranges", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/scenario_flags",
   "post"
@@ -217,7 +215,6 @@ export default async function NewScenarioPage({
         createDescriptionsAction={createDraftDescriptions}
         createProblemStatementsAction={createDraftProblemStatements}
         createObjectivesAction={createDraftObjectives}
-        createRangesAction={createDraftRanges}
         createScenarioFlagsAction={createDraftScenarioFlags}
       />
     </div>

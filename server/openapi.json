@@ -31367,6 +31367,268 @@
             ],
             "title": "Departments"
           },
+          "reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Id"
+          },
+          "reasoning_level_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetAgentV4ReasoningLevelResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_reasoning_levels": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Reasoning Levels"
+          },
+          "reasoning_levels_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Agent Id"
+          },
+          "reasoning_levels_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Required"
+          },
+          "reasoning_level_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Suggestions"
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAgentV4ReasoningLevelResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels"
+          },
+          "temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Id"
+          },
+          "temperature_level_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetAgentV4TemperatureLevelResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_temperature_levels": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Temperature Levels"
+          },
+          "temperature_levels_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels Agent Id"
+          },
+          "temperature_levels_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels Required"
+          },
+          "temperature_level_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Suggestions"
+          },
+          "temperature_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAgentV4TemperatureLevelResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels"
+          },
+          "voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Ids"
+          },
+          "voice_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAgentV4VoiceResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Resources"
+          },
+          "show_voices": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Voices"
+          },
+          "voices_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Agent Id"
+          },
+          "voices_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Required"
+          },
+          "voice_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Suggestions"
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAgentV4VoiceResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices"
+          },
           "system_prompt": {
             "anyOf": [
               {
@@ -31400,45 +31662,6 @@
             ],
             "title": "Role"
           },
-          "temperature_level_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Level Id"
-          },
-          "reasoning_level_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Level Id"
-          },
-          "voice_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice Ids"
-          },
           "valid_model_ids": {
             "anyOf": [
               {
@@ -31469,32 +31692,32 @@
             ],
             "title": "Valid Department Ids"
           },
-          "temperature_levels": {
+          "temperature_levels_jsonb": {
             "anyOf": [
               {},
               {
                 "type": "null"
               }
             ],
-            "title": "Temperature Levels"
+            "title": "Temperature Levels Jsonb"
           },
-          "reasoning_options": {
+          "reasoning_options_jsonb": {
             "anyOf": [
               {},
               {
                 "type": "null"
               }
             ],
-            "title": "Reasoning Options"
+            "title": "Reasoning Options Jsonb"
           },
-          "available_voices": {
+          "available_voices_jsonb": {
             "anyOf": [
               {},
               {
                 "type": "null"
               }
             ],
-            "title": "Available Voices"
+            "title": "Available Voices Jsonb"
           },
           "debug_info": {
             "anyOf": [
@@ -55964,6 +56187,153 @@
           "generated"
         ],
         "title": "QGetAgentV4PromptResource"
+      },
+      "QGetAgentV4ReasoningLevelResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "reasoning_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reasoning_level",
+          "generated"
+        ],
+        "title": "QGetAgentV4ReasoningLevelResource"
+      },
+      "QGetAgentV4TemperatureLevelResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "is_upper": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Upper"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "temperature",
+          "is_upper",
+          "generated"
+        ],
+        "title": "QGetAgentV4TemperatureLevelResource"
+      },
+      "QGetAgentV4VoiceResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "voice",
+          "generated"
+        ],
+        "title": "QGetAgentV4VoiceResource"
       },
       "QGetAuthListV4Auth": {
         "properties": {

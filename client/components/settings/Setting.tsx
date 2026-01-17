@@ -18,14 +18,14 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Auths } from "@/components/resources/Auths";
+import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
+import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
-import { SettingAuths } from "@/components/resources/SettingAuths";
-import { SettingColors } from "@/components/resources/SettingColors";
-import { SettingKeys } from "@/components/resources/SettingKeys";
-import { SettingProviders } from "@/components/resources/SettingProviders";
+import { Providers } from "@/components/resources/Providers";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -96,6 +96,15 @@ export interface SettingProps {
   createDepartmentsAction?: (
     input: CreateDraftDepartmentsIn
   ) => Promise<CreateDraftDepartmentsOut>;
+  createAuthsAction?: (
+    input: InputOf<"/api/v4/resources/auths", "post">
+  ) => Promise<OutputOf<"/api/v4/resources/auths", "post">>;
+  createProvidersAction?: (
+    input: InputOf<"/api/v4/resources/providers", "post">
+  ) => Promise<OutputOf<"/api/v4/resources/providers", "post">>;
+  createKeysAction?: (
+    input: InputOf<"/api/v4/resources/keys", "post">
+  ) => Promise<OutputOf<"/api/v4/resources/keys", "post">>;
 }
 
 function SettingComponent({
@@ -1135,16 +1144,17 @@ function SettingComponent({
               }
             >
               {/* Multi-select Colors component */}
-              <SettingColors
+              <Colors
                 color_ids={formState.color_ids ?? []}
                 color_resources={currentSettingData?.color_resources ?? []}
-                show_colors={currentSettingData?.show_colors ?? false}
+                show_color={currentSettingData?.show_colors ?? false}
                 color_suggestions={currentSettingData?.color_suggestions ?? []}
                 colors={currentSettingData?.colors ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, color_ids: ids }))
                 }
+                multiSelect={true}
                 searchTerm={
                   (stepFormData["colorSearch"] as string | null | undefined) ||
                   ""
@@ -1180,7 +1190,7 @@ function SettingComponent({
             >
               {/* Multi-select Auths, Providers, Keys components */}
               <div className="space-y-4">
-                <SettingAuths
+                <Auths
                   auth_ids={formState.auth_ids ?? []}
                   auth_resources={currentSettingData?.auth_resources ?? []}
                   show_auths={currentSettingData?.show_auths ?? false}
@@ -1193,9 +1203,10 @@ function SettingComponent({
                   required={currentSettingData?.auths_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
                   agent_id={currentSettingData?.auths_agent_id ?? null}
+                  createAuthsAction={createAuthsAction}
                 />
 
-                <SettingProviders
+                <Providers
                   provider_ids={formState.provider_ids ?? []}
                   provider_resources={
                     currentSettingData?.provider_resources ?? []
@@ -1209,24 +1220,28 @@ function SettingComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, provider_ids: ids }))
                   }
+                  multiSelect={true}
                   required={currentSettingData?.providers_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
                   agent_id={currentSettingData?.providers_agent_id ?? null}
+                  createProvidersAction={createProvidersAction}
                 />
 
-                <SettingKeys
+                <Keys
                   key_ids={formState.key_ids ?? []}
                   key_resources={currentSettingData?.key_resources ?? []}
-                  show_keys={currentSettingData?.show_keys ?? false}
+                  show_key={currentSettingData?.show_keys ?? false}
                   key_suggestions={currentSettingData?.key_suggestions ?? []}
                   keys={currentSettingData?.keys ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, key_ids: ids }))
                   }
+                  multiSelect={true}
                   required={currentSettingData?.keys_required ?? false}
                   group_id={currentSettingData?.group_id ?? null}
                   agent_id={currentSettingData?.keys_agent_id ?? null}
+                  createKeysAction={createKeysAction}
                 />
               </div>
             </StepCard>

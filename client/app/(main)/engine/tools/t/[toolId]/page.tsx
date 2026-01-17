@@ -87,46 +87,6 @@ async function patchToolDraft(
   return api.patch("/tools/draft", input);
 }
 
-async function createDraftSchemas(
-  input: CreateDraftSchemasIn
-): Promise<CreateDraftSchemasOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/schemas", input);
-}
-
-async function createDraftTemplates(
-  input: CreateDraftTemplatesIn
-): Promise<CreateDraftTemplatesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/templates", input);
-}
-
-async function createDraftSchemaFieldItems(
-  input: CreateDraftSchemaFieldItemsIn
-): Promise<CreateDraftSchemaFieldItemsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/schema_field_items", input);
-}
-
-async function createDraftTemplateArrayItems(
-  input: CreateDraftTemplateArrayItemsIn
-): Promise<CreateDraftTemplateArrayItemsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/template_array_items", input);
-}
-
-async function createDraftTemplateValues(
-  input: CreateDraftTemplateValuesIn
-): Promise<CreateDraftTemplateValuesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/template_values", input);
-}
-
 async function createDraftArgs(
   input: CreateDraftArgsIn
 ): Promise<CreateDraftArgsOut> {

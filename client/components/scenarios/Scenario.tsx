@@ -93,7 +93,6 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Objectives } from "@/components/resources/Objectives";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
-import { Ranges } from "@/components/resources/Ranges";
 import { useGenerationContext } from "@/contexts/generation-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -175,9 +174,6 @@ export interface ScenarioProps {
   createObjectivesAction?: (
     input: InputOf<"/api/v4/resources/objectives", "post">
   ) => Promise<OutputOf<"/api/v4/resources/objectives", "post">>;
-  createRangesAction?: (
-    input: InputOf<"/api/v4/resources/ranges", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/ranges", "post">>;
   createScenarioFlagsAction?: (
     input: InputOf<"/api/v4/resources/scenario_flags", "post">
   ) => Promise<OutputOf<"/api/v4/resources/scenario_flags", "post">>;
@@ -197,7 +193,6 @@ function ScenarioComponent({
   createDescriptionsAction,
   createProblemStatementsAction,
   createObjectivesAction,
-  createRangesAction,
   createScenarioFlagsAction,
 }: ScenarioProps) {
   const router = useRouter();
@@ -529,9 +524,6 @@ function ScenarioComponent({
         name_id: null,
         description_id: null,
         problem_statement_id: null,
-        persona_range_id: null,
-        document_range_id: null,
-        parameter_range_id: null,
         active_flag_id: null,
         objectives_enabled_flag_id: null,
         images_enabled_flag_id: null,
@@ -546,7 +538,6 @@ function ScenarioComponent({
         field_ids: [],
         image_ids: [],
         objective_ids: [],
-        field_range_ids: [],
         video_length: null,
         scenario_domain_id: null,
         image_domain_id: null,
@@ -559,15 +550,6 @@ function ScenarioComponent({
       description_id: data.description_id ? String(data.description_id) : null,
       problem_statement_id: data.problem_statement_id
         ? String(data.problem_statement_id)
-        : null,
-      persona_range_id: data.persona_range_id
-        ? String(data.persona_range_id)
-        : null,
-      document_range_id: data.document_range_id
-        ? String(data.document_range_id)
-        : null,
-      parameter_range_id: data.parameter_range_id
-        ? String(data.parameter_range_id)
         : null,
       active_flag_id: data.active_flag_id ? String(data.active_flag_id) : null,
       objectives_enabled_flag_id: data.objectives_enabled_flag_id
@@ -593,7 +575,6 @@ function ScenarioComponent({
       field_ids: (data.field_ids || []).map(String),
       image_ids: (data.image_ids || []).map(String),
       objective_ids: (data.objective_ids || []).map(String),
-      field_range_ids: (data.field_range_ids || []).map(String),
       video_length: null, // TODO: Extract from video data
       scenario_domain_id: null, // TODO: Extract from scenario data
       image_domain_id: null, // TODO: Extract from scenario data
@@ -618,9 +599,6 @@ function ScenarioComponent({
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
         prev.problem_statement_id !== newState.problem_statement_id ||
-        prev.persona_range_id !== newState.persona_range_id ||
-        prev.document_range_id !== newState.document_range_id ||
-        prev.parameter_range_id !== newState.parameter_range_id ||
         prev.active_flag_id !== newState.active_flag_id ||
         prev.objectives_enabled_flag_id !==
           newState.objectives_enabled_flag_id ||
@@ -642,9 +620,7 @@ function ScenarioComponent({
         JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
         JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
         JSON.stringify(prev.objective_ids) !==
-          JSON.stringify(newState.objective_ids) ||
-        JSON.stringify(prev.field_range_ids) !==
-          JSON.stringify(newState.field_range_ids)
+          JSON.stringify(newState.objective_ids)
       ) {
         return newState;
       }
@@ -654,9 +630,6 @@ function ScenarioComponent({
     scenarioData?.name_id,
     scenarioData?.description_id,
     scenarioData?.problem_statement_id,
-    scenarioData?.persona_range_id,
-    scenarioData?.document_range_id,
-    scenarioData?.parameter_range_id,
     scenarioData?.active_flag_id,
     scenarioData?.objectives_enabled_flag_id,
     scenarioData?.images_enabled_flag_id,
@@ -671,7 +644,6 @@ function ScenarioComponent({
     JSON.stringify(scenarioData?.field_ids),
     JSON.stringify(scenarioData?.image_ids),
     JSON.stringify(scenarioData?.objective_ids),
-    JSON.stringify(scenarioData?.field_range_ids),
   ]);
 
   // Track previous initialDraftState content to avoid unnecessary updates
@@ -794,10 +766,6 @@ function ScenarioComponent({
       description_id?: string | null;
       problem_statement_id?: string | null;
       objective_ids?: string[];
-      persona_range_id?: string | null;
-      document_range_id?: string | null;
-      parameter_range_id?: string | null;
-      field_range_ids?: string[];
       active_flag_id?: string | null;
       objectives_enabled_flag_id?: string | null;
       hints_enabled_flag_id?: string | null;
@@ -841,22 +809,6 @@ function ScenarioComponent({
               .map(String)
               .filter((id) => !prev.objective_ids.includes(id));
             updates.objective_ids = [...prev.objective_ids, ...newObjectiveIds];
-          }
-          if (data.persona_range_id)
-            updates.persona_range_id = String(data.persona_range_id);
-          if (data.document_range_id)
-            updates.document_range_id = String(data.document_range_id);
-          if (data.parameter_range_id)
-            updates.parameter_range_id = String(data.parameter_range_id);
-          if (data.field_range_ids && data.field_range_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newFieldRangeIds = data.field_range_ids
-              .map(String)
-              .filter((id) => !prev.field_range_ids.includes(id));
-            updates.field_range_ids = [
-              ...prev.field_range_ids,
-              ...newFieldRangeIds,
-            ];
           }
           if (data.active_flag_id)
             updates.active_flag_id = String(data.active_flag_id);
@@ -990,34 +942,6 @@ function ScenarioComponent({
       objectives_required: scenarioData.objectives_required,
       objective_suggestions: scenarioData.objective_suggestions,
       objectives: scenarioData.objectives,
-      persona_range_id: scenarioData.persona_range_id,
-      persona_range_resource: scenarioData.persona_range_resource,
-      show_persona_range: scenarioData.show_persona_range,
-      persona_range_agent_id: scenarioData.persona_range_agent_id,
-      persona_range_required: scenarioData.persona_range_required,
-      persona_range_suggestions: scenarioData.persona_range_suggestions,
-      persona_ranges: scenarioData.persona_ranges,
-      document_range_id: scenarioData.document_range_id,
-      document_range_resource: scenarioData.document_range_resource,
-      show_document_range: scenarioData.show_document_range,
-      document_range_agent_id: scenarioData.document_range_agent_id,
-      document_range_required: scenarioData.document_range_required,
-      document_range_suggestions: scenarioData.document_range_suggestions,
-      document_ranges: scenarioData.document_ranges,
-      parameter_range_id: scenarioData.parameter_range_id,
-      parameter_range_resource: scenarioData.parameter_range_resource,
-      show_parameter_range: scenarioData.show_parameter_range,
-      parameter_range_agent_id: scenarioData.parameter_range_agent_id,
-      parameter_range_required: scenarioData.parameter_range_required,
-      parameter_range_suggestions: scenarioData.parameter_range_suggestions,
-      parameter_ranges: scenarioData.parameter_ranges,
-      field_range_ids: scenarioData.field_range_ids,
-      field_range_resources: scenarioData.field_range_resources,
-      show_field_ranges: scenarioData.show_field_ranges,
-      field_ranges_agent_id: scenarioData.field_ranges_agent_id,
-      field_ranges_required: scenarioData.field_ranges_required,
-      field_range_suggestions: scenarioData.field_range_suggestions,
-      field_ranges: scenarioData.field_ranges,
       active_flag_id: scenarioData.active_flag_id,
       active_flag_resource: scenarioData.active_flag_resource,
       show_active_flag: scenarioData.show_active_flag,
@@ -1102,34 +1026,6 @@ function ScenarioComponent({
     scenarioData?.objectives_required,
     scenarioData?.objective_suggestions,
     scenarioData?.objectives,
-    scenarioData?.persona_range_id,
-    scenarioData?.persona_range_resource,
-    scenarioData?.show_persona_range,
-    scenarioData?.persona_range_agent_id,
-    scenarioData?.persona_range_required,
-    scenarioData?.persona_range_suggestions,
-    scenarioData?.persona_ranges,
-    scenarioData?.document_range_id,
-    scenarioData?.document_range_resource,
-    scenarioData?.show_document_range,
-    scenarioData?.document_range_agent_id,
-    scenarioData?.document_range_required,
-    scenarioData?.document_range_suggestions,
-    scenarioData?.document_ranges,
-    scenarioData?.parameter_range_id,
-    scenarioData?.parameter_range_resource,
-    scenarioData?.show_parameter_range,
-    scenarioData?.parameter_range_agent_id,
-    scenarioData?.parameter_range_required,
-    scenarioData?.parameter_range_suggestions,
-    scenarioData?.parameter_ranges,
-    scenarioData?.field_range_ids,
-    scenarioData?.field_range_resources,
-    scenarioData?.show_field_ranges,
-    scenarioData?.field_ranges_agent_id,
-    scenarioData?.field_ranges_required,
-    scenarioData?.field_range_suggestions,
-    scenarioData?.field_ranges,
     scenarioData?.active_flag_id,
     scenarioData?.active_flag_resource,
     scenarioData?.show_active_flag,
@@ -1196,19 +1092,6 @@ function ScenarioComponent({
               (o) => o.generated
             ) ?? false
           );
-        case "ranges":
-          return (
-            stableScenarioDataFields.persona_range_resource?.generated ??
-            (false ||
-              stableScenarioDataFields.document_range_resource?.generated) ??
-            (false ||
-              stableScenarioDataFields.parameter_range_resource?.generated) ??
-            (false ||
-              stableScenarioDataFields.field_range_resources?.some(
-                (r) => r.generated
-              )) ??
-            false
-          );
         case "scenario_flags":
           return (
             stableScenarioDataFields.active_flag_resource?.generated ??
@@ -1247,10 +1130,6 @@ function ScenarioComponent({
 
   const handleGenerateFlags = useCallback(() => {
     handleGenerateResources(["scenario_flags"]);
-  }, [handleGenerateResources]);
-
-  const handleGenerateRanges = useCallback(() => {
-    handleGenerateResources(["ranges"]);
   }, [handleGenerateResources]);
 
   const handleGenerateProblemStatements = useCallback(() => {
@@ -1385,14 +1264,13 @@ function ScenarioComponent({
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
-      basic: ["names", "descriptions", "scenario_flags", "ranges"],
+      basic: ["names", "descriptions", "scenario_flags"],
       content: ["problem_statements", "objectives"],
       all: [
         "names",
         "descriptions",
         "problem_statements",
         "objectives",
-        "ranges",
         "scenario_flags",
       ], // All resources for full-page generation
     }),
@@ -5519,10 +5397,6 @@ function ScenarioComponent({
                 "description",
                 "department_ids",
                 "active_flag_id",
-                "persona_range_id",
-                "document_range_id",
-                "parameter_range_id",
-                "field_range_ids",
               ]}
               actions={
                 stepResources["basic"] &&
@@ -6066,102 +5940,6 @@ function ScenarioComponent({
                     null
                   }
                   createFlagsAction={createScenarioFlagsAction}
-                />
-
-                {/* Persona Range - using Ranges resource component */}
-                <Ranges
-                  range_id={formState.persona_range_id ?? null}
-                  range_resource={
-                    currentScenarioData?.persona_range_resource ?? null
-                  }
-                  show_range={currentScenarioData?.show_persona_range ?? false}
-                  range_suggestions={
-                    currentScenarioData?.persona_range_suggestions ?? []
-                  }
-                  ranges={currentScenarioData?.persona_ranges ?? []}
-                  disabled={isReadonly}
-                  onRangeIdChange={(rangeId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      persona_range_id: rangeId,
-                    }))
-                  }
-                  onGenerate={handleGenerateRanges}
-                  isGenerating={isGenerating("ranges")}
-                  label="Persona Range"
-                  helpText="Number of personas to randomize"
-                  required={
-                    currentScenarioData?.persona_range_required ?? false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.persona_range_agent_id ?? null}
-                  createRangesAction={createRangesAction}
-                />
-
-                {/* Document Range */}
-                <Ranges
-                  range_id={formState.document_range_id ?? null}
-                  range_resource={
-                    currentScenarioData?.document_range_resource ?? null
-                  }
-                  show_range={currentScenarioData?.show_document_range ?? false}
-                  range_suggestions={
-                    currentScenarioData?.document_range_suggestions ?? []
-                  }
-                  ranges={currentScenarioData?.document_ranges ?? []}
-                  disabled={isReadonly}
-                  onRangeIdChange={(rangeId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      document_range_id: rangeId,
-                    }))
-                  }
-                  onGenerate={handleGenerateRanges}
-                  isGenerating={isGenerating("ranges")}
-                  label="Document Range"
-                  helpText="Number of documents to randomize"
-                  required={
-                    currentScenarioData?.document_range_required ?? false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.document_range_agent_id ?? null
-                  }
-                  createRangesAction={createRangesAction}
-                />
-
-                {/* Parameter Range */}
-                <Ranges
-                  range_id={formState.parameter_range_id ?? null}
-                  range_resource={
-                    currentScenarioData?.parameter_range_resource ?? null
-                  }
-                  show_range={
-                    currentScenarioData?.show_parameter_range ?? false
-                  }
-                  range_suggestions={
-                    currentScenarioData?.parameter_range_suggestions ?? []
-                  }
-                  ranges={currentScenarioData?.parameter_ranges ?? []}
-                  disabled={isReadonly}
-                  onRangeIdChange={(rangeId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      parameter_range_id: rangeId,
-                    }))
-                  }
-                  onGenerate={handleGenerateRanges}
-                  isGenerating={isGenerating("ranges")}
-                  label="Parameter Range"
-                  helpText="Number of parameters to randomize"
-                  required={
-                    currentScenarioData?.parameter_range_required ?? false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.parameter_range_agent_id ?? null
-                  }
-                  createRangesAction={createRangesAction}
                 />
               </div>
             </StepCard>

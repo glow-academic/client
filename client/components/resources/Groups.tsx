@@ -1,7 +1,8 @@
 /**
- * SettingColors.tsx
- * Multi-select resource component for theme colors in settings
- * Follows Departments.tsx pattern for multi-select resources
+ * Groups.tsx
+ * Resource component for group selection
+ * Uses GenericPicker to select existing group resources
+ * Manages group_ids array and reports to parent
  */
 
 "use client";
@@ -20,128 +21,96 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
+type CreateDraftGroupsIn = InputOf<"/api/v4/resources/groups", "post">;
+type CreateDraftGroupsOut = OutputOf<"/api/v4/resources/groups", "post">;
 
-export interface SettingColorItem {
+export interface GroupItem {
   id: string;
   name: string;
   description?: string;
-  hex_code?: string;
 }
 
-export interface SettingColorsProps {
-  color_ids?: string[]; // Current color resource IDs (standardized prop name)
-  color_resources?: Array<{
-    id: string | null;
+export interface GroupsProps {
+  group_ids?: string[]; // Current group resource IDs (standardized prop name)
+  group_resources?: Array<{
+    group_id: string | null;
     name: string | null;
-    description: string | null;
-    hex_code: string | null;
+    description?: string | null;
     generated?: boolean | null;
-  }>; // Selected color resources (each includes generated field)
-  show_colors?: boolean; // Whether to show this resource picker
-  color_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  colors?: Array<{
-    id: string | null;
+  }>; // Selected group resources (each includes generated field)
+  show_groups?: boolean; // Whether to show this resource picker
+  group_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  groups?: Array<{
+    group_id: string | null;
     name: string | null;
-    description: string | null;
-    hex_code: string | null;
+    description?: string | null;
     generated?: boolean | null;
-  }>; // All available colors from API (each includes generated field)
+  }>; // All available groups from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update color_ids in form state
+  onChange: (ids: string[]) => void; // Update group_ids in form state
   label?: string;
   id?: string;
   required?: boolean;
   placeholder?: string;
   description?: string;
-  searchTerm?: string;
-  onSearchChange?: (term: string) => void;
-  showSelectedFilter?: boolean;
-  onShowSelectedChange?: (value: boolean) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
-  createColorsAction?:
-    | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
+  createGroupsAction?:
+    | ((input: CreateDraftGroupsIn) => Promise<CreateDraftGroupsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
 
-export function SettingColors({
-  color_ids,
-  color_resources,
-  show_colors = false,
-  color_suggestions,
-  colors,
+export function Groups({
+  group_ids,
+  group_resources,
+  show_groups = false,
+  group_suggestions,
+  groups,
   disabled = false,
   onChange,
-  label = "Theme Colors",
-  id = "colors",
+  label = "Groups",
+  id = "groups",
   required = false,
-  placeholder = "Select colors...",
+  placeholder = "Select groups...",
   description,
-  searchTerm = "",
-  onSearchChange,
-  showSelectedFilter = false,
-  onShowSelectedChange,
   group_id,
   agent_id,
-  createColorsAction,
+  createGroupsAction,
   onGenerate,
   isGenerating = false,
-}: SettingColorsProps) {
-  const ids = useMemo(() => color_ids ?? [], [color_ids]);
-  const show = show_colors ?? false;
-  const allColors = useMemo(() => colors ?? [], [colors]);
+}: GroupsProps) {
+  const ids = useMemo(() => group_ids ?? [], [group_ids]);
+  const show = show_groups ?? false;
+  const allGroups = useMemo(() => groups ?? [], [groups]);
   const suggestionsList = useMemo(
-    () => color_suggestions ?? [],
-    [color_suggestions]
+    () => group_suggestions ?? [],
+    [group_suggestions]
   );
 
-  // Track which color IDs have already had resources created
-  const createdColorIdsRef = useRef<Set<string>>(new Set());
+  // Track which group IDs have already had resources created
+  const createdGroupIdsRef = useRef<Set<string>>(new Set());
 
-  // Initialize createdColorIdsRef with current IDs
+  // Initialize createdGroupIdsRef with current IDs
   useEffect(() => {
-    ids.forEach((id) => createdColorIdsRef.current.add(id));
+    ids.forEach((id) => createdGroupIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert colors array to SettingColorItem format for GenericPicker
-  const colorItems = useMemo(() => {
-    return allColors
-      .filter((c) => c.id && c.name) // Filter out nulls
-      .map((c) => ({
-        id: c.id!,
-        name: c.name!,
-        ...(c.description ? { description: c.description } : {}),
-        ...(c.hex_code ? { hex_code: c.hex_code } : {}),
+  // Convert groups array to GroupItem format for GenericPicker
+  const groupItems = useMemo(() => {
+    return allGroups
+      .filter((g) => g.group_id && g.name) // Filter out nulls
+      .map((g) => ({
+        id: g.group_id!,
+        name: g.name!,
+        ...(g.description ? { description: g.description } : {}),
       }));
-  }, [allColors]);
+  }, [allGroups]);
 
-  // Filter colors by search term
-  const filteredColorItems = useMemo(() => {
-    if (!searchTerm) return colorItems;
-    const term = searchTerm.toLowerCase();
-    return colorItems.filter(
-      (c) =>
-        c.name.toLowerCase().includes(term) ||
-        c.description?.toLowerCase().includes(term) ||
-        c.hex_code?.toLowerCase().includes(term)
-    );
-  }, [colorItems, searchTerm]);
-
-  // Filter by showSelectedFilter if enabled
-  const displayColorItems = useMemo(() => {
-    if (showSelectedFilter) {
-      return filteredColorItems.filter((c) => ids.includes(c.id));
-    }
-    return filteredColorItems;
-  }, [filteredColorItems, showSelectedFilter, ids]);
-
-  // Check if a color is suggested
+  // Check if a group is suggested
   const isSuggested = useCallback(
-    (colorId: string) => suggestionsList.includes(colorId),
+    (groupId: string) => suggestionsList.includes(groupId),
     [suggestionsList]
   );
 
@@ -149,31 +118,30 @@ export function SettingColors({
     async (selectedIds: string[]) => {
       // Find newly selected IDs
       const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdColorIdsRef.current.has(id)
+        (id) => !ids.includes(id) && !createdGroupIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected colors
+      // Create resources for newly selected groups
       if (
         newlySelected.length > 0 &&
-        createColorsAction &&
+        createGroupsAction &&
         agent_id &&
         group_id
       ) {
-        for (const colorId of newlySelected) {
+        for (const groupId of newlySelected) {
           try {
-            await createColorsAction({
+            await createGroupsAction({
               body: {
                 agent_id: agent_id,
-                group_id: group_id,
-                color_id: colorId,
+                group_id: groupId,
                 mcp: false,
               },
             });
-            createdColorIdsRef.current.add(colorId);
+            createdGroupIdsRef.current.add(groupId);
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error(
-              `Failed to create color resource for ${colorId}:`,
+              `Failed to create group resource for ${groupId}:`,
               error
             );
             // Don't block UI - still update selection
@@ -184,15 +152,15 @@ export function SettingColors({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createColorsAction, agent_id, group_id]
+    [ids, onChange, createGroupsAction, agent_id, group_id]
   );
 
-  // Check if any color resource is generated (must be before early return)
+  // Check if any group resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
-    return color_resources?.some((c) => c.generated) ?? false;
-  }, [color_resources]);
+    return group_resources?.some((g) => g.generated) ?? false;
+  }, [group_resources]);
 
-  // Don't render if show_colors is false (AFTER all hooks)
+  // Don't render if show_groups is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -237,11 +205,11 @@ export function SettingColors({
           )}
         </div>
       )}
-      <GenericPicker<SettingColorItem>
-        items={displayColorItems}
-        itemIds={allColors
-          .map((c) => c.id)
-          .filter((id): id is string => id !== null)} // All color IDs from array, filter nulls
+      <GenericPicker<GroupItem>
+        items={groupItems}
+        itemIds={allGroups
+          .map((g) => g.group_id)
+          .filter((id): id is string => id !== null)} // All group IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}
         multiSelect={true}
@@ -254,12 +222,6 @@ export function SettingColors({
                 <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
                   Suggested
                 </span>
-              )}
-              {item.hex_code && (
-                <div
-                  className="w-4 h-4 rounded border shrink-0"
-                  style={{ backgroundColor: item.hex_code }}
-                />
               )}
               <div className="flex-1 min-w-0">
                 <div className="truncate">{item.name}</div>
@@ -283,8 +245,6 @@ export function SettingColors({
         showLabel={false}
         hideSelectedChips={false}
         showClearAll={true}
-        searchTerm={searchTerm}
-        onSearchChange={onSearchChange}
       />
     </div>
   );

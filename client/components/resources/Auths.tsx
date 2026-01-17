@@ -1,7 +1,8 @@
 /**
- * SettingKeys.tsx
- * Multi-select resource component for keys in settings
- * Follows Departments.tsx pattern for multi-select resources
+ * Auths.tsx
+ * Resource component for auth selection
+ * Uses GenericPicker to select existing auth resources
+ * Manages auth_ids array and reports to parent
  */
 
 "use client";
@@ -20,41 +21,51 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftKeysIn = InputOf<"/api/v4/resources/keys", "post">;
-type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
+type CreateDraftAuthsIn = InputOf<"/api/v4/resources/auths", "post">;
+type CreateDraftAuthsOut = OutputOf<"/api/v4/resources/auths", "post">;
 
-export interface SettingKeyItem {
+export interface AuthItem {
   id: string;
   name: string;
   description?: string;
-  masked_key?: string;
+  slug?: string;
   active?: boolean;
 }
 
-export interface SettingKeysProps {
-  key_ids?: string[]; // Current key resource IDs (standardized prop name)
-  key_resources?: Array<{
-    key_id: string | null;
+export interface AuthsProps {
+  auth_ids?: string[]; // Current auth resource IDs (standardized prop name)
+  auth_resources?: Array<{
+    auth_id: string | null;
     name: string | null;
-    masked_key: string | null;
     description: string | null;
+    slug: string | null;
     active: boolean | null;
-    department_ids?: string[] | null;
+    auth_items?: Array<{
+      id: string | null;
+      name: string | null;
+      description: string | null;
+      encrypted: boolean | null;
+    }> | null;
     generated?: boolean | null;
-  }>; // Selected key resources (each includes generated field)
-  show_keys?: boolean; // Whether to show this resource picker
-  key_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  keys?: Array<{
-    key_id: string | null;
+  }>; // Selected auth resources (each includes generated field)
+  show_auths?: boolean; // Whether to show this resource picker
+  auth_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  auths?: Array<{
+    auth_id: string | null;
     name: string | null;
-    masked_key: string | null;
     description: string | null;
+    slug: string | null;
     active: boolean | null;
-    department_ids?: string[] | null;
+    auth_items?: Array<{
+      id: string | null;
+      name: string | null;
+      description: string | null;
+      encrypted: boolean | null;
+    }> | null;
     generated?: boolean | null;
-  }>; // All available keys from API (each includes generated field)
+  }>; // All available auths from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update key_ids in form state
+  onChange: (ids: string[]) => void; // Update auth_ids in form state
   label?: string;
   id?: string;
   required?: boolean;
@@ -62,64 +73,64 @@ export interface SettingKeysProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
-  createKeysAction?:
-    | ((input: CreateDraftKeysIn) => Promise<CreateDraftKeysOut>)
+  createAuthsAction?:
+    | ((input: CreateDraftAuthsIn) => Promise<CreateDraftAuthsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
 
-export function SettingKeys({
-  key_ids,
-  key_resources,
-  show_keys = false,
-  key_suggestions,
-  keys,
+export function Auths({
+  auth_ids,
+  auth_resources,
+  show_auths = false,
+  auth_suggestions,
+  auths,
   disabled = false,
   onChange,
-  label = "Keys",
-  id = "keys",
+  label = "Auths",
+  id = "auths",
   required = false,
-  placeholder = "Select keys...",
+  placeholder = "Select auths...",
   description,
   group_id,
   agent_id,
-  createKeysAction,
+  createAuthsAction,
   onGenerate,
   isGenerating = false,
-}: SettingKeysProps) {
-  const ids = useMemo(() => key_ids ?? [], [key_ids]);
-  const show = show_keys ?? false;
-  const allKeys = useMemo(() => keys ?? [], [keys]);
+}: AuthsProps) {
+  const ids = useMemo(() => auth_ids ?? [], [auth_ids]);
+  const show = show_auths ?? false;
+  const allAuths = useMemo(() => auths ?? [], [auths]);
   const suggestionsList = useMemo(
-    () => key_suggestions ?? [],
-    [key_suggestions]
+    () => auth_suggestions ?? [],
+    [auth_suggestions]
   );
 
-  // Track which key IDs have already had resources created
-  const createdKeyIdsRef = useRef<Set<string>>(new Set());
+  // Track which auth IDs have already had resources created
+  const createdAuthIdsRef = useRef<Set<string>>(new Set());
 
-  // Initialize createdKeyIdsRef with current IDs
+  // Initialize createdAuthIdsRef with current IDs
   useEffect(() => {
-    ids.forEach((id) => createdKeyIdsRef.current.add(id));
+    ids.forEach((id) => createdAuthIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert keys array to SettingKeyItem format for GenericPicker
-  const keyItems = useMemo(() => {
-    return allKeys
-      .filter((k) => k.key_id && k.name) // Filter out nulls
-      .map((k) => ({
-        id: k.key_id!,
-        name: k.name!,
-        ...(k.description ? { description: k.description } : {}),
-        ...(k.masked_key ? { masked_key: k.masked_key } : {}),
-        ...(k.active !== null ? { active: k.active } : {}),
+  // Convert auths array to AuthItem format for GenericPicker
+  const authItems = useMemo(() => {
+    return allAuths
+      .filter((a) => a.auth_id && a.name) // Filter out nulls
+      .map((a) => ({
+        id: a.auth_id!,
+        name: a.name!,
+        ...(a.description ? { description: a.description } : {}),
+        ...(a.slug ? { slug: a.slug } : {}),
+        ...(a.active !== null ? { active: a.active } : {}),
       }));
-  }, [allKeys]);
+  }, [allAuths]);
 
-  // Check if a key is suggested
+  // Check if an auth is suggested
   const isSuggested = useCallback(
-    (keyId: string) => suggestionsList.includes(keyId),
+    (authId: string) => suggestionsList.includes(authId),
     [suggestionsList]
   );
 
@@ -127,30 +138,33 @@ export function SettingKeys({
     async (selectedIds: string[]) => {
       // Find newly selected IDs
       const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdKeyIdsRef.current.has(id)
+        (id) => !ids.includes(id) && !createdAuthIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected keys
+      // Create resources for newly selected auths
       if (
         newlySelected.length > 0 &&
-        createKeysAction &&
+        createAuthsAction &&
         agent_id &&
         group_id
       ) {
-        for (const keyId of newlySelected) {
+        for (const authId of newlySelected) {
           try {
-            await createKeysAction({
+            await createAuthsAction({
               body: {
                 agent_id: agent_id,
                 group_id: group_id,
-                key_id: keyId,
+                auth_id: authId,
                 mcp: false,
               },
             });
-            createdKeyIdsRef.current.add(keyId);
+            createdAuthIdsRef.current.add(authId);
           } catch (error) {
             // eslint-disable-next-line no-console
-            console.error(`Failed to create key resource for ${keyId}:`, error);
+            console.error(
+              `Failed to create auth resource for ${authId}:`,
+              error
+            );
             // Don't block UI - still update selection
           }
         }
@@ -159,15 +173,15 @@ export function SettingKeys({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createKeysAction, agent_id, group_id]
+    [ids, onChange, createAuthsAction, agent_id, group_id]
   );
 
-  // Check if any key resource is generated (must be before early return)
+  // Check if any auth resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
-    return key_resources?.some((k) => k.generated) ?? false;
-  }, [key_resources]);
+    return auth_resources?.some((a) => a.generated) ?? false;
+  }, [auth_resources]);
 
-  // Don't render if show_keys is false (AFTER all hooks)
+  // Don't render if show_auths is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -212,11 +226,11 @@ export function SettingKeys({
           )}
         </div>
       )}
-      <GenericPicker<SettingKeyItem>
-        items={keyItems}
-        itemIds={allKeys
-          .map((k) => k.key_id)
-          .filter((id): id is string => id !== null)} // All key IDs from array, filter nulls
+      <GenericPicker<AuthItem>
+        items={authItems}
+        itemIds={allAuths
+          .map((a) => a.auth_id)
+          .filter((id): id is string => id !== null)} // All auth IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}
         multiSelect={true}
@@ -237,9 +251,9 @@ export function SettingKeys({
                     {item.description}
                   </div>
                 )}
-                {item.masked_key && (
-                  <div className="text-xs text-muted-foreground truncate font-mono">
-                    {item.masked_key}
+                {item.slug && (
+                  <div className="text-xs text-muted-foreground truncate">
+                    {item.slug}
                   </div>
                 )}
               </div>

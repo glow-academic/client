@@ -1,7 +1,8 @@
 /**
- * SettingProviders.tsx
- * Multi-select resource component for providers in settings
- * Follows Departments.tsx pattern for multi-select resources
+ * Agents.tsx
+ * Resource component for agent selection
+ * Uses GenericPicker to select existing agent artifacts
+ * Manages agent_ids array and reports to parent
  */
 
 "use client";
@@ -20,39 +21,33 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftProvidersIn = InputOf<"/api/v4/resources/providers", "post">;
-type CreateDraftProvidersOut = OutputOf<"/api/v4/resources/providers", "post">;
+type CreateDraftAgentsIn = InputOf<"/api/v4/resources/agents", "post">;
+type CreateDraftAgentsOut = OutputOf<"/api/v4/resources/agents", "post">;
 
-export interface SettingProviderItem {
+export interface AgentItem {
   id: string;
   name: string;
   description?: string;
-  value?: string;
-  active?: boolean;
 }
 
-export interface SettingProvidersProps {
-  provider_ids?: string[]; // Current provider resource IDs (standardized prop name)
-  provider_resources?: Array<{
-    provider_id: string | null;
+export interface AgentsProps {
+  agent_ids?: string[]; // Current agent resource IDs (standardized prop name)
+  agent_resources?: Array<{
+    agent_id: string | null;
     name: string | null;
-    description: string | null;
-    value: string | null;
-    active: boolean | null;
+    description?: string | null;
     generated?: boolean | null;
-  }>; // Selected provider resources (each includes generated field)
-  show_providers?: boolean; // Whether to show this resource picker
-  provider_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  providers?: Array<{
-    provider_id: string | null;
+  }>; // Selected agent resources (each includes generated field)
+  show_agents?: boolean; // Whether to show this resource picker
+  agent_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  agents?: Array<{
+    agent_id: string | null;
     name: string | null;
-    description: string | null;
-    value: string | null;
-    active: boolean | null;
+    description?: string | null;
     generated?: boolean | null;
-  }>; // All available providers from API (each includes generated field)
+  }>; // All available agents from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update provider_ids in form state
+  onChange: (ids: string[]) => void; // Update agent_ids in form state
   label?: string;
   id?: string;
   required?: boolean;
@@ -60,64 +55,62 @@ export interface SettingProvidersProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
-  createProvidersAction?:
-    | ((input: CreateDraftProvidersIn) => Promise<CreateDraftProvidersOut>)
+  createAgentsAction?:
+    | ((input: CreateDraftAgentsIn) => Promise<CreateDraftAgentsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
 
-export function SettingProviders({
-  provider_ids,
-  provider_resources,
-  show_providers = false,
-  provider_suggestions,
-  providers,
+export function Agents({
+  agent_ids,
+  agent_resources,
+  show_agents = false,
+  agent_suggestions,
+  agents,
   disabled = false,
   onChange,
-  label = "Providers",
-  id = "providers",
+  label = "Agents",
+  id = "agents",
   required = false,
-  placeholder = "Select providers...",
+  placeholder = "Select agents...",
   description,
   group_id,
   agent_id,
-  createProvidersAction,
+  createAgentsAction,
   onGenerate,
   isGenerating = false,
-}: SettingProvidersProps) {
-  const ids = useMemo(() => provider_ids ?? [], [provider_ids]);
-  const show = show_providers ?? false;
-  const allProviders = useMemo(() => providers ?? [], [providers]);
+}: AgentsProps) {
+  const ids = useMemo(() => agent_ids ?? [], [agent_ids]);
+  const show = show_agents ?? false;
+  const allAgents = useMemo(() => agents ?? [], [agents]);
   const suggestionsList = useMemo(
-    () => provider_suggestions ?? [],
-    [provider_suggestions]
+    () => agent_suggestions ?? [],
+    [agent_suggestions]
   );
 
-  // Track which provider IDs have already had resources created
-  const createdProviderIdsRef = useRef<Set<string>>(new Set());
+  // Track which agent IDs have already had resources created
+  const createdAgentIdsRef = useRef<Set<string>>(new Set());
 
-  // Initialize createdProviderIdsRef with current IDs
+  // Initialize createdAgentIdsRef with current IDs
   useEffect(() => {
-    ids.forEach((id) => createdProviderIdsRef.current.add(id));
+    ids.forEach((id) => createdAgentIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert providers array to SettingProviderItem format for GenericPicker
-  const providerItems = useMemo(() => {
-    return allProviders
-      .filter((p) => p.provider_id && p.name) // Filter out nulls
-      .map((p) => ({
-        id: p.provider_id!,
-        name: p.name!,
-        ...(p.description ? { description: p.description } : {}),
-        ...(p.value ? { value: p.value } : {}),
-        ...(p.active !== null ? { active: p.active } : {}),
+  // Convert agents array to AgentItem format for GenericPicker
+  const agentItems = useMemo(() => {
+    return allAgents
+      .filter((a) => a.agent_id && a.name) // Filter out nulls
+      .map((a) => ({
+        id: a.agent_id!,
+        name: a.name!,
+        ...(a.description ? { description: a.description } : {}),
       }));
-  }, [allProviders]);
+  }, [allAgents]);
 
-  // Check if a provider is suggested
+  // Check if an agent is suggested
   const isSuggested = useCallback(
-    (providerId: string) => suggestionsList.includes(providerId),
+    (agentId: string) => suggestionsList.includes(agentId),
     [suggestionsList]
   );
 
@@ -125,31 +118,31 @@ export function SettingProviders({
     async (selectedIds: string[]) => {
       // Find newly selected IDs
       const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdProviderIdsRef.current.has(id)
+        (id) => !ids.includes(id) && !createdAgentIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected providers
+      // Create resources for newly selected agents
       if (
         newlySelected.length > 0 &&
-        createProvidersAction &&
+        createAgentsAction &&
         agent_id &&
         group_id
       ) {
-        for (const providerId of newlySelected) {
+        for (const agentId of newlySelected) {
           try {
-            await createProvidersAction({
+            await createAgentsAction({
               body: {
-                agent_id: agent_id,
+                agent_id: agentId,
                 group_id: group_id,
-                provider_id: providerId,
+                artifact_agent_id: agent_id,
                 mcp: false,
               },
             });
-            createdProviderIdsRef.current.add(providerId);
+            createdAgentIdsRef.current.add(agentId);
           } catch (error) {
             // eslint-disable-next-line no-console
             console.error(
-              `Failed to create provider resource for ${providerId}:`,
+              `Failed to create agent resource for ${agentId}:`,
               error
             );
             // Don't block UI - still update selection
@@ -160,15 +153,15 @@ export function SettingProviders({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createProvidersAction, agent_id, group_id]
+    [ids, onChange, createAgentsAction, agent_id, group_id]
   );
 
-  // Check if any provider resource is generated (must be before early return)
+  // Check if any agent resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
-    return provider_resources?.some((p) => p.generated) ?? false;
-  }, [provider_resources]);
+    return agent_resources?.some((a) => a.generated) ?? false;
+  }, [agent_resources]);
 
-  // Don't render if show_providers is false (AFTER all hooks)
+  // Don't render if show_agents is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -213,11 +206,11 @@ export function SettingProviders({
           )}
         </div>
       )}
-      <GenericPicker<SettingProviderItem>
-        items={providerItems}
-        itemIds={allProviders
-          .map((p) => p.provider_id)
-          .filter((id): id is string => id !== null)} // All provider IDs from array, filter nulls
+      <GenericPicker<AgentItem>
+        items={agentItems}
+        itemIds={allAgents
+          .map((a) => a.agent_id)
+          .filter((id): id is string => id !== null)} // All agent IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}
         multiSelect={true}
@@ -236,11 +229,6 @@ export function SettingProviders({
                 {item.description && (
                   <div className="text-xs text-muted-foreground truncate">
                     {item.description}
-                  </div>
-                )}
-                {item.value && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.value}
                   </div>
                 )}
               </div>

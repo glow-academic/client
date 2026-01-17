@@ -1,7 +1,8 @@
 /**
- * SettingAuths.tsx
- * Multi-select resource component for auths in settings
- * Follows Departments.tsx pattern for multi-select resources
+ * Endpoints.tsx
+ * Resource component for endpoint selection
+ * Uses GenericPicker to select existing endpoint resources
+ * Manages endpoint_ids array and reports to parent
  */
 
 "use client";
@@ -20,51 +21,33 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftAuthsIn = InputOf<"/api/v4/resources/auths", "post">;
-type CreateDraftAuthsOut = OutputOf<"/api/v4/resources/auths", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
 
-export interface SettingAuthItem {
+export interface EndpointItem {
   id: string;
   name: string;
   description?: string;
-  slug?: string;
-  active?: boolean;
 }
 
-export interface SettingAuthsProps {
-  auth_ids?: string[]; // Current auth resource IDs (standardized prop name)
-  auth_resources?: Array<{
-    auth_id: string | null;
+export interface EndpointsProps {
+  endpoint_ids?: string[]; // Current endpoint resource IDs (standardized prop name)
+  endpoint_resources?: Array<{
+    endpoint_id: string | null;
     name: string | null;
-    description: string | null;
-    slug: string | null;
-    active: boolean | null;
-    auth_items?: Array<{
-      id: string | null;
-      name: string | null;
-      description: string | null;
-      encrypted: boolean | null;
-    }> | null;
+    description?: string | null;
     generated?: boolean | null;
-  }>; // Selected auth resources (each includes generated field)
-  show_auths?: boolean; // Whether to show this resource picker
-  auth_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  auths?: Array<{
-    auth_id: string | null;
+  }>; // Selected endpoint resources (each includes generated field)
+  show_endpoints?: boolean; // Whether to show this resource picker
+  endpoint_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  endpoints?: Array<{
+    endpoint_id: string | null;
     name: string | null;
-    description: string | null;
-    slug: string | null;
-    active: boolean | null;
-    auth_items?: Array<{
-      id: string | null;
-      name: string | null;
-      description: string | null;
-      encrypted: boolean | null;
-    }> | null;
+    description?: string | null;
     generated?: boolean | null;
-  }>; // All available auths from API (each includes generated field)
+  }>; // All available endpoints from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update auth_ids in form state
+  onChange: (ids: string[]) => void; // Update endpoint_ids in form state
   label?: string;
   id?: string;
   required?: boolean;
@@ -72,64 +55,62 @@ export interface SettingAuthsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
-  createAuthsAction?:
-    | ((input: CreateDraftAuthsIn) => Promise<CreateDraftAuthsOut>)
+  createEndpointsAction?:
+    | ((input: CreateDraftEndpointsIn) => Promise<CreateDraftEndpointsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
 
-export function SettingAuths({
-  auth_ids,
-  auth_resources,
-  show_auths = false,
-  auth_suggestions,
-  auths,
+export function Endpoints({
+  endpoint_ids,
+  endpoint_resources,
+  show_endpoints = false,
+  endpoint_suggestions,
+  endpoints,
   disabled = false,
   onChange,
-  label = "Auths",
-  id = "auths",
+  label = "Endpoints",
+  id = "endpoints",
   required = false,
-  placeholder = "Select auths...",
+  placeholder = "Select endpoints...",
   description,
   group_id,
   agent_id,
-  createAuthsAction,
+  createEndpointsAction,
   onGenerate,
   isGenerating = false,
-}: SettingAuthsProps) {
-  const ids = useMemo(() => auth_ids ?? [], [auth_ids]);
-  const show = show_auths ?? false;
-  const allAuths = useMemo(() => auths ?? [], [auths]);
+}: EndpointsProps) {
+  const ids = useMemo(() => endpoint_ids ?? [], [endpoint_ids]);
+  const show = show_endpoints ?? false;
+  const allEndpoints = useMemo(() => endpoints ?? [], [endpoints]);
   const suggestionsList = useMemo(
-    () => auth_suggestions ?? [],
-    [auth_suggestions]
+    () => endpoint_suggestions ?? [],
+    [endpoint_suggestions]
   );
 
-  // Track which auth IDs have already had resources created
-  const createdAuthIdsRef = useRef<Set<string>>(new Set());
+  // Track which endpoint IDs have already had resources created
+  const createdEndpointIdsRef = useRef<Set<string>>(new Set());
 
-  // Initialize createdAuthIdsRef with current IDs
+  // Initialize createdEndpointIdsRef with current IDs
   useEffect(() => {
-    ids.forEach((id) => createdAuthIdsRef.current.add(id));
+    ids.forEach((id) => createdEndpointIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert auths array to SettingAuthItem format for GenericPicker
-  const authItems = useMemo(() => {
-    return allAuths
-      .filter((a) => a.auth_id && a.name) // Filter out nulls
-      .map((a) => ({
-        id: a.auth_id!,
-        name: a.name!,
-        ...(a.description ? { description: a.description } : {}),
-        ...(a.slug ? { slug: a.slug } : {}),
-        ...(a.active !== null ? { active: a.active } : {}),
+  // Convert endpoints array to EndpointItem format for GenericPicker
+  const endpointItems = useMemo(() => {
+    return allEndpoints
+      .filter((e) => e.endpoint_id && e.name) // Filter out nulls
+      .map((e) => ({
+        id: e.endpoint_id!,
+        name: e.name!,
+        ...(e.description ? { description: e.description } : {}),
       }));
-  }, [allAuths]);
+  }, [allEndpoints]);
 
-  // Check if an auth is suggested
+  // Check if an endpoint is suggested
   const isSuggested = useCallback(
-    (authId: string) => suggestionsList.includes(authId),
+    (endpointId: string) => suggestionsList.includes(endpointId),
     [suggestionsList]
   );
 
@@ -137,50 +118,23 @@ export function SettingAuths({
     async (selectedIds: string[]) => {
       // Find newly selected IDs
       const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdAuthIdsRef.current.has(id)
+        (id) => !ids.includes(id) && !createdEndpointIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected auths
-      if (
-        newlySelected.length > 0 &&
-        createAuthsAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const authId of newlySelected) {
-          try {
-            await createAuthsAction({
-              body: {
-                agent_id: agent_id,
-                group_id: group_id,
-                auth_id: authId,
-                mcp: false,
-              },
-            });
-            createdAuthIdsRef.current.add(authId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create auth resource for ${authId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
+      // Create resources for newly selected endpoints (endpoints are generated, not selected)
+      // So we don't create resources here - they're created via generation
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createAuthsAction, agent_id, group_id]
+    [ids, onChange]
   );
 
-  // Check if any auth resource is generated (must be before early return)
+  // Check if any endpoint resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
-    return auth_resources?.some((a) => a.generated) ?? false;
-  }, [auth_resources]);
+    return endpoint_resources?.some((e) => e.generated) ?? false;
+  }, [endpoint_resources]);
 
-  // Don't render if show_auths is false (AFTER all hooks)
+  // Don't render if show_endpoints is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -225,11 +179,11 @@ export function SettingAuths({
           )}
         </div>
       )}
-      <GenericPicker<SettingAuthItem>
-        items={authItems}
-        itemIds={allAuths
-          .map((a) => a.auth_id)
-          .filter((id): id is string => id !== null)} // All auth IDs from array, filter nulls
+      <GenericPicker<EndpointItem>
+        items={endpointItems}
+        itemIds={allEndpoints
+          .map((e) => e.endpoint_id)
+          .filter((id): id is string => id !== null)} // All endpoint IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}
         multiSelect={true}
@@ -248,11 +202,6 @@ export function SettingAuths({
                 {item.description && (
                   <div className="text-xs text-muted-foreground truncate">
                     {item.description}
-                  </div>
-                )}
-                {item.slug && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.slug}
                   </div>
                 )}
               </div>
