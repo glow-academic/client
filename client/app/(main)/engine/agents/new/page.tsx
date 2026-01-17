@@ -16,10 +16,22 @@ type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
 type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
 type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
-type CreateDraftReasoningLevelsIn = InputOf<"/api/v4/resources/reasoning_levels", "post">;
-type CreateDraftReasoningLevelsOut = OutputOf<"/api/v4/resources/reasoning_levels", "post">;
-type CreateDraftTemperatureLevelsIn = InputOf<"/api/v4/resources/temperature_levels", "post">;
-type CreateDraftTemperatureLevelsOut = OutputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftReasoningLevelsIn = InputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftReasoningLevelsOut = OutputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftTemperatureLevelsIn = InputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
+type CreateDraftTemperatureLevelsOut = OutputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 

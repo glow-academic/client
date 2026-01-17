@@ -35,6 +35,9 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
+import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { Voices } from "@/components/resources/Voices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,9 +77,6 @@ import {
 } from "lucide-react";
 import { parseAsString, useQueryStates, type Parser, type Values } from "nuqs";
 import AgentDebugInfo from "./AgentDebugInfo";
-import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
-import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
-import { Voices } from "@/components/resources/Voices";
 
 // Type-only import from server page
 import type {
@@ -89,10 +89,22 @@ import type {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 // Resource creation action types
-type CreateDraftReasoningLevelsIn = InputOf<"/api/v4/resources/reasoning_levels", "post">;
-type CreateDraftReasoningLevelsOut = OutputOf<"/api/v4/resources/reasoning_levels", "post">;
-type CreateDraftTemperatureLevelsIn = InputOf<"/api/v4/resources/temperature_levels", "post">;
-type CreateDraftTemperatureLevelsOut = OutputOf<"/api/v4/resources/temperature_levels", "post">;
+type CreateDraftReasoningLevelsIn = InputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftReasoningLevelsOut = OutputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftTemperatureLevelsIn = InputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
+type CreateDraftTemperatureLevelsOut = OutputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
@@ -1665,8 +1677,10 @@ export default function Agent({
           }
           if (data.model_id) updates.modelId = data.model_id;
           if (data.prompt_id) updates.promptId = data.prompt_id;
-          if (data.reasoning_level_id) updates.reasoning_level_id = data.reasoning_level_id;
-          if (data.temperature_level_id) updates.temperature_level_id = data.temperature_level_id;
+          if (data.reasoning_level_id)
+            updates.reasoning_level_id = data.reasoning_level_id;
+          if (data.temperature_level_id)
+            updates.temperature_level_id = data.temperature_level_id;
           if (data.voice_ids && data.voice_ids.length > 0) {
             updates.voice_ids = [
               ...new Set([...prev.voice_ids, ...data.voice_ids]),
@@ -2445,20 +2459,39 @@ export default function Agent({
                     >
                       <TemperatureLevels
                         temperature_level_id={draftState.temperature_level_id}
-                        temperature_level_resource={agentData?.temperature_level_resource ?? null}
-                        show_temperature_levels={agentData?.show_temperature_levels ?? true}
-                        temperature_level_suggestions={agentData?.temperature_level_suggestions ?? []}
+                        temperature_level_resource={
+                          agentData?.temperature_level_resource ?? null
+                        }
+                        show_temperature_levels={
+                          agentData?.show_temperature_levels ?? true
+                        }
+                        temperature_level_suggestions={
+                          agentData?.temperature_level_suggestions ?? []
+                        }
                         temperature_levels={agentData?.temperature_levels ?? []}
-                        temperature_lower={selectedModel?.temperature_lower ?? null}
-                        temperature_upper={selectedModel?.temperature_upper ?? null}
+                        temperature_lower={
+                          selectedModel?.temperature_lower ?? null
+                        }
+                        temperature_upper={
+                          selectedModel?.temperature_upper ?? null
+                        }
                         disabled={isReadonly}
-                        onTemperatureLevelIdChange={(id) => setDraftState(prev => ({ ...prev, temperature_level_id: id }))}
+                        onTemperatureLevelIdChange={(id) =>
+                          setDraftState((prev) => ({
+                            ...prev,
+                            temperature_level_id: id,
+                          }))
+                        }
                         onGenerate={handleGenerateTemperatureLevels}
                         isGenerating={isGenerating("temperature_levels")}
                         showSlider={true}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.temperature_levels_agent_id ?? null}
-                        createTemperatureLevelsAction={createTemperatureLevelsAction}
+                        agent_id={
+                          agentData?.temperature_levels_agent_id ?? null
+                        }
+                        createTemperatureLevelsAction={
+                          createTemperatureLevelsAction
+                        }
                       />
                     </StepCard>
                   );
@@ -2481,17 +2514,30 @@ export default function Agent({
                     >
                       <ReasoningLevels
                         reasoning_level_id={draftState.reasoning_level_id}
-                        reasoning_level_resource={agentData?.reasoning_level_resource ?? null}
-                        show_reasoning_levels={agentData?.show_reasoning_levels ?? true}
-                        reasoning_level_suggestions={agentData?.reasoning_level_suggestions ?? []}
+                        reasoning_level_resource={
+                          agentData?.reasoning_level_resource ?? null
+                        }
+                        show_reasoning_levels={
+                          agentData?.show_reasoning_levels ?? true
+                        }
+                        reasoning_level_suggestions={
+                          agentData?.reasoning_level_suggestions ?? []
+                        }
                         reasoning_levels={agentData?.reasoning_levels ?? []}
                         disabled={isReadonly}
-                        onReasoningLevelIdChange={(id) => setDraftState(prev => ({ ...prev, reasoning_level_id: id }))}
+                        onReasoningLevelIdChange={(id) =>
+                          setDraftState((prev) => ({
+                            ...prev,
+                            reasoning_level_id: id,
+                          }))
+                        }
                         onGenerate={handleGenerateReasoningLevels}
                         isGenerating={isGenerating("reasoning_levels")}
                         group_id={agentData?.group_id ?? null}
                         agent_id={agentData?.reasoning_levels_agent_id ?? null}
-                        createReasoningLevelsAction={createReasoningLevelsAction}
+                        createReasoningLevelsAction={
+                          createReasoningLevelsAction
+                        }
                       />
                     </StepCard>
                   );
@@ -2525,7 +2571,9 @@ export default function Agent({
                         voice_suggestions={agentData?.voice_suggestions ?? []}
                         voices={agentData?.voices ?? []}
                         disabled={isReadonly}
-                        onVoiceIdsChange={(ids) => setDraftState(prev => ({ ...prev, voice_ids: ids }))}
+                        onVoiceIdsChange={(ids) =>
+                          setDraftState((prev) => ({ ...prev, voice_ids: ids }))
+                        }
                         onGenerate={handleGenerateVoices}
                         isGenerating={isGenerating("voices")}
                         group_id={agentData?.group_id ?? null}
