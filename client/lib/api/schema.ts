@@ -3298,66 +3298,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/schema_field_items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Schema Field Item
-         * @description Create schema_field_items resource (always INSERT).
-         */
-        post: operations["create_schema_field_item_api_v4_resources_schema_field_items_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/schema_fields": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Schema Field
-         * @description Create schema_fields resource (always INSERT).
-         */
-        post: operations["create_schema_field_api_v4_resources_schema_fields_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/schemas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Schema
-         * @description Create schemas resource (always INSERT).
-         */
-        post: operations["create_schema_api_v4_resources_schemas_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/settings": {
         parameters: {
             query?: never;
@@ -3492,46 +3432,6 @@ export interface paths {
          * @description Create temperature_levels resource (always INSERT).
          */
         post: operations["create_temperature_levels_api_v4_resources_temperature_levels_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/template_array_items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Template Array Item
-         * @description Create template_array_items resource (always INSERT).
-         */
-        post: operations["create_template_array_item_api_v4_resources_template_array_items_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/template_values": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Template Value
-         * @description Create template_values resource (always INSERT).
-         */
-        post: operations["create_template_value_api_v4_resources_template_values_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3692,6 +3592,26 @@ export interface paths {
          * @description Create voices resource (always INSERT).
          */
         post: operations["create_voices_api_v4_resources_voices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Upload
+         * @description Create uploads resource (always INSERT).
+         */
+        post: operations["create_upload_api_v4_resources_uploads_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8665,6 +8585,20 @@ export interface components {
             field_suggestions?: string[] | null;
             /** Fields */
             fields?: components["schemas"]["QGetDocumentV4Field"][] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Upload Resources */
+            upload_resources?: components["schemas"]["QGetDocumentV4Upload"][] | null;
+            /** Show Uploads */
+            show_uploads?: boolean | null;
+            /** Uploads Agent Id */
+            uploads_agent_id?: string | null;
+            /** Uploads Required */
+            uploads_required?: boolean | null;
+            /** Upload Suggestions */
+            upload_suggestions?: string[] | null;
+            /** Uploads */
+            uploads?: components["schemas"]["QGetDocumentV4Upload"][] | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             flag_resource?: components["schemas"]["QGetDocumentV4FlagResource"] | null;
@@ -14037,6 +13971,23 @@ export interface components {
             name: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetDocumentV4Upload */
+        QGetDocumentV4Upload: {
+            /** Uploads Id */
+            uploads_id: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Size */
+            size: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetEvalAttemptV4Attempt */
         QGetEvalAttemptV4Attempt: {
@@ -19536,8 +19487,8 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
-            /** Template Flag Id */
-            template_flag_id?: string | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
             /** Html Id */
             html_id?: string | null;
             /** Schema Id */
@@ -20120,104 +20071,6 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** SchemaFieldItemsApiRequest */
-        SchemaFieldItemsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Schema Field Id
-             * Format: uuid
-             */
-            schema_field_id: string;
-            /**
-             * Item Schema Id
-             * Format: uuid
-             */
-            item_schema_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** SchemaFieldItemsApiResponse */
-        SchemaFieldItemsApiResponse: {
-            /** Schema Field Item Id */
-            schema_field_item_id?: string | null;
-        };
-        /** SchemaFieldsApiRequest */
-        SchemaFieldsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Schema Id
-             * Format: uuid
-             */
-            schema_id: string;
-            /** Name */
-            name: string;
-            /** Field Type */
-            field_type: string;
-            /** Required */
-            required: boolean;
-            /** Position Value */
-            position_value: number;
-            /** Template */
-            template: string;
-            /** Description */
-            description: string;
-            /** Default Value */
-            default_value: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** SchemaFieldsApiResponse */
-        SchemaFieldsApiResponse: {
-            /** Schema Field Id */
-            schema_field_id?: string | null;
-        };
-        /** SchemasApiRequest */
-        SchemasApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** SchemasApiResponse */
-        SchemasApiResponse: {
-            /** Schema Id */
-            schema_id?: string | null;
-        };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
             /** Limit Count */
@@ -20722,85 +20575,6 @@ export interface components {
             /** Temperature Levels Id */
             temperature_levels_id?: string | null;
         };
-        /** TemplateArrayItemsApiRequest */
-        TemplateArrayItemsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Template Id
-             * Format: uuid
-             */
-            template_id: string;
-            /**
-             * Schema Field Id
-             * Format: uuid
-             */
-            schema_field_id: string;
-            /**
-             * Item Template Id
-             * Format: uuid
-             */
-            item_template_id: string;
-            /** Position Value */
-            position_value: number;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** TemplateArrayItemsApiResponse */
-        TemplateArrayItemsApiResponse: {
-            /** Template Array Item Id */
-            template_array_item_id?: string | null;
-        };
-        /** TemplateValuesApiRequest */
-        TemplateValuesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Template Id
-             * Format: uuid
-             */
-            template_id: string;
-            /**
-             * Schema Field Id
-             * Format: uuid
-             */
-            schema_field_id: string;
-            /** String Value */
-            string_value: string;
-            /** Number Value */
-            number_value: string;
-            /** Boolean Value */
-            boolean_value: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** TemplateValuesApiResponse */
-        TemplateValuesApiResponse: {
-            /** Template Value Id */
-            template_value_id?: string | null;
-        };
         /** TemplatesApiRequest */
         TemplatesApiRequest: {
             /**
@@ -20921,6 +20695,34 @@ export interface components {
         ToolsApiResponse: {
             /** Tools Id */
             tools_id?: string | null;
+        };
+        /** UploadsApiRequest */
+        UploadsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** UploadsApiResponse */
+        UploadsApiResponse: {
+            /** Uploads Id */
+            uploads_id?: string | null;
         };
         /** UpsertStaffApiRequest */
         UpsertStaffApiRequest: {
@@ -26993,117 +26795,6 @@ export interface operations {
             };
         };
     };
-    create_schema_field_item_api_v4_resources_schema_field_items_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SchemaFieldItemsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemaFieldItemsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_schema_field_api_v4_resources_schema_fields_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SchemaFieldsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemaFieldsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_schema_api_v4_resources_schemas_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SchemasApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemasApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_setting_api_v4_resources_settings_post: {
         parameters: {
             query?: never;
@@ -27350,80 +27041,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemperatureLevelsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_template_array_item_api_v4_resources_template_array_items_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TemplateArrayItemsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TemplateArrayItemsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_template_value_api_v4_resources_template_values_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TemplateValuesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TemplateValuesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -27720,6 +27337,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoicesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_upload_api_v4_resources_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadsApiResponse"];
                 };
             };
             /** @description Validation Error */

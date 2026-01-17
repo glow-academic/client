@@ -15625,297 +15625,6 @@
         ]
       }
     },
-    "/api/v4/resources/schema_field_items": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Schema Field Item",
-        "description": "Create schema_field_items resource (always INSERT).",
-        "operationId": "create_schema_field_item_api_v4_resources_schema_field_items_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SchemaFieldItemsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SchemaFieldItemsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/schema_fields": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Schema Field",
-        "description": "Create schema_fields resource (always INSERT).",
-        "operationId": "create_schema_field_api_v4_resources_schema_fields_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SchemaFieldsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SchemaFieldsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/schemas": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Schema",
-        "description": "Create schemas resource (always INSERT).",
-        "operationId": "create_schema_api_v4_resources_schemas_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SchemasApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SchemasApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
     "/api/v4/resources/settings": {
       "post": {
         "tags": [
@@ -16574,200 +16283,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TemperatureLevelsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/template_array_items": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Template Array Item",
-        "description": "Create template_array_items resource (always INSERT).",
-        "operationId": "create_template_array_item_api_v4_resources_template_array_items_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TemplateArrayItemsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TemplateArrayItemsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/template_values": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Template Value",
-        "description": "Create template_values resource (always INSERT).",
-        "operationId": "create_template_value_api_v4_resources_template_values_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TemplateValuesApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TemplateValuesApiResponse"
                 }
               }
             }
@@ -17544,6 +17059,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VoicesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/uploads": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Upload",
+        "description": "Create uploads resource (always INSERT).",
+        "operationId": "create_upload_api_v4_resources_uploads_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadsApiResponse"
                 }
               }
             }
@@ -35601,6 +35213,98 @@
               }
             ],
             "title": "Fields"
+          },
+          "upload_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Ids"
+          },
+          "upload_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDocumentV4Upload"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Resources"
+          },
+          "show_uploads": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Uploads"
+          },
+          "uploads_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploads Agent Id"
+          },
+          "uploads_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploads Required"
+          },
+          "upload_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Suggestions"
+          },
+          "uploads": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDocumentV4Upload"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploads"
           },
           "active_flag_id": {
             "anyOf": [
@@ -62922,6 +62626,101 @@
           "generated"
         ],
         "title": "QGetDocumentV4NameResource"
+      },
+      "QGetDocumentV4Upload": {
+        "properties": {
+          "uploads_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploads Id"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploads_id",
+          "upload_id",
+          "file_path",
+          "mime_type",
+          "size",
+          "generated",
+          "group_id"
+        ],
+        "title": "QGetDocumentV4Upload"
       },
       "QGetEvalAttemptV4Attempt": {
         "properties": {
@@ -92400,17 +92199,20 @@
             ],
             "title": "Active Flag Id"
           },
-          "template_flag_id": {
+          "upload_ids": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Template Flag Id"
+            "title": "Upload Ids"
           },
           "html_id": {
             "anyOf": [
@@ -94577,209 +94379,6 @@
         "type": "object",
         "title": "ScenariosApiResponse"
       },
-      "SchemaFieldItemsApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "schema_field_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Schema Field Id"
-          },
-          "item_schema_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Item Schema Id"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "schema_field_id",
-          "item_schema_id"
-        ],
-        "title": "SchemaFieldItemsApiRequest"
-      },
-      "SchemaFieldItemsApiResponse": {
-        "properties": {
-          "schema_field_item_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Field Item Id"
-          }
-        },
-        "type": "object",
-        "title": "SchemaFieldItemsApiResponse"
-      },
-      "SchemaFieldsApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "schema_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Schema Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "field_type": {
-            "type": "string",
-            "title": "Field Type"
-          },
-          "required": {
-            "type": "boolean",
-            "title": "Required"
-          },
-          "position_value": {
-            "type": "integer",
-            "title": "Position Value"
-          },
-          "template": {
-            "type": "string",
-            "title": "Template"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "default_value": {
-            "type": "string",
-            "title": "Default Value"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "schema_id",
-          "name",
-          "field_type",
-          "required",
-          "position_value",
-          "template",
-          "description",
-          "default_value"
-        ],
-        "title": "SchemaFieldsApiRequest"
-      },
-      "SchemaFieldsApiResponse": {
-        "properties": {
-          "schema_field_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Field Id"
-          }
-        },
-        "type": "object",
-        "title": "SchemaFieldsApiResponse"
-      },
-      "SchemasApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id"
-        ],
-        "title": "SchemasApiRequest"
-      },
-      "SchemasApiResponse": {
-        "properties": {
-          "schema_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Id"
-          }
-        },
-        "type": "object",
-        "title": "SchemasApiResponse"
-      },
       "SearchSimulatableProfilesApiRequest": {
         "properties": {
           "limit_count": {
@@ -95862,156 +95461,6 @@
         "type": "object",
         "title": "TemperatureLevelsApiResponse"
       },
-      "TemplateArrayItemsApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "template_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Template Id"
-          },
-          "schema_field_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Schema Field Id"
-          },
-          "item_template_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Item Template Id"
-          },
-          "position_value": {
-            "type": "integer",
-            "title": "Position Value"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "template_id",
-          "schema_field_id",
-          "item_template_id",
-          "position_value"
-        ],
-        "title": "TemplateArrayItemsApiRequest"
-      },
-      "TemplateArrayItemsApiResponse": {
-        "properties": {
-          "template_array_item_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Array Item Id"
-          }
-        },
-        "type": "object",
-        "title": "TemplateArrayItemsApiResponse"
-      },
-      "TemplateValuesApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "template_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Template Id"
-          },
-          "schema_field_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Schema Field Id"
-          },
-          "string_value": {
-            "type": "string",
-            "title": "String Value"
-          },
-          "number_value": {
-            "type": "string",
-            "title": "Number Value"
-          },
-          "boolean_value": {
-            "type": "string",
-            "title": "Boolean Value"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id",
-          "template_id",
-          "schema_field_id",
-          "string_value",
-          "number_value",
-          "boolean_value"
-        ],
-        "title": "TemplateValuesApiRequest"
-      },
-      "TemplateValuesApiResponse": {
-        "properties": {
-          "template_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Value Id"
-          }
-        },
-        "type": "object",
-        "title": "TemplateValuesApiResponse"
-      },
       "TemplatesApiRequest": {
         "properties": {
           "agent_id": {
@@ -96276,6 +95725,62 @@
         },
         "type": "object",
         "title": "ToolsApiResponse"
+      },
+      "UploadsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id",
+          "upload_id"
+        ],
+        "title": "UploadsApiRequest"
+      },
+      "UploadsApiResponse": {
+        "properties": {
+          "uploads_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploads Id"
+          }
+        },
+        "type": "object",
+        "title": "UploadsApiResponse"
       },
       "UpsertStaffApiRequest": {
         "properties": {
