@@ -196,6 +196,7 @@ async def ensure_department_client(
             "serviceAccountsEnabled": True,
             "clientAuthenticatorType": "client-secret",
             "secret": target_secret,
+            "consentRequired": False,
         }
         
         if existing_client:
@@ -298,6 +299,7 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
             "serviceAccountsEnabled": True,
             "clientAuthenticatorType": "client-secret",
             "secret": target_secret,
+            "consentRequired": False,
         }
 
         if existing_client:
@@ -386,14 +388,37 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
 
         if existing_scope:
             scope_id = existing_scope.get("id")
-            logger.info(f"✅ Client scope '{scope_name}' already exists")
+            # Update scope to ensure consent screen is disabled
+            # Note: We update via database directly since Admin API has method signature issues
+            try:
+                from app.main import get_pool
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as conn:
+                        # Update via SQL to ensure attribute exists and is set to false
+                        await conn.execute(
+                            """
+                            INSERT INTO keycloak.client_scope_attributes (scope_id, name, value)
+                            VALUES ($1, 'display.on.consent.screen', 'false')
+                            ON CONFLICT (scope_id, name) DO UPDATE SET value = 'false'
+                            """,
+                            scope_id,
+                        )
+                        logger.info(f"✅ Updated client scope '{scope_name}' to disable consent screen")
+                else:
+                    logger.warning("Database pool not available, cannot update scope attributes")
+            except Exception as e:
+                logger.warning(f"Failed to update client scope '{scope_name}' attributes: {e}")
+                # Continue anyway - scope exists
         else:
             # Create the client scope
             scope_payload: dict[str, Any] = {
                 "name": scope_name,
                 "description": "MCP resource scope for OAuth audience binding",
                 "protocol": "openid-connect",
-                "attributes": {},
+                "attributes": {
+                    "display.on.consent.screen": "false",
+                },
             }
 
             try:
@@ -742,6 +767,210 @@ async def ensure_trusted_hosts_policy(kc_admin: Any) -> None:
         
     except Exception as e:
         logger.warning(f"Could not remove Trusted Hosts policy: {e}", exc_info=True)
+
+
+async def ensure_dynamic_clients_no_consent(kc_admin: Any) -> None:
+    """Post-process dynamically registered MCP clients to disable consent.
+    
+    Dynamically registered clients (like ChatGPT-XXXX, Cursor-XXXX, or UUID-based)
+    may require consent by default. This function finds them and disables consent.
+    
+    Strategy:
+    - Known MCP client patterns (ChatGPT, Cursor, etc.)
+    - UUID-based client_ids (dynamically registered clients often use UUIDs)
+    - Clients that are NOT our managed clients (glow-client, glow-client-*)
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    if not is_mcp_enabled():
+        logger.debug("MCP is disabled, skipping dynamic client consent fix")
+        return
+    
+    try:
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Get all clients
+        clients = kc_admin.get_clients()
+        
+        # Our managed clients (should NOT be updated by this function)
+        managed_client_prefixes = [
+            "glow-client",
+            "admin-cli",
+            "broker",
+            "realm-management",
+            "security-admin-console",
+            "account",
+            "account-console",
+        ]
+        
+        # Known MCP client patterns (Cursor, ChatGPT, Claude, Windsurf, etc.)
+        mcp_client_patterns = [
+            "ChatGPT",
+            "Cursor",
+            "Claude",
+            "Windsurf",
+            "Cursor-",
+            "chatgpt-",
+            "claude-",
+            "windsurf-",
+        ]
+        
+        updated_count = 0
+        for client in clients:
+            client_id = client.get("clientId", "")
+            client_uuid = client.get("id")
+            consent_required = client.get("consentRequired", False)
+            
+            # Skip our managed clients
+            is_managed = any(
+                client_id.startswith(prefix) for prefix in managed_client_prefixes
+            )
+            if is_managed:
+                continue
+            
+            # Check if this looks like a dynamically registered MCP client
+            # Pattern 1: Known MCP client names
+            is_mcp_client_by_name = any(
+                pattern.lower() in client_id.lower() for pattern in mcp_client_patterns
+            )
+            
+            # Pattern 2: UUID-based client_id (common for dynamically registered clients)
+            # UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            import re
+            is_uuid_client = bool(
+                re.match(
+                    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                    client_id,
+                    re.IGNORECASE,
+                )
+            )
+            
+            # Pattern 3: Check redirect URIs for MCP patterns
+            redirect_uris = client.get("redirectUris", [])
+            has_mcp_redirect = any(
+                "chatgpt.com" in uri.lower()
+                or "cursor.sh" in uri.lower()
+                or "cursor://" in uri.lower()
+                or "claude.ai" in uri.lower()
+                or "windsurf.ai" in uri.lower()
+                for uri in redirect_uris
+            )
+            
+            is_mcp_client = (
+                is_mcp_client_by_name or (is_uuid_client and has_mcp_redirect)
+            )
+            
+            if is_mcp_client and consent_required and client_uuid:
+                try:
+                    # Update client to disable consent
+                    kc_admin.update_client(
+                        client_id=client_uuid,
+                        payload={"consentRequired": False},
+                    )
+                    logger.info(
+                        f"✅ Disabled consent for dynamically registered client: {client_id}"
+                    )
+                    updated_count += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to disable consent for client '{client_id}': {e}"
+                    )
+        
+        if updated_count > 0:
+            logger.info(
+                f"✅ Updated {updated_count} dynamically registered MCP client(s) to disable consent"
+            )
+        else:
+            logger.debug("No dynamically registered MCP clients found requiring consent fix")
+    
+    except Exception as e:
+        logger.warning(f"Could not ensure dynamic clients have no consent: {e}", exc_info=True)
+
+
+async def ensure_default_scopes_no_consent(kc_admin: Any) -> None:
+    """Disable consent screen display for all default client scopes.
+    
+    Even if clients have consentRequired=false, Keycloak will still show consent
+    if the scopes themselves have display.on.consent.screen=true. This function
+    updates all default client scopes to disable consent screen display.
+    
+    Uses direct database updates since Admin API has method signature issues.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    try:
+        from app.main import get_pool
+        
+        pool = get_pool()
+        if not pool:
+            logger.warning("Database pool not available, cannot update scope attributes")
+            return
+        
+        # Scopes that should have consent disabled (all default OIDC scopes)
+        scopes_to_update = [
+            "offline_access",
+            "address",
+            "roles",
+            "profile",
+            "organization",
+            "email",
+            "phone",
+            "mcp-resource",
+        ]
+        
+        async with pool.acquire() as conn:
+            # Get scope IDs for all scopes we need to update
+            scope_ids_result = await conn.fetch(
+                """
+                SELECT id, name 
+                FROM keycloak.client_scope 
+                WHERE name = ANY($1)
+                """,
+                scopes_to_update,
+            )
+            
+            if not scope_ids_result:
+                logger.debug("No default scopes found to update")
+                return
+            
+            updated_count = 0
+            for row in scope_ids_result:
+                scope_id = row["id"]
+                scope_name = row["name"]
+                
+                try:
+                    # Update via SQL to ensure attribute exists and is set to false
+                    # This works even if the attribute doesn't exist yet (INSERT) or exists (UPDATE)
+                    await conn.execute(
+                        """
+                        INSERT INTO keycloak.client_scope_attributes (scope_id, name, value)
+                        VALUES ($1, 'display.on.consent.screen', 'false')
+                        ON CONFLICT (scope_id, name) DO UPDATE SET value = 'false'
+                        """,
+                        scope_id,
+                    )
+                    logger.info(
+                        f"✅ Disabled consent screen for scope: {scope_name}"
+                    )
+                    updated_count += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to update scope '{scope_name}' to disable consent: {e}"
+                    )
+            
+            if updated_count > 0:
+                logger.info(
+                    f"✅ Updated {updated_count} client scope(s) to disable consent screen"
+                )
+            else:
+                logger.debug("All client scopes already have consent screen disabled")
+    
+    except Exception as e:
+        logger.warning(
+            f"Could not ensure default scopes have no consent: {e}", exc_info=True
+        )
 
 
 async def sync_identity_provider_for_realm_level(
@@ -1666,6 +1895,13 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         
         # Ensure Trusted Hosts policy is configured for client registration
         await ensure_trusted_hosts_policy(kc_admin)
+        
+        # Disable consent screen display for all default client scopes
+        # This is critical: even if clients have consentRequired=false, scopes can force consent
+        await ensure_default_scopes_no_consent(kc_admin)
+        
+        # Post-process dynamically registered MCP clients to disable consent
+        await ensure_dynamic_clients_no_consent(kc_admin)
 
         # Sync identity providers (realm-level + department-scoped)
         # All IdPs are hidden, theme controls visibility based on client_id
