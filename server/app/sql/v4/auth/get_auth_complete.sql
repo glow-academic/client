@@ -147,6 +147,17 @@ WITH params AS (
         draft_id AS draft_id,
         COALESCE(mcp, false) AS mcp
 ),
+-- Convert auths_resource.id to auth_artifact.id (junction tables reference auth_artifact.id)
+auth_artifact_id_lookup AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT auth_id FROM params) IS NULL THEN NULL::uuid
+            ELSE COALESCE(
+                (SELECT ar.auth_id FROM auths_resource ar WHERE ar.id = (SELECT auth_id FROM params)),
+                (SELECT auth_id FROM params)  -- Fallback: assume it's already auth_artifact.id if not found in resource table
+            )
+        END as auth_artifact_id
+),
 -- Conditional: Only check auth existence if auth_id provided
 auth_exists_check AS (
     SELECT 
@@ -191,7 +202,7 @@ name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT an.name_id FROM auth_names an WHERE an.auth_id = (SELECT auth_id FROM params) LIMIT 1)
+            (SELECT an.name_id FROM auth_names an WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_auth_v4_name_resource 
@@ -204,7 +215,7 @@ name_resource_data AS (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM auth_names an 
                 JOIN names_resource n ON an.name_id = n.id 
-                WHERE an.auth_id = (SELECT auth_id FROM params)
+                WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
             ) n
             ORDER BY priority
             LIMIT 1
@@ -215,7 +226,7 @@ description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT ad.description_id FROM auth_descriptions ad WHERE ad.auth_id = (SELECT auth_id FROM params) LIMIT 1)
+            (SELECT ad.description_id FROM auth_descriptions ad WHERE ad.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_auth_v4_description_resource 
@@ -239,7 +250,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT af.flag_id FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_id FROM params) AND f.name = 'active' AND af.value = TRUE LIMIT 1)
+            (SELECT af.flag_id FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'active' AND af.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_auth_v4_flag_resource 
@@ -253,7 +264,7 @@ flag_resource_data AS (
                 FROM auth_flags af 
                 JOIN flags_resource f ON af.flag_id = f.id 
                 JOIN flags_resource fl ON af.flag_id = fl.id 
-                WHERE af.auth_id = (SELECT auth_id FROM params) AND fl.name = 'active' AND f.name = 'active' AND af.value = TRUE
+                WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND fl.name = 'active' AND f.name = 'active' AND af.value = TRUE
             ) f
             ORDER BY priority
             LIMIT 1
@@ -284,7 +295,7 @@ slug_ids_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(as_j.slug_id ORDER BY as_j.created_at)
                  FROM auth_slugs as_j
-                 WHERE as_j.auth_id = (SELECT auth_id FROM params)),
+                 WHERE as_j.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)),
                 ARRAY[]::uuid[]
             )
         END as slug_ids
@@ -623,9 +634,10 @@ auth_items_data AS (
             ELSE ''::text
         END as value_masked
     FROM params x
-    LEFT JOIN auth_items ai_j ON ai_j.auth_id = x.auth_id
+    CROSS JOIN auth_artifact_id_lookup aail
+    LEFT JOIN auth_items ai_j ON ai_j.auth_id = aail.auth_artifact_id AND aail.auth_artifact_id IS NOT NULL
     LEFT JOIN items_resource i ON i.id = ai_j.item_id
-    WHERE x.auth_id IS NOT NULL AND i.id IS NOT NULL
+    WHERE x.auth_id IS NOT NULL AND aail.auth_artifact_id IS NOT NULL AND i.id IS NOT NULL
     ORDER BY i.position
 ),
 -- Agent selection helper CTEs (shared across all agent selections)

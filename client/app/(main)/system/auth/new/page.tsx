@@ -36,7 +36,7 @@ type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
  * Always bypass cache to ensure fresh data for create pages.
  */
 const getAuthDefault = async (input: GetAuthIn): Promise<GetAuthOut> => {
-  return api.post("/auth/get", input, {
+  return api.post("/auths/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

@@ -7972,6 +7972,20 @@ export interface components {
             voice_suggestions?: string[] | null;
             /** Voices */
             voices?: components["schemas"]["QGetAgentV4VoiceResource"][] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
+            /** Tool Resources */
+            tool_resources?: components["schemas"]["QGetAgentV4Tool"][] | null;
+            /** Show Tools */
+            show_tools?: boolean | null;
+            /** Tools Agent Id */
+            tools_agent_id?: string | null;
+            /** Tools Required */
+            tools_required?: boolean | null;
+            /** Tool Suggestions */
+            tool_suggestions?: string[] | null;
+            /** Tools */
+            tools?: components["schemas"]["QGetAgentV4Tool"][] | null;
             /** System Prompt */
             system_prompt?: string | null;
             /** Active */
@@ -12404,12 +12418,8 @@ export interface components {
         PatchToolDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Schema Ids */
-            schema_ids?: string[] | null;
             /** Template Ids */
             template_ids?: string[] | null;
-            /** Schema Field Item Ids */
-            schema_field_item_ids?: string[] | null;
             /** Template Array Item Ids */
             template_array_item_ids?: string[] | null;
             /** Template Value Ids */
@@ -12836,6 +12846,19 @@ export interface components {
             is_upper: boolean | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetAgentV4Tool */
+        QGetAgentV4Tool: {
+            /** Tool Id */
+            tool_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetAgentV4VoiceResource */
         QGetAgentV4VoiceResource: {
@@ -19445,6 +19468,8 @@ export interface components {
             reasoning_level_id?: string | null;
             /** Voice Ids */
             voice_ids?: string[] | null;
+            /** Tool Ids */
+            tool_ids?: string[] | null;
         };
         /** SaveAgentApiResponse */
         SaveAgentApiResponse: {
