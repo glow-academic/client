@@ -10689,18 +10689,6 @@ export interface components {
             standard_group_suggestions?: string[] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["QGetRubricV4StandardGroupResource"][] | null;
-            /** Standard Groups Legacy */
-            standard_groups_legacy?: components["schemas"]["QGetRubricV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetRubricV4Standard"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Draft Standard Groups */
-            draft_standard_groups?: unknown | null;
-            /** Draft Standards */
-            draft_standards?: unknown | null;
-            /** Draft Grid Cells */
-            draft_grid_cells?: unknown | null;
         };
         /** GetRubricsListApiRequest */
         GetRubricsListApiRequest: Record<string, never>;
@@ -16217,36 +16205,6 @@ export interface components {
             value: number | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetRubricV4Standard */
-        QGetRubricV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetRubricV4StandardGroup */
-        QGetRubricV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
         };
         /** QGetRubricV4StandardGroupResource */
         QGetRubricV4StandardGroupResource: {

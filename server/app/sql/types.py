@@ -27000,30 +27000,6 @@ class QGetRubricV4PointsResource(BaseModel):
 
 
 
-class QGetRubricV4Standard(BaseModel):
-
-    standard_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-
-
-
-
-class QGetRubricV4StandardGroup(BaseModel):
-
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-    position: int | None
-    active: bool | None
-    standard_ids: list[UUID] | None
-
-
-
-
 class QGetRubricV4StandardGroupResource(BaseModel):
 
     standard_group_id: UUID | None
@@ -27091,12 +27067,6 @@ class GetRubricSqlRow(BaseModel):
     standard_groups_required: bool | None = None
     standard_group_suggestions: list[UUID] | None = None
     standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
-    standard_groups_legacy: list[QGetRubricV4StandardGroup] | None = None
-    standards: list[QGetRubricV4Standard] | None = None
-    draft_version: int | None = None
-    draft_standard_groups: Any | None = None
-    draft_standards: Any | None = None
-    draft_grid_cells: Any | None = None
 
 class GetRubricApiRequest(BaseModel):
 
@@ -27159,12 +27129,6 @@ class GetRubricApiResponse(BaseModel):
     standard_groups_required: bool | None = None
     standard_group_suggestions: list[UUID] | None = None
     standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
-    standard_groups_legacy: list[QGetRubricV4StandardGroup] | None = None
-    standards: list[QGetRubricV4Standard] | None = None
-    draft_version: int | None = None
-    draft_standard_groups: Any | None = None
-    draft_standards: Any | None = None
-    draft_grid_cells: Any | None = None
 
 
 

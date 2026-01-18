@@ -42,24 +42,6 @@ CREATE TYPE types.q_get_rubric_v4_department AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_rubric_v4_standard_group AS (
-    standard_group_id uuid,
-    name text,
-    description text,
-    points int,
-    pass_points int,
-    position int,
-    active boolean,
-    standard_ids uuid[]
-);
-
-CREATE TYPE types.q_get_rubric_v4_standard AS (
-    standard_id uuid,
-    name text,
-    description text,
-    points int
-);
-
 CREATE TYPE types.q_get_rubric_v4_name_resource AS (
     id uuid,
     name text,
@@ -172,14 +154,7 @@ RETURNS TABLE (
     standard_groups_agent_id uuid,
     standard_groups_required boolean,
     standard_group_suggestions uuid[],
-    standard_groups types.q_get_rubric_v4_standard_group_resource[],
-    -- Additional fields for compatibility
-    standard_groups_legacy types.q_get_rubric_v4_standard_group[],
-    standards types.q_get_rubric_v4_standard[],
-    draft_version int,
-    draft_standard_groups jsonb,
-    draft_standards jsonb,
-    draft_grid_cells jsonb
+    standard_groups types.q_get_rubric_v4_standard_group_resource[]
 )
 LANGUAGE sql
 STABLE
@@ -198,16 +173,6 @@ rubric_exists_check AS (
             WHEN (SELECT rubric_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM rubric_artifact WHERE id = (SELECT rubric_id FROM params))::boolean
         END as rubric_exists
-),
--- Draft data is now stored in draft_* junction tables, not in payload
-draft_payload_data AS (
-    SELECT 
-        NULL::jsonb as payload,
-        d.version as draft_version
-    FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id AND d.profile_id = x.profile_id
-    WHERE x.draft_id IS NOT NULL
-    LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
 draft_group_data AS (
@@ -259,6 +224,20 @@ department_mapping_data AS (
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
+),
+-- Departments aggregation CTE
+departments_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_rubric_v4_department
+                ORDER BY dmd.name
+            ),
+            '{}'::types.q_get_rubric_v4_department[]
+        ) AS departments
+    FROM department_mapping_data dmd
+    CROSS JOIN params
+    LIMIT 1
 ),
 primary_department_id_data AS (
     SELECT department_id
@@ -1262,6 +1241,20 @@ names_data AS (
         OR n.id = ANY(nsd.name_suggestions)
     ORDER BY n.name
 ),
+-- Names aggregation CTE
+names_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (nd.id, nd.name, nd.generated)::types.q_get_rubric_v4_name_resource
+                ORDER BY nd.name
+            ),
+            COALESCE((SELECT names FROM names_suggestions_objects), '{}'::types.q_get_rubric_v4_name_resource[])
+        ) AS names
+    FROM names_data nd
+    CROSS JOIN params
+    LIMIT 1
+),
 -- Descriptions data (suggested options only)
 descriptions_data AS (
     SELECT DISTINCT
@@ -1281,6 +1274,20 @@ descriptions_data AS (
         )
     ORDER BY d.description
 ),
+-- Descriptions aggregation CTE
+descriptions_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (dd.id, dd.description, dd.generated)::types.q_get_rubric_v4_description_resource
+                ORDER BY dd.description
+            ),
+            COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), '{}'::types.q_get_rubric_v4_description_resource[])
+        ) AS descriptions
+    FROM descriptions_data dd
+    CROSS JOIN params
+    LIMIT 1
+),
 -- Flags data (all available flag options)
 flags_data AS (
     SELECT DISTINCT
@@ -1296,6 +1303,20 @@ flags_data AS (
         f.id = (SELECT active_flag_id FROM flag_resource_data)
         OR (SELECT active_flag_id FROM flag_resource_data) IS NULL
     ORDER BY f.name
+),
+-- Flags aggregation CTE
+flags_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (fd.id, fd.name, fd.description, fd.icon_id, fd.generated)::types.q_get_rubric_v4_flag_resource
+                ORDER BY fd.name
+            ),
+            '{}'::types.q_get_rubric_v4_flag_resource[]
+        ) AS flags
+    FROM flags_data fd
+    CROSS JOIN params
+    LIMIT 1
 ),
 -- Points data (all available points options)
 points_data AS (
@@ -1314,6 +1335,20 @@ points_data AS (
         OR p.id = ANY(psd.points_suggestions)
       )
     ORDER BY p.value
+),
+-- Points aggregation CTE
+points_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (pd.id, pd.value, pd.generated)::types.q_get_rubric_v4_points_option
+                ORDER BY pd.value
+            ),
+            '{}'::types.q_get_rubric_v4_points_option[]
+        ) AS points
+    FROM points_data pd
+    CROSS JOIN params
+    LIMIT 1
 ),
 -- Standard groups data (for selected standard groups - only when rubric_id provided)
 standard_groups_selected_data AS (
@@ -1353,80 +1388,32 @@ standard_groups_all_data AS (
     WHERE sg.active = true
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active, sg.generated
 ),
-standard_groups_data AS (
+-- Standard groups aggregated (selected groups for standard_group_resources)
+standard_groups_selected_aggregated AS (
     SELECT 
-        COALESCE(sg_selected.standard_group_id, sg_all.standard_group_id) as standard_group_id,
-        COALESCE(sg_selected.name, sg_all.name) as name,
-        COALESCE(sg_selected.description, sg_all.description) as description,
-        COALESCE(sg_selected.points, sg_all.points) as points,
-        COALESCE(sg_selected.pass_points, sg_all.pass_points) as pass_points,
-        COALESCE(sg_selected.position, sg_all.position) as position,
-        COALESCE(sg_selected.active, sg_all.active) as active,
-        COALESCE(sg_selected.standard_ids, sg_all.standard_ids, ARRAY[]::uuid[]) as standard_ids,
-        COALESCE(sg_selected.generated, sg_all.generated) as generated
-    FROM params x
-    FULL OUTER JOIN standard_groups_selected_data sg_selected ON true
-    FULL OUTER JOIN standard_groups_all_data sg_all ON true
-    WHERE (x.rubric_id IS NOT NULL AND sg_selected.standard_group_id IS NOT NULL)
-       OR (x.rubric_id IS NULL AND sg_all.standard_group_id IS NOT NULL)
-),
-standard_groups_aggregated AS (
-    SELECT 
-        ARRAY_AGG(sg.standard_group_id ORDER BY sg.position, sg.name) FILTER (WHERE sg.standard_group_id IS NOT NULL) as standard_group_ids,
         COALESCE(
             ARRAY_AGG(
                 (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
                 ORDER BY sg.position, sg.name
-            ) FILTER (WHERE sg.standard_group_id IS NOT NULL),
+            ),
             '{}'::types.q_get_rubric_v4_standard_group_resource[]
-        ) as standard_groups
-    FROM standard_groups_data sg
+        ) as standard_group_resources
+    FROM standard_groups_selected_data sg
+    CROSS JOIN params
+    LIMIT 1
 ),
--- Standards data
-standards_distinct AS (
-    SELECT DISTINCT ON (s.id)
-        s.id, 
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name, 
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, 
-        s.points
-    FROM standards s
-    WHERE s.standard_group_id IN (
-        SELECT DISTINCT standard_group_id 
-        FROM standard_groups_data 
-        WHERE standard_group_id IS NOT NULL
-    )
-    ORDER BY s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
-),
-standards_aggregated AS (
+-- Standard groups aggregated (all available groups for standard_groups array)
+standard_groups_all_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sd.id, sd.name, sd.description, sd.points)::types.q_get_rubric_v4_standard
-                ORDER BY sd.name
+                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+                ORDER BY sg.position, sg.name
             ),
-            '{}'::types.q_get_rubric_v4_standard[]
-        ) as standards
-    FROM standards_distinct sd
-),
--- Draft payload extraction (for compatibility with existing frontend)
-draft_standard_groups_extracted AS (
-    SELECT 
-        COALESCE(
-            (SELECT payload->'standardGroups' FROM draft_payload_data),
-            (SELECT payload->'standard_groups' FROM draft_payload_data),
-            '[]'::jsonb
-        ) as draft_standard_groups,
-        COALESCE(
-            (SELECT payload->'standards' FROM draft_payload_data),
-            (SELECT payload->'standards' FROM draft_payload_data),
-            '[]'::jsonb
-        ) as draft_standards,
-        COALESCE(
-            (SELECT payload->'gridCells' FROM draft_payload_data),
-            (SELECT payload->'grid_cells' FROM draft_payload_data),
-            '{}'::jsonb
-        ) as draft_grid_cells
-    FROM params
+            '{}'::types.q_get_rubric_v4_standard_group_resource[]
+        ) as standard_groups
+    FROM standard_groups_all_data sg
+    CROSS JOIN params
     LIMIT 1
 )
 SELECT
@@ -1447,13 +1434,7 @@ SELECT
     (SELECT agent_id FROM name_agent_data) as name_agent_id,
     true as name_required,
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (nd.id, nd.name, nd.generated)::types.q_get_rubric_v4_name_resource
-            ORDER BY nd.name
-        ) FROM (SELECT DISTINCT id, name, generated FROM names_data) nd),
-        COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_rubric_v4_name_resource[])
-    ) as names,
+    (SELECT names FROM names_agg) as names,
     -- Single-select resources: description
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT desc_res FROM (SELECT drd.draft_description_resource as desc_res UNION ALL SELECT drd.rubric_description_resource LIMIT 1) sub WHERE desc_res IS NOT NULL LIMIT 1) as description_resource,
@@ -1464,13 +1445,7 @@ SELECT
     (SELECT agent_id FROM description_agent_data) as description_agent_id,
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dd.id, dd.description, dd.generated)::types.q_get_rubric_v4_description_resource
-            ORDER BY dd.description
-        ) FROM (SELECT DISTINCT id, description, generated FROM descriptions_data) dd),
-        COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_rubric_v4_description_resource[])
-    ) as descriptions,
+    (SELECT descriptions FROM descriptions_agg) as descriptions,
     -- Multi-select resources: departments
     COALESCE(
         CASE 
@@ -1511,26 +1486,14 @@ SELECT
         ELSE false
     END as departments_required,
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_rubric_v4_department
-            ORDER BY dmd.name
-        ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
-        '{}'::types.q_get_rubric_v4_department[]
-    ) as departments,
+    (SELECT departments FROM departments_agg) as departments,
     -- Single-select resources: flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.rubric_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
     uf.show_flag,
     (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
     false as flag_required,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fd.id, fd.name, fd.description, fd.icon_id, fd.generated)::types.q_get_rubric_v4_flag_resource
-            ORDER BY fd.name
-        ) FROM (SELECT DISTINCT id, name, description, icon_id, generated FROM flags_data) fd),
-        '{}'::types.q_get_rubric_v4_flag_resource[]
-    ) as flags,
+    (SELECT flags FROM flags_agg) as flags,
     -- Single-select resources: total_points
     (SELECT total_points_id FROM total_points_resource_data) as total_points_id,
     tprd.total_points_resource,
@@ -1541,13 +1504,7 @@ SELECT
     (SELECT agent_id FROM points_agent_data) as points_agent_id,
     true as points_required,
     COALESCE((SELECT points_suggestions FROM points_suggestions_data), ARRAY[]::uuid[]) as points_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pd.id, pd.value, pd.generated)::types.q_get_rubric_v4_points_option
-            ORDER BY pd.value
-        ) FROM (SELECT DISTINCT id, value, generated FROM points_data) pd),
-        '{}'::types.q_get_rubric_v4_points_option[]
-    ) as points,
+    (SELECT points FROM points_agg) as points,
     -- Single-select resources: pass_points
     (SELECT pass_points_id FROM pass_points_resource_data) as pass_points_id,
     pprd.pass_points_resource,
@@ -1558,13 +1515,7 @@ SELECT
     (SELECT agent_id FROM points_agent_data) as pass_points_agent_id,
     true as pass_points_required,
     COALESCE((SELECT points_suggestions FROM points_suggestions_data), ARRAY[]::uuid[]) as pass_points_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (pd.id, pd.value, pd.generated)::types.q_get_rubric_v4_points_option
-            ORDER BY pd.value
-        ) FROM (SELECT DISTINCT id, value, generated FROM points_data) pd),
-        '{}'::types.q_get_rubric_v4_points_option[]
-    ) as pass_points,
+    (SELECT points FROM points_agg) as pass_points,
     -- Multi-select resources: standard_groups
     COALESCE((SELECT standard_group_ids FROM standard_group_ids_data), ARRAY[]::uuid[]) as standard_group_ids,
     -- Standard group resources (selected standard groups filtered by standard_group_ids)
@@ -1588,29 +1539,7 @@ SELECT
     END as standard_groups_required,
     COALESCE((SELECT standard_group_suggestions FROM standard_group_suggestions_data), ARRAY[]::uuid[]) as standard_group_suggestions,
     -- Standard groups array (all available standard groups)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
-            ORDER BY sg.position, sg.name
-        ) FROM standard_groups_all_data sg),
-        '{}'::types.q_get_rubric_v4_standard_group_resource[]
-    ) as standard_groups,
-    -- Legacy standard_groups format (for compatibility - only selected ones)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]))::types.q_get_rubric_v4_standard_group
-            ORDER BY sg.position, sg.name
-        ) FROM standard_groups_selected_data sg),
-        '{}'::types.q_get_rubric_v4_standard_group[]
-    ) as standard_groups_legacy,
-    -- Standards array
-    COALESCE((SELECT standards FROM standards_aggregated), '{}'::types.q_get_rubric_v4_standard[]) as standards,
-    -- Draft version
-    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
-    -- Draft payload fields (for compatibility)
-    COALESCE((SELECT draft_standard_groups FROM draft_standard_groups_extracted), '[]'::jsonb) as draft_standard_groups,
-    COALESCE((SELECT draft_standards FROM draft_standard_groups_extracted), '[]'::jsonb) as draft_standards,
-    COALESCE((SELECT draft_grid_cells FROM draft_standard_groups_extracted), '{}'::jsonb) as draft_grid_cells
+    (SELECT standard_groups FROM standard_groups_all_aggregated) as standard_groups
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
@@ -1628,10 +1557,14 @@ CROSS JOIN description_suggestions_data dsd
 CROSS JOIN names_suggestions_objects nso
 CROSS JOIN descriptions_suggestions_objects dso
 CROSS JOIN standard_group_ids_data sgid
-CROSS JOIN standard_groups_aggregated sga
-CROSS JOIN standards_aggregated sta
+CROSS JOIN standard_groups_selected_aggregated sgsa
+CROSS JOIN standard_groups_all_aggregated sgaa
 CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN points_suggestions_data psd
 CROSS JOIN standard_group_suggestions_data sgsd
-CROSS JOIN draft_standard_groups_extracted dsge
+CROSS JOIN names_agg na
+CROSS JOIN descriptions_agg da
+CROSS JOIN departments_agg depta
+CROSS JOIN flags_agg fa
+CROSS JOIN points_agg pa
 $$;
