@@ -156,107 +156,6 @@ CREATE TYPE types.q_get_scenario_v4_parameter AS (
     video_parameter boolean
 );
 
--- Legacy types (kept for backward compatibility with existing arrays)
-CREATE TYPE types.q_get_scenario_v4_agent AS (
-    agent_id uuid,
-    name text,
-    description text,
-    roles text[]
-);
-
-CREATE TYPE types.q_get_scenario_v4_simulation AS (
-    simulation_id uuid,
-    name text,
-    description text,
-    time_limit bigint,
-    department_ids uuid[]
-);
-
-CREATE TYPE types.q_get_scenario_v4_objective AS (
-    objective_id uuid,
-    name text,
-    description text
-);
-
-CREATE TYPE types.q_get_scenario_v4_problem_statement AS (
-    problem_statement_id uuid,
-    name text,
-    problem_statement text,
-    created_at timestamptz,
-    updated_at timestamptz
-);
-
-CREATE TYPE types.q_get_scenario_v4_scenario_image AS (
-    upload_id uuid,
-    name text,
-    file_path text,
-    mime_type text,
-    active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
-);
-
-CREATE TYPE types.q_get_scenario_v4_scenario_video AS (
-    id uuid,
-    name text,
-    length_seconds integer,
-    completed boolean,
-    active boolean,
-    file_path text,
-    mime_type text,
-    upload_id uuid
-);
-
-CREATE TYPE types.q_get_scenario_v4_question_option AS (
-    id uuid,
-    option_text text,
-    is_correct boolean
-);
-
-CREATE TYPE types.q_get_scenario_v4_question AS (
-    id uuid,
-    question_text text,
-    allow_multiple boolean,
-    active boolean,
-    options types.q_get_scenario_v4_question_option[],
-    times integer[]
-);
-
-CREATE TYPE types.q_get_scenario_v4_objective_with_departments AS (
-    objective text,
-    department_ids uuid[]
-);
-
-CREATE TYPE types.q_get_scenario_v4_document_detail AS (
-    document_id uuid,
-    name text,
-    updated_at timestamptz,
-    extension text,
-    scenario_ids uuid[],
-    can_edit boolean,
-    can_delete boolean,
-    active boolean,
-    department_ids uuid[],
-    file_path text,
-    mime_type text,
-    upload_id uuid,
-    field_ids uuid[],
-    is_template boolean,
-    parent_document_id uuid
-);
-
-CREATE TYPE types.q_get_scenario_v4_parameter_detail AS (
-    parameter_id uuid,
-    field_ids uuid[],
-    valid_field_ids uuid[]
-);
-
-CREATE TYPE types.q_get_scenario_v4_field_range AS (
-    parameter_id uuid,
-    min_count integer,
-    max_count integer
-);
-
 -- Flag resource composite type (with generated boolean, NOT group_id)
 CREATE TYPE types.q_get_scenario_v4_flag_resource AS (
     id uuid,
@@ -437,44 +336,10 @@ RETURNS TABLE (
     parameters_required boolean,
     parameter_suggestions uuid[],
     parameters types.q_get_scenario_v4_parameter[],
-    -- Single-select resources: ranges (one per range type)
     -- Multi-resource combination agent IDs
     basic_agent_id uuid,
     content_agent_id uuid,
-    general_agent_id uuid,
-    -- Scenario-specific fields (kept for backward compatibility)
-    scenario_id uuid,
-    name text,
-    description text,
-    problem_statement text,
-    active boolean,
-    parent_scenario_id uuid,
-    hints_enabled boolean,
-    objectives_enabled boolean,
-    image_input_enabled boolean,
-    simulation_ids text[],
-    valid_persona_ids text[],
-    valid_document_ids text[],
-    valid_department_ids uuid[],
-    active_usage_count bigint,
-    user_role text,
-    valid_parameter_ids text[],
-    valid_field_ids text[],
-    video_enabled boolean,
-    questions_enabled boolean,
-    problem_statement_enabled boolean,
-    valid_agent_ids text[],
-    can_duplicate boolean,
-    can_delete boolean,
-    agents types.q_get_scenario_v4_agent[],
-    simulations types.q_get_scenario_v4_simulation[],
-    objectives_history types.q_get_scenario_v4_objective_with_departments[],
-    document_details types.q_get_scenario_v4_document_detail[],
-    parameters_detail types.q_get_scenario_v4_parameter_detail[],
-    draft_version int,
-    draft_field_show_selected jsonb,
-    draft_field_ranges jsonb,
-    draft_randomize_parameter_items jsonb
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -576,9 +441,10 @@ user_departments_rows AS (
 scenario_departments_data AS (
     SELECT 
         sd.scenario_id,
-        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
-    FROM scenario_departments sd
-    WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true
+        COALESCE(ARRAY_AGG(sd.department_id ORDER BY sd.created_at), ARRAY[]::uuid[]) as department_ids
+    FROM params x
+    LEFT JOIN scenario_departments sd ON sd.scenario_id = x.scenario_id AND sd.active = true
+    WHERE x.scenario_id IS NOT NULL
     GROUP BY sd.scenario_id
 ),
 scenario_active_problem_statement AS (
@@ -664,6 +530,7 @@ scenario_department_access_check AS (
     WHERE x.scenario_id IS NOT NULL
 ),
 -- Conditional: Get scenario core data only if scenario_id provided
+-- Always returns at least one row (for CROSS JOIN safety)
 scenario_core AS (
     SELECT 
         s.id,
@@ -673,19 +540,19 @@ scenario_core AS (
         COALESCE(saps.problem_statement_id, NULL) as problem_statement_id,
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE) as active,
         st.parent_id as parent_scenario_id,
-        COALESCE(sdd.department_ids, NULL) as department_ids,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) as objectives_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) as images_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'video_enabled' AND sf.value = TRUE) as video_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'questions_enabled' AND sf.value = TRUE) as questions_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'problem_statement_enabled' AND sf.value = TRUE) as problem_statement_enabled
+        COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids,
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) END as objectives_enabled,
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) END as images_enabled,
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'video_enabled' AND sf.value = TRUE) END as video_enabled,
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'questions_enabled' AND sf.value = TRUE) END as questions_enabled,
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'problem_statement_enabled' AND sf.value = TRUE) END as problem_statement_enabled
     FROM params x
     LEFT JOIN scenario_artifact s ON s.id = x.scenario_id
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     LEFT JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id
-    WHERE x.scenario_id IS NULL OR (x.scenario_id IS NOT NULL AND sdac.has_access = true)
+    WHERE x.scenario_id IS NULL OR (x.scenario_id IS NOT NULL AND (sdac.has_access = true OR sdac.has_access IS NULL))
     LIMIT 1
 ),
 -- Resource data CTEs - query from scenario_* tables or draft_* tables if draft_id provided
@@ -1052,8 +919,8 @@ scenario_simulation_attributes AS (
 scenario_personas_agg AS (
     SELECT 
         CASE 
-            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::text[]
-            ELSE COALESCE(ARRAY_AGG(persona_id::text ORDER BY persona_id), ARRAY[]::text[])
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(ARRAY_AGG(sp.persona_id ORDER BY sp.persona_id), ARRAY[]::uuid[])
         END as persona_ids
     FROM params x
     LEFT JOIN scenario_personas sp ON sp.scenario_id = x.scenario_id AND sp.active = true
@@ -1062,8 +929,8 @@ scenario_personas_agg AS (
 scenario_documents_agg AS (
     SELECT 
         CASE 
-            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::text[]
-            ELSE COALESCE(ARRAY_AGG(document_id::text ORDER BY document_id), ARRAY[]::text[])
+            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(ARRAY_AGG(sd.document_id ORDER BY sd.document_id), ARRAY[]::uuid[])
         END as document_ids
     FROM params x
     LEFT JOIN scenario_documents sd ON sd.scenario_id = x.scenario_id AND sd.active = true
@@ -1177,14 +1044,14 @@ objective_suggestions_data AS (
 ),
 scenario_simulations_agg AS (
     SELECT 
-        COALESCE(ARRAY_AGG(DISTINCT simulation_id::text), ARRAY[]::text[]) as simulation_ids,
-        COUNT(DISTINCT CASE WHEN EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE) THEN simulation_id END) as active_usage_count
-    FROM simulation_scenarios ss
-    JOIN simulation_artifact s ON s.id = ss.simulation_id
-    WHERE ss.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-          AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' 
-          AND ssf.value = true)
+        COALESCE(ARRAY_AGG(DISTINCT ss.simulation_id), ARRAY[]::uuid[]) as simulation_ids,
+        COUNT(DISTINCT CASE WHEN EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = x.scenario_id AND f.name = 'active' AND sf.value = TRUE) THEN ss.simulation_id END) as active_usage_count
+    FROM params x
+    LEFT JOIN simulation_scenarios ss ON ss.scenario_id = x.scenario_id AND x.scenario_id IS NOT NULL
+    LEFT JOIN simulation_scenario_flags ssf ON ssf.simulation_id = ss.simulation_id
+    LEFT JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id AND sfr.scenario_id = x.scenario_id
+    LEFT JOIN flags_resource f ON sfr.flag_id = f.id AND f.name = 'active' AND ssf.value = true
+    GROUP BY x.scenario_id
 ),
 all_parameters_data AS (
     SELECT 
@@ -2431,47 +2298,156 @@ user_departments_for_agents_scenario AS (
     JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
 ),
 -- Department mapping data (for departments array) - must be defined before ui_flags
-department_mapping_data_scenario AS (
+-- Following personas pattern: Only active departments user is linked to
+department_mapping_data AS (
     SELECT 
-        d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        d.department_id,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
+    CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
         AND
-        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
 ),
--- Placeholder CTEs for mapping data (must be defined before ui_flags)
-field_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Persona mapping data (for personas array) - following personas pattern
+persona_mapping_data AS (
+    SELECT 
+        p.persona_id,
+        p.name,
+        p.description,
+        p.color,
+        p.icon,
+        p.image_model,
+        p.parameter_ids,
+        p.field_ids,
+        p.example,
+        false as generated  -- Personas are not generated resources
+    FROM valid_personas_array p
 ),
-objective_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Document mapping data (for documents array)
+document_mapping_data AS (
+    SELECT 
+        vdf.id as document_id,
+        vdf.name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = vdf.id LIMIT 1), '') as description,
+        vdf.file_path,
+        vdf.mime_type,
+        COALESCE((
+            SELECT ARRAY_AGG(DISTINCT param.id ORDER BY param.id)
+            FROM document_fields df
+            JOIN fields_resource f ON f.id = df.field_id
+            JOIN parameter_artifact param ON param.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
+            WHERE df.document_id = vdf.id
+              AND df.active = true
+              AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = TRUE)
+              AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = param.id AND fl.name = 'active' AND pf.value = true)
+        ), ARRAY[]::uuid[]) as parameter_ids,
+        COALESCE((
+            SELECT ARRAY_AGG(DISTINCT df.field_id ORDER BY df.field_id)
+            FROM document_fields df
+            WHERE df.document_id = vdf.id
+              AND df.active = true
+              AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = df.field_id AND fl.name = 'active' AND ff.value = TRUE)
+        ), ARRAY[]::uuid[]) as field_ids,
+        NULL::uuid as parent_document_id,  -- TODO: Add parent_document_id if needed
+        false as generated  -- Documents are not generated resources
+    FROM valid_documents_filtered vdf
 ),
-image_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Parameter mapping data (for parameters array)
+parameter_mapping_data AS (
+    SELECT 
+        p.id as parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'document_parameter' AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'persona_parameter' AND pf.value = TRUE) as persona_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'scenario_parameter' AND pf.value = TRUE) as scenario_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'video_parameter' AND pf.value = TRUE) as video_parameter
+    FROM parameter_artifact p
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'active' AND pf.value = true)
 ),
-video_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Field mapping data (for fields array) - following personas pattern
+field_mapping_data AS (
+    SELECT 
+        f.id as field_id,
+        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) as parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
+        COALESCE((
+            SELECT ARRAY_AGG(fcp.parameter_id ORDER BY fcp.parameter_id)
+            FROM field_parameters fcp
+            WHERE fcp.field_id = f.id
+              AND fcp.active = true
+              AND fcp.type = 'conditional'::type_field_parameters
+        ), ARRAY[]::uuid[]) as conditional_parameter_ids,
+        COALESCE(f.generated, false) as generated
+    FROM fields_resource f
+    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
 ),
-question_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Objective mapping data (for objectives array)
+objective_mapping_data AS (
+    SELECT 
+        o.id,
+        o.objective,
+        false as generated  -- Objectives are not generated resources
+    FROM objectives_resource o
+    WHERE o.active = true
 ),
-template_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Image mapping data (for images array)
+image_mapping_data AS (
+    SELECT 
+        i.id,
+        i.name,
+        COALESCE(u.file_path, '') as file_path,
+        COALESCE(u.mime_type, '') as mime_type,
+        COALESCE(iu.upload_id, i.id) as upload_id,
+        COALESCE(i.generated, false) as generated
+    FROM images_resource i
+    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+    LEFT JOIN uploads u ON u.id = iu.upload_id
+    WHERE i.active = true
 ),
-persona_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Video mapping data (for videos array)
+video_mapping_data AS (
+    SELECT 
+        v.id,
+        v.name,
+        v.length_seconds,
+        COALESCE(v.completed, false) as completed,
+        COALESCE(u.file_path, '') as file_path,
+        COALESCE(u.mime_type, '') as mime_type,
+        COALESCE(vu.upload_id, v.id) as upload_id,
+        false as generated  -- Videos are not generated resources
+    FROM videos_resource v
+    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
+    LEFT JOIN uploads u ON u.id = vu.upload_id
+    WHERE v.active = true
 ),
-document_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Question mapping data (for questions array)
+question_mapping_data AS (
+    SELECT 
+        q.id,
+        q.question_text,
+        COALESCE(q.allow_multiple, false) as allow_multiple,
+        false as generated  -- Questions are not generated resources
+    FROM questions_resource q
+    WHERE q.active = true
 ),
-parameter_mapping_data_scenario AS (
-    SELECT 1 WHERE false
+-- Template mapping data (for templates array)
+template_mapping_data AS (
+    SELECT 
+        t.id,
+        t.name,
+        COALESCE(t.description, '') as description,
+        COALESCE(t.generated, false) as generated
+    FROM templates_resource t
+    WHERE t.active = true
 ),
 -- UI flags for show_{resource} logic
 ui_flags AS (
@@ -2482,49 +2458,49 @@ ui_flags AS (
         true as show_problem_statement,  -- Always show problem statement picker
         -- Multi-select resource flags (based on business logic)
         CASE 
-            WHEN EXISTS (SELECT 1 FROM department_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM department_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_departments,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM field_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM field_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_fields,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM objective_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM objective_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_objectives,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM image_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM image_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_images,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM video_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM video_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_videos,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM question_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM question_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_questions,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM template_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM template_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_templates,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM persona_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM persona_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_personas,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM document_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM document_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_documents,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM parameter_mapping_data_scenario LIMIT 1) THEN true
+            WHEN EXISTS (SELECT 1 FROM parameter_mapping_data LIMIT 1) THEN true
             ELSE false
         END as show_parameters
     FROM params x
 ),
 -- Department suggestions
-department_suggestions_data_scenario AS (
+department_suggestions_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(sd.department_id ORDER BY sd.created_at DESC)
@@ -2563,86 +2539,488 @@ department_suggestions_data_scenario AS (
     LIMIT 1
 ),
 -- Agent selection CTEs for each resource (following personas pattern)
--- Note: These are simplified placeholders - will be fully implemented based on personas pattern
+-- Agent selection for 'names' resource
 name_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'scenario'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'names'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
 ),
+-- Agent selection helper function pattern (reused for all resources)
+-- Agent selection for 'descriptions' resource
 description_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'descriptions'::resources
+        )
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id,
+            CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'problem_statements' resource  
 problem_statement_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'problem_statements'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'departments' resource (no MCP filter)
 departments_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'departments'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'fields' resource (no MCP filter)
 fields_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'fields'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'objectives' resource (no MCP filter)
 objectives_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'objectives'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'images' resource (no MCP filter)
 images_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'images'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'videos' resource (no MCP filter)
 videos_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'videos'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'questions' resource (no MCP filter)
 questions_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'questions'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'templates' resource (no MCP filter)
 templates_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'templates'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'personas' resource (no MCP filter)
 personas_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'personas'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'documents' resource (no MCP filter)
 documents_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'documents'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'parameters' resource (no MCP filter)
 parameters_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'parameters'::resources)
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
--- Flag agent selection CTEs (one per flag type)
+-- Flag agent selection CTEs (one per flag type) - all use 'scenario_flags' resource
 active_flag_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
 objectives_enabled_flag_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
 images_enabled_flag_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
 video_enabled_flag_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
 questions_enabled_flag_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
 problem_statement_enabled_flag_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
--- Range agent selection CTEs (one per range type)
-persona_range_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
-),
-document_range_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
-),
-parameter_range_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
-),
-field_ranges_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
-),
+-- Multi-resource combination agent IDs
+-- Agent selection for 'basic' multi-resource combination (names + descriptions + flags + departments)
 basic_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    ),
+    agent_tool_resources AS (
+        SELECT ea.agent_id, COALESCE(ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL), ARRAY[]::text[]) as tool_resources, ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT atr.agent_id, atr.tool_resources,
+            ARRAY_LENGTH(ARRAY(SELECT unnest(atr.tool_resources) EXCEPT SELECT unnest(ARRAY['names', 'descriptions', 'scenario_flags', 'departments']::text[])), 1) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'descriptions', 'scenario_flags', 'departments']::text[] <@ atr.tool_resources
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = atr.agent_id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ascores.agent_id, ascores.unmatched_count,
+            CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ascores.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.unmatched_count ASC, adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'content' multi-resource combination (objectives + images + videos + questions)
 content_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    ),
+    agent_tool_resources AS (
+        SELECT ea.agent_id, COALESCE(ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL), ARRAY[]::text[]) as tool_resources, ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT atr.agent_id, atr.tool_resources,
+            ARRAY_LENGTH(ARRAY(SELECT unnest(atr.tool_resources) EXCEPT SELECT unnest(ARRAY['objectives', 'images', 'videos', 'questions']::text[])), 1) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['objectives', 'images', 'videos', 'questions']::text[] <@ atr.tool_resources
+    ),
+    agent_department_preference AS (
+        SELECT ascores.agent_id, ascores.unmatched_count,
+            CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ascores.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.unmatched_count ASC, adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+-- Agent selection for 'general' - agent with ALL scenario tools
 general_agent_data AS (
-    SELECT NULL::uuid as agent_id WHERE false
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+    ),
+    agent_tool_resources AS (
+        SELECT ea.agent_id, COALESCE(ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL), ARRAY[]::text[]) as tool_resources, ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT atr.agent_id, atr.tool_resources,
+            ARRAY_LENGTH(ARRAY(SELECT unnest(atr.tool_resources) EXCEPT SELECT unnest(ARRAY['names', 'descriptions', 'problem_statements', 'scenario_flags', 'departments', 'personas', 'documents', 'parameters', 'fields', 'objectives', 'images', 'videos', 'questions', 'templates']::text[])), 1) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'descriptions', 'problem_statements', 'scenario_flags', 'departments', 'personas', 'documents', 'parameters', 'fields', 'objectives', 'images', 'videos', 'questions', 'templates']::text[] <@ atr.tool_resources
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = atr.agent_id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ascores.agent_id, ascores.unmatched_count,
+            CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ascores.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.unmatched_count ASC, adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
 -- Tools existence check CTE
 tools_existence_check AS (
@@ -2770,7 +3148,7 @@ permissions_data_with_tools AS (
                 -- Detail mode permissions
                 CASE 
                     WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN false
-                    WHEN (COALESCE(sdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false
+                    WHEN (COALESCE(array_length(sdd.department_ids, 1), 0) = 0 AND up.role != 'superadmin') THEN false
                     WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
                     ELSE false
                 END
@@ -2783,7 +3161,7 @@ permissions_data_with_tools AS (
                 -- Detail mode: compute disabled_reason
                 CASE 
                     WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN 'Scenario is currently in use and cannot be edited.'
-                    WHEN (COALESCE(sdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN 'You do not have access to edit this scenario.'
+                    WHEN (COALESCE(array_length(sdd.department_ids, 1), 0) = 0 AND up.role != 'superadmin') THEN 'You do not have access to edit this scenario.'
                     WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN NULL::text
                     ELSE 'This scenario cannot be edited. You can view the details but cannot make changes.'::text
                 END
@@ -2940,7 +3318,7 @@ SELECT
             (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_scenario_v4_department
             ORDER BY dmd.name
         )
-        FROM department_mapping_data_scenario dmd
+        FROM department_mapping_data dmd
         WHERE dmd.department_id = ANY(
             COALESCE(
                 (SELECT 
@@ -2966,7 +3344,7 @@ SELECT
     ) as department_resources,
     CASE 
         WHEN NOT tec.departments_has_tools AND uf.show_departments THEN false
-        WHEN EXISTS (SELECT 1 FROM department_mapping_data_scenario LIMIT 1) THEN true
+        WHEN EXISTS (SELECT 1 FROM department_mapping_data LIMIT 1) THEN true
         ELSE uf.show_departments
     END as show_departments,
     (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
@@ -2974,17 +3352,34 @@ SELECT
         WHEN uf.show_departments THEN true
         ELSE false
     END as departments_required,
-    COALESCE((SELECT department_suggestions FROM department_suggestions_data_scenario), ARRAY[]::uuid[]) as department_suggestions,
+    COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
             (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_scenario_v4_department
             ORDER BY dmd.name
-        ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data_scenario) dmd),
+        ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_scenario_v4_department[]
     ) as departments,
-    -- Multi-select resources: fields (placeholder - will be populated)
-    ARRAY[]::uuid[] as field_ids,
-    '{}'::types.q_get_scenario_v4_field[] as field_resources,
+    -- Multi-select resources: fields
+    COALESCE((
+        SELECT ARRAY_AGG(sf.field_id ORDER BY sf.field_id)
+        FROM scenario_fields sf
+        WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
+    ), ARRAY[]::uuid[]) as field_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name, fmd.conditional_parameter_ids, fmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY fmd.parameter_name, fmd.name
+        )
+        FROM field_mapping_data fmd
+        WHERE fmd.field_id = ANY(
+            COALESCE((
+                SELECT ARRAY_AGG(sf.field_id ORDER BY sf.field_id)
+                FROM scenario_fields sf
+                WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
+            ), ARRAY[]::uuid[])
+        )
+    ), '{}'::types.q_get_scenario_v4_field[]) as field_resources,
     CASE 
         WHEN NOT tec.fields_has_tools AND uf.show_fields THEN false
         ELSE uf.show_fields
@@ -2995,7 +3390,13 @@ SELECT
         ELSE false
     END as fields_required,
     ARRAY[]::uuid[] as field_suggestions,
-    '{}'::types.q_get_scenario_v4_field[] as fields,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name, fmd.conditional_parameter_ids, fmd.generated)::types.q_get_scenario_v4_field
+            ORDER BY fmd.parameter_name, fmd.name
+        ) FROM (SELECT DISTINCT field_id, name, description, parameter_id, parameter_name, conditional_parameter_ids, generated FROM field_mapping_data) fmd),
+        '{}'::types.q_get_scenario_v4_field[]
+    ) as fields,
     -- Multi-select resources: objectives (populated from CTEs, filtered by flag)
     CASE 
         WHEN sc.objectives_enabled THEN COALESCE((
@@ -3027,21 +3428,18 @@ SELECT
     COALESCE((SELECT objective_suggestions FROM objective_suggestions_data), ARRAY[]::uuid[]) as objective_suggestions,
     CASE 
         WHEN sc.objectives_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((o.objective_id, o.name, false)::types.q_get_scenario_v4_objective_resource)
-            FROM (
-                SELECT 
-                    o2.id as objective_id,
-                    o2.objective as name
-                FROM objectives_resource o2
-                LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o2.id AND od_dept.active = true
-                LEFT JOIN scenario_objectives so2 ON so2.objective_id = o2.id AND so2.scenario_id = (SELECT scenario_id FROM params)
-                WHERE (
-                    od_dept.department_id IN (SELECT id FROM user_departments_rows)
-                    OR NOT EXISTS (SELECT 1 FROM objective_departments od3 WHERE od3.objective_id = o2.id AND od3.active = true)
-                )
-                ORDER BY CASE WHEN so2.scenario_id IS NOT NULL THEN 0 ELSE 1 END, COALESCE(so2.idx, 999999), o2.created_at DESC
-                LIMIT 100
-            ) o
+            SELECT ARRAY_AGG(
+                (omd.id, omd.objective, omd.generated)::types.q_get_scenario_v4_objective_resource
+                ORDER BY CASE WHEN so2.scenario_id IS NOT NULL THEN 0 ELSE 1 END, COALESCE(so2.idx, 999999), omd.id
+            )
+            FROM objective_mapping_data omd
+            LEFT JOIN scenario_objectives so2 ON so2.objective_id = omd.id AND so2.scenario_id = (SELECT scenario_id FROM params)
+            LEFT JOIN objective_departments od_dept ON od_dept.objective_id = omd.id AND od_dept.active = true
+            WHERE (
+                od_dept.department_id IN (SELECT id FROM user_departments_rows)
+                OR NOT EXISTS (SELECT 1 FROM objective_departments od3 WHERE od3.objective_id = omd.id AND od3.active = true)
+            )
+            LIMIT 100
         ), '{}'::types.q_get_scenario_v4_objective_resource[])
         ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
     END as objectives,
@@ -3078,13 +3476,18 @@ SELECT
     ARRAY[]::uuid[] as image_suggestions,
     CASE 
         WHEN sc.images_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((i.upload_id, i.name, i.file_path, i.mime_type, i.upload_id, false)::types.q_get_scenario_v4_image_resource)
-            FROM (
-                SELECT upload_id, name, file_path, mime_type
-                FROM scenario_images_array
-                ORDER BY sort_order, created_at DESC
-                LIMIT 100
-            ) i
+            SELECT ARRAY_AGG(
+                (imd.id, imd.name, imd.file_path, imd.mime_type, imd.upload_id, imd.generated)::types.q_get_scenario_v4_image_resource
+                ORDER BY CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END, imd.id
+            )
+            FROM image_mapping_data imd
+            LEFT JOIN scenario_images si ON si.image_id = imd.id AND si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true
+            LEFT JOIN image_departments id_dept ON id_dept.image_id = imd.id AND id_dept.active = true
+            WHERE (
+                id_dept.department_id IN (SELECT id FROM user_departments_rows)
+                OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = imd.id AND id2.active = true)
+            )
+            LIMIT 100
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
     END as images,
@@ -3121,13 +3524,18 @@ SELECT
     ARRAY[]::uuid[] as video_suggestions,
     CASE 
         WHEN sc.video_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((v.id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(v.file_path, ''), COALESCE(v.mime_type, ''), COALESCE(v.upload_id, v.id), false)::types.q_get_scenario_v4_video_resource)
-            FROM (
-                SELECT id, name, length_seconds, completed, file_path, mime_type, upload_id
-                FROM scenario_videos_array
-                ORDER BY sort_order, created_at DESC
-                LIMIT 100
-            ) v
+            SELECT ARRAY_AGG(
+                (vmd.id, vmd.name, vmd.length_seconds, vmd.completed, vmd.file_path, vmd.mime_type, vmd.upload_id, vmd.generated)::types.q_get_scenario_v4_video_resource
+                ORDER BY CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END, vmd.id
+            )
+            FROM video_mapping_data vmd
+            LEFT JOIN scenario_videos sv ON sv.video_id = vmd.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
+            LEFT JOIN video_departments vd_dept ON vd_dept.video_id = vmd.id AND vd_dept.active = true
+            WHERE (
+                vd_dept.department_id IN (SELECT id FROM user_departments_rows)
+                OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vmd.id AND vd2.active = true)
+            )
+            LIMIT 100
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]
     END as videos,
@@ -3162,19 +3570,41 @@ SELECT
     ARRAY[]::uuid[] as question_suggestions,
     CASE 
         WHEN sc.questions_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((q.id, q.question_text, q.allow_multiple, false)::types.q_get_scenario_v4_question_resource)
-            FROM (
-                SELECT id, question_text, COALESCE(allow_multiple, false) as allow_multiple
-                FROM scenario_questions_array
-                ORDER BY sort_order, created_at DESC
-                LIMIT 100
-            ) q
+            SELECT ARRAY_AGG(
+                (qmd.id, qmd.question_text, qmd.allow_multiple, qmd.generated)::types.q_get_scenario_v4_question_resource
+                ORDER BY CASE WHEN sq.scenario_id IS NOT NULL THEN 0 ELSE 1 END, qmd.id
+            )
+            FROM question_mapping_data qmd
+            LEFT JOIN scenario_questions sq ON sq.question_id = qmd.id AND sq.scenario_id = (SELECT scenario_id FROM params) AND sq.active = true
+            LEFT JOIN question_departments qd_dept ON qd_dept.question_id = qmd.id AND qd_dept.active = true
+            WHERE (
+                qd_dept.department_id IN (SELECT id FROM user_departments_rows)
+                OR NOT EXISTS (SELECT 1 FROM question_departments qd2 WHERE qd2.question_id = qmd.id AND qd2.active = true)
+            )
+            LIMIT 100
         ), '{}'::types.q_get_scenario_v4_question_resource[])
         ELSE '{}'::types.q_get_scenario_v4_question_resource[]
     END as questions,
-    -- Multi-select resources: templates (placeholder - will be populated)
-    ARRAY[]::uuid[] as template_ids,
-    '{}'::types.q_get_scenario_v4_template_resource[] as template_resources,
+    -- Multi-select resources: templates
+    COALESCE((
+        SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
+        FROM scenario_templates st
+        WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
+    ), ARRAY[]::uuid[]) as template_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
+            ORDER BY tmd.name
+        )
+        FROM template_mapping_data tmd
+        WHERE tmd.id = ANY(
+            COALESCE((
+                SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
+                FROM scenario_templates st
+                WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
+            ), ARRAY[]::uuid[])
+        )
+    ), '{}'::types.q_get_scenario_v4_template_resource[]) as template_resources,
     CASE 
         WHEN NOT tec.templates_has_tools AND uf.show_templates THEN false
         ELSE uf.show_templates
@@ -3185,10 +3615,33 @@ SELECT
         ELSE false
     END as templates_required,
     ARRAY[]::uuid[] as template_suggestions,
-    '{}'::types.q_get_scenario_v4_template_resource[] as templates,
-    -- Multi-select resources: personas (placeholder - will be populated)
-    ARRAY[]::uuid[] as persona_ids,
-    '{}'::types.q_get_scenario_v4_persona[] as persona_resources,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
+            ORDER BY tmd.name
+        ) FROM (SELECT DISTINCT id, name, description, generated FROM template_mapping_data) tmd),
+        '{}'::types.q_get_scenario_v4_template_resource[]
+    ) as templates,
+    -- Multi-select resources: personas
+    COALESCE((
+        SELECT ARRAY_AGG(sp.persona_id ORDER BY sp.persona_id)
+        FROM scenario_personas sp
+        WHERE sp.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sp.active = true
+    ), ARRAY[]::uuid[]) as persona_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (pmd.persona_id, pmd.name, pmd.description, pmd.color, pmd.icon, pmd.image_model, pmd.parameter_ids, pmd.field_ids, pmd.example)::types.q_get_scenario_v4_persona
+            ORDER BY pmd.name
+        )
+        FROM persona_mapping_data pmd
+        WHERE pmd.persona_id = ANY(
+            COALESCE((
+                SELECT ARRAY_AGG(sp.persona_id ORDER BY sp.persona_id)
+                FROM scenario_personas sp
+                WHERE sp.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sp.active = true
+            ), ARRAY[]::uuid[])
+        )
+    ), '{}'::types.q_get_scenario_v4_persona[]) as persona_resources,
     CASE 
         WHEN NOT tec.personas_has_tools AND uf.show_personas THEN false
         ELSE uf.show_personas
@@ -3199,10 +3652,33 @@ SELECT
         ELSE false
     END as personas_required,
     COALESCE((SELECT persona_suggestions FROM persona_suggestions_data), ARRAY[]::uuid[]) as persona_suggestions,
-    '{}'::types.q_get_scenario_v4_persona[] as personas,
-    -- Multi-select resources: documents (placeholder - will be populated)
-    ARRAY[]::uuid[] as document_ids,
-    '{}'::types.q_get_scenario_v4_document[] as document_resources,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (pmd.persona_id, pmd.name, pmd.description, pmd.color, pmd.icon, pmd.image_model, pmd.parameter_ids, pmd.field_ids, pmd.example)::types.q_get_scenario_v4_persona
+            ORDER BY pmd.name
+        ) FROM (SELECT DISTINCT persona_id, name, description, color, icon, image_model, parameter_ids, field_ids, example FROM persona_mapping_data) pmd),
+        '{}'::types.q_get_scenario_v4_persona[]
+    ) as personas,
+    -- Multi-select resources: documents
+    COALESCE((
+        SELECT ARRAY_AGG(sd.document_id ORDER BY sd.document_id)
+        FROM scenario_documents sd
+        WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true
+    ), ARRAY[]::uuid[]) as document_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (dmd.document_id, dmd.name, dmd.description, dmd.file_path, dmd.mime_type, dmd.parameter_ids, dmd.field_ids, dmd.parent_document_id)::types.q_get_scenario_v4_document
+            ORDER BY dmd.name
+        )
+        FROM document_mapping_data dmd
+        WHERE dmd.document_id = ANY(
+            COALESCE((
+                SELECT ARRAY_AGG(sd.document_id ORDER BY sd.document_id)
+                FROM scenario_documents sd
+                WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true
+            ), ARRAY[]::uuid[])
+        )
+    ), '{}'::types.q_get_scenario_v4_document[]) as document_resources,
     CASE 
         WHEN NOT tec.documents_has_tools AND uf.show_documents THEN false
         ELSE uf.show_documents
@@ -3212,11 +3688,36 @@ SELECT
         WHEN uf.show_documents THEN true
         ELSE false
     END as documents_required,
-    COALESCE((SELECT document_suggestions FROM document_suggestions_data), ARRAY[]::uuid[]) as document_suggestions,
-    '{}'::types.q_get_scenario_v4_document[] as documents,
-    -- Multi-select resources: parameters (placeholder - will be populated)
-    ARRAY[]::uuid[] as parameter_ids,
-    '{}'::types.q_get_scenario_v4_parameter[] as parameter_resources,
+    ARRAY[]::uuid[] as document_suggestions,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (dmd.document_id, dmd.name, dmd.description, dmd.file_path, dmd.mime_type, dmd.parameter_ids, dmd.field_ids, dmd.parent_document_id)::types.q_get_scenario_v4_document
+            ORDER BY dmd.name
+        ) FROM (SELECT DISTINCT document_id, name, description, file_path, mime_type, parameter_ids, field_ids, parent_document_id FROM document_mapping_data) dmd),
+        '{}'::types.q_get_scenario_v4_document[]
+    ) as documents,
+    -- Multi-select resources: parameters
+    COALESCE((
+        SELECT ARRAY_AGG(DISTINCT (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = sf.field_id LIMIT 1) ORDER BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = sf.field_id LIMIT 1))
+        FROM scenario_fields sf
+        WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
+          AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = sf.field_id LIMIT 1) IS NOT NULL
+    ), ARRAY[]::uuid[]) as parameter_ids,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (pmd.parameter_id, pmd.name, pmd.description, pmd.document_parameter, pmd.persona_parameter, pmd.scenario_parameter, pmd.video_parameter)::types.q_get_scenario_v4_parameter
+            ORDER BY pmd.name
+        )
+        FROM parameter_mapping_data pmd
+        WHERE pmd.parameter_id = ANY(
+            COALESCE((
+                SELECT ARRAY_AGG(DISTINCT (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = sf.field_id LIMIT 1) ORDER BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = sf.field_id LIMIT 1))
+                FROM scenario_fields sf
+                WHERE sf.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sf.active = true
+                  AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = sf.field_id LIMIT 1) IS NOT NULL
+            ), ARRAY[]::uuid[])
+        )
+    ), '{}'::types.q_get_scenario_v4_parameter[]) as parameter_resources,
     CASE 
         WHEN NOT tec.parameters_has_tools AND uf.show_parameters THEN false
         ELSE uf.show_parameters
@@ -3227,103 +3728,17 @@ SELECT
         ELSE false
     END as parameters_required,
     ARRAY[]::uuid[] as parameter_suggestions,
-    '{}'::types.q_get_scenario_v4_parameter[] as parameters,
+    COALESCE((
+        SELECT ARRAY_AGG(
+            (pmd.parameter_id, pmd.name, pmd.description, pmd.document_parameter, pmd.persona_parameter, pmd.scenario_parameter, pmd.video_parameter)::types.q_get_scenario_v4_parameter
+            ORDER BY pmd.name
+        ) FROM (SELECT DISTINCT parameter_id, name, description, document_parameter, persona_parameter, scenario_parameter, video_parameter FROM parameter_mapping_data) pmd),
+        '{}'::types.q_get_scenario_v4_parameter[]
+    ) as parameters,
     -- Multi-resource combination agent IDs
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
     (SELECT agent_id FROM content_agent_data) as content_agent_id,
-    (SELECT agent_id FROM general_agent_data) as general_agent_id,
-    -- Scenario-specific fields (kept for backward compatibility)
-    sc.id as scenario_id,
-    sc.name,
-    sc.description,
-    sc.problem_statement,
-    sc.active,
-    sc.parent_scenario_id,
-    COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
-    COALESCE(
-        (SELECT (payload->>'use_objectives')::boolean FROM draft_payload_data),
-        sc.objectives_enabled
-    ) as objectives_enabled,
-    COALESCE(
-        (SELECT (payload->>'use_image')::boolean FROM draft_payload_data),
-        sc.images_enabled
-    ) as image_input_enabled,
-    -- Note: persona_ids, document_ids, objective_ids are now returned earlier as uuid[] arrays (new resource fields)
-    COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
-    COALESCE((
-        SELECT ARRAY_AGG(persona_id::text ORDER BY name)
-        FROM valid_personas_array
-    ), ARRAY[]::text[]) as valid_persona_ids,
-    COALESCE((
-        SELECT ARRAY_AGG(document_id::text ORDER BY name)
-        FROM all_documents_array
-    ), ARRAY[]::text[]) as valid_document_ids,
-    COALESCE((SELECT dept_ids FROM user_departments), ARRAY[]::uuid[]) as valid_department_ids,
-    COALESCE(ssa.active_usage_count, 0) as active_usage_count,
-    up.role as user_role,
-    -- Note: parameter_ids is now returned earlier as uuid[] array (new resource field)
-    COALESCE((
-        SELECT ARRAY_AGG(id::text ORDER BY name)
-        FROM all_parameters_array
-    ), ARRAY[]::text[]) as valid_parameter_ids,
-    COALESCE((
-        SELECT ARRAY_AGG(field_id::text ORDER BY parameter_name, name)
-        FROM all_fields_array
-    ), ARRAY[]::text[]) as valid_field_ids,
-    sc.video_enabled,
-    sc.questions_enabled,
-    sc.problem_statement_enabled,
-    COALESCE((
-        SELECT ARRAY_AGG(agent_id::text ORDER BY name)
-        FROM valid_agents_array
-    ), ARRAY[]::text[]) as valid_agent_ids,
-    -- Computed permissions (moved after can_edit)
-    true as can_duplicate,
-    CASE 
-        WHEN (SELECT scenario_id FROM params) IS NULL THEN false  -- New mode: cannot delete
-        WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN false
-        WHEN (COALESCE(sc.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false
-        WHEN up.role != 'superadmin' THEN false
-        ELSE true
-    END as can_delete,
-    -- Backward compatibility arrays (kept for legacy support)
-    COALESCE((
-        SELECT ARRAY_AGG((vaa.agent_id, vaa.name, vaa.description, vaa.roles)::types.q_get_scenario_v4_agent ORDER BY vaa.name)
-        FROM valid_agents_array vaa
-    ), '{}'::types.q_get_scenario_v4_agent[]) as agents,
-    COALESCE((
-        SELECT ARRAY_AGG((sda.simulation_id, sda.name, sda.description, sda.time_limit, sda.department_ids)::types.q_get_scenario_v4_simulation ORDER BY sda.name)
-        FROM simulation_data sda
-    ), '{}'::types.q_get_scenario_v4_simulation[]) as simulations,
-    COALESCE((
-        SELECT ARRAY_AGG((owda.objective, owda.department_ids)::types.q_get_scenario_v4_objective_with_departments ORDER BY owda.objective)
-        FROM objectives_with_departments_array owda
-    ), '{}'::types.q_get_scenario_v4_objective_with_departments[]) as objectives_history,
-    COALESCE((
-        SELECT ARRAY_AGG((dda.document_id, dda.name, dda.updated_at, dda.extension, dda.scenario_ids, dda.can_edit, dda.can_delete, dda.active, dda.department_ids, dda.file_path, dda.mime_type, dda.upload_id, dda.field_ids, dda.is_template, dda.parent_document_id)::types.q_get_scenario_v4_document_detail ORDER BY dda.name)
-        FROM document_details_array dda
-    ), '{}'::types.q_get_scenario_v4_document_detail[]) as document_details,
-    COALESCE((
-        SELECT ARRAY_AGG((apd.param_id, apd.selected_items, apd.valid_items)::types.q_get_scenario_v4_parameter_detail ORDER BY apd.param_id)
-        FROM all_parameters_data apd
-    ), '{}'::types.q_get_scenario_v4_parameter_detail[]) as parameters_detail,
-    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
-    -- Extract nested objects from draft payload if available
-    COALESCE(
-        (SELECT payload->'fieldShowSelected' FROM draft_payload_data),
-        (SELECT payload->'field_show_selected' FROM draft_payload_data),
-        '{}'::jsonb
-    ) as draft_field_show_selected,
-    COALESCE(
-        (SELECT payload->'fieldRanges' FROM draft_payload_data),
-        (SELECT payload->'field_ranges' FROM draft_payload_data),
-        '{}'::jsonb
-    ) as draft_field_ranges,
-    COALESCE(
-        (SELECT payload->'randomizeParameterItems' FROM draft_payload_data),
-        (SELECT payload->'randomize_parameter_items' FROM draft_payload_data),
-        '{}'::jsonb
-    ) as draft_randomize_parameter_items
+    (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
@@ -3340,8 +3755,5 @@ CROSS JOIN images_enabled_flag_resource_data iefrd
 CROSS JOIN video_enabled_flag_resource_data vefrd
 CROSS JOIN questions_enabled_flag_resource_data qefrd
 CROSS JOIN problem_statement_enabled_flag_resource_data psefrd
-LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
-LEFT JOIN scenario_personas_agg spa ON true
-LEFT JOIN scenario_documents_agg sd ON true
 LEFT JOIN scenario_simulations_agg ssa ON true
 $$;

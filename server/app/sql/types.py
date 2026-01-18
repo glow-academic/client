@@ -29784,16 +29784,6 @@ class GetScenarioSqlParams(BaseModel):
             self.mcp,
         )
 
-class QGetScenarioV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
-
 class QGetScenarioV4Department(BaseModel):
 
     department_id: UUID | None
@@ -29822,27 +29812,6 @@ class QGetScenarioV4Document(BaseModel):
     mime_type: str | None
     parameter_ids: list[UUID] | None
     field_ids: list[UUID] | None
-    parent_document_id: UUID | None
-
-
-
-
-class QGetScenarioV4DocumentDetail(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    updated_at: str | None
-    extension: str | None
-    scenario_ids: list[UUID] | None
-    can_edit: bool | None
-    can_delete: bool | None
-    active: bool | None
-    department_ids: list[UUID] | None
-    file_path: str | None
-    mime_type: str | None
-    upload_id: UUID | None
-    field_ids: list[UUID] | None
-    is_template: bool | None
     parent_document_id: UUID | None
 
 
@@ -29902,14 +29871,6 @@ class QGetScenarioV4ObjectiveResource(BaseModel):
 
 
 
-class QGetScenarioV4ObjectiveWithDepartments(BaseModel):
-
-    objective: str | None
-    department_ids: list[UUID] | None
-
-
-
-
 class QGetScenarioV4Parameter(BaseModel):
 
     parameter_id: UUID | None
@@ -29919,15 +29880,6 @@ class QGetScenarioV4Parameter(BaseModel):
     persona_parameter: bool | None
     scenario_parameter: bool | None
     video_parameter: bool | None
-
-
-
-
-class QGetScenarioV4ParameterDetail(BaseModel):
-
-    parameter_id: UUID | None
-    field_ids: list[UUID] | None
-    valid_field_ids: list[UUID] | None
 
 
 
@@ -29963,17 +29915,6 @@ class QGetScenarioV4QuestionResource(BaseModel):
     question_text: str | None
     allow_multiple: bool | None
     generated: bool | None
-
-
-
-
-class QGetScenarioV4Simulation(BaseModel):
-
-    simulation_id: UUID | None
-    name: str | None
-    description: str | None
-    time_limit: int | None
-    department_ids: list[UUID] | None
 
 
 
@@ -30130,38 +30071,6 @@ class GetScenarioSqlRow(BaseModel):
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    parent_scenario_id: UUID | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_enabled: bool | None = None
-    simulation_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
-    valid_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-    user_role: str | None = None
-    valid_parameter_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
-    video_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    valid_agent_ids: list[str] | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    agents: list[QGetScenarioV4Agent] | None = None
-    simulations: list[QGetScenarioV4Simulation] | None = None
-    objectives_history: list[QGetScenarioV4ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioV4DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioV4ParameterDetail] | None = None
-    draft_version: int | None = None
-    draft_field_show_selected: Any | None = None
-    draft_field_ranges: Any | None = None
-    draft_randomize_parameter_items: Any | None = None
 
 class GetScenarioApiRequest(BaseModel):
 
@@ -30318,38 +30227,6 @@ class GetScenarioApiResponse(BaseModel):
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    parent_scenario_id: UUID | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_enabled: bool | None = None
-    simulation_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
-    valid_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-    user_role: str | None = None
-    valid_parameter_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
-    video_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    valid_agent_ids: list[str] | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    agents: list[QGetScenarioV4Agent] | None = None
-    simulations: list[QGetScenarioV4Simulation] | None = None
-    objectives_history: list[QGetScenarioV4ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioV4DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioV4ParameterDetail] | None = None
-    draft_version: int | None = None
-    draft_field_show_selected: Any | None = None
-    draft_field_ranges: Any | None = None
-    draft_randomize_parameter_items: Any | None = None
 
 
 
