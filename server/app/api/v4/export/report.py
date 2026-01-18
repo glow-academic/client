@@ -103,7 +103,7 @@ async def _get_per_simulation_metrics(
         audit_activity("reports.exported", "{{ actor.name }} exported reports")
     ],
 )
-async def export_reports(
+async def export_report(
     request: ExportRequest,
     http_request: Request,
     response: Response,
@@ -385,7 +385,7 @@ async def export_reports(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="export_reports",
+            operation="export_report",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

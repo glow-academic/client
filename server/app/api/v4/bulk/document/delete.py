@@ -3,20 +3,15 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
-from app.sql.types import (
-    DeleteDocumentApiRequest,
-    DeleteDocumentApiResponse,
-    DeleteDocumentSqlParams,
-    DeleteDocumentSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (DeleteDocumentApiRequest, DeleteDocumentApiResponse,
+                           DeleteDocumentSqlParams, DeleteDocumentSqlRow,
+                           load_sql_query)
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/documents/delete_document_complete.sql"
@@ -33,7 +28,7 @@ router = APIRouter()
         )
     ],
 )
-async def bulk_delete_documents(
+async def delete_document(
     request: DeleteDocumentApiRequest,
     http_request: Request,
     response: Response,
@@ -95,7 +90,7 @@ async def bulk_delete_documents(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="bulk_delete_documents",
+            operation="delete_document",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

@@ -17490,9 +17490,9 @@
           "reports",
           "reports"
         ],
-        "summary": "Export Reports",
+        "summary": "Export Report",
         "description": "Export reports data as CSV or ZIP file.",
-        "operationId": "export_reports_api_v4_analytics_reports_report_post",
+        "operationId": "export_report_api_v4_analytics_reports_report_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19205,9 +19205,9 @@
           "attempts",
           "simulation"
         ],
-        "summary": "Get Attempt Full",
+        "summary": "Get Simulation Attempt",
         "description": "Get complete attempt data with all related entities and computed values.",
-        "operationId": "get_attempt_full_api_v4_attempts_simulation_get_post",
+        "operationId": "get_simulation_attempt_api_v4_attempts_simulation_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19306,9 +19306,9 @@
           "attempts",
           "simulation"
         ],
-        "summary": "Bulk Archive Attempts",
+        "summary": "Archive Simulation Attempts",
         "description": "Bulk archive or unarchive simulation attempts.",
-        "operationId": "bulk_archive_attempts_api_v4_attempts_simulation_archive_post",
+        "operationId": "archive_simulation_attempts_api_v4_attempts_simulation_archive_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19407,9 +19407,9 @@
           "attempts",
           "benchmark"
         ],
-        "summary": "Get Eval Attempt Full",
+        "summary": "Get Benchmark Attempt",
         "description": "Get complete eval attempt data with all runs and status.",
-        "operationId": "get_eval_attempt_full_api_v4_attempts_benchmark_get_post",
+        "operationId": "get_benchmark_attempt_api_v4_attempts_benchmark_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19508,9 +19508,9 @@
           "attempts",
           "benchmark"
         ],
-        "summary": "Bulk Archive Attempts",
+        "summary": "Archive Benchmark Attempts",
         "description": "Bulk archive or unarchive simulation attempts.",
-        "operationId": "bulk_archive_attempts_api_v4_attempts_benchmark_archive_post",
+        "operationId": "archive_benchmark_attempts_api_v4_attempts_benchmark_archive_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19609,9 +19609,9 @@
           "bulk",
           "staff"
         ],
-        "summary": "Process Csv",
+        "summary": "Process Staff",
         "description": "Process CSV file and map columns to target fields.",
-        "operationId": "process_csv_api_v4_bulk_staff_process_post",
+        "operationId": "process_staff_api_v4_bulk_staff_process_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19811,9 +19811,9 @@
           "bulk",
           "staff"
         ],
-        "summary": "Bulk Save Staff",
+        "summary": "Save Staff",
         "description": "Bulk create or update staff members (upsert).",
-        "operationId": "bulk_save_staff_api_v4_bulk_staff_save_post",
+        "operationId": "save_staff_api_v4_bulk_staff_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -19912,9 +19912,9 @@
           "bulk",
           "staff"
         ],
-        "summary": "Bulk Delete Staff",
+        "summary": "Delete Staff",
         "description": "Bulk delete profiles.",
-        "operationId": "bulk_delete_staff_api_v4_bulk_staff_delete_post",
+        "operationId": "delete_staff_api_v4_bulk_staff_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20013,9 +20013,9 @@
           "bulk",
           "document"
         ],
-        "summary": "Process Document Csv",
+        "summary": "Process Document",
         "description": "Process CSV file and map columns to target fields for documents.",
-        "operationId": "process_document_csv_api_v4_bulk_document_process_post",
+        "operationId": "process_document_api_v4_bulk_document_process_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20114,9 +20114,9 @@
           "bulk",
           "document"
         ],
-        "summary": "Search Documents",
+        "summary": "Search Document",
         "description": "Search documents for bulk operations.",
-        "operationId": "search_documents_api_v4_bulk_document_search_post",
+        "operationId": "search_document_api_v4_bulk_document_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20215,9 +20215,9 @@
           "bulk",
           "document"
         ],
-        "summary": "Bulk Save Documents",
+        "summary": "Save Document",
         "description": "Bulk create or update documents.",
-        "operationId": "bulk_save_documents_api_v4_bulk_document_save_post",
+        "operationId": "save_document_api_v4_bulk_document_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20316,9 +20316,9 @@
           "bulk",
           "document"
         ],
-        "summary": "Bulk Delete Documents",
+        "summary": "Delete Document",
         "description": "Bulk delete documents.",
-        "operationId": "bulk_delete_documents_api_v4_bulk_document_delete_post",
+        "operationId": "delete_document_api_v4_bulk_document_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20512,9 +20512,9 @@
           "v4",
           "export"
         ],
-        "summary": "Generate Certificate",
+        "summary": "Export Certificate",
         "description": "Generate a certificate PDF/text for a profile.",
-        "operationId": "generate_certificate_api_v4_export_certificate_post",
+        "operationId": "export_certificate_api_v4_export_certificate_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20608,9 +20608,9 @@
           "export",
           "reports"
         ],
-        "summary": "Export Reports",
+        "summary": "Export Report",
         "description": "Export reports data as CSV or ZIP file.",
-        "operationId": "export_reports_api_v4_export_report_post",
+        "operationId": "export_report_api_v4_export_report_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20704,9 +20704,9 @@
           "v4",
           "uploads"
         ],
-        "summary": "Download Upload",
+        "summary": "Get Upload",
         "description": "Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.",
-        "operationId": "download_upload_api_v4_uploads_get__upload_id__get",
+        "operationId": "get_upload_api_v4_uploads_get__upload_id__get",
         "parameters": [
           {
             "name": "upload_id",
@@ -21256,9 +21256,9 @@
           "v4",
           "uploads"
         ],
-        "summary": "Tus Finalize",
+        "summary": "Save Upload",
         "description": "Finalize a TUS upload and create upload record.",
-        "operationId": "tus_finalize_api_v4_uploads_save__upload_id__finalize_post",
+        "operationId": "save_upload_api_v4_uploads_save__upload_id__finalize_post",
         "parameters": [
           {
             "name": "upload_id",

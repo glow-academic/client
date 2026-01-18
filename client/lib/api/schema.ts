@@ -3691,10 +3691,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Export Reports
+         * Export Report
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_reports_api_v4_analytics_reports_report_post"];
+        post: operations["export_report_api_v4_analytics_reports_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4038,10 +4038,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Attempt Full
+         * Get Simulation Attempt
          * @description Get complete attempt data with all related entities and computed values.
          */
-        post: operations["get_attempt_full_api_v4_attempts_simulation_get_post"];
+        post: operations["get_simulation_attempt_api_v4_attempts_simulation_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4058,10 +4058,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Archive Attempts
+         * Archive Simulation Attempts
          * @description Bulk archive or unarchive simulation attempts.
          */
-        post: operations["bulk_archive_attempts_api_v4_attempts_simulation_archive_post"];
+        post: operations["archive_simulation_attempts_api_v4_attempts_simulation_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4078,10 +4078,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Eval Attempt Full
+         * Get Benchmark Attempt
          * @description Get complete eval attempt data with all runs and status.
          */
-        post: operations["get_eval_attempt_full_api_v4_attempts_benchmark_get_post"];
+        post: operations["get_benchmark_attempt_api_v4_attempts_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4098,10 +4098,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Archive Attempts
+         * Archive Benchmark Attempts
          * @description Bulk archive or unarchive simulation attempts.
          */
-        post: operations["bulk_archive_attempts_api_v4_attempts_benchmark_archive_post"];
+        post: operations["archive_benchmark_attempts_api_v4_attempts_benchmark_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4118,10 +4118,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Process Csv
+         * Process Staff
          * @description Process CSV file and map columns to target fields.
          */
-        post: operations["process_csv_api_v4_bulk_staff_process_post"];
+        post: operations["process_staff_api_v4_bulk_staff_process_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4158,10 +4158,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Save Staff
+         * Save Staff
          * @description Bulk create or update staff members (upsert).
          */
-        post: operations["bulk_save_staff_api_v4_bulk_staff_save_post"];
+        post: operations["save_staff_api_v4_bulk_staff_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4178,10 +4178,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Delete Staff
+         * Delete Staff
          * @description Bulk delete profiles.
          */
-        post: operations["bulk_delete_staff_api_v4_bulk_staff_delete_post"];
+        post: operations["delete_staff_api_v4_bulk_staff_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4198,10 +4198,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Process Document Csv
+         * Process Document
          * @description Process CSV file and map columns to target fields for documents.
          */
-        post: operations["process_document_csv_api_v4_bulk_document_process_post"];
+        post: operations["process_document_api_v4_bulk_document_process_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4218,10 +4218,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Search Documents
+         * Search Document
          * @description Search documents for bulk operations.
          */
-        post: operations["search_documents_api_v4_bulk_document_search_post"];
+        post: operations["search_document_api_v4_bulk_document_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4238,10 +4238,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Save Documents
+         * Save Document
          * @description Bulk create or update documents.
          */
-        post: operations["bulk_save_documents_api_v4_bulk_document_save_post"];
+        post: operations["save_document_api_v4_bulk_document_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4258,10 +4258,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Bulk Delete Documents
+         * Delete Document
          * @description Bulk delete documents.
          */
-        post: operations["bulk_delete_documents_api_v4_bulk_document_delete_post"];
+        post: operations["delete_document_api_v4_bulk_document_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4298,10 +4298,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generate Certificate
+         * Export Certificate
          * @description Generate a certificate PDF/text for a profile.
          */
-        post: operations["generate_certificate_api_v4_export_certificate_post"];
+        post: operations["export_certificate_api_v4_export_certificate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4318,10 +4318,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Export Reports
+         * Export Report
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_reports_api_v4_export_report_post"];
+        post: operations["export_report_api_v4_export_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4336,10 +4336,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Download Upload
+         * Get Upload
          * @description Download an upload by ID. If preview=True and file is PDF, returns first page as PNG.
          */
-        get: operations["download_upload_api_v4_uploads_get__upload_id__get"];
+        get: operations["get_upload_api_v4_uploads_get__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4410,10 +4410,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Tus Finalize
+         * Save Upload
          * @description Finalize a TUS upload and create upload record.
          */
-        post: operations["tus_finalize_api_v4_uploads_save__upload_id__finalize_post"];
+        post: operations["save_upload_api_v4_uploads_save__upload_id__finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27584,7 +27584,7 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v4_analytics_reports_report_post: {
+    export_report_api_v4_analytics_reports_report_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28213,7 +28213,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_full_api_v4_attempts_simulation_get_post: {
+    get_simulation_attempt_api_v4_attempts_simulation_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28250,7 +28250,7 @@ export interface operations {
             };
         };
     };
-    bulk_archive_attempts_api_v4_attempts_simulation_archive_post: {
+    archive_simulation_attempts_api_v4_attempts_simulation_archive_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28287,7 +28287,7 @@ export interface operations {
             };
         };
     };
-    get_eval_attempt_full_api_v4_attempts_benchmark_get_post: {
+    get_benchmark_attempt_api_v4_attempts_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28324,7 +28324,7 @@ export interface operations {
             };
         };
     };
-    bulk_archive_attempts_api_v4_attempts_benchmark_archive_post: {
+    archive_benchmark_attempts_api_v4_attempts_benchmark_archive_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28361,7 +28361,7 @@ export interface operations {
             };
         };
     };
-    process_csv_api_v4_bulk_staff_process_post: {
+    process_staff_api_v4_bulk_staff_process_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28435,7 +28435,7 @@ export interface operations {
             };
         };
     };
-    bulk_save_staff_api_v4_bulk_staff_save_post: {
+    save_staff_api_v4_bulk_staff_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28472,7 +28472,7 @@ export interface operations {
             };
         };
     };
-    bulk_delete_staff_api_v4_bulk_staff_delete_post: {
+    delete_staff_api_v4_bulk_staff_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28509,7 +28509,7 @@ export interface operations {
             };
         };
     };
-    process_document_csv_api_v4_bulk_document_process_post: {
+    process_document_api_v4_bulk_document_process_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28546,7 +28546,7 @@ export interface operations {
             };
         };
     };
-    search_documents_api_v4_bulk_document_search_post: {
+    search_document_api_v4_bulk_document_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28583,7 +28583,7 @@ export interface operations {
             };
         };
     };
-    bulk_save_documents_api_v4_bulk_document_save_post: {
+    save_document_api_v4_bulk_document_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28620,7 +28620,7 @@ export interface operations {
             };
         };
     };
-    bulk_delete_documents_api_v4_bulk_document_delete_post: {
+    delete_document_api_v4_bulk_document_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28694,7 +28694,7 @@ export interface operations {
             };
         };
     };
-    generate_certificate_api_v4_export_certificate_post: {
+    export_certificate_api_v4_export_certificate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28731,7 +28731,7 @@ export interface operations {
             };
         };
     };
-    export_reports_api_v4_export_report_post: {
+    export_report_api_v4_export_report_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28768,7 +28768,7 @@ export interface operations {
             };
         };
     };
-    download_upload_api_v4_uploads_get__upload_id__get: {
+    get_upload_api_v4_uploads_get__upload_id__get: {
         parameters: {
             query?: {
                 /** @description Return preview image for PDFs */
@@ -28977,7 +28977,7 @@ export interface operations {
             };
         };
     };
-    tus_finalize_api_v4_uploads_save__upload_id__finalize_post: {
+    save_upload_api_v4_uploads_save__upload_id__finalize_post: {
         parameters: {
             query?: never;
             header?: {

@@ -6,22 +6,19 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse, Response
-from app.utils.document.pdf_first_page_to_image_bytes import pdf_first_page_to_image_bytes
-from app.utils.mime.get_content_type import get_content_type
-from app.utils.settings.theme import ThemeTokens
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.templates.jinja_renderer import render_template
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
-from app.sql.types import (
-    GetUploadFileInfoSqlParams,
-    GetUploadFileInfoSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (GetUploadFileInfoSqlParams, GetUploadFileInfoSqlRow,
+                           load_sql_query)
+from app.utils.document.pdf_first_page_to_image_bytes import \
+    pdf_first_page_to_image_bytes
+from app.utils.mime.get_content_type import get_content_type
+from app.utils.settings.theme import ThemeTokens
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import FileResponse, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/uploads/get_upload_file_info_complete.sql"
@@ -38,7 +35,7 @@ router = APIRouter()
         )
     ],
 )
-async def download_upload(
+async def get_upload(
     upload_id: str,
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -291,7 +288,7 @@ async def download_upload(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="download_upload",
+            operation="get_upload",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

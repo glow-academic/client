@@ -272,7 +272,7 @@ async def tus_patch(upload_id: str, request: Request) -> Response:
         )
     ],
 )
-async def tus_finalize(
+async def save_upload(
     upload_id: str,
     http_request: Request,
     response: Response,
@@ -405,7 +405,7 @@ async def tus_finalize(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="tus_finalize",
+            operation="save_upload",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

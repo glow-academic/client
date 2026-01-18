@@ -15,11 +15,11 @@ from app.sql.types import (ProcessDocumentCsvApiRequest,
                            ProcessDocumentCsvSqlRow,
                            QProcessDocumentCsvV4CsvRowError,
                            QProcessDocumentCsvV4ProcessedRow, load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/documents/process_document_csv_complete.sql"
@@ -32,7 +32,7 @@ router = APIRouter()
     response_model=ProcessDocumentCsvApiResponse,
     dependencies=[audit_activity("document.process", "{{ actor.name }} processed document CSV")],
 )
-async def process_document_csv(
+async def process_document(
     request: ProcessDocumentCsvApiRequest,
     http_request: Request,
     response: Response,
@@ -109,7 +109,7 @@ async def process_document_csv(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="process_document_csv",
+            operation="process_document",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

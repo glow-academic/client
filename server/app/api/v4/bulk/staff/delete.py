@@ -4,20 +4,16 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    BulkDeleteStaffApiRequest,
-    BulkDeleteStaffApiResponse,
-    BulkDeleteStaffSqlParams,
-    BulkDeleteStaffSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (BulkDeleteStaffApiRequest,
+                           BulkDeleteStaffApiResponse,
+                           BulkDeleteStaffSqlParams, BulkDeleteStaffSqlRow,
+                           load_sql_query)
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/staff/bulk_delete_staff_complete.sql"
@@ -34,7 +30,7 @@ router = APIRouter()
         )
     ],
 )
-async def bulk_delete_staff(
+async def delete_staff(
     request: BulkDeleteStaffApiRequest,
     http_request: Request,
     response: Response,
@@ -107,7 +103,7 @@ async def bulk_delete_staff(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="bulk_delete_staff",
+            operation="delete_staff",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

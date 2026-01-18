@@ -50,6 +50,356 @@ def discover_resources() -> list[str]:
     return resources
 
 
+def _get_analytics_handler_name(analytics_type: str, operation: str) -> str | None:
+    """Get the handler function name for an analytics operation.
+    
+    Args:
+        analytics_type: Analytics type (e.g., "home", "dashboard")
+        operation: Operation name (e.g., "get", "list")
+    
+    Returns:
+        Function name or None if operation not applicable.
+    """
+    if operation == "get":
+        # Pattern: get_{type}_overview, get_{type}, get_{type}_bundle, etc.
+        # Try common patterns
+        patterns = [
+            f"get_{analytics_type}_overview",
+            f"get_{analytics_type}",
+            f"get_{analytics_type}_bundle",
+        ]
+        return patterns[0]  # Return first pattern, will try to import
+    elif operation == "list":
+        # Pattern: get_{type}_history, get_{type}_list, etc.
+        patterns = [
+            f"get_{analytics_type}_history",
+            f"get_{analytics_type}_list",
+        ]
+        return patterns[0]
+    elif operation == "refresh" and analytics_type == "refresh":
+        return "refresh_analytics"
+    
+    return None
+
+
+def discover_analytics_handlers() -> dict[tuple[str, str], Any]:
+    """Discover all analytics handlers by scanning analytics directory.
+    
+    Returns:
+        Dictionary mapping (type, operation) tuples to handler functions.
+    """
+    analytics_dir = Path(__file__).parent.parent / "api" / "v4" / "analytics"
+    handlers: dict[tuple[str, str], Any] = {}
+    
+    if not analytics_dir.exists():
+        return handlers
+    
+    # Handle refresh.py separately (it's at the root level)
+    refresh_path = analytics_dir / "refresh.py"
+    if refresh_path.exists():
+        try:
+            module = importlib.import_module("app.api.v4.analytics.refresh")
+            func_name = _get_analytics_handler_name("refresh", "refresh")
+            if func_name and hasattr(module, func_name):
+                handlers[("refresh", "refresh")] = getattr(module, func_name)
+        except (ImportError, AttributeError):
+            pass
+    
+    # Scan subdirectories for type/operation pairs
+    for item in sorted(analytics_dir.iterdir()):
+        if item.is_dir() and not item.name.startswith("_"):
+            analytics_type = item.name
+            
+            # Check for get.py
+            get_path = item / "get.py"
+            if get_path.exists():
+                try:
+                    module = importlib.import_module(f"app.api.v4.analytics.{analytics_type}.get")
+                    func_name = _get_analytics_handler_name(analytics_type, "get")
+                    if func_name:
+                        # Try the primary pattern first
+                        if hasattr(module, func_name):
+                            handlers[(analytics_type, "get")] = getattr(module, func_name)
+                        else:
+                            # Fallback: find any function starting with "get_"
+                            for attr_name in dir(module):
+                                if attr_name.startswith("get_") and callable(getattr(module, attr_name)):
+                                    handlers[(analytics_type, "get")] = getattr(module, attr_name)
+                                    break
+                except (ImportError, AttributeError):
+                    pass
+            
+            # Check for list.py
+            list_path = item / "list.py"
+            if list_path.exists():
+                try:
+                    module = importlib.import_module(f"app.api.v4.analytics.{analytics_type}.list")
+                    func_name = _get_analytics_handler_name(analytics_type, "list")
+                    if func_name:
+                        # Try the primary pattern first
+                        if hasattr(module, func_name):
+                            handlers[(analytics_type, "list")] = getattr(module, func_name)
+                        else:
+                            # Fallback: find any function starting with "get_" (list endpoints also use get_ prefix)
+                            for attr_name in dir(module):
+                                if attr_name.startswith("get_") and callable(getattr(module, attr_name)):
+                                    handlers[(analytics_type, "list")] = getattr(module, attr_name)
+                                    break
+                except (ImportError, AttributeError):
+                    pass
+    
+    return handlers
+
+
+def _get_attempts_handler_name(attempt_type: str, operation: str) -> str | None:
+    """Get the handler function name for an attempts operation.
+    
+    Args:
+        attempt_type: Attempt type (e.g., "simulation", "benchmark")
+        operation: Operation name (e.g., "get", "archive")
+    
+    Returns:
+        Function name or None if operation not applicable.
+    """
+    if operation == "get":
+        return f"get_{attempt_type}_attempt"
+    elif operation == "archive":
+        return f"archive_{attempt_type}_attempts"
+    
+    return None
+
+
+def discover_attempts_handlers() -> dict[tuple[str, str], Any]:
+    """Discover all attempts handlers by scanning attempts directory.
+    
+    Returns:
+        Dictionary mapping (type, operation) tuples to handler functions.
+    """
+    attempts_dir = Path(__file__).parent.parent / "api" / "v4" / "attempts"
+    handlers: dict[tuple[str, str], Any] = {}
+    
+    if not attempts_dir.exists():
+        return handlers
+    
+    # Scan subdirectories for type/operation pairs
+    for item in sorted(attempts_dir.iterdir()):
+        if item.is_dir() and not item.name.startswith("_"):
+            attempt_type = item.name
+            
+            # Check for get.py
+            get_path = item / "get.py"
+            if get_path.exists():
+                try:
+                    module = importlib.import_module(f"app.api.v4.attempts.{attempt_type}.get")
+                    func_name = _get_attempts_handler_name(attempt_type, "get")
+                    if func_name and hasattr(module, func_name):
+                        handlers[(attempt_type, "get")] = getattr(module, func_name)
+                except (ImportError, AttributeError):
+                    pass
+            
+            # Check for archive.py
+            archive_path = item / "archive.py"
+            if archive_path.exists():
+                try:
+                    module = importlib.import_module(f"app.api.v4.attempts.{attempt_type}.archive")
+                    func_name = _get_attempts_handler_name(attempt_type, "archive")
+                    if func_name and hasattr(module, func_name):
+                        handlers[(attempt_type, "archive")] = getattr(module, func_name)
+                except (ImportError, AttributeError):
+                    pass
+    
+    return handlers
+
+
+def _get_bulk_handler_name(bulk_type: str, operation: str) -> str | None:
+    """Get the handler function name for a bulk operation.
+    
+    Args:
+        bulk_type: Bulk type (e.g., "document", "staff")
+        operation: Operation name (e.g., "process", "search", "save", "delete")
+    
+    Returns:
+        Function name: {operation}_{type}
+    """
+    return f"{operation}_{bulk_type}"
+
+
+def discover_bulk_handlers() -> dict[tuple[str, str], Any]:
+    """Discover all bulk handlers by scanning bulk directory.
+    
+    Returns:
+        Dictionary mapping (type, operation) tuples to handler functions.
+    """
+    bulk_dir = Path(__file__).parent.parent / "api" / "v4" / "bulk"
+    handlers: dict[tuple[str, str], Any] = {}
+    
+    if not bulk_dir.exists():
+        return handlers
+    
+    # Scan subdirectories for type/operation pairs
+    for item in sorted(bulk_dir.iterdir()):
+        if item.is_dir() and not item.name.startswith("_"):
+            bulk_type = item.name
+            
+            # Check for operation files
+            for op_file in sorted(item.iterdir()):
+                if op_file.is_file() and op_file.suffix == ".py" and not op_file.name.startswith("_"):
+                    operation = op_file.stem
+                    if operation == "__init__":
+                        continue
+                    
+                    try:
+                        module = importlib.import_module(f"app.api.v4.bulk.{bulk_type}.{operation}")
+                        func_name = _get_bulk_handler_name(bulk_type, operation)
+                        if func_name and hasattr(module, func_name):
+                            handlers[(bulk_type, operation)] = getattr(module, func_name)
+                    except (ImportError, AttributeError):
+                        pass
+    
+    return handlers
+
+
+def _get_export_handler_name(export_type: str) -> str | None:
+    """Get the handler function name for an export operation.
+    
+    Args:
+        export_type: Export type (e.g., "certificate", "report")
+    
+    Returns:
+        Function name: export_{type}
+    """
+    return f"export_{export_type}"
+
+
+def discover_export_handlers() -> dict[str, Any]:
+    """Discover all export handlers by scanning export directory.
+    
+    Returns:
+        Dictionary mapping type to handler functions.
+    """
+    export_dir = Path(__file__).parent.parent / "api" / "v4" / "export"
+    handlers: dict[str, Any] = {}
+    
+    if not export_dir.exists():
+        return handlers
+    
+    # Scan for type files
+    for item in sorted(export_dir.iterdir()):
+        if item.is_file() and item.suffix == ".py" and not item.name.startswith("_"):
+            export_type = item.stem
+            if export_type == "__init__":
+                continue
+            
+            try:
+                module = importlib.import_module(f"app.api.v4.export.{export_type}")
+                func_name = _get_export_handler_name(export_type)
+                if func_name and hasattr(module, func_name):
+                    handlers[export_type] = getattr(module, func_name)
+            except (ImportError, AttributeError):
+                pass
+    
+    return handlers
+
+
+def discover_decrypt_handlers() -> dict[str, Any]:
+    """Discover decrypt handler.
+    
+    Returns:
+        Dictionary with "decrypt" key mapping to handler function.
+    """
+    handlers: dict[str, Any] = {}
+    
+    try:
+        module = importlib.import_module("app.api.v4.decrypt.key")
+        if hasattr(module, "decrypt_key"):
+            handlers["decrypt"] = getattr(module, "decrypt_key")
+    except (ImportError, AttributeError):
+        pass
+    
+    return handlers
+
+
+def _get_uploads_handler_name(operation: str) -> str | None:
+    """Get the handler function name for an uploads operation.
+    
+    Args:
+        operation: Operation name (e.g., "get", "save")
+    
+    Returns:
+        Function name: {operation}_upload
+    """
+    return f"{operation}_upload"
+
+
+def discover_uploads_handlers() -> dict[str, Any]:
+    """Discover all uploads handlers by scanning uploads directory.
+    
+    Returns:
+        Dictionary mapping operation to handler functions.
+    """
+    uploads_dir = Path(__file__).parent.parent / "api" / "v4" / "uploads"
+    handlers: dict[str, Any] = {}
+    
+    if not uploads_dir.exists():
+        return handlers
+    
+    # Scan for operation files
+    for item in sorted(uploads_dir.iterdir()):
+        if item.is_file() and item.suffix == ".py" and not item.name.startswith("_"):
+            operation = item.stem
+            if operation == "__init__":
+                continue
+            
+            try:
+                module = importlib.import_module(f"app.api.v4.uploads.{operation}")
+                func_name = _get_uploads_handler_name(operation)
+                if func_name and hasattr(module, func_name):
+                    handlers[operation] = getattr(module, func_name)
+            except (ImportError, AttributeError):
+                pass
+    
+    return handlers
+
+
+def discover_debug_handlers() -> dict[str, Any]:
+    """Discover debug handler.
+    
+    Returns:
+        Dictionary with "debug" key mapping to handler function.
+    """
+    handlers: dict[str, Any] = {}
+    
+    try:
+        module = importlib.import_module("app.api.v4.debug")
+        # Try create_feedback first (current name), fallback to debug
+        if hasattr(module, "create_feedback"):
+            handlers["debug"] = getattr(module, "create_feedback")
+        elif hasattr(module, "debug"):
+            handlers["debug"] = getattr(module, "debug")
+    except (ImportError, AttributeError):
+        pass
+    
+    return handlers
+
+
+def discover_groups_handlers() -> dict[str, Any]:
+    """Discover groups handler from artifacts/group.py.
+    
+    Returns:
+        Dictionary with "get" key mapping to handler function.
+    """
+    handlers: dict[str, Any] = {}
+    
+    try:
+        module = importlib.import_module("app.api.v4.artifacts.group")
+        if hasattr(module, "get_group"):
+            handlers["get"] = getattr(module, "get_group")
+    except (ImportError, AttributeError):
+        pass
+    
+    return handlers
+
+
 def pluralize_artifact(artifact_name: str) -> str:
     """Pluralize artifact name for docs operations.
     
@@ -238,96 +588,29 @@ for artifact in ARTIFACTS:
 
 
 
-# Analytics handlers - using (type, operation) tuple keys
-try:
-    from app.api.v4.analytics.activity.get import \
-        get_activity_bundle  # type: ignore[attr-defined]
-    from app.api.v4.analytics.activity.list import \
-        get_activity_list  # type: ignore[attr-defined]
-    from app.api.v4.analytics.benchmark.get import \
-        get_benchmark_overview  # type: ignore[attr-defined]
-    from app.api.v4.analytics.benchmark.list import \
-        get_benchmark_history  # type: ignore[attr-defined]
-    from app.api.v4.analytics.dashboard.get import \
-        get_dashboard  # type: ignore[attr-defined]
-    from app.api.v4.analytics.dashboard.list import \
-        get_dashboard_history  # type: ignore[attr-defined]
-    from app.api.v4.analytics.health.get import \
-        get_health  # type: ignore[attr-defined]
-    from app.api.v4.analytics.home.get import \
-        get_home_overview  # type: ignore[attr-defined]
-    from app.api.v4.analytics.home.list import \
-        get_home_history  # type: ignore[attr-defined]
-    from app.api.v4.analytics.leaderboard.get import \
-        get_leaderboard  # type: ignore[attr-defined]
-    from app.api.v4.analytics.practice.get import \
-        get_practice_overview  # type: ignore[attr-defined]
-    from app.api.v4.analytics.practice.list import \
-        get_practice_history  # type: ignore[attr-defined]
-    from app.api.v4.analytics.pricing.get import \
-        get_pricing  # type: ignore[attr-defined]
-    from app.api.v4.analytics.pricing.list import \
-        get_pricing_list  # type: ignore[attr-defined]
-    from app.api.v4.analytics.refresh import \
-        refresh_analytics  # type: ignore[attr-defined]
-    from app.api.v4.analytics.reports.get import \
-        get_reports  # type: ignore[attr-defined] # Single profile report (merged overview + history)
-    from app.api.v4.analytics.reports.list import \
-        get_reports as \
-        get_reports_list  # type: ignore[attr-defined] # List for multiple profiles
+# Analytics handlers - dynamically discovered
+ANALYTICS_HANDLERS: dict[tuple[str, str], Any] = discover_analytics_handlers()
 
-    ANALYTICS_HANDLERS: dict[tuple[str, str], Any] = {
-        ("home", "get"): get_home_overview,
-        ("home", "list"): get_home_history,
-        ("dashboard", "get"): get_dashboard,
-        ("dashboard", "list"): get_dashboard_history,
-        ("practice", "get"): get_practice_overview,
-        ("practice", "list"): get_practice_history,
-        ("leaderboard", "get"): get_leaderboard,
-        ("reports", "get"): get_reports,  # Single profile report
-        ("reports", "list"): get_reports_list,  # Multiple profiles
-        ("activity", "get"): get_activity_bundle,
-        ("activity", "list"): get_activity_list,
-        ("pricing", "get"): get_pricing,
-        ("pricing", "list"): get_pricing_list,  # Pricing groups
-        ("health", "get"): get_health,
-        ("benchmark", "get"): get_benchmark_overview,
-        ("benchmark", "list"): get_benchmark_history,
-        ("refresh", "refresh"): refresh_analytics,
-    }
-except ImportError:
-    ANALYTICS_HANDLERS: dict[tuple[str, str], Any] = {}
+# Groups handlers - dynamically discovered
+GROUPS_HANDLERS: dict[str, Any] = discover_groups_handlers()
 
-# Groups handlers
-try:
-    from app.api.v4.artifacts.group import \
-        get_group  # type: ignore[attr-defined]
+# Attempts handlers - dynamically discovered
+ATTEMPTS_HANDLERS: dict[tuple[str, str], Any] = discover_attempts_handlers()
 
-    GROUPS_HANDLER = get_group
-except ImportError:
-    GROUPS_HANDLER = None
+# Bulk handlers - dynamically discovered
+BULK_HANDLERS: dict[tuple[str, str], Any] = discover_bulk_handlers()
 
-# Attempts handlers - using (type, operation) tuple keys
-try:
-    from app.api.v4.attempts.benchmark.archive import \
-        bulk_archive_attempts as \
-        bulk_archive_benchmark_attempts  # type: ignore[attr-defined]
-    from app.api.v4.attempts.benchmark.get import \
-        get_eval_attempt_full  # type: ignore[attr-defined]
-    from app.api.v4.attempts.simulation.archive import \
-        bulk_archive_attempts as \
-        bulk_archive_simulation_attempts  # type: ignore[attr-defined]
-    from app.api.v4.attempts.simulation.get import \
-        get_attempt_full  # type: ignore[attr-defined]
+# Export handlers - dynamically discovered
+EXPORT_HANDLERS: dict[str, Any] = discover_export_handlers()
 
-    ATTEMPTS_HANDLERS: dict[tuple[str, str], Any] = {
-        ("simulation", "get"): get_attempt_full,
-        ("simulation", "archive"): bulk_archive_simulation_attempts,
-        ("benchmark", "get"): get_eval_attempt_full,
-        ("benchmark", "archive"): bulk_archive_benchmark_attempts,
-    }
-except ImportError:
-    ATTEMPTS_HANDLERS: dict[tuple[str, str], Any] = {}
+# Decrypt handlers - dynamically discovered
+DECRYPT_HANDLERS: dict[str, Any] = discover_decrypt_handlers()
+
+# Uploads handlers - dynamically discovered
+UPLOADS_HANDLERS: dict[str, Any] = discover_uploads_handlers()
+
+# Debug handlers - dynamically discovered
+DEBUG_HANDLERS: dict[str, Any] = discover_debug_handlers()
 
 
 
@@ -965,7 +1248,7 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        if GROUPS_HANDLER is None:
+        if "get" not in GROUPS_HANDLERS:
             return {
                 "error": "get_group handler not available.",
                 "status": "not_implemented",
@@ -973,19 +1256,19 @@ def register_endpoints(server: FastMCP) -> None:
 
         # Add group_id to payload
         payload_with_id = {**payload, "group_id": group_id}
-        return await call_endpoint_handler(GROUPS_HANDLER, payload_with_id, profile_id)
+        return await call_endpoint_handler(GROUPS_HANDLERS["get"], payload_with_id, profile_id)
 
     # Attempts endpoints
     @server.tool()
-    async def attempts(
-        type: str, operation: str, payload: dict[str, Any]
+    async def get_attempt(
+        type: str, attempt_id: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
-        """Call attempts endpoint by type and operation.
+        """Get attempt by type and ID.
 
         Args:
             type: Attempt type (simulation, benchmark)
-            operation: Operation (get, archive)
-            payload: Request payload (must include attempt_id for get, attempt_ids and archived for archive)
+            attempt_id: Attempt ID
+            payload: Request payload
 
         Returns:
             Attempt data or error message.
@@ -995,34 +1278,76 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        key = (type, operation)
+        key = (type, "get")
         if key not in ATTEMPTS_HANDLERS:
             valid_keys = list(ATTEMPTS_HANDLERS.keys())
             return {
-                "error": f"'{type}' with operation '{operation}' is not a valid attempts endpoint.",
-                "status": "invalid_type_operation",
-                "valid_combinations": [f"{t}/{op}" for t, op in valid_keys],
+                "error": f"'{type}' is not a valid attempt type for get.",
+                "status": "invalid_type",
+                "valid_types": [t for t, op in valid_keys if op == "get"],
             }
 
         handler = ATTEMPTS_HANDLERS[key]
         if handler is None:
             return {
-                "error": f"Attempts endpoint '{type}/{operation}' is not implemented yet.",
+                "error": f"get_attempt for type '{type}' is not implemented yet.",
                 "status": "not_implemented",
             }
 
-        return await call_endpoint_handler(handler, payload, profile_id)
+        # Add attempt_id to payload
+        payload_with_id = {**payload, "attempt_id": attempt_id}
+        return await call_endpoint_handler(handler, payload_with_id, profile_id)
+
+    @server.tool()
+    async def archive_attempt(
+        type: str, attempt_ids: list[str], payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Archive or unarchive attempts.
+
+        Args:
+            type: Attempt type (simulation, benchmark)
+            attempt_ids: List of attempt IDs
+            payload: Request payload (must include archived: bool)
+
+        Returns:
+            Archive result or error message.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
+        key = (type, "archive")
+        if key not in ATTEMPTS_HANDLERS:
+            valid_keys = list(ATTEMPTS_HANDLERS.keys())
+            return {
+                "error": f"'{type}' is not a valid attempt type for archive.",
+                "status": "invalid_type",
+                "valid_types": [t for t, op in valid_keys if op == "archive"],
+            }
+
+        handler = ATTEMPTS_HANDLERS[key]
+        if handler is None:
+            return {
+                "error": f"archive_attempt for type '{type}' is not implemented yet.",
+                "status": "not_implemented",
+            }
+
+        # Add attempt_ids to payload
+        payload_with_ids = {**payload, "attempt_ids": attempt_ids}
+        return await call_endpoint_handler(handler, payload_with_ids, profile_id)
 
 
     # Decrypt endpoint
     @server.tool()
     async def decrypt(
-        payload: dict[str, Any]
+        key_id: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Decrypt encrypted key value.
 
         Args:
-            payload: Request payload (must include key_id or key identifier)
+            key_id: The key ID to decrypt
+            payload: Request payload
 
         Returns:
             Decrypted key value or error message.
@@ -1032,104 +1357,66 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        try:
-            from app.api.v4.decrypt.key import \
-                decrypt_key  # type: ignore[import-untyped]
-        except ImportError:
+        if "decrypt" not in DECRYPT_HANDLERS:
             return {
                 "error": "decrypt handler not available.",
                 "status": "not_implemented",
             }
 
-        return await call_endpoint_handler(decrypt_key, payload, profile_id)
+        # Add key_id to payload
+        payload_with_id = {**payload, "key_id": key_id}
+        return await call_endpoint_handler(DECRYPT_HANDLERS["decrypt"], payload_with_id, profile_id)
 
     # Export endpoints
     @server.tool()
-    async def export(
-        type: str, payload: dict[str, Any]
+    async def export_certificate(
+        payload: dict[str, Any]
     ) -> dict[str, Any]:
-        """Export certificate or report.
+        """Export certificate.
 
         Args:
-            type: Export type (certificate, report)
             payload: Request payload
 
         Returns:
-            Export content (PDF/text for certificate, CSV/ZIP for report) or error message.
+            Certificate content (PDF/text) or error message.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        try:
-            if type == "certificate":
-                from app.api.v4.export.certificate import \
-                    generate_certificate  # type: ignore[import-untyped]
-                handler = generate_certificate
-            elif type == "report":
-                from app.api.v4.export.report import \
-                    export_reports  # type: ignore[import-untyped]
-                handler = export_reports
-            else:
-                return {
-                    "error": f"'{type}' is not a valid export type.",
-                    "status": "invalid_type",
-                    "valid_types": ["certificate", "report"],
-                }
-        except ImportError:
+        if "certificate" not in EXPORT_HANDLERS:
             return {
-                "error": f"export handler for type '{type}' not available.",
+                "error": "export_certificate handler not available.",
                 "status": "not_implemented",
             }
 
-        return await call_endpoint_handler(handler, payload, profile_id)
+        return await call_endpoint_handler(EXPORT_HANDLERS["certificate"], payload, profile_id)
 
     @server.tool()
-    def export_payload(type: str) -> dict[str, Any]:
-        """Get payload schema for export endpoint type.
+    async def export_report(
+        payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Export report.
 
         Args:
-            type: Export type (certificate, report)
+            payload: Request payload
 
         Returns:
-            JSON schema for the payload.
+            Report content (CSV/ZIP) or error message.
         """
-        try:
-            if type == "certificate":
-                from app.api.v4.export.certificate import \
-                    generate_certificate  # type: ignore[import-untyped]
-                handler = generate_certificate
-            elif type == "report":
-                from app.api.v4.export.report import \
-                    export_reports  # type: ignore[import-untyped]
-                handler = export_reports
-            else:
-                return {
-                    "error": f"'{type}' is not a valid export type.",
-                    "status": "invalid_type",
-                    "valid_types": ["certificate", "report"],
-                }
-        except ImportError:
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
+        if "report" not in EXPORT_HANDLERS:
             return {
-                "error": f"export handler for type '{type}' not available.",
+                "error": "export_report handler not available.",
                 "status": "not_implemented",
             }
 
-        request_model = get_request_model_from_handler(handler)  # type: ignore[arg-type]
-        if request_model and hasattr(request_model, "model_json_schema"):
-            schema = request_model.model_json_schema()
-            return cast(dict[str, Any], schema)
-
-        return {
-            "type": "object",
-            "properties": {
-                "payload": {
-                    "type": "object",
-                    "description": f"Payload for {type} export endpoint",
-                }
-            },
-        }
+        return await call_endpoint_handler(EXPORT_HANDLERS["report"], payload, profile_id)
 
     # Bulk endpoints
     @server.tool()
@@ -1151,64 +1438,30 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        try:
-            if type == "document":
-                if operation == "process":
-                    from app.api.v4.bulk.document.process import \
-                        process_document_csv  # type: ignore[import-untyped]
-                    handler = process_document_csv
-                elif operation == "search":
-                    from app.api.v4.bulk.document.search import \
-                        search_documents  # type: ignore[import-untyped]
-                    handler = search_documents
-                elif operation == "save":
-                    from app.api.v4.bulk.document.save import \
-                        bulk_save_documents  # type: ignore[import-untyped]
-                    handler = bulk_save_documents
-                elif operation == "delete":
-                    from app.api.v4.bulk.document.delete import \
-                        bulk_delete_documents  # type: ignore[import-untyped]
-                    handler = bulk_delete_documents
-                else:
-                    return {
-                        "error": f"'{operation}' is not a valid operation for document bulk operations.",
-                        "status": "invalid_operation",
-                        "valid_operations": ["process", "search", "save", "delete"],
-                    }
-            elif type == "staff":
-                if operation == "process":
-                    from app.api.v4.bulk.staff.process import \
-                        process_csv  # type: ignore[import-untyped]
-                    handler = process_csv
-                elif operation == "search":
-                    from app.api.v4.bulk.staff.search import \
-                        search_staff  # type: ignore[import-untyped]
-                    handler = search_staff
-                elif operation == "save":
-                    from app.api.v4.bulk.staff.save import \
-                        bulk_save_staff  # type: ignore[import-untyped]
-                    handler = bulk_save_staff
-                elif operation == "delete":
-                    from app.api.v4.bulk.staff.delete import \
-                        bulk_delete_staff  # type: ignore[import-untyped]
-                    handler = bulk_delete_staff
-                else:
-                    return {
-                        "error": f"'{operation}' is not a valid operation for staff bulk operations.",
-                        "status": "invalid_operation",
-                        "valid_operations": ["process", "search", "save", "delete"],
-                    }
-            else:
+        key = (type, operation)
+        if key not in BULK_HANDLERS:
+            valid_keys = list(BULK_HANDLERS.keys())
+            valid_types = list(set(t for t, op in valid_keys))
+            valid_operations = list(set(op for t, op in valid_keys if t == type))
+            
+            if type not in valid_types:
                 return {
                     "error": f"'{type}' is not a valid bulk type.",
                     "status": "invalid_type",
-                    "valid_types": ["document", "staff"],
+                    "valid_types": valid_types,
                 }
-        except ImportError as e:
+            else:
+                return {
+                    "error": f"'{operation}' is not a valid operation for {type} bulk operations.",
+                    "status": "invalid_operation",
+                    "valid_operations": valid_operations,
+                }
+        
+        handler = BULK_HANDLERS[key]
+        if handler is None:
             return {
-                "error": f"bulk handler for type '{type}' operation '{operation}' not available.",
+                "error": f"bulk handler for type '{type}' operation '{operation}' is not implemented yet.",
                 "status": "not_implemented",
-                "import_error": str(e),
             }
 
         return await call_endpoint_handler(handler, payload, profile_id)
@@ -1285,8 +1538,12 @@ def register_endpoints(server: FastMCP) -> None:
                 f.write(f"length:{len(content_bytes)}\noffset:{len(content_bytes)}")
 
             # Finalize upload (move to final location and create DB record)
-            from app.api.v4.uploads.save import \
-                tus_finalize  # type: ignore[import-untyped]
+            if "save" not in UPLOADS_HANDLERS:
+                return {
+                    "error": "save_upload handler not available.",
+                    "status": "not_implemented",
+                }
+            
             from app.main import get_db
             from starlette.requests import Request as StarletteRequest
 
@@ -1306,7 +1563,7 @@ def register_endpoints(server: FastMCP) -> None:
 
             # Call finalize
             async for conn in get_db():
-                result = await tus_finalize(upload_id, http_request, http_response, conn)
+                result = await UPLOADS_HANDLERS["save"](upload_id, http_request, http_response, conn)
                 if hasattr(result, "model_dump"):
                     result_dict = result.model_dump(mode="json")
                     return cast(dict[str, Any], result_dict)
@@ -1343,9 +1600,13 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
+        if "get" not in UPLOADS_HANDLERS:
+            return {
+                "error": "get_upload handler not available.",
+                "status": "not_implemented",
+            }
+        
         try:
-            from app.api.v4.uploads.get import \
-                download_upload  # type: ignore[import-untyped]
             from app.main import get_db
             from starlette.requests import Request as StarletteRequest
 
@@ -1367,7 +1628,7 @@ def register_endpoints(server: FastMCP) -> None:
 
             # Call download handler
             async for conn in get_db():
-                result = await download_upload(upload_id, http_request, conn, preview=preview)
+                result = await UPLOADS_HANDLERS["get"](upload_id, http_request, conn, preview=preview)
                 
                 # Handle FileResponse or Response
                 if hasattr(result, "body"):
@@ -1420,10 +1681,6 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        # Import debug handler directly
-        from app.api.v4.debug import \
-            create_feedback  # type: ignore[import-untyped]
-
         # Validate message
         if not message or not message.strip():
             return {
@@ -1437,10 +1694,16 @@ def register_endpoints(server: FastMCP) -> None:
                 "status": "validation_error",
             }
 
+        if "debug" not in DEBUG_HANDLERS:
+            return {
+                "error": "debug handler not available.",
+                "status": "not_implemented",
+            }
+
         # Create payload for debug endpoint - always use type="bug"
         payload = {
             "type": "bug",
             "message": message.strip(),
         }
 
-        return await call_endpoint_handler(create_feedback, payload, profile_id)
+        return await call_endpoint_handler(DEBUG_HANDLERS["debug"], payload, profile_id)

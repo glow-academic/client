@@ -3,22 +3,18 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (GetDocumentsListApiRequest,
+                           GetDocumentsListApiResponse,
+                           GetDocumentsListSqlParams, GetDocumentsListSqlRow,
+                           load_sql_query)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    GetDocumentsListApiRequest,
-    GetDocumentsListApiResponse,
-    GetDocumentsListSqlParams,
-    GetDocumentsListSqlRow,
-    load_sql_query,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/documents/get_documents_list_complete.sql"
@@ -31,7 +27,7 @@ router = APIRouter()
     response_model=GetDocumentsListApiResponse,
     dependencies=[audit_activity("document.searched", "{{ actor.name }} searched documents")],
 )
-async def search_documents(
+async def search_document(
     request: GetDocumentsListApiRequest,
     http_request: Request,
     response: Response,
@@ -103,7 +99,7 @@ async def search_documents(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="search_documents",
+            operation="search_document",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
