@@ -13,7 +13,7 @@
 ## Schema Tables (database_schema.md)
 ### Artifact + resource containers
 - `model_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
-- `models_resource`(created_at, updated_at, value, model_id, active, generated, mcp, call_id, <u>id</u>)
+- `models_resource`(created_at, updated_at, value, model_id, active, generated, mcp, call_id, modality, <u>id</u>)
 
 ### Junction + relationship tables
 - `model_departments`(active, created_at, updated_at, <u>department_id</u>, <u>model_id</u>, generated, mcp)

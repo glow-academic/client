@@ -31,7 +31,7 @@
 - `slugs_resource`(<u>id</u>, value, created_at, updated_at, generated, call_id, mcp)
 
 ### Draft persistence
-- `draft_auth`(<u>draft_id</u>, <u>auth_id</u>, version, created_at, updated_at, generated, mcp, active)
+- `draft_auths`(<u>draft_id</u>, <u>auths_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Flags, Protocols, Slugs
