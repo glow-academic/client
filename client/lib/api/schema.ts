@@ -14478,6 +14478,8 @@ export interface components {
             description: string | null;
             /** Agent Role */
             agent_role: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetFieldV4Department */
         QGetFieldV4Department: {

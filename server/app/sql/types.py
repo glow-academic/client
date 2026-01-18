@@ -11761,6 +11761,7 @@ class QGetEvalV4Rubric(BaseModel):
     name: str | None
     description: str | None
     agent_role: str | None
+    generated: bool | None
 
 class GetEvalSqlRow(BaseModel):
 

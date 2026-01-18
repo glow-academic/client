@@ -65618,6 +65618,17 @@
               }
             ],
             "title": "Agent Role"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
@@ -65625,7 +65636,8 @@
           "rubric_id",
           "name",
           "description",
-          "agent_role"
+          "agent_role",
+          "generated"
         ],
         "title": "QGetEvalV4Rubric"
       },
