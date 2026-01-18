@@ -52225,50 +52225,6 @@
             ],
             "title": "Tool Id"
           },
-          "schema_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Search"
-          },
-          "template_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Search"
-          },
-          "schema_show_selected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Schema Show Selected"
-          },
-          "template_show_selected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Show Selected"
-          },
           "draft_id": {
             "anyOf": [
               {

@@ -8,18 +8,13 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetToolApiRequest,
-    GetToolApiResponse,
-    GetToolSqlParams,
-    GetToolSqlRow,
-    load_sql_query,
-)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (GetToolApiRequest, GetToolApiResponse,
+                           GetToolSqlParams, GetToolSqlRow, load_sql_query)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/tools/get_tool_complete.sql"
@@ -81,11 +76,7 @@ async def get_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Extract search and filter params from API request
-        schema_search = request.schema_search
-        template_search = request.template_search
-        schema_show_selected = request.schema_show_selected
-        template_show_selected = request.template_show_selected
+        # Extract params from API request
         draft_id = request.draft_id
         tool_id = request.tool_id  # Can be NULL for new mode
 
@@ -96,10 +87,6 @@ async def get_tool(
         params = GetToolSqlParams(
             tool_id=tool_id,
             profile_id=profile_id,
-            schema_search=schema_search,
-            template_search=template_search,
-            schema_show_selected=schema_show_selected,
-            template_show_selected=template_show_selected,
             draft_id=draft_id,
             mcp=mcp,
         )

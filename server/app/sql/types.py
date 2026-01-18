@@ -35429,10 +35429,6 @@ class GetToolSqlParams(BaseModel):
 
     profile_id: UUID
     tool_id: UUID | None = None
-    schema_search: str | None = None
-    template_search: str | None = None
-    schema_show_selected: bool | None = None
-    template_show_selected: bool | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 
@@ -35440,10 +35436,6 @@ class GetToolSqlParams(BaseModel):
         return (
             self.profile_id,
             self.tool_id,
-            self.schema_search,
-            self.template_search,
-            self.schema_show_selected,
-            self.template_show_selected,
             self.draft_id,
             self.mcp,
         )
@@ -35571,10 +35563,6 @@ class GetToolSqlRow(BaseModel):
 class GetToolApiRequest(BaseModel):
 
     tool_id: UUID | None = None
-    schema_search: str | None = None
-    template_search: str | None = None
-    schema_show_selected: bool | None = None
-    template_show_selected: bool | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 

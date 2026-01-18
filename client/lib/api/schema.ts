@@ -11552,14 +11552,6 @@ export interface components {
         GetToolApiRequest: {
             /** Tool Id */
             tool_id?: string | null;
-            /** Schema Search */
-            schema_search?: string | null;
-            /** Template Search */
-            template_search?: string | null;
-            /** Schema Show Selected */
-            schema_show_selected?: boolean | null;
-            /** Template Show Selected */
-            template_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
             /**

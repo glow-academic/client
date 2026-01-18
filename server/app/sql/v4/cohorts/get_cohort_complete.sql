@@ -149,6 +149,9 @@ cohort_exists_check AS (
             WHEN (SELECT cohort_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM cohort_artifact WHERE id = (SELECT cohort_id FROM params))::boolean
         END as cohort_exists
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
 draft_payload_data AS (
@@ -189,12 +192,23 @@ user_departments AS (
 -- Conditional: Get cohort department data only if cohort_id provided
 cohort_departments_data AS (
     SELECT 
-        cd.cohort_id,
-        ARRAY_AGG(cd.department_id ORDER BY cd.created_at) as department_ids
-    FROM params x
-    JOIN cohort_departments cd ON cd.cohort_id = x.cohort_id AND cd.active = true
-    WHERE x.cohort_id IS NOT NULL
-    GROUP BY cd.cohort_id
+        CASE 
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN NULL::uuid
+            ELSE (SELECT cohort_id FROM params)
+        END as cohort_id,
+        CASE 
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(cd.department_id ORDER BY cd.created_at)
+                 FROM cohort_departments cd
+                 WHERE cd.cohort_id = (SELECT cohort_id FROM params)
+                   AND cd.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as department_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 cohort_department_access_check AS (
     SELECT 
@@ -243,6 +257,8 @@ name_resource_data AS (
             LIMIT 1
         ) as name_resource
     FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 description_resource_data AS (
     SELECT 
@@ -253,6 +269,8 @@ description_resource_data AS (
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM draft_descriptions dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1) as cohort_description_resource
     FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 flag_resource_data AS (
     SELECT 
@@ -263,6 +281,8 @@ flag_resource_data AS (
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.name = 'active' AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
     FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Name suggestions: linked to cohorts OR same group with generated=true
 name_suggestions_data AS (
@@ -300,6 +320,7 @@ name_suggestions_data AS (
             ARRAY[]::uuid[]
         ) as name_suggestions
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- Description suggestions: linked to cohorts OR same group with generated=true
@@ -338,6 +359,7 @@ description_suggestions_data AS (
             ARRAY[]::uuid[]
         ) as description_suggestions
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- Suggested resource objects CTEs
@@ -357,6 +379,7 @@ names_suggestions_objects AS (
             ARRAY[]::types.q_get_cohort_v4_name_resource[]
         ) as names
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 descriptions_suggestions_objects AS (
@@ -375,6 +398,7 @@ descriptions_suggestions_objects AS (
             ARRAY[]::types.q_get_cohort_v4_description_resource[]
         ) as descriptions
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- Descriptions: linked to cohorts OR same group with generated=true
@@ -429,7 +453,7 @@ flags_data AS (
         OR (SELECT active_flag_id FROM flag_resource_data) IS NULL
     ORDER BY f.name
 ),
--- Department mapping data
+-- Department mapping data (only active departments user is linked to)
 department_mapping_data AS (
     SELECT 
         d.department_id,
@@ -439,6 +463,7 @@ department_mapping_data AS (
     FROM params x
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
+        -- Only include departments with active flag AND user is linked to them
         EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
@@ -479,6 +504,7 @@ department_suggestions_data AS (
             ARRAY[]::uuid[]
         ) as department_suggestions
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- Simulation mapping data (filtered: active flag AND user department access)
@@ -504,12 +530,22 @@ simulation_mapping_data AS (
         OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
     )
 ),
--- Cohort simulation IDs
-cohort_simulation_ids AS (
-    SELECT cs.simulation_id
-    FROM params x
-    JOIN cohort_simulations cs ON cs.cohort_id = x.cohort_id AND cs.active = true
-    WHERE x.cohort_id IS NOT NULL
+-- Cohort simulation IDs (always return at least one row)
+cohort_simulation_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(cs.simulation_id ORDER BY cs.created_at)
+                 FROM cohort_simulations cs
+                 WHERE cs.cohort_id = (SELECT cohort_id FROM params)
+                   AND cs.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as simulation_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Simulation suggestions: linked to cohorts with active=true OR same group with generated=true
 simulation_suggestions_data AS (
@@ -549,6 +585,7 @@ simulation_suggestions_data AS (
             ARRAY[]::uuid[]
         ) as simulation_suggestions
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- UI flags
@@ -566,6 +603,8 @@ ui_flags AS (
             ELSE false
         END as show_simulations
     FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Tools existence check
 tools_existence_check AS (
@@ -601,6 +640,8 @@ tools_existence_check AS (
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
         ) as simulations_has_tools
     FROM params x
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Missing tools check for required resources
 missing_tools_check AS (
@@ -611,6 +652,8 @@ missing_tools_check AS (
         ]::text[], NULL) as missing_resources
     FROM tools_existence_check tec
     CROSS JOIN ui_flags uf
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Selected department for agent selection (use first department from user or cohort)
 selected_department_for_agents AS (
@@ -620,6 +663,7 @@ selected_department_for_agents AS (
             (SELECT dept_id FROM cohort_departments_data cdd CROSS JOIN LATERAL unnest(cdd.department_ids) as dept_id LIMIT 1)
         ) as department_id
     FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- User departments for agent selection
@@ -1223,6 +1267,8 @@ permissions_final AS (
     CROSS JOIN user_profile up
     LEFT JOIN cohort_departments_data cdd ON true
     CROSS JOIN missing_tools_check mtc
+    -- Always return at least one row
+    LIMIT 1
 )
 SELECT
     -- Required fields (first 5)
@@ -1266,30 +1312,15 @@ SELECT
     (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
     false as flag_required,
     -- Multi-select resources: departments
-    COALESCE(
-        CASE 
-            WHEN (SELECT cohort_id FROM params) IS NULL THEN
-                ARRAY[]::uuid[]
-            ELSE cdd.department_ids
-        END,
-        ARRAY[]::uuid[]
-    ) as department_ids,
+    cdd.department_ids,
+    -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
             (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_cohort_v4_department
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
-        WHERE dmd.department_id = ANY(
-            COALESCE(
-                CASE 
-                    WHEN (SELECT cohort_id FROM params) IS NULL THEN
-                        ARRAY[]::uuid[]
-                    ELSE cdd.department_ids
-                END,
-                ARRAY[]::uuid[]
-            )
-        )),
+        WHERE dmd.department_id = ANY(COALESCE(cdd.department_ids, ARRAY[]::uuid[]))),
         '{}'::types.q_get_cohort_v4_department[]
     ) as department_resources,
     CASE 
@@ -1303,6 +1334,7 @@ SELECT
         ELSE false
     END as departments_required,
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
+    -- Departments array (all available - uses same department_mapping_data CTE)
     COALESCE(
         (SELECT ARRAY_AGG(
             (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_cohort_v4_department
@@ -1311,30 +1343,15 @@ SELECT
         '{}'::types.q_get_cohort_v4_department[]
     ) as departments,
     -- Multi-select resources: simulations
-    COALESCE(
-        CASE 
-            WHEN (SELECT cohort_id FROM params) IS NULL THEN
-                ARRAY[]::uuid[]
-            ELSE (SELECT ARRAY_AGG(simulation_id) FROM cohort_simulation_ids)
-        END,
-        ARRAY[]::uuid[]
-    ) as simulation_ids,
+    csid.simulation_ids,
+    -- Simulation resources (selected simulations filtered by simulation_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
             (smd.simulation_id, smd.name, smd.description, smd.time_limit, smd.generated)::types.q_get_cohort_v4_simulation
             ORDER BY smd.name
         )
         FROM simulation_mapping_data smd
-        WHERE smd.simulation_id = ANY(
-            COALESCE(
-                CASE 
-                    WHEN (SELECT cohort_id FROM params) IS NULL THEN
-                        ARRAY[]::uuid[]
-                    ELSE (SELECT ARRAY_AGG(simulation_id) FROM cohort_simulation_ids)
-                END,
-                ARRAY[]::uuid[]
-            )
-        )),
+        WHERE smd.simulation_id = ANY(COALESCE(csid.simulation_ids, ARRAY[]::uuid[]))),
         '{}'::types.q_get_cohort_v4_simulation[]
     ) as simulation_resources,
     CASE 
@@ -1344,6 +1361,7 @@ SELECT
     (SELECT agent_id FROM simulations_agent_data) as simulations_agent_id,
     false as simulations_required,
     COALESCE((SELECT simulation_suggestions FROM simulation_suggestions_data), ARRAY[]::uuid[]) as simulation_suggestions,
+    -- Simulations array (all available - uses same simulation_mapping_data CTE)
     COALESCE(
         (SELECT ARRAY_AGG(
             (smd.simulation_id, smd.name, smd.description, smd.time_limit, smd.generated)::types.q_get_cohort_v4_simulation
@@ -1358,7 +1376,8 @@ FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
-LEFT JOIN cohort_departments_data cdd ON true
+CROSS JOIN cohort_departments_data cdd
+CROSS JOIN cohort_simulation_ids_data csid
 CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd

@@ -1,5 +1,5 @@
 -- Unified get tool function - handles both new (tool_id = NULL) and detail (tool_id provided)
--- Converted to function with composite types
+-- Converted to function with composite types following ARTIFACT.md pattern
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -33,19 +33,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3) Recreate types
-CREATE TYPE types.q_get_tool_v4_schema AS (
-    schema_id uuid,
-    field_count integer,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_tool_v4_template AS (
-    template_id uuid,
-    name text,
-    generated boolean
-);
-
+-- 3) Recreate types (only necessary types per SPEC.md)
 CREATE TYPE types.q_get_tool_v4_name_resource AS (
     id uuid,
     name text,
@@ -58,65 +46,9 @@ CREATE TYPE types.q_get_tool_v4_description_resource AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_tool_v4_schema_field AS (
-    schema_field_id uuid,
-    name text,
-    description text,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_tool_v4_schema_field_item AS (
-    schema_field_item_id uuid,
-    schema_field_id uuid,
-    schema_field_name text,
-    item_schema_id uuid,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_tool_v4_template_array_item AS (
-    template_array_item_id uuid,
-    template_id uuid,
-    template_name text,
-    schema_field_id uuid,
-    schema_field_name text,
-    item_template_id uuid,
-    item_template_name text,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_tool_v4_template_value AS (
-    template_value_id uuid,
-    template_id uuid,
-    template_name text,
-    schema_field_id uuid,
-    schema_field_name text,
-    value text,
-    generated boolean
-);
-
 CREATE TYPE types.q_get_tool_v4_domain AS (
     domain_id uuid,
     resource text,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_tool_v4_schema_field_detail AS (
-    schema_field_id uuid,
-    schema_id uuid,
-    name text,
-    field_type text,
-    required boolean,
-    description text,
-    template text,
-    position integer,
-    default_value text,
-    generated boolean
-);
-
-CREATE TYPE types.q_get_tool_v4_template_detail AS (
-    template_id uuid,
-    name text,
-    schema_id uuid,
     generated boolean
 );
 
@@ -164,10 +96,6 @@ CREATE TYPE types.q_get_tool_v4_args_outputs_detail AS (
 CREATE OR REPLACE FUNCTION api_get_tool_v4(
     profile_id uuid,
     tool_id uuid DEFAULT NULL,
-    schema_search text DEFAULT NULL,
-    template_search text DEFAULT NULL,
-    schema_show_selected boolean DEFAULT NULL,
-    template_show_selected boolean DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 )
@@ -230,10 +158,6 @@ WITH params AS (
     SELECT 
         tool_id AS tool_id,
         profile_id AS profile_id,
-        schema_search AS schema_search,
-        template_search AS template_search,
-        COALESCE(schema_show_selected, false) AS schema_show_selected,
-        COALESCE(template_show_selected, false) AS template_show_selected,
         draft_id AS draft_id,
         COALESCE(mcp, false) AS mcp
 ),
@@ -244,13 +168,7 @@ tool_exists_check AS (
             WHEN (SELECT tool_id FROM params) IS NULL THEN NULL::boolean
             ELSE EXISTS(SELECT 1 FROM tool_artifact WHERE id = (SELECT tool_id FROM params))::boolean
         END as tool_exists
-),
--- Draft data is now stored in draft_* junction tables, not in payload
-draft_payload_data AS (
-    SELECT 
-        NULL::jsonb as payload
-    FROM params x
-    WHERE x.draft_id IS NOT NULL
+    FROM params
     LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
@@ -279,150 +197,12 @@ tool_data AS (
         t.id,
         (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         (SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) as active,
+        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true) as active,
         t.updated_at
     FROM params x
     LEFT JOIN tool_artifact t ON t.id = x.tool_id
     WHERE x.tool_id IS NOT NULL
     LIMIT 1
-),
--- Schema IDs (selected schema IDs for tool) - now maps to args_resource IDs
-schema_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at)
-                 FROM tool_args ta
-                 WHERE ta.tool_id = (SELECT tool_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as schema_ids
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Template IDs (selected template IDs for tool) - now maps to args_outputs_resource IDs
-template_ids_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at)
-                 FROM tool_args_outputs tao
-                 WHERE tao.tool_id = (SELECT tool_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as template_ids
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Schema suggestions: linked to tools OR same group with generated=true - now uses args_resource
-schema_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at DESC)
-             FROM (
-                 SELECT DISTINCT ta.args_id, MAX(ta.created_at) as created_at
-                 FROM tool_args ta
-                 JOIN args_resource ar ON ar.id = ta.args_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE ta.args_id IS NOT NULL
-                   AND ar.active = true
-                   AND (
-                       -- Option 1: Linked to tools (tool_args junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       ta.generated = false
-                       OR
-                       (
-                           ta.generated = true
-                           AND ar.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = ar.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY ta.args_id
-                 ORDER BY MAX(ta.created_at) DESC
-                 LIMIT 20
-             ) ta),
-            ARRAY[]::uuid[]
-        ) as schema_suggestions
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Template suggestions: linked to tools OR same group with generated=true - now uses args_outputs_resource
-template_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at DESC)
-             FROM (
-                 SELECT DISTINCT tao.args_outputs_id, MAX(tao.created_at) as created_at
-                 FROM tool_args_outputs tao
-                 JOIN args_outputs_resource ao ON ao.id = tao.args_outputs_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE tao.args_outputs_id IS NOT NULL
-                   AND ao.active = true
-                   AND (
-                       -- Option 1: Linked to tools (tool_args_outputs junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       tao.generated = false
-                       OR
-                       (
-                           tao.generated = true
-                           AND ao.generated = true
-                           AND ao.call_id IS NOT NULL
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = ao.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY tao.args_outputs_id
-                 ORDER BY MAX(tao.created_at) DESC
-                 LIMIT 20
-             ) tao),
-            ARRAY[]::uuid[]
-        ) as template_suggestions
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Schema mapping (for schemas array - all available schemas) - now uses args_resource
--- Note: field_count is always 1 since each args_resource is a single field
-schema_mapping_data AS (
-    SELECT 
-        ar.id as schema_id,
-        1 as field_count,  -- Each args_resource represents one field
-        COALESCE(ta.generated, false) as generated
-    FROM params x
-    CROSS JOIN draft_group_data dgd
-    JOIN args_resource ar ON ar.active = true
-    LEFT JOIN tool_args ta ON ta.args_id = ar.id AND ta.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
-),
--- Template mapping (for templates array - all available templates) - now uses args_outputs_resource
-template_mapping_data AS (
-    SELECT 
-        ao.id as template_id,
-        ao.name,
-        COALESCE(tao.generated, false) as generated
-    FROM params x
-    CROSS JOIN draft_group_data dgd
-    JOIN args_outputs_resource ao ON ao.active = true
-    LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
-    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),
 -- Name ID (selected name ID for tool)
 name_id_data AS (
@@ -490,6 +270,27 @@ name_mapping_data AS (
     LEFT JOIN tool_names tn ON tn.name_id = n.id AND tn.tool_id = x.tool_id
     WHERE n.name IS NOT NULL AND n.name != ''
 ),
+-- Names suggestions objects (for names array - suggested options only)
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(tn.generated, false))::types.q_get_tool_v4_name_resource
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
+                LEFT JOIN tool_names tn ON tn.name_id = n.id AND tn.tool_id = (SELECT tool_id FROM params)
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_tool_v4_name_resource[]
+        ) as names
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
 -- Description ID (selected description ID for tool)
 description_id_data AS (
     SELECT 
@@ -556,71 +357,25 @@ description_mapping_data AS (
     LEFT JOIN tool_descriptions td ON td.description_id = d.id AND td.tool_id = x.tool_id
     WHERE d.description IS NOT NULL AND d.description != ''
 ),
--- Schema field IDs (selected schema field IDs for tool)
--- DEPRECATED: Schema field IDs - tool_schema_fields table has been dropped
-schema_field_ids_data AS (
-    SELECT ARRAY[]::uuid[] as schema_field_ids
+-- Descriptions suggestions objects (for descriptions array - suggested options only)
+descriptions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (d.id, d.description, COALESCE(td.generated, false))::types.q_get_tool_v4_description_resource
+                    ORDER BY array_position(dsd.description_suggestions, d.id)
+                )
+                FROM description_suggestions_data dsd
+                CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
+                LEFT JOIN tool_descriptions td ON td.description_id = d.id AND td.tool_id = (SELECT tool_id FROM params)
+                WHERE d.description IS NOT NULL AND d.description != ''
+            ),
+            ARRAY[]::types.q_get_tool_v4_description_resource[]
+        ) as descriptions
     FROM params
-    LIMIT 1
-),
--- DEPRECATED: Schema field suggestions - tool_schema_fields table has been dropped
-schema_field_suggestions_data AS (
-    SELECT ARRAY[]::uuid[] as schema_field_suggestions
-    FROM params
-    LIMIT 1
-),
--- DEPRECATED: Schema field mapping - schema_fields_resource table has been dropped
-schema_field_mapping_data AS (
-    SELECT NULL::uuid as schema_field_id, NULL::text as name, NULL::text as description, false as generated
-    FROM params x
-    WHERE false  -- Return empty result set
-),
--- DEPRECATED: Schema field item IDs - tool_schema_field_items table has been dropped
-schema_field_item_ids_data AS (
-    SELECT ARRAY[]::uuid[] as schema_field_item_ids
-    FROM params
-    LIMIT 1
-),
--- DEPRECATED: Schema field item suggestions - tool_schema_field_items table has been dropped
-schema_field_item_suggestions_data AS (
-    SELECT ARRAY[]::uuid[] as schema_field_item_suggestions
-    FROM params
-    LIMIT 1
-),
--- DEPRECATED: Schema field item mapping - schema_field_items_resource table has been dropped
-schema_field_item_mapping_data AS (
-    SELECT NULL::uuid as schema_field_item_id, NULL::uuid as schema_field_id, ''::text as schema_field_name, NULL::uuid as item_schema_id, false as generated
-    FROM params x
-    WHERE false  -- Return empty result set
-),
--- DEPRECATED: Template array item IDs - tool_template_array_items table has been dropped
-template_array_item_ids_data AS (
-    SELECT ARRAY[]::uuid[] as template_array_item_ids
-    FROM params
-    LIMIT 1
-),
--- DEPRECATED: Template array item suggestions - tool_template_array_items table has been dropped
-template_array_item_suggestions_data AS (
-    SELECT ARRAY[]::uuid[] as template_array_item_suggestions
-    FROM params
-    LIMIT 1
-),
--- DEPRECATED: Template array item mapping - template_array_items_resource table has been dropped
-template_array_item_mapping_data AS (
-    SELECT NULL::uuid as template_array_item_id, NULL::uuid as template_id, ''::text as template_name, NULL::uuid as schema_field_id, ''::text as schema_field_name, NULL::uuid as item_template_id, ''::text as item_template_name, false as generated
-    FROM params x
-    WHERE false  -- Return empty result set
-),
--- DEPRECATED: Template value IDs - tool_template_values table has been dropped
-template_value_ids_data AS (
-    SELECT ARRAY[]::uuid[] as template_value_ids
-    FROM params
-    LIMIT 1
-),
--- DEPRECATED: Template value suggestions - template_values_resource table has been dropped
-template_value_suggestions_data AS (
-    SELECT ARRAY[]::uuid[] as template_value_suggestions
-    FROM params
+    -- Always return at least one row
     LIMIT 1
 ),
 -- Domain IDs (selected domain IDs for tool)
@@ -650,70 +405,6 @@ domain_mapping_data AS (
     JOIN domains_resource d ON d.active = true
     LEFT JOIN tool_domains td ON td.domain_id = d.id AND td.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all domains for new tools
-),
--- Input schema fields detail (for SchemaInput component - fields from selected schemas)
--- Input schema fields detail (for SchemaInput component - fields from selected schema_ids) - now uses args_resource
--- Note: schema_ids_data now returns args_resource IDs, so we query args_resource directly
-input_schema_fields_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (ar.id, ar.id, ar.name, ar.field_type::text, ar.required, COALESCE(ar.description, ''), ''::text, ar.position, COALESCE(ar.default_value, ''), COALESCE(ar.generated, false))::types.q_get_tool_v4_schema_field_detail
-                ORDER BY ar.position, ar.name
-            )
-            FROM params x
-            CROSS JOIN schema_ids_data sid
-            JOIN args_resource ar ON ar.id = ANY(sid.schema_ids) AND ar.active = true
-            WHERE COALESCE(array_length(sid.schema_ids, 1), 0) > 0),
-            ARRAY[]::types.q_get_tool_v4_schema_field_detail[]
-        ) as input_schema_fields
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Output templates detail (for SchemaOutput component - templates from selected template_ids) - now uses args_outputs_resource
-output_templates_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (ao.id, ao.name, COALESCE(ao.args_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(tao.generated, false))::types.q_get_tool_v4_template_detail
-                ORDER BY ao.name
-            )
-            FROM params x
-            CROSS JOIN template_ids_data tid
-            JOIN args_outputs_resource ao ON ao.id = ANY(tid.template_ids) AND ao.active = true
-            LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
-            WHERE COALESCE(array_length(tid.template_ids, 1), 0) > 0),
-            ARRAY[]::types.q_get_tool_v4_template_detail[]
-        ) as output_templates
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Output schema fields detail (for SchemaOutput component - fields from schemas linked to selected templates) - now uses args_outputs_resource.args_id → args_resource
-output_schema_fields_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (ar.id, ar.id, ar.name, ar.field_type::text, ar.required, COALESCE(ar.description, ''), ''::text, ar.position, COALESCE(ar.default_value, ''), COALESCE(ar.generated, false))::types.q_get_tool_v4_schema_field_detail
-                ORDER BY ar.position, ar.name
-            )
-            FROM params x
-            CROSS JOIN template_ids_data tid
-            JOIN args_outputs_resource ao ON ao.id = ANY(tid.template_ids) AND ao.active = true
-            JOIN args_resource ar ON ar.id = ao.args_id AND ar.active = true
-            WHERE COALESCE(array_length(tid.template_ids, 1), 0) > 0),
-            ARRAY[]::types.q_get_tool_v4_schema_field_detail[]
-        ) as output_schema_fields
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- DEPRECATED: Template value mapping - template_values_resource table has been dropped
-template_value_mapping_data AS (
-    SELECT NULL::uuid as template_value_id, NULL::uuid as template_id, ''::text as template_name, NULL::uuid as schema_field_id, ''::text as schema_field_name, ''::text as value, false as generated
-    FROM params x
-    WHERE false  -- Return empty result set
 ),
 -- Args IDs (selected args IDs for tool)
 args_ids_data AS (
@@ -928,6 +619,7 @@ ui_flags AS (
             ELSE false
         END as show_args_outputs
     FROM params x
+    LIMIT 1
 ),
 -- Agent selection helper CTEs (shared across all agent selections)
 profile_primary_department_for_agents AS (
@@ -939,155 +631,13 @@ profile_primary_department_for_agents AS (
 selected_department_for_agents AS (
     SELECT 
         (SELECT department_id FROM profile_primary_department_for_agents) as department_id
+    FROM params
+    LIMIT 1
 ),
 user_departments_for_agents AS (
     SELECT pd.department_id
     FROM params p
     JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
-),
--- Agent selection for 'schemas' resource
-schemas_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'tool'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        -- Note: 'schemas' resource was removed in migration 268, so this filter is disabled
-        -- AND EXISTS (
-        --     SELECT 1 FROM agent_tools at
-        --     JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        --     JOIN resource_tools rt ON rt.tool_id = t.id
-        --     WHERE at.agent_id = a.id AND at.active = true
-        --       AND rt.resource = 'schemas'::resources
-        -- )
-        AND false  -- Always false since schemas resource no longer exists
-        -- Filter by MCP flag when mcp=true
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
-                  AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
-            )
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
-),
--- Agent selection for 'templates' resource
-templates_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'tool'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'templates'::resources
-        )
-        -- Filter by MCP flag when mcp=true
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
-                  AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
-            )
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
 ),
 -- Agent selection for 'names' resource
 names_agent_data AS (
@@ -1120,7 +670,7 @@ names_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
@@ -1191,302 +741,10 @@ descriptions_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
-        )
-        -- Filter by MCP flag when mcp=true
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
-                  AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
-            )
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
-),
--- Agent selection for 'schema_fields' resource
-schema_fields_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'tool'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              -- Note: 'schema_fields' resource was removed in migration 268, so this filter is disabled
-              -- AND rt.resource = 'schema_fields'::resources
-              AND false  -- Always false since schema_fields resource no longer exists
-        )
-        -- Filter by MCP flag when mcp=true
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
-                  AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
-            )
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
-),
--- Agent selection for 'schema_field_items' resource
-schema_field_items_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'tool'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              -- Note: 'schema_field_items' resource was removed in migration 268, so this filter is disabled
-              -- AND rt.resource = 'schema_field_items'::resources
-              AND false  -- Always false since schema_field_items resource no longer exists
-        )
-        -- Filter by MCP flag when mcp=true
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
-                  AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
-            )
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
-),
--- Agent selection for 'template_array_items' resource
-template_array_items_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'tool'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              -- Note: 'template_array_items' resource was removed in migration 268, so this filter is disabled
-              -- AND rt.resource = 'template_array_items'::resources
-              AND false  -- Always false since template_array_items resource no longer exists
-        )
-        -- Filter by MCP flag when mcp=true
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
-                  AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
-            )
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
-),
--- Agent selection for 'template_values' resource
-template_values_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'tool'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              -- Note: 'template_values' resource was removed in migration 268, so this filter is disabled
-              -- AND rt.resource = 'template_values'::resources
-              AND false  -- Always false since template_values resource no longer exists
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1554,7 +812,7 @@ args_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'args'::resources
@@ -1625,7 +883,7 @@ args_outputs_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'args_outputs'::resources
@@ -1674,27 +932,28 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'args'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
         ) as args_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'args_outputs'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
         ) as args_outputs_has_tools
     FROM params x
+    LIMIT 1
 ),
 missing_tools_check AS (
     SELECT 
@@ -1711,6 +970,7 @@ missing_tools_check AS (
     FROM params x
     CROSS JOIN ui_flags uf
     CROSS JOIN tools_existence_check tec
+    LIMIT 1
 ),
 permissions_data_with_tools AS (
     SELECT 
@@ -1743,6 +1003,7 @@ permissions_data_with_tools AS (
         END as base_disabled_reason
     FROM params x
     CROSS JOIN user_profile up
+    LIMIT 1
 ),
 permissions_final AS (
     SELECT 
@@ -1760,6 +1021,7 @@ permissions_final AS (
         END as disabled_reason
     FROM permissions_data_with_tools pd
     CROSS JOIN missing_tools_check mtc
+    LIMIT 1
 )
 SELECT
     -- Required fields (first 5)
@@ -1790,14 +1052,7 @@ SELECT
     (SELECT agent_id FROM names_agent_data) as name_agent_id,
     true as name_required,
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (nmd.id, nmd.name, nmd.generated)::types.q_get_tool_v4_name_resource
-            ORDER BY array_position(nsd.name_suggestions, nmd.id)
-        ) FROM name_mapping_data nmd
-        CROSS JOIN name_suggestions_data nsd),
-        '{}'::types.q_get_tool_v4_name_resource[]
-    ) as names,
+    COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_tool_v4_name_resource[]) as names,
     -- Single-select resources: description
     did.description_id,
     COALESCE(
@@ -1815,14 +1070,7 @@ SELECT
     (SELECT agent_id FROM descriptions_agent_data) as description_agent_id,
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dmd.id, dmd.description, dmd.generated)::types.q_get_tool_v4_description_resource
-            ORDER BY array_position(dsd.description_suggestions, dmd.id)
-        ) FROM description_mapping_data dmd
-        CROSS JOIN description_suggestions_data dsd),
-        '{}'::types.q_get_tool_v4_description_resource[]
-    ) as descriptions,
+    COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_tool_v4_description_resource[]) as descriptions,
     -- Domain connections (for scoping logic)
     domids.domain_ids,
     COALESCE(
