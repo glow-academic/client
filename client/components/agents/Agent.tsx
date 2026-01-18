@@ -94,26 +94,6 @@ type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftModelsIn = InputOf<"/api/v4/resources/models", "post">;
 type CreateDraftModelsOut = OutputOf<"/api/v4/resources/models", "post">;
 
-// Build model_mapping type from models array
-// The API returns models array, we build a mapping from model_id to model info
-type AgentModelMapping = Record<
-  string,
-  {
-    model_id: string;
-    name: string | null;
-    description: string | null;
-    input_modalities: string[] | null;
-    output_modalities: string[] | null;
-    temperature_lower: number | null;
-    temperature_upper: number | null;
-    temperature_levels: unknown;
-    reasoning_options: unknown;
-    available_voices: unknown;
-  }
->;
-
-// Remove old StepStatus and Step interfaces - use from GenericForm
-// Remove AgentFormData interface - form fields are in draftState, URL params are separate
 
 export interface AgentProps {
   agentId?: string;
@@ -144,13 +124,6 @@ export interface AgentProps {
   ) => Promise<CreateDraftModelsOut>;
 }
 
-interface FormErrors {
-  name?: string;
-  description?: string;
-  prompt_id?: string;
-  modelId?: string;
-}
-
 export default function Agent({
   agentId,
   agentDetail: serverAgentDetail,
@@ -176,8 +149,6 @@ export default function Agent({
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
-
-  const [errors, setErrors] = useState<FormErrors>({});
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -334,13 +305,13 @@ export default function Agent({
   const draftId = urlDraftId;
 
   // Local draft state (not in URL) - initialized from server data or draft payload
-  // Store resource IDs, not text (canonical pattern - matches Persona.tsx)
+  // Store resource IDs only, not text or resource objects (canonical pattern - matches Persona.tsx)
   type DraftState = {
     name_id: string | null;
     description_id: string | null;
     prompt_id: string | null;
     modelId: string;
-    active: boolean;
+    active_flag_id: string | null;
     tool_ids: string[];
     departmentIds: string[];
     temperature_level_id: string | null;
@@ -368,7 +339,7 @@ export default function Agent({
         description_id: null,
         prompt_id: null,
         modelId: "",
-        active: true,
+        active_flag_id: null,
         tool_ids: [],
         departmentIds: defaultDepartmentIds,
         temperature_level_id: null,
@@ -378,21 +349,19 @@ export default function Agent({
       };
     }
 
-    // If draftId exists, server should have merged draft payload into data
-    // Otherwise, use server defaults
-    // Extract resource IDs, not display text
+    // Extract resource IDs only, not display text or resource objects
     return {
       name_id: data.name_id ?? null,
       description_id: data.description_id ?? null,
-      prompt_id: data.prompt_id || null,
-      modelId: data.model_id || "",
-      active: data.active ?? true,
-      tool_ids: data.tool_ids || [],
-      departmentIds: data.department_ids || [],
-      temperature_level_id: data.temperature_level_id || null,
-      reasoning_level_id: data.reasoning_level_id || null,
-      voice_ids: data.voice_ids || [],
-      instructions_id: data.instructions_id || null,
+      prompt_id: data.prompt_id ?? null,
+      modelId: data.model_id ?? "",
+      active_flag_id: data.active_flag_id ?? null,
+      tool_ids: data.tool_ids ?? [],
+      departmentIds: data.department_ids ?? [],
+      temperature_level_id: data.temperature_level_id ?? null,
+      reasoning_level_id: data.reasoning_level_id ?? null,
+      voice_ids: data.voice_ids ?? [],
+      instructions_id: data.instructions_id ?? null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -498,87 +467,21 @@ export default function Agent({
     [saveAgentAction]
   );
 
-  // Build model mapping from models array
-  // Define this BEFORE temperatureBounds since temperatureBounds depends on it
-  const modelMapping = useMemo((): AgentModelMapping => {
-    if (!agentData?.models || !Array.isArray(agentData.models)) {
-      return {} as AgentModelMapping;
-    }
-    const mapping: AgentModelMapping = {};
-    agentData.models.forEach((model) => {
-      if (model.model_id) {
-        mapping[model.model_id] = {
-          model_id: model.model_id,
-          name: model.name || null,
-          description: model.description || null,
-          input_modalities: model.input_modalities || null,
-          output_modalities: model.output_modalities || null,
-          temperature_lower: model.temperature_lower ?? null,
-          temperature_upper: model.temperature_upper ?? null,
-          temperature_levels: model.temperature_levels ?? null,
-          reasoning_options: model.reasoning_options ?? null,
-          available_voices: model.available_voices ?? null,
-        };
-      }
-    });
-    return mapping;
-  }, [agentData?.models]);
-
-  // formData is no longer needed - form fields are in draftState, URL params are in urlParams
-
-  // Helper to extract modalities from model info
-  // The API returns input_modalities and output_modalities as separate fields
-  const getModelModalities = useCallback(
-    (
-      modelInfo: AgentModelMapping[string] | undefined
-    ): { input: string[]; output: string[] } => {
-      if (!modelInfo) return { input: [], output: [] };
-
-      // New format: separate fields (from our API update) - type-safe
-      if (modelInfo.input_modalities || modelInfo.output_modalities) {
-        return {
-          input: Array.isArray(modelInfo.input_modalities)
-            ? modelInfo.input_modalities
-            : [],
-          output: Array.isArray(modelInfo.output_modalities)
-            ? modelInfo.output_modalities
-            : [],
-        };
-      }
-
-      // Old format: nested modalities object (backward compatibility)
-      // Type assertion needed for old format
-      const modelInfoWithOldFormat = modelInfo as AgentModelMapping[string] & {
-        modalities?: {
-          input?: string[];
-          output?: string[];
-        };
-      };
-      if (modelInfoWithOldFormat.modalities) {
-        return {
-          input: modelInfoWithOldFormat.modalities.input || [],
-          output: modelInfoWithOldFormat.modalities.output || [],
-        };
-      }
-
-      return { input: [], output: [] };
-    },
-    []
-  );
-
   // Get selected model capabilities
   const selectedModelCapabilities = useMemo(() => {
-    if (!draftState.modelId || !modelMapping) {
+    if (!draftState.modelId) {
       return null;
     }
 
-    const modelInfo = modelMapping[draftState.modelId];
-    if (!modelInfo) {
+    const selectedModel = agentData?.models?.find(
+      (m) => m.model_id === draftState.modelId
+    );
+    if (!selectedModel) {
       return null;
     }
 
-    const { input: inputMods, output: outputMods } =
-      getModelModalities(modelInfo);
+    const inputMods = selectedModel.input_modalities ?? [];
+    const outputMods = selectedModel.output_modalities ?? [];
 
     return {
       input_modalities: inputMods,
@@ -589,11 +492,11 @@ export default function Agent({
       has_image_output: outputMods.includes("image"),
       has_video_output: outputMods.includes("video"),
     };
-  }, [draftState.modelId, modelMapping, getModelModalities]);
+  }, [draftState.modelId, agentData?.models]);
 
   // Set breadcrumb context when agent data is loaded
   useEffect(() => {
-    const agentName = agentData?.name_resource?.name || agentDetail?.name;
+    const agentName = agentData?.name_resource?.name;
     if (agentName && agentId && isEditMode) {
       setEntityMetadata({
         entityId: agentId,
@@ -604,7 +507,6 @@ export default function Agent({
     return () => clearEntityMetadata();
   }, [
     agentData?.name_resource?.name,
-    agentDetail?.name,
     agentId,
     isEditMode,
     setEntityMetadata,
@@ -664,7 +566,6 @@ export default function Agent({
 
   const resetFormAndState = useCallback(() => {
     setDraftState(initialDraftState);
-    setErrors({});
   }, [initialDraftState]);
 
   // Initialize form from server data (for GenericForm)
@@ -774,7 +675,7 @@ export default function Agent({
     () => ({
       name: (_s, init) => ({ name_id: init.name_id }),
       description: (_s, init) => ({ description_id: init.description_id }),
-      active: (_s, init) => ({ active: init.active }),
+      active: (_s, init) => ({ active_flag_id: init.active_flag_id }),
       departmentIds: (_s, init) => ({ departmentIds: init.departmentIds }),
       tool_ids: (_s, init) => ({ tool_ids: init.tool_ids }),
       modelId: (_s, init) => ({ modelId: init.modelId }),
@@ -818,33 +719,20 @@ export default function Agent({
       // Form data from GenericForm is URL params (search/filter)
       // Actual form fields are in draftState
 
-      // Validation - check resource IDs (canonical pattern)
+      // Validation - check resource IDs
       if (!draftState.name_id) {
-        setErrors((prev) => ({ ...prev, name: "Agent name is required" }));
         throw new Error("Agent name is required");
       }
 
       if (!draftState.description_id) {
-        setErrors((prev) => ({
-          ...prev,
-          description: "Agent description is required",
-        }));
         throw new Error("Agent description is required");
       }
 
       if (!draftState.prompt_id) {
-        setErrors((prev) => ({
-          ...prev,
-          prompt_id: "Prompt selection is required",
-        }));
         throw new Error("Prompt selection is required");
       }
 
       if (!draftState.modelId || draftState.modelId.trim().length === 0) {
-        setErrors((prev) => ({
-          ...prev,
-          modelId: "Model selection is required",
-        }));
         throw new Error("Model selection is required");
       }
 
@@ -865,17 +753,10 @@ export default function Agent({
 
         // Note: profileId is added by the server action
         // Use input_agent_id = null for create, agent_id for update
-        // Derive name and description text from resource IDs at submit-time (canonical pattern)
         const nameText =
-          agentData?.names?.find((n) => n.id === draftState.name_id)?.name ||
-          agentData?.name_resource?.name ||
-          "New Agent";
+          agentData?.name_resource?.name || "New Agent";
         const descriptionText =
-          agentData?.descriptions?.find(
-            (d) => d.id === draftState.description_id
-          )?.description ||
-          agentData?.description_resource?.description ||
-          null;
+          agentData?.description_resource?.description || null;
 
         await handleSaveAgent({
           input_agent_id: isEditMode ? agentId : null,
@@ -885,7 +766,7 @@ export default function Agent({
           prompt_id: draftState.prompt_id || null,
           system_prompt: null, // Prompts component handles system_prompt via prompt_id
           instructions_id: draftState.instructions_id || null,
-          active_flag_id: agentData?.active_flag_id || null,
+          active_flag_id: draftState.active_flag_id || null,
           department_ids: finalDepartmentIds,
           artifact_name: "assistant", // Default artifact name (tools replace role)
           temperature_level_id: draftState.temperature_level_id || null,
@@ -1310,7 +1191,7 @@ export default function Agent({
             }
           }
           if (data.active_flag_id) {
-            updates.active = true; // Flag ID means active
+            updates.active_flag_id = data.active_flag_id;
           }
           if (data.department_ids && data.department_ids.length > 0) {
             updates.departmentIds = [
@@ -1492,7 +1373,6 @@ export default function Agent({
             isReadonly={isReadonly}
             isEditMode={isEditMode}
             registerSetFormData={(setter) => {
-              // Register GenericForm's setFormData with our ref for URL updates
               setUrlParamsRef.current = setter as typeof setUrlParams;
             }}
             renderStep={({
@@ -1659,17 +1539,15 @@ export default function Agent({
                           agent_id={agentData?.departments_agent_id ?? null}
                         />
 
-                        {/* Active Switch - using Flags resource component */}
                         <Flags
-                          flag_id={agentData?.active_flag_id ?? null}
+                          flag_id={draftState.active_flag_id}
                           flag_resource={agentData?.flag_resource ?? null}
                           show_flag={agentData?.show_flag ?? false}
                           disabled={isReadonly}
                           onFlagIdChange={(flagId) => {
-                            // Update draftState active based on flag
                             setDraftState((prev) => ({
                               ...prev,
-                              active: flagId ? true : false,
+                              active_flag_id: flagId,
                             }));
                           }}
                           onGenerate={handleGenerateFlags}
@@ -1748,12 +1626,12 @@ export default function Agent({
                       }
                     >
                       <Tools
-                        tool_ids={agentData?.tool_ids ?? []}
+                        tool_ids={draftState.tool_ids}
                         tool_resources={agentData?.tool_resources ?? []}
                         show_tools={agentData?.show_tools ?? false}
                         tool_suggestions={agentData?.tool_suggestions ?? []}
                         tools={agentData?.tools ?? []}
-                        disabled={disabled}
+                        disabled={isReadonly}
                         onChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, tool_ids: ids }))
                         }
@@ -1761,6 +1639,7 @@ export default function Agent({
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
                         required={agentData?.tools_required ?? false}
                         group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.tools_agent_id ?? null}
                         searchTerm={
                           (stepFormData["toolSearch"] as string) || ""
                         }
@@ -1779,9 +1658,6 @@ export default function Agent({
                 }
 
                 case "model": {
-                  const selectedModel = agentData?.models?.find(
-                    (m) => m.model_id === draftState.modelId
-                  );
                   const modelSearch =
                     (stepFormData["modelSearch"] as string) || "";
                   return (
@@ -1852,24 +1728,8 @@ export default function Agent({
                     >
                       <Models
                         model_id={draftState.modelId || null}
-                        model_resource={
-                          selectedModel
-                            ? {
-                                id: draftState.modelId,
-                                name:
-                                  modelMapping[draftState.modelId]?.name ||
-                                  null,
-                                description:
-                                  modelMapping[draftState.modelId]
-                                    ?.description || null,
-                                active: null,
-                                generated:
-                                  (selectedModel as { generated?: boolean })
-                                    ?.generated || null,
-                              }
-                            : null
-                        }
-                        show_models={true}
+                        model_resource={agentData?.model_resource ?? null}
+                        show_models={agentData?.show_models ?? true}
                         model_suggestions={agentData?.model_suggestions ?? []}
                         models={agentData?.models ?? []}
                         disabled={isReadonly}
@@ -1878,15 +1738,9 @@ export default function Agent({
                             ...prev,
                             modelId: modelId || "",
                           }));
-                          if (errors.modelId) {
-                            setErrors((prev) => {
-                              const { modelId: _, ...rest } = prev;
-                              return rest;
-                            });
-                          }
                         }}
                         label="Model"
-                        required={true}
+                        required={agentData?.models_required ?? true}
                         id="model"
                         helpText="Select the AI model for this agent."
                         searchTerm={modelSearch}
@@ -1900,19 +1754,14 @@ export default function Agent({
                         onShowSelectedChange={(value) =>
                           setStepFormData({ modelShowSelected: value })
                         }
+                        group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.models_agent_id ?? null}
                       />
-                      {errors?.modelId && (
-                        <p className="text-sm text-destructive">
-                          {errors.modelId}
-                        </p>
-                      )}
                     </StepCard>
                   );
                 }
 
                 case "temperature": {
-                  if (!selectedModelCapabilities) return null;
-
                   const selectedModel = agentData?.models?.find(
                     (m) => m.model_id === draftState.modelId
                   );
@@ -1981,19 +1830,7 @@ export default function Agent({
                       <TemperatureLevels
                         temperature_level_id={draftState.temperature_level_id}
                         temperature_level_resource={
-                          agentData?.temperature_level_resource
-                            ? {
-                                ...agentData.temperature_level_resource,
-                                temperature:
-                                  agentData.temperature_level_resource
-                                    .temperature !== null
-                                    ? String(
-                                        agentData.temperature_level_resource
-                                          .temperature
-                                      )
-                                    : null,
-                              }
-                            : null
+                          agentData?.temperature_level_resource ?? null
                         }
                         show_temperature_levels={
                           agentData?.show_temperature_levels ?? true
@@ -2001,15 +1838,7 @@ export default function Agent({
                         temperature_level_suggestions={
                           agentData?.temperature_level_suggestions ?? []
                         }
-                        temperature_levels={
-                          agentData?.temperature_levels?.map((tl) => ({
-                            ...tl,
-                            temperature:
-                              tl.temperature !== null
-                                ? String(tl.temperature)
-                                : null,
-                          })) ?? []
-                        }
+                        temperature_levels={agentData?.temperature_levels ?? []}
                         temperature_lower={
                           selectedModel?.temperature_lower ?? null
                         }
@@ -2039,8 +1868,6 @@ export default function Agent({
                 }
 
                 case "reasoning": {
-                  if (!selectedModelCapabilities?.has_text_output) return null;
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2134,14 +1961,6 @@ export default function Agent({
                 }
 
                 case "voice": {
-                  // Only show for models with BOTH input and output audio (e.g., gpt-realtime)
-                  if (
-                    !selectedModelCapabilities?.has_audio_input ||
-                    !selectedModelCapabilities?.has_audio_output
-                  ) {
-                    return null;
-                  }
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2292,21 +2111,11 @@ export default function Agent({
                         disabled={isReadonly}
                         onPromptIdChange={(id) => {
                           setDraftState((prev) => ({ ...prev, prompt_id: id }));
-                          if (errors.prompt_id) {
-                            setErrors((prev) => {
-                              const { prompt_id: _, ...rest } = prev;
-                              return rest;
-                            });
-                          }
                         }}
                         group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.prompts_agent_id ?? null}
                         createPromptsAction={createPromptsAction}
                       />
-                      {errors?.prompt_id && (
-                        <p className="text-sm text-destructive">
-                          {errors.prompt_id}
-                        </p>
-                      )}
                     </StepCard>
                   );
                 }
@@ -2374,7 +2183,7 @@ export default function Agent({
                           agentData?.instructions_suggestions ?? []
                         }
                         instructions={agentData?.instructions ?? []}
-                        disabled={disabled}
+                        disabled={isReadonly}
                         onInstructionsIdChange={(id) =>
                           setDraftState((prev) => ({
                             ...prev,
@@ -2382,6 +2191,7 @@ export default function Agent({
                           }))
                         }
                         group_id={agentData?.group_id ?? null}
+                        agent_id={agentData?.instructions_agent_id ?? null}
                       />
                     </StepCard>
                   );
