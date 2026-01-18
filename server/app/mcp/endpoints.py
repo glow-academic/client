@@ -1,216 +1,205 @@
 """Unified endpoints for artifacts and resources."""
 
+import importlib
 import inspect
+from pathlib import Path
 from typing import Any, cast
 
 from fastapi import Request, Response
 from mcp.server.fastmcp import FastMCP
 
-# Static enumeration of artifacts and resources with descriptions
-# Artifacts use singular names (matching database table names: persona_artifact, scenario_artifact, etc.)
-ARTIFACTS = [
-    "agent",
-    "auth",
-    "cohort",
-    "department",
-    "document",
-    "eval",
-    "field",
-    "model",
-    "parameter",
-    "persona",
-    "profile",
-    "provider",
-    "rubric",
-    "scenario",
-    "setting",
-    "simulation",
-    "tool",
-]
+# ============================================================================
+# Dynamic Discovery Functions
+# ============================================================================
 
-RESOURCES = [
-    "agents",
-    "analyses",
-    "args",
-    "args_outputs",
-    "audios",
-    "auths",
-    "cohorts",
-    "colors",
-    "conditional_parameters",
-    "contents",
-    "conversations",
-    "debug_info",
-    "default_accounts",
-    "departments",
-    "descriptions",
-    "documents",
-    "emails",
-    "endpoints",
-    "evals",
-    "examples",
-    "feedbacks",
-    "fields",
-    "flags",
-    "group_positions",
-    "groups",
-    "groups_rubric_grade_agents",
-    "hints",
-    "html",
-    "icons",
-    "images",
-    "improvements",
-    "instructions",
-    "items",
-    "keys",
-    "modalities",
-    "models",
-    "names",
-    "objectives",
-    "options",
-    "parameters",
-    "personas",
-    "points",
-    "pricing",
-    "problem_statements",
-    "profiles",
-    "prompts",
-    "protocols",
-    "providers",
-    "qualities",
-    "questions",
-    "reasoning_levels",
-    "request_limits",
-    "responses",
-    "rubrics",
-    "run_positions",
-    "runs",
-    "runs_rubric_grade_agents",
-    "scenario_flags",
-    "scenario_positions",
-    "scenario_rubric_grade_agents",
-    "scenarios",
-    "settings",
-    "simulation_scenario_flags",
-    "simulations",
-    "slugs",
-    "standard_groups",
-    "strengths",
-    "temperature_levels",
-    "templates",
-    "texts",
-    "thresholds",
-    "times",
-    "tools",
-    "uploads",
-    "values",
-    "videos",
-    "voices",
-]
+def discover_artifacts() -> list[str]:
+    """Discover all artifacts by scanning artifacts directory.
+    
+    Returns:
+        List of artifact names (singular, alphabetical).
+    """
+    artifacts_dir = Path(__file__).parent.parent / "api" / "v4" / "artifacts"
+    artifacts = []
+    
+    if artifacts_dir.exists():
+        for item in sorted(artifacts_dir.iterdir()):
+            if item.is_dir() and not item.name.startswith("_"):
+                # Check if it has handlers (has get.py or save.py)
+                if (item / "get.py").exists() or (item / "save.py").exists():
+                    artifacts.append(item.name)
+    
+    return artifacts
 
-# Artifact descriptions (one-sentence)
-# Keys use singular names (matching database table names)
-ARTIFACT_DESCRIPTIONS: dict[str, str] = {
-    "persona": "AI characters used in scenarios to represent different roles or perspectives",
-    "scenario": "Practice scenarios that students interact with for learning",
-    "simulation": "Interactive simulation sessions for practice and assessment",
-    "document": "Document resources used in scenarios and learning materials",
-    "department": "Organizational departments for grouping users and resources",
-    "cohort": "Student cohorts for organizing groups of learners",
-    "eval": "Evaluation configurations for assessing student performance",
-    "rubric": "Grading rubrics for structured assessment criteria",
-    "setting": "System settings for configuration and preferences",
-    "agent": "AI agents that perform various tasks and operations",
-    "model": "AI models used for generation and inference",
-    "provider": "AI providers that supply models and services",
-    "parameter": "Configuration parameters for customizing behavior",
-    "field": "Custom fields for extending artifact schemas",
-    "profile": "User profiles containing account and preference information",
-    "auth": "Authentication configurations for user access control",
-    "tool": "Tools for extending agent capabilities",
-}
 
-# Resource descriptions (one-sentence)
-RESOURCE_DESCRIPTIONS: dict[str, str] = {
-    "names": "Name resources for various artifacts",
-    "colors": "Color resources for UI elements and visual representation",
-    "flags": "Boolean flag resources for enabling/disabling features",
-    "descriptions": "Description resources providing detailed information",
-    "examples": "Example resources demonstrating usage patterns",
-    "icons": "Icon resources for UI visual representation",
-    "points": "Point resources for scoring and evaluation",
-    "thresholds": "Threshold resources for defining limits and boundaries",
-    "contents": "Content resources containing text or media",
-    "html": "HTML content resources for rich text formatting",
-    "hints": "Hint resources providing guidance and tips",
-    "images": "Image resources for visual content",
-    "videos": "Video resources for multimedia content",
-    "objectives": "Objective resources defining learning goals",
-    "options": "Option resources for choices and selections",
-    "problem_statements": "Problem statement resources describing challenges",
-    "prompts": "Prompt resources for AI generation inputs",
-    "questions": "Question resources for assessments and quizzes",
-    "responses": "Response resources for answers and feedback",
-    "analyses": "Analysis resources containing evaluation results",
-    "instructions": "Instruction resources providing guidance and directions",
-    "improvements": "Improvement resources suggesting enhancements",
-    "strengths": "Strength resources highlighting positive aspects",
-    "feedbacks": "Feedback resources containing evaluation comments",
-    "conversations": "Conversation resources for dialogue content",
-    "debug_info": "Debug info resources containing diagnostic information",
-    "default_accounts": "Default account resources for system configuration",
-    "templates": "Template resources for reusable content patterns",
-    "standard_groups": "Standard group resources for organizing criteria",
-    "times": "Time resources for duration and scheduling",
-    "agents": "Agent resources for AI agent configurations",
-    "analyses": "Analysis resources containing evaluation results",
-    "args": "Argument resources for function and tool arguments",
-    "args_outputs": "Argument output resources for function and tool outputs",
-    "audios": "Audio resources for sound content",
-    "auths": "Authentication resource configurations",
-    "cohorts": "Cohort resources for student groups",
-    "conditional_parameters": "Conditional parameter resources for dynamic configurations",
-    "departments": "Department resources for organizational structure",
-    "documents": "Document resources for file and content management",
-    "emails": "Email resources for communication",
-    "endpoints": "Endpoint resources for API configurations",
-    "evals": "Evaluation resources for assessment configurations",
-    "fields": "Field resources for custom data fields",
-    "group_positions": "Group position resources for ordering",
-    "groups": "Group resources for organizing runs and sessions",
-    "groups_rubric_grade_agents": "Groups rubric grade agent resources for grading configurations",
-    "items": "Item resources for list elements",
-    "keys": "Key resources for API authentication",
-    "modalities": "Modality resources for interaction types",
-    "models": "Model resources for AI model configurations",
-    "parameters": "Parameter resources for configuration settings",
-    "personas": "Persona resources for AI character definitions",
-    "pricing": "Pricing resources for cost configurations",
-    "profiles": "Profile resources for user profiles",
-    "protocols": "Protocol resources for communication standards",
-    "providers": "Provider resources for AI service providers",
-    "qualities": "Quality resources for content quality settings",
-    "reasoning_levels": "Reasoning level resources for AI reasoning configurations",
-    "request_limits": "Request limit resources for rate limiting",
-    "rubrics": "Rubric resources for grading criteria",
-    "run_positions": "Run position resources for ordering runs",
-    "runs": "Run resources for execution tracking",
-    "runs_rubric_grade_agents": "Runs rubric grade agent resources for run grading",
-    "scenario_flags": "Scenario flag resources for scenario configurations",
-    "scenario_positions": "Scenario position resources for ordering scenarios",
-    "scenario_rubric_grade_agents": "Scenario rubric grade agent resources for scenario grading",
-    "scenarios": "Scenario resources for practice scenarios",
-    "settings": "Setting resources for system configuration",
-    "simulation_scenario_flags": "Simulation scenario flag resources for simulation configurations",
-    "simulations": "Simulation resources for interactive sessions",
-    "slugs": "Slug resources for URL-friendly identifiers",
-    "temperature_levels": "Temperature level resources for AI model temperature settings",
-    "texts": "Text resources for text content",
-    "tools": "Tool resources for tool configurations",
-    "uploads": "Upload resources for file uploads and media management",
-    "values": "Value resources for configuration values",
-    "voices": "Voice resources for voice configurations",
-}
+def discover_resources() -> list[str]:
+    """Discover all resources by scanning resources directory.
+    
+    Returns:
+        List of resource names (plural, alphabetical).
+    """
+    resources_dir = Path(__file__).parent.parent / "api" / "v4" / "resources"
+    resources = []
+    
+    if resources_dir.exists():
+        for item in sorted(resources_dir.iterdir()):
+            if item.is_dir() and not item.name.startswith("_"):
+                # Check if it has create.py
+                if (item / "create.py").exists():
+                    resources.append(item.name)
+    
+    return resources
+
+
+def pluralize_artifact(artifact_name: str) -> str:
+    """Pluralize artifact name for docs operations.
+    
+    Args:
+        artifact_name: Singular artifact name (e.g., "agent", "persona")
+    
+    Returns:
+        Pluralized artifact name (e.g., "agents", "personas")
+    """
+    # Simple rule: add 's' to end (handles most cases)
+    # Special cases: y → ies, s/x/z → add 'es', etc.
+    if artifact_name.endswith('y'):
+        return artifact_name[:-1] + 'ies'
+    elif artifact_name.endswith(('s', 'x', 'z', 'ch', 'sh')):
+        return artifact_name + 'es'
+    else:
+        return artifact_name + 's'
+
+
+def _get_artifact_handler_name(artifact_name: str, operation: str) -> str | None:
+    """Get the handler function name for an artifact operation.
+    
+    Derives function names directly from API path structure.
+    Artifacts use singular names matching directory names.
+    
+    Args:
+        artifact_name: Singular artifact name (e.g., "agent", "persona")
+        operation: Operation name (e.g., "get", "save", "list")
+    
+    Returns:
+        Function name or None if operation not applicable.
+    """
+    if operation == "get":
+        return f"get_{artifact_name}"
+    elif operation == "save":
+        return f"save_{artifact_name}"
+    elif operation == "list":
+        # Singular: get_{artifact}_list (matches directory name)
+        return f"get_{artifact_name}_list"
+    elif operation == "duplicate":
+        return f"duplicate_{artifact_name}"
+    elif operation == "delete":
+        return f"delete_{artifact_name}"
+    elif operation == "draft":
+        return f"patch_{artifact_name}_draft"
+    elif operation == "docs":
+        # Pluralize only for docs: get_{artifact}s_docs
+        plural_name = pluralize_artifact(artifact_name)
+        return f"get_{plural_name}_docs"
+    
+    return None
+
+
+def discover_artifact_handlers(artifact_name: str) -> dict[str, Any]:
+    """Discover handlers for an artifact dynamically.
+    
+    Args:
+        artifact_name: Singular artifact name (e.g., "agent", "persona")
+    
+    Returns:
+        Dictionary mapping operation names to handler functions.
+    """
+    handlers: dict[str, Any] = {}
+    operations = ["get", "save", "list", "duplicate", "delete", "draft", "docs"]
+    
+    for op in operations:
+        func_name = _get_artifact_handler_name(artifact_name, op)
+        if func_name is None:
+            continue
+        
+        try:
+            module_path = f"app.api.v4.artifacts.{artifact_name}.{op}"
+            module = importlib.import_module(module_path)
+            
+            if hasattr(module, func_name):
+                handlers[op] = getattr(module, func_name)
+        except (ImportError, AttributeError):
+            pass  # Operation not available for this artifact
+    
+    return handlers
+
+
+def _get_resource_create_handler_name(resource_name: str) -> str | None:
+    """Get the create handler function name for a resource.
+    
+    Derives function names directly from API path structure.
+    Resources use plural names matching directory names.
+    
+    Args:
+        resource_name: Plural resource name (e.g., "agents", "args")
+    
+    Returns:
+        Function name: create_{resource_name} (plural, matches directory)
+    """
+    # Direct derivation: create_{resource_name} - matches directory name exactly
+    return f"create_{resource_name}"
+
+
+def discover_resource_handlers(resource_name: str) -> dict[str, Any]:
+    """Discover handlers for a resource dynamically.
+    
+    Args:
+        resource_name: Plural resource name (e.g., "agents", "args")
+    
+    Returns:
+        Dictionary with "create" and optionally "docs" handlers.
+    """
+    handlers: dict[str, Any] = {}
+    
+    # Create handler
+    try:
+        module = importlib.import_module(f"app.api.v4.resources.{resource_name}.create")
+        func_name = _get_resource_create_handler_name(resource_name)
+        
+        if func_name and hasattr(module, func_name):
+            handlers["create"] = getattr(module, func_name)
+        else:
+            # Fallback: find any function starting with "create_"
+            for attr_name in dir(module):
+                if attr_name.startswith("create_") and callable(getattr(module, attr_name)):
+                    handlers["create"] = getattr(module, attr_name)
+                    break
+    except ImportError:
+        pass
+    
+    # Docs handler
+    try:
+        module = importlib.import_module(f"app.api.v4.resources.{resource_name}.docs")
+        func_name = f"get_{resource_name}_docs"
+        if hasattr(module, func_name):
+            handlers["docs"] = getattr(module, func_name)
+    except ImportError:
+        pass
+    
+    return handlers
+
+# ============================================================================
+# Discovered Data Structures
+# ============================================================================
+
+# Discover artifacts and resources dynamically
+ARTIFACTS = discover_artifacts()
+RESOURCES = discover_resources()
+
+# ============================================================================
+# Legacy Description Dictionaries (DEPRECATED - use get_artifact_description/get_resource_description instead)
+# ============================================================================
+
+# These dictionaries have been removed. Descriptions are now derived dynamically
+# from docs.py files or handler docstrings via get_artifact_description() and get_resource_description().
 
 # Combined list
 ALL_ITEMS = ARTIFACTS + RESOURCES
@@ -238,439 +227,16 @@ def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) 
     return save_handler
 
 
-# Static imports for all artifact handlers
-# Organized alphabetically by artifact name
+# ============================================================================
+# Discover Artifact Handlers Dynamically
+# ============================================================================
 
-# Agent handlers
-try:
-    from app.api.v4.artifacts.agent.delete import \
-        delete_agent  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.agent.draft import \
-        patch_agent_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.agent.duplicate import \
-        duplicate_agent  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.agent.get import \
-        get_agent  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.agent.list import \
-        list_agents  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.agent.save import \
-        save_agent  # type: ignore[attr-defined]
+# Discover handlers for all artifacts
+HANDLERS: dict[str, dict[str, Any]] = {}
+for artifact in ARTIFACTS:
+    HANDLERS[artifact] = discover_artifact_handlers(artifact)
 
-    AGENTS_HANDLERS = {
-        "get": get_agent,
-        "save": save_agent,
-        "list": list_agents,
-        "duplicate": duplicate_agent,
-        "delete": delete_agent,
-        "draft": patch_agent_draft,
-    }
-except ImportError:
-    AGENTS_HANDLERS = {}
 
-# Auth handlers
-try:
-    from app.api.v4.artifacts.auth.delete import \
-        delete_auth  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.auth.draft import \
-        patch_auth_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.auth.duplicate import \
-        duplicate_auth  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.auth.get import \
-        get_auth  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.auth.list import \
-        get_auth_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.auth.save import \
-        save_auth  # type: ignore[attr-defined]
-
-    AUTH_HANDLERS = {
-        "get": get_auth,
-        "save": save_auth,
-        "list": get_auth_list,
-        "duplicate": duplicate_auth,
-        "delete": delete_auth,
-        "draft": patch_auth_draft,
-    }
-except ImportError:
-    AUTH_HANDLERS = {}
-
-# Cohort handlers
-try:
-    from app.api.v4.artifacts.cohort.delete import \
-        delete_cohort  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.draft import \
-        patch_cohort_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.duplicate import \
-        duplicate_cohort  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.get import \
-        get_cohort  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.list import \
-        get_cohorts_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.save import \
-        save_cohort  # type: ignore[attr-defined]
-
-    COHORTS_HANDLERS = {
-        "get": get_cohort,
-        "save": save_cohort,
-        "list": get_cohorts_list,
-        "duplicate": duplicate_cohort,
-        "delete": delete_cohort,
-        "draft": patch_cohort_draft,
-    }
-except ImportError:
-    COHORTS_HANDLERS = {}
-
-# Department handlers
-try:
-    from app.api.v4.artifacts.department.delete import \
-        delete_department  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.draft import \
-        patch_department_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.duplicate import \
-        duplicate_department  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.get import \
-        get_department  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.list import \
-        get_departments_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.save import \
-        save_department  # type: ignore[attr-defined]
-
-    DEPARTMENTS_HANDLERS = {
-        "get": get_department,
-        "save": save_department,
-        "list": get_departments_list,
-        "duplicate": duplicate_department,
-        "delete": delete_department,
-        "draft": patch_department_draft,
-    }
-except ImportError:
-    DEPARTMENTS_HANDLERS = {}
-
-# Document handlers
-try:
-    from app.api.v4.artifacts.document.delete import \
-        delete_document  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.draft import \
-        patch_document_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.get import \
-        get_document  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.list import \
-        get_documents_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.save import \
-        save_document  # type: ignore[attr-defined]
-
-    DOCUMENTS_HANDLERS = {
-        "get": get_document,
-        "save": save_document,
-        "list": get_documents_list,
-        "duplicate": None,  # Documents doesn't have duplicate
-        "delete": delete_document,
-        "draft": patch_document_draft,
-    }
-except ImportError:
-    DOCUMENTS_HANDLERS = {}
-
-# Eval handlers
-try:
-    from app.api.v4.artifacts.eval.delete import \
-        delete_eval  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.draft import \
-        patch_eval_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.get import \
-        get_eval  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.list import \
-        get_evals_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.save import \
-        save_eval  # type: ignore[attr-defined]
-
-    EVALS_HANDLERS = {
-        "get": get_eval,
-        "save": save_eval,
-        "list": get_evals_list,
-        "duplicate": None,  # Evals doesn't have duplicate
-        "delete": delete_eval,
-        "draft": patch_eval_draft,
-    }
-except ImportError:
-    EVALS_HANDLERS = {}
-
-# Field handlers
-try:
-    from app.api.v4.artifacts.field.delete import \
-        delete_field  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.draft import \
-        patch_field_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.duplicate import \
-        duplicate_field  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.get import \
-        get_field  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.list import \
-        get_fields_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.save import \
-        save_field  # type: ignore[attr-defined]
-
-    FIELDS_HANDLERS = {
-        "get": get_field,
-        "save": save_field,
-        "list": get_fields_list,
-        "duplicate": duplicate_field,
-        "delete": delete_field,
-        "draft": patch_field_draft,
-    }
-except ImportError:
-    FIELDS_HANDLERS = {}
-
-# Model handlers
-try:
-    from app.api.v4.artifacts.model.delete import \
-        delete_model  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.draft import \
-        patch_model_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.duplicate import \
-        duplicate_model  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.get import \
-        get_model  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.list import \
-        get_models_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.save import \
-        save_model  # type: ignore[attr-defined]
-
-    MODELS_HANDLERS = {
-        "get": get_model,
-        "save": save_model,
-        "list": get_models_list,
-        "duplicate": duplicate_model,
-        "delete": delete_model,
-        "draft": patch_model_draft,
-    }
-except ImportError:
-    MODELS_HANDLERS = {}
-
-# Parameter handlers
-try:
-    from app.api.v4.artifacts.parameter.delete import \
-        delete_parameter  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.draft import \
-        patch_parameter_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.duplicate import \
-        duplicate_parameter  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.get import \
-        get_parameter  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.list import \
-        get_parameters_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.save import \
-        save_parameter  # type: ignore[attr-defined]
-
-    PARAMETERS_HANDLERS = {
-        "get": get_parameter,
-        "save": save_parameter,
-        "list": get_parameters_list,
-        "duplicate": duplicate_parameter,
-        "delete": delete_parameter,
-        "draft": patch_parameter_draft,
-    }
-except ImportError:
-    PARAMETERS_HANDLERS = {}
-
-# Persona handlers
-try:
-    from app.api.v4.artifacts.persona.delete import \
-        delete_persona  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.draft import \
-        patch_persona_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.duplicate import \
-        duplicate_persona  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.get import \
-        get_persona  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.list import \
-        get_personas_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.save import \
-        save_persona  # type: ignore[attr-defined]
-
-    PERSONAS_HANDLERS = {
-        "get": get_persona,
-        "save": save_persona,
-        "list": get_personas_list,
-        "duplicate": duplicate_persona,
-        "delete": delete_persona,
-        "draft": patch_persona_draft,
-    }
-except ImportError:
-    PERSONAS_HANDLERS = {}
-
-# Profile handlers
-try:
-    from app.api.v4.artifacts.profile.delete import \
-        delete_profile  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.profile.get import \
-        get_profile  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.profile.save import \
-        save_profile  # type: ignore[attr-defined]
-
-    PROFILE_HANDLERS = {
-        "get": get_profile,
-        "save": save_profile,
-        "list": None,  # Profile doesn't have list (staff list is separate)
-        "duplicate": None,  # Profile doesn't have duplicate
-        "delete": delete_profile,
-        "draft": None,  # Profile doesn't have draft
-    }
-except ImportError:
-    PROFILE_HANDLERS = {}
-
-# Provider handlers
-try:
-    from app.api.v4.artifacts.provider.delete import \
-        delete_provider  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.draft import \
-        patch_provider_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.get import \
-        get_provider  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.list import \
-        get_providers_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.save import \
-        save_provider  # type: ignore[attr-defined]
-
-    PROVIDERS_HANDLERS = {
-        "get": get_provider,
-        "save": save_provider,
-        "list": get_providers_list,
-        "duplicate": None,  # Providers doesn't have duplicate
-        "delete": delete_provider,
-        "draft": patch_provider_draft,
-    }
-except ImportError:
-    PROVIDERS_HANDLERS = {}
-
-# Rubric handlers
-try:
-    from app.api.v4.artifacts.rubric.delete import \
-        delete_rubric  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.draft import \
-        patch_rubric_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.duplicate import \
-        duplicate_rubric  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.get import \
-        get_rubric  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.list import \
-        get_rubrics_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.save import \
-        save_rubric  # type: ignore[attr-defined]
-
-    RUBRICS_HANDLERS = {
-        "get": get_rubric,
-        "save": save_rubric,
-        "list": get_rubrics_list,
-        "duplicate": duplicate_rubric,
-        "delete": delete_rubric,
-        "draft": patch_rubric_draft,
-    }
-except ImportError:
-    RUBRICS_HANDLERS = {}
-
-# Scenario handlers
-try:
-    from app.api.v4.artifacts.scenario.delete import \
-        delete_scenario  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.draft import \
-        patch_scenario_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.duplicate import \
-        duplicate_scenario  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.get import \
-        get_scenario  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.list import \
-        get_scenarios_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.save import \
-        save_scenario  # type: ignore[attr-defined]
-
-    SCENARIOS_HANDLERS = {
-        "get": get_scenario,
-        "save": save_scenario,
-        "list": get_scenarios_list,
-        "duplicate": duplicate_scenario,
-        "delete": delete_scenario,
-        "draft": patch_scenario_draft,
-    }
-except ImportError:
-    SCENARIOS_HANDLERS = {}
-
-# Setting handlers
-try:
-    from app.api.v4.artifacts.setting.draft import \
-        patch_setting_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.setting.duplicate import \
-        duplicate_setting  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.setting.get import \
-        get_setting  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.setting.list import \
-        list_settings  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.setting.save import \
-        save_setting  # type: ignore[attr-defined]
-
-    SETTINGS_HANDLERS = {
-        "get": get_setting,
-        "save": save_setting,
-        "list": list_settings,
-        "duplicate": duplicate_setting,
-        "delete": None,  # Settings doesn't have delete (not implemented)
-        "draft": patch_setting_draft,
-    }
-except ImportError:
-    SETTINGS_HANDLERS = {}
-
-# Simulation handlers
-try:
-    from app.api.v4.artifacts.simulation.delete import \
-        delete_simulation  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.draft import \
-        patch_simulation_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.duplicate import \
-        duplicate_simulation  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.get import \
-        get_simulation  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.list import \
-        get_simulations_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.save import \
-        save_simulation  # type: ignore[attr-defined]
-
-    SIMULATIONS_HANDLERS = {
-        "get": get_simulation,
-        "save": save_simulation,
-        "list": get_simulations_list,
-        "duplicate": duplicate_simulation,
-        "delete": delete_simulation,
-        "draft": patch_simulation_draft,
-    }
-except ImportError:
-    SIMULATIONS_HANDLERS = {}
-
-# Tool handlers
-try:
-    from app.api.v4.artifacts.tool.delete import \
-        delete_tool  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.tool.draft import \
-        patch_tool_draft  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.tool.duplicate import \
-        duplicate_tool  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.tool.get import \
-        get_tool  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.tool.list import \
-        get_tools_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.tool.save import \
-        save_tool  # type: ignore[attr-defined]
-
-    TOOLS_HANDLERS = {
-        "get": get_tool,
-        "save": save_tool,
-        "list": get_tools_list,
-        "duplicate": duplicate_tool,
-        "delete": delete_tool,
-        "draft": patch_tool_draft,
-    }
-except ImportError:
-    TOOLS_HANDLERS = {}
-
-# Keys handlers (no CRUD endpoints found, skipping for now)
-KEYS_HANDLERS: dict[str, Any] = {}
 
 # Analytics handlers
 try:
@@ -737,10 +303,14 @@ try:
         get_home_history  # type: ignore[attr-defined]
     from app.api.v4.analytics.practice.list import \
         get_practice_history  # type: ignore[attr-defined]
-    from app.api.v4.attempts.archive import \
-        bulk_archive_attempts  # type: ignore[import-untyped]
+    from app.api.v4.attempts.benchmark.archive import \
+        bulk_archive_attempts as \
+        bulk_archive_benchmark_attempts  # type: ignore[attr-defined]
     from app.api.v4.attempts.benchmark.get import \
         get_eval_attempt_full  # type: ignore[attr-defined]
+    from app.api.v4.attempts.simulation.archive import \
+        bulk_archive_attempts as \
+        bulk_archive_simulation_attempts  # type: ignore[attr-defined]
     from app.api.v4.attempts.simulation.get import \
         get_attempt_full  # type: ignore[attr-defined]
 
@@ -751,395 +321,101 @@ try:
         "list_benchmark": get_benchmark_history,
         "get_simulation": get_attempt_full,
         "get_eval": get_eval_attempt_full,
-        "archive": bulk_archive_attempts,  # Currently supports simulation only, will support benchmark/eval later
+        "archive_simulation": bulk_archive_simulation_attempts,
+        "archive_benchmark": bulk_archive_benchmark_attempts,
     }
 except ImportError:
     ATTEMPTS_HANDLERS = {}
 
 
 
-# Resource handlers (for create_resource tool)
+# ============================================================================
+# Discover Resource Handlers Dynamically
+# ============================================================================
+
+# Discover handlers for all resources
 RESOURCE_HANDLERS: dict[str, Any] = {}
-try:
-    from app.api.v4.resources.agents.create import \
-        create_agent as create_agent_resource  # type: ignore[attr-defined]
-    from app.api.v4.resources.analyses.create import \
-        create_analyses  # type: ignore[attr-defined]
-    from app.api.v4.resources.args.create import \
-        create_arg  # type: ignore[attr-defined]
-    from app.api.v4.resources.args_outputs.create import \
-        create_args_output  # type: ignore[attr-defined]
-    from app.api.v4.resources.audios.create import \
-        create_audio  # type: ignore[attr-defined]
-    from app.api.v4.resources.auths.create import \
-        create_auths  # type: ignore[attr-defined]
-    from app.api.v4.resources.cohorts.create import \
-        create_cohort  # type: ignore[attr-defined]
-    from app.api.v4.resources.colors.create import \
-        create_color  # type: ignore[attr-defined]
-    from app.api.v4.resources.conditional_parameters.create import \
-        create_conditional_parameters  # type: ignore[attr-defined]
-    from app.api.v4.resources.contents.create import \
-        create_contents  # type: ignore[attr-defined]
-    from app.api.v4.resources.conversations.create import \
-        create_conversation  # type: ignore[attr-defined]
-    from app.api.v4.resources.debug_info.create import \
-        create_debug_info  # type: ignore[attr-defined]
-    from app.api.v4.resources.default_accounts.create import \
-        create_default_accounts  # type: ignore[attr-defined]
-    from app.api.v4.resources.departments.create import \
-        create_department  # type: ignore[attr-defined]
-    from app.api.v4.resources.descriptions.create import \
-        create_description  # type: ignore[attr-defined]
-    from app.api.v4.resources.documents.create import \
-        create_document  # type: ignore[attr-defined]
-    from app.api.v4.resources.emails.create import \
-        create_emails  # type: ignore[attr-defined]
-    from app.api.v4.resources.endpoints.create import \
-        create_endpoints  # type: ignore[attr-defined]
-    from app.api.v4.resources.evals.create import \
-        create_eval  # type: ignore[attr-defined]
-    from app.api.v4.resources.examples.create import \
-        create_example  # type: ignore[attr-defined]
-    from app.api.v4.resources.feedbacks.create import \
-        create_feedbacks  # type: ignore[attr-defined]
-    from app.api.v4.resources.fields.create import \
-        create_field  # type: ignore[attr-defined]
-    from app.api.v4.resources.flags.create import \
-        create_flag  # type: ignore[attr-defined]
-    from app.api.v4.resources.group_positions.create import \
-        create_group_positions  # type: ignore[attr-defined]
-    from app.api.v4.resources.groups.create import \
-        create_groups  # type: ignore[attr-defined]
-    from app.api.v4.resources.groups_rubric_grade_agents.create import \
-        create_groups_rubric_grade_agents  # type: ignore[attr-defined]
-    from app.api.v4.resources.hints.create import \
-        create_hint  # type: ignore[attr-defined]
-    from app.api.v4.resources.html.create import \
-        create_html  # type: ignore[attr-defined]
-    from app.api.v4.resources.icons.create import \
-        create_icon  # type: ignore[attr-defined]
-    from app.api.v4.resources.images.create import \
-        create_image  # type: ignore[attr-defined]
-    from app.api.v4.resources.improvements.create import \
-        create_improvement  # type: ignore[attr-defined]
-    from app.api.v4.resources.instructions.create import \
-        create_instruction  # type: ignore[attr-defined]
-    from app.api.v4.resources.items.create import \
-        create_items  # type: ignore[attr-defined]
-    from app.api.v4.resources.keys.create import \
-        create_key  # type: ignore[attr-defined]
-    from app.api.v4.resources.modalities.create import \
-        create_modalities  # type: ignore[attr-defined]
-    from app.api.v4.resources.models.create import \
-        create_model as create_model_resource  # type: ignore[attr-defined]
-    from app.api.v4.resources.names.create import \
-        create_name  # type: ignore[attr-defined]
-    from app.api.v4.resources.objectives.create import \
-        create_objective  # type: ignore[attr-defined]
-    from app.api.v4.resources.options.create import \
-        create_option  # type: ignore[attr-defined]
-    from app.api.v4.resources.parameters.create import \
-        create_parameter as \
-        create_parameter_resource  # type: ignore[attr-defined]
-    from app.api.v4.resources.personas.create import \
-        create_persona  # type: ignore[attr-defined]
-    from app.api.v4.resources.points.create import \
-        create_point  # type: ignore[attr-defined]
-    from app.api.v4.resources.pricing.create import \
-        create_pricing  # type: ignore[attr-defined]
-    from app.api.v4.resources.problem_statements.create import \
-        create_problem_statement  # type: ignore[attr-defined]
-    from app.api.v4.resources.profiles.create import \
-        create_profile as create_profile_resource  # type: ignore[attr-defined]
-    from app.api.v4.resources.prompts.create import \
-        create_prompt  # type: ignore[attr-defined]
-    from app.api.v4.resources.protocols.create import \
-        create_protocols  # type: ignore[attr-defined]
-    from app.api.v4.resources.providers.create import \
-        create_providers  # type: ignore[attr-defined]
-    from app.api.v4.resources.qualities.create import \
-        create_qualities  # type: ignore[attr-defined]
-    from app.api.v4.resources.questions.create import \
-        create_questions  # type: ignore[attr-defined]
-    from app.api.v4.resources.reasoning_levels.create import \
-        create_reasoning_levels  # type: ignore[attr-defined]
-    from app.api.v4.resources.request_limits.create import \
-        create_request_limits  # type: ignore[attr-defined]
-    from app.api.v4.resources.responses.create import \
-        create_response  # type: ignore[attr-defined]
-    from app.api.v4.resources.rubrics.create import \
-        create_rubric as create_rubric_resource  # type: ignore[attr-defined]
-    from app.api.v4.resources.run_positions.create import \
-        create_run_positions  # type: ignore[attr-defined]
-    from app.api.v4.resources.runs.create import \
-        create_runs  # type: ignore[attr-defined]
-    from app.api.v4.resources.runs_rubric_grade_agents.create import \
-        create_runs_rubric_grade_agents  # type: ignore[attr-defined]
-    from app.api.v4.resources.scenario_flags.create import \
-        create_scenario_flags  # type: ignore[attr-defined]
-    from app.api.v4.resources.scenario_positions.create import \
-        create_scenario_position  # type: ignore[attr-defined]
-    from app.api.v4.resources.scenario_rubric_grade_agents.create import \
-        create_scenario_rubric_grade_agent  # type: ignore[attr-defined]
-    from app.api.v4.resources.scenarios.create import \
-        create_scenario as \
-        create_scenario_resource  # type: ignore[attr-defined]
-    from app.api.v4.resources.settings.create import \
-        create_setting  # type: ignore[attr-defined]
-    from app.api.v4.resources.simulation_scenario_flags.create import \
-        create_simulation_scenario_flag  # type: ignore[attr-defined]
-    from app.api.v4.resources.simulations.create import \
-        create_simulation  # type: ignore[attr-defined]
-    from app.api.v4.resources.slugs.create import \
-        create_slugs  # type: ignore[attr-defined]
-    from app.api.v4.resources.standard_groups.create import \
-        create_standard_group  # type: ignore[attr-defined]
-    from app.api.v4.resources.strengths.create import \
-        create_strength  # type: ignore[attr-defined]
-    from app.api.v4.resources.temperature_levels.create import \
-        create_temperature_levels  # type: ignore[attr-defined]
-    from app.api.v4.resources.templates.create import \
-        create_template  # type: ignore[attr-defined]
-    from app.api.v4.resources.texts.create import \
-        create_texts  # type: ignore[attr-defined]
-    from app.api.v4.resources.thresholds.create import \
-        create_threshold  # type: ignore[attr-defined]
-    from app.api.v4.resources.times.create import \
-        create_time  # type: ignore[attr-defined]
-    from app.api.v4.resources.tools.create import \
-        create_tools  # type: ignore[attr-defined]
-    from app.api.v4.resources.uploads.create import \
-        create_upload  # type: ignore[attr-defined]
-    from app.api.v4.resources.values.create import \
-        create_values  # type: ignore[attr-defined]
-    from app.api.v4.resources.videos.create import \
-        create_video  # type: ignore[attr-defined]
-    from app.api.v4.resources.voices.create import \
-        create_voices  # type: ignore[attr-defined]
+RESOURCE_DOCS_HANDLERS: dict[str, Any] = {}
 
-    RESOURCE_HANDLERS = {
-        "agents": create_agent_resource,
-        "analyses": create_analyses,
-        "args": create_arg,
-        "args_outputs": create_args_output,
-        "audios": create_audio,
-        "auths": create_auths,
-        "cohorts": create_cohort,
-        "colors": create_color,
-        "conditional_parameters": create_conditional_parameters,
-        "contents": create_contents,
-        "conversations": create_conversation,
-        "debug_info": create_debug_info,
-        "default_accounts": create_default_accounts,
-        "departments": create_department,
-        "descriptions": create_description,
-        "documents": create_document,
-        "emails": create_emails,
-        "endpoints": create_endpoints,
-        "evals": create_eval,
-        "examples": create_example,
-        "feedbacks": create_feedbacks,
-        "fields": create_field,
-        "flags": create_flag,
-        "group_positions": create_group_positions,
-        "groups": create_groups,
-        "groups_rubric_grade_agents": create_groups_rubric_grade_agents,
-        "hints": create_hint,
-        "html": create_html,
-        "icons": create_icon,
-        "images": create_image,
-        "improvements": create_improvement,
-        "instructions": create_instruction,
-        "items": create_items,
-        "keys": create_key,
-        "modalities": create_modalities,
-        "models": create_model_resource,
-        "names": create_name,
-        "objectives": create_objective,
-        "options": create_option,
-        "parameters": create_parameter_resource,
-        "personas": create_persona,
-        "points": create_point,
-        "pricing": create_pricing,
-        "problem_statements": create_problem_statement,
-        "profiles": create_profile_resource,
-        "prompts": create_prompt,
-        "protocols": create_protocols,
-        "providers": create_providers,
-        "qualities": create_qualities,
-        "questions": create_questions,
-        "reasoning_levels": create_reasoning_levels,
-        "request_limits": create_request_limits,
-        "responses": create_response,
-        "rubrics": create_rubric_resource,
-        "run_positions": create_run_positions,
-        "runs": create_runs,
-        "runs_rubric_grade_agents": create_runs_rubric_grade_agents,
-        "scenario_flags": create_scenario_flags,
-        "scenario_positions": create_scenario_position,
-        "scenario_rubric_grade_agents": create_scenario_rubric_grade_agent,
-        "scenarios": create_scenario_resource,
-        "settings": create_setting,
-        "simulation_scenario_flags": create_simulation_scenario_flag,
-        "simulations": create_simulation,
-        "slugs": create_slugs,
-        "standard_groups": create_standard_group,
-        "strengths": create_strength,
-        "temperature_levels": create_temperature_levels,
-        "templates": create_template,
-        "texts": create_texts,
-        "thresholds": create_threshold,
-        "times": create_time,
-        "tools": create_tools,
-        "uploads": create_upload,
-        "values": create_values,
-        "videos": create_video,
-        "voices": create_voices,
-    }
-except ImportError:
-    RESOURCE_HANDLERS = {}
+for resource in RESOURCES:
+    resource_handlers = discover_resource_handlers(resource)
+    if "create" in resource_handlers:
+        RESOURCE_HANDLERS[resource] = resource_handlers["create"]
+    if "docs" in resource_handlers:
+        RESOURCE_DOCS_HANDLERS[resource] = resource_handlers["docs"]
 
-# Import artifact documentation functions
-# Maps singular artifact names (MCP/database) to docs functions
-# Organized alphabetically by artifact name
+
+# ============================================================================
+# Discover Artifact Docs (for backward compatibility)
+# ============================================================================
+
+# Extract docs handlers from HANDLERS dictionary
 ARTIFACT_DOCS: dict[str, Any] = {}
+for artifact in ARTIFACTS:
+    if "docs" in HANDLERS[artifact]:
+        ARTIFACT_DOCS[artifact] = HANDLERS[artifact]["docs"]
 
-# Agent docs
-try:
-    from app.api.v4.artifacts.agent.docs import \
-        get_agents_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["agent"] = get_agents_docs
-except ImportError:
-    pass
+# ============================================================================
+# Description Derivation Functions
+# ============================================================================
 
-# Auth docs
-try:
-    from app.api.v4.artifacts.auth.docs import \
-        get_auths_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["auth"] = get_auths_docs
-except ImportError:
-    pass
+def get_artifact_description(artifact_name: str) -> str:
+    """Get artifact description from docs or handler docstring.
+    
+    Args:
+        artifact_name: Singular artifact name (e.g., "agent", "persona")
+    
+    Returns:
+        Description string, or fallback if not available.
+    """
+    # Try docs.py first
+    if artifact_name in HANDLERS and "docs" in HANDLERS[artifact_name]:
+        try:
+            docs = HANDLERS[artifact_name]["docs"]()
+            if "glow_context" in docs and "description" in docs["glow_context"]:
+                return docs["glow_context"]["description"]
+        except Exception:
+            pass
+    
+    # Fallback to handler docstring
+    if artifact_name in HANDLERS and "get" in HANDLERS[artifact_name]:
+        handler = HANDLERS[artifact_name]["get"]
+        if handler and handler.__doc__:
+            # Extract first sentence
+            first_sentence = handler.__doc__.split('.')[0].strip()
+            return first_sentence
+    
+    # Generic fallback
+    return f"{artifact_name.title()} artifact"
 
-# Cohort docs
-try:
-    from app.api.v4.artifacts.cohort.docs import \
-        get_cohorts_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["cohort"] = get_cohorts_docs
-except ImportError:
-    pass
 
-# Department docs
-try:
-    from app.api.v4.artifacts.department.docs import \
-        get_departments_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["department"] = get_departments_docs
-except ImportError:
-    pass
-
-# Document docs
-try:
-    from app.api.v4.artifacts.document.docs import \
-        get_documents_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["document"] = get_documents_docs
-except ImportError:
-    pass
-
-# Eval docs
-try:
-    from app.api.v4.artifacts.eval.docs import \
-        get_evals_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["eval"] = get_evals_docs
-except ImportError:
-    pass
-
-# Field docs
-try:
-    from app.api.v4.artifacts.field.docs import \
-        get_fields_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["field"] = get_fields_docs
-except ImportError:
-    pass
-
-# Model docs
-try:
-    from app.api.v4.artifacts.model.docs import \
-        get_models_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["model"] = get_models_docs
-except ImportError:
-    pass
-
-# Parameter docs
-try:
-    from app.api.v4.artifacts.parameter.docs import \
-        get_parameters_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["parameter"] = get_parameters_docs
-except ImportError:
-    pass
-
-# Persona docs
-try:
-    from app.api.v4.artifacts.persona.docs import \
-        get_personas_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["persona"] = get_personas_docs
-except ImportError:
-    pass
-
-# Profile docs
-try:
-    from app.api.v4.artifacts.profile.docs import \
-        get_profiles_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["profile"] = get_profiles_docs
-except ImportError:
-    pass
-
-# Provider docs
-try:
-    from app.api.v4.artifacts.provider.docs import \
-        get_providers_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["provider"] = get_providers_docs
-except ImportError:
-    pass
-
-# Rubric docs
-try:
-    from app.api.v4.artifacts.rubric.docs import \
-        get_rubrics_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["rubric"] = get_rubrics_docs
-except ImportError:
-    pass
-
-# Scenario docs
-try:
-    from app.api.v4.artifacts.scenario.docs import \
-        get_scenarios_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["scenario"] = get_scenarios_docs
-except ImportError:
-    pass
-
-# Setting docs
-try:
-    from app.api.v4.artifacts.setting.docs import \
-        get_settings_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["setting"] = get_settings_docs
-except ImportError:
-    pass
-
-# Simulation docs
-try:
-    from app.api.v4.artifacts.simulation.docs import \
-        get_simulations_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["simulation"] = get_simulations_docs
-except ImportError:
-    pass
-
-# Tool docs
-try:
-    from app.api.v4.artifacts.tool.docs import \
-        get_tools_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["tool"] = get_tools_docs
-except ImportError:
-    pass
+def get_resource_description(resource_name: str) -> str:
+    """Get resource description from docs or handler docstring.
+    
+    Args:
+        resource_name: Plural resource name (e.g., "agents", "args")
+    
+    Returns:
+        Description string, or fallback if not available.
+    """
+    # Try docs.py first
+    if resource_name in RESOURCE_DOCS_HANDLERS:
+        try:
+            docs = RESOURCE_DOCS_HANDLERS[resource_name]()
+            if "glow_context" in docs and "description" in docs["glow_context"]:
+                return docs["glow_context"]["description"]
+        except Exception:
+            pass
+    
+    # Fallback to handler docstring
+    if resource_name in RESOURCE_HANDLERS:
+        handler = RESOURCE_HANDLERS[resource_name]
+        if handler and handler.__doc__:
+            first_sentence = handler.__doc__.split('.')[0].strip()
+            return first_sentence
+    
+    # Generic fallback
+    return f"{resource_name.title()} resource"
 
 
 # Import root GLOW documentation
@@ -1178,28 +454,8 @@ ARTIFACT_TO_API_NAME: dict[str, str] = {
     "tool": "tools",
 }
 
-# Handler mapping - maps singular artifact name (MCP/database) to available operations
-# Handlers are imported from plural API endpoints but mapped by singular names
-# Organized alphabetically by artifact name
-HANDLERS: dict[str, dict[str, Any]] = {
-    "agent": AGENTS_HANDLERS,
-    "auth": AUTH_HANDLERS,
-    "cohort": COHORTS_HANDLERS,
-    "department": DEPARTMENTS_HANDLERS,
-    "document": DOCUMENTS_HANDLERS,
-    "eval": EVALS_HANDLERS,
-    "field": FIELDS_HANDLERS,
-    "model": MODELS_HANDLERS,
-    "parameter": PARAMETERS_HANDLERS,
-    "persona": PERSONAS_HANDLERS,
-    "profile": PROFILE_HANDLERS,
-    "provider": PROVIDERS_HANDLERS,
-    "rubric": RUBRICS_HANDLERS,
-    "scenario": SCENARIOS_HANDLERS,
-    "setting": SETTINGS_HANDLERS,
-    "simulation": SIMULATIONS_HANDLERS,
-    "tool": TOOLS_HANDLERS,
-}
+# HANDLERS is already populated by dynamic discovery above
+# No need for manual mapping - it's already done in the discovery loop
 
 
 def is_artifact(name: str) -> bool:
@@ -1412,9 +668,7 @@ def register_endpoints(server: FastMCP) -> None:
         return [
             {
                 "name": artifact,
-                "description": ARTIFACT_DESCRIPTIONS.get(
-                    artifact, "No description available"
-                ),
+                "description": get_artifact_description(artifact),
             }
             for artifact in ARTIFACTS
         ]
@@ -1429,9 +683,7 @@ def register_endpoints(server: FastMCP) -> None:
         return [
             {
                 "name": resource,
-                "description": RESOURCE_DESCRIPTIONS.get(
-                    resource, "No description available"
-                ),
+                "description": get_resource_description(resource),
             }
             for resource in RESOURCES
         ]
@@ -1450,13 +702,39 @@ def register_endpoints(server: FastMCP) -> None:
         if name not in ARTIFACTS:
             return {"error": f"'{name}' is not a valid artifact."}
 
-        if name not in ARTIFACT_DOCS:
+        # Use docs handler from HANDLERS if available
+        if name in HANDLERS and "docs" in HANDLERS[name] and HANDLERS[name]["docs"]:
+            docs_handler = HANDLERS[name]["docs"]
+            result = docs_handler()
+            return cast(dict[str, Any], result)
+
+        return {
+            "error": f"Documentation not available for '{name}'",
+            "note": "Documentation may not be implemented yet. Check if docs.py exists for this artifact.",
+        }
+
+    @server.tool()
+    def docs_resource(name: str) -> dict[str, Any]:
+        """Get comprehensive documentation for a resource.
+
+        Args:
+            name: The name of the resource to get documentation for.
+
+        Returns:
+            Dictionary containing database schema, relationships, API routing,
+            and GLOW context.
+        """
+        if name not in RESOURCES:
+            return {"error": f"'{name}' is not a valid resource."}
+
+        if name not in RESOURCE_DOCS_HANDLERS:
             return {
                 "error": f"Documentation not available for '{name}'",
-                "note": "Documentation may not be implemented yet. Check if docs.py exists for this artifact.",
+                "note": "Documentation may not be implemented yet. Check if docs.py exists for this resource.",
             }
 
-        result = ARTIFACT_DOCS[name]()
+        docs_handler = RESOURCE_DOCS_HANDLERS[name]
+        result = docs_handler()
         return cast(dict[str, Any], result)
 
     @server.tool()
@@ -1863,21 +1141,22 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        # Currently only simulation is supported
-        if type != "simulation":
+        # Map attempt type to handler operation
+        operation = f"archive_{type}"
+        if operation not in ATTEMPTS_HANDLERS:
+            available_types = [
+                t.replace("archive_", "")
+                for t in ATTEMPTS_HANDLERS.keys()
+                if t.startswith("archive_")
+            ]
             return {
                 "error": f"archive_attempts for type '{type}' is not implemented yet.",
                 "status": "not_implemented",
-                "note": "Will support benchmark and eval types in the future.",
+                "available_types": available_types,
+                "note": f"Available types: {', '.join(available_types)}",
             }
 
-        if "archive" not in ATTEMPTS_HANDLERS:
-            return {
-                "error": "archive_attempts handler not available.",
-                "status": "not_implemented",
-            }
-
-        handler = ATTEMPTS_HANDLERS["archive"]
+        handler = ATTEMPTS_HANDLERS[operation]
 
         # Add archive parameters to payload
         payload_with_params = {

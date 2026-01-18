@@ -4668,9 +4668,9 @@
           "v4",
           "settings"
         ],
-        "summary": "List Settings",
+        "summary": "Get Setting List",
         "description": "Get list of all settings ordered by created_at DESC.",
-        "operationId": "list_settings_api_v4_settings_list_post",
+        "operationId": "get_setting_list_api_v4_settings_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5250,9 +5250,9 @@
           "v4",
           "agents"
         ],
-        "summary": "List Agents",
+        "summary": "Get Agent List",
         "description": "Get list of agents with permissions.",
-        "operationId": "list_agents_api_v4_agents_list_post",
+        "operationId": "get_agent_list_api_v4_agents_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",

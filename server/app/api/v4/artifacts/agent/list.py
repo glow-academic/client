@@ -43,7 +43,7 @@ router = APIRouter()
         audit_activity("agents.list", "{{ actor.name }} visited the Agents page")
     ],
 )
-async def list_agents(
+async def get_agent_list(
     request: GetAgentsListApiRequest,
     http_request: Request,
     response: Response,
@@ -113,7 +113,7 @@ async def list_agents(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="list_agents",
+            operation="get_agent_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

@@ -1,5 +1,7 @@
 """Documentation for uploads resource."""
 
+from typing import Any
+
 
 def get_uploads_docs() -> dict[str, Any]:
     """Get comprehensive documentation for the uploads resource.
@@ -7,8 +9,6 @@ def get_uploads_docs() -> dict[str, Any]:
     Returns:
         Dictionary containing resource documentation.
     """
-    from typing import Any
-
     return {
         "name": "uploads",
         "description": "Uploads resource documentation - see SQL files for schema details",

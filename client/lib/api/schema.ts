@@ -1013,10 +1013,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Settings
+         * Get Setting List
          * @description Get list of all settings ordered by created_at DESC.
          */
-        post: operations["list_settings_api_v4_settings_list_post"];
+        post: operations["get_setting_list_api_v4_settings_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1143,10 +1143,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Agents
+         * Get Agent List
          * @description Get list of agents with permissions.
          */
-        post: operations["list_agents_api_v4_agents_list_post"];
+        post: operations["get_agent_list_api_v4_agents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -22700,7 +22700,7 @@ export interface operations {
             };
         };
     };
-    list_settings_api_v4_settings_list_post: {
+    get_setting_list_api_v4_settings_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22922,7 +22922,7 @@ export interface operations {
             };
         };
     };
-    list_agents_api_v4_agents_list_post: {
+    get_agent_list_api_v4_agents_list_post: {
         parameters: {
             query?: never;
             header?: {

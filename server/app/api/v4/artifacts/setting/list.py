@@ -30,7 +30,7 @@ router = APIRouter()
         audit_activity("settings.list", "{{ actor.name }} visited the Settings page")
     ],
 )
-async def list_settings(
+async def get_setting_list(
     request: GetSettingsListApiRequest,
     http_request: Request,
     response: Response,
@@ -100,7 +100,7 @@ async def list_settings(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="list_settings",
+            operation="get_setting_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
