@@ -2088,10 +2088,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Agent
+         * Create Agents
          * @description Create agents resource (always INSERT).
          */
-        post: operations["create_agent_api_v4_resources_agents_post"];
+        post: operations["create_agents_api_v4_resources_agents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2148,10 +2148,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Args Output
+         * Create Args Outputs
          * @description Create args_outputs resource (always INSERT).
          */
-        post: operations["create_args_output_api_v4_resources_args_outputs_post"];
+        post: operations["create_args_outputs_api_v4_resources_args_outputs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2168,10 +2168,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Audio
+         * Create Audios
          * @description Create audios resource (always INSERT).
          */
-        post: operations["create_audio_api_v4_resources_audios_post"];
+        post: operations["create_audios_api_v4_resources_audios_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2208,10 +2208,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Cohort
+         * Create Cohorts
          * @description Create cohorts resource (always INSERT).
          */
-        post: operations["create_cohort_api_v4_resources_cohorts_post"];
+        post: operations["create_cohorts_api_v4_resources_cohorts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2348,10 +2348,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Department
+         * Create Departments
          * @description Create departments resource (always INSERT).
          */
-        post: operations["create_department_api_v4_resources_departments_post"];
+        post: operations["create_departments_api_v4_resources_departments_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2368,10 +2368,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Description
+         * Create Descriptions
          * @description Create descriptions resource (always INSERT).
          */
-        post: operations["create_description_api_v4_resources_descriptions_post"];
+        post: operations["create_descriptions_api_v4_resources_descriptions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2448,10 +2448,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Eval
+         * Create Evals
          * @description Create evals resource (always INSERT).
          */
-        post: operations["create_eval_api_v4_resources_evals_post"];
+        post: operations["create_evals_api_v4_resources_evals_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2528,10 +2528,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Flag
+         * Create Flags
          * @description Create flags resource (always INSERT).
          */
-        post: operations["create_flag_api_v4_resources_flags_post"];
+        post: operations["create_flags_api_v4_resources_flags_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2668,10 +2668,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Image
+         * Create Images
          * @description Create images resource (always INSERT).
          */
-        post: operations["create_image_api_v4_resources_images_post"];
+        post: operations["create_images_api_v4_resources_images_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2688,10 +2688,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Improvement
+         * Create Improvements
          * @description Create improvements resource (always INSERT).
          */
-        post: operations["create_improvement_api_v4_resources_improvements_post"];
+        post: operations["create_improvements_api_v4_resources_improvements_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2708,10 +2708,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Instruction
+         * Create Instructions
          * @description Create instructions resource (always INSERT).
          */
-        post: operations["create_instruction_api_v4_resources_instructions_post"];
+        post: operations["create_instructions_api_v4_resources_instructions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2788,10 +2788,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Model
+         * Create Models
          * @description Create models resource (always INSERT).
          */
-        post: operations["create_model_api_v4_resources_models_post"];
+        post: operations["create_models_api_v4_resources_models_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2808,10 +2808,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Name
+         * Create Names
          * @description Create names resource (always INSERT).
          */
-        post: operations["create_name_api_v4_resources_names_post"];
+        post: operations["create_names_api_v4_resources_names_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2828,10 +2828,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Objective
+         * Create Objectives
          * @description Create objectives resource (always INSERT).
          */
-        post: operations["create_objective_api_v4_resources_objectives_post"];
+        post: operations["create_objectives_api_v4_resources_objectives_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2848,10 +2848,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Option
+         * Create Options
          * @description Create options resource (always INSERT).
          */
-        post: operations["create_option_api_v4_resources_options_post"];
+        post: operations["create_options_api_v4_resources_options_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2888,10 +2888,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Persona
+         * Create Personas
          * @description Create personas resource (always INSERT).
          */
-        post: operations["create_persona_api_v4_resources_personas_post"];
+        post: operations["create_personas_api_v4_resources_personas_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2948,10 +2948,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Problem Statement
+         * Create Problem Statements
          * @description Create problem_statements resource (always INSERT).
          */
-        post: operations["create_problem_statement_api_v4_resources_problem_statements_post"];
+        post: operations["create_problem_statements_api_v4_resources_problem_statements_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3128,10 +3128,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Response
+         * Create Responses
          * @description Create responses resource (always INSERT).
          */
-        post: operations["create_response_api_v4_resources_responses_post"];
+        post: operations["create_responses_api_v4_resources_responses_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3268,10 +3268,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Scenario Rubric Grade Agent
+         * Create Scenario Rubric Grade Agents
          * @description Create scenario_rubric_grade_agents resource (always INSERT).
          */
-        post: operations["create_scenario_rubric_grade_agent_api_v4_resources_scenario_rubric_grade_agents_post"];
+        post: operations["create_scenario_rubric_grade_agents_api_v4_resources_scenario_rubric_grade_agents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3308,10 +3308,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Setting
+         * Create Settings
          * @description Create settings resource (always INSERT).
          */
-        post: operations["create_setting_api_v4_resources_settings_post"];
+        post: operations["create_settings_api_v4_resources_settings_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3328,10 +3328,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Simulation Scenario Flag
+         * Create Simulation Scenario Flags
          * @description Create simulation_scenario_flags resource (always INSERT).
          */
-        post: operations["create_simulation_scenario_flag_api_v4_resources_simulation_scenario_flags_post"];
+        post: operations["create_simulation_scenario_flags_api_v4_resources_simulation_scenario_flags_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3408,10 +3408,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Strength
+         * Create Strengths
          * @description Create strengths resource (always INSERT).
          */
-        post: operations["create_strength_api_v4_resources_strengths_post"];
+        post: operations["create_strengths_api_v4_resources_strengths_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3488,10 +3488,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Threshold
+         * Create Thresholds
          * @description Create thresholds resource (always INSERT).
          */
-        post: operations["create_threshold_api_v4_resources_thresholds_post"];
+        post: operations["create_thresholds_api_v4_resources_thresholds_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3508,10 +3508,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Time
+         * Create Times
          * @description Create times resource (always INSERT).
          */
-        post: operations["create_time_api_v4_resources_times_post"];
+        post: operations["create_times_api_v4_resources_times_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3568,10 +3568,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Video
+         * Create Videos
          * @description Create videos resource (always INSERT).
          */
-        post: operations["create_video_api_v4_resources_videos_post"];
+        post: operations["create_videos_api_v4_resources_videos_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24624,7 +24624,7 @@ export interface operations {
             };
         };
     };
-    create_agent_api_v4_resources_agents_post: {
+    create_agents_api_v4_resources_agents_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24735,7 +24735,7 @@ export interface operations {
             };
         };
     };
-    create_args_output_api_v4_resources_args_outputs_post: {
+    create_args_outputs_api_v4_resources_args_outputs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24772,7 +24772,7 @@ export interface operations {
             };
         };
     };
-    create_audio_api_v4_resources_audios_post: {
+    create_audios_api_v4_resources_audios_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24846,7 +24846,7 @@ export interface operations {
             };
         };
     };
-    create_cohort_api_v4_resources_cohorts_post: {
+    create_cohorts_api_v4_resources_cohorts_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25105,7 +25105,7 @@ export interface operations {
             };
         };
     };
-    create_department_api_v4_resources_departments_post: {
+    create_departments_api_v4_resources_departments_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25142,7 +25142,7 @@ export interface operations {
             };
         };
     };
-    create_description_api_v4_resources_descriptions_post: {
+    create_descriptions_api_v4_resources_descriptions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25290,7 +25290,7 @@ export interface operations {
             };
         };
     };
-    create_eval_api_v4_resources_evals_post: {
+    create_evals_api_v4_resources_evals_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25438,7 +25438,7 @@ export interface operations {
             };
         };
     };
-    create_flag_api_v4_resources_flags_post: {
+    create_flags_api_v4_resources_flags_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25697,7 +25697,7 @@ export interface operations {
             };
         };
     };
-    create_image_api_v4_resources_images_post: {
+    create_images_api_v4_resources_images_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25734,7 +25734,7 @@ export interface operations {
             };
         };
     };
-    create_improvement_api_v4_resources_improvements_post: {
+    create_improvements_api_v4_resources_improvements_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25771,7 +25771,7 @@ export interface operations {
             };
         };
     };
-    create_instruction_api_v4_resources_instructions_post: {
+    create_instructions_api_v4_resources_instructions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25919,7 +25919,7 @@ export interface operations {
             };
         };
     };
-    create_model_api_v4_resources_models_post: {
+    create_models_api_v4_resources_models_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25956,7 +25956,7 @@ export interface operations {
             };
         };
     };
-    create_name_api_v4_resources_names_post: {
+    create_names_api_v4_resources_names_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25993,7 +25993,7 @@ export interface operations {
             };
         };
     };
-    create_objective_api_v4_resources_objectives_post: {
+    create_objectives_api_v4_resources_objectives_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26030,7 +26030,7 @@ export interface operations {
             };
         };
     };
-    create_option_api_v4_resources_options_post: {
+    create_options_api_v4_resources_options_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26104,7 +26104,7 @@ export interface operations {
             };
         };
     };
-    create_persona_api_v4_resources_personas_post: {
+    create_personas_api_v4_resources_personas_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26215,7 +26215,7 @@ export interface operations {
             };
         };
     };
-    create_problem_statement_api_v4_resources_problem_statements_post: {
+    create_problem_statements_api_v4_resources_problem_statements_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26548,7 +26548,7 @@ export interface operations {
             };
         };
     };
-    create_response_api_v4_resources_responses_post: {
+    create_responses_api_v4_resources_responses_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26807,7 +26807,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_rubric_grade_agent_api_v4_resources_scenario_rubric_grade_agents_post: {
+    create_scenario_rubric_grade_agents_api_v4_resources_scenario_rubric_grade_agents_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26881,7 +26881,7 @@ export interface operations {
             };
         };
     };
-    create_setting_api_v4_resources_settings_post: {
+    create_settings_api_v4_resources_settings_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26918,7 +26918,7 @@ export interface operations {
             };
         };
     };
-    create_simulation_scenario_flag_api_v4_resources_simulation_scenario_flags_post: {
+    create_simulation_scenario_flags_api_v4_resources_simulation_scenario_flags_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27066,7 +27066,7 @@ export interface operations {
             };
         };
     };
-    create_strength_api_v4_resources_strengths_post: {
+    create_strengths_api_v4_resources_strengths_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27214,7 +27214,7 @@ export interface operations {
             };
         };
     };
-    create_threshold_api_v4_resources_thresholds_post: {
+    create_thresholds_api_v4_resources_thresholds_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27251,7 +27251,7 @@ export interface operations {
             };
         };
     };
-    create_time_api_v4_resources_times_post: {
+    create_times_api_v4_resources_times_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27362,7 +27362,7 @@ export interface operations {
             };
         };
     };
-    create_video_api_v4_resources_videos_post: {
+    create_videos_api_v4_resources_videos_post: {
         parameters: {
             query?: never;
             header?: {

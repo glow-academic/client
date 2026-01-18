@@ -197,9 +197,10 @@ def get_glow_docs() -> dict[str, Any]:
                 ],
             },
             "documentation": {
-                "artifact_docs": "Each artifact has a docs.py file alongside its API routes (e.g., server/app/api/v4/personas/docs.py)",
-                "root_docs": "General GLOW documentation in server/app/mcp/docs.py",
-                "pattern": "MCP server imports artifact docs from API routes and exposes them via docs_artifact() endpoint",
+                "artifact_docs": "Each artifact has a docs.py file alongside its API routes (e.g., server/app/api/v4/artifacts/{artifact}/docs.py)",
+                "resource_docs": "Each resource has a docs.py file alongside its API routes (e.g., server/app/api/v4/resources/{resource}/docs.py)",
+                "root_docs": "General GLOW documentation in server/app/api/v4/docs.py",
+                "pattern": "MCP server imports artifact/resource docs from API routes and exposes them via docs_artifact() and docs_resource() endpoints",
             },
         },
     }

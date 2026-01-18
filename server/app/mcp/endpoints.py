@@ -360,7 +360,10 @@ for artifact in ARTIFACTS:
 # ============================================================================
 
 def get_artifact_description(artifact_name: str) -> str:
-    """Get artifact description from docs or handler docstring.
+    """Get artifact description from handler docstring.
+    
+    This is used for the artifacts() list endpoint which shows short descriptions.
+    For comprehensive documentation, use docs_artifact() which uses docs.py files.
     
     Args:
         artifact_name: Singular artifact name (e.g., "agent", "persona")
@@ -368,16 +371,7 @@ def get_artifact_description(artifact_name: str) -> str:
     Returns:
         Description string, or fallback if not available.
     """
-    # Try docs.py first
-    if artifact_name in HANDLERS and "docs" in HANDLERS[artifact_name]:
-        try:
-            docs = HANDLERS[artifact_name]["docs"]()
-            if "glow_context" in docs and "description" in docs["glow_context"]:
-                return docs["glow_context"]["description"]
-        except Exception:
-            pass
-    
-    # Fallback to handler docstring
+    # Use handler docstring (get handler)
     if artifact_name in HANDLERS and "get" in HANDLERS[artifact_name]:
         handler = HANDLERS[artifact_name]["get"]
         if handler and handler.__doc__:
@@ -390,7 +384,10 @@ def get_artifact_description(artifact_name: str) -> str:
 
 
 def get_resource_description(resource_name: str) -> str:
-    """Get resource description from docs or handler docstring.
+    """Get resource description from handler docstring.
+    
+    This is used for the resources() list endpoint which shows short descriptions.
+    For comprehensive documentation, use docs_resource() which uses docs.py files.
     
     Args:
         resource_name: Plural resource name (e.g., "agents", "args")
@@ -398,20 +395,7 @@ def get_resource_description(resource_name: str) -> str:
     Returns:
         Description string, or fallback if not available.
     """
-    # Try docs.py first
-    if resource_name in RESOURCE_DOCS_HANDLERS:
-        try:
-            docs = RESOURCE_DOCS_HANDLERS[resource_name]()
-            # Check top-level description field first (most resources use this)
-            if "description" in docs:
-                return docs["description"]
-            # Fallback to glow_context.description if it exists
-            if "glow_context" in docs and "description" in docs["glow_context"]:
-                return docs["glow_context"]["description"]
-        except Exception:
-            pass
-    
-    # Fallback to handler docstring
+    # Use handler docstring (create handler)
     if resource_name in RESOURCE_HANDLERS:
         handler = RESOURCE_HANDLERS[resource_name]
         if handler and handler.__doc__:

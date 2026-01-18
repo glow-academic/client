@@ -9714,9 +9714,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Agent",
+        "summary": "Create Agents",
         "description": "Create agents resource (always INSERT).",
-        "operationId": "create_agent_api_v4_resources_agents_post",
+        "operationId": "create_agents_api_v4_resources_agents_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10005,9 +10005,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Args Output",
+        "summary": "Create Args Outputs",
         "description": "Create args_outputs resource (always INSERT).",
-        "operationId": "create_args_output_api_v4_resources_args_outputs_post",
+        "operationId": "create_args_outputs_api_v4_resources_args_outputs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10102,9 +10102,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Audio",
+        "summary": "Create Audios",
         "description": "Create audios resource (always INSERT).",
-        "operationId": "create_audio_api_v4_resources_audios_post",
+        "operationId": "create_audios_api_v4_resources_audios_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10296,9 +10296,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Cohort",
+        "summary": "Create Cohorts",
         "description": "Create cohorts resource (always INSERT).",
-        "operationId": "create_cohort_api_v4_resources_cohorts_post",
+        "operationId": "create_cohorts_api_v4_resources_cohorts_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10975,9 +10975,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Department",
+        "summary": "Create Departments",
         "description": "Create departments resource (always INSERT).",
-        "operationId": "create_department_api_v4_resources_departments_post",
+        "operationId": "create_departments_api_v4_resources_departments_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11072,9 +11072,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Description",
+        "summary": "Create Descriptions",
         "description": "Create descriptions resource (always INSERT).",
-        "operationId": "create_description_api_v4_resources_descriptions_post",
+        "operationId": "create_descriptions_api_v4_resources_descriptions_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11460,9 +11460,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Eval",
+        "summary": "Create Evals",
         "description": "Create evals resource (always INSERT).",
-        "operationId": "create_eval_api_v4_resources_evals_post",
+        "operationId": "create_evals_api_v4_resources_evals_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11848,9 +11848,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Flag",
+        "summary": "Create Flags",
         "description": "Create flags resource (always INSERT).",
-        "operationId": "create_flag_api_v4_resources_flags_post",
+        "operationId": "create_flags_api_v4_resources_flags_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12527,9 +12527,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Image",
+        "summary": "Create Images",
         "description": "Create images resource (always INSERT).",
-        "operationId": "create_image_api_v4_resources_images_post",
+        "operationId": "create_images_api_v4_resources_images_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12624,9 +12624,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Improvement",
+        "summary": "Create Improvements",
         "description": "Create improvements resource (always INSERT).",
-        "operationId": "create_improvement_api_v4_resources_improvements_post",
+        "operationId": "create_improvements_api_v4_resources_improvements_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12721,9 +12721,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Instruction",
+        "summary": "Create Instructions",
         "description": "Create instructions resource (always INSERT).",
-        "operationId": "create_instruction_api_v4_resources_instructions_post",
+        "operationId": "create_instructions_api_v4_resources_instructions_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13109,9 +13109,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Model",
+        "summary": "Create Models",
         "description": "Create models resource (always INSERT).",
-        "operationId": "create_model_api_v4_resources_models_post",
+        "operationId": "create_models_api_v4_resources_models_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13206,9 +13206,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Name",
+        "summary": "Create Names",
         "description": "Create names resource (always INSERT).",
-        "operationId": "create_name_api_v4_resources_names_post",
+        "operationId": "create_names_api_v4_resources_names_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13303,9 +13303,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Objective",
+        "summary": "Create Objectives",
         "description": "Create objectives resource (always INSERT).",
-        "operationId": "create_objective_api_v4_resources_objectives_post",
+        "operationId": "create_objectives_api_v4_resources_objectives_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13400,9 +13400,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Option",
+        "summary": "Create Options",
         "description": "Create options resource (always INSERT).",
-        "operationId": "create_option_api_v4_resources_options_post",
+        "operationId": "create_options_api_v4_resources_options_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13594,9 +13594,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Persona",
+        "summary": "Create Personas",
         "description": "Create personas resource (always INSERT).",
-        "operationId": "create_persona_api_v4_resources_personas_post",
+        "operationId": "create_personas_api_v4_resources_personas_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13885,9 +13885,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Problem Statement",
+        "summary": "Create Problem Statements",
         "description": "Create problem_statements resource (always INSERT).",
-        "operationId": "create_problem_statement_api_v4_resources_problem_statements_post",
+        "operationId": "create_problem_statements_api_v4_resources_problem_statements_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -14758,9 +14758,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Response",
+        "summary": "Create Responses",
         "description": "Create responses resource (always INSERT).",
-        "operationId": "create_response_api_v4_resources_responses_post",
+        "operationId": "create_responses_api_v4_resources_responses_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15437,9 +15437,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Scenario Rubric Grade Agent",
+        "summary": "Create Scenario Rubric Grade Agents",
         "description": "Create scenario_rubric_grade_agents resource (always INSERT).",
-        "operationId": "create_scenario_rubric_grade_agent_api_v4_resources_scenario_rubric_grade_agents_post",
+        "operationId": "create_scenario_rubric_grade_agents_api_v4_resources_scenario_rubric_grade_agents_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15631,9 +15631,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Setting",
+        "summary": "Create Settings",
         "description": "Create settings resource (always INSERT).",
-        "operationId": "create_setting_api_v4_resources_settings_post",
+        "operationId": "create_settings_api_v4_resources_settings_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15728,9 +15728,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Simulation Scenario Flag",
+        "summary": "Create Simulation Scenario Flags",
         "description": "Create simulation_scenario_flags resource (always INSERT).",
-        "operationId": "create_simulation_scenario_flag_api_v4_resources_simulation_scenario_flags_post",
+        "operationId": "create_simulation_scenario_flags_api_v4_resources_simulation_scenario_flags_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16116,9 +16116,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Strength",
+        "summary": "Create Strengths",
         "description": "Create strengths resource (always INSERT).",
-        "operationId": "create_strength_api_v4_resources_strengths_post",
+        "operationId": "create_strengths_api_v4_resources_strengths_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16504,9 +16504,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Threshold",
+        "summary": "Create Thresholds",
         "description": "Create thresholds resource (always INSERT).",
-        "operationId": "create_threshold_api_v4_resources_thresholds_post",
+        "operationId": "create_thresholds_api_v4_resources_thresholds_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16601,9 +16601,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Time",
+        "summary": "Create Times",
         "description": "Create times resource (always INSERT).",
-        "operationId": "create_time_api_v4_resources_times_post",
+        "operationId": "create_times_api_v4_resources_times_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16892,9 +16892,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Video",
+        "summary": "Create Videos",
         "description": "Create videos resource (always INSERT).",
-        "operationId": "create_video_api_v4_resources_videos_post",
+        "operationId": "create_videos_api_v4_resources_videos_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
