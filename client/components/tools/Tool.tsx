@@ -2,6 +2,7 @@
  * Tool.tsx
  * Implementation using modular resource components
  * Used to create and manage tools - supports both creation and editing
+ * Follows Persona.tsx gold standard pattern
  */
 "use client";
 
@@ -14,17 +15,27 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Args } from "@/components/resources/Args";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+import { Loader2, Sparkles } from "lucide-react";
+import { parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
@@ -44,12 +55,13 @@ type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
 
 type ToolData = OutputOf<"/api/v4/tools/get", "post">;
 
+// Resource types for tools
+type ToolResourceType = "args" | "args_outputs";
+
 export interface ToolProps {
   toolId?: string;
   // Server-provided data (for server-side rendering)
   toolData?: ToolData;
-  toolDetail?: ToolData; // Legacy prop name for compatibility
-  toolDetailDefault?: ToolData; // Legacy prop name for compatibility
   // Server actions (replaces useMutation)
   saveToolAction?: (input: SaveToolIn) => Promise<SaveToolOut>;
   patchToolDraftAction?: (
@@ -64,16 +76,12 @@ export interface ToolProps {
 
 function ToolComponent({
   toolId,
-  toolData: toolDataProp,
-  toolDetail,
-  toolDetailDefault,
+  toolData,
   saveToolAction,
   patchToolDraftAction,
   createArgsAction,
   createArgsOutputsAction,
 }: ToolProps) {
-  // Support both new prop name (toolData) and legacy prop names (toolDetail, toolDetailDefault)
-  const toolData = toolDataProp || toolDetail || toolDetailDefault;
   const router = useRouter();
   const isEditMode = !!toolId;
   const {
@@ -87,19 +95,31 @@ function ToolComponent({
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
 
-  // Generation state for AI workflows (removed - no longer needed for schema/template)
+  // Generation state for AI workflows
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ToolResourceType>
+  >(new Set());
+
+  // Modal state for generate/regenerate
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
+    null
+  );
+  const [modalResources, setModalResources] = useState<
+    GenerateRegenerateModalResource[]
+  >([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+
+  const isGenerating = useCallback(
+    (resourceType: ToolResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const toolSearchParamsClient = useMemo(
     () => ({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
-      // Search params (URL-backed, updated via debounced callback in StepCard)
-      argsSearch: parseAsString,
-      argsOutputsSearch: parseAsString,
-      // Filter params (URL-backed)
-      argsShowSelected: parseAsBoolean,
-      argsOutputsShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -129,15 +149,33 @@ function ToolComponent({
       args_outputs: toolData.args_outputs,
       args_outputs_required: toolData.args_outputs_required,
       args_outputs_agent_id: toolData.args_outputs_agent_id,
-      input_args_fields:
-        (toolData as typeof toolData & { input_args_fields?: unknown[] })
-          .input_args_fields ?? [],
-      output_args_outputs:
-        (toolData as typeof toolData & { output_args_outputs?: unknown[] })
-          .output_args_outputs ?? [],
-      domain_resources: toolData.domain_resources ?? [],
+      input_args_fields: toolData.input_args_fields ?? [],
+      output_args_outputs: toolData.output_args_outputs ?? [],
     };
   }, [toolData]);
+
+  // Helper to check if a resource type can be regenerated
+  const canRegenerate = useCallback(
+    (resourceType: ToolResourceType): boolean => {
+      if (!stableToolDataFields) return false;
+      switch (resourceType) {
+        case "args":
+          return (
+            stableToolDataFields.args_resources?.some((r) => r.generated) ??
+            false
+          );
+        case "args_outputs":
+          return (
+            stableToolDataFields.args_outputs_resources?.some(
+              (r) => r.generated
+            ) ?? false
+          );
+        default:
+          return false;
+      }
+    },
+    [stableToolDataFields]
+  );
 
   const getInitialFormState = useCallback(() => {
     const data = toolDataRef.current;
@@ -173,22 +211,6 @@ function ToolComponent({
     [toolData?.args_outputs_ids]
   );
 
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      // TODO: Implement generation logic for tools
-      // For now, check if generation capability exists
-      if (toolData?.general_agent_id) {
-        // When generation is implemented, trigger it here
-        // handleGenerateResources([...]);
-        toast.info("Generation not yet implemented for tools");
-      }
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [toolData?.general_agent_id]);
-
   // Update form state when server data changes
   useEffect(() => {
     const newState = getInitialFormState();
@@ -211,13 +233,6 @@ function ToolComponent({
     argsOutputsIdsStr,
     getInitialFormState,
   ]);
-
-  // Draft version tracking
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
 
   // Get draftId from GenericForm's URL state
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -245,20 +260,6 @@ function ToolComponent({
     patchToolDraftActionRef.current = patchToolDraftAction;
   }, [patchToolDraftAction]);
 
-  // Build a stable key for "what would we patch"
-  const draftPatchKey = React.useMemo(() => {
-    return JSON.stringify({
-      draftId: draftId || null,
-      args_ids: formState.args_ids,
-      args_outputs_ids: formState.args_outputs_ids,
-    });
-  }, [draftId, formState.args_ids, formState.args_outputs_ids]);
-
-  const lastPatchedKeyRef = React.useRef<string | null>(null);
-
-  // Draft change listener - removed since patchToolDraft API doesn't support args_ids/args_outputs_ids yet
-  // TODO: Update patchToolDraft API to support args_ids/args_outputs_ids if draft patching is needed
-
   // WebSocket handlers for AI generation
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -269,15 +270,13 @@ function ToolComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      schema_ids?: string[];
-      template_ids?: string[];
-      schema_field_item_ids?: string[];
-      template_array_item_ids?: string[];
-      template_value_ids?: string[];
+      args_ids?: string[];
+      args_outputs_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
     }) => {
+      // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "tool" ||
         !data.group_id ||
@@ -286,8 +285,51 @@ function ToolComponent({
         return;
       }
 
-      // WebSocket generation handlers removed for schema/template resources
-      // Args and args_outputs generation can be added here if needed in the future
+      const validResourceTypes: ToolResourceType[] = ["args", "args_outputs"];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ToolResourceType)
+      ) {
+        // Update formState with the resource IDs that were generated
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.args_ids && data.args_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newArgsIds = data.args_ids.filter(
+              (id) => !prev.args_ids.includes(id)
+            );
+            updates.args_ids = [...prev.args_ids, ...newArgsIds];
+          }
+          if (data.args_outputs_ids && data.args_outputs_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newArgsOutputsIds = data.args_outputs_ids.filter(
+              (id) => !prev.args_outputs_ids.includes(id)
+            );
+            updates.args_outputs_ids = [
+              ...prev.args_outputs_ids,
+              ...newArgsOutputsIds,
+            ];
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ToolResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
     };
 
     const handleGenerationProgress = (data: {
@@ -296,6 +338,7 @@ function ToolComponent({
       resource_type?: string;
       [key: string]: unknown;
     }) => {
+      // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "tool" ||
         !data.group_id ||
@@ -303,6 +346,7 @@ function ToolComponent({
       ) {
         return;
       }
+      // Handle progress updates if needed
     };
 
     const handleGenerationError = (data: {
@@ -312,6 +356,7 @@ function ToolComponent({
       resource_type?: string;
       resource_types?: string[];
     }) => {
+      // Filter by artifact_type and group_id
       if (
         data.artifact_type !== "tool" ||
         !data.group_id ||
@@ -320,11 +365,22 @@ function ToolComponent({
         return;
       }
 
-      // WebSocket error handlers removed for schema/template resources
-      // Args and args_outputs error handling can be added here if needed in the future
+      const validResourceTypes: ToolResourceType[] = ["args", "args_outputs"];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ToolResourceType)) {
+            next.delete(rt as ToolResourceType);
+          }
+        });
+        return next;
+      });
       toast.error(data.message || "Generation failed");
     };
 
+    // Listen to tool-specific events filtered by artifact_type and group_id
     socket.on("tool_generation_progress", handleGenerationProgress);
     socket.on("tool_generation_complete", handleGenerationComplete);
     socket.on("tool_generation_error", handleGenerationError);
@@ -336,9 +392,64 @@ function ToolComponent({
     };
   }, [socket, isConnected, toolData?.group_id]);
 
-  // Generation handlers (removed schema/template handlers)
+  // Multi-generation handler - accepts list of resource types and optional user instructions
+  const determineAgentType = useCallback(
+    (resourceTypes: ToolResourceType[]): string | null => {
+      if (resourceTypes.length === 1) {
+        // Single resource type - map to agent_type
+        const agentTypeMap: Partial<Record<ToolResourceType, string>> = {
+          args: "args",
+          args_outputs: "args_outputs",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType] ?? null;
+        }
+      } else if (resourceTypes.length === 2) {
+        // Both resources - use general agent if available
+        return "general";
+      }
+      return null;
+    },
+    []
+  );
 
-  // Disabled logic based on can_edit flag
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ToolResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      // Read draftId from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+      // Emit tool_generate event
+      socket.emit("tool_generate", {
+        resource_types: resourceTypes,
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        draft_id: draftId || null,
+        mcp: false,
+        tool_id: toolId || null,
+      });
+    },
+    [socket, isConnected, toolId]
+  );
+
+  // Disabled logic based on can_edit flag - check in both new and edit modes
   const disabled = useMemo(() => {
     if (!toolData) return false;
     return !toolData.can_edit;
@@ -357,15 +468,25 @@ function ToolComponent({
     return () => clearEntityMetadata();
   }, [toolData, toolId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
-  // Set generation capability when tool data is loaded (removed schema/template generation)
+  // Set generation capability when tool data is loaded
   useEffect(() => {
+    const canGenerate = !!(
+      toolData?.args_agent_id || toolData?.args_outputs_agent_id
+    );
+    const agentId =
+      toolData?.args_agent_id || toolData?.args_outputs_agent_id || null;
     setGenerationCapability({
       artifactType: "tool",
-      canGenerate: false,
-      agentId: null,
+      canGenerate,
+      agentId,
     });
     return () => clearGenerationCapability();
-  }, [setGenerationCapability, clearGenerationCapability]);
+  }, [
+    toolData?.args_agent_id,
+    toolData?.args_outputs_agent_id,
+    setGenerationCapability,
+    clearGenerationCapability,
+  ]);
 
   // Submit handler for GenericForm
   const handleSubmit = useCallback(
@@ -462,6 +583,78 @@ function ToolComponent({
     [formState]
   );
 
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ToolResourceType[]> = useMemo(
+    () => ({
+      args: ["args"],
+      args_outputs: ["args_outputs"],
+      all: ["args", "args_outputs"], // All resources for full-page generation
+    }),
+    []
+  );
+
+  // Resource labels for display
+  const resourceLabels: Partial<Record<ToolResourceType, string>> = useMemo(
+    () => ({
+      args: "Args",
+      args_outputs: "Args Outputs",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt] ?? "",
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
+  // Handler for modal generate/regenerate action
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      const resourceTypes = selectedResources as ToolResourceType[];
+      const agentType = determineAgentType(resourceTypes);
+      await handleGenerateResources(
+        resourceTypes,
+        agentType,
+        instructions.trim() || undefined
+      );
+      setShowGenerateModal(false);
+      setModalInstructions("");
+    },
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      if (toolData?.args_agent_id || toolData?.args_outputs_agent_id) {
+        // Open modal instead of directly generating
+        handleOpenStepCardModal("all", "generate");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [
+    toolData?.args_agent_id,
+    toolData?.args_outputs_agent_id,
+    handleOpenStepCardModal,
+  ]);
+
   // Steps configuration for GenericForm
   const steps = useMemo(
     () => [
@@ -472,57 +665,15 @@ function ToolComponent({
         resetFields: ["name", "description"],
       },
       {
-        id: "input_schema",
-        title: "Input Schema",
-        description: "Edit input schema fields.",
-        resetFields: [],
-      },
-      {
-        id: "output_template",
-        title: "Output Template",
-        description: "Edit output template Jinja content.",
-        resetFields: [],
-      },
-      {
-        id: "schemas",
-        title: "Schemas",
-        description: "Select input schemas for this tool.",
-        resetFields: ["schema_ids"],
-      },
-      {
-        id: "templates",
-        title: "Templates",
-        description: "Select output templates for this tool.",
-        resetFields: ["template_ids"],
-      },
-      {
-        id: "schema_field_items",
-        title: "Schema Field Items",
-        description: "Select schema field items for this tool.",
-        resetFields: ["schema_field_item_ids"],
-      },
-      {
-        id: "template_array_items",
-        title: "Template Array Items",
-        description: "Select template array items for this tool.",
-        resetFields: ["template_array_item_ids"],
-      },
-      {
-        id: "template_values",
-        title: "Template Values",
-        description: "Select template values for this tool.",
-        resetFields: ["template_value_ids"],
-      },
-      {
         id: "args",
         title: "Args",
-        description: "Select args for this tool.",
+        description: "Select and edit args for this tool.",
         resetFields: ["args_ids"],
       },
       {
         id: "args_outputs",
         title: "Args Outputs",
-        description: "Select args outputs for this tool.",
+        description: "Select and edit args outputs for this tool.",
         resetFields: ["args_outputs_ids"],
       },
     ],
@@ -652,44 +803,76 @@ function ToolComponent({
               resetFields={["args_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["args"] &&
+                stepResources["args"].length > 0 &&
+                currentToolData?.args_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "args"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "args",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["args"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["args"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["args"]!.some((rt) => canRegenerate(rt))
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
               <Args
                 args_ids={formState.args_ids ?? []}
-                input_args_fields={(
-                  (
-                    currentToolData as typeof currentToolData & {
-                      input_args_fields?: Array<{
-                        args_id?: string | null;
-                        name?: string | null;
-                        description?: string | null;
-                        field_type?: string | null;
-                        required?: boolean | null;
-                        default_value?: string | null;
-                        position?: number | null;
-                        generated?: boolean | null;
-                      }>;
-                    }
-                  )?.input_args_fields ?? []
-                )
-                  .filter(
-                    (f): f is NonNullable<typeof f> =>
-                      f !== null &&
-                      f.args_id !== null &&
-                      f.name !== null &&
-                      f.field_type !== null &&
-                      f.required !== null &&
-                      f.position !== null
-                  )
-                  .map((f) => ({
-                    args_id: f.args_id!,
-                    name: f.name!,
-                    description: f.description ?? "",
-                    field_type: f.field_type!,
-                    required: f.required!,
-                    default_value: f.default_value ?? "",
-                    position: f.position!,
-                    generated: f.generated ?? false,
-                  }))}
+                input_args_fields={
+                  currentToolData?.input_args_fields
+                    ?.filter(
+                      (f): f is NonNullable<typeof f> =>
+                        f !== null &&
+                        f.args_id !== null &&
+                        f.name !== null &&
+                        f.field_type !== null &&
+                        f.required !== null &&
+                        f.position !== null
+                    )
+                    .map((f) => ({
+                      args_id: f.args_id!,
+                      name: f.name!,
+                      description: f.description ?? "",
+                      field_type: f.field_type!,
+                      required: f.required!,
+                      default_value: f.default_value ?? "",
+                      position: f.position!,
+                      generated: f.generated ?? false,
+                    })) ?? []
+                }
                 disabled={disabled}
                 {...(createArgsAction ? { createArgsAction } : {})}
                 group_id={currentToolData?.group_id ?? null}
@@ -711,71 +894,95 @@ function ToolComponent({
               resetFields={["args_outputs_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["args_outputs"] &&
+                stepResources["args_outputs"].length > 0 &&
+                currentToolData?.args_outputs_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "args_outputs"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "args_outputs",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["args_outputs"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["args_outputs"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["args_outputs"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
               <ArgsOutputs
                 args_outputs_ids={formState.args_outputs_ids ?? []}
-                output_args_outputs={(
-                  (
-                    currentToolData as typeof currentToolData & {
-                      output_args_outputs?: Array<{
-                        args_outputs_id?: string | null;
-                        args_id?: string | null;
-                        name?: string | null;
-                        template?: string | null;
-                        generated?: boolean | null;
-                      }>;
-                    }
-                  )?.output_args_outputs ?? []
-                )
-                  .filter(
-                    (o): o is NonNullable<typeof o> =>
-                      o !== null &&
-                      o.args_outputs_id !== null &&
-                      o.args_id !== null &&
-                      o.name !== null
-                  )
-                  .map((o) => ({
-                    args_outputs_id: o.args_outputs_id!,
-                    args_id: o.args_id!,
-                    name: o.name!,
-                    template: o.template ?? "",
-                    generated: o.generated ?? false,
-                  }))}
-                input_args_fields={(
-                  (
-                    currentToolData as typeof currentToolData & {
-                      input_args_fields?: Array<{
-                        args_id?: string | null;
-                        name?: string | null;
-                        description?: string | null;
-                        field_type?: string | null;
-                        required?: boolean | null;
-                        default_value?: string | null;
-                        position?: number | null;
-                        generated?: boolean | null;
-                      }>;
-                    }
-                  )?.input_args_fields ?? []
-                )
-                  .filter(
-                    (f): f is NonNullable<typeof f> =>
-                      f !== null &&
-                      f.args_id !== null &&
-                      f.name !== null &&
-                      f.field_type !== null &&
-                      f.required !== null &&
-                      f.position !== null
-                  )
-                  .map((f) => ({
-                    args_id: f.args_id!,
-                    name: f.name!,
-                    description: f.description ?? "",
-                    field_type: f.field_type!,
-                    required: f.required!,
-                    default_value: f.default_value ?? "",
-                    position: f.position!,
-                    generated: f.generated ?? false,
-                  }))}
+                output_args_outputs={
+                  currentToolData?.output_args_outputs
+                    ?.filter(
+                      (o): o is NonNullable<typeof o> =>
+                        o !== null &&
+                        o.args_outputs_id !== null &&
+                        o.args_id !== null &&
+                        o.name !== null
+                    )
+                    .map((o) => ({
+                      args_outputs_id: o.args_outputs_id!,
+                      args_id: o.args_id!,
+                      name: o.name!,
+                      template: o.template ?? "",
+                      generated: o.generated ?? false,
+                    })) ?? []
+                }
+                input_args_fields={
+                  currentToolData?.input_args_fields
+                    ?.filter(
+                      (f): f is NonNullable<typeof f> =>
+                        f !== null &&
+                        f.args_id !== null &&
+                        f.name !== null &&
+                        f.field_type !== null &&
+                        f.required !== null &&
+                        f.position !== null
+                    )
+                    .map((f) => ({
+                      args_id: f.args_id!,
+                      name: f.name!,
+                      description: f.description ?? "",
+                      field_type: f.field_type!,
+                      required: f.required!,
+                      default_value: f.default_value ?? "",
+                      position: f.position!,
+                      generated: f.generated ?? false,
+                    })) ?? []
+                }
                 disabled={disabled}
                 {...(createArgsOutputsAction
                   ? { createArgsOutputsAction }
@@ -798,40 +1005,100 @@ function ToolComponent({
       isEditMode,
       createArgsAction,
       createArgsOutputsAction,
+      stepResources,
+      canRegenerate,
+      handleOpenStepCardModal,
+      isGenerating,
     ]
   );
 
   return (
-    <div
-      className="w-full p-6 space-y-8"
-      data-page={`tool-${isEditMode ? "edit" : "new"}`}
-    >
-      <ReadOnlyBanner
-        disabled={disabled}
-        disabledReason={toolData?.disabled_reason ?? null}
-        entityType="tool"
-      />
+    <TooltipProvider>
+      <div
+        className="w-full p-6 space-y-8"
+        data-page={`tool-${isEditMode ? "edit" : "new"}`}
+      >
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={toolData?.disabled_reason ?? null}
+          entityType="tool"
+        />
 
-      <GenericForm
-        nuqsParsers={toolSearchParamsClient as Record<string, Parser<unknown>>}
-        steps={steps}
-        getStepStatus={getStepStatus}
-        serverData={toolData}
-        formFieldKeys={formFieldKeys}
-        resetSuccessMessage={resetSuccessMessage}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
-        isEditMode={isEditMode}
-        renderStep={renderStep}
-        onFormDataChange={onFormDataChange}
-        registerSetFormData={(setter) => {
-          setUrlFormDataRef.current = setter;
-        }}
-      />
-    </div>
+        <GenericForm
+          nuqsParsers={
+            toolSearchParamsClient as Record<string, Parser<unknown>>
+          }
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={toolData}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
+        />
+
+        {/* Generate/Regenerate Modal */}
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ToolResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
 
 // Memoize component to prevent re-renders when only prop references change
-export default React.memo(ToolComponent);
+export default React.memo(ToolComponent, (prevProps, nextProps) => {
+  // Compare toolData by resource IDs, not object reference
+  const prevIds = {
+    name: prevProps.toolData?.name,
+    description: prevProps.toolData?.description,
+    args_ids: prevProps.toolData?.args_ids,
+    args_outputs_ids: prevProps.toolData?.args_outputs_ids,
+  };
+  const nextIds = {
+    name: nextProps.toolData?.name,
+    description: nextProps.toolData?.description,
+    args_ids: nextProps.toolData?.args_ids,
+    args_outputs_ids: nextProps.toolData?.args_outputs_ids,
+  };
+
+  // Compare primitive props
+  if (
+    prevProps.toolId !== nextProps.toolId ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.saveToolAction !== nextProps.saveToolAction ||
+    prevProps.patchToolDraftAction !== nextProps.patchToolDraftAction ||
+    prevProps.createArgsAction !== nextProps.createArgsAction ||
+    prevProps.createArgsOutputsAction !== nextProps.createArgsOutputsAction
+  ) {
+    return false; // Function props changed, re-render
+  }
+
+  // All props are equivalent, skip re-render
+  return true;
+});

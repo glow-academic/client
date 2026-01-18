@@ -158,7 +158,7 @@ export default async function ToolDetailPage({
       >
         <Tool
           toolId={toolId}
-          toolDetail={toolDetail}
+          toolData={toolDetail}
           saveToolAction={saveTool}
           patchToolDraftAction={patchToolDraft}
           createArgsAction={createDraftArgs}

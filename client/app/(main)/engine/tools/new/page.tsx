@@ -130,7 +130,7 @@ export default async function NewToolPage({
       aria-label="Create new tool page"
     >
       <Tool
-        toolDetailDefault={toolDetailDefault}
+        toolData={toolDetailDefault}
         saveToolAction={saveTool}
         patchToolDraftAction={patchToolDraft}
         createArgsAction={createDraftArgs}
