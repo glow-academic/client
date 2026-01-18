@@ -34,7 +34,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_simulation_scenario_flag(
+async def create_simulation_scenario_flags(
     request: SimulationScenarioFlagsApiRequest,
     http_request: Request,
     response: Response,
@@ -104,7 +104,7 @@ async def create_simulation_scenario_flag(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_simulation_scenario_flag",
+            operation="create_simulation_scenario_flags",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

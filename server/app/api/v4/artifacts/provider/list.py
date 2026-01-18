@@ -30,7 +30,7 @@ router = APIRouter()
         audit_activity("providers.list", "{{ actor.name }} visited the Providers page")
     ],
 )
-async def get_providers_list(
+async def get_provider_list(
     request: GetProvidersListApiRequest,
     http_request: Request,
     response: Response,
@@ -100,7 +100,7 @@ async def get_providers_list(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_providers_list",
+            operation="get_provider_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

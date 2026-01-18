@@ -34,7 +34,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_instruction(
+async def create_instructions(
     request: InstructionsApiRequest,
     http_request: Request,
     response: Response,
@@ -104,7 +104,7 @@ async def create_instruction(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_instruction",
+            operation="create_instructions",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

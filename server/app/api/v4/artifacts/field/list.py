@@ -29,7 +29,7 @@ router = APIRouter()
         audit_activity("fields.list", "{{ actor.name }} visited the Fields page")
     ],
 )
-async def get_fields_list(
+async def get_field_list(
     request: GetFieldsListApiRequest,
     http_request: Request,
     response: Response,
@@ -103,7 +103,7 @@ async def get_fields_list(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_fields_list",
+            operation="get_field_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

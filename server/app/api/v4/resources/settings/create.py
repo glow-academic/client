@@ -34,7 +34,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_setting(
+async def create_settings(
     request: SettingsApiRequest,
     http_request: Request,
     response: Response,
@@ -102,7 +102,7 @@ async def create_setting(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_setting",
+            operation="create_settings",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

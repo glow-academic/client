@@ -402,6 +402,10 @@ def get_resource_description(resource_name: str) -> str:
     if resource_name in RESOURCE_DOCS_HANDLERS:
         try:
             docs = RESOURCE_DOCS_HANDLERS[resource_name]()
+            # Check top-level description field first (most resources use this)
+            if "description" in docs:
+                return docs["description"]
+            # Fallback to glow_context.description if it exists
             if "glow_context" in docs and "description" in docs["glow_context"]:
                 return docs["glow_context"]["description"]
         except Exception:

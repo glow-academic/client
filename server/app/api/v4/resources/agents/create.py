@@ -34,7 +34,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_agent(
+async def create_agents(
     request: AgentsApiRequest,
     http_request: Request,
     response: Response,
@@ -102,7 +102,7 @@ async def create_agent(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_agent",
+            operation="create_agents",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

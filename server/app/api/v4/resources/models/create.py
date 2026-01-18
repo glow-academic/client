@@ -34,7 +34,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_model(
+async def create_models(
     request: ModelsApiRequest,
     http_request: Request,
     response: Response,
@@ -102,7 +102,7 @@ async def create_model(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_model",
+            operation="create_models",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

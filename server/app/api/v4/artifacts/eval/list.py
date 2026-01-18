@@ -3,22 +3,17 @@
 from typing import Annotated, Any, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (GetEvalsListApiRequest, GetEvalsListApiResponse,
+                           GetEvalsListSqlParams, GetEvalsListSqlRow,
+                           load_sql_query)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    GetEvalsListApiRequest,
-    GetEvalsListApiResponse,
-    GetEvalsListSqlParams,
-    GetEvalsListSqlRow,
-    load_sql_query,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/benchmark/get_evals_list_complete.sql"
@@ -34,7 +29,7 @@ router = APIRouter()
         audit_activity("evals.list", "{{ actor.name }} visited the Evals page")
     ],
 )
-async def get_evals_list(
+async def get_eval_list(
     request: GetEvalsListApiRequest,
     http_request: Request,
     response: Response,
@@ -108,7 +103,7 @@ async def get_evals_list(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_evals_list",
+            operation="get_eval_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

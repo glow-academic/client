@@ -29,7 +29,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_upload(
+async def create_uploads(
     request: UploadsApiRequest,
     http_request: Request,
     response: Response,
@@ -98,7 +98,7 @@ async def create_upload(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_upload",
+            operation="create_uploads",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

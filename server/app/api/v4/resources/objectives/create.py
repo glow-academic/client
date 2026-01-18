@@ -34,7 +34,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_objective(
+async def create_objectives(
     request: ObjectivesApiRequest,
     http_request: Request,
     response: Response,
@@ -104,7 +104,7 @@ async def create_objective(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_objective",
+            operation="create_objectives",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

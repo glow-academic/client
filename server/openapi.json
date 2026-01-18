@@ -109,9 +109,9 @@
           "v4",
           "personas"
         ],
-        "summary": "Get Personas List",
+        "summary": "Get Persona List",
         "description": "Get personas list with permissions and scenario details.",
-        "operationId": "get_personas_list_api_v4_personas_list_post",
+        "operationId": "get_persona_list_api_v4_personas_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -691,9 +691,9 @@
           "v4",
           "scenarios"
         ],
-        "summary": "Get Scenarios List",
+        "summary": "Get Scenario List",
         "description": "Get scenarios list with all relationships.",
-        "operationId": "get_scenarios_list_api_v4_scenarios_list_post",
+        "operationId": "get_scenario_list_api_v4_scenarios_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1273,9 +1273,9 @@
           "v4",
           "simulations"
         ],
-        "summary": "Get Simulations List",
+        "summary": "Get Simulation List",
         "description": "Get simulations list with permissions and relationships.",
-        "operationId": "get_simulations_list_api_v4_simulations_list_post",
+        "operationId": "get_simulation_list_api_v4_simulations_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1758,9 +1758,9 @@
           "v4",
           "documents"
         ],
-        "summary": "Get Documents List",
+        "summary": "Get Document List",
         "description": "Get documents list with tags and scenarios.",
-        "operationId": "get_documents_list_api_v4_documents_list_post",
+        "operationId": "get_document_list_api_v4_documents_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2437,9 +2437,9 @@
           "v4",
           "departments"
         ],
-        "summary": "Get Departments List",
+        "summary": "Get Department List",
         "description": "Get list of departments with computed fields.",
-        "operationId": "get_departments_list_api_v4_departments_list_post",
+        "operationId": "get_department_list_api_v4_departments_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2922,9 +2922,9 @@
           "v4",
           "cohorts"
         ],
-        "summary": "Get Cohorts List",
+        "summary": "Get Cohort List",
         "description": "Get cohorts list with permissions and relationships.",
-        "operationId": "get_cohorts_list_api_v4_cohorts_list_post",
+        "operationId": "get_cohort_list_api_v4_cohorts_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -3504,9 +3504,9 @@
           "v4",
           "evals"
         ],
-        "summary": "Get Evals List",
+        "summary": "Get Eval List",
         "description": "Get evals list with status derivation and permissions.",
-        "operationId": "get_evals_list_api_v4_evals_list_post",
+        "operationId": "get_eval_list_api_v4_evals_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4183,9 +4183,9 @@
           "v4",
           "rubrics"
         ],
-        "summary": "Get Rubrics List",
+        "summary": "Get Rubric List",
         "description": "Get rubrics list with hierarchical structure and permissions.",
-        "operationId": "get_rubrics_list_api_v4_rubrics_list_post",
+        "operationId": "get_rubric_list_api_v4_rubrics_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -5832,9 +5832,9 @@
           "v4",
           "models"
         ],
-        "summary": "Get Models List",
+        "summary": "Get Model List",
         "description": "Get models list (flat structure with provider info).",
-        "operationId": "get_models_list_api_v4_models_list_post",
+        "operationId": "get_model_list_api_v4_models_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6317,9 +6317,9 @@
           "v4",
           "providers"
         ],
-        "summary": "Get Providers List",
+        "summary": "Get Provider List",
         "description": "Get providers list with permissions and endpoint info.",
-        "operationId": "get_providers_list_api_v4_providers_list_post",
+        "operationId": "get_provider_list_api_v4_providers_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6996,9 +6996,9 @@
           "v4",
           "parameters"
         ],
-        "summary": "Get Parameters List",
+        "summary": "Get Parameter List",
         "description": "Get parameters list with item counts and permissions.",
-        "operationId": "get_parameters_list_api_v4_parameters_list_post",
+        "operationId": "get_parameter_list_api_v4_parameters_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7578,9 +7578,9 @@
           "v4",
           "fields"
         ],
-        "summary": "Get Fields List",
+        "summary": "Get Field List",
         "description": "Get fields list with permissions and relationships.",
-        "operationId": "get_fields_list_api_v4_fields_list_post",
+        "operationId": "get_field_list_api_v4_fields_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9033,9 +9033,9 @@
           "v4",
           "tools"
         ],
-        "summary": "Get Tools List",
+        "summary": "Get Tool List",
         "description": "Get tools list with permissions.",
-        "operationId": "get_tools_list_api_v4_tools_list_post",
+        "operationId": "get_tool_list_api_v4_tools_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9908,9 +9908,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Arg",
+        "summary": "Create Args",
         "description": "Create args resource (always INSERT).",
-        "operationId": "create_arg_api_v4_resources_args_post",
+        "operationId": "create_args_api_v4_resources_args_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10393,9 +10393,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Color",
+        "summary": "Create Colors",
         "description": "Create colors resource (always INSERT).",
-        "operationId": "create_color_api_v4_resources_colors_post",
+        "operationId": "create_colors_api_v4_resources_colors_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10684,9 +10684,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Conversation",
+        "summary": "Create Conversations",
         "description": "Create conversations resource (always INSERT).",
-        "operationId": "create_conversation_api_v4_resources_conversations_post",
+        "operationId": "create_conversations_api_v4_resources_conversations_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11169,9 +11169,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Document",
+        "summary": "Create Documents",
         "description": "Create documents resource (always INSERT).",
-        "operationId": "create_document_api_v4_resources_documents_post",
+        "operationId": "create_documents_api_v4_resources_documents_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11557,9 +11557,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Example",
+        "summary": "Create Examples",
         "description": "Create examples resource (always INSERT).",
-        "operationId": "create_example_api_v4_resources_examples_post",
+        "operationId": "create_examples_api_v4_resources_examples_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11751,9 +11751,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Field",
+        "summary": "Create Fields",
         "description": "Create fields resource (always INSERT).",
-        "operationId": "create_field_api_v4_resources_fields_post",
+        "operationId": "create_fields_api_v4_resources_fields_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12236,9 +12236,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Hint",
+        "summary": "Create Hints",
         "description": "Create hints resource (always INSERT).",
-        "operationId": "create_hint_api_v4_resources_hints_post",
+        "operationId": "create_hints_api_v4_resources_hints_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12430,9 +12430,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Icon",
+        "summary": "Create Icons",
         "description": "Create icons resource (always INSERT).",
-        "operationId": "create_icon_api_v4_resources_icons_post",
+        "operationId": "create_icons_api_v4_resources_icons_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -12915,9 +12915,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Key",
+        "summary": "Create Keys",
         "description": "Create keys resource (always INSERT).",
-        "operationId": "create_key_api_v4_resources_keys_post",
+        "operationId": "create_keys_api_v4_resources_keys_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13497,9 +13497,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Parameter",
+        "summary": "Create Parameters",
         "description": "Create parameters resource (always INSERT).",
-        "operationId": "create_parameter_api_v4_resources_parameters_post",
+        "operationId": "create_parameters_api_v4_resources_parameters_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13691,9 +13691,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Point",
+        "summary": "Create Points",
         "description": "Create points resource (always INSERT).",
-        "operationId": "create_point_api_v4_resources_points_post",
+        "operationId": "create_points_api_v4_resources_points_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13982,9 +13982,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Profile",
+        "summary": "Create Profiles",
         "description": "Create profiles resource (always INSERT).",
-        "operationId": "create_profile_api_v4_resources_profiles_post",
+        "operationId": "create_profiles_api_v4_resources_profiles_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -14079,9 +14079,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Prompt",
+        "summary": "Create Prompts",
         "description": "Create prompts resource (always INSERT).",
-        "operationId": "create_prompt_api_v4_resources_prompts_post",
+        "operationId": "create_prompts_api_v4_resources_prompts_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -14855,9 +14855,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Rubric",
+        "summary": "Create Rubrics",
         "description": "Create rubrics resource (always INSERT).",
-        "operationId": "create_rubric_api_v4_resources_rubrics_post",
+        "operationId": "create_rubrics_api_v4_resources_rubrics_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15340,9 +15340,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Scenario Position",
+        "summary": "Create Scenario Positions",
         "description": "Create scenario_positions resource (always INSERT).",
-        "operationId": "create_scenario_position_api_v4_resources_scenario_positions_post",
+        "operationId": "create_scenario_positions_api_v4_resources_scenario_positions_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15534,9 +15534,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Scenario",
+        "summary": "Create Scenarios",
         "description": "Create scenarios resource (always INSERT).",
-        "operationId": "create_scenario_api_v4_resources_scenarios_post",
+        "operationId": "create_scenarios_api_v4_resources_scenarios_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15825,9 +15825,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Simulation",
+        "summary": "Create Simulations",
         "description": "Create simulations resource (always INSERT).",
-        "operationId": "create_simulation_api_v4_resources_simulations_post",
+        "operationId": "create_simulations_api_v4_resources_simulations_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16019,9 +16019,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Standard Group",
+        "summary": "Create Standard Groups",
         "description": "Create standard_groups resource (always INSERT).",
-        "operationId": "create_standard_group_api_v4_resources_standard_groups_post",
+        "operationId": "create_standard_groups_api_v4_resources_standard_groups_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -16310,9 +16310,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Template",
+        "summary": "Create Templates",
         "description": "Create templates resource (always INSERT).",
-        "operationId": "create_template_api_v4_resources_templates_post",
+        "operationId": "create_templates_api_v4_resources_templates_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -17086,9 +17086,9 @@
           "v4",
           "resources"
         ],
-        "summary": "Create Upload",
+        "summary": "Create Uploads",
         "description": "Create uploads resource (always INSERT).",
-        "operationId": "create_upload_api_v4_resources_uploads_post",
+        "operationId": "create_uploads_api_v4_resources_uploads_post",
         "parameters": [
           {
             "name": "X-Profile-Id",

@@ -3,21 +3,16 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (ListModelsApiRequest, ListModelsApiResponse,
+                           ListModelsSqlParams, ListModelsSqlRow)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    ListModelsApiRequest,
-    ListModelsApiResponse,
-    ListModelsSqlParams,
-    ListModelsSqlRow,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/models/list_models_complete.sql"
@@ -32,7 +27,7 @@ router = APIRouter()
         audit_activity("models.list", "{{ actor.name }} visited the Models page")
     ],
 )
-async def get_models_list(
+async def get_model_list(
     request: ListModelsApiRequest,
     http_request: Request,
     response: Response,
@@ -102,7 +97,7 @@ async def get_models_list(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_models_list",
+            operation="get_model_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

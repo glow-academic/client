@@ -33,7 +33,7 @@ router = APIRouter()
         )
     ],
 )
-async def create_flag(
+async def create_flags(
     request: FlagsApiRequest,
     http_request: Request,
     response: Response,
@@ -103,7 +103,7 @@ async def create_flag(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_flag",
+            operation="create_flags",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
