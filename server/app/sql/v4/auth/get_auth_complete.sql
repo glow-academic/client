@@ -274,15 +274,17 @@ flag_resource_data AS (
 -- Protocol IDs (selected protocol IDs for auth)
 protocol_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(ap.protocol_id ORDER BY ap.created_at)
-                 FROM auth_protocols ap
-                 WHERE ap.auth_id = (SELECT auth_id FROM params)),
-                ARRAY[]::uuid[]
-            )
-        END as protocol_ids
+        COALESCE(
+            CASE 
+                WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+                ELSE (
+                    SELECT ARRAY_AGG(ap.protocol_id ORDER BY ap.created_at)
+                    FROM auth_protocols ap
+                    WHERE ap.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
+                )
+            END,
+            ARRAY[]::uuid[]
+        ) as protocol_ids
     FROM params
     -- Always return at least one row
     LIMIT 1
@@ -290,15 +292,17 @@ protocol_ids_data AS (
 -- Slug IDs (selected slug IDs for auth)
 slug_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(as_j.slug_id ORDER BY as_j.created_at)
-                 FROM auth_slugs as_j
-                 WHERE as_j.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)),
-                ARRAY[]::uuid[]
-            )
-        END as slug_ids
+        COALESCE(
+            CASE 
+                WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+                ELSE (
+                    SELECT ARRAY_AGG(as_j.slug_id ORDER BY as_j.created_at)
+                    FROM auth_slugs as_j
+                    WHERE as_j.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
+                )
+            END,
+            ARRAY[]::uuid[]
+        ) as slug_ids
     FROM params
     -- Always return at least one row
     LIMIT 1
@@ -311,7 +315,7 @@ protocol_mapping_data AS (
         COALESCE(p.generated, false) as generated
     FROM protocols_resource p
     CROSS JOIN params x
-    WHERE TRUE
+    WHERE p.id IS NOT NULL
     ORDER BY p.value
 ),
 -- Slug mapping (for slugs array - all available slugs)
@@ -322,7 +326,7 @@ slug_mapping_data AS (
         COALESCE(s.generated, false) as generated
     FROM slugs_resource s
     CROSS JOIN params x
-    WHERE TRUE
+    WHERE s.id IS NOT NULL
     ORDER BY s.value
 ),
 -- Name suggestions: linked to auths OR same group with generated=true
@@ -565,44 +569,9 @@ descriptions_suggestions_objects AS (
     -- Always return at least one row, even if no suggestions exist
     LIMIT 1
 ),
--- Descriptions: linked to auths OR same group with generated=true
-descriptions_data AS (
-    SELECT DISTINCT
-        d.id,
-        d.description,
-        COALESCE(d.generated, false) as generated
-    FROM descriptions_resource d
-    CROSS JOIN params p
-    CROSS JOIN draft_group_data dgd
-    WHERE 
-        -- Always include selected description_id if it exists
-        d.id = (SELECT description_id FROM description_resource_data)
-        OR (
-            (
-                -- Option 1: Linked to auths (auth_descriptions junction table means it's used)
-                EXISTS (
-                    SELECT 1 FROM auth_descriptions ad
-                    WHERE ad.description_id = d.id
-                )
-                OR
-                -- Option 2: Linked to same group with generated=true
-                (
-                    d.generated = true
-                    AND EXISTS (
-                        SELECT 1 FROM calls c
-                        JOIN message_calls mc ON mc.call_id = c.id
-                        JOIN message_runs mr ON mr.message_id = mc.message_id
-                        JOIN group_runs gr ON gr.run_id = mr.run_id
-                        WHERE c.id = d.call_id
-                          AND gr.group_id = dgd.group_id
-                    )
-                )
-            )
-            AND d.description IS NOT NULL
-            AND d.description != ''
-        )
-    ORDER BY d.description
-),
+-- Descriptions: suggested options only (like names) - linked to auths OR same group with generated=true
+-- Note: This is used for the descriptions array which should only show suggested options, not all available
+-- Note: We don't actually need this CTE anymore since we use descriptions_suggestions_objects directly
 -- Flags (all available flag options)
 flags_data AS (
     SELECT DISTINCT
@@ -667,12 +636,11 @@ name_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
               AND af.value = true
         )
-        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -702,7 +670,7 @@ name_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -731,12 +699,11 @@ description_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
               AND af.value = true
         )
-        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -766,7 +733,7 @@ description_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -795,12 +762,11 @@ flag_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
               AND af.value = true
         )
-        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -830,7 +796,7 @@ flag_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -859,12 +825,11 @@ protocols_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
               AND af.value = true
         )
-        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -894,7 +859,7 @@ protocols_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -923,12 +888,11 @@ slugs_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
               AND af.value = true
         )
-        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -958,7 +922,7 @@ slugs_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1107,13 +1071,7 @@ SELECT
     (SELECT agent_id FROM description_agent_data) as description_agent_id,
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dd.id, dd.description, dd.generated)::types.q_get_auth_v4_description_resource
-            ORDER BY dd.description
-        ) FROM (SELECT DISTINCT id, description, generated FROM descriptions_data) dd),
-        COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_auth_v4_description_resource[])
-    ) as descriptions,
+    COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_auth_v4_description_resource[]) as descriptions,
     -- Single-select resources: flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     frd.flag_resource,
@@ -1130,7 +1088,7 @@ SELECT
             ORDER BY pmd.value
         )
         FROM protocol_mapping_data pmd
-        WHERE pmd.id = ANY(pid.protocol_ids)),
+        WHERE pmd.id IS NOT NULL AND pmd.id = ANY(pid.protocol_ids)),
         '{}'::types.q_get_auth_v4_protocol[]
     ) as protocol_resources,
     CASE 
@@ -1148,7 +1106,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (pmd.id, pmd.value, pmd.generated)::types.q_get_auth_v4_protocol
             ORDER BY pmd.value
-        ) FROM (SELECT DISTINCT id, value, generated FROM protocol_mapping_data) pmd),
+        ) FROM protocol_mapping_data pmd WHERE pmd.id IS NOT NULL),
         '{}'::types.q_get_auth_v4_protocol[]
     ) as protocols,
     -- Multi-select resources: slugs
@@ -1160,7 +1118,7 @@ SELECT
             ORDER BY smd.value
         )
         FROM slug_mapping_data smd
-        WHERE smd.id = ANY(sid.slug_ids)),
+        WHERE smd.id IS NOT NULL AND smd.id = ANY(sid.slug_ids)),
         '{}'::types.q_get_auth_v4_slug[]
     ) as slug_resources,
     CASE 
@@ -1178,15 +1136,15 @@ SELECT
         (SELECT ARRAY_AGG(
             (smd.id, smd.value, smd.generated)::types.q_get_auth_v4_slug
             ORDER BY smd.value
-        ) FROM (SELECT DISTINCT id, value, generated FROM slug_mapping_data) smd),
+        ) FROM slug_mapping_data smd WHERE smd.id IS NOT NULL),
         '{}'::types.q_get_auth_v4_slug[]
     ) as slugs,
     -- Special handling: auth_items
     COALESCE(
-        ARRAY_AGG(
+        (SELECT ARRAY_AGG(
             (aid.auth_item_id, aid.name, aid.description, aid.position, aid.active, aid.value_masked, aid.key_id, aid.encrypted)::types.q_get_auth_v4_auth_item
             ORDER BY aid.position
-        ),
+        ) FROM auth_items_data aid WHERE aid.auth_item_id IS NOT NULL),
         '{}'::types.q_get_auth_v4_auth_item[]
     ) as auth_items,
     -- Extract auth_item_ids from draft payload if available, otherwise extract from auth_items array
@@ -1227,7 +1185,7 @@ CROSS JOIN protocol_ids_data pid
 CROSS JOIN slug_ids_data sid
 CROSS JOIN protocol_suggestions_data psd
 CROSS JOIN slug_suggestions_data ssd
-LEFT JOIN auth_items_data aid ON true
+LEFT JOIN auth_items_data aid ON aid.auth_item_id IS NOT NULL
 GROUP BY 
     up.actor_name,
     perm_final.can_edit,
