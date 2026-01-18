@@ -56,6 +56,16 @@ CREATE TYPE types.q_get_eval_v4_rubric AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_eval_v4_run_rubrics AS (
+    run_id uuid,
+    rubric_ids uuid[]
+);
+
+CREATE TYPE types.q_get_eval_v4_group_rubrics AS (
+    group_id uuid,
+    rubric_ids uuid[]
+);
+
 CREATE TYPE types.q_get_eval_v4_name_resource AS (
     id uuid,
     name text,
@@ -176,6 +186,11 @@ RETURNS TABLE (
     rubrics_required boolean,
     rubric_suggestions uuid[],
     rubrics types.q_get_eval_v4_rubric[],
+    -- Run/group selections + rubric mapping
+    model_run_ids uuid[],
+    group_ids uuid[],
+    run_rubrics types.q_get_eval_v4_run_rubrics[],
+    group_rubrics types.q_get_eval_v4_group_rubrics[],
     -- Additional eval-specific fields
     available_model_runs types.q_get_eval_v4_available_model_run[],
     available_model_runs_total_count bigint,
@@ -1053,6 +1068,48 @@ eval_department_ids_data AS (
     FROM params
     LIMIT 1
 ),
+-- Draft run/group selections (for new evals)
+draft_run_ids_data AS (
+    SELECT
+        COALESCE(ARRAY_AGG(dr.runs_id ORDER BY dr.created_at), ARRAY[]::uuid[]) as run_ids
+    FROM params x
+    LEFT JOIN draft_runs dr ON dr.draft_id = x.draft_id
+),
+draft_group_ids_data AS (
+    SELECT
+        COALESCE(ARRAY_AGG(dg.groups_id ORDER BY dg.created_at), ARRAY[]::uuid[]) as group_ids
+    FROM params x
+    LEFT JOIN draft_groups dg ON dg.draft_id = x.draft_id
+),
+-- Eval run/group selections
+eval_run_ids_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT eval_id FROM params) IS NULL THEN COALESCE((SELECT run_ids FROM draft_run_ids_data), ARRAY[]::uuid[])
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(er.run_id ORDER BY er.created_at)
+                 FROM eval_runs er
+                 WHERE er.eval_id = (SELECT eval_id FROM params) AND er.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as run_ids
+    FROM params
+    LIMIT 1
+),
+eval_group_ids_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT eval_id FROM params) IS NULL THEN COALESCE((SELECT group_ids FROM draft_group_ids_data), ARRAY[]::uuid[])
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(eg.group_id ORDER BY eg.created_at)
+                 FROM eval_groups eg
+                 WHERE eg.eval_id = (SELECT eval_id FROM params) AND eg.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as group_ids
+    FROM params
+    LIMIT 1
+),
 -- Eval rubric IDs (selected rubric IDs for eval)
 eval_rubric_ids_data AS (
     SELECT 
@@ -1075,6 +1132,37 @@ eval_rubric_ids_data AS (
         END as rubric_ids
     FROM params
     LIMIT 1
+),
+-- Eval run/group rubric mappings
+eval_run_rubrics_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG((err.run_id, err.rubric_ids)::types.q_get_eval_v4_run_rubrics),
+            '{}'::types.q_get_eval_v4_run_rubrics[]
+        ) as run_rubrics
+    FROM (
+        SELECT
+            err.run_id,
+            ARRAY_AGG(err.rubric_id ORDER BY err.created_at) as rubric_ids
+        FROM eval_runs_rubrics err
+        WHERE err.eval_id = (SELECT eval_id FROM params) AND err.active = true
+        GROUP BY err.run_id
+    ) err
+),
+eval_group_rubrics_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG((egr.group_id, egr.rubric_ids)::types.q_get_eval_v4_group_rubrics),
+            '{}'::types.q_get_eval_v4_group_rubrics[]
+        ) as group_rubrics
+    FROM (
+        SELECT
+            egr.group_id,
+            ARRAY_AGG(egr.rubric_id ORDER BY egr.created_at) as rubric_ids
+        FROM eval_groups_rubrics egr
+        WHERE egr.eval_id = (SELECT eval_id FROM params) AND egr.active = true
+        GROUP BY egr.group_id
+    ) egr
 ),
 -- Check for missing tools on required resources
 -- IMPORTANT: We check for TOOLS existence (not agents). Tools are required, agents are optional.
@@ -1485,6 +1573,11 @@ SELECT
     END as rubrics_required,
     COALESCE((SELECT rubric_suggestions FROM rubric_suggestions_data), ARRAY[]::uuid[]) as rubric_suggestions,
     COALESCE((SELECT rubrics FROM rubrics_array), '{}'::types.q_get_eval_v4_rubric[]) as rubrics,
+    -- Run/group selections + rubric mapping
+    COALESCE((SELECT run_ids FROM eval_run_ids_data), ARRAY[]::uuid[]) as model_run_ids,
+    COALESCE((SELECT group_ids FROM eval_group_ids_data), ARRAY[]::uuid[]) as group_ids,
+    COALESCE((SELECT run_rubrics FROM eval_run_rubrics_data), '{}'::types.q_get_eval_v4_run_rubrics[]) as run_rubrics,
+    COALESCE((SELECT group_rubrics FROM eval_group_rubrics_data), '{}'::types.q_get_eval_v4_group_rubrics[]) as group_rubrics,
     -- Additional eval-specific fields
     COALESCE((SELECT available_model_runs FROM available_model_runs_array), '{}'::types.q_get_eval_v4_available_model_run[]) as available_model_runs,
     COALESCE((SELECT total_count FROM available_model_runs_array), 0) as available_model_runs_total_count,
@@ -1508,6 +1601,10 @@ CROSS JOIN rubrics_array ra
 CROSS JOIN eval_agent_ids_data eaid
 CROSS JOIN eval_department_ids_data edid
 CROSS JOIN eval_rubric_ids_data erid
+CROSS JOIN eval_run_ids_data erun
+CROSS JOIN eval_group_ids_data egrp
+CROSS JOIN eval_run_rubrics_data errd
+CROSS JOIN eval_group_rubrics_data egrd
 LEFT JOIN available_model_runs_array amra ON (
     (SELECT available_model_runs_search FROM params) IS NOT NULL 
     OR (SELECT available_model_runs_agent_ids FROM params) IS NOT NULL

@@ -43,7 +43,7 @@ import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
-import { parseAsString, useQueryStates, type Parser } from "nuqs";
+import { parseAsBoolean, parseAsString, useQueryStates, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
@@ -257,6 +257,8 @@ function FieldComponent({
   const fieldSearchParamsClient = useMemo(
     () => ({
       draftId: parseAsString,
+      parameterSearch: parseAsString,
+      parameterShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -1147,6 +1149,14 @@ function FieldComponent({
           );
 
         case "parameters":
+          const parameterSearchTerm =
+            (stepFormData["parameterSearch"] as string | null | undefined) ||
+            "";
+          const parameterShowSelected =
+            (stepFormData["parameterShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1155,7 +1165,28 @@ function FieldComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["parameter_ids"]}
+              searchTerm={parameterSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ parameterSearch: term || null })
+              }
+              searchPlaceholder="Search parameters..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: parameterShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      parameterShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={[
+                "parameter_ids",
+                "parameterSearch",
+                "parameterShowSelected",
+              ]}
               actions={
                 stepResources["parameters"] &&
                 stepResources["parameters"].length > 0 &&
@@ -1227,6 +1258,8 @@ function FieldComponent({
                 createParametersAction={createParametersAction}
                 onGenerate={handleGenerateParameters}
                 isGenerating={isGenerating("parameters")}
+                searchTerm={parameterSearchTerm}
+                showSelectedFilter={parameterShowSelected}
               />
             </StepCard>
           );

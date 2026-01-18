@@ -8822,6 +8822,14 @@ export interface components {
             rubric_suggestions?: string[] | null;
             /** Rubrics */
             rubrics?: components["schemas"]["QGetEvalV4Rubric"][] | null;
+            /** Model Run Ids */
+            model_run_ids?: string[] | null;
+            /** Group Ids */
+            group_ids?: string[] | null;
+            /** Run Rubrics */
+            run_rubrics?: components["schemas"]["QGetEvalV4RunRubrics"][] | null;
+            /** Group Rubrics */
+            group_rubrics?: components["schemas"]["QGetEvalV4GroupRubrics"][] | null;
             /** Available Model Runs */
             available_model_runs?: components["schemas"]["QGetEvalV4AvailableModelRun"][] | null;
             /** Available Model Runs Total Count */
@@ -14351,6 +14359,13 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetEvalV4GroupRubrics */
+        QGetEvalV4GroupRubrics: {
+            /** Group Id */
+            group_id: string | null;
+            /** Rubric Ids */
+            rubric_ids: string[] | null;
+        };
         /** QGetEvalV4NameResource */
         QGetEvalV4NameResource: {
             /** Id */
@@ -14372,6 +14387,13 @@ export interface components {
             agent_role: string | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetEvalV4RunRubrics */
+        QGetEvalV4RunRubrics: {
+            /** Run Id */
+            run_id: string | null;
+            /** Rubric Ids */
+            rubric_ids: string[] | null;
         };
         /** QGetFieldV4Department */
         QGetFieldV4Department: {
@@ -19141,6 +19163,20 @@ export interface components {
             /** Count */
             count: number | null;
         };
+        /** QSaveEvalV4GroupRubricLink */
+        QSaveEvalV4GroupRubricLink: {
+            /** Group Id */
+            group_id: string | null;
+            /** Rubric Ids */
+            rubric_ids: string[] | null;
+        };
+        /** QSaveEvalV4RunRubricLink */
+        QSaveEvalV4RunRubricLink: {
+            /** Run Id */
+            run_id: string | null;
+            /** Rubric Ids */
+            rubric_ids: string[] | null;
+        };
         /** QSaveScenarioV4Parameter */
         QSaveScenarioV4Parameter: {
             /** Parameter Id */
@@ -19649,6 +19685,12 @@ export interface components {
             use_groups: boolean | null;
             /** Model Run Ids */
             model_run_ids?: string[] | null;
+            /** Group Ids */
+            group_ids?: string[] | null;
+            /** Run Rubric Links */
+            run_rubric_links?: components["schemas"]["QSaveEvalV4RunRubricLink"][] | null;
+            /** Group Rubric Links */
+            group_rubric_links?: components["schemas"]["QSaveEvalV4GroupRubricLink"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /**

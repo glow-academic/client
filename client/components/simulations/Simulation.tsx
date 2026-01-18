@@ -24,8 +24,9 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
 import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
-import { ScenarioRubricGradeAgents } from "@/components/resources/ScenarioRubricGradeAgents";
 import { Scenarios } from "@/components/resources/Scenarios";
+import { Rubrics } from "@/components/resources/Rubrics";
+import { Times } from "@/components/resources/Times";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -67,6 +68,8 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
+type CreateDraftRubricsIn = InputOf<"/api/v4/resources/rubrics", "post">;
+type CreateDraftRubricsOut = OutputOf<"/api/v4/resources/rubrics", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/simulation_scenario_flags",
   "post"
@@ -95,6 +98,7 @@ type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
 
 type SimulationData = OutputOf<"/api/v4/simulations/get", "post">;
+type SimulationResourceType = ResourceType | "scenario_rubrics" | "scenario_time_limits";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -123,6 +127,9 @@ export interface SimulationProps {
   createScenariosAction?: (
     input: CreateDraftScenariosIn
   ) => Promise<CreateDraftScenariosOut>;
+  createRubricsAction?: (
+    input: CreateDraftRubricsIn
+  ) => Promise<CreateDraftRubricsOut>;
   createScenarioFlagsAction?: (
     input: CreateDraftScenarioFlagsIn
   ) => Promise<CreateDraftScenarioFlagsOut>;
@@ -144,9 +151,9 @@ function SimulationComponent({
   createFlagsAction,
   createDepartmentsAction,
   createScenariosAction,
+  createRubricsAction,
   createScenarioFlagsAction,
   createScenarioPositionsAction,
-  createScenarioRubricGradeAgentsAction,
 }: SimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
@@ -163,7 +170,7 @@ function SimulationComponent({
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
+    Set<SimulationResourceType>
   >(new Set());
 
   // Modal state for generate/regenerate
@@ -177,7 +184,8 @@ function SimulationComponent({
   const [modalInstructions, setModalInstructions] = useState("");
 
   const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    (resourceType: SimulationResourceType) =>
+      generatingResources.has(resourceType),
     [generatingResources]
   );
 
@@ -255,19 +263,22 @@ function SimulationComponent({
       scenario_position_suggestions:
         simulationData.scenario_position_suggestions,
       scenario_positions: simulationData.scenario_positions,
-      scenario_rubric_grade_agent_ids:
-        simulationData.scenario_rubric_grade_agent_ids,
-      scenario_rubric_grade_agent_resources:
-        simulationData.scenario_rubric_grade_agent_resources,
-      show_scenario_rubric_grade_agents:
-        simulationData.show_scenario_rubric_grade_agents,
-      scenario_rubric_grade_agents_agent_id:
-        simulationData.scenario_rubric_grade_agents_agent_id,
-      scenario_rubric_grade_agents_required:
-        simulationData.scenario_rubric_grade_agents_required,
-      scenario_rubric_grade_agent_suggestions:
-        simulationData.scenario_rubric_grade_agent_suggestions,
-      scenario_rubric_grade_agents: simulationData.scenario_rubric_grade_agents,
+      scenario_rubric_ids: simulationData.scenario_rubric_ids,
+      scenario_rubric_resources: simulationData.scenario_rubric_resources,
+      show_scenario_rubrics: simulationData.show_scenario_rubrics,
+      scenario_rubrics_agent_id: simulationData.scenario_rubrics_agent_id,
+      scenario_rubrics_required: simulationData.scenario_rubrics_required,
+      scenario_rubric_suggestions: simulationData.scenario_rubric_suggestions,
+      scenario_rubrics: simulationData.scenario_rubrics,
+      scenario_time_limit_ids: simulationData.scenario_time_limit_ids,
+      scenario_time_limit_resources:
+        simulationData.scenario_time_limit_resources,
+      show_scenario_time_limits: simulationData.show_scenario_time_limits,
+      scenario_time_limits_agent_id: simulationData.scenario_time_limits_agent_id,
+      scenario_time_limits_required: simulationData.scenario_time_limits_required,
+      scenario_time_limit_suggestions:
+        simulationData.scenario_time_limit_suggestions,
+      scenario_time_limits: simulationData.scenario_time_limits,
       general_agent_id: simulationData.general_agent_id,
     };
     // Intentionally depend on individual fields, not whole simulationData object
@@ -319,20 +330,27 @@ function SimulationComponent({
     simulationData?.scenario_positions_required,
     simulationData?.scenario_position_suggestions,
     simulationData?.scenario_positions,
-    simulationData?.scenario_rubric_grade_agent_ids,
-    simulationData?.scenario_rubric_grade_agent_resources,
-    simulationData?.show_scenario_rubric_grade_agents,
-    simulationData?.scenario_rubric_grade_agents_agent_id,
-    simulationData?.scenario_rubric_grade_agents_required,
-    simulationData?.scenario_rubric_grade_agent_suggestions,
-    simulationData?.scenario_rubric_grade_agents,
+    simulationData?.scenario_rubric_ids,
+    simulationData?.scenario_rubric_resources,
+    simulationData?.show_scenario_rubrics,
+    simulationData?.scenario_rubrics_agent_id,
+    simulationData?.scenario_rubrics_required,
+    simulationData?.scenario_rubric_suggestions,
+    simulationData?.scenario_rubrics,
+    simulationData?.scenario_time_limit_ids,
+    simulationData?.scenario_time_limit_resources,
+    simulationData?.show_scenario_time_limits,
+    simulationData?.scenario_time_limits_agent_id,
+    simulationData?.scenario_time_limits_required,
+    simulationData?.scenario_time_limit_suggestions,
+    simulationData?.scenario_time_limits,
     simulationData?.general_agent_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
   // Use stableSimulationDataFields to prevent callback recreation when simulationData object reference changes
   const canRegenerate = useCallback(
-    (resourceType: ResourceType): boolean => {
+    (resourceType: SimulationResourceType): boolean => {
       if (!stableSimulationDataFields) return false;
       switch (resourceType) {
         case "names":
@@ -367,10 +385,16 @@ function SimulationComponent({
               (p) => p.generated
             ) ?? false
           );
-        case "scenario_rubric_grade_agents":
+        case "scenario_rubrics":
           return (
-            stableSimulationDataFields.scenario_rubric_grade_agent_resources?.some(
-              (a) => a.generated
+            stableSimulationDataFields.scenario_rubric_resources?.some(
+              (r) => r.generated
+            ) ?? false
+          );
+        case "scenario_time_limits":
+          return (
+            stableSimulationDataFields.scenario_time_limit_resources?.some(
+              (t) => t.generated
             ) ?? false
           );
         default:
@@ -391,7 +415,8 @@ function SimulationComponent({
         scenario_ids: [] as string[],
         scenario_flag_ids: [] as string[],
         scenario_position_ids: [] as string[],
-        scenario_rubric_grade_agent_ids: [] as string[],
+        scenario_rubric_ids: [] as string[],
+        scenario_time_limit_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
@@ -403,13 +428,9 @@ function SimulationComponent({
       department_ids: data.department_ids ?? [],
       scenario_ids: data.scenario_ids ?? [],
       scenario_flag_ids: data.scenario_flag_ids ?? [],
-      // Convert scenario_position_resources to IDs (composite keys represented as strings)
-      scenario_position_ids:
-        data.scenario_position_resources?.map(
-          (p) => `${p.simulation_id}-${p.scenario_id}`
-        ) ?? [],
-      scenario_rubric_grade_agent_ids:
-        data.scenario_rubric_grade_agent_ids ?? [],
+      scenario_position_ids: data.scenario_position_ids ?? [],
+      scenario_rubric_ids: data.scenario_rubric_ids ?? [],
+      scenario_time_limit_ids: data.scenario_time_limit_ids ?? [],
     };
     // Remove simulationData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -436,18 +457,6 @@ function SimulationComponent({
     () => JSON.stringify(formState.scenario_ids),
     [formState.scenario_ids]
   );
-  const formStateScenarioFlagIdsStr = React.useMemo(
-    () => JSON.stringify(formState.scenario_flag_ids),
-    [formState.scenario_flag_ids]
-  );
-  const formStateScenarioPositionIdsStr = React.useMemo(
-    () => JSON.stringify(formState.scenario_position_ids),
-    [formState.scenario_position_ids]
-  );
-  const formStateScenarioRubricGradeAgentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.scenario_rubric_grade_agent_ids),
-    [formState.scenario_rubric_grade_agent_ids]
-  );
 
   // Update form state when server data changes
   // Use simulationData directly in dependency array, not getInitialFormState
@@ -467,8 +476,10 @@ function SimulationComponent({
           JSON.stringify(newState.scenario_flag_ids) ||
         JSON.stringify(prev.scenario_position_ids) !==
           JSON.stringify(newState.scenario_position_ids) ||
-        JSON.stringify(prev.scenario_rubric_grade_agent_ids) !==
-          JSON.stringify(newState.scenario_rubric_grade_agent_ids)
+        JSON.stringify(prev.scenario_rubric_ids) !==
+          JSON.stringify(newState.scenario_rubric_ids) ||
+        JSON.stringify(prev.scenario_time_limit_ids) !==
+          JSON.stringify(newState.scenario_time_limit_ids)
       ) {
         return newState;
       }
@@ -484,12 +495,9 @@ function SimulationComponent({
     departmentIdsStr,
     JSON.stringify(simulationData?.scenario_ids ?? []),
     JSON.stringify(simulationData?.scenario_flag_ids ?? []),
-    JSON.stringify(
-      simulationData?.scenario_position_resources?.map(
-        (p) => `${p.simulation_id}-${p.scenario_id}`
-      ) ?? []
-    ),
-    JSON.stringify(simulationData?.scenario_rubric_grade_agent_ids ?? []),
+    JSON.stringify(simulationData?.scenario_position_ids ?? []),
+    JSON.stringify(simulationData?.scenario_rubric_ids ?? []),
+    JSON.stringify(simulationData?.scenario_time_limit_ids ?? []),
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -541,10 +549,6 @@ function SimulationComponent({
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
       scenario_ids: formState.scenario_ids,
-      scenario_flag_ids: formState.scenario_flag_ids,
-      scenario_position_ids: formState.scenario_position_ids,
-      scenario_rubric_grade_agent_ids:
-        formState.scenario_rubric_grade_agent_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -555,9 +559,6 @@ function SimulationComponent({
     formState.active_flag_id,
     formStateDepartmentIdsStr,
     formStateScenarioIdsStr,
-    formStateScenarioFlagIdsStr,
-    formStateScenarioPositionIdsStr,
-    formStateScenarioRubricGradeAgentIdsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -571,10 +572,7 @@ function SimulationComponent({
       formState.description_id ||
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
-      formState.scenario_ids.length > 0 ||
-      formState.scenario_flag_ids.length > 0 ||
-      formState.scenario_position_ids.length > 0 ||
-      formState.scenario_rubric_grade_agent_ids.length > 0;
+      formState.scenario_ids.length > 0;
 
     if (!hasResourceIds || !patchSimulationDraftActionRef.current) {
       return;
@@ -596,10 +594,6 @@ function SimulationComponent({
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
             scenario_ids: formState.scenario_ids,
-            scenario_flag_ids: formState.scenario_flag_ids,
-            scenario_position_ids: formState.scenario_position_ids,
-            scenario_rubric_grade_agent_ids:
-              formState.scenario_rubric_grade_agent_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -654,7 +648,8 @@ function SimulationComponent({
       scenario_ids?: string[];
       scenario_flag_ids?: string[];
       scenario_position_ids?: string[];
-      scenario_rubric_grade_agent_ids?: string[];
+      scenario_rubric_ids?: string[];
+      scenario_time_limit_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -668,7 +663,7 @@ function SimulationComponent({
         return; // Not for this simulation or wrong group_id
       }
 
-      const validResourceTypes: ResourceType[] = [
+      const validResourceTypes: SimulationResourceType[] = [
         "names",
         "descriptions",
         "flags",
@@ -676,11 +671,12 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
+        "scenario_time_limits",
       ];
       if (
         data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
+        validResourceTypes.includes(data.resource_type as SimulationResourceType)
       ) {
         // Update formState with the resource ID that was generated
         // Only update the field that matches resource_type (others will be null)
@@ -727,18 +723,27 @@ function SimulationComponent({
               ...newScenarioPositionIds,
             ];
           }
+          if (data.scenario_rubric_ids && data.scenario_rubric_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newScenarioRubricIds = data.scenario_rubric_ids.filter(
+              (id) => !prev.scenario_rubric_ids.includes(id)
+            );
+            updates.scenario_rubric_ids = [
+              ...prev.scenario_rubric_ids,
+              ...newScenarioRubricIds,
+            ];
+          }
           if (
-            data.scenario_rubric_grade_agent_ids &&
-            data.scenario_rubric_grade_agent_ids.length > 0
+            data.scenario_time_limit_ids &&
+            data.scenario_time_limit_ids.length > 0
           ) {
             // For arrays, append new IDs (avoid duplicates)
-            const newScenarioRubricGradeAgentIds =
-              data.scenario_rubric_grade_agent_ids.filter(
-                (id) => !prev.scenario_rubric_grade_agent_ids.includes(id)
-              );
-            updates.scenario_rubric_grade_agent_ids = [
-              ...prev.scenario_rubric_grade_agent_ids,
-              ...newScenarioRubricGradeAgentIds,
+            const newScenarioTimeLimitIds = data.scenario_time_limit_ids.filter(
+              (id) => !prev.scenario_time_limit_ids.includes(id)
+            );
+            updates.scenario_time_limit_ids = [
+              ...prev.scenario_time_limit_ids,
+              ...newScenarioTimeLimitIds,
             ];
           }
 
@@ -754,7 +759,7 @@ function SimulationComponent({
         setGeneratingResources((prev) => {
           const next = new Set(prev);
           if (data.resource_type) {
-            next.delete(data.resource_type as ResourceType);
+            next.delete(data.resource_type as SimulationResourceType);
           }
           return next;
         });
@@ -804,7 +809,7 @@ function SimulationComponent({
         return;
       }
 
-      const validResourceTypes: ResourceType[] = [
+      const validResourceTypes: SimulationResourceType[] = [
         "names",
         "descriptions",
         "flags",
@@ -812,15 +817,16 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
+        "scenario_time_limits",
       ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
+          if (validResourceTypes.includes(rt as SimulationResourceType)) {
+            next.delete(rt as SimulationResourceType);
           }
         });
         return next;
@@ -842,8 +848,8 @@ function SimulationComponent({
 
   // Determine agent type for generation (simplified for simulations)
   const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      const allResourceTypes: ResourceType[] = [
+    (resourceTypes: SimulationResourceType[]): string | null => {
+      const allResourceTypes: SimulationResourceType[] = [
         "names",
         "descriptions",
         "departments",
@@ -851,7 +857,8 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
+        "scenario_time_limits",
       ];
 
       const isAllResources =
@@ -862,7 +869,7 @@ function SimulationComponent({
         return "general";
       } else if (resourceTypes.length === 1) {
         // Single resource type - map to agent_type
-        const agentTypeMap: Record<ResourceType, string> = {
+        const agentTypeMap: Record<SimulationResourceType, string> = {
           names: "name",
           descriptions: "description",
           departments: "departments",
@@ -870,7 +877,8 @@ function SimulationComponent({
           scenarios: "scenarios",
           scenario_flags: "scenario_flags",
           scenario_positions: "scenario_positions",
-          scenario_rubric_grade_agents: "scenario_rubric_grade_agents",
+          scenario_rubrics: "scenario_rubrics",
+          scenario_time_limits: "scenario_time_limits",
           // Not used for simulations but needed for type safety
           colors: "color",
           icons: "icon",
@@ -890,7 +898,7 @@ function SimulationComponent({
 
   const handleGenerateResources = useCallback(
     async (
-      resourceTypes: ResourceType[],
+      resourceTypes: SimulationResourceType[],
       agentType: string | null,
       userInstructions?: string
     ) => {
@@ -990,11 +998,20 @@ function SimulationComponent({
     [handleGenerateResources, determineAgentType]
   );
 
-  const handleGenerateScenarioRubricGradeAgents = useCallback(
+  const handleGenerateScenarioRubrics = useCallback(
     async () =>
       handleGenerateResources(
-        ["scenario_rubric_grade_agents"],
-        determineAgentType(["scenario_rubric_grade_agents"])
+        ["scenario_rubrics"],
+        determineAgentType(["scenario_rubrics"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateScenarioTimeLimits = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["scenario_time_limits"],
+        determineAgentType(["scenario_time_limits"])
       ),
     [handleGenerateResources, determineAgentType]
   );
@@ -1064,6 +1081,60 @@ function SimulationComponent({
         throw new Error("Departments are required");
       }
 
+      if (simulationData?.flag_required && !formState.active_flag_id) {
+        toast.error("Active flag is required");
+        throw new Error("Active flag is required");
+      }
+
+      if (simulationData?.description_required && !formState.description_id) {
+        toast.error("Description is required");
+        throw new Error("Description is required");
+      }
+
+      if (
+        simulationData?.scenarios_required &&
+        (!formState.scenario_ids || formState.scenario_ids.length === 0)
+      ) {
+        toast.error("Scenarios are required");
+        throw new Error("Scenarios are required");
+      }
+
+      if (
+        simulationData?.scenario_flags_required &&
+        (!formState.scenario_flag_ids ||
+          formState.scenario_flag_ids.length === 0)
+      ) {
+        toast.error("Scenario flags are required");
+        throw new Error("Scenario flags are required");
+      }
+
+      if (
+        simulationData?.scenario_positions_required &&
+        (!formState.scenario_position_ids ||
+          formState.scenario_position_ids.length === 0)
+      ) {
+        toast.error("Scenario positions are required");
+        throw new Error("Scenario positions are required");
+      }
+
+      if (
+        simulationData?.scenario_rubrics_required &&
+        (!formState.scenario_rubric_ids ||
+          formState.scenario_rubric_ids.length === 0)
+      ) {
+        toast.error("Scenario rubrics are required");
+        throw new Error("Scenario rubrics are required");
+      }
+
+      if (
+        simulationData?.scenario_time_limits_required &&
+        (!formState.scenario_time_limit_ids ||
+          formState.scenario_time_limit_ids.length === 0)
+      ) {
+        toast.error("Scenario time limits are required");
+        throw new Error("Scenario time limits are required");
+      }
+
       // Pass department_ids directly - SQL handles validation via validate_department_create_permissions/validate_department_update_permissions
 
       // Ensure profileId exists - required for API calls
@@ -1103,8 +1174,8 @@ function SimulationComponent({
             scenario_audio_enabled: [],
             scenario_text_enabled: [],
             scenario_rubric_grade_agents: [],
-            simulation_text_domain_id: null,
-            simulation_voice_domain_id: null,
+            scenario_flag_ids: formState.scenario_flag_ids || [],
+            scenario_position_ids: formState.scenario_position_ids || [],
           },
         });
         toast.success(
@@ -1126,7 +1197,14 @@ function SimulationComponent({
       saveSimulationAction,
       router,
       simulationData?.name_required,
+      simulationData?.description_required,
+      simulationData?.flag_required,
       simulationData?.departments_required,
+      simulationData?.scenarios_required,
+      simulationData?.scenario_flags_required,
+      simulationData?.scenario_positions_required,
+      simulationData?.scenario_rubrics_required,
+      simulationData?.scenario_time_limits_required,
     ]
   );
 
@@ -1134,23 +1212,64 @@ function SimulationComponent({
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       // Check resource IDs from formState (components manage their own display state)
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
+      const hasName =
+        !(simulationData?.name_required ?? false) || !!formState.name_id;
+      const hasDescription =
+        !(simulationData?.description_required ?? false) ||
+        !!formState.description_id;
+      const hasDepartments =
+        !(simulationData?.departments_required ?? false) ||
+        formState.department_ids.length > 0;
+      const hasActiveFlag =
+        !(simulationData?.flag_required ?? false) ||
+        !!formState.active_flag_id;
+      const hasScenarios =
+        !(simulationData?.scenarios_required ?? false) ||
+        formState.scenario_ids.length > 0;
+      const hasScenarioFlags =
+        !(simulationData?.scenario_flags_required ?? false) ||
+        formState.scenario_flag_ids.length > 0;
+      const hasScenarioPositions =
+        !(simulationData?.scenario_positions_required ?? false) ||
+        formState.scenario_position_ids.length > 0;
+      const hasScenarioRubrics =
+        !(simulationData?.scenario_rubrics_required ?? false) ||
+        formState.scenario_rubric_ids.length > 0;
+      const hasScenarioTimeLimits =
+        !(simulationData?.scenario_time_limits_required ?? false) ||
+        formState.scenario_time_limit_ids.length > 0;
 
       switch (stepId) {
         case "basic":
-          return hasName && hasDescription ? "completed" : "active";
+          return hasName && hasDescription && hasDepartments && hasActiveFlag
+            ? "completed"
+            : "active";
+        case "scenarios":
+          return hasScenarios &&
+            hasScenarioFlags &&
+            hasScenarioPositions &&
+            hasScenarioRubrics &&
+            hasScenarioTimeLimits
+            ? "completed"
+            : "active";
         default:
           return "pending";
       }
     },
-    [formState]
+    [formState, simulationData]
   );
 
   // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
+  const stepResources: Record<string, SimulationResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
+      scenarios: [
+        "scenarios",
+        "scenario_flags",
+        "scenario_positions",
+        "scenario_rubrics",
+        "scenario_time_limits",
+      ],
       all: [
         "names",
         "descriptions",
@@ -1159,14 +1278,15 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
+        "scenario_time_limits",
       ], // All resources for full-page generation
     }),
     []
   );
 
   // Resource labels for display
-  const resourceLabels: Record<ResourceType, string> = useMemo(
+  const resourceLabels: Record<string, string> = useMemo(
     () => ({
       names: "Names",
       descriptions: "Descriptions",
@@ -1175,18 +1295,8 @@ function SimulationComponent({
       scenarios: "Scenarios",
       scenario_flags: "Scenario Flags",
       scenario_positions: "Scenario Positions",
-      scenario_rubric_grade_agents: "Scenario Rubric Grade Agents",
-      // Not used for simulations but needed for type safety
-      colors: "Colors",
-      icons: "Icons",
-      instructions: "Instructions",
-      examples: "Examples",
-      fields: "Fields",
-      schemas: "Schemas",
-      templates: "Templates",
-      schema_field_items: "Schema Field Items",
-      template_array_items: "Template Array Items",
-      template_values: "Template Values",
+      scenario_rubrics: "Scenario Rubrics",
+      scenario_time_limits: "Scenario Time Limits",
     }),
     []
   );
@@ -1214,7 +1324,7 @@ function SimulationComponent({
   // Handler for modal generate/regenerate action
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
+      const resourceTypes = selectedResources as SimulationResourceType[];
       const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
@@ -1250,13 +1360,38 @@ function SimulationComponent({
           "Set the simulation name, description, departments, and active status.",
         resetFields: ["name", "description", "department_ids", "active"],
       },
+      {
+        id: "scenarios",
+        title: "Scenarios",
+        description:
+          "Select scenarios and configure scenario flags, positions, rubrics, and time limits.",
+        resetFields: [
+          "scenario_ids",
+          "scenario_flag_ids",
+          "scenario_position_ids",
+          "scenario_rubric_ids",
+          "scenario_time_limit_ids",
+          "scenarioSearch",
+          "scenarioShowSelected",
+        ],
+      },
     ],
     []
   );
 
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
-    () => ["name", "description", "departments", "active"],
+    () => [
+      "name",
+      "description",
+      "departments",
+      "active",
+      "scenario_ids",
+      "scenario_flag_ids",
+      "scenario_position_ids",
+      "scenario_rubric_ids",
+      "scenario_time_limit_ids",
+    ],
     []
   );
 
@@ -1265,6 +1400,8 @@ function SimulationComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
+      case "scenarios":
+        return "Scenario configuration reset";
       default:
         return "Reset";
     }
@@ -1679,7 +1816,7 @@ function SimulationComponent({
             onInstructionsChange={setModalInstructions}
             onGenerate={handleModalGenerate}
             isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
+              isGenerating(r.id as SimulationResourceType)
             )}
             mode={modalMode}
           />

@@ -36555,6 +36555,64 @@
             ],
             "title": "Rubrics"
           },
+          "model_run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Run Ids"
+          },
+          "group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Ids"
+          },
+          "run_rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEvalV4RunRubrics"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Rubrics"
+          },
+          "group_rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetEvalV4GroupRubrics"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Rubrics"
+          },
           "available_model_runs": {
             "anyOf": [
               {
@@ -64860,6 +64918,43 @@
         ],
         "title": "QGetEvalV4FlagResource"
       },
+      "QGetEvalV4GroupRubrics": {
+        "properties": {
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "rubric_ids"
+        ],
+        "title": "QGetEvalV4GroupRubrics"
+      },
       "QGetEvalV4NameResource": {
         "properties": {
           "id": {
@@ -64973,6 +65068,43 @@
           "generated"
         ],
         "title": "QGetEvalV4Rubric"
+      },
+      "QGetEvalV4RunRubrics": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "rubric_ids"
+        ],
+        "title": "QGetEvalV4RunRubrics"
       },
       "QGetFieldV4Department": {
         "properties": {
@@ -91352,6 +91484,80 @@
         ],
         "title": "QReportsOverviewV4TrendData"
       },
+      "QSaveEvalV4GroupRubricLink": {
+        "properties": {
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "rubric_ids"
+        ],
+        "title": "QSaveEvalV4GroupRubricLink"
+      },
+      "QSaveEvalV4RunRubricLink": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "rubric_ids"
+        ],
+        "title": "QSaveEvalV4RunRubricLink"
+      },
       "QSaveScenarioV4Parameter": {
         "properties": {
           "parameter_id": {
@@ -93159,6 +93365,49 @@
               }
             ],
             "title": "Model Run Ids"
+          },
+          "group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Ids"
+          },
+          "run_rubric_links": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QSaveEvalV4RunRubricLink"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Rubric Links"
+          },
+          "group_rubric_links": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QSaveEvalV4GroupRubricLink"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Rubric Links"
           },
           "department_ids": {
             "anyOf": [

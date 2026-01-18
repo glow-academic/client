@@ -385,7 +385,12 @@ function EvalComponent({
 
   // Set breadcrumb context when eval data is loaded
   useEffect(() => {
-    const evalName = evalData?.name_resource?.name;
+    const evalName =
+      evalData?.name_resource?.name ??
+      (evalData?.name_id
+        ? evalData?.names?.find((name) => name.id === evalData.name_id)?.name ??
+          null
+        : null);
     if (evalName && evalId && isEditMode) {
       setEntityMetadata({
         entityId: evalId,

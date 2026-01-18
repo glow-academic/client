@@ -16,6 +16,24 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Drop input types for run/group rubrics
+DO $$
+BEGIN
+    DROP TYPE IF EXISTS types.q_save_eval_v4_run_rubric_link;
+    DROP TYPE IF EXISTS types.q_save_eval_v4_group_rubric_link;
+END $$;
+
+-- Create input types for run/group rubrics
+CREATE TYPE types.q_save_eval_v4_run_rubric_link AS (
+    run_id uuid,
+    rubric_ids uuid[]
+);
+
+CREATE TYPE types.q_save_eval_v4_group_rubric_link AS (
+    group_id uuid,
+    rubric_ids uuid[]
+);
+
 CREATE OR REPLACE FUNCTION api_save_eval_v4(
     name text,
     agent_ids uuid[],
@@ -23,6 +41,9 @@ CREATE OR REPLACE FUNCTION api_save_eval_v4(
     description text DEFAULT NULL,
     use_groups boolean DEFAULT false,
     model_run_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    group_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    run_rubric_links types.q_save_eval_v4_run_rubric_link[] DEFAULT ARRAY[]::types.q_save_eval_v4_run_rubric_link[],
+    group_rubric_links types.q_save_eval_v4_group_rubric_link[] DEFAULT ARRAY[]::types.q_save_eval_v4_group_rubric_link[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     active boolean DEFAULT true,
     dynamic boolean DEFAULT false,
@@ -63,8 +84,10 @@ BEGIN
         DELETE FROM eval_descriptions WHERE eval_id = v_eval_id;
         DELETE FROM eval_departments WHERE eval_id = v_eval_id;
         DELETE FROM eval_agents WHERE eval_id = v_eval_id;
+        DELETE FROM eval_runs_rubrics WHERE eval_id = v_eval_id;
+        DELETE FROM eval_groups_rubrics WHERE eval_id = v_eval_id;
         DELETE FROM eval_runs WHERE eval_id = v_eval_id;
-        -- Note: eval_rubrics handled separately via eval_runs_rubric_grade_agents/eval_groups_rubric_grade_agents
+        DELETE FROM eval_groups WHERE eval_id = v_eval_id;
     END IF;
     
     -- Continue with eval save using SQL (eval already created/updated above)
@@ -80,6 +103,9 @@ BEGIN
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(agent_ids, ARRAY[]::uuid[]) AS agent_ids,
             COALESCE(model_run_ids, ARRAY[]::uuid[]) AS model_run_ids,
+            COALESCE(group_ids, ARRAY[]::uuid[]) AS group_ids,
+            COALESCE(run_rubric_links, ARRAY[]::types.q_save_eval_v4_run_rubric_link[]) AS run_rubric_links,
+            COALESCE(group_rubric_links, ARRAY[]::types.q_save_eval_v4_group_rubric_link[]) AS group_rubric_links,
             profile_id
     ),
     -- Insert name INTO names_resource table and get ID
@@ -258,13 +284,69 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.model_run_ids) as run_id
-        WHERE COALESCE(array_length(x.model_run_ids, 1), 0) > 0
+        WHERE x.use_groups = false
+          AND COALESCE(array_length(x.model_run_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_runs_pkey DO UPDATE SET
             completed = false,
             updated_at = NOW()
+    ),
+    -- Link groups when using groups
+    link_groups AS (
+        INSERT INTO eval_groups (eval_id, group_id, created_at, updated_at)
+        SELECT
+            x.eval_id,
+            group_id,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.group_ids) as group_id
+        WHERE x.use_groups = true
+          AND COALESCE(array_length(x.group_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT eval_groups_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link rubrics to runs
+    link_run_rubrics AS (
+        INSERT INTO eval_runs_rubrics (eval_id, run_id, rubric_id, created_at, updated_at, generated, mcp, active)
+        SELECT
+            x.eval_id,
+            rr.run_id,
+            rubric_id,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN LATERAL UNNEST(x.run_rubric_links) AS rr(run_id uuid, rubric_ids uuid[])
+        CROSS JOIN LATERAL UNNEST(rr.rubric_ids) AS rubric_id
+        WHERE x.use_groups = false
+          AND COALESCE(array_length(rr.rubric_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT eval_runs_rubrics_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+    ),
+    -- Link rubrics to groups
+    link_group_rubrics AS (
+        INSERT INTO eval_groups_rubrics (eval_id, group_id, rubric_id, created_at, updated_at, generated, mcp, active)
+        SELECT
+            x.eval_id,
+            gr.group_id,
+            rubric_id,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN LATERAL UNNEST(x.group_rubric_links) AS gr(group_id uuid, rubric_ids uuid[])
+        CROSS JOIN LATERAL UNNEST(gr.rubric_ids) AS rubric_id
+        WHERE x.use_groups = true
+          AND COALESCE(array_length(gr.rubric_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT eval_groups_rubrics_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
     )
-    -- Note: Rubrics are linked via eval_runs_rubric_grade_agents/eval_groups_rubric_grade_agents
-    -- which is handled separately in the frontend/API layer based on groups flag
     SELECT 
         x.eval_id AS eval_id,
         ap.actor_name AS actor_name

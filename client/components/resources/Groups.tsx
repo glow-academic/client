@@ -1,13 +1,13 @@
 /**
  * Groups.tsx
  * Resource component for group selection
- * Uses GenericPicker to select existing group resources
+ * Uses SelectableGrid to select existing group resources
  * Manages group_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -73,7 +73,6 @@ export function Groups({
   label = "Groups",
   id = "groups",
   required = false,
-  placeholder = "Select groups...",
   description,
   group_id,
   agent_id,
@@ -97,7 +96,7 @@ export function Groups({
     ids.forEach((id) => createdGroupIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert groups array to GroupItem format for GenericPicker
+  // Convert groups array to GroupItem format for grid rendering
   const groupItems = useMemo(() => {
     return allGroups
       .filter((g) => g.group_id && g.name) // Filter out nulls
@@ -115,42 +114,38 @@ export function Groups({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdGroupIdsRef.current.has(id)
-      );
+    async (selectedId: string) => {
+      const isSelected = ids.includes(selectedId);
+      const nextIds = isSelected
+        ? ids.filter((id) => id !== selectedId)
+        : [...ids, selectedId];
 
-      // Create resources for newly selected groups
       if (
-        newlySelected.length > 0 &&
+        !isSelected &&
+        !createdGroupIdsRef.current.has(selectedId) &&
         createGroupsAction &&
         agent_id &&
         group_id
       ) {
-        for (const groupId of newlySelected) {
-          try {
-            await createGroupsAction({
-              body: {
-                agent_id: agent_id,
-                group_id: groupId,
-                mcp: false,
-              },
-            });
-            createdGroupIdsRef.current.add(groupId);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create group resource for ${groupId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
+        try {
+          await createGroupsAction({
+            body: {
+              agent_id: agent_id,
+              group_id: selectedId,
+              mcp: false,
+            },
+          });
+          createdGroupIdsRef.current.add(selectedId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(
+            `Failed to create group resource for ${selectedId}:`,
+            error
+          );
         }
       }
 
-      // Update parent state
-      onChange(selectedIds);
+      onChange(nextIds);
     },
     [ids, onChange, createGroupsAction, agent_id, group_id]
   );
@@ -205,46 +200,52 @@ export function Groups({
           )}
         </div>
       )}
-      <GenericPicker<GroupItem>
+      <SelectableGrid
         items={groupItems}
-        itemIds={allGroups
-          .map((g) => g.group_id)
-          .filter((id): id is string => id !== null)} // All group IDs from array, filter nulls
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
+          <div
+            className={cn(
+              "w-full rounded-lg border p-3 transition-colors",
+              isSelected
+                ? "border-primary bg-primary/10"
+                : "border-muted/60 hover:border-muted-foreground/50"
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-medium">{item.name}</span>
+                  {isSuggested(item.id) && !isSelected && (
+                    <span className="text-xs text-muted-foreground">
+                      Suggested
+                    </span>
+                  )}
+                </div>
                 {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground line-clamp-2">
                     {item.description}
-                  </div>
+                  </p>
                 )}
               </div>
+              <div
+                className={cn(
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border",
+                  isSelected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-muted"
+                )}
+              >
+                {isSelected && <Check className="h-3.5 w-3.5" />}
+              </div>
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No groups found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

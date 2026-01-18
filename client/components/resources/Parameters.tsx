@@ -7,7 +7,7 @@
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,6 +60,8 @@ export interface ParametersProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  searchTerm?: string; // Search term for filtering parameters
+  showSelectedFilter?: boolean; // Whether to show only selected parameters
 }
 
 export function Parameters({
@@ -73,13 +75,15 @@ export function Parameters({
   label = "Parameters",
   id = "parameters",
   required = false,
-  placeholder = "Select parameters...",
+  placeholder: _placeholder = "Select parameters...",
   description,
   group_id,
   agent_id,
   createParametersAction,
   onGenerate,
   isGenerating = false,
+  searchTerm = "",
+  showSelectedFilter = false,
 }: ParametersProps) {
   const ids = useMemo(() => parameter_ids ?? [], [parameter_ids]);
   const show = show_parameters ?? false;
@@ -108,6 +112,26 @@ export function Parameters({
       }));
   }, [allParameters]);
 
+  // Filter parameters based on search term and selection
+  const filteredParameters = useMemo(() => {
+    let filtered = parametersItems;
+
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((parameter) => {
+        const searchText =
+          `${parameter.name} ${parameter.description || ""}`.toLowerCase();
+        return searchText.includes(searchLower);
+      });
+    }
+
+    if (showSelectedFilter) {
+      filtered = filtered.filter((parameter) => ids.includes(parameter.id));
+    }
+
+    return filtered;
+  }, [parametersItems, searchTerm, showSelectedFilter, ids]);
+
   // Check if a parameters is suggested
   const isSuggested = useCallback(
     (parametersId: string) => suggestionsList.includes(parametersId),
@@ -115,20 +139,21 @@ export function Parameters({
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdParametersIdsRef.current.has(id)
-      );
+    async (parametersId: string) => {
+      const isSelected = ids.includes(parametersId);
+      let newIds: string[];
 
-      // Create resources for newly selected parameters
-      if (
-        newlySelected.length > 0 &&
-        createParametersAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const parametersId of newlySelected) {
+      if (isSelected) {
+        newIds = ids.filter((id) => id !== parametersId);
+      } else {
+        newIds = [...ids, parametersId];
+
+        if (
+          !createdParametersIdsRef.current.has(parametersId) &&
+          createParametersAction &&
+          agent_id &&
+          group_id
+        ) {
           try {
             await createParametersAction({
               body: {
@@ -150,8 +175,7 @@ export function Parameters({
         }
       }
 
-      // Update parent state
-      onChange(selectedIds);
+      onChange(newIds);
     },
     [ids, onChange, createParametersAction, agent_id, group_id]
   );
@@ -206,46 +230,45 @@ export function Parameters({
           )}
         </div>
       )}
-      <GenericPicker<ParametersItem>
-        items={parametersItems}
-        itemIds={allParameters
-          .map((p) => p.parameter_id)
-          .filter((id): id is string => id !== null)} // All parameters IDs from array, filter nulls
+      <SelectableGrid<ParametersItem>
+        items={filteredParameters}
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                )}
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+            )}
+
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+              {item.description && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {item.description}
+                </p>
               )}
-            />
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No parameters found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

@@ -5935,6 +5935,14 @@ class QGetEvalV4FlagResource(BaseModel):
 
 
 
+class QGetEvalV4GroupRubrics(BaseModel):
+
+    group_id: UUID | None
+    rubric_ids: list[UUID] | None
+
+
+
+
 class QGetEvalV4NameResource(BaseModel):
 
     id: UUID | None
@@ -5951,6 +5959,14 @@ class QGetEvalV4Rubric(BaseModel):
     description: str | None
     agent_role: str | None
     generated: bool | None
+
+
+
+
+class QGetEvalV4RunRubrics(BaseModel):
+
+    run_id: UUID | None
+    rubric_ids: list[UUID] | None
 
 class GetEvalSqlRow(BaseModel):
 
@@ -6009,6 +6025,10 @@ class GetEvalSqlRow(BaseModel):
     rubrics_required: bool | None = None
     rubric_suggestions: list[UUID] | None = None
     rubrics: list[QGetEvalV4Rubric] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
+    run_rubrics: list[QGetEvalV4RunRubrics] | None = None
+    group_rubrics: list[QGetEvalV4GroupRubrics] | None = None
     available_model_runs: list[QGetEvalV4AvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
@@ -6085,6 +6105,10 @@ class GetEvalApiResponse(BaseModel):
     rubrics_required: bool | None = None
     rubric_suggestions: list[UUID] | None = None
     rubrics: list[QGetEvalV4Rubric] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
+    run_rubrics: list[QGetEvalV4RunRubrics] | None = None
+    group_rubrics: list[QGetEvalV4GroupRubrics] | None = None
     available_model_runs: list[QGetEvalV4AvailableModelRun] | None = None
     available_model_runs_total_count: int | None = None
     available_model_runs_page: int | None = None
@@ -6145,6 +6169,19 @@ class PatchEvalDraftApiResponse(BaseModel):
 
 # Generated from: save_eval
 
+class QSaveEvalV4GroupRubricLink(BaseModel):
+
+    group_id: UUID | None
+    rubric_ids: list[UUID] | None
+
+
+
+
+class QSaveEvalV4RunRubricLink(BaseModel):
+
+    run_id: UUID | None
+    rubric_ids: list[UUID] | None
+
 class SaveEvalSqlParams(BaseModel):
 
     name: str
@@ -6153,12 +6190,25 @@ class SaveEvalSqlParams(BaseModel):
     description: str | None = None
     use_groups: bool | None = False
     model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    run_rubric_links: list[QSaveEvalV4RunRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_rubric_links: list[QSaveEvalV4GroupRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     active: bool | None = True
     dynamic: bool | None = False
     input_eval_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert run_rubric_links composite array to tuples for asyncpg
+        run_rubric_links_tuples = [
+            (conn.run_id, conn.rubric_ids)
+            for conn in (self.run_rubric_links or [])
+        ]
+        # Convert group_rubric_links composite array to tuples for asyncpg
+        group_rubric_links_tuples = [
+            (conn.group_id, conn.rubric_ids)
+            for conn in (self.group_rubric_links or [])
+        ]
         return (
             self.name,
             self.agent_ids,
@@ -6166,6 +6216,9 @@ class SaveEvalSqlParams(BaseModel):
             self.description,
             self.use_groups,
             self.model_run_ids,
+            self.group_ids,
+            run_rubric_links_tuples,
+            group_rubric_links_tuples,
             self.department_ids,
             self.active,
             self.dynamic,
@@ -6184,6 +6237,9 @@ class SaveEvalApiRequest(BaseModel):
     description: str | None = None
     use_groups: bool | None = False
     model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    run_rubric_links: list[QSaveEvalV4RunRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    group_rubric_links: list[QSaveEvalV4GroupRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     active: bool | None = True
     dynamic: bool | None = False
