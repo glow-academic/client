@@ -1,7 +1,7 @@
 /**
  * Document.tsx
- * Refactored Document component following Persona.tsx pattern
- * Removed all template logic, converted to resource-based pattern
+ * Implementation using modular resource components
+ * Used to create and manage documents - supports both creation and editing
  * @AshokSaravanan222 & @siladiea
  * 01/21/2025
  */
@@ -65,31 +65,18 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
-// Type assertions needed because TypeScript types haven't been regenerated yet
-type CreateDraftUploadsIn = {
-  body: {
-    group_id: string;
-    upload_id: string;
-    mcp?: boolean;
-  };
-};
-type CreateDraftUploadsOut = {
-  uploads_id: string;
-  success: boolean;
-  message?: string;
-};
+type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
 
 type DocumentData = OutputOf<"/api/v4/documents/get", "post">;
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
 
 export interface DocumentProps {
   documentId?: string;
   mode?: "create" | "edit";
   // Server-provided data
   documentDetail?: DocumentData;
-  documentDetailDefault?: DocumentsListOut;
   // Server actions
   saveDocumentAction?: (input: SaveDocumentIn) => Promise<SaveDocumentOut>;
   patchDocumentDraftAction?: (
@@ -119,8 +106,7 @@ export interface DocumentProps {
 function DocumentComponent({
   documentId,
   mode = documentId ? "edit" : "create",
-  documentDetail: serverDocumentDetail,
-  documentDetailDefault: serverDocumentDetailDefault,
+  documentDetail,
   saveDocumentAction,
   patchDocumentDraftAction,
   createNamesAction,
@@ -142,10 +128,6 @@ function DocumentComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
-
-  // Use server-provided data directly
-  const documentDetail = serverDocumentDetail;
-  const _documentDetailDefault = serverDocumentDetailDefault;
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -184,166 +166,8 @@ function DocumentComponent({
 
   // Local form state (not in URL) - stores only resource IDs
   // Display values are managed inside resource components
-  // Use ref to store documentDetail to prevent callback recreation on every render
-  const documentDetailRef = React.useRef(documentDetail);
-  React.useEffect(() => {
-    documentDetailRef.current = documentDetail;
-  }, [documentDetail]);
-
-  // Memoize documentDetail fields used in renderStep to prevent callback recreation
-  // when only object reference changes (but content is same)
-  const stableDocumentDataFields = React.useMemo(() => {
-    if (!documentDetail) return null;
-    // Type assertion needed because TypeScript types haven't been regenerated yet
-    const docDetail = documentDetail as DocumentData & {
-      upload_ids?: string[];
-      upload_resources?: Array<{
-        uploads_id: string | null;
-        upload_id: string | null;
-        file_path: string | null;
-        mime_type: string | null;
-        size: number | null;
-        generated?: boolean | null;
-      }>;
-      show_uploads?: boolean;
-      upload_suggestions?: string[];
-      uploads_required?: boolean;
-      uploads_agent_id?: string | null;
-      uploads?: Array<{
-        uploads_id: string | null;
-        upload_id: string | null;
-        file_path: string | null;
-        mime_type: string | null;
-        size: number | null;
-        generated?: boolean | null;
-      }>;
-    };
-    return {
-      group_id: documentDetail.group_id,
-      name_resource: documentDetail.name_resource,
-      show_name: documentDetail.show_name,
-      name_suggestions: documentDetail.name_suggestions,
-      names: documentDetail.names,
-      name_required: documentDetail.name_required,
-      name_agent_id: documentDetail.name_agent_id,
-      description_resource: documentDetail.description_resource,
-      show_description: documentDetail.show_description,
-      description_suggestions: documentDetail.description_suggestions,
-      description_required: documentDetail.description_required,
-      description_agent_id: documentDetail.description_agent_id,
-      descriptions: documentDetail.descriptions,
-      department_resources: documentDetail.department_resources,
-      show_departments: documentDetail.show_departments,
-      department_suggestions: documentDetail.department_suggestions,
-      departments_required: documentDetail.departments_required,
-      departments_agent_id: documentDetail.departments_agent_id,
-      departments: documentDetail.departments,
-      flag_resource: documentDetail.flag_resource,
-      show_flag: documentDetail.show_flag,
-      flag_required: documentDetail.flag_required,
-      flag_agent_id: documentDetail.flag_agent_id,
-      field_resources: documentDetail.field_resources,
-      show_fields: documentDetail.show_fields,
-      field_suggestions: documentDetail.field_suggestions,
-      fields_required: documentDetail.fields_required,
-      fields_agent_id: documentDetail.fields_agent_id,
-      fields: documentDetail.fields,
-      upload_resources: docDetail.upload_resources,
-      show_uploads: docDetail.show_uploads,
-      upload_suggestions: docDetail.upload_suggestions,
-      uploads_required: docDetail.uploads_required,
-      uploads_agent_id: docDetail.uploads_agent_id,
-      uploads: docDetail.uploads,
-      general_agent_id: documentDetail.general_agent_id,
-      can_edit: documentDetail.can_edit,
-      disabled_reason: documentDetail.disabled_reason,
-    };
-    // Intentionally depend on individual documentDetail fields, not whole object
-    // to prevent recreation when only object reference changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    documentDetail?.group_id,
-    documentDetail?.name_resource,
-    documentDetail?.show_name,
-    documentDetail?.name_suggestions,
-    documentDetail?.names,
-    documentDetail?.name_required,
-    documentDetail?.name_agent_id,
-    documentDetail?.description_resource,
-    documentDetail?.show_description,
-    documentDetail?.description_suggestions,
-    documentDetail?.description_required,
-    documentDetail?.description_agent_id,
-    documentDetail?.descriptions,
-    documentDetail?.department_resources,
-    documentDetail?.show_departments,
-    documentDetail?.department_suggestions,
-    documentDetail?.departments_required,
-    documentDetail?.departments_agent_id,
-    documentDetail?.departments,
-    documentDetail?.flag_resource,
-    documentDetail?.show_flag,
-    documentDetail?.flag_required,
-    documentDetail?.flag_agent_id,
-    documentDetail?.field_resources,
-    documentDetail?.show_fields,
-    documentDetail?.field_suggestions,
-    documentDetail?.fields_required,
-    documentDetail?.fields_agent_id,
-    documentDetail?.fields,
-    documentDetail?.upload_resources,
-    documentDetail?.show_uploads,
-    documentDetail?.upload_suggestions,
-    documentDetail?.uploads_required,
-    documentDetail?.uploads_agent_id,
-    documentDetail?.uploads,
-    documentDetail?.general_agent_id,
-    documentDetail?.can_edit,
-    documentDetail?.disabled_reason,
-  ]);
-
-  // Helper to check if a resource type can be regenerated
-  // Use stableDocumentDataFields to prevent callback recreation when documentDetail object reference changes
-  const canRegenerate = useCallback(
-    (resourceType: ResourceType): boolean => {
-      if (!stableDocumentDataFields) return false;
-      switch (resourceType) {
-        case "names":
-          return stableDocumentDataFields.name_resource?.generated ?? false;
-        case "descriptions":
-          return (
-            stableDocumentDataFields.description_resource?.generated ?? false
-          );
-        case "flags":
-          return stableDocumentDataFields.flag_resource?.generated ?? false;
-        case "departments":
-          return (
-            stableDocumentDataFields.department_resources?.some(
-              (d) => d.generated
-            ) ?? false
-          );
-        case "fields":
-          return (
-            stableDocumentDataFields.field_resources?.some(
-              (f) => f.generated
-            ) ?? false
-          );
-        case "uploads":
-          return (
-            stableDocumentDataFields.upload_resources?.some(
-              (u) => u.generated
-            ) ?? false
-          );
-        default:
-          return false;
-      }
-    },
-    [stableDocumentDataFields]
-  );
-
   const getInitialFormState = useCallback(() => {
-    const data = documentDetailRef.current;
-    if (!data) {
+    if (!documentDetail) {
       return {
         name_id: null as string | null,
         description_id: null as string | null,
@@ -354,66 +178,19 @@ function DocumentComponent({
       };
     }
     // Extract resource IDs from server data
-    // Note: Server data may have display values, but we only store IDs here
-    // Type assertion needed because TypeScript types haven't been regenerated yet
-    const docData = data as typeof data & {
-      upload_ids?: string[];
-    };
     return {
-      name_id: docData.name_resource?.id ?? null,
-      description_id: docData.description_resource?.id ?? null,
-      active_flag_id: docData.flag_resource?.id ?? null,
-      department_ids: docData.department_ids ?? [],
-      field_ids: docData.field_ids ?? [],
-      upload_ids: docData.upload_ids ?? [],
+      name_id: documentDetail.name_id ?? null,
+      description_id: documentDetail.description_id ?? null,
+      active_flag_id: documentDetail.active_flag_id ?? null,
+      department_ids: documentDetail.department_ids ?? [],
+      field_ids: documentDetail.field_ids ?? [],
+      upload_ids: documentDetail.upload_ids ?? [],
     };
-    // Remove documentDetail from dependencies - use ref instead to prevent callback recreation
-  }, []);
+  }, [documentDetail]);
 
   const [formState, setFormState] = useState(getInitialFormState);
-  // Use ref to access formState in renderStep without depending on it
-  const formStateRef = React.useRef(formState);
-  React.useEffect(() => {
-    formStateRef.current = formState;
-  }, [formState]);
-
-  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
-  const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(documentDetail?.department_ids ?? []),
-    [documentDetail?.department_ids]
-  );
-  const fieldIdsStr = React.useMemo(
-    () => JSON.stringify(documentDetail?.field_ids ?? []),
-    [documentDetail?.field_ids]
-  );
-  const uploadIdsStr = React.useMemo(() => {
-    if (!documentDetail) return "[]";
-    const docDetail = documentDetail as typeof documentDetail & {
-      upload_ids?: string[];
-    };
-    return JSON.stringify(docDetail.upload_ids ?? []);
-  }, [
-    // Type assertion needed (TypeScript types not regenerated yet)
-    (documentDetail as typeof documentDetail & { upload_ids?: string[] })
-      ?.upload_ids,
-  ]);
-
-  // Memoize stringified formState arrays for draft listener effect dependencies
-  const formStateDepartmentIdsStr = React.useMemo(
-    () => JSON.stringify(formState.department_ids),
-    [formState.department_ids]
-  );
-  const formStateFieldIdsStr = React.useMemo(
-    () => JSON.stringify(formState.field_ids),
-    [formState.field_ids]
-  );
-  const formStateUploadIdsStr = React.useMemo(
-    () => JSON.stringify(formState.upload_ids),
-    [formState.upload_ids]
-  );
 
   // Update form state when server data changes
-  // Use documentDetail directly in dependency array, not getInitialFormState
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
@@ -431,20 +208,17 @@ function DocumentComponent({
       }
       return prev;
     });
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    documentDetail?.name_resource?.id,
-    documentDetail?.description_resource?.id,
-    documentDetail?.flag_resource?.id,
-    departmentIdsStr,
-    fieldIdsStr,
-    uploadIdsStr,
+    documentDetail?.name_id,
+    documentDetail?.description_id,
+    documentDetail?.active_flag_id,
+    documentDetail?.department_ids,
+    documentDetail?.field_ids,
+    documentDetail?.upload_ids,
+    getInitialFormState,
   ]);
 
   // Draft version tracking for optimistic concurrency control
-  // Keep version in a ref so updating it doesn't retrigger the effect
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
   const lastSavedVersionRef = React.useRef(0);
   React.useEffect(() => {
@@ -492,16 +266,14 @@ function DocumentComponent({
       field_ids: formState.field_ids,
       upload_ids: formState.upload_ids,
     });
-    // Use stringified arrays to prevent recreation when array references change but content is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     draftId,
     formState.name_id,
     formState.description_id,
     formState.active_flag_id,
-    formStateDepartmentIdsStr,
-    formStateFieldIdsStr,
-    formStateUploadIdsStr,
+    formState.department_ids,
+    formState.field_ids,
+    formState.upload_ids,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -538,9 +310,8 @@ function DocumentComponent({
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
             field_ids: formState.field_ids,
-            // upload_ids not yet supported in draft patch function
-            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
-          } as PatchDocumentDraftIn["body"],
+            expected_version: lastSavedVersionRef.current,
+          },
         });
 
         // Mark this payload as patched so we don't loop
@@ -564,16 +335,7 @@ function DocumentComponent({
     }, 1000);
 
     return () => clearTimeout(timer);
-    // ✅ Trigger only when payload changes, not when version changes
-    // patchDocumentDraftAction and setDraftId are accessed via refs to prevent effect recreation
-    // when prop/function references change but functionality is the same
-    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
-    // to prevent unnecessary effect recreation when individual fields change but payload is same
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftPatchKey, // ✅ trigger only when payload changes
-    // patchDocumentDraftAction and setDraftId are accessed via refs
-  ]);
+  }, [draftPatchKey, draftId, formState]);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
   useEffect(() => {
@@ -860,6 +622,37 @@ function DocumentComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  // Helper to check if a resource type can be regenerated
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!documentDetail) return false;
+      switch (resourceType) {
+        case "names":
+          return documentDetail.name_resource?.generated ?? false;
+        case "descriptions":
+          return documentDetail.description_resource?.generated ?? false;
+        case "flags":
+          return documentDetail.flag_resource?.generated ?? false;
+        case "departments":
+          return (
+            documentDetail.department_resources?.some((d) => d.generated) ??
+            false
+          );
+        case "fields":
+          return (
+            documentDetail.field_resources?.some((f) => f.generated) ?? false
+          );
+        case "uploads":
+          return (
+            documentDetail.upload_resources?.some((u) => u.generated) ?? false
+          );
+        default:
+          return false;
+      }
+    },
+    [documentDetail]
+  );
+
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
@@ -960,8 +753,7 @@ function DocumentComponent({
             department_ids: formState.department_ids || [],
             field_ids: formState.field_ids || [],
             upload_ids: formState.upload_ids || [],
-            // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-          } as SaveDocumentIn["body"],
+          },
         });
         toast.success(
           `Document ${isEditMode ? "updated" : "created"} successfully!`
@@ -1047,17 +839,13 @@ function DocumentComponent({
   const handleOpenStepCardModal = useCallback(
     (stepId: string, mode: "generate" | "regenerate") => {
       const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes
-        .map((rt) => {
-          const label = resourceLabels[rt];
-          if (!label) return null;
-          return {
-            id: rt as string,
-            label,
-            active: mode === "regenerate" ? canRegenerate(rt) : true,
-          };
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt] ?? "",
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
         })
-        .filter((r): r is GenerateRegenerateModalResource => r !== null);
+      );
 
       setModalResources(resources);
       setModalMode(mode);
@@ -1188,8 +976,6 @@ function DocumentComponent({
       }>;
       onReset?: () => void;
     }) => {
-      // Use memoized fields to avoid dependency on documentDetail object reference
-      const currentDocumentData = stableDocumentDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -1203,10 +989,10 @@ function DocumentComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={currentDocumentData?.name_resource ?? null}
-                  show_name={currentDocumentData?.show_name ?? true}
-                  name_suggestions={currentDocumentData?.name_suggestions ?? []}
-                  names={currentDocumentData?.names ?? []}
+                  name_resource={documentDetail?.name_resource ?? null}
+                  show_name={documentDetail?.show_name ?? true}
+                  name_suggestions={documentDetail?.name_suggestions ?? []}
+                  names={documentDetail?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
@@ -1215,24 +1001,18 @@ function DocumentComponent({
                   isGenerating={isGenerating("names")}
                   placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
-                  required={currentDocumentData?.name_required ?? false}
+                  required={documentDetail?.name_required ?? false}
                   hideDescription={true}
-                  group_id={currentDocumentData?.group_id ?? null}
-                  agent_id={currentDocumentData?.name_agent_id ?? null}
-                  createNamesAction={
-                    createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn
-                        ) => Promise<CreateDraftNamesOut>)
-                      | undefined
-                  }
+                  group_id={documentDetail?.group_id ?? null}
+                  agent_id={documentDetail?.name_agent_id ?? null}
+                  createNamesAction={createNamesAction}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
-                currentDocumentData?.general_agent_id ? (
+                documentDetail?.general_agent_id ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1282,15 +1062,13 @@ function DocumentComponent({
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={
-                    currentDocumentData?.description_resource ?? null
+                    documentDetail?.description_resource ?? null
                   }
-                  show_description={
-                    currentDocumentData?.show_description ?? true
-                  }
+                  show_description={documentDetail?.show_description ?? true}
                   description_suggestions={
-                    currentDocumentData?.description_suggestions ?? []
+                    documentDetail?.description_suggestions ?? []
                   }
-                  descriptions={currentDocumentData?.descriptions ?? []}
+                  descriptions={documentDetail?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1304,11 +1082,11 @@ function DocumentComponent({
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Document description and purpose"
-                  required={currentDocumentData?.description_required ?? false}
+                  required={documentDetail?.description_required ?? false}
                   rows={4}
                   data-testid="input-document-description"
-                  group_id={currentDocumentData?.group_id ?? null}
-                  agent_id={currentDocumentData?.description_agent_id ?? null}
+                  group_id={documentDetail?.group_id ?? null}
+                  agent_id={documentDetail?.description_agent_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1316,32 +1094,30 @@ function DocumentComponent({
                 <Departments
                   department_ids={formState.department_ids ?? []}
                   department_resources={
-                    currentDocumentData?.department_resources ?? []
+                    documentDetail?.department_resources ?? []
                   }
-                  show_departments={
-                    currentDocumentData?.show_departments ?? false
-                  }
+                  show_departments={documentDetail?.show_departments ?? false}
                   department_suggestions={
-                    currentDocumentData?.department_suggestions ?? []
+                    documentDetail?.department_suggestions ?? []
                   }
-                  departments={currentDocumentData?.departments ?? []}
+                  departments={documentDetail?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
                   isGenerating={isGenerating("departments")}
-                  required={currentDocumentData?.departments_required ?? false}
-                  group_id={currentDocumentData?.group_id ?? null}
-                  agent_id={currentDocumentData?.departments_agent_id ?? null}
+                  required={documentDetail?.departments_required ?? false}
+                  group_id={documentDetail?.group_id ?? null}
+                  agent_id={documentDetail?.departments_agent_id ?? null}
                   createDepartmentsAction={createDepartmentsAction}
                 />
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
-                  flag_resource={currentDocumentData?.flag_resource ?? null}
-                  show_flag={currentDocumentData?.show_flag ?? false}
+                  flag_resource={documentDetail?.flag_resource ?? null}
+                  show_flag={documentDetail?.show_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
                     setFormState((prev) => ({
@@ -1353,9 +1129,9 @@ function DocumentComponent({
                   isGenerating={isGenerating("flags")}
                   label="Active"
                   helpText="Inactive documents will not be available for scenarios"
-                  required={currentDocumentData?.flag_required ?? false}
-                  group_id={currentDocumentData?.group_id ?? null}
-                  agent_id={currentDocumentData?.flag_agent_id ?? null}
+                  required={documentDetail?.flag_required ?? false}
+                  group_id={documentDetail?.group_id ?? null}
+                  agent_id={documentDetail?.flag_agent_id ?? null}
                   createFlagsAction={createFlagsAction}
                 />
               </div>
@@ -1397,7 +1173,7 @@ function DocumentComponent({
               actions={
                 stepResources["fields"] &&
                 stepResources["fields"].length > 0 &&
-                currentDocumentData?.fields_agent_id ? (
+                documentDetail?.fields_agent_id ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1444,18 +1220,18 @@ function DocumentComponent({
             >
               <Fields
                 field_ids={formState.field_ids ?? []}
-                field_resources={currentDocumentData?.field_resources ?? []}
-                show_fields={currentDocumentData?.show_fields ?? false}
-                field_suggestions={currentDocumentData?.field_suggestions ?? []}
-                fields={currentDocumentData?.fields ?? []}
+                field_resources={documentDetail?.field_resources ?? []}
+                show_fields={documentDetail?.show_fields ?? false}
+                field_suggestions={documentDetail?.field_suggestions ?? []}
+                fields={documentDetail?.fields ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, field_ids: ids }))
                 }
                 label="Fields"
-                required={currentDocumentData?.fields_required ?? false}
-                group_id={currentDocumentData?.group_id ?? null}
-                agent_id={currentDocumentData?.fields_agent_id ?? null}
+                required={documentDetail?.fields_required ?? false}
+                group_id={documentDetail?.group_id ?? null}
+                agent_id={documentDetail?.fields_agent_id ?? null}
                 createFieldsAction={createFieldsAction}
                 searchTerm={fieldSearchTerm}
                 showSelectedFilter={fieldShowSelected}
@@ -1478,7 +1254,7 @@ function DocumentComponent({
               actions={
                 stepResources["uploads"] &&
                 stepResources["uploads"].length > 0 &&
-                currentDocumentData?.uploads_agent_id ? (
+                documentDetail?.uploads_agent_id ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1525,20 +1301,18 @@ function DocumentComponent({
             >
               <Uploads
                 upload_ids={formState.upload_ids ?? []}
-                upload_resources={currentDocumentData?.upload_resources ?? []}
-                show_uploads={currentDocumentData?.show_uploads ?? false}
-                upload_suggestions={
-                  currentDocumentData?.upload_suggestions ?? []
-                }
-                uploads={currentDocumentData?.uploads ?? []}
+                upload_resources={documentDetail?.upload_resources ?? []}
+                show_uploads={documentDetail?.show_uploads ?? false}
+                upload_suggestions={documentDetail?.upload_suggestions ?? []}
+                uploads={documentDetail?.uploads ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, upload_ids: ids }))
                 }
                 label="Files"
-                required={currentDocumentData?.uploads_required ?? false}
-                group_id={currentDocumentData?.group_id ?? null}
-                uploads_agent_id={currentDocumentData?.uploads_agent_id ?? null}
+                required={documentDetail?.uploads_required ?? false}
+                group_id={documentDetail?.group_id ?? null}
+                uploads_agent_id={documentDetail?.uploads_agent_id ?? null}
                 createUploadsAction={createUploadsAction}
               />
             </StepCard>
@@ -1549,9 +1323,7 @@ function DocumentComponent({
       }
     },
     [
-      // Use stableDocumentDataFields instead of documentDetail to prevent callback recreation
-      // when only object reference changes (but content is same)
-      stableDocumentDataFields,
+      documentDetail,
       disabled,
       isEditMode,
       handleGenerateName,
@@ -1560,13 +1332,9 @@ function DocumentComponent({
       handleGenerateFlags,
       isGenerating,
       stepResources,
-      // Depend on individual formState fields instead of whole object to prevent callback recreation
-      // when object reference changes but values are same
       formState.name_id,
       formState.description_id,
       formState.active_flag_id,
-      // Include arrays - they're used in the callback, but the formState sync effect ensures
-      // they only change when content actually changes (not just reference)
       formState.department_ids,
       formState.field_ids,
       formState.upload_ids,
@@ -1637,29 +1405,21 @@ function DocumentComponent({
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   // Compare documentDetail by resource IDs, not object reference
-  const prevDocDetail =
-    prevProps.documentDetail as typeof prevProps.documentDetail & {
-      upload_ids?: string[];
-    };
-  const nextDocDetail =
-    nextProps.documentDetail as typeof nextProps.documentDetail & {
-      upload_ids?: string[];
-    };
   const prevIds = {
-    name_id: prevDocDetail?.name_resource?.id,
-    description_id: prevDocDetail?.description_resource?.id,
-    active_flag_id: prevDocDetail?.flag_resource?.id,
-    department_ids: prevDocDetail?.department_ids,
-    field_ids: prevDocDetail?.field_ids,
-    upload_ids: prevDocDetail?.upload_ids,
+    name_id: prevProps.documentDetail?.name_id,
+    description_id: prevProps.documentDetail?.description_id,
+    active_flag_id: prevProps.documentDetail?.active_flag_id,
+    department_ids: prevProps.documentDetail?.department_ids,
+    field_ids: prevProps.documentDetail?.field_ids,
+    upload_ids: prevProps.documentDetail?.upload_ids,
   };
   const nextIds = {
-    name_id: nextDocDetail?.name_resource?.id,
-    description_id: nextDocDetail?.description_resource?.id,
-    active_flag_id: nextDocDetail?.flag_resource?.id,
-    department_ids: nextDocDetail?.department_ids,
-    field_ids: nextDocDetail?.field_ids,
-    upload_ids: nextDocDetail?.upload_ids,
+    name_id: nextProps.documentDetail?.name_id,
+    description_id: nextProps.documentDetail?.description_id,
+    active_flag_id: nextProps.documentDetail?.active_flag_id,
+    department_ids: nextProps.documentDetail?.department_ids,
+    field_ids: nextProps.documentDetail?.field_ids,
+    upload_ids: nextProps.documentDetail?.upload_ids,
   };
 
   // Compare primitive props
