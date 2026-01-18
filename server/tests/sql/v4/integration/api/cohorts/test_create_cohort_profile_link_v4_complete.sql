@@ -17,11 +17,11 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO cohort_profiles(cohort_id, profile_id, active)
+    INSERT INTO profile_cohorts(profile_id, cohort_id, active)
     VALUES (
-        test_create_cohort_profile_link_v4.input_cohort_id,
         test_create_cohort_profile_link_v4.input_profile_id,
+        test_create_cohort_profile_link_v4.input_cohort_id,
         true
     )
-    RETURNING cohort_id, profile_id, active, created_at;
+    RETURNING profile_id, cohort_id, active, created_at;
 $$;

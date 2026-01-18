@@ -107,7 +107,7 @@ profile_active_cohort_links AS (
     SELECT 
         profile_id,
         COUNT(*) as active_cohort_count
-    FROM cohort_profiles
+    FROM profile_cohorts
     WHERE active = true
     GROUP BY profile_id
 ),
@@ -115,14 +115,14 @@ profile_all_cohort_links AS (
     SELECT 
         profile_id,
         COUNT(*) as total_cohort_links
-    FROM cohort_profiles
+    FROM profile_cohorts
     GROUP BY profile_id
 ),
 profile_cohorts AS (
     SELECT 
         cp.profile_id,
         ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
-    FROM cohort_profiles cp
+    FROM profile_cohorts cp
     JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE cp.active = true
     GROUP BY cp.profile_id

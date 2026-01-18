@@ -154,62 +154,48 @@ eval_info AS (
         (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
         COALESCE(NULL::uuid[], ARRAY[]::uuid[]) as agent_ids,
         EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = true) AS dynamic,
-        -- Get first rubric and eval_agent from junction table
+        -- Get first rubric from direct rubric links
         -- Get first rubric FROM runs (when use_groups = false) or groups (when use_groups = true)
-        (SELECT rga.rubric_id 
+        (SELECT combined.rubric_id 
          FROM (
-             SELECT errga.rubric_grade_agent_id, errga.created_at
-             FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+             SELECT err.rubric_id, err.created_at
+             FROM eval_runs_rubrics err
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
-             SELECT egga.rubric_grade_agent_id, egga.created_at
-             FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+             SELECT egr.rubric_id, egr.created_at
+             FROM eval_groups_rubrics egr
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
-         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
         (SELECT (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
-             SELECT errga.rubric_grade_agent_id, errga.created_at
-             FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+             SELECT err.rubric_id, err.created_at
+             FROM eval_runs_rubrics err
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
-             SELECT egga.rubric_grade_agent_id, egga.created_at
-             FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+             SELECT egr.rubric_id, egr.created_at
+             FROM eval_groups_rubrics egr
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
-         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics_resource r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_name,
         (SELECT (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
          FROM (
-             SELECT errga.rubric_grade_agent_id, errga.created_at
-             FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+             SELECT err.rubric_id, err.created_at
+             FROM eval_runs_rubrics err
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
              UNION ALL
-             SELECT egga.rubric_grade_agent_id, egga.created_at
-             FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+             SELECT egr.rubric_id, egr.created_at
+             FROM eval_groups_rubrics egr
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
          ) combined
-         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics_resource r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_description,
-        (SELECT rga.grade_agent_id 
-         FROM (
-             SELECT errga.rubric_grade_agent_id, errga.created_at
-             FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
-             UNION ALL
-             SELECT egga.rubric_grade_agent_id, egga.created_at
-             FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
-         ) combined
-         JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         ORDER BY combined.created_at 
-         LIMIT 1) as eval_agent_id
+        -- eval_agent_id no longer available (was grade_agent_id from rubric_grade_agents)
+        NULL::uuid as eval_agent_id
     FROM attempt_data ad
     JOIN evals_resource e ON e.id = ad.eval_id
     LEFT JOIN eval_agents_data ead ON ead.eval_id = e.id

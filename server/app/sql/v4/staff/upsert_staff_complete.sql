@@ -314,17 +314,17 @@ dept_insert AS (
 ),
 cohort_insert AS (
     -- Insert cohort relationships for all profiles
-    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
     SELECT 
-        cohort_id,
         pu.id,
+        cohort_id,
         true
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     JOIN profiles_expanded pe ON pe.profile_idx = pwi.profile_idx
     CROSS JOIN unnest(pe.cohort_ids) as cohort_id
     WHERE cardinality(pe.cohort_ids) > 0
-    ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
+    ON CONFLICT (profile_id, cohort_id) DO UPDATE SET
         active = true
 ),
 results AS (

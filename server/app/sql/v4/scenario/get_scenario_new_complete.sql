@@ -888,13 +888,9 @@ document_fields_data AS (
     WHERE df.active = true
     GROUP BY df.document_id
 ),
+-- document_tree removed - document hierarchy no longer supported
 document_tree_data AS (
-    SELECT DISTINCT ON (dt.child_id)
-        dt.child_id as document_id,
-        dt.parent_id
-    FROM document_tree dt
-    WHERE dt.active = true
-    ORDER BY dt.child_id, dt.created_at DESC
+    SELECT NULL::uuid as document_id, NULL::uuid as parent_id FROM (SELECT 1) x WHERE false
 ),
 all_documents_array AS (
     SELECT 
@@ -1348,10 +1344,8 @@ all_document_details_array AS (
             (SELECT document_ids FROM params_single) IS NOT NULL
             AND array_length((SELECT document_ids FROM params_single), 1) > 0
             AND EXISTS (
-                SELECT 1 FROM document_tree dtree
-                WHERE dtree.child_id = d.id
-                AND dtree.parent_id IN (SELECT unnest((SELECT document_ids FROM params_single)::uuid[]))
-                AND dtree.active = true
+                -- document_tree removed - document hierarchy no longer supported
+                SELECT false WHERE false
             )
         )
     )

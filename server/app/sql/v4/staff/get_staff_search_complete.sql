@@ -112,7 +112,7 @@ profile_cohorts AS (
     SELECT
         cp.profile_id,
         ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
-    FROM cohort_profiles cp
+    FROM profile_cohorts cp
     JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE cp.active = true
     GROUP BY cp.profile_id
@@ -253,10 +253,10 @@ staff_rows AS (
         (SELECT array_length(cohort_ids, 1) FROM params) IS NULL
         OR (SELECT array_length(cohort_ids, 1) FROM params) = 0
         OR NOT EXISTS (
-            SELECT 1 FROM cohort_profiles cp_exclude 
-            WHERE cp_exclude.profile_id = p.id 
-            AND cp_exclude.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
-            AND cp_exclude.active = true
+            SELECT 1 FROM public.profile_cohorts pce_table 
+            WHERE pce_table.profile_id = p.id 
+            AND pce_table.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
+            AND pce_table.active = true
         )
     )
     AND (

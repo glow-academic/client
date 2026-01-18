@@ -226,7 +226,7 @@ staff_cohorts_data AS (
         COALESCE(cp.profile_id, (SELECT profile_id FROM params LIMIT 1)) as profile_id,
         COALESCE(ARRAY_AGG(cp.cohort_id ORDER BY cp.created_at) FILTER (WHERE cp.cohort_id IS NOT NULL), ARRAY[]::uuid[]) as cohort_ids
     FROM params x
-    LEFT JOIN cohort_profiles cp ON cp.profile_id = x.staff_id AND cp.active = true AND x.staff_id IS NOT NULL
+    LEFT JOIN profile_cohorts cp ON cp.profile_id = x.staff_id AND cp.active = true AND x.staff_id IS NOT NULL
     GROUP BY cp.profile_id
     LIMIT 1
 ),

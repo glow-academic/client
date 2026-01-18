@@ -439,7 +439,7 @@ target_profile_cohorts AS (
     SELECT 
         ARRAY_AGG(cp.cohort_id ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM resolve_target_profile_id rtp
-    JOIN cohort_profiles cp ON cp.profile_id = rtp.resolved_target_profile_id
+    JOIN profile_cohorts cp ON cp.profile_id = rtp.resolved_target_profile_id
     JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE rtp.resolved_target_profile_id IS NOT NULL 
       AND cp.active = true 

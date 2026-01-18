@@ -106,26 +106,24 @@ user_departments AS (
 ),
 rubric_active_simulation_links AS (
     SELECT 
-        rga.rubric_id,
+        srr.rubric_id,
         COUNT(DISTINCT ss.simulation_id) as active_simulation_count
     FROM simulation_scenarios ss
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+    JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
+    JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
     JOIN simulation_artifact s ON s.id = ss.simulation_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true) AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true) AND rga.rubric_id IS NOT NULL
-    GROUP BY rga.rubric_id
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true) AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
+    GROUP BY srr.rubric_id
 ),
 rubric_all_simulation_links AS (
     SELECT 
-        rga.rubric_id,
+        srr.rubric_id,
         COUNT(DISTINCT ss.simulation_id) as total_simulation_links
     FROM simulation_scenarios ss
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    WHERE rga.rubric_id IS NOT NULL
-    GROUP BY rga.rubric_id
+    JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
+    JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
+    WHERE srr.rubric_id IS NOT NULL
+    GROUP BY srr.rubric_id
 ),
 simulation_department_access_for_rubrics AS (
     -- Pre-compute which simulations the user has access to (for filtering rubric_simulations_data)
@@ -143,18 +141,17 @@ simulation_department_access_for_rubrics AS (
     GROUP BY s.id
 ),
 rubric_simulations_distinct AS (
-    SELECT DISTINCT ON (rga.rubric_id, s.id)
-        rga.rubric_id,
+    SELECT DISTINCT ON (srr.rubric_id, s.id)
+        srr.rubric_id,
         s.id as simulation_id,
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_title
     FROM simulation_artifact s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
-    INNER JOIN simulation_scenarios ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
-    INNER JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    INNER JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    INNER JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true) AND rga.rubric_id IS NOT NULL
-    ORDER BY rga.rubric_id, s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    INNER JOIN simulation_scenarios ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+    INNER JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
+    INNER JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
+    ORDER BY srr.rubric_id, s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
 ),
 rubric_simulations_data AS (
     SELECT 
@@ -319,10 +316,11 @@ simulations_with_time_limit AS (
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, 
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
-            (SELECT SUM(stl.time_limit_seconds)
-             FROM scenario_time_limits stl
-             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+            (SELECT SUM(stlr.time_limit_seconds)
+             FROM simulation_scenario_time_limits sstl
+             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
             0
         )::int as time_limit
     FROM simulation_artifact s
@@ -358,10 +356,11 @@ simulation_options_with_disambiguation AS (
         END as name,
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
-            (SELECT SUM(stl.time_limit_seconds)
-             FROM scenario_time_limits stl
-             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+            (SELECT SUM(stlr.time_limit_seconds)
+             FROM simulation_scenario_time_limits sstl
+             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
             0
         )::int as time_limit
     FROM simulation_artifact s

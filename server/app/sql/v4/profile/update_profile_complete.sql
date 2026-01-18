@@ -319,7 +319,7 @@ email_insert AS (
 ),
 cohort_deactivate AS (
     -- Deactivate existing cohort relationships not in the new list (or all if empty array)
-    UPDATE cohort_profiles SET
+    UPDATE profile_cohorts SET
         active = false,
         updated_at = NOW()
     WHERE profile_id = (SELECT target_profile_id FROM params)
@@ -332,10 +332,10 @@ cohort_deactivate AS (
 ),
 cohort_insert AS (
     -- Insert or activate cohort relationships
-    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
     SELECT 
-        cohort_id,
         pu.id,
+        cohort_id,
         true
     FROM profile_update pu
     CROSS JOIN unnest((SELECT cohort_ids FROM params)) as cohort_id

@@ -215,16 +215,16 @@ email_insert AS (
 ),
 cohort_insert AS (
     -- Insert cohort relationships if provided and profile was created
-    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
     SELECT 
-        cohort_id,
         pi.id,
+        cohort_id,
         true
     FROM profile_insert pi
     CROSS JOIN unnest((SELECT cohort_ids FROM params)) as cohort_id
     WHERE array_length((SELECT cohort_ids FROM params), 1) > 0
         AND NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
-    ON CONFLICT (cohort_id, profile_id) DO NOTHING
+    ON CONFLICT (profile_id, cohort_id) DO NOTHING
 ),
 department_insert AS (
     -- Insert department relationships if provided and profile was created (set primary based on index)

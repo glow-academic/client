@@ -57,7 +57,7 @@ scenario_info AS (
     SELECT 
         s.id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
-        (SELECT COUNT(*) FROM simulation_scenarios ss WHERE ss.scenario_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)) as usage_count
+        (SELECT COUNT(*) FROM simulation_scenarios ss WHERE ss.scenario_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)) as usage_count
     FROM scenario_artifact s
     WHERE s.id = (SELECT scenario_id FROM params)
 ),

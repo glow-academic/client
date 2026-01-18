@@ -81,41 +81,25 @@ link_runs AS (
         completed = false,
         updated_at = NOW()
 ),
--- Create/find rubric_grade_agents entries
-create_rubric_grade_agents AS (
-    INSERT INTO rubric_grade_agents (rubric_id, grade_agent_id, created_at, updated_at)
-    SELECT DISTINCT
-        (rga).rubric_id,
-        (rga).grade_agent_id,
-        NOW(),
-        NOW()
-    FROM params x
-    CROSS JOIN UNNEST(x.runs) AS r
-    CROSS JOIN UNNEST((r).rubric_grade_agents) AS rga
-    WHERE (rga).rubric_id IS NOT NULL 
-      AND (rga).grade_agent_id IS NOT NULL
-    ON CONFLICT (rubric_id, grade_agent_id, agent_id) DO UPDATE SET
-        updated_at = NOW()
-    RETURNING id as rubric_grade_agent_id, rubric_id, grade_agent_id
-),
--- Link rubric_grade_agents to runs
-link_run_rubric_grade_agents AS (
-    INSERT INTO eval_runs_rubric_grade_agents (eval_id, run_id, rubric_grade_agent_id, created_at, updated_at)
+-- Link rubrics directly to runs (no rubric_grade_agents needed)
+link_run_rubrics AS (
+    INSERT INTO eval_runs_rubrics (eval_id, run_id, rubric_id, created_at, updated_at, generated, mcp, active)
     SELECT DISTINCT
         p.eval_id,
         (r).run_id,
-        crga.rubric_grade_agent_id,
+        (rga).rubric_id,
         NOW(),
-        NOW()
+        NOW(),
+        false,
+        false,
+        true
     FROM params p
     CROSS JOIN UNNEST(p.runs) AS r
     CROSS JOIN UNNEST((r).rubric_grade_agents) AS rga
-    JOIN create_rubric_grade_agents crga ON crga.rubric_id = (rga).rubric_id 
-        AND crga.grade_agent_id = (rga).grade_agent_id
     WHERE (r).run_id IS NOT NULL
-      AND (rga).rubric_id IS NOT NULL 
-      AND (rga).grade_agent_id IS NOT NULL
-    ON CONFLICT (eval_id, run_id, rubric_grade_agent_id) DO NOTHING
+      AND (rga).rubric_id IS NOT NULL
+    ON CONFLICT (eval_id, run_id, rubric_id) DO UPDATE SET
+        updated_at = NOW()
 )
 SELECT 
     p.eval_id,

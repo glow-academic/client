@@ -240,15 +240,15 @@ BEGIN
     ),
     -- Link cohorts (old ones already deleted above if update)
     link_cohorts AS (
-        INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+        INSERT INTO profile_cohorts (profile_id, cohort_id, active)
         SELECT 
-            cohort_id,
             x.staff_id,
+            cohort_id,
             true
         FROM params x
         CROSS JOIN UNNEST(x.cohort_ids) as cohort_id
         WHERE COALESCE(array_length(x.cohort_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT cohort_profiles_pkey DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT profile_cohorts_pkey DO UPDATE SET
             active = true
     ),
     -- Handle emails (deactivate all existing, then insert new ones)

@@ -123,7 +123,7 @@ cohort_profiles_agg AS (
     SELECT 
         cp.cohort_id,
         ARRAY_AGG(cp.profile_id ORDER BY (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1)) as profile_ids
-    FROM cohort_profiles cp
+    FROM profile_cohorts cp
     JOIN profile_artifact p ON p.id = cp.profile_id
     WHERE cp.active = true
     GROUP BY cp.cohort_id
@@ -139,7 +139,7 @@ cohort_profiles_role_filtered AS (
                 (up.role = 'member'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)) OR
                 (up.role = 'guest'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = 'guest'::profile_role)
         ) as profile_ids
-    FROM cohort_profiles cp
+    FROM profile_cohorts cp
     JOIN profile_artifact p ON p.id = cp.profile_id
     CROSS JOIN user_profile up
     WHERE cp.active = true
@@ -156,7 +156,7 @@ cohort_simulations_agg AS (
 ),
 cohort_usage AS (
     SELECT DISTINCT cp.cohort_id, COUNT(DISTINCT ap.attempt_id) as usage_count
-    FROM cohort_profiles cp
+    FROM profile_cohorts cp
     JOIN attempt_profiles ap ON ap.profile_id = cp.profile_id
     WHERE cp.active = true
     GROUP BY cp.cohort_id
@@ -172,7 +172,7 @@ cohort_departments_data AS (
 user_in_cohort AS (
     SELECT cohort_id
     FROM params x
-    JOIN cohort_profiles cp ON cp.profile_id = x.profile_id AND cp.active = true
+    JOIN profile_cohorts cp ON cp.profile_id = x.profile_id AND cp.active = true
 ),
 all_profile_ids AS (
     SELECT DISTINCT unnest(profile_ids) as profile_id
@@ -189,7 +189,7 @@ simulation_scenarios_agg AS (
     FROM simulation_scenarios ss
     JOIN scenarios_resource sc ON sc.id = ss.scenario_id
     WHERE ss.simulation_id IN (SELECT simulation_id FROM all_simulation_ids)
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
     GROUP BY ss.simulation_id
 ),
 all_scenario_ids AS (
@@ -321,10 +321,11 @@ simulation_mapping_data AS (
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
-            (SELECT SUM(stl.time_limit_seconds)
-             FROM scenario_time_limits stl
-             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+            (SELECT SUM(stlr.time_limit_seconds)
+             FROM simulation_scenario_time_limits sstl
+             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
             0
         ) as time_limit,
         COALESCE(sdd.department_ids, ARRAY[]::text[]) as department_ids,

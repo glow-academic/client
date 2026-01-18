@@ -27,10 +27,23 @@ AS $$
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active'  AND sf.value = TRUE) as active,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice'  AND sf.value = TRUE) as practice_simulation,
         COALESCE(
-            (SELECT SUM(stl.time_limit_seconds)
-             FROM scenario_time_limits stl
-             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id  AND ssf.value = true)),
+            (SELECT SUM(stlr.time_limit_seconds)
+             FROM simulation_scenario_time_limits sstl
+             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+             WHERE sstl.simulation_id = s.id 
+               AND sstl.active = true 
+               AND stlr.active = true
+               AND EXISTS (
+                   SELECT 1 
+                   FROM simulation_scenario_flags ssf 
+                   JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flag_id
+                   WHERE ssf.simulation_id = ss.simulation_id 
+                     AND sfr.scenario_id = ss.scenario_id
+                     AND ssf.value = true
+                     AND ssf.active = true
+               )
+            ),
             0
         ) as time_limit,
         s.created_at,

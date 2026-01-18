@@ -121,15 +121,10 @@ link_document_upload AS (
         updated_at = NOW()
     RETURNING document_id, uploads_id
 ),
+-- document_tree removed - document hierarchy no longer supported
 link_document_tree AS (
-    -- Link parent→child in document_tree
-    INSERT INTO document_tree (parent_id, child_id, active, created_at, updated_at)
-    SELECT api_complete_document_creation_v4.parent_document_id, ccd.document_id, true, NOW(), NOW()
-    FROM create_child_document ccd
-    ON CONFLICT (parent_id, child_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-    RETURNING child_id
+    -- Placeholder CTE (document_tree functionality removed)
+    SELECT ccd.document_id as child_id FROM create_child_document ccd LIMIT 0
 ),
 copy_document_departments AS (
     -- Copy document_departments from parent to child (for department filtering)

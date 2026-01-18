@@ -486,28 +486,29 @@ simulation_base AS (
         END as practice_simulation,
         CASE 
             WHEN x.simulation_id IS NULL THEN NULL::uuid
-            ELSE (SELECT rga.rubric_id FROM simulation_scenarios ss 
-             JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-             JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-             JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+            ELSE (SELECT srr.rubric_id FROM simulation_scenarios ss 
+             JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
+             JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
              WHERE ss.simulation_id = x.simulation_id 
-               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-                   AND ssf.scenario_id = ss.scenario_id 
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+                   AND sfr.scenario_id = ss.scenario_id 
                    AND f.name = 'active' 
                    AND ssf.value = true)
-             ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+             ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
              LIMIT 1)
         END as rubric_id,
         CASE 
             WHEN x.simulation_id IS NULL THEN 0::int
             ELSE COALESCE(
-                (SELECT SUM(stl.time_limit_seconds)
-                 FROM scenario_time_limits stl
-                 JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                 WHERE stl.simulation_id = x.simulation_id 
-                   AND stl.active = true 
-                   AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-                       AND ssf.scenario_id = ss.scenario_id 
+                (SELECT SUM(stlr.time_limit_seconds)
+                 FROM simulation_scenario_time_limits sstl
+                 JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+                 JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+                 WHERE sstl.simulation_id = x.simulation_id 
+                   AND sstl.active = true 
+                   AND stlr.active = true
+                   AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+                       AND sfr.scenario_id = ss.scenario_id 
                        AND f.name = 'active' 
                        AND ssf.value = true)),
                 0
@@ -555,24 +556,24 @@ simulation_scenarios_base AS (
         s.id as scenario_id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-            AND ssf.scenario_id = ss.scenario_id 
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+            AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'active'), false) as active,
-        ((SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) = 1) as default_scenario,
-        (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-            AND ssf.scenario_id = ss.scenario_id 
+        ((SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) = 1) as default_scenario,
+        (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) as position,
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+            AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'hints_enabled'), false) as hints_enabled,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-            AND ssf.scenario_id = ss.scenario_id 
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+            AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-            AND ssf.scenario_id = ss.scenario_id 
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+            AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'audio_enabled'), false) as audio_enabled,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-            AND ssf.scenario_id = ss.scenario_id 
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+            AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'text_enabled'), true) as text_enabled,
-        stl.time_limit_seconds,
+        stlr.time_limit_seconds,
         COALESCE(
             (SELECT ARRAY_AGG(DISTINCT sf.field_id)
              FROM scenario_fields sf
@@ -582,9 +583,10 @@ simulation_scenarios_base AS (
     FROM params x
     JOIN simulation_scenarios ss ON ss.simulation_id = x.simulation_id
     JOIN scenarios_resource s ON s.id = ss.scenario_id
-    LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
+    LEFT JOIN simulation_scenario_time_limits sstl ON sstl.simulation_id = ss.simulation_id
+    LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id AND stlr.scenario_id = ss.scenario_id AND sstl.active = true AND stlr.active = true
     WHERE x.simulation_id IS NOT NULL
-    ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+    ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
 scenario_statistics AS (
     SELECT 
@@ -647,24 +649,20 @@ scenario_statistics AS (
 ),
 scenario_rubric_grade_agents_data AS (
     SELECT 
-        sssrga.scenario_id,
+        ssb.scenario_id,
         ARRAY_AGG(
-            (srga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), 
-             rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a_text.id LIMIT 1),
-             rgav.audio_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a_voice.id LIMIT 1))::types.q_get_simulation_v4_rubric_grade_agent
+            (srr.id, srr.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), 
+             NULL::uuid, NULL::text,
+             NULL::uuid, NULL::text)::types.q_get_simulation_v4_rubric_grade_agent
             ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
         ) as rubric_grade_agents
     FROM params x
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ssb.simulation_id AND sssrga.scenario_id = ssb.scenario_id
-    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN rubrics_resource r ON r.id = rga.rubric_id
-    JOIN agents_resource a_text ON a_text.id = rga.grade_agent_id
-    LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
-    LEFT JOIN agents_resource a_voice ON a_voice.id = rgav.audio_agent_id
+    JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ssb.simulation_id
+    JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ssb.scenario_id
+    JOIN rubrics_resource r ON r.id = srr.rubric_id
     WHERE x.simulation_id IS NOT NULL
-    GROUP BY sssrga.scenario_id
+    GROUP BY ssb.scenario_id
 ),
 scenarios_data AS (
     SELECT 
@@ -795,12 +793,11 @@ valid_rubrics_data AS (
         COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r2.id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
-    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_sb ON sssrga_sb.simulation_id = sb.id
-    LEFT JOIN scenario_rubric_grade_agents_resource srga_sb ON srga_sb.id = sssrga_sb.scenario_rubric_grade_agent_id
-    LEFT JOIN rubric_grade_agents rga_sb ON rga_sb.id = srga_sb.grade_agent_id
-    JOIN rubrics_resource r2 ON r2.id = rga_sb.rubric_id
+    LEFT JOIN simulation_scenario_rubrics ssr_sb ON ssr_sb.simulation_id = sb.id
+    LEFT JOIN scenario_rubrics_resource srr_sb ON srr_sb.id = ssr_sb.scenario_rubric_id
+    JOIN rubrics_resource r2 ON r2.id = srr_sb.rubric_id
     WHERE x.simulation_id IS NOT NULL
-      AND rga_sb.rubric_id IS NOT NULL 
+      AND srr_sb.rubric_id IS NOT NULL 
       AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r2.id AND f.name = 'active' AND rf.value = TRUE)
     UNION
     SELECT DISTINCT
@@ -809,12 +806,11 @@ valid_rubrics_data AS (
         COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r3.id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_ssb ON sssrga_ssb.simulation_id = ssb.simulation_id AND sssrga_ssb.scenario_id = ssb.scenario_id
-    JOIN scenario_rubric_grade_agents_resource srga_ssb ON srga_ssb.id = sssrga_ssb.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga_ssb ON rga_ssb.id = srga_ssb.grade_agent_id
-    JOIN rubrics_resource r3 ON r3.id = rga_ssb.rubric_id
+    JOIN simulation_scenario_rubrics ssr_ssb ON ssr_ssb.simulation_id = ssb.simulation_id
+    JOIN scenario_rubrics_resource srr_ssb ON srr_ssb.id = ssr_ssb.scenario_rubric_id AND srr_ssb.scenario_id = ssb.scenario_id
+    JOIN rubrics_resource r3 ON r3.id = srr_ssb.rubric_id
     WHERE x.simulation_id IS NOT NULL
-      AND rga_ssb.rubric_id IS NOT NULL 
+      AND srr_ssb.rubric_id IS NOT NULL 
       AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r3.id AND f.name = 'active' AND rf.value = TRUE)
 ),
 rubrics_data AS (
@@ -1100,50 +1096,23 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 selected_agents_from_simulation AS (
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), NULL::text as role
+    SELECT NULL::uuid as id, NULL::text as name, NULL::text as description, NULL::text as role
     FROM params x
-    JOIN simulation_base sb ON sb.id = x.simulation_id
-    JOIN agents_resource a ON false
-    WHERE x.simulation_id IS NOT NULL AND false
-      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
-      AND false  -- Domain-based agent lookup removed (a_text, da_text, a_voice, da_voice references removed)
+    WHERE false  -- Domain-based agent lookup removed (a_text, da_text, a_voice, da_voice references removed)
     UNION
     -- Get grade agents from junction tables
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
+    SELECT NULL::uuid as id, NULL::text as name, NULL::text as description, NULL::text as role
     FROM params x
-    JOIN simulation_base sb ON sb.id = x.simulation_id
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = sb.id
-    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN agents_resource a ON a.id = rga.grade_agent_id
-    
-    
-    WHERE x.simulation_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+    WHERE false
     UNION
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
+    SELECT NULL::uuid as id, NULL::text as name, NULL::text as description, NULL::text as role
     FROM params x
-    JOIN simulation_base sb ON sb.id = x.simulation_id
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = sb.id
-    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
-    JOIN agents_resource a ON a.id = rgav.audio_agent_id
-    
-    
-    WHERE x.simulation_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+    WHERE false
     UNION
     -- Get rubric agents (member role) from rubric_domains
     -- NOTE: rubric_domains table was removed in migration 249, so this query returns no rows
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
+    SELECT NULL::uuid as id, NULL::text as name, NULL::text as description, NULL::text as role
     FROM params x
-    JOIN simulation_base sb ON sb.id = x.simulation_id
-    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = sb.id
-    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN rubrics_resource r ON r.id = rga.rubric_id
-    JOIN agents_resource a ON false
     WHERE false  -- Disabled: rubric_domains table was removed in migration 249
 ),
 agents_data AS (
@@ -1154,17 +1123,11 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
-        FROM agent_artifact a
-        
-        
-        LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) 
-        AND false  -- Domain-based agent lookup removed (message, grade artifacts no longer exist)
-        GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), NULL::artifacts
-        HAVING 
-            COUNT(NULL::uuid) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
-            OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+        SELECT NULL::uuid as id, NULL::text as name, NULL::text as description, NULL::text as role
+        FROM (SELECT 1) x
+        WHERE false  -- Domain-based agent lookup removed (message, grade artifacts no longer exist)
+        GROUP BY NULL::uuid, NULL::text, NULL::text, NULL::text
+        HAVING false
         UNION
         SELECT DISTINCT sas.id, sas.name, sas.description, sas.role
         FROM selected_agents_from_simulation sas
@@ -1221,11 +1184,8 @@ valid_member_agents AS (
     UNION
     -- Get rubric agents (member role) from rubric_domains
     -- NOTE: rubric_domains table was removed in migration 249, so this query is disabled
-    SELECT DISTINCT a.id
-    FROM rubric_artifact r
-    JOIN agents_resource a ON false
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) 
-    AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r.id AND f.name = 'active' AND rf.value = true)
+    SELECT DISTINCT NULL::uuid as id
+    WHERE false
 ),
 default_hint_agent AS (
     SELECT id FROM valid_hint_agents
@@ -1502,16 +1462,14 @@ name_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'simulation'::artifacts
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1570,16 +1528,14 @@ description_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'simulation'::artifacts
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1638,16 +1594,14 @@ departments_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'simulation'::artifacts
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1706,16 +1660,14 @@ flag_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'simulation'::artifacts
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1774,16 +1726,14 @@ scenarios_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'simulation'::artifacts
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1921,9 +1871,11 @@ scenario_flags_data AS (
 scenario_position_ids_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(sp.scenario_id ORDER BY sp.value)
-             FROM scenario_positions_resource sp
-             WHERE sp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))),
+            (SELECT ARRAY_AGG(spr.scenario_id ORDER BY spr.value)
+             FROM simulation_scenario_positions ssp
+             JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
+             WHERE ssp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
+               AND ssp.active = true),
             ARRAY[]::uuid[]
         ) as scenario_position_ids
     FROM params
@@ -1933,13 +1885,15 @@ scenario_position_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (sp.simulation_id, sp.scenario_id, sp.value, COALESCE(sp.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = sp.call_id LIMIT 1)
+                (ssp.simulation_id, spr.scenario_id, spr.value, COALESCE(ssp.generated, false),
+                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = spr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_position_resource
-                ORDER BY sp.value
+                ORDER BY spr.value
             )
-            FROM scenario_positions_resource sp
-            WHERE sp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))),
+            FROM simulation_scenario_positions ssp
+            JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
+            WHERE ssp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
+              AND ssp.active = true),
             '{}'::types.q_get_simulation_v4_scenario_position_resource[]
         ) as scenario_position_resources
 ),
@@ -1966,16 +1920,14 @@ general_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'simulation'::artifacts
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 

@@ -90,7 +90,7 @@ filtered_profiles AS (
     WHERE 
         (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
-            SELECT 1 FROM cohort_profiles cp 
+            SELECT 1 FROM profile_cohorts cp 
             WHERE cp.profile_id = p.id 
               AND cp.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]) 
               AND cp.active = true

@@ -149,7 +149,7 @@ expanded_history_cohort_ids AS (
         UNION
         SELECT cp.cohort_id
         FROM params p
-        JOIN cohort_profiles cp ON cp.profile_id = p.profile_id
+        JOIN profile_cohorts cp ON cp.profile_id = p.profile_id
     ) combined
 ),
 -- Filter attempts by date, profile, cohorts, departments
@@ -205,7 +205,7 @@ history_attempt_cohorts AS (
         COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(ARRAY_AGG(DISTINCT (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::text[]) AS cohort_names
     FROM history_attempts ha
-    LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
+    LEFT JOIN profile_cohorts cp ON cp.profile_id = ha.profile_id
     LEFT JOIN cohort_artifact c ON c.id = cp.cohort_id AND EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'active' AND cf.value = TRUE)
     LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
     WHERE (
@@ -314,13 +314,17 @@ history_chat_grades AS (
     SELECT DISTINCT ON (c.id)
         c.id AS chat_id,
         scg.score,
-        rga.rubric_id
+        COALESCE(srr.rubric_id, srr_fallback.rubric_id) as rubric_id
     FROM grades scg
-    LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
     JOIN runs r ON r.id = scg.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN grade_groups gg ON gg.group_id = gr.group_id
     JOIN chats c ON c.id = gg.chat_id
+    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
+    LEFT JOIN attempt_chats ac_fallback ON ac_fallback.chat_id = c.id
+    LEFT JOIN simulation_attempts sa_fallback ON sa_fallback.id = ac_fallback.attempt_id
+    LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id = sa_fallback.simulation_id
+    LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
@@ -339,21 +343,20 @@ history_chat_grades AS (
 sim_first_scenario_rubric AS (
     SELECT DISTINCT ON (ss.simulation_id)
         ss.simulation_id,
-        rga.rubric_id,
+        srr.rubric_id,
         p_total.value AS points
     FROM simulation_scenarios ss
-    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    LEFT JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    LEFT JOIN rubrics_resource r ON r.id = rga.rubric_id
+    LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
+    LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
+    LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
     LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
     LEFT JOIN points_resource p_total ON p_total.id = rp_total.point_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-        AND ssf.scenario_id = ss.scenario_id 
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+        AND sfr.scenario_id = ss.scenario_id 
         AND f.name = 'active' 
         AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
-    ORDER BY ss.simulation_id, COALESCE((SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1), 999999)
+    ORDER BY ss.simulation_id, COALESCE((SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1), 999999)
 ),
 -- Aggregate grades per attempt
 history_grade_rollup AS (
@@ -367,16 +370,14 @@ history_grade_rollup AS (
     JOIN chats sc ON sc.id = ac.chat_id
     JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
-    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback_scenario ON sssrga_fallback_scenario.simulation_id = sa.simulation_id
-    LEFT JOIN scenario_rubric_grade_agents_resource srga_fallback_scenario ON srga_fallback_scenario.id = sssrga_fallback_scenario.scenario_rubric_grade_agent_id
-      AND sssrga_fallback_scenario.scenario_id = sc.scenario_id
+    LEFT JOIN simulation_scenario_rubrics ssr_fallback_scenario ON ssr_fallback_scenario.simulation_id = sa.simulation_id
+    LEFT JOIN scenario_rubrics_resource srr_fallback_scenario ON srr_fallback_scenario.id = ssr_fallback_scenario.scenario_rubric_id AND srr_fallback_scenario.scenario_id = sc.scenario_id
       AND hcg.chat_id IS NOT NULL
       AND hcg.rubric_id IS NULL
-    LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = srga_fallback_scenario.grade_agent_id
     LEFT JOIN rubrics_resource r ON r.id = hcg.rubric_id
     LEFT JOIN rubric_points rp_r ON rp_r.rubric_id = r.id AND rp_r.type = 'total'::type_rubric_points
     LEFT JOIN points_resource p_r ON p_r.id = rp_r.point_id
-    LEFT JOIN rubrics_resource r_fallback_scenario ON r_fallback_scenario.id = rga_fallback_scenario.rubric_id
+    LEFT JOIN rubrics_resource r_fallback_scenario ON r_fallback_scenario.id = srr_fallback_scenario.rubric_id
     LEFT JOIN rubric_points rp_fallback_scenario ON rp_fallback_scenario.rubric_id = r_fallback_scenario.id AND rp_fallback_scenario.type = 'total'::type_rubric_points
     LEFT JOIN points_resource p_fallback_scenario ON p_fallback_scenario.id = rp_fallback_scenario.point_id
     LEFT JOIN sim_first_scenario_rubric sfsr ON sfsr.simulation_id = sa.simulation_id
@@ -468,7 +469,7 @@ history_sim_scenario_count AS (
 history_scenario_ids AS (
     SELECT
         s.id AS simulation_id,
-        ARRAY_AGG(ss.scenario_id ORDER BY COALESCE((SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1), 999999))::uuid[] AS scenario_ids_assigned
+        ARRAY_AGG(ss.scenario_id ORDER BY COALESCE((SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1), 999999))::uuid[] AS scenario_ids_assigned
     FROM simulation_artifact s
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
     WHERE s.id IN (SELECT simulation_id FROM history_attempts_final)
@@ -529,20 +530,19 @@ simulation_rubrics AS (
         p_total.value AS rubric_points,
         p_pass.value AS rubric_pass_points
     FROM simulation_scenarios ss
-    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    LEFT JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
-    LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    LEFT JOIN rubrics_resource r ON r.id = rga.rubric_id
+    LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
+    LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
+    LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
     LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
     LEFT JOIN points_resource p_total ON p_total.id = rp_total.point_id
     LEFT JOIN rubric_points rp_pass ON rp_pass.rubric_id = r.id AND rp_pass.type = 'pass'::type_rubric_points
     LEFT JOIN points_resource p_pass ON p_pass.id = rp_pass.point_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-        AND ssf.scenario_id = ss.scenario_id 
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+        AND sfr.scenario_id = ss.scenario_id 
         AND f.name = 'active' 
         AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)
-    ORDER BY ss.simulation_id, COALESCE((SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1), 999999)
+    ORDER BY ss.simulation_id, COALESCE((SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1), 999999)
 ),
 attempt_joined AS (
     SELECT
@@ -557,13 +557,15 @@ attempt_joined AS (
         END AS pass_pct,
         (COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) AS profile_name,
         COALESCE(
-            (SELECT SUM(stl.time_limit_seconds)
-             FROM scenario_time_limits stl
-             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id 
-               AND stl.active = true 
-               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-                   AND ssf.scenario_id = ss.scenario_id 
+            (SELECT SUM(stlr.time_limit_seconds)
+             FROM simulation_scenario_time_limits sstl
+             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+             WHERE sstl.simulation_id = s.id 
+               AND sstl.active = true 
+               AND stlr.active = true
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+                   AND sfr.scenario_id = ss.scenario_id 
                    AND f.name = 'active' 
                    AND ssf.value = true)),
             0
@@ -772,10 +774,11 @@ data_agg AS (
                 pr.num_scenarios_completed,
                 pr.infinite_mode,
                 COALESCE(
-                    (SELECT SUM(stl.time_limit_seconds)
-                     FROM scenario_time_limits stl
-                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                     WHERE stl.simulation_id = pr.simulation_id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+                    (SELECT SUM(stlr.time_limit_seconds)
+                     FROM simulation_scenario_time_limits sstl
+                     JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+                     JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+                     WHERE sstl.simulation_id = pr.simulation_id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
                     0
                 ),
                 COALESCE(pl.persona_names, ARRAY[]::text[]),

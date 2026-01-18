@@ -56,17 +56,18 @@ latest_grade AS (
          c.id AS simulation_chat_id,
          g.score::numeric AS score,
          COALESCE(t.time_taken, 0)::numeric AS time_taken_seconds,
-         rga.rubric_id,
+         srr.rubric_id,
          g.created_at
   FROM grades g
-  LEFT JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
   LEFT JOIN grade_times gt ON gt.grade_id = g.id AND gt.active = TRUE
   LEFT JOIN times_resource t ON t.id = gt.time_id
   JOIN runs r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
   JOIN chats c ON c.id = gg.chat_id
+  LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
   -- Simulation grades only (derive from relationship via grade_groups → groups → group_runs → runs)
+  -- Get rubric_id from scenario_rubrics_resource based on chat's scenario_id
   ORDER BY c.id, g.created_at DESC
 ),
 -- only ACTIVE simulations
@@ -113,7 +114,7 @@ profile_cohorts_for_sim AS (
            SELECT c.id
            FROM cohort_artifact c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
-           JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
+           JOIN profile_cohorts cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
            WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
                AND f.name = 'active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
@@ -325,12 +326,8 @@ JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
 LEFT JOIN personas_resource p          ON p.id = sfp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
-LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = sa.simulation_id
-  AND sssrga_fallback.scenario_id = s.id
-  AND lg.rubric_id IS NULL
-LEFT JOIN scenario_rubric_grade_agents_resource srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
-LEFT JOIN rubric_grade_agents rga_fallback ON rga_fallback.id = srga_fallback.grade_agent_id
-LEFT JOIN rubrics_resource r           ON r.id = COALESCE(lg.rubric_id, rga_fallback.rubric_id)
+LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.scenario_id = s.id AND lg.rubric_id IS NULL
+LEFT JOIN rubrics_resource r           ON r.id = COALESCE(lg.rubric_id, srr_fallback.rubric_id)
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
@@ -431,9 +428,9 @@ CREATE INDEX analytics_simulation_idx
   ON analytics (simulation_id);
 
 -- Additional indexes for skill performance optimization
--- Latest grade per (run, rubric_grade_agent) fast path
-CREATE INDEX IF NOT EXISTS grades_run_rubric_grade_agent_created_idx
-  ON grades (run_id, rubric_grade_agent_id, created_at DESC);
+-- Latest grade per run fast path (rubric_grade_agent_id removed)
+CREATE INDEX IF NOT EXISTS grades_run_created_idx
+  ON grades (run_id, created_at DESC);
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
@@ -492,6 +489,10 @@ CREATE INDEX IF NOT EXISTS attempt_profiles_profile_active_idx
 
 CREATE INDEX IF NOT EXISTS scenario_personas_scenario_active_idx
   ON scenario_personas (scenario_id, persona_id) WHERE active = TRUE;
+
+-- Index for scenario_rubrics_resource lookup
+CREATE INDEX IF NOT EXISTS scenario_rubrics_resource_scenario_id_idx
+  ON scenario_rubrics_resource (scenario_id);
 
 -- Optimized indexes for analytics functions performance
 -- Profile + time range lookups for fast filtering

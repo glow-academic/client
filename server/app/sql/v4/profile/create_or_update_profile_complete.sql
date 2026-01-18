@@ -278,16 +278,16 @@ dept_insert AS (
 ),
 cohort_cleanup AS (
     -- Delete existing cohort relationships
-    DELETE FROM cohort_profiles
+    DELETE FROM profile_cohorts
     WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
       AND EXISTS (SELECT 1 FROM profile_upsert)
 ),
 cohort_insert AS (
     -- Insert cohort relationships
-    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
     SELECT 
-        cohort_id,
         pu.id,
+        cohort_id,
         true
     FROM profile_upsert pu
     CROSS JOIN unnest((SELECT cohort_ids FROM params)) as cohort_id

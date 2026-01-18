@@ -32,10 +32,13 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-INSERT INTO document_tree (parent_id, child_id, active, created_at, updated_at)
-VALUES (api_insert_document_tree_v4.parent_id, api_insert_document_tree_v4.child_id, api_insert_document_tree_v4.active, NOW(), NOW())
-ON CONFLICT (parent_id, child_id) DO UPDATE SET
-    active = EXCLUDED.active,
-    updated_at = NOW()
-RETURNING parent_id, child_id, active, created_at, updated_at
+-- document_tree removed - document hierarchy no longer supported
+-- Return empty result
+SELECT 
+    api_insert_document_tree_v4.parent_id,
+    api_insert_document_tree_v4.child_id,
+    api_insert_document_tree_v4.active,
+    NOW() as created_at,
+    NOW() as updated_at
+WHERE false
 $$;

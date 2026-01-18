@@ -758,103 +758,103 @@ problem_statement_resource_data AS (
 -- Flag resource data CTEs (one per flag type, following Persona.tsx pattern)
 active_flag_resource_data AS (
     SELECT 
-        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'active' 
-         AND ssf.active = true 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'active' 
+         AND sf.active = true 
          LIMIT 1) as active_flag_id,
-        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
-         FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'active' 
-         AND ssf.active = true 
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'active' 
+         AND sf.active = true 
          LIMIT 1) as active_flag_resource
     FROM params
 ),
 objectives_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'objectives_enabled' 
-         AND ssf.active = true 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'objectives_enabled' 
+         AND sf.active = true 
          LIMIT 1) as objectives_enabled_flag_id,
-        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
-         FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'objectives_enabled' 
-         AND ssf.active = true 
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'objectives_enabled' 
+         AND sf.active = true 
          LIMIT 1) as objectives_enabled_flag_resource
     FROM params
 ),
 images_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'images_enabled' 
-         AND ssf.active = true 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'images_enabled' 
+         AND sf.active = true 
          LIMIT 1) as images_enabled_flag_id,
-        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
-         FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'images_enabled' 
-         AND ssf.active = true 
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'images_enabled' 
+         AND sf.active = true 
          LIMIT 1) as images_enabled_flag_resource
     FROM params
 ),
 video_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'video_enabled' 
-         AND ssf.active = true 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'video_enabled' 
+         AND sf.active = true 
          LIMIT 1) as video_enabled_flag_id,
-        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
-         FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'video_enabled' 
-         AND ssf.active = true 
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'video_enabled' 
+         AND sf.active = true 
          LIMIT 1) as video_enabled_flag_resource
     FROM params
 ),
 questions_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'questions_enabled' 
-         AND ssf.active = true 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'questions_enabled' 
+         AND sf.active = true 
          LIMIT 1) as questions_enabled_flag_id,
-        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
-         FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'questions_enabled' 
-         AND ssf.active = true 
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'questions_enabled' 
+         AND sf.active = true 
          LIMIT 1) as questions_enabled_flag_resource
     FROM params
 ),
 problem_statement_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'problem_statement_enabled' 
-         AND ssf.active = true 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'problem_statement_enabled' 
+         AND sf.active = true 
          LIMIT 1) as problem_statement_enabled_flag_id,
-        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
-         FROM scenario_scenario_flags ssf 
-         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
-         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
-         AND sfr.name = 'problem_statement_enabled' 
-         AND ssf.active = true 
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'problem_statement_enabled' 
+         AND sf.active = true 
          LIMIT 1) as problem_statement_enabled_flag_resource
     FROM params
 ),
@@ -1037,16 +1037,16 @@ problem_statements_suggestions_objects AS (
 scenario_simulation_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
         ss.scenario_id,
-        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-            AND ssf.scenario_id = ss.scenario_id 
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+            AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'hints_enabled'), false) as hints_enabled
     FROM params x
     LEFT JOIN simulation_scenarios ss ON ss.scenario_id = x.scenario_id
     WHERE x.scenario_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-          AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+          AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' 
           AND ssf.value = true)
-    ORDER BY ss.scenario_id, (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+    ORDER BY ss.scenario_id, (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
     LIMIT 1
 ),
 scenario_personas_agg AS (
@@ -1182,8 +1182,8 @@ scenario_simulations_agg AS (
     FROM simulation_scenarios ss
     JOIN simulation_artifact s ON s.id = ss.simulation_id
     WHERE ss.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-          AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+          AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' 
           AND ssf.value = true)
 ),
 all_parameters_data AS (
@@ -1849,11 +1849,8 @@ document_parameter_ids_agg AS (
     GROUP BY dpr.document_id
 ),
 document_parent_ids AS (
-    SELECT DISTINCT ON (dt.child_id)
-        dt.child_id as document_id,
-        dt.parent_id
-    FROM document_tree dt
-    WHERE dt.child_id IN (SELECT id FROM document_data) AND dt.active = true
+    -- document_tree removed - document hierarchy no longer supported
+    SELECT NULL::uuid as document_id, NULL::uuid as parent_id WHERE false
 ),
 valid_documents_array AS (
     SELECT 
@@ -1923,7 +1920,7 @@ document_details_array AS (
             WHEN EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = dd.id AND f.name = 'template' AND df.value = TRUE) THEN true
             ELSE false
         END as is_template,
-        (SELECT dt.parent_id FROM document_tree dt WHERE dt.child_id = dd.id AND dt.active = true LIMIT 1) as parent_document_id
+        NULL::uuid as parent_document_id
     FROM document_data dd
     JOIN document_artifact d ON d.id = dd.id
 ),
@@ -1933,10 +1930,11 @@ simulation_data AS (
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
-            (SELECT SUM(stl.time_limit_seconds)
-             FROM scenario_time_limits stl
-             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+            (SELECT SUM(stlr.time_limit_seconds)
+             FROM simulation_scenario_time_limits sstl
+             JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
+             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
             0
         ) as time_limit,
         COALESCE((

@@ -25,9 +25,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
+    -- rubric_grade_agents removed - return NULL values (function kept for API compatibility)
     SELECT 
-        rga.rubric_id::text as rubric_id,
-        rga.grade_agent_id::text as eval_agent_id
-    FROM rubric_grade_agents rga
-    WHERE rga.id = $1
+        NULL::text as rubric_id,
+        NULL::text as eval_agent_id
+    WHERE false
 $$;

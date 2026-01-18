@@ -123,23 +123,22 @@ cohort_with_title AS (
 ),
 copy_profiles AS (
     -- Copy profile relationships
-    INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
     SELECT 
-        nc.id,
         cp.profile_id,
+        nc.id,
         cp.active
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
-    JOIN cohort_profiles cp ON cp.cohort_id = oc.id
+    JOIN profile_cohorts cp ON cp.cohort_id = oc.id
 ),
 copy_simulations AS (
-    -- Copy simulation relationships with position
-    INSERT INTO cohort_simulations (cohort_id, simulation_id, active, position)
+    -- Copy simulation relationships (position removed - now in simulation_positions_resource)
+    INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
     SELECT 
         nc.id,
         cs.simulation_id,
-        cs.active,
-        cs.position
+        cs.active
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
     JOIN cohort_simulations cs ON cs.cohort_id = oc.id

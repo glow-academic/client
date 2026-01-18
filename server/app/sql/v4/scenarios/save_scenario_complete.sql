@@ -343,49 +343,49 @@ link_description AS (
     ON CONFLICT ON CONSTRAINT scenario_descriptions_pkey DO UPDATE SET updated_at = NOW()
 ),
 link_flags AS (
-    -- Link all scenario flags using scenario_scenario_flags junction table (resource-based)
+    -- Link all scenario flags using scenario_flags junction table (resource-based)
     -- Delete existing flags first, then insert new ones
-    DELETE FROM scenario_scenario_flags 
+    DELETE FROM scenario_flags 
     WHERE scenario_id = (SELECT scenario_id FROM scenario_id_resolved LIMIT 1)
 ),
 insert_flags AS (
-    INSERT INTO scenario_scenario_flags (scenario_id, scenario_flags_id, active, generated, mcp, created_at, updated_at)
-    SELECT sir.scenario_id, gfi.active_flag_id, p.active, false, false, NOW(), NOW()
+    INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
+    SELECT sir.scenario_id, gfi.active_flag_id, p.active, p.active, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.active IS NOT NULL AND gfi.active_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.objectives_enabled_flag_id, p.objectives_enabled, false, false, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.objectives_enabled_flag_id, p.objectives_enabled, p.objectives_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.objectives_enabled IS NOT NULL AND gfi.objectives_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.images_enabled_flag_id, p.images_enabled, false, false, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.images_enabled_flag_id, p.images_enabled, p.images_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.images_enabled IS NOT NULL AND gfi.images_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.video_enabled_flag_id, p.video_enabled, false, false, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.video_enabled_flag_id, p.video_enabled, p.video_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.video_enabled IS NOT NULL AND gfi.video_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.questions_enabled_flag_id, p.questions_enabled, false, false, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.questions_enabled_flag_id, p.questions_enabled, p.questions_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.questions_enabled IS NOT NULL AND gfi.questions_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.problem_statement_enabled_flag_id, p.problem_statement_enabled, false, false, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.problem_statement_enabled_flag_id, p.problem_statement_enabled, p.problem_statement_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
     WHERE p.problem_statement_enabled IS NOT NULL AND gfi.problem_statement_enabled_flag_id IS NOT NULL
-    ON CONFLICT (scenario_id, scenario_flags_id) DO UPDATE SET
+    ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 ),

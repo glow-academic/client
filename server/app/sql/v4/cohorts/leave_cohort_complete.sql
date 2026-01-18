@@ -47,12 +47,12 @@ cohort_info AS (
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
 update_result AS (
-    UPDATE cohort_profiles
+    UPDATE profile_cohorts
     SET active = false, updated_at = NOW()
     FROM params x
-    WHERE cohort_profiles.cohort_id = x.cohort_id 
-      AND cohort_profiles.profile_id = x.profile_id
-    RETURNING cohort_profiles.cohort_id
+    WHERE profile_cohorts.cohort_id = x.cohort_id 
+      AND profile_cohorts.profile_id = x.profile_id
+    RETURNING profile_cohorts.cohort_id
 )
 SELECT 
     ci.title as cohort_title,

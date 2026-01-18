@@ -222,36 +222,32 @@ eval_agents_data AS (
 -- Get rubric_grade_agents per run (when use_groups = false)
 runs_rubric_grade_agents_data AS (
     SELECT 
-        errga.eval_id,
-        errga.run_id,
+        err.eval_id,
+        err.run_id,
         ARRAY_AGG(
-            (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
+            (NULL::uuid, err.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), NULL::uuid, NULL::text)::types.q_get_eval_detail_v4_rubric_grade_agent
             ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
         ) as rubric_grade_agents
     FROM params x
     JOIN evals_resource e ON e.id = x.eval_id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
-    JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id
-    JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
-    JOIN rubrics_resource r ON r.id = rga.rubric_id
-    JOIN agents_resource a ON a.id = rga.grade_agent_id
-    GROUP BY errga.eval_id, errga.run_id
+    JOIN eval_runs_rubrics err ON err.eval_id = e.id
+    JOIN rubrics_resource r ON r.id = err.rubric_id
+    GROUP BY err.eval_id, err.run_id
 ),
 -- Get rubric_grade_agents per group (when use_groups = true)
 groups_rubric_grade_agents_data AS (
     SELECT 
-        egga.eval_id,
-        egga.group_id,
+        egr.eval_id,
+        egr.group_id,
         ARRAY_AGG(
-            (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
+            (NULL::uuid, egr.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), NULL::uuid, NULL::text)::types.q_get_eval_detail_v4_rubric_grade_agent
             ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
         ) as rubric_grade_agents
     FROM params x
     JOIN evals_resource e ON e.id = x.eval_id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
-    JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id
-    JOIN rubric_grade_agents rga ON rga.id = egga.rubric_grade_agent_id
-    JOIN rubrics_resource r ON r.id = rga.rubric_id
-    JOIN agents_resource a ON a.id = rga.grade_agent_id
-    GROUP BY egga.eval_id, egga.group_id
+    JOIN eval_groups_rubrics egr ON egr.eval_id = e.id
+    JOIN rubrics_resource r ON r.id = egr.rubric_id
+    GROUP BY egr.eval_id, egr.group_id
 ),
 eval_departments_data AS (
     SELECT 
@@ -296,14 +292,12 @@ runs_list AS (
         g.created_at as grade_created_at,
         COALESCE(
             (SELECT ARRAY_AGG(
-                (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a2.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
+                (NULL::uuid, err.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1), NULL::uuid, NULL::text)::types.q_get_eval_detail_v4_rubric_grade_agent
                 ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1)
             )
-            FROM eval_runs_rubric_grade_agents errga
-            JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
-            JOIN rubrics_resource r2 ON r2.id = rga.rubric_id
-            JOIN agents_resource a2 ON a2.id = rga.grade_agent_id
-            WHERE errga.eval_id = er.eval_id AND errga.run_id = er.run_id),
+            FROM eval_runs_rubrics err
+            JOIN rubrics_resource r2 ON r2.id = err.rubric_id
+            WHERE err.eval_id = er.eval_id AND err.run_id = er.run_id),
             '{}'::types.q_get_eval_detail_v4_rubric_grade_agent[]
         ) as rubric_grade_agents
     FROM params x
@@ -460,10 +454,9 @@ valid_rubrics_data AS (
         (SELECT ra.artifact::text FROM rubric_artifacts ra WHERE ra.rubric_id = r2.id LIMIT 1) as agent_role  -- Derive from rubric_artifacts junction
     FROM params x
     JOIN evals_resource e ON e.id = x.eval_id
-    LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
-    LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
-    JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
-    JOIN rubrics_resource r2 ON r2.id = rga.rubric_id
+    LEFT JOIN eval_runs_rubrics err ON err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+    LEFT JOIN eval_groups_rubrics egr ON egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+    JOIN rubrics_resource r2 ON r2.id = COALESCE(err.rubric_id, egr.rubric_id)
     WHERE EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r2.id AND f.name = 'active' AND rf.value = true)
 ),
 rubrics_array AS (
@@ -719,23 +712,22 @@ SELECT
         (SELECT payload->'run_rubric_grade_agents' FROM draft_payload_data),
         COALESCE(
             (SELECT jsonb_object_agg(
-                errga.run_id::text,
+                err.run_id::text,
                 COALESCE(
                     (SELECT jsonb_agg(
                         jsonb_build_object(
-                            'rubric_id', rga.rubric_id::text,
-                            'grade_text_agent_id', rga.grade_agent_id::text
+                            'rubric_id', err2.rubric_id::text,
+                            'grade_text_agent_id', NULL::text
                         )
                     )
-                    FROM eval_runs_rubric_grade_agents errga2
-                    JOIN rubric_grade_agents rga ON rga.id = errga2.rubric_grade_agent_id
-                    WHERE errga2.eval_id = ed.eval_id AND errga2.run_id = errga.run_id),
+                    FROM eval_runs_rubrics err2
+                    WHERE err2.eval_id = ed.eval_id AND err2.run_id = err.run_id),
                     '[]'::jsonb
                 )
             )
              FROM params x2
-             JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = ed.eval_id
-             GROUP BY errga.run_id),
+             JOIN eval_runs_rubrics err ON err.eval_id = ed.eval_id
+             GROUP BY err.run_id),
             '{}'::jsonb
         )
     ) as run_rubric_grade_agents,
@@ -743,23 +735,22 @@ SELECT
         (SELECT payload->'group_rubric_grade_agents' FROM draft_payload_data),
         COALESCE(
             (SELECT jsonb_object_agg(
-                egga.group_id::text,
+                egr.group_id::text,
                 COALESCE(
                     (SELECT jsonb_agg(
                         jsonb_build_object(
-                            'rubric_id', rga.rubric_id::text,
-                            'grade_text_agent_id', rga.grade_agent_id::text
+                            'rubric_id', egr2.rubric_id::text,
+                            'grade_text_agent_id', NULL::text
                         )
                     )
-                    FROM eval_groups_rubric_grade_agents egga2
-                    JOIN rubric_grade_agents rga ON rga.id = egga2.rubric_grade_agent_id
-                    WHERE egga2.eval_id = ed.eval_id AND egga2.group_id = egga.group_id),
+                    FROM eval_groups_rubrics egr2
+                    WHERE egr2.eval_id = ed.eval_id AND egr2.group_id = egr.group_id),
                     '[]'::jsonb
                 )
             )
              FROM params x3
-             JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = ed.eval_id
-             GROUP BY egga.group_id),
+             JOIN eval_groups_rubrics egr ON egr.eval_id = ed.eval_id
+             GROUP BY egr.group_id),
             '{}'::jsonb
         )
     ) as group_rubric_grade_agents

@@ -45,7 +45,7 @@ actor_profile AS (
 usage_check AS (
     SELECT COUNT(*) as usage_count
     FROM params x
-    JOIN cohort_profiles cp ON cp.cohort_id = x.cohort_id
+    JOIN profile_cohorts cp ON cp.cohort_id = x.cohort_id
 ),
 cohort_title AS (
     -- Get cohort title before deletion

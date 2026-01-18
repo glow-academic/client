@@ -259,12 +259,12 @@ runs_base AS (
                 SELECT id FROM profile_artifact p WHERE EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role::text = ANY((SELECT roles FROM params)::text[]))
             )
         )
-        -- Cohort filter (via cohort_profiles)
+        -- Cohort filter (via profile_cohorts)
         AND (
             p.cohort_ids IS NULL
             OR COALESCE(array_length(p.cohort_ids, 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT cp.profile_id FROM cohort_profiles cp
+                SELECT cp.profile_id FROM profile_cohorts cp
                 WHERE cp.cohort_id = ANY(p.cohort_ids) AND cp.active = true
             )
         )

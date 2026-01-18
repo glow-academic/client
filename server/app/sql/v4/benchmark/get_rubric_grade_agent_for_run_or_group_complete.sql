@@ -30,28 +30,6 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH run_rubric AS (
-    SELECT 
-        errga.rubric_grade_agent_id::uuid as rubric_grade_agent_id
-    FROM eval_runs_rubric_grade_agents errga
-    WHERE errga.eval_id = eval_id 
-      AND errga.run_id = run_id
-      AND use_groups = false
-    ORDER BY errga.created_at ASC
-    LIMIT 1
-),
-group_rubric AS (
-    SELECT 
-        egga.rubric_grade_agent_id::uuid as rubric_grade_agent_id
-    FROM eval_groups_rubric_grade_agents egga
-    WHERE egga.eval_id = eval_id 
-      AND egga.group_id = group_id
-      AND use_groups = true
-    ORDER BY egga.created_at ASC
-    LIMIT 1
-)
-SELECT 
-    COALESCE(rr.rubric_grade_agent_id, gr.rubric_grade_agent_id) as rubric_grade_agent_id
-FROM run_rubric rr
-FULL OUTER JOIN group_rubric gr ON true
+-- rubric_grade_agents removed - return NULL (function kept for API compatibility)
+SELECT NULL::uuid as rubric_grade_agent_id WHERE false
 $$;

@@ -289,7 +289,7 @@ BEGIN
     ),
     -- Handle cohorts if provided
     cohort_deactivate AS (
-        UPDATE cohort_profiles SET
+        UPDATE profile_cohorts SET
             active = false,
             updated_at = NOW()
         WHERE profile_id = (SELECT target_profile_id FROM params)
@@ -301,15 +301,15 @@ BEGIN
           )
     ),
     cohort_insert AS (
-        INSERT INTO cohort_profiles (cohort_id, profile_id, active)
+        INSERT INTO profile_cohorts (profile_id, cohort_id, active)
         SELECT 
-            cohort_id,
             x.target_profile_id,
+            cohort_id,
             true
         FROM params x
         CROSS JOIN unnest(x.cohort_ids) as cohort_id
         WHERE array_length(x.cohort_ids, 1) > 0
-        ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
+        ON CONFLICT (profile_id, cohort_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),

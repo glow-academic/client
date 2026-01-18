@@ -697,7 +697,7 @@ settings_suggestions_data AS (
 user_profile_cohorts AS (
     SELECT 
         ARRAY_AGG(cp.cohort_id ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
-    FROM cohort_profiles cp
+    FROM profile_cohorts cp
     JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE cp.profile_id = (SELECT profile_id FROM params) AND cp.active = true
 ),

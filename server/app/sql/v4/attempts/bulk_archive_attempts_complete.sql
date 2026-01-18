@@ -109,7 +109,7 @@ BEGIN
                 WHERE cardinality(cohort_ids) > 0
                 UNION
                 SELECT cp.cohort_id
-                FROM cohort_profiles cp
+                FROM profile_cohorts cp
                 WHERE cp.profile_id = profile_id AND (profile_id::text IS NOT NULL AND profile_id::text != '')
             ) combined
         ),
@@ -166,7 +166,7 @@ BEGIN
                 ha.attempt_id,
                 COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids
             FROM history_attempts ha
-            LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
+            LEFT JOIN profile_cohorts cp ON cp.profile_id = ha.profile_id
             LEFT JOIN cohort_artifact c ON c.id = cp.cohort_id AND c.active = TRUE
             LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
             WHERE (

@@ -260,8 +260,8 @@ SELECT
     
     -- Scenario settings (flags moved FROM scenario_artifact to simulation_scenarios)
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), false) as image_input_enabled,
-    COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-        AND ssf.scenario_id = ss.scenario_id 
+    COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+        AND sfr.scenario_id = ss.scenario_id 
         AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
     
     -- Profile data (via attempt_profiles junction)
@@ -381,8 +381,8 @@ GROUP BY sc.id, sc.title,
          m_voice.id, m_voice.value, n_voice_prov.name, kr_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
          -- Other fields
          EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), 
-         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN flags_resource f ON ssf.scenario_flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-             AND ssf.scenario_id = ss.scenario_id 
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
+             AND sfr.scenario_id = ss.scenario_id 
              AND f.name = 'copy_paste_allowed'), false),
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
