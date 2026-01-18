@@ -32829,16 +32829,6 @@ class GetSimulationSqlParams(BaseModel):
             self.mcp,
         )
 
-class QGetSimulationV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
-
 class QGetSimulationV4Department(BaseModel):
 
     department_id: UUID | None
@@ -32869,17 +32859,6 @@ class QGetSimulationV4DescriptionResource(BaseModel):
     description: str | None
     generated: bool | None
     group_id: UUID | None
-
-
-
-
-class QGetSimulationV4Field(BaseModel):
-
-    field_id: UUID | None
-    name: str | None
-    description: str | None
-    parameter_id: UUID | None
-    parameter_name: str | None
 
 
 
@@ -32928,79 +32907,6 @@ class QGetSimulationV4NameResource(BaseModel):
 
 
 
-class QGetSimulationV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    document_parameter: bool | None
-    persona_parameter: bool | None
-
-
-
-
-class QGetSimulationV4ParameterItem(BaseModel):
-
-    id: UUID | None
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetSimulationV4ParameterItemDetail(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    parameter_id: UUID | None
-
-
-
-
-class QGetSimulationV4Rubric(BaseModel):
-
-    rubric_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetSimulationV4RubricGradeAgent(BaseModel):
-
-    rubric_grade_agent_id: UUID | None
-    rubric_id: UUID | None
-    rubric_name: str | None
-    grade_agent_id: UUID | None
-    grade_agent_name: str | None
-    audio_agent_id: UUID | None
-    audio_agent_name: str | None
-
-class QGetSimulationV4Scenario(BaseModel):
-
-    scenario_id: UUID | None
-    title: str | None
-    description: str | None
-    active: bool | None
-    position: int | None
-    parameter_item_ids: list[UUID] | None
-    hints_enabled: bool | None
-    copy_paste_allowed: bool | None
-    audio_enabled: bool | None
-    text_enabled: bool | None
-    time_limit_seconds: int | None
-    usage_count: int | None
-    success_rate: int | None
-    last_used: str | None
-    can_remove: bool | None
-    has_active_video: bool | None
-    rubric_grade_agents: list[QGetSimulationV4RubricGradeAgent] | None
-
-
-
-
 class QGetSimulationV4ScenarioFlagResource(BaseModel):
 
     id: UUID | None
@@ -33009,39 +32915,6 @@ class QGetSimulationV4ScenarioFlagResource(BaseModel):
     icon_id: UUID | None
     generated: bool | None
     group_id: UUID | None
-
-
-
-
-class QGetSimulationV4Document(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetSimulationV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-    description: str | None
-    color: str | None
-    icon: str | None
-    image_model: bool | None
-
-class QGetSimulationV4ScenarioFull(BaseModel):
-
-    scenario_id: UUID | None
-    name: str | None
-    description: str | None
-    persona_ids: list[UUID] | None
-    persona_mapping: list[QGetSimulationV4Persona] | None
-    document_mapping: list[QGetSimulationV4Document] | None
-    parameter_item_mapping: list[QGetSimulationV4Field] | None
-    parameter_item_ids: list[UUID] | None
-    document_ids: list[UUID] | None
 
 
 
@@ -33069,24 +32942,24 @@ class QGetSimulationV4ScenarioResource(BaseModel):
 
 
 
-class QGetSimulationV4ScenarioRubricGradeAgentResource(BaseModel):
+class QGetSimulationV4ScenarioRubricResource(BaseModel):
 
     id: UUID | None
+    scenario_id: UUID | None
     rubric_id: UUID | None
-    grade_agent_id: UUID | None
-    agent_id: UUID | None
     generated: bool | None
     group_id: UUID | None
 
 
 
 
-class QGetSimulationV4Video(BaseModel):
+class QGetSimulationV4ScenarioTimeLimitResource(BaseModel):
 
-    video_id: UUID | None
-    name: str | None
-    description: str | None
-    length_seconds: int | None
+    id: UUID | None
+    scenario_id: UUID | None
+    time_limit_seconds: int | None
+    generated: bool | None
+    group_id: UUID | None
 
 class GetSimulationSqlRow(BaseModel):
 
@@ -33143,43 +33016,21 @@ class GetSimulationSqlRow(BaseModel):
     scenario_positions_required: bool | None = None
     scenario_position_suggestions: list[UUID] | None = None
     scenario_positions: list[QGetSimulationV4ScenarioPositionResource] | None = None
-    scenario_rubric_grade_agent_ids: list[UUID] | None = None
-    scenario_rubric_grade_agent_resources: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
-    show_scenario_rubric_grade_agents: bool | None = None
-    scenario_rubric_grade_agents_agent_id: UUID | None = None
-    scenario_rubric_grade_agents_required: bool | None = None
-    scenario_rubric_grade_agent_suggestions: list[UUID] | None = None
-    scenario_rubric_grade_agents: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_rubric_resources: list[QGetSimulationV4ScenarioRubricResource] | None = None
+    show_scenario_rubrics: bool | None = None
+    scenario_rubrics_agent_id: UUID | None = None
+    scenario_rubrics_required: bool | None = None
+    scenario_rubric_suggestions: list[UUID] | None = None
+    scenario_rubrics: list[QGetSimulationV4ScenarioRubricResource] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    scenario_time_limit_resources: list[QGetSimulationV4ScenarioTimeLimitResource] | None = None
+    show_scenario_time_limits: bool | None = None
+    scenario_time_limits_agent_id: UUID | None = None
+    scenario_time_limits_required: bool | None = None
+    scenario_time_limit_suggestions: list[UUID] | None = None
+    scenario_time_limits: list[QGetSimulationV4ScenarioTimeLimitResource] | None = None
     general_agent_id: UUID | None = None
-    simulation_id: UUID | None = None
-    time_limit: int | None = None
-    rubric_id: UUID | None = None
-    valid_rubric_ids: list[UUID] | None = None
-    simulation_scenario_artifact_ids: list[UUID] | None = None
-    valid_scenario_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    valid_video_ids: list[UUID] | None = None
-    practice_simulation: bool | None = None
-    member_agent_id: UUID | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    in_use: bool | None = None
-    cohort_count: int | None = None
-    primary_department_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    simulation_scenarios: list[QGetSimulationV4Scenario] | None = None
-    videos: list[QGetSimulationV4Video] | None = None
-    parameters: list[QGetSimulationV4ParameterItem] | None = None
-    parameter_items: list[QGetSimulationV4ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationV4ScenarioFull] | None = None
-    rubrics: list[QGetSimulationV4Rubric] | None = None
-    parameters_full: list[QGetSimulationV4Parameter] | None = None
-    fields: list[QGetSimulationV4Field] | None = None
-    agents: list[QGetSimulationV4Agent] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    draft_version: int | None = None
-    scenario_active_states: Any | None = None
-    scenario_settings: Any | None = None
 
 class GetSimulationApiRequest(BaseModel):
 
@@ -33245,43 +33096,21 @@ class GetSimulationApiResponse(BaseModel):
     scenario_positions_required: bool | None = None
     scenario_position_suggestions: list[UUID] | None = None
     scenario_positions: list[QGetSimulationV4ScenarioPositionResource] | None = None
-    scenario_rubric_grade_agent_ids: list[UUID] | None = None
-    scenario_rubric_grade_agent_resources: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
-    show_scenario_rubric_grade_agents: bool | None = None
-    scenario_rubric_grade_agents_agent_id: UUID | None = None
-    scenario_rubric_grade_agents_required: bool | None = None
-    scenario_rubric_grade_agent_suggestions: list[UUID] | None = None
-    scenario_rubric_grade_agents: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_rubric_resources: list[QGetSimulationV4ScenarioRubricResource] | None = None
+    show_scenario_rubrics: bool | None = None
+    scenario_rubrics_agent_id: UUID | None = None
+    scenario_rubrics_required: bool | None = None
+    scenario_rubric_suggestions: list[UUID] | None = None
+    scenario_rubrics: list[QGetSimulationV4ScenarioRubricResource] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    scenario_time_limit_resources: list[QGetSimulationV4ScenarioTimeLimitResource] | None = None
+    show_scenario_time_limits: bool | None = None
+    scenario_time_limits_agent_id: UUID | None = None
+    scenario_time_limits_required: bool | None = None
+    scenario_time_limit_suggestions: list[UUID] | None = None
+    scenario_time_limits: list[QGetSimulationV4ScenarioTimeLimitResource] | None = None
     general_agent_id: UUID | None = None
-    simulation_id: UUID | None = None
-    time_limit: int | None = None
-    rubric_id: UUID | None = None
-    valid_rubric_ids: list[UUID] | None = None
-    simulation_scenario_artifact_ids: list[UUID] | None = None
-    valid_scenario_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    valid_video_ids: list[UUID] | None = None
-    practice_simulation: bool | None = None
-    member_agent_id: UUID | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    in_use: bool | None = None
-    cohort_count: int | None = None
-    primary_department_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    simulation_scenarios: list[QGetSimulationV4Scenario] | None = None
-    videos: list[QGetSimulationV4Video] | None = None
-    parameters: list[QGetSimulationV4ParameterItem] | None = None
-    parameter_items: list[QGetSimulationV4ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationV4ScenarioFull] | None = None
-    rubrics: list[QGetSimulationV4Rubric] | None = None
-    parameters_full: list[QGetSimulationV4Parameter] | None = None
-    fields: list[QGetSimulationV4Field] | None = None
-    agents: list[QGetSimulationV4Agent] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    draft_version: int | None = None
-    scenario_active_states: Any | None = None
-    scenario_settings: Any | None = None
 
 
 

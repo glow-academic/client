@@ -11293,80 +11293,36 @@ export interface components {
             scenario_position_suggestions?: string[] | null;
             /** Scenario Positions */
             scenario_positions?: components["schemas"]["QGetSimulationV4ScenarioPositionResource"][] | null;
-            /** Scenario Rubric Grade Agent Ids */
-            scenario_rubric_grade_agent_ids?: string[] | null;
-            /** Scenario Rubric Grade Agent Resources */
-            scenario_rubric_grade_agent_resources?: components["schemas"]["QGetSimulationV4ScenarioRubricGradeAgentResource"][] | null;
-            /** Show Scenario Rubric Grade Agents */
-            show_scenario_rubric_grade_agents?: boolean | null;
-            /** Scenario Rubric Grade Agents Agent Id */
-            scenario_rubric_grade_agents_agent_id?: string | null;
-            /** Scenario Rubric Grade Agents Required */
-            scenario_rubric_grade_agents_required?: boolean | null;
-            /** Scenario Rubric Grade Agent Suggestions */
-            scenario_rubric_grade_agent_suggestions?: string[] | null;
-            /** Scenario Rubric Grade Agents */
-            scenario_rubric_grade_agents?: components["schemas"]["QGetSimulationV4ScenarioRubricGradeAgentResource"][] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Rubric Resources */
+            scenario_rubric_resources?: components["schemas"]["QGetSimulationV4ScenarioRubricResource"][] | null;
+            /** Show Scenario Rubrics */
+            show_scenario_rubrics?: boolean | null;
+            /** Scenario Rubrics Agent Id */
+            scenario_rubrics_agent_id?: string | null;
+            /** Scenario Rubrics Required */
+            scenario_rubrics_required?: boolean | null;
+            /** Scenario Rubric Suggestions */
+            scenario_rubric_suggestions?: string[] | null;
+            /** Scenario Rubrics */
+            scenario_rubrics?: components["schemas"]["QGetSimulationV4ScenarioRubricResource"][] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
+            /** Scenario Time Limit Resources */
+            scenario_time_limit_resources?: components["schemas"]["QGetSimulationV4ScenarioTimeLimitResource"][] | null;
+            /** Show Scenario Time Limits */
+            show_scenario_time_limits?: boolean | null;
+            /** Scenario Time Limits Agent Id */
+            scenario_time_limits_agent_id?: string | null;
+            /** Scenario Time Limits Required */
+            scenario_time_limits_required?: boolean | null;
+            /** Scenario Time Limit Suggestions */
+            scenario_time_limit_suggestions?: string[] | null;
+            /** Scenario Time Limits */
+            scenario_time_limits?: components["schemas"]["QGetSimulationV4ScenarioTimeLimitResource"][] | null;
             /** General Agent Id */
             general_agent_id?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids?: string[] | null;
-            /** Simulation Scenario Artifact Ids */
-            simulation_scenario_artifact_ids?: string[] | null;
-            /** Valid Scenario Ids */
-            valid_scenario_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Valid Video Ids */
-            valid_video_ids?: string[] | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
-            /** Member Agent Id */
-            member_agent_id?: string | null;
-            /** Can Duplicate */
-            can_duplicate?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** In Use */
-            in_use?: boolean | null;
-            /** Cohort Count */
-            cohort_count?: number | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Simulation Scenarios */
-            simulation_scenarios?: components["schemas"]["QGetSimulationV4Scenario"][] | null;
-            /** Videos */
-            videos?: components["schemas"]["QGetSimulationV4Video"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetSimulationV4ParameterItem"][] | null;
-            /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetSimulationV4ParameterItemDetail"][] | null;
-            /** Scenarios Full */
-            scenarios_full?: components["schemas"]["QGetSimulationV4ScenarioFull"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetSimulationV4Rubric"][] | null;
-            /** Parameters Full */
-            parameters_full?: components["schemas"]["QGetSimulationV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetSimulationV4Field"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetSimulationV4Agent"][] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Scenario Active States */
-            scenario_active_states?: unknown | null;
-            /** Scenario Settings */
-            scenario_settings?: unknown | null;
         };
         /** GetSimulationAttemptApiRequest */
         GetSimulationAttemptApiRequest: {
@@ -17201,17 +17157,6 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
-        /** QGetSimulationV4Agent */
-        QGetSimulationV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
         /** QGetSimulationV4Department */
         QGetSimulationV4Department: {
             /** Department Id */
@@ -17252,28 +17197,6 @@ export interface components {
             generated: boolean | null;
             /** Group Id */
             group_id: string | null;
-        };
-        /** QGetSimulationV4Document */
-        QGetSimulationV4Document: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationV4Field */
-        QGetSimulationV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
         };
         /** QGetSimulationV4FlagOption */
         QGetSimulationV4FlagOption: {
@@ -17327,119 +17250,6 @@ export interface components {
             /** Group Id */
             group_id: string | null;
         };
-        /** QGetSimulationV4Parameter */
-        QGetSimulationV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-        };
-        /** QGetSimulationV4ParameterItem */
-        QGetSimulationV4ParameterItem: {
-            /** Id */
-            id: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationV4ParameterItemDetail */
-        QGetSimulationV4ParameterItemDetail: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-        };
-        /** QGetSimulationV4Persona */
-        QGetSimulationV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Image Model */
-            image_model: boolean | null;
-        };
-        /** QGetSimulationV4Rubric */
-        QGetSimulationV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationV4RubricGradeAgent */
-        QGetSimulationV4RubricGradeAgent: {
-            /** Rubric Grade Agent Id */
-            rubric_grade_agent_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Grade Agent Id */
-            grade_agent_id: string | null;
-            /** Grade Agent Name */
-            grade_agent_name: string | null;
-            /** Audio Agent Id */
-            audio_agent_id: string | null;
-            /** Audio Agent Name */
-            audio_agent_name: string | null;
-        };
-        /** QGetSimulationV4Scenario */
-        QGetSimulationV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Position */
-            position: number | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[] | null;
-            /** Hints Enabled */
-            hints_enabled: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean | null;
-            /** Audio Enabled */
-            audio_enabled: boolean | null;
-            /** Text Enabled */
-            text_enabled: boolean | null;
-            /** Time Limit Seconds */
-            time_limit_seconds: number | null;
-            /** Usage Count */
-            usage_count: number | null;
-            /** Success Rate */
-            success_rate: number | null;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean | null;
-            /** Has Active Video */
-            has_active_video: boolean | null;
-            /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["QGetSimulationV4RubricGradeAgent"][] | null;
-        };
         /** QGetSimulationV4ScenarioFlagResource */
         QGetSimulationV4ScenarioFlagResource: {
             /** Id */
@@ -17454,27 +17264,6 @@ export interface components {
             generated: boolean | null;
             /** Group Id */
             group_id: string | null;
-        };
-        /** QGetSimulationV4ScenarioFull */
-        QGetSimulationV4ScenarioFull: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
-            /** Persona Mapping */
-            persona_mapping: components["schemas"]["QGetSimulationV4Persona"][] | null;
-            /** Document Mapping */
-            document_mapping: components["schemas"]["QGetSimulationV4Document"][] | null;
-            /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QGetSimulationV4Field"][] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[] | null;
-            /** Document Ids */
-            document_ids: string[] | null;
         };
         /** QGetSimulationV4ScenarioPositionResource */
         QGetSimulationV4ScenarioPositionResource: {
@@ -17504,31 +17293,31 @@ export interface components {
             /** Group Id */
             group_id: string | null;
         };
-        /** QGetSimulationV4ScenarioRubricGradeAgentResource */
-        QGetSimulationV4ScenarioRubricGradeAgentResource: {
+        /** QGetSimulationV4ScenarioRubricResource */
+        QGetSimulationV4ScenarioRubricResource: {
             /** Id */
             id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
             /** Rubric Id */
             rubric_id: string | null;
-            /** Grade Agent Id */
-            grade_agent_id: string | null;
-            /** Agent Id */
-            agent_id: string | null;
             /** Generated */
             generated: boolean | null;
             /** Group Id */
             group_id: string | null;
         };
-        /** QGetSimulationV4Video */
-        QGetSimulationV4Video: {
-            /** Video Id */
-            video_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Length Seconds */
-            length_seconds: number | null;
+        /** QGetSimulationV4ScenarioTimeLimitResource */
+        QGetSimulationV4ScenarioTimeLimitResource: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetToolV4ArgsFieldDetail */
         QGetToolV4ArgsFieldDetail: {
