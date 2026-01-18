@@ -9,22 +9,22 @@ from mcp.server.fastmcp import FastMCP
 # Static enumeration of artifacts and resources with descriptions
 # Artifacts use singular names (matching database table names: persona_artifact, scenario_artifact, etc.)
 ARTIFACTS = [
-    "persona",
-    "scenario",
-    "simulation",
-    "document",
-    "department",
-    "cohort",
-    "eval",
-    "rubric",
-    "setting",
     "agent",
-    "model",
-    "provider",
-    "parameter",
-    "field",
-    "profile",
     "auth",
+    "cohort",
+    "department",
+    "document",
+    "eval",
+    "field",
+    "model",
+    "parameter",
+    "persona",
+    "profile",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
     "tool",
 ]
 
@@ -239,189 +239,14 @@ def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) 
 
 
 # Static imports for all artifact handlers
-try:
-    from app.api.v4.artifacts.persona.delete import \
-        delete_persona  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.duplicate import \
-        duplicate_persona  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.get import \
-        get_persona  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.list import \
-        get_personas_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.persona.save import \
-        save_persona  # type: ignore[attr-defined]
+# Organized alphabetically by artifact name
 
-    PERSONAS_HANDLERS = {
-        "get": get_persona,
-        "save": save_persona,
-        "list": get_personas_list,
-        "duplicate": duplicate_persona,
-        "delete": delete_persona,
-    }
-except ImportError:
-    PERSONAS_HANDLERS = {}
-
-# Scenarios handlers (uses unified get.py and save.py)
-try:
-    from app.api.v4.artifacts.scenario.delete import \
-        delete_scenario  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.duplicate import \
-        duplicate_scenario  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.get import \
-        get_scenario  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.list import \
-        get_scenarios_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.scenario.save import \
-        save_scenario  # type: ignore[attr-defined]
-
-    SCENARIOS_HANDLERS = {
-        "get": get_scenario,
-        "save": save_scenario,
-        "list": get_scenarios_list,
-        "duplicate": duplicate_scenario,
-        "delete": delete_scenario,
-    }
-except ImportError:
-    SCENARIOS_HANDLERS = {}
-
-# Simulations handlers
-try:
-    from app.api.v4.artifacts.simulation.delete import \
-        delete_simulation  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.duplicate import \
-        duplicate_simulation  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.get import \
-        get_simulation  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.list import \
-        get_simulations_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.simulation.save import \
-        save_simulation  # type: ignore[attr-defined]
-
-    SIMULATIONS_HANDLERS = {
-        "get": get_simulation,
-        "save": save_simulation,
-        "list": get_simulations_list,
-        "duplicate": duplicate_simulation,
-        "delete": delete_simulation,
-    }
-except ImportError:
-    SIMULATIONS_HANDLERS = {}
-
-# Documents handlers (uses unified save.py)
-try:
-    from app.api.v4.artifacts.document.delete import \
-        delete_document  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.get import \
-        get_document  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.list import \
-        get_documents_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.document.save import \
-        save_document  # type: ignore[attr-defined]
-
-    DOCUMENTS_HANDLERS = {
-        "get": get_document,
-        "save": save_document,
-        "list": get_documents_list,
-        "duplicate": None,  # Documents doesn't have duplicate
-        "delete": delete_document,
-    }
-except ImportError:
-    DOCUMENTS_HANDLERS = {}
-
-# Departments handlers
-try:
-    from app.api.v4.artifacts.department.delete import \
-        delete_department  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.duplicate import \
-        duplicate_department  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.get import \
-        get_department  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.list import \
-        get_departments_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.department.save import \
-        save_department  # type: ignore[attr-defined]
-
-    DEPARTMENTS_HANDLERS = {
-        "get": get_department,
-        "save": save_department,
-        "list": get_departments_list,
-        "duplicate": duplicate_department,
-        "delete": delete_department,
-    }
-except ImportError:
-    DEPARTMENTS_HANDLERS = {}
-
-# Cohorts handlers
-try:
-    from app.api.v4.artifacts.cohort.delete import \
-        delete_cohort  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.duplicate import \
-        duplicate_cohort  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.get import \
-        get_cohort  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.list import \
-        get_cohorts_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.cohort.save import \
-        save_cohort  # type: ignore[attr-defined]
-
-    COHORTS_HANDLERS = {
-        "get": get_cohort,
-        "save": save_cohort,
-        "list": get_cohorts_list,
-        "duplicate": duplicate_cohort,
-        "delete": delete_cohort,
-    }
-except ImportError:
-    COHORTS_HANDLERS = {}
-
-# Evals handlers (uses unified save.py)
-try:
-    from app.api.v4.artifacts.eval.delete import \
-        delete_eval  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.get import \
-        get_eval  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.list import \
-        get_evals_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.eval.save import \
-        save_eval  # type: ignore[attr-defined]
-
-    EVALS_HANDLERS = {
-        "get": get_eval,
-        "save": save_eval,
-        "list": get_evals_list,
-        "duplicate": None,  # Evals doesn't have duplicate
-        "delete": delete_eval,
-    }
-except ImportError:
-    EVALS_HANDLERS = {}
-
-# Rubrics handlers (uses unified save.py)
-try:
-    from app.api.v4.artifacts.rubric.delete import \
-        delete_rubric  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.duplicate import \
-        duplicate_rubric  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.get import \
-        get_rubric  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.list import \
-        get_rubrics_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.rubric.save import \
-        save_rubric  # type: ignore[attr-defined]
-
-    RUBRICS_HANDLERS = {
-        "get": get_rubric,
-        "save": save_rubric,
-        "list": get_rubrics_list,
-        "duplicate": duplicate_rubric,
-        "delete": delete_rubric,
-    }
-except ImportError:
-    RUBRICS_HANDLERS = {}
-
-# Agents handlers (uses unified save.py)
+# Agent handlers
 try:
     from app.api.v4.artifacts.agent.delete import \
         delete_agent  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.agent.draft import \
+        patch_agent_draft  # type: ignore[attr-defined]
     from app.api.v4.artifacts.agent.duplicate import \
         duplicate_agent  # type: ignore[attr-defined]
     from app.api.v4.artifacts.agent.get import \
@@ -437,123 +262,17 @@ try:
         "list": list_agents,
         "duplicate": duplicate_agent,
         "delete": delete_agent,
+        "draft": patch_agent_draft,
     }
 except ImportError:
     AGENTS_HANDLERS = {}
 
-# Models handlers (uses unified save.py)
-try:
-    from app.api.v4.artifacts.model.delete import \
-        delete_model  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.duplicate import \
-        duplicate_model  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.get import \
-        get_model  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.list import \
-        get_models_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.model.save import \
-        save_model  # type: ignore[attr-defined]
-
-    MODELS_HANDLERS = {
-        "get": get_model,
-        "save": save_model,
-        "list": get_models_list,
-        "duplicate": duplicate_model,
-        "delete": delete_model,
-    }
-except ImportError:
-    MODELS_HANDLERS = {}
-
-# Providers handlers
-try:
-    from app.api.v4.artifacts.provider.delete import \
-        delete_provider  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.get import \
-        get_provider  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.list import \
-        get_providers_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.provider.save import \
-        save_provider  # type: ignore[attr-defined]
-
-    PROVIDERS_HANDLERS = {
-        "get": get_provider,
-        "save": save_provider,
-        "list": get_providers_list,
-        "duplicate": None,  # Providers doesn't have duplicate
-        "delete": delete_provider,
-    }
-except ImportError:
-    PROVIDERS_HANDLERS = {}
-
-# Parameters handlers (uses unified save.py)
-try:
-    from app.api.v4.artifacts.parameter.delete import \
-        delete_parameter  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.duplicate import \
-        duplicate_parameter  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.get import \
-        get_parameter  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.list import \
-        get_parameters_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.parameter.save import \
-        save_parameter  # type: ignore[attr-defined]
-
-    PARAMETERS_HANDLERS = {
-        "get": get_parameter,
-        "save": save_parameter,
-        "list": get_parameters_list,
-        "duplicate": duplicate_parameter,
-        "delete": delete_parameter,
-    }
-except ImportError:
-    PARAMETERS_HANDLERS = {}
-
-# Fields handlers
-try:
-    from app.api.v4.artifacts.field.delete import \
-        delete_field  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.duplicate import \
-        duplicate_field  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.get import \
-        get_field  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.list import \
-        get_fields_list  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.field.save import \
-        save_field  # type: ignore[attr-defined]
-
-    FIELDS_HANDLERS = {
-        "get": get_field,
-        "save": save_field,
-        "list": get_fields_list,
-        "duplicate": duplicate_field,
-        "delete": delete_field,
-    }
-except ImportError:
-    FIELDS_HANDLERS = {}
-
-# Profile handlers (uses unified get.py and save.py)
-try:
-    from app.api.v4.artifacts.profile.delete import \
-        delete_profile  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.profile.get import \
-        get_profile  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.profile.save import \
-        save_profile  # type: ignore[attr-defined]
-
-    PROFILE_HANDLERS = {
-        "get": get_profile,
-        "save": save_profile,
-        "list": None,  # Profile doesn't have list (staff list is separate)
-        "duplicate": None,  # Profile doesn't have duplicate
-        "delete": delete_profile,
-    }
-except ImportError:
-    PROFILE_HANDLERS = {}
-
-# Auth handlers (uses unified save.py)
+# Auth handlers
 try:
     from app.api.v4.artifacts.auth.delete import \
         delete_auth  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.auth.draft import \
+        patch_auth_draft  # type: ignore[attr-defined]
     from app.api.v4.artifacts.auth.duplicate import \
         duplicate_auth  # type: ignore[attr-defined]
     from app.api.v4.artifacts.auth.get import \
@@ -569,14 +288,367 @@ try:
         "list": get_auth_list,
         "duplicate": duplicate_auth,
         "delete": delete_auth,
+        "draft": patch_auth_draft,
     }
 except ImportError:
     AUTH_HANDLERS = {}
 
-# Tools handlers
+# Cohort handlers
+try:
+    from app.api.v4.artifacts.cohort.delete import \
+        delete_cohort  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.draft import \
+        patch_cohort_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.duplicate import \
+        duplicate_cohort  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.get import \
+        get_cohort  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.list import \
+        get_cohorts_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.save import \
+        save_cohort  # type: ignore[attr-defined]
+
+    COHORTS_HANDLERS = {
+        "get": get_cohort,
+        "save": save_cohort,
+        "list": get_cohorts_list,
+        "duplicate": duplicate_cohort,
+        "delete": delete_cohort,
+        "draft": patch_cohort_draft,
+    }
+except ImportError:
+    COHORTS_HANDLERS = {}
+
+# Department handlers
+try:
+    from app.api.v4.artifacts.department.delete import \
+        delete_department  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.draft import \
+        patch_department_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.duplicate import \
+        duplicate_department  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.get import \
+        get_department  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.list import \
+        get_departments_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.save import \
+        save_department  # type: ignore[attr-defined]
+
+    DEPARTMENTS_HANDLERS = {
+        "get": get_department,
+        "save": save_department,
+        "list": get_departments_list,
+        "duplicate": duplicate_department,
+        "delete": delete_department,
+        "draft": patch_department_draft,
+    }
+except ImportError:
+    DEPARTMENTS_HANDLERS = {}
+
+# Document handlers
+try:
+    from app.api.v4.artifacts.document.delete import \
+        delete_document  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.draft import \
+        patch_document_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.get import \
+        get_document  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.list import \
+        get_documents_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.save import \
+        save_document  # type: ignore[attr-defined]
+
+    DOCUMENTS_HANDLERS = {
+        "get": get_document,
+        "save": save_document,
+        "list": get_documents_list,
+        "duplicate": None,  # Documents doesn't have duplicate
+        "delete": delete_document,
+        "draft": patch_document_draft,
+    }
+except ImportError:
+    DOCUMENTS_HANDLERS = {}
+
+# Eval handlers
+try:
+    from app.api.v4.artifacts.eval.delete import \
+        delete_eval  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.draft import \
+        patch_eval_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.get import \
+        get_eval  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.list import \
+        get_evals_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.save import \
+        save_eval  # type: ignore[attr-defined]
+
+    EVALS_HANDLERS = {
+        "get": get_eval,
+        "save": save_eval,
+        "list": get_evals_list,
+        "duplicate": None,  # Evals doesn't have duplicate
+        "delete": delete_eval,
+        "draft": patch_eval_draft,
+    }
+except ImportError:
+    EVALS_HANDLERS = {}
+
+# Field handlers
+try:
+    from app.api.v4.artifacts.field.delete import \
+        delete_field  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.draft import \
+        patch_field_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.duplicate import \
+        duplicate_field  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.get import \
+        get_field  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.list import \
+        get_fields_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.save import \
+        save_field  # type: ignore[attr-defined]
+
+    FIELDS_HANDLERS = {
+        "get": get_field,
+        "save": save_field,
+        "list": get_fields_list,
+        "duplicate": duplicate_field,
+        "delete": delete_field,
+        "draft": patch_field_draft,
+    }
+except ImportError:
+    FIELDS_HANDLERS = {}
+
+# Model handlers
+try:
+    from app.api.v4.artifacts.model.delete import \
+        delete_model  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.draft import \
+        patch_model_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.duplicate import \
+        duplicate_model  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.get import \
+        get_model  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.list import \
+        get_models_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.save import \
+        save_model  # type: ignore[attr-defined]
+
+    MODELS_HANDLERS = {
+        "get": get_model,
+        "save": save_model,
+        "list": get_models_list,
+        "duplicate": duplicate_model,
+        "delete": delete_model,
+        "draft": patch_model_draft,
+    }
+except ImportError:
+    MODELS_HANDLERS = {}
+
+# Parameter handlers
+try:
+    from app.api.v4.artifacts.parameter.delete import \
+        delete_parameter  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.draft import \
+        patch_parameter_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.duplicate import \
+        duplicate_parameter  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.get import \
+        get_parameter  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.list import \
+        get_parameters_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.save import \
+        save_parameter  # type: ignore[attr-defined]
+
+    PARAMETERS_HANDLERS = {
+        "get": get_parameter,
+        "save": save_parameter,
+        "list": get_parameters_list,
+        "duplicate": duplicate_parameter,
+        "delete": delete_parameter,
+        "draft": patch_parameter_draft,
+    }
+except ImportError:
+    PARAMETERS_HANDLERS = {}
+
+# Persona handlers
+try:
+    from app.api.v4.artifacts.persona.delete import \
+        delete_persona  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.draft import \
+        patch_persona_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.duplicate import \
+        duplicate_persona  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.get import \
+        get_persona  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.list import \
+        get_personas_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.save import \
+        save_persona  # type: ignore[attr-defined]
+
+    PERSONAS_HANDLERS = {
+        "get": get_persona,
+        "save": save_persona,
+        "list": get_personas_list,
+        "duplicate": duplicate_persona,
+        "delete": delete_persona,
+        "draft": patch_persona_draft,
+    }
+except ImportError:
+    PERSONAS_HANDLERS = {}
+
+# Profile handlers
+try:
+    from app.api.v4.artifacts.profile.delete import \
+        delete_profile  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.profile.get import \
+        get_profile  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.profile.save import \
+        save_profile  # type: ignore[attr-defined]
+
+    PROFILE_HANDLERS = {
+        "get": get_profile,
+        "save": save_profile,
+        "list": None,  # Profile doesn't have list (staff list is separate)
+        "duplicate": None,  # Profile doesn't have duplicate
+        "delete": delete_profile,
+        "draft": None,  # Profile doesn't have draft
+    }
+except ImportError:
+    PROFILE_HANDLERS = {}
+
+# Provider handlers
+try:
+    from app.api.v4.artifacts.provider.delete import \
+        delete_provider  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.draft import \
+        patch_provider_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.get import \
+        get_provider  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.list import \
+        get_providers_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.save import \
+        save_provider  # type: ignore[attr-defined]
+
+    PROVIDERS_HANDLERS = {
+        "get": get_provider,
+        "save": save_provider,
+        "list": get_providers_list,
+        "duplicate": None,  # Providers doesn't have duplicate
+        "delete": delete_provider,
+        "draft": patch_provider_draft,
+    }
+except ImportError:
+    PROVIDERS_HANDLERS = {}
+
+# Rubric handlers
+try:
+    from app.api.v4.artifacts.rubric.delete import \
+        delete_rubric  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.draft import \
+        patch_rubric_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.duplicate import \
+        duplicate_rubric  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.get import \
+        get_rubric  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.list import \
+        get_rubrics_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.save import \
+        save_rubric  # type: ignore[attr-defined]
+
+    RUBRICS_HANDLERS = {
+        "get": get_rubric,
+        "save": save_rubric,
+        "list": get_rubrics_list,
+        "duplicate": duplicate_rubric,
+        "delete": delete_rubric,
+        "draft": patch_rubric_draft,
+    }
+except ImportError:
+    RUBRICS_HANDLERS = {}
+
+# Scenario handlers
+try:
+    from app.api.v4.artifacts.scenario.delete import \
+        delete_scenario  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.draft import \
+        patch_scenario_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.duplicate import \
+        duplicate_scenario  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.get import \
+        get_scenario  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.list import \
+        get_scenarios_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.save import \
+        save_scenario  # type: ignore[attr-defined]
+
+    SCENARIOS_HANDLERS = {
+        "get": get_scenario,
+        "save": save_scenario,
+        "list": get_scenarios_list,
+        "duplicate": duplicate_scenario,
+        "delete": delete_scenario,
+        "draft": patch_scenario_draft,
+    }
+except ImportError:
+    SCENARIOS_HANDLERS = {}
+
+# Setting handlers
+try:
+    from app.api.v4.artifacts.setting.draft import \
+        patch_setting_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.setting.duplicate import \
+        duplicate_setting  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.setting.get import \
+        get_setting  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.setting.list import \
+        list_settings  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.setting.save import \
+        save_setting  # type: ignore[attr-defined]
+
+    SETTINGS_HANDLERS = {
+        "get": get_setting,
+        "save": save_setting,
+        "list": list_settings,
+        "duplicate": duplicate_setting,
+        "delete": None,  # Settings doesn't have delete (not implemented)
+        "draft": patch_setting_draft,
+    }
+except ImportError:
+    SETTINGS_HANDLERS = {}
+
+# Simulation handlers
+try:
+    from app.api.v4.artifacts.simulation.delete import \
+        delete_simulation  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.draft import \
+        patch_simulation_draft  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.duplicate import \
+        duplicate_simulation  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.get import \
+        get_simulation  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.list import \
+        get_simulations_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.save import \
+        save_simulation  # type: ignore[attr-defined]
+
+    SIMULATIONS_HANDLERS = {
+        "get": get_simulation,
+        "save": save_simulation,
+        "list": get_simulations_list,
+        "duplicate": duplicate_simulation,
+        "delete": delete_simulation,
+        "draft": patch_simulation_draft,
+    }
+except ImportError:
+    SIMULATIONS_HANDLERS = {}
+
+# Tool handlers
 try:
     from app.api.v4.artifacts.tool.delete import \
         delete_tool  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.tool.draft import \
+        patch_tool_draft  # type: ignore[attr-defined]
     from app.api.v4.artifacts.tool.duplicate import \
         duplicate_tool  # type: ignore[attr-defined]
     from app.api.v4.artifacts.tool.get import \
@@ -592,6 +664,7 @@ try:
         "list": get_tools_list,
         "duplicate": duplicate_tool,
         "delete": delete_tool,
+        "draft": patch_tool_draft,
     }
 except ImportError:
     TOOLS_HANDLERS = {}
@@ -683,28 +756,7 @@ try:
 except ImportError:
     ATTEMPTS_HANDLERS = {}
 
-# Settings handlers (embedded in artifacts)
-try:
-    from app.api.v4.artifacts.setting.list import \
-        list_settings  # type: ignore[attr-defined]
-    from app.api.v4.artifacts.setting.update import \
-        update_settings  # type: ignore[import-untyped]
 
-    SETTINGS_HANDLERS = {
-        "get": list_settings,
-        "save": update_settings,
-    }
-except ImportError:
-    SETTINGS_HANDLERS = {}
-
-# Debug handlers (for debug/report problem)
-try:
-    from app.api.v4.debug import \
-        create_feedback  # type: ignore[import-untyped]
-
-    DEBUG_HANDLER: Any = create_feedback
-except ImportError:
-    DEBUG_HANDLER: Any = None
 
 # Resource handlers (for create_resource tool)
 RESOURCE_HANDLERS: dict[str, Any] = {}
@@ -950,104 +1002,138 @@ except ImportError:
 
 # Import artifact documentation functions
 # Maps singular artifact names (MCP/database) to docs functions
-# Docs functions are imported from artifact endpoints
+# Organized alphabetically by artifact name
 ARTIFACT_DOCS: dict[str, Any] = {}
-try:
-    from app.api.v4.artifacts.persona.docs import \
-        get_personas_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["persona"] = get_personas_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.scenario.docs import \
-        get_scenarios_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["scenario"] = get_scenarios_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.simulation.docs import \
-        get_simulations_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["simulation"] = get_simulations_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.document.docs import \
-        get_documents_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["document"] = get_documents_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.department.docs import \
-        get_departments_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["department"] = get_departments_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.cohort.docs import \
-        get_cohorts_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["cohort"] = get_cohorts_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.eval.docs import \
-        get_evals_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["eval"] = get_evals_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.rubric.docs import \
-        get_rubrics_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["rubric"] = get_rubrics_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.setting.docs import \
-        get_settings_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["setting"] = get_settings_docs
-except ImportError:
-    pass
+
+# Agent docs
 try:
     from app.api.v4.artifacts.agent.docs import \
         get_agents_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["agent"] = get_agents_docs
 except ImportError:
     pass
-try:
-    from app.api.v4.artifacts.model.docs import \
-        get_models_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["model"] = get_models_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.provider.docs import \
-        get_providers_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["provider"] = get_providers_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.parameter.docs import \
-        get_parameters_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["parameter"] = get_parameters_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.field.docs import \
-        get_fields_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["field"] = get_fields_docs
-except ImportError:
-    pass
-try:
-    from app.api.v4.artifacts.profile.docs import \
-        get_profiles_docs  # type: ignore[attr-defined]
-    ARTIFACT_DOCS["profile"] = get_profiles_docs
-except ImportError:
-    pass
+
+# Auth docs
 try:
     from app.api.v4.artifacts.auth.docs import \
         get_auths_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["auth"] = get_auths_docs
 except ImportError:
     pass
+
+# Cohort docs
+try:
+    from app.api.v4.artifacts.cohort.docs import \
+        get_cohorts_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["cohort"] = get_cohorts_docs
+except ImportError:
+    pass
+
+# Department docs
+try:
+    from app.api.v4.artifacts.department.docs import \
+        get_departments_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["department"] = get_departments_docs
+except ImportError:
+    pass
+
+# Document docs
+try:
+    from app.api.v4.artifacts.document.docs import \
+        get_documents_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["document"] = get_documents_docs
+except ImportError:
+    pass
+
+# Eval docs
+try:
+    from app.api.v4.artifacts.eval.docs import \
+        get_evals_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["eval"] = get_evals_docs
+except ImportError:
+    pass
+
+# Field docs
+try:
+    from app.api.v4.artifacts.field.docs import \
+        get_fields_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["field"] = get_fields_docs
+except ImportError:
+    pass
+
+# Model docs
+try:
+    from app.api.v4.artifacts.model.docs import \
+        get_models_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["model"] = get_models_docs
+except ImportError:
+    pass
+
+# Parameter docs
+try:
+    from app.api.v4.artifacts.parameter.docs import \
+        get_parameters_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["parameter"] = get_parameters_docs
+except ImportError:
+    pass
+
+# Persona docs
+try:
+    from app.api.v4.artifacts.persona.docs import \
+        get_personas_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["persona"] = get_personas_docs
+except ImportError:
+    pass
+
+# Profile docs
+try:
+    from app.api.v4.artifacts.profile.docs import \
+        get_profiles_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["profile"] = get_profiles_docs
+except ImportError:
+    pass
+
+# Provider docs
+try:
+    from app.api.v4.artifacts.provider.docs import \
+        get_providers_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["provider"] = get_providers_docs
+except ImportError:
+    pass
+
+# Rubric docs
+try:
+    from app.api.v4.artifacts.rubric.docs import \
+        get_rubrics_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["rubric"] = get_rubrics_docs
+except ImportError:
+    pass
+
+# Scenario docs
+try:
+    from app.api.v4.artifacts.scenario.docs import \
+        get_scenarios_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["scenario"] = get_scenarios_docs
+except ImportError:
+    pass
+
+# Setting docs
+try:
+    from app.api.v4.artifacts.setting.docs import \
+        get_settings_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["setting"] = get_settings_docs
+except ImportError:
+    pass
+
+# Simulation docs
+try:
+    from app.api.v4.artifacts.simulation.docs import \
+        get_simulations_docs  # type: ignore[attr-defined]
+    ARTIFACT_DOCS["simulation"] = get_simulations_docs
+except ImportError:
+    pass
+
+# Tool docs
 try:
     from app.api.v4.artifacts.tool.docs import \
         get_tools_docs  # type: ignore[attr-defined]
@@ -1094,23 +1180,24 @@ ARTIFACT_TO_API_NAME: dict[str, str] = {
 
 # Handler mapping - maps singular artifact name (MCP/database) to available operations
 # Handlers are imported from plural API endpoints but mapped by singular names
+# Organized alphabetically by artifact name
 HANDLERS: dict[str, dict[str, Any]] = {
-    "persona": PERSONAS_HANDLERS,
-    "scenario": SCENARIOS_HANDLERS,
-    "simulation": SIMULATIONS_HANDLERS,
-    "document": DOCUMENTS_HANDLERS,
-    "department": DEPARTMENTS_HANDLERS,
-    "cohort": COHORTS_HANDLERS,
-    "eval": EVALS_HANDLERS,
-    "rubric": RUBRICS_HANDLERS,
-    "setting": SETTINGS_HANDLERS,
     "agent": AGENTS_HANDLERS,
-    "model": MODELS_HANDLERS,
-    "provider": PROVIDERS_HANDLERS,
-    "parameter": PARAMETERS_HANDLERS,
-    "field": FIELDS_HANDLERS,
-    "profile": PROFILE_HANDLERS,
     "auth": AUTH_HANDLERS,
+    "cohort": COHORTS_HANDLERS,
+    "department": DEPARTMENTS_HANDLERS,
+    "document": DOCUMENTS_HANDLERS,
+    "eval": EVALS_HANDLERS,
+    "field": FIELDS_HANDLERS,
+    "model": MODELS_HANDLERS,
+    "parameter": PARAMETERS_HANDLERS,
+    "persona": PERSONAS_HANDLERS,
+    "profile": PROFILE_HANDLERS,
+    "provider": PROVIDERS_HANDLERS,
+    "rubric": RUBRICS_HANDLERS,
+    "scenario": SCENARIOS_HANDLERS,
+    "setting": SETTINGS_HANDLERS,
+    "simulation": SIMULATIONS_HANDLERS,
     "tool": TOOLS_HANDLERS,
 }
 
@@ -1483,6 +1570,21 @@ def register_endpoints(server: FastMCP) -> None:
         """
         return await call_handler(name, "delete", payload)
 
+    @server.tool()
+    async def draft_artifact(
+        name: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Create or patch a draft artifact (autosave).
+
+        Args:
+            name: The name of the artifact.
+            payload: The payload containing draft data.
+
+        Returns:
+            Draft data or error message.
+        """
+        return await call_handler(name, "draft", payload)
+
     # Resource-specific endpoints (create only)
     @server.tool()
     async def create_resource(
@@ -1805,11 +1907,9 @@ def register_endpoints(server: FastMCP) -> None:
         # Extract profile_id from MCP context
         profile_id = get_mcp_profile_id()
         
-        if DEBUG_HANDLER is None:
-            return {
-                "error": "debug/report problem handler not available.",
-                "status": "not_implemented",
-            }
+        # Import debug handler directly
+        from app.api.v4.debug import \
+            create_feedback  # type: ignore[import-untyped]
 
         # Validate type
         valid_types = ["feature", "bug", "question", "other"]
@@ -1839,4 +1939,4 @@ def register_endpoints(server: FastMCP) -> None:
             "message": message.strip(),
         }
 
-        return await call_endpoint_handler(DEBUG_HANDLER, payload, profile_id)
+        return await call_endpoint_handler(create_feedback, payload, profile_id)
