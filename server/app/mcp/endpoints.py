@@ -659,10 +659,14 @@ def get_artifact_description(artifact_name: str) -> str:
     # Use handler docstring (get handler)
     if artifact_name in HANDLERS and "get" in HANDLERS[artifact_name]:
         handler = HANDLERS[artifact_name]["get"]
-        if handler and handler.__doc__:
-            # Extract first sentence
-            first_sentence = handler.__doc__.split('.')[0].strip()
-            return first_sentence
+        if handler:
+            doc = getattr(handler, "__doc__", None)
+            if doc and isinstance(doc, str):
+                # Extract first sentence
+                parts = doc.split('.')
+                if parts:
+                    first_sentence = parts[0].strip()
+                    return str(first_sentence)
     
     # Generic fallback
     return f"{artifact_name.title()} artifact"
@@ -683,9 +687,14 @@ def get_resource_description(resource_name: str) -> str:
     # Use handler docstring (create handler)
     if resource_name in RESOURCE_HANDLERS:
         handler = RESOURCE_HANDLERS[resource_name]
-        if handler and handler.__doc__:
-            first_sentence = handler.__doc__.split('.')[0].strip()
-            return first_sentence
+        if handler:
+            doc = getattr(handler, "__doc__", None)
+            if doc and isinstance(doc, str):
+                # Extract first sentence
+                parts = doc.split('.')
+                if parts:
+                    first_sentence = parts[0].strip()
+                    return str(first_sentence)
     
     # Generic fallback
     return f"{resource_name.title()} resource"
@@ -709,6 +718,194 @@ except ImportError:
 # No need for manual mapping - it's already done in the discovery loop
 
 
+# ============================================================================
+# Documentation Helper Functions
+# ============================================================================
+
+def get_artifact_operation_description(operation: str) -> str:
+    """Generate enhanced description for artifact operations.
+    
+    Args:
+        operation: Operation name (get, save, list, duplicate, delete, draft)
+    
+    Returns:
+        Enhanced description string with examples and workflow guidance.
+    """
+    descriptions = {
+        "get": """Get an artifact or resource by name.
+
+Args:
+    name: Artifact name (e.g., "agent", "persona", "cohort", "document").
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+Payload Structure:
+    Common fields for "get" operations:
+    - {artifact}_id: UUID | null (optional, null for new item)
+    - draft_id: UUID | null (optional, for draft items)
+
+Example:
+    name: "agent"
+    payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
+    or
+    payload: {{"agent_id": null}}  # for new item
+
+Returns:
+    Object containing:
+    - id: UUID
+    - name: string
+    - created_at: timestamp
+    - updated_at: timestamp
+    - ... artifact-specific fields and related resources
+
+Workflow:
+    1. Call payload_artifact(name="agent") to get exact payload schema
+    2. Construct payload with required fields
+    3. Call get_artifact with name and payload""",
+        
+        "save": """Save (create or update) an artifact or resource.
+
+Args:
+    name: Artifact name (e.g., "agent", "persona", "cohort").
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+Payload Structure:
+    Use payload_artifact(name="{name}") to get the exact schema.
+    
+    For create: omit {artifact}_id or set to null
+    For update: include {artifact}_id with UUID
+
+Example:
+    name: "agent"
+    payload: {{"name": "My Agent", "description": "Agent description", ...}}
+
+Returns:
+    Object with saved artifact data including id, timestamps, and all fields.
+
+Workflow:
+    1. Call payload_artifact(name="agent") to get exact payload schema
+    2. Construct payload with artifact data
+    3. Call save_artifact with name and payload""",
+        
+        "list": """List items for an artifact or resource.
+
+Args:
+    name: Artifact name (e.g., "agent", "persona", "cohort").
+    payload: Request payload with filter parameters. Call payload_artifact(name="{name}") first to get exact schema.
+
+Payload Structure:
+    Common fields for "list" operations:
+    - Filters may include department_ids, cohort_ids, search terms, etc.
+    - Use payload_artifact(name="{name}") to see available filters
+
+Example:
+    name: "agent"
+    payload: {{}}  # empty for all items
+    or
+    payload: {{"department_ids": ["123e4567-..."]}}  # filtered
+
+Returns:
+    List of artifact objects, each containing id, name, timestamps, and related data.
+
+Workflow:
+    1. Call payload_artifact(name="agent") to get exact payload schema
+    2. Construct payload with filter parameters (or empty for all)
+    3. Call list_artifact with name and payload""",
+        
+        "duplicate": """Duplicate an artifact or resource.
+
+Args:
+    name: Artifact name (e.g., "agent", "persona").
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+Payload Structure:
+    Typically includes:
+    - {artifact}_id: UUID (required, ID of item to duplicate)
+    - name: string (optional, new name for duplicated item)
+
+Example:
+    name: "agent"
+    payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy of Agent"}}
+
+Returns:
+    Object with duplicated artifact data including new id.
+
+Workflow:
+    1. Call payload_artifact(name="agent") to get exact payload schema
+    2. Construct payload with source artifact_id
+    3. Call duplicate_artifact with name and payload""",
+        
+        "delete": """Delete an artifact or resource.
+
+Args:
+    name: Artifact name (e.g., "agent", "persona").
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+Payload Structure:
+    Typically includes:
+    - {artifact}_id: UUID (required, ID of item to delete)
+
+Example:
+    name: "agent"
+    payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
+
+Returns:
+    Success response or error message.
+
+Workflow:
+    1. Call payload_artifact(name="agent") to get exact payload schema
+    2. Construct payload with artifact_id to delete
+    3. Call delete_artifact with name and payload""",
+        
+        "draft": """Create or patch a draft artifact (autosave).
+
+Args:
+    name: Artifact name (e.g., "agent", "persona").
+    payload: Request payload with draft data. Call payload_artifact(name="{name}") first to get exact schema.
+
+Payload Structure:
+    Use payload_artifact(name="{name}") to get the exact schema.
+    Draft payloads typically include partial artifact data for autosave.
+
+Example:
+    name: "agent"
+    payload: {{"name": "Draft Agent", "description": "..."}}
+
+Returns:
+    Draft data including draft_id and version information.
+
+Workflow:
+    1. Call payload_artifact(name="agent") to get exact payload schema
+    2. Construct payload with draft data
+    3. Call draft_artifact with name and payload""",
+    }
+    
+    return descriptions.get(operation, "Standard artifact operation")
+
+
+def format_example_payload(artifact_name: str, operation: str) -> str:
+    """Format example payload for documentation.
+    
+    Args:
+        artifact_name: Name of the artifact (e.g., "agent", "persona")
+        operation: Operation name (get, save, list, etc.)
+    
+    Returns:
+        Formatted example payload string.
+    """
+    artifact_id_field = f"{artifact_name}_id"
+    
+    examples = {
+        "get": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
+        "save": f'{{"name": "My {artifact_name.title()}", "description": "...", ...}}',
+        "list": "{}",  # empty for all
+        "duplicate": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy"}}',
+        "delete": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
+        "draft": f'{{"name": "Draft {artifact_name.title()}", ...}}',
+    }
+    
+    return examples.get(operation, "{}")
+
+
 def is_artifact(name: str) -> bool:
     """Check if name is an artifact."""
     return name in ARTIFACTS
@@ -727,7 +924,10 @@ def get_available_operations(name: str) -> list[str]:
 
 
 def get_payload_schema(name: str) -> dict[str, Any]:
-    """Get payload schema for artifact/resource operations."""
+    """Get payload schema for artifact/resource operations.
+    
+    Note: The 'mcp' field is automatically filtered out as it's auto-injected.
+    """
     if name not in ALL_ITEMS:
         return {"error": f"'{name}' is not a valid artifact or resource."}
 
@@ -742,6 +942,14 @@ def get_payload_schema(name: str) -> dict[str, Any]:
                     request_type = annotations["request"]
                     if hasattr(request_type, "model_json_schema"):
                         schema: dict[str, Any] = request_type.model_json_schema()  # type: ignore[assignment]
+                        # Filter out 'mcp' field from schema so agents don't see it
+                        if "properties" in schema and "mcp" in schema["properties"]:
+                            schema = schema.copy()
+                            schema["properties"] = schema["properties"].copy()
+                            del schema["properties"]["mcp"]
+                            # Remove from required list if present
+                            if "required" in schema and "mcp" in schema["required"]:
+                                schema["required"] = [r for r in schema["required"] if r != "mcp"]
                         return schema
         except Exception:
             pass
@@ -791,12 +999,12 @@ async def call_handler(
         }
 
     handler = HANDLERS[name][operation]
-    if handler is None:
+    if not handler:
         return {
             "error": f"Handler for {name}.{operation} is not implemented yet.",
             "status": "not_implemented",
         }
-
+    
     # Call the handler using call_endpoint_handler which properly sets up Request/Response/DB context
     return await call_endpoint_handler(handler, payload, profile_id)
 
@@ -868,6 +1076,11 @@ async def call_endpoint_handler(
         
         # Create Response object
         http_response = Response()
+        
+        # Auto-inject mcp: true if request model has mcp field
+        # This ensures agents never need to pass mcp parameter
+        if hasattr(request_model, "model_fields") and "mcp" in request_model.model_fields:
+            payload = {**payload, "mcp": True}
         
         # Get database connection (get_db is an async generator)
         async for conn in get_db():
@@ -943,12 +1156,30 @@ def register_endpoints(server: FastMCP) -> None:
     def docs_artifact(name: str) -> dict[str, Any]:
         """Get comprehensive documentation for an artifact.
 
+        Use this tool to understand the complete structure, relationships, and usage patterns
+        for an artifact before working with it.
+
         Args:
-            name: The name of the artifact to get documentation for.
+            name: Artifact name (e.g., "agent", "persona", "cohort", "document").
 
         Returns:
-            Dictionary containing database schema, relationships, API routing,
-            resources, frontend information, and GLOW context.
+            Dictionary containing:
+            - database: Table schema, columns, indexes, foreign keys
+            - relationships: Resources, junction tables, related artifacts
+            - api_routing: All endpoints (get, save, list, duplicate, delete, draft)
+            - resources: Available resource types and their endpoints
+            - frontend: Components and pages that use this artifact
+            - glow_context: Description, use cases, related concepts
+
+        Example:
+            name: "agent"
+            Returns comprehensive documentation about agents including database structure,
+            API endpoints, available resources (names, descriptions, flags, etc.), and usage patterns.
+
+        Workflow:
+            1. Call docs_artifact(name="agent") to understand the artifact structure
+            2. Use payload_artifact(name="agent") to get exact payload schemas
+            3. Use artifact operations (get_artifact, save_artifact, etc.) to work with data
         """
         if name not in ARTIFACTS:
             return {"error": f"'{name}' is not a valid artifact."}
@@ -968,12 +1199,28 @@ def register_endpoints(server: FastMCP) -> None:
     def docs_resource(name: str) -> dict[str, Any]:
         """Get comprehensive documentation for a resource.
 
+        Use this tool to understand the structure and usage patterns for a resource
+        before creating it.
+
         Args:
-            name: The name of the resource to get documentation for.
+            name: Resource name (e.g., "names", "descriptions", "flags", "departments").
 
         Returns:
-            Dictionary containing database schema, relationships, API routing,
-            and GLOW context.
+            Dictionary containing:
+            - database: Table schema, columns, indexes, foreign keys
+            - relationships: How resources connect to artifacts
+            - api_routing: Create endpoint details
+            - glow_context: Description, use cases, related concepts
+
+        Example:
+            name: "names"
+            Returns documentation about name resources including database structure,
+            how they connect to artifacts, and usage patterns.
+
+        Workflow:
+            1. Call docs_resource(name="names") to understand the resource structure
+            2. Use payload_resource(name="names") to get exact payload schema
+            3. Use create_resource(name="names", payload=...) to create resources
         """
         if name not in RESOURCES:
             return {"error": f"'{name}' is not a valid resource."}
@@ -992,9 +1239,28 @@ def register_endpoints(server: FastMCP) -> None:
     def docs() -> dict[str, Any]:
         """Get general GLOW documentation.
 
+        Use this tool to understand GLOW's overall architecture, concepts, and patterns.
+        This is helpful when starting to work with GLOW or understanding high-level concepts.
+
         Returns:
-            Dictionary containing general information about GLOW, its architecture,
-            concepts, and patterns.
+            Dictionary containing general information about:
+            - GLOW architecture and design principles
+            - Core concepts (artifacts, resources, relationships)
+            - Common patterns and workflows
+            - Best practices
+
+        Example:
+            Returns overview of GLOW including:
+            - Artifact vs resource distinction
+            - Database design principles (BCNF, no nulls)
+            - API routing patterns
+            - Frontend architecture
+
+        Workflow:
+            1. Call docs() for high-level understanding
+            2. Call docs_artifact(name="...") for specific artifact details
+            3. Use payload_artifact/payload_resource for exact schemas
+            4. Use artifact/resource operations to work with data
         """
         if get_glow_docs is None:
             return {"error": "Root GLOW documentation not available."}
@@ -1004,11 +1270,28 @@ def register_endpoints(server: FastMCP) -> None:
     def payload_artifact(name: str) -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for an artifact.
 
+        IMPORTANT: Call this tool FIRST before using artifact operations (get_artifact, save_artifact, etc.)
+        to understand the exact payload structure required.
+
         Args:
-            name: The name of the artifact.
+            name: Artifact name (e.g., "agent", "persona", "cohort", "document").
 
         Returns:
-            JSON schema for the payload.
+            JSON schema for the payload showing:
+            - Required and optional fields
+            - Field types (UUID, string, boolean, etc.)
+            - Field descriptions
+            - Default values
+            
+            Note: The 'mcp' field is automatically filtered out as it's auto-injected.
+
+        Example:
+            name: "agent"
+            Returns schema with fields like agent_id, draft_id, etc.
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get schema
+            2. Use the schema to construct payload for get_artifact, save_artifact, etc.
         """
         return get_payload_schema(name)
 
@@ -1016,11 +1299,28 @@ def register_endpoints(server: FastMCP) -> None:
     def payload_resource(name: str) -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for a resource.
 
+        IMPORTANT: Call this tool FIRST before using create_resource to understand
+        the exact payload structure required.
+
         Args:
-            name: The name of the resource.
+            name: Resource name (e.g., "names", "descriptions", "flags", "departments").
 
         Returns:
-            JSON schema for the payload.
+            JSON schema for the payload showing:
+            - Required and optional fields
+            - Field types (UUID, string, boolean, etc.)
+            - Field descriptions
+            - Default values
+            
+            Note: The 'mcp' field is automatically filtered out as it's auto-injected.
+
+        Example:
+            name: "names"
+            Returns schema with fields like agent_id, name, etc.
+
+        Workflow:
+            1. Call payload_resource(name="names") to get schema
+            2. Use the schema to construct payload for create_resource
         """
         return get_payload_schema(name)
 
@@ -1031,11 +1331,32 @@ def register_endpoints(server: FastMCP) -> None:
         """Get an artifact or resource by name.
 
         Args:
-            name: The name of the artifact or resource.
-            payload: The payload containing parameters for the get operation.
+            name: Artifact name (e.g., "agent", "persona", "cohort", "document").
+            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Common fields for "get" operations:
+            - {artifact}_id: UUID | null (optional, null for new item)
+            - draft_id: UUID | null (optional, for draft items)
+
+        Example:
+            name: "agent"
+            payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
+            or
+            payload: {{"agent_id": null}}  # for new item
 
         Returns:
-            The artifact/resource data or error message.
+            Object containing:
+            - id: UUID
+            - name: string
+            - created_at: timestamp
+            - updated_at: timestamp
+            - ... artifact-specific fields and related resources
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get exact payload schema
+            2. Construct payload with required fields
+            3. Call get_artifact with name and payload
         """
         return await call_handler(name, "get", payload)
 
@@ -1046,11 +1367,26 @@ def register_endpoints(server: FastMCP) -> None:
         """Save (create or update) an artifact or resource.
 
         Args:
-            name: The name of the artifact or resource.
-            payload: The payload containing data to save.
+            name: Artifact name (e.g., "agent", "persona", "cohort").
+            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Use payload_artifact(name="{name}") to get the exact schema.
+            
+            For create: omit {artifact}_id or set to null
+            For update: include {artifact}_id with UUID
+
+        Example:
+            name: "agent"
+            payload: {{"name": "My Agent", "description": "Agent description", ...}}
 
         Returns:
-            Success response or error message.
+            Object with saved artifact data including id, timestamps, and all fields.
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get exact payload schema
+            2. Construct payload with artifact data
+            3. Call save_artifact with name and payload
         """
         return await call_handler(name, "save", payload)
 
@@ -1061,11 +1397,27 @@ def register_endpoints(server: FastMCP) -> None:
         """List items for an artifact or resource.
 
         Args:
-            name: The name of the artifact or resource.
-            payload: The payload containing filter parameters.
+            name: Artifact name (e.g., "agent", "persona", "cohort").
+            payload: Request payload with filter parameters. Call payload_artifact(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Common fields for "list" operations:
+            - Filters may include department_ids, cohort_ids, search terms, etc.
+            - Use payload_artifact(name="{name}") to see available filters
+
+        Example:
+            name: "agent"
+            payload: {{}}  # empty for all items
+            or
+            payload: {{"department_ids": ["123e4567-..."]}}  # filtered
 
         Returns:
-            List of items or error message.
+            List of artifact objects, each containing id, name, timestamps, and related data.
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get exact payload schema
+            2. Construct payload with filter parameters (or empty for all)
+            3. Call list_artifact with name and payload
         """
         return await call_handler(name, "list", payload)
 
@@ -1076,11 +1428,25 @@ def register_endpoints(server: FastMCP) -> None:
         """Duplicate an artifact or resource.
 
         Args:
-            name: The name of the artifact or resource.
-            payload: The payload containing the item to duplicate.
+            name: Artifact name (e.g., "agent", "persona").
+            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Typically includes:
+            - {artifact}_id: UUID (required, ID of item to duplicate)
+            - name: string (optional, new name for duplicated item)
+
+        Example:
+            name: "agent"
+            payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy of Agent"}}
 
         Returns:
-            Duplicated item data or error message.
+            Object with duplicated artifact data including new id.
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get exact payload schema
+            2. Construct payload with source artifact_id
+            3. Call duplicate_artifact with name and payload
         """
         return await call_handler(name, "duplicate", payload)
 
@@ -1091,11 +1457,24 @@ def register_endpoints(server: FastMCP) -> None:
         """Delete an artifact or resource.
 
         Args:
-            name: The name of the artifact or resource.
-            payload: The payload containing the item to delete.
+            name: Artifact name (e.g., "agent", "persona").
+            payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Typically includes:
+            - {artifact}_id: UUID (required, ID of item to delete)
+
+        Example:
+            name: "agent"
+            payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
 
         Returns:
             Success response or error message.
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get exact payload schema
+            2. Construct payload with artifact_id to delete
+            3. Call delete_artifact with name and payload
         """
         return await call_handler(name, "delete", payload)
 
@@ -1106,11 +1485,24 @@ def register_endpoints(server: FastMCP) -> None:
         """Create or patch a draft artifact (autosave).
 
         Args:
-            name: The name of the artifact.
-            payload: The payload containing draft data.
+            name: Artifact name (e.g., "agent", "persona").
+            payload: Request payload with draft data. Call payload_artifact(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Use payload_artifact(name="{name}") to get the exact schema.
+            Draft payloads typically include partial artifact data for autosave.
+
+        Example:
+            name: "agent"
+            payload: {{"name": "Draft Agent", "description": "..."}}
 
         Returns:
-            Draft data or error message.
+            Draft data including draft_id and version information.
+
+        Workflow:
+            1. Call payload_artifact(name="agent") to get exact payload schema
+            2. Construct payload with draft data
+            3. Call draft_artifact with name and payload
         """
         return await call_handler(name, "draft", payload)
 
@@ -1122,11 +1514,26 @@ def register_endpoints(server: FastMCP) -> None:
         """Create a resource.
 
         Args:
-            name: The name of the resource.
-            payload: The payload containing data to create the resource.
+            name: Resource name (e.g., "names", "descriptions", "flags").
+            payload: Request payload. IMPORTANT: Call payload_resource(name="{name}") first to get exact schema.
+
+        Payload Structure:
+            Use payload_resource(name="{name}") to get the exact schema.
+            Resources are create-only and typically include:
+            - {artifact}_id: UUID (required, ID of parent artifact)
+            - Resource-specific fields (name, description, value, etc.)
+
+        Example:
+            name: "names"
+            payload: {{"agent_id": "123e4567-...", "name": "My Agent Name"}}
 
         Returns:
-            Success response or error message.
+            Success response with created resource data including id.
+
+        Workflow:
+            1. Call payload_resource(name="names") to get exact payload schema
+            2. Construct payload with resource data
+            3. Call create_resource with name and payload
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1156,13 +1563,47 @@ def register_endpoints(server: FastMCP) -> None:
     ) -> dict[str, Any]:
         """Call analytics endpoint by type and operation.
 
+        IMPORTANT: Call analytics_payload(type="{type}", operation="{operation}") first
+        to get the exact payload schema required.
+
         Args:
-            type: Analytics type (home, dashboard, practice, leaderboard, reports, activity, pricing, health, benchmark, refresh)
-            operation: Operation (get, list, refresh)
-            payload: Request payload
+            type: Analytics type:
+                - "home": Home dashboard analytics
+                - "dashboard": Main dashboard analytics
+                - "practice": Practice session analytics
+                - "leaderboard": Leaderboard data
+                - "reports": Report analytics
+                - "activity": Activity analytics
+                - "pricing": Pricing analytics
+                - "health": Health metrics
+                - "benchmark": Benchmark analytics
+                - "refresh": Refresh analytics cache
+            operation: Operation type:
+                - "get": Get analytics data
+                - "list": List analytics history
+                - "refresh": Refresh analytics (only for type="refresh")
+            payload: Request payload. Call analytics_payload first to get exact schema.
+
+        Payload Structure:
+            Common fields may include:
+            - start_date: ISO timestamp (optional)
+            - end_date: ISO timestamp (optional)
+            - cohort_ids: array of UUIDs (optional)
+            - department_ids: array of UUIDs (optional)
+            - Use analytics_payload to see exact schema
+
+        Example:
+            type: "dashboard"
+            operation: "get"
+            payload: {{"start_date": "2025-01-01T00:00:00Z", "end_date": "2025-01-31T23:59:59Z"}}
 
         Returns:
-            Analytics data or error message.
+            Analytics data object with metrics, charts, and aggregated data.
+
+        Workflow:
+            1. Call analytics_payload(type="dashboard", operation="get") to get schema
+            2. Construct payload with filter parameters
+            3. Call analytics with type, operation, and payload
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1191,12 +1632,30 @@ def register_endpoints(server: FastMCP) -> None:
     def analytics_payload(type: str, operation: str) -> dict[str, Any]:
         """Get payload schema for analytics endpoint type and operation.
 
+        IMPORTANT: Call this tool FIRST before using analytics to understand
+        the exact payload structure required.
+
         Args:
-            type: Analytics type (home, dashboard, practice, leaderboard, reports, activity, pricing, health, benchmark, refresh)
-            operation: Operation (get, list, refresh)
+            type: Analytics type (home, dashboard, practice, leaderboard, reports, activity, pricing, health, benchmark, refresh).
+            operation: Operation (get, list, refresh).
 
         Returns:
-            JSON schema for the payload.
+            JSON schema for the payload showing:
+            - Required and optional fields
+            - Field types and formats
+            - Field descriptions
+            - Default values
+            
+            Note: The 'mcp' field is automatically filtered out as it's auto-injected.
+
+        Example:
+            type: "dashboard"
+            operation: "get"
+            Returns schema with fields like start_date, end_date, cohort_ids, etc.
+
+        Workflow:
+            1. Call analytics_payload(type="dashboard", operation="get") to get schema
+            2. Use the schema to construct payload for analytics call
         """
         key = (type, operation)
         if key not in ANALYTICS_HANDLERS:
@@ -1217,6 +1676,14 @@ def register_endpoints(server: FastMCP) -> None:
         request_model = get_request_model_from_handler(handler)  # type: ignore[arg-type]
         if request_model and hasattr(request_model, "model_json_schema"):
             schema = request_model.model_json_schema()
+            # Filter out 'mcp' field from schema so agents don't see it
+            if isinstance(schema, dict) and "properties" in schema and "mcp" in schema["properties"]:
+                schema = schema.copy()
+                schema["properties"] = schema["properties"].copy()
+                del schema["properties"]["mcp"]
+                # Remove from required list if present
+                if "required" in schema and "mcp" in schema["required"]:
+                    schema["required"] = [r for r in schema["required"] if r != "mcp"]
             return cast(dict[str, Any], schema)
 
         return {
@@ -1237,11 +1704,19 @@ def register_endpoints(server: FastMCP) -> None:
         """Get pricing group detail.
 
         Args:
-            group_id: The group ID
-            payload: Request payload
+            group_id: UUID string of the pricing group.
+            payload: Request payload (typically empty or minimal).
+
+        Example:
+            group_id: "123e4567-e89b-12d3-a456-426614174000"
+            payload: {{}}
 
         Returns:
-            Pricing group detail or error message.
+            Object containing pricing group details including:
+            - id: UUID
+            - name: string
+            - pricing information
+            - associated data
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1266,12 +1741,25 @@ def register_endpoints(server: FastMCP) -> None:
         """Get attempt by type and ID.
 
         Args:
-            type: Attempt type (simulation, benchmark)
-            attempt_id: Attempt ID
-            payload: Request payload
+            type: Attempt type:
+                - "simulation": Simulation attempt
+                - "benchmark": Benchmark attempt
+            attempt_id: UUID string of the attempt.
+            payload: Request payload (typically empty or minimal).
+
+        Example:
+            type: "simulation"
+            attempt_id: "123e4567-e89b-12d3-a456-426614174000"
+            payload: {{}}
 
         Returns:
-            Attempt data or error message.
+            Object containing attempt data including:
+            - id: UUID
+            - type: string
+            - status: string
+            - scores and metrics
+            - timestamps
+            - related data
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1305,12 +1793,25 @@ def register_endpoints(server: FastMCP) -> None:
         """Archive or unarchive attempts.
 
         Args:
-            type: Attempt type (simulation, benchmark)
-            attempt_ids: List of attempt IDs
-            payload: Request payload (must include archived: bool)
+            type: Attempt type:
+                - "simulation": Simulation attempts
+                - "benchmark": Benchmark attempts
+            attempt_ids: List of UUID strings for attempts to archive/unarchive.
+            payload: Request payload must include:
+                - archived: boolean (true to archive, false to unarchive)
+
+        Example:
+            type: "simulation"
+            attempt_ids: ["123e4567-...", "234e5678-..."]
+            payload: {{"archived": true}}
 
         Returns:
-            Archive result or error message.
+            Archive result with success status and affected attempt IDs.
+
+        Workflow:
+            1. Get attempt IDs using list_artifact or other methods
+            2. Construct payload with archived boolean
+            3. Call archive_attempt with type, attempt_ids, and payload
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1346,11 +1847,20 @@ def register_endpoints(server: FastMCP) -> None:
         """Decrypt encrypted key value.
 
         Args:
-            key_id: The key ID to decrypt
-            payload: Request payload
+            key_id: UUID string of the encrypted key to decrypt.
+            payload: Request payload (typically empty or minimal).
+
+        Example:
+            key_id: "123e4567-e89b-12d3-a456-426614174000"
+            payload: {{}}
 
         Returns:
-            Decrypted key value or error message.
+            Object containing:
+            - decrypted_value: string (the decrypted key value)
+            - key_id: UUID
+            - metadata about the key
+
+        Note: This tool requires appropriate permissions to decrypt keys.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1375,10 +1885,18 @@ def register_endpoints(server: FastMCP) -> None:
         """Export certificate.
 
         Args:
-            payload: Request payload
+            payload: Request payload typically including:
+                - certificate_id or similar identifier
+                - format preferences (optional)
+
+        Example:
+            payload: {{"certificate_id": "123e4567-e89b-12d3-a456-426614174000"}}
 
         Returns:
-            Certificate content (PDF/text) or error message.
+            Certificate content:
+            - For PDF: base64-encoded PDF content
+            - For text: plain text certificate content
+            - Includes content_type and encoding information
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1400,10 +1918,22 @@ def register_endpoints(server: FastMCP) -> None:
         """Export report.
 
         Args:
-            payload: Request payload
+            payload: Request payload typically including:
+                - report_id or report parameters
+                - format: "csv" or "zip" (optional)
+                - date ranges, filters, etc.
+
+        Example:
+            payload: {{
+                "report_id": "123e4567-e89b-12d3-a456-426614174000",
+                "format": "csv"
+            }}
 
         Returns:
-            Report content (CSV/ZIP) or error message.
+            Report content:
+            - For CSV: CSV file content (base64-encoded or text)
+            - For ZIP: ZIP archive content (base64-encoded)
+            - Includes content_type and encoding information
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1426,12 +1956,34 @@ def register_endpoints(server: FastMCP) -> None:
         """Call bulk operation endpoint by type and operation.
 
         Args:
-            type: Bulk type (document, staff)
-            operation: Operation (process, search, save, delete)
-            payload: Request payload
+            type: Bulk type:
+                - "document": Document bulk operations
+                - "staff": Staff bulk operations
+            operation: Operation type:
+                - "process": Process bulk items
+                - "search": Search bulk items
+                - "save": Save bulk items
+                - "delete": Delete bulk items
+            payload: Request payload with operation-specific data.
+
+        Payload Structure:
+            Varies by type and operation:
+            - For "process": May include file data, processing options
+            - For "search": Search criteria and filters
+            - For "save": Array of items to save
+            - For "delete": Array of IDs to delete
+
+        Example:
+            type: "document"
+            operation: "process"
+            payload: {{"file_data": "...", "options": {{...}}}}
 
         Returns:
-            Bulk operation result or error message.
+            Bulk operation result with:
+            - success: boolean
+            - processed_count: number
+            - errors: array (if any)
+            - results: array of processed items
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1475,13 +2027,29 @@ def register_endpoints(server: FastMCP) -> None:
 
         Args:
             payload: Request payload containing:
-                - content: base64 string (required)
-                - filename: string (required)
-                - content_type: string (optional)
-                - subfolder: "audio" | "video" | None (optional)
+                - content: base64-encoded string (required) - the file content encoded in base64
+                - filename: string (required) - the original filename
+                - content_type: string (optional) - MIME type (e.g., "image/png", "application/pdf")
+                - subfolder: "audio" | "video" | None (optional) - subfolder for organization
+
+        Example:
+            payload: {{
+                "content": "iVBORw0KGgoAAAANSUhEUgAA...",  # base64-encoded file
+                "filename": "document.pdf",
+                "content_type": "application/pdf"
+            }}
 
         Returns:
-            Upload result with upload_id or error message.
+            Object containing:
+            - upload_id: UUID string (use this for download or other operations)
+            - filename: string
+            - status: string
+
+        Workflow:
+            1. Encode file content as base64
+            2. Construct payload with content, filename, and optional metadata
+            3. Call upload with payload
+            4. Use returned upload_id for subsequent operations (download, etc.)
         """
         import base64
         import json
@@ -1587,11 +2155,26 @@ def register_endpoints(server: FastMCP) -> None:
         """Download an upload file.
 
         Args:
-            upload_id: The upload ID
-            payload: Request payload (may include preview: bool for PDF previews)
+            upload_id: UUID string of the upload (obtained from upload tool).
+            payload: Request payload (optional):
+                - preview: boolean (optional, default false) - if true, returns PDF preview for PDF files
+
+        Example:
+            upload_id: "123e4567-e89b-12d3-a456-426614174000"
+            payload: {{}}  # download full file
+            or
+            payload: {{"preview": true}}  # get PDF preview
 
         Returns:
-            File content (base64 encoded for binary files) or error message.
+            Object containing:
+            - content: string (base64-encoded for binary files, plain text for text files)
+            - content_type: string (MIME type)
+            - encoding: "base64" (for binary files) or omitted (for text files)
+
+        Workflow:
+            1. Get upload_id from upload tool or other source
+            2. Call download with upload_id and optional preview flag
+            3. Decode base64 content if encoding is "base64"
         """
         import base64
 
@@ -1670,11 +2253,27 @@ def register_endpoints(server: FastMCP) -> None:
     ) -> dict[str, Any]:
         """Report a problem or provide feedback (debug tool).
 
+        Use this tool to report bugs, provide feedback, or ask questions about the system.
+        All feedback is logged and reviewed.
+
         Args:
-            message: Problem description or feedback message (max 1000 characters)
+            message: Problem description or feedback message (max 1000 characters).
+                Include:
+                - What you were trying to do
+                - What happened (or what you expected)
+                - Any error messages
+                - Steps to reproduce (if applicable)
+
+        Example:
+            message: "When calling get_artifact with agent_id=null, I expected to get a new agent template but got an error instead."
 
         Returns:
-            Feedback creation result or error message.
+            Object containing:
+            - success: boolean
+            - feedback_id: UUID (if created)
+            - message: confirmation message
+
+        Note: This tool automatically sets type="bug" - use it for reporting issues or providing feedback.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
