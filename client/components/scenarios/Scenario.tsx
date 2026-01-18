@@ -3,132 +3,177 @@
  * Implementation using modular resource components
  * Used to create and manage scenarios - supports both creation and editing
  * Follows Persona.tsx pattern, adapted for scenarios
- * @AshokSaravanan222 & @siladiea
- * 01/15/2026
  */
 "use client";
-import { Brain, Check, Eye, Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  parseAsBoolean,
-  parseAsString,
-  useQueryStates,
-  type Parser,
-  type Values,
-} from "nuqs";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import * as tus from "tus-js-client";
 
-// UI Components
-import DocumentViewer, {
-  type DocumentItem,
-} from "@/components/common/chat/viewers/DocumentViewer";
-import { ParameterSelector } from "@/components/parameters/ParameterSelector";
-import { ConfigSection } from "@/components/scenarios/ConfigSection";
-// TODO: Re-integrate preview sections in future
-// import { PreviewStep } from "@/components/scenarios/PreviewStep";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { getPersonaIconComponent } from "@/utils/persona-icons";
-
-// Custom Components
-import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
+import { Documents } from "@/components/resources/Documents";
+import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/Flags";
+import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
 import { Objectives } from "@/components/resources/Objectives";
+import { Parameters } from "@/components/resources/Parameters";
+import { Personas } from "@/components/resources/Personas";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
+import { Questions } from "@/components/resources/Questions";
+import { Templates } from "@/components/resources/Templates";
+import { Videos } from "@/components/resources/Videos";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
-import type { InputOf, OutputOf } from "@/lib/api/types";
-import type { ResourceType } from "@/lib/resources/types";
-import { buildSearchParams } from "./scenario-helpers";
-import type { DraftState, ScenarioFormState } from "./scenario-types";
-import { isScenarioDetailOut, isScenarioNewOut } from "./scenario-types";
-
-// Resource creation types
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-
-// Utility function to generate gradient from hex color (used for persona cards)
-const generateGradientFromHex = (hexColor: string): string => {
-  const cleanHex = hexColor.replace("#", "");
-  const r = parseInt(cleanHex.substr(0, 2), 16);
-  const g = parseInt(cleanHex.substr(2, 2), 16);
-  const b = parseInt(cleanHex.substr(4, 2), 16);
-  const lighterR = Math.min(255, r + 60);
-  const lighterG = Math.min(255, g + 60);
-  const lighterB = Math.min(255, b + 60);
-  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
-};
-
-// Types and API functions
-import type {
-  SaveScenarioIn,
-  SaveScenarioOut,
-} from "@/app/(main)/create/scenarios/new/page";
-import type {
-  GenerateAIScenarioIn,
-  GenerateAIScenarioOut,
-  GetScenarioOut,
-  PatchScenarioDraftIn,
-  PatchScenarioDraftOut,
-  ScenarioNewOut,
-} from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
 import { useProfile } from "@/contexts/profile-context";
-import { useDraftAutosave } from "@/hooks/use-draft-autosave";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
-import {
-  getObjectivesFromMapping,
-  groupFieldsByParameterId,
-} from "@/utils/scenario-helpers";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import { Loader2, Sparkles } from "lucide-react";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+
+// Types defined inline using InputOf/OutputOf
++type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
++type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
++type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
++type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
++type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
++
++type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
++type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
++type CreateDraftDescriptionsIn = InputOf<
++  "/api/v4/resources/descriptions",
++  "post"
++>;
++type CreateDraftDescriptionsOut = OutputOf<
++  "/api/v4/resources/descriptions",
++  "post"
++>;
++type CreateDraftProblemStatementsIn = InputOf<
++  "/api/v4/resources/problem_statements",
++  "post"
++>;
++type CreateDraftProblemStatementsOut = OutputOf<
++  "/api/v4/resources/problem_statements",
++  "post"
++>;
++type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
++type CreateDraftObjectivesOut = OutputOf<
++  "/api/v4/resources/objectives",
++  "post"
++>;
++type CreateDraftScenarioFlagsIn = InputOf<
++  "/api/v4/resources/scenario_flags",
++  "post"
++>;
++type CreateDraftScenarioFlagsOut = OutputOf<
++  "/api/v4/resources/scenario_flags",
++  "post"
++>;
++type CreateDraftDepartmentsIn = InputOf<
++  "/api/v4/resources/departments",
++  "post"
++>;
++type CreateDraftDepartmentsOut = OutputOf<
++  "/api/v4/resources/departments",
++  "post"
++>;
++type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
++type CreateDraftPersonasOut = OutputOf<
++  "/api/v4/resources/personas",
++  "post"
++>;
++type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
++type CreateDraftDocumentsOut = OutputOf<
++  "/api/v4/resources/documents",
++  "post"
++>;
++type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
++type CreateDraftTemplatesOut = OutputOf<
++  "/api/v4/resources/templates",
++  "post"
++>;
++type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
++type CreateDraftParametersOut = OutputOf<
++  "/api/v4/resources/parameters",
++  "post"
++>;
++type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
++type CreateDraftFieldsOut = OutputOf<
++  "/api/v4/resources/fields",
++  "post"
++>;
++type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
++type CreateDraftImagesOut = OutputOf<
++  "/api/v4/resources/images",
++  "post"
++>;
++type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
++type CreateDraftVideosOut = OutputOf<
++  "/api/v4/resources/videos",
++  "post"
++>;
++type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
++type CreateDraftQuestionsOut = OutputOf<
++  "/api/v4/resources/questions",
++  "post"
++>;
++
++type ScenarioResourceType =
++  | "names"
++  | "descriptions"
++  | "problem_statements"
++  | "objectives"
++  | "scenario_flags"
++  | "departments"
++  | "personas"
++  | "documents"
++  | "templates"
++  | "parameters"
++  | "fields"
++  | "images"
++  | "videos"
++  | "questions"
++  | "ranges";
++
++type ScenarioFormState = {
++  name_id: string | null;
++  description_id: string | null;
++  problem_statement_id: string | null;
++  active_flag_id: string | null;
++  objectives_enabled_flag_id: string | null;
++  images_enabled_flag_id: string | null;
++  video_enabled_flag_id: string | null;
++  questions_enabled_flag_id: string | null;
++  problem_statement_enabled_flag_id: string | null;
++  department_ids: string[];
++  persona_ids: string[];
++  document_ids: string[];
++  template_ids: string[];
++  parameter_ids: string[];
++  field_ids: string[];
++  image_ids: string[];
++  objective_ids: string[];
++  video_ids: string[];
++  question_ids: string[];
++};
++
++type CreateFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
++type CreateFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -142,23 +187,48 @@ export interface ScenarioProps {
   ) => Promise<PatchScenarioDraftOut>;
   // Resource creation actions
   createNamesAction?: (
-    input: InputOf<"/api/v4/resources/names", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/names", "post">>;
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
   createDescriptionsAction?: (
-    input: InputOf<"/api/v4/resources/descriptions", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/descriptions", "post">>;
+    input: CreateDraftDescriptionsIn
+  ) => Promise<CreateDraftDescriptionsOut>;
   createProblemStatementsAction?: (
-    input: InputOf<"/api/v4/resources/problem_statements", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/problem_statements", "post">>;
+    input: CreateDraftProblemStatementsIn
+  ) => Promise<CreateDraftProblemStatementsOut>;
   createObjectivesAction?: (
-    input: InputOf<"/api/v4/resources/objectives", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/objectives", "post">>;
+    input: CreateDraftObjectivesIn
+  ) => Promise<CreateDraftObjectivesOut>;
   createScenarioFlagsAction?: (
-    input: InputOf<"/api/v4/resources/scenario_flags", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/scenario_flags", "post">>;
+    input: CreateDraftScenarioFlagsIn
+  ) => Promise<CreateDraftScenarioFlagsOut>;
+  createDepartmentsAction?: (
+    input: CreateDraftDepartmentsIn
+  ) => Promise<CreateDraftDepartmentsOut>;
+  createPersonasAction?: (
+    input: CreateDraftPersonasIn
+  ) => Promise<CreateDraftPersonasOut>;
+  createDocumentsAction?: (
+    input: CreateDraftDocumentsIn
+  ) => Promise<CreateDraftDocumentsOut>;
+  createTemplatesAction?: (
+    input: CreateDraftTemplatesIn
+  ) => Promise<CreateDraftTemplatesOut>;
+  createParametersAction?: (
+    input: CreateDraftParametersIn
+  ) => Promise<CreateDraftParametersOut>;
+  createFieldsAction?: (
+    input: CreateDraftFieldsIn
+  ) => Promise<CreateDraftFieldsOut>;
+  createImagesAction?: (
+    input: CreateDraftImagesIn
+  ) => Promise<CreateDraftImagesOut>;
+  createVideosAction?: (
+    input: CreateDraftVideosIn
+  ) => Promise<CreateDraftVideosOut>;
+  createQuestionsAction?: (
+    input: CreateDraftQuestionsIn
+  ) => Promise<CreateDraftQuestionsOut>;
 }
-
-// StepStatus type imported from GenericForm
 
 function ScenarioComponent({
   scenarioId,
@@ -171,44 +241,37 @@ function ScenarioComponent({
   createProblemStatementsAction,
   createObjectivesAction,
   createScenarioFlagsAction,
+  createDepartmentsAction,
+  createPersonasAction,
+  createDocumentsAction,
+  createTemplatesAction,
+  createParametersAction,
+  createFieldsAction,
+  createImagesAction,
+  createVideosAction,
+  createQuestionsAction,
 }: ScenarioProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const isEditMode = !!scenarioId;
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
-  const isEditMode = !!scenarioId;
+
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
   const scenarioData = isEditMode
     ? serverScenarioDetail
     : serverScenarioDetailDefault;
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
-
-  // Set breadcrumb context when scenario data is loaded in edit mode
-  useEffect(() => {
-    const scenarioName = scenarioData?.name_resource?.name;
-    if (scenarioName && scenarioId && isEditMode) {
-      setEntityMetadata({
-        entityId: scenarioId,
-        entityName: scenarioName,
-        entityType: "scenario",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    scenarioData,
-    scenarioId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
-    Set<ResourceType>
+    Set<ScenarioResourceType>
   >(new Set());
 
   // Modal state for generate/regenerate
@@ -222,190 +285,65 @@ function ScenarioComponent({
   const [modalInstructions, setModalInstructions] = useState("");
 
   const isGenerating = useCallback(
-    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    (resourceType: ScenarioResourceType) =>
+      generatingResources.has(resourceType),
     [generatingResources]
   );
 
-  // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
-  const scenarioSearchParamsClient = {
-    // Draft ID (URL-backed, updated when draft is created)
-    draftId: parseAsString,
-    // Search params (URL-backed, updated via debounced callback in StepCard)
-    personaSearch: parseAsString,
-    documentSearch: parseAsString,
-    parameterSearch: parseAsString,
-    // Filter params (URL-backed)
-    documentShowSelected: parseAsBoolean,
-    documentShowTemplate: parseAsBoolean,
-    personaShowSelected: parseAsBoolean,
-    parameterShowSelected: parseAsBoolean,
-    // Legacy range params removed - use resource-based approach instead
-  } as const;
+  // Set breadcrumb context when scenario data is loaded in edit mode
+  useEffect(() => {
+    const scenarioName = scenarioData?.name_resource?.name;
+    if (scenarioName && scenarioId && isEditMode) {
+      setEntityMetadata({
+        entityId: scenarioId,
+        entityName: scenarioName,
+        entityType: "scenario",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    scenarioData?.name_resource?.name,
+    scenarioId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
-  // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(scenarioSearchParamsClient, {
-    history: "replace",
-    shallow: true, // Use shallow routing to prevent server component re-renders
-  });
+  // nuqs parsers for URL-backed state (search/filter params only)
+  const scenarioSearchParamsClient = useMemo(
+    () => ({
+      draftId: parseAsString,
+      personaSearch: parseAsString,
+      documentSearch: parseAsString,
+      parameterSearch: parseAsString,
+      personaShowSelected: parseAsBoolean,
+      documentShowSelected: parseAsBoolean,
+      parameterShowSelected: parseAsBoolean,
+    }),
+    []
+  );
 
-  // Get draftId from URL (managed by nuqs via urlParams)
-  const urlDraftId = urlParams.draftId || null;
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = useRef<
+    null | ((updates: Record<string, unknown>) => void)
+  >(null);
+  const formDataRef = useRef<Record<string, unknown>>({});
+
+  const onFormDataChange = useCallback((fd: Record<string, unknown>) => {
+    formDataRef.current = fd;
+    const nextDraftId = (fd["draftId"] as string | undefined) ?? null;
+    setDraftId((prev) => (prev === nextDraftId ? prev : nextDraftId));
+  }, []);
 
   // Sync URL draftId to profile context
   useEffect(() => {
-    if (urlDraftId !== selectedDraftId) {
-      setSelectedDraftId(urlDraftId);
+    if (draftId !== selectedDraftId) {
+      setSelectedDraftId(draftId);
     }
-  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+  }, [draftId, selectedDraftId, setSelectedDraftId]);
 
-  const draftId = urlDraftId;
-
-  // Local draft state (not in URL) - initialized from server data or draft payload
-  // DraftState type imported from scenario-types.ts
-
-  // Centralized query parameter configuration (DHH-style: URL as source of truth)
-  // Only include params in URL when they differ from defaults
-  const queryParamConfig = useMemo(() => {
-    // Default values (from server defaults)
-    const defaults = {
-      objectives_enabled: true,
-      images_enabled: false,
-      video_enabled: false,
-      questions_enabled: false,
-    };
-
-    // Always use defaults for create mode
-    const getServerValue = (
-      field:
-        | "objectives_enabled"
-        | "images_enabled"
-        | "video_enabled"
-        | "questions_enabled"
-    ): boolean => {
-      return defaults[field];
-    };
-
-    return {
-      defaults,
-      getServerValue,
-      urlParamNames: {
-        objectives_enabled: "useObjectives",
-        images_enabled: "useImage",
-        video_enabled: "useVideo",
-        questions_enabled: "useQuestions",
-      },
-    };
-  }, []);
-
-  // Initialize draft state from server data or draft payload
-  // Resource-first: Remove name, problemStatement, objectives from draftState
-  // These are now managed via resource IDs in formState only
-  const initialDraftState = useMemo((): DraftState => {
-    const data = scenarioData;
-    if (!data || typeof data !== "object") {
-      return {
-        name: "", // Legacy field - not used, kept for DraftState type compatibility
-        problemStatement: "", // Legacy field - not used, kept for DraftState type compatibility
-        objectives: [], // Legacy field - not used, kept for DraftState type compatibility
-        departmentIds: [],
-        personaIds: [],
-        documentIds: [],
-        templateDocumentIds: [],
-        parameterIds: [],
-        fieldIds: [],
-        imageIds: [],
-        objectiveIds: [],
-        problemStatementIds: [],
-        useImage: false,
-        useVideo: false,
-        useObjectives: true,
-        useQuestions: false,
-        useProblemStatement: false,
-        videoLength: null,
-        active: true,
-        scenarioDomainId: null,
-        imageDomainId: null,
-        videoDomainId: null,
-      };
-    }
-
-    // Type assert data as GetScenarioOut after null check
-    const typedData = data as GetScenarioOut;
-    const newData = isScenarioNewOut(typedData) ? typedData : null;
-
-    // Safely access properties with type guards
-    const departmentIds = Array.isArray(typedData.department_ids)
-      ? typedData.department_ids.map((id) => String(id))
-      : [];
-
-    return {
-      name: "", // Legacy field - not used, values come from resource objects
-      problemStatement: "", // Legacy field - not used, values come from resource objects
-      objectives: [], // Legacy field - not used, values come from resource objects
-      departmentIds,
-      personaIds: [],
-      documentIds: [],
-      templateDocumentIds:
-        newData &&
-        "selected_template_document_ids" in newData &&
-        Array.isArray(newData.selected_template_document_ids)
-          ? newData.selected_template_document_ids
-          : [],
-      parameterIds: [],
-      fieldIds: [],
-      imageIds:
-        newData &&
-        "scenario_images" in newData &&
-        Array.isArray(newData.scenario_images)
-          ? newData.scenario_images.map((img: { upload_id?: string | null }) =>
-              String(img.upload_id || "")
-            )
-          : [],
-      objectiveIds: [],
-      problemStatementIds: [],
-      useImage: false,
-      useVideo:
-        newData && "video_enabled" in newData
-          ? (newData.video_enabled ?? false)
-          : false,
-      useObjectives: true,
-      useQuestions:
-        newData && "questions_enabled" in newData
-          ? (newData.questions_enabled ?? false)
-          : false,
-      useProblemStatement: false,
-      videoLength: null,
-      active: true,
-      randomize: null,
-      randomizePersonas: null,
-      randomizeDocuments: null,
-      randomizeParameters: null,
-      scenarioDomainId:
-        "scenario_domain_id" in typedData && typedData.scenario_domain_id
-          ? typedData.scenario_domain_id
-          : null,
-      imageDomainId:
-        "image_domain_id" in typedData && typedData.image_domain_id
-          ? typedData.image_domain_id
-          : null,
-      videoDomainId: null,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenarioData, draftId, urlDraftId, scenarioData?.department_ids]);
-
-  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
-
-  // Resource-based form state (stores only resource IDs)
-  // Use ref to store scenarioData to prevent callback recreation on every render
-  const scenarioDataRef = React.useRef(scenarioData);
-  React.useEffect(() => {
-    scenarioDataRef.current = scenarioData;
-  }, [scenarioData]);
-
-  // Helper to get initial form state from scenarioData
   const getInitialFormState = useCallback((): ScenarioFormState => {
-    const data = scenarioDataRef.current;
-    if (!data) {
+    if (!scenarioData) {
       return {
         name_id: null,
         description_id: null,
@@ -419,75 +357,94 @@ function ScenarioComponent({
         department_ids: [],
         persona_ids: [],
         document_ids: [],
-        template_document_ids: [],
+        template_ids: [],
         parameter_ids: [],
         field_ids: [],
         image_ids: [],
         objective_ids: [],
-        video_length: null,
-        scenario_domain_id: null,
-        image_domain_id: null,
-        video_domain_id: null,
+        video_ids: [],
+        question_ids: [],
       };
     }
-    // Extract resource IDs from server data
+
     return {
-      name_id: data.name_id ? String(data.name_id) : null,
-      description_id: data.description_id ? String(data.description_id) : null,
-      problem_statement_id: data.problem_statement_id
-        ? String(data.problem_statement_id)
-        : null,
-      active_flag_id: data.active_flag_id ? String(data.active_flag_id) : null,
-      objectives_enabled_flag_id: data.objectives_enabled_flag_id
-        ? String(data.objectives_enabled_flag_id)
-        : null,
-      images_enabled_flag_id: data.images_enabled_flag_id
-        ? String(data.images_enabled_flag_id)
-        : null,
-      video_enabled_flag_id: data.video_enabled_flag_id
-        ? String(data.video_enabled_flag_id)
-        : null,
-      questions_enabled_flag_id: data.questions_enabled_flag_id
-        ? String(data.questions_enabled_flag_id)
-        : null,
-      problem_statement_enabled_flag_id: data.problem_statement_enabled_flag_id
-        ? String(data.problem_statement_enabled_flag_id)
-        : null,
-      department_ids: (data.department_ids || []).map(String),
-      persona_ids: (data.persona_ids || []).map(String),
-      document_ids: (data.document_ids || []).map(String),
-      template_document_ids: (data.template_ids || []).map(String),
-      parameter_ids: (data.parameter_ids || []).map(String),
-      field_ids: (data.field_ids || []).map(String),
-      image_ids: (data.image_ids || []).map(String),
-      objective_ids: (data.objective_ids || []).map(String),
-      video_length: null, // TODO: Extract from video data
-      scenario_domain_id: null, // TODO: Extract from scenario data
-      image_domain_id: null, // TODO: Extract from scenario data
-      video_domain_id: null, // TODO: Extract from scenario data
+      name_id: scenarioData.name_id ?? null,
+      description_id: scenarioData.description_id ?? null,
+      problem_statement_id: scenarioData.problem_statement_id ?? null,
+      active_flag_id: scenarioData.active_flag_id ?? null,
+      objectives_enabled_flag_id: scenarioData.objectives_enabled_flag_id ?? null,
+      images_enabled_flag_id: scenarioData.images_enabled_flag_id ?? null,
+      video_enabled_flag_id: scenarioData.video_enabled_flag_id ?? null,
+      questions_enabled_flag_id: scenarioData.questions_enabled_flag_id ?? null,
+      problem_statement_enabled_flag_id:
+        scenarioData.problem_statement_enabled_flag_id ?? null,
+      department_ids: (scenarioData.department_ids ?? []).map(String),
+      persona_ids: (scenarioData.persona_ids ?? []).map(String),
+      document_ids: (scenarioData.document_ids ?? []).map(String),
+      template_ids: (scenarioData.template_ids ?? []).map(String),
+      parameter_ids: (scenarioData.parameter_ids ?? []).map(String),
+      field_ids: (scenarioData.field_ids ?? []).map(String),
+      image_ids: (scenarioData.image_ids ?? []).map(String),
+      objective_ids: (scenarioData.objective_ids ?? []).map(String),
+      video_ids: (scenarioData.video_ids ?? []).map(String),
+      question_ids: (scenarioData.question_ids ?? []).map(String),
     };
-  }, []);
+  }, [scenarioData]);
 
-  const [formState, setFormState] =
-    useState<ScenarioFormState>(getInitialFormState);
-  // Use ref to access formState in renderStep without depending on it
-  const formStateRef = React.useRef(formState);
-  React.useEffect(() => {
-    formStateRef.current = formState;
-  }, [formState]);
+  const [formState, setFormState] = useState<ScenarioFormState>(
+    getInitialFormState
+  );
 
-  // Update form state when server data changes
+  const departmentIdsStr = useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids]
+  );
+  const personaIdsStr = useMemo(
+    () => JSON.stringify(formState.persona_ids),
+    [formState.persona_ids]
+  );
+  const documentIdsStr = useMemo(
+    () => JSON.stringify(formState.document_ids),
+    [formState.document_ids]
+  );
+  const templateIdsStr = useMemo(
+    () => JSON.stringify(formState.template_ids),
+    [formState.template_ids]
+  );
+  const parameterIdsStr = useMemo(
+    () => JSON.stringify(formState.parameter_ids),
+    [formState.parameter_ids]
+  );
+  const fieldIdsStr = useMemo(
+    () => JSON.stringify(formState.field_ids),
+    [formState.field_ids]
+  );
+  const imageIdsStr = useMemo(
+    () => JSON.stringify(formState.image_ids),
+    [formState.image_ids]
+  );
+  const objectiveIdsStr = useMemo(
+    () => JSON.stringify(formState.objective_ids),
+    [formState.objective_ids]
+  );
+  const videoIdsStr = useMemo(
+    () => JSON.stringify(formState.video_ids),
+    [formState.video_ids]
+  );
+  const questionIdsStr = useMemo(
+    () => JSON.stringify(formState.question_ids),
+    [formState.question_ids]
+  );
+
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
-      // Only update if resource IDs actually changed
       if (
         prev.name_id !== newState.name_id ||
         prev.description_id !== newState.description_id ||
         prev.problem_statement_id !== newState.problem_statement_id ||
         prev.active_flag_id !== newState.active_flag_id ||
-        prev.objectives_enabled_flag_id !==
-          newState.objectives_enabled_flag_id ||
+        prev.objectives_enabled_flag_id !== newState.objectives_enabled_flag_id ||
         prev.images_enabled_flag_id !== newState.images_enabled_flag_id ||
         prev.video_enabled_flag_id !== newState.video_enabled_flag_id ||
         prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
@@ -499,20 +456,24 @@ function ScenarioComponent({
           JSON.stringify(newState.persona_ids) ||
         JSON.stringify(prev.document_ids) !==
           JSON.stringify(newState.document_ids) ||
-        JSON.stringify(prev.template_document_ids) !==
-          JSON.stringify(newState.template_document_ids) ||
+        JSON.stringify(prev.template_ids) !==
+          JSON.stringify(newState.template_ids) ||
         JSON.stringify(prev.parameter_ids) !==
           JSON.stringify(newState.parameter_ids) ||
         JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
         JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
         JSON.stringify(prev.objective_ids) !==
-          JSON.stringify(newState.objective_ids)
+          JSON.stringify(newState.objective_ids) ||
+        JSON.stringify(prev.video_ids) !== JSON.stringify(newState.video_ids) ||
+        JSON.stringify(prev.question_ids) !==
+          JSON.stringify(newState.question_ids)
       ) {
         return newState;
       }
       return prev;
     });
   }, [
+    getInitialFormState,
     scenarioData?.name_id,
     scenarioData?.description_id,
     scenarioData?.problem_statement_id,
@@ -530,149 +491,183 @@ function ScenarioComponent({
     JSON.stringify(scenarioData?.field_ids),
     JSON.stringify(scenarioData?.image_ids),
     JSON.stringify(scenarioData?.objective_ids),
+    JSON.stringify(scenarioData?.video_ids),
+    JSON.stringify(scenarioData?.question_ids),
   ]);
 
-  // Track previous initialDraftState content to avoid unnecessary updates
-  const prevInitialDraftStateRef = useRef<string>(
-    JSON.stringify(initialDraftState)
+  // Draft version tracking for optimistic concurrency control
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
+  const lastSavedVersionRef = useRef(0);
+  useEffect(() => {
+    lastSavedVersionRef.current = lastSavedVersion;
+  }, [lastSavedVersion]);
+
+  const patchScenarioDraftActionRef = useRef(patchScenarioDraftAction);
+  useEffect(() => {
+    patchScenarioDraftActionRef.current = patchScenarioDraftAction;
+  }, [patchScenarioDraftAction]);
+
+  const draftPatchKey = useMemo(
+    () =>
+      JSON.stringify({
+        draftId: draftId || null,
+        name_id: formState.name_id,
+        description_id: formState.description_id,
+        problem_statement_id: formState.problem_statement_id,
+        active_flag_id: formState.active_flag_id,
+        objectives_enabled_flag_id: formState.objectives_enabled_flag_id,
+        images_enabled_flag_id: formState.images_enabled_flag_id,
+        video_enabled_flag_id: formState.video_enabled_flag_id,
+        questions_enabled_flag_id: formState.questions_enabled_flag_id,
+        problem_statement_enabled_flag_id:
+          formState.problem_statement_enabled_flag_id,
+        department_ids: formState.department_ids,
+        persona_ids: formState.persona_ids,
+        document_ids: formState.document_ids,
+        template_ids: formState.template_ids,
+        parameter_ids: formState.parameter_ids,
+        field_ids: formState.field_ids,
+        image_ids: formState.image_ids,
+        objective_ids: formState.objective_ids,
+        video_ids: formState.video_ids,
+        question_ids: formState.question_ids,
+      }),
+    [
+      draftId,
+      formState.name_id,
+      formState.description_id,
+      formState.problem_statement_id,
+      formState.active_flag_id,
+      formState.objectives_enabled_flag_id,
+      formState.images_enabled_flag_id,
+      formState.video_enabled_flag_id,
+      formState.questions_enabled_flag_id,
+      formState.problem_statement_enabled_flag_id,
+      departmentIdsStr,
+      personaIdsStr,
+      documentIdsStr,
+      templateIdsStr,
+      parameterIdsStr,
+      fieldIdsStr,
+      imageIdsStr,
+      objectiveIdsStr,
+      videoIdsStr,
+      questionIdsStr,
+    ]
   );
 
-  // Update draft state when server data changes (e.g., draft selected)
-  // Only update if content actually changed (deep comparison to prevent unnecessary re-renders)
+  const lastPatchedKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
-    // Deep compare to avoid unnecessary state updates
-    const currentStateStr = prevInitialDraftStateRef.current;
-    const newStateStr = JSON.stringify(initialDraftState);
+    const hasResourceIds =
+      formState.name_id ||
+      formState.description_id ||
+      formState.problem_statement_id ||
+      formState.active_flag_id ||
+      formState.objectives_enabled_flag_id ||
+      formState.images_enabled_flag_id ||
+      formState.video_enabled_flag_id ||
+      formState.questions_enabled_flag_id ||
+      formState.problem_statement_enabled_flag_id ||
+      formState.department_ids.length > 0 ||
+      formState.persona_ids.length > 0 ||
+      formState.document_ids.length > 0 ||
+      formState.template_ids.length > 0 ||
+      formState.parameter_ids.length > 0 ||
+      formState.field_ids.length > 0 ||
+      formState.image_ids.length > 0 ||
+      formState.objective_ids.length > 0 ||
+      formState.video_ids.length > 0 ||
+      formState.question_ids.length > 0;
 
-    // Only update if content actually changed
-    if (currentStateStr !== newStateStr) {
-      prevInitialDraftStateRef.current = newStateStr;
-      setDraftState(initialDraftState);
+    if (!hasResourceIds || !patchScenarioDraftActionRef.current) {
+      return;
     }
-  }, [initialDraftState]);
 
-  // Integrate autosave hook
-  // Pattern: Transform hook API (draft_id, patch, expected_version) to backend API (input_draft_id, patch, expected_version)
-  // See Z-DOCS.md "Draft Autosave Pattern" section for type transformation details
-  const {
-    saveStatus: _saveStatus,
-    saveNow: _saveNow,
-    lastSavedVersion: _lastSavedVersion,
-  } = useDraftAutosave({
-    draftId,
-    draftState,
-    patchDraftAction: patchScenarioDraftAction
-      ? async (input) => {
-          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
-          const camelToSnake: Record<string, string> = {
-            departmentIds: "department_ids",
-            personaIds: "persona_ids",
-            documentIds: "document_ids",
-            templateDocumentIds: "template_document_ids",
-            parameterIds: "parameter_ids",
-            fieldIds: "field_ids",
-            imageIds: "image_ids",
-            objectiveIds: "objective_ids",
-            problemStatementIds: "problem_statement_ids",
-            useImage: "use_image",
-            useVideo: "use_video",
-            useObjectives: "use_objectives",
-            useQuestions: "use_questions",
-            useProblemStatement: "use_problem_statement",
-            videoLength: "video_length",
-            problemStatement: "problem_statement",
-            scenarioDomainId: "scenario_domain_id",
-            imageDomainId: "image_domain_id",
-            videoDomainId: "video_domain_id",
-          };
-          const transformedPatch: Record<string, unknown> = {};
-          Object.entries(input.body.patch as Record<string, unknown>).forEach(
-            ([key, value]) => {
-              const snakeKey = camelToSnake[key] || key;
-              transformedPatch[snakeKey] = value;
-            }
-          );
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      return;
+    }
 
-          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
-          // Note: profile_id is added server-side from header
-          const result = await patchScenarioDraftAction({
-            body: {
-              input_draft_id: input.body.draft_id || null,
-              patch: transformedPatch,
-              expected_version: input.body.expected_version,
-            } as PatchScenarioDraftIn["body"],
-          });
-          // Transform backend API → hook API
-          // Backend API: { draft_id, new_version, draft_exists }
-          // Hook API: { draftId, newVersion, draftExists }
-          return {
-            draftId: result.draft_id || "",
-            newVersion: result.new_version || 0,
-            draftExists: result.draft_exists || false,
-          };
+    const timer = setTimeout(async () => {
+      try {
+        if (!patchScenarioDraftActionRef.current) return;
+        const result = await patchScenarioDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            problem_statement_id: formState.problem_statement_id,
+            active_flag_id: formState.active_flag_id,
+            objectives_enabled_flag_id: formState.objectives_enabled_flag_id,
+            images_enabled_flag_id: formState.images_enabled_flag_id,
+            video_enabled_flag_id: formState.video_enabled_flag_id,
+            questions_enabled_flag_id: formState.questions_enabled_flag_id,
+            problem_statement_enabled_flag_id:
+              formState.problem_statement_enabled_flag_id,
+            department_ids: formState.department_ids,
+            persona_ids: formState.persona_ids,
+            document_ids: formState.document_ids,
+            template_ids: formState.template_ids,
+            parameter_ids: formState.parameter_ids,
+            field_ids: formState.field_ids,
+            image_ids: formState.image_ids,
+            objective_ids: formState.objective_ids,
+            video_ids: formState.video_ids,
+            question_ids: formState.question_ids,
+            expected_version: lastSavedVersionRef.current,
+          },
+        });
+
+        lastPatchedKeyRef.current = draftPatchKey;
+
+        if (!draftId && result.draft_id) {
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
-      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
-    debounceMs: 1000,
-    onDraftCreated: useCallback(
-      (newDraftId: string) => {
-        // Only update URL if draftId actually changed
-        const currentUrlDraftId = searchParams.get("draftId");
-        if (newDraftId === currentUrlDraftId) {
-          return;
-        }
-        // Update URL with new draftId and trigger server-side refetch
-        // This ensures the server component gets fresh data with the new draft
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("draftId", newDraftId);
-        const newUrl = `?${params.toString()}`;
-        router.replace(newUrl, { scroll: false });
-        // Force server components to re-render with updated search params
-        router.refresh();
-      },
-      [router, searchParams]
-    ),
-  });
 
-  // Memoize scenarioData fields used in renderStep to prevent callback recreation
-  // when only object reference changes (but content is same)
-  const stableScenarioDataFields = React.useMemo(() => {
+        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
+          setLastSavedVersion(result.new_version ?? 0);
+          lastSavedVersionRef.current = result.new_version ?? 0;
+        }
+      } catch {
+        // Draft save failed - API logs handle details
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [draftPatchKey, draftId, formState]);
+
+  const stableScenarioDataFields = useMemo(() => {
     if (!scenarioData) return null;
     return {
       group_id: scenarioData.group_id,
-      name_id: scenarioData.name_id,
       name_resource: scenarioData.name_resource,
       show_name: scenarioData.show_name,
       name_suggestions: scenarioData.name_suggestions,
       names: scenarioData.names,
       name_required: scenarioData.name_required,
       name_agent_id: scenarioData.name_agent_id,
-      description_id: scenarioData.description_id,
       description_resource: scenarioData.description_resource,
       show_description: scenarioData.show_description,
       description_suggestions: scenarioData.description_suggestions,
       description_required: scenarioData.description_required,
       description_agent_id: scenarioData.description_agent_id,
       descriptions: scenarioData.descriptions,
-      problem_statement_id: scenarioData.problem_statement_id,
       problem_statement_resource: scenarioData.problem_statement_resource,
       show_problem_statement: scenarioData.show_problem_statement,
       problem_statement_suggestions: scenarioData.problem_statement_suggestions,
       problem_statement_required: scenarioData.problem_statement_required,
       problem_statement_agent_id: scenarioData.problem_statement_agent_id,
       problem_statements: scenarioData.problem_statements,
-      objective_ids: scenarioData.objective_ids,
       objective_resources: scenarioData.objective_resources,
       show_objectives: scenarioData.show_objectives,
       objectives_agent_id: scenarioData.objectives_agent_id,
       objectives_required: scenarioData.objectives_required,
       objective_suggestions: scenarioData.objective_suggestions,
       objectives: scenarioData.objectives,
-      active_flag_id: scenarioData.active_flag_id,
       active_flag_resource: scenarioData.active_flag_resource,
       show_active_flag: scenarioData.show_active_flag,
       active_flag_agent_id: scenarioData.active_flag_agent_id,
       active_flag_required: scenarioData.active_flag_required,
-      objectives_enabled_flag_id: scenarioData.objectives_enabled_flag_id,
       objectives_enabled_flag_resource:
         scenarioData.objectives_enabled_flag_resource,
       show_objectives_enabled_flag: scenarioData.show_objectives_enabled_flag,
@@ -680,17 +675,14 @@ function ScenarioComponent({
         scenarioData.objectives_enabled_flag_agent_id,
       objectives_enabled_flag_required:
         scenarioData.objectives_enabled_flag_required,
-      images_enabled_flag_id: scenarioData.images_enabled_flag_id,
       images_enabled_flag_resource: scenarioData.images_enabled_flag_resource,
       show_images_enabled_flag: scenarioData.show_images_enabled_flag,
       images_enabled_flag_agent_id: scenarioData.images_enabled_flag_agent_id,
       images_enabled_flag_required: scenarioData.images_enabled_flag_required,
-      video_enabled_flag_id: scenarioData.video_enabled_flag_id,
       video_enabled_flag_resource: scenarioData.video_enabled_flag_resource,
       show_video_enabled_flag: scenarioData.show_video_enabled_flag,
       video_enabled_flag_agent_id: scenarioData.video_enabled_flag_agent_id,
       video_enabled_flag_required: scenarioData.video_enabled_flag_required,
-      questions_enabled_flag_id: scenarioData.questions_enabled_flag_id,
       questions_enabled_flag_resource:
         scenarioData.questions_enabled_flag_resource,
       show_questions_enabled_flag: scenarioData.show_questions_enabled_flag,
@@ -698,8 +690,6 @@ function ScenarioComponent({
         scenarioData.questions_enabled_flag_agent_id,
       questions_enabled_flag_required:
         scenarioData.questions_enabled_flag_required,
-      problem_statement_enabled_flag_id:
-        scenarioData.problem_statement_enabled_flag_id,
       problem_statement_enabled_flag_resource:
         scenarioData.problem_statement_enabled_flag_resource,
       show_problem_statement_enabled_flag:
@@ -708,96 +698,70 @@ function ScenarioComponent({
         scenarioData.problem_statement_enabled_flag_agent_id,
       problem_statement_enabled_flag_required:
         scenarioData.problem_statement_enabled_flag_required,
-      department_ids: scenarioData.department_ids,
       department_resources: scenarioData.department_resources,
       show_departments: scenarioData.show_departments,
       departments_agent_id: scenarioData.departments_agent_id,
       departments_required: scenarioData.departments_required,
       department_suggestions: scenarioData.department_suggestions,
       departments: scenarioData.departments,
+      persona_resources: scenarioData.persona_resources,
+      show_personas: scenarioData.show_personas,
+      personas_agent_id: scenarioData.personas_agent_id,
+      personas_required: scenarioData.personas_required,
+      persona_suggestions: scenarioData.persona_suggestions,
+      personas: scenarioData.personas,
+      document_resources: scenarioData.document_resources,
+      show_documents: scenarioData.show_documents,
+      documents_agent_id: scenarioData.documents_agent_id,
+      documents_required: scenarioData.documents_required,
+      document_suggestions: scenarioData.document_suggestions,
+      documents: scenarioData.documents,
+      template_resources: scenarioData.template_resources,
+      show_templates: scenarioData.show_templates,
+      templates_agent_id: scenarioData.templates_agent_id,
+      templates_required: scenarioData.templates_required,
+      template_suggestions: scenarioData.template_suggestions,
+      templates: scenarioData.templates,
+      parameter_resources: scenarioData.parameter_resources,
+      show_parameters: scenarioData.show_parameters,
+      parameters_agent_id: scenarioData.parameters_agent_id,
+      parameters_required: scenarioData.parameters_required,
+      parameter_suggestions: scenarioData.parameter_suggestions,
+      parameters: scenarioData.parameters,
+      field_resources: scenarioData.field_resources,
+      show_fields: scenarioData.show_fields,
+      fields_agent_id: scenarioData.fields_agent_id,
+      fields_required: scenarioData.fields_required,
+      field_suggestions: scenarioData.field_suggestions,
+      fields: scenarioData.fields,
+      image_resources: scenarioData.image_resources,
+      show_images: scenarioData.show_images,
+      images_agent_id: scenarioData.images_agent_id,
+      images_required: scenarioData.images_required,
+      image_suggestions: scenarioData.image_suggestions,
+      images: scenarioData.images,
+      video_resources: scenarioData.video_resources,
+      show_videos: scenarioData.show_videos,
+      videos_agent_id: scenarioData.videos_agent_id,
+      videos_required: scenarioData.videos_required,
+      video_suggestions: scenarioData.video_suggestions,
+      videos: scenarioData.videos,
+      question_resources: scenarioData.question_resources,
+      show_questions: scenarioData.show_questions,
+      questions_agent_id: scenarioData.questions_agent_id,
+      questions_required: scenarioData.questions_required,
+      question_suggestions: scenarioData.question_suggestions,
+      questions: scenarioData.questions,
       can_edit: scenarioData.can_edit,
       disabled_reason: scenarioData.disabled_reason,
       general_agent_id: scenarioData.general_agent_id,
       basic_agent_id: scenarioData.basic_agent_id,
       content_agent_id: scenarioData.content_agent_id,
     };
-  }, [
-    scenarioData?.group_id,
-    scenarioData?.name_id,
-    scenarioData?.name_resource,
-    scenarioData?.show_name,
-    scenarioData?.name_suggestions,
-    scenarioData?.names,
-    scenarioData?.name_required,
-    scenarioData?.name_agent_id,
-    scenarioData?.description_id,
-    scenarioData?.description_resource,
-    scenarioData?.show_description,
-    scenarioData?.description_suggestions,
-    scenarioData?.description_required,
-    scenarioData?.description_agent_id,
-    scenarioData?.descriptions,
-    scenarioData?.problem_statement_id,
-    scenarioData?.problem_statement_resource,
-    scenarioData?.show_problem_statement,
-    scenarioData?.problem_statement_suggestions,
-    scenarioData?.problem_statement_required,
-    scenarioData?.problem_statement_agent_id,
-    scenarioData?.problem_statements,
-    scenarioData?.objective_ids,
-    scenarioData?.objective_resources,
-    scenarioData?.show_objectives,
-    scenarioData?.objectives_agent_id,
-    scenarioData?.objectives_required,
-    scenarioData?.objective_suggestions,
-    scenarioData?.objectives,
-    scenarioData?.active_flag_id,
-    scenarioData?.active_flag_resource,
-    scenarioData?.show_active_flag,
-    scenarioData?.active_flag_agent_id,
-    scenarioData?.active_flag_required,
-    scenarioData?.objectives_enabled_flag_id,
-    scenarioData?.objectives_enabled_flag_resource,
-    scenarioData?.show_objectives_enabled_flag,
-    scenarioData?.objectives_enabled_flag_agent_id,
-    scenarioData?.objectives_enabled_flag_required,
-    scenarioData?.images_enabled_flag_id,
-    scenarioData?.images_enabled_flag_resource,
-    scenarioData?.show_images_enabled_flag,
-    scenarioData?.images_enabled_flag_agent_id,
-    scenarioData?.images_enabled_flag_required,
-    scenarioData?.video_enabled_flag_id,
-    scenarioData?.video_enabled_flag_resource,
-    scenarioData?.show_video_enabled_flag,
-    scenarioData?.video_enabled_flag_agent_id,
-    scenarioData?.video_enabled_flag_required,
-    scenarioData?.questions_enabled_flag_id,
-    scenarioData?.questions_enabled_flag_resource,
-    scenarioData?.show_questions_enabled_flag,
-    scenarioData?.questions_enabled_flag_agent_id,
-    scenarioData?.questions_enabled_flag_required,
-    scenarioData?.problem_statement_enabled_flag_id,
-    scenarioData?.problem_statement_enabled_flag_resource,
-    scenarioData?.show_problem_statement_enabled_flag,
-    scenarioData?.problem_statement_enabled_flag_agent_id,
-    scenarioData?.problem_statement_enabled_flag_required,
-    JSON.stringify(scenarioData?.department_ids),
-    scenarioData?.department_resources,
-    scenarioData?.show_departments,
-    scenarioData?.departments_agent_id,
-    scenarioData?.departments_required,
-    scenarioData?.department_suggestions,
-    scenarioData?.departments,
-    scenarioData?.can_edit,
-    scenarioData?.disabled_reason,
-    scenarioData?.general_agent_id,
-    scenarioData?.basic_agent_id,
-    scenarioData?.content_agent_id,
-  ]);
+  }, [scenarioData]);
 
-  // Helper to check if a resource type can be regenerated
   const canRegenerate = useCallback(
-    (resourceType: ResourceType): boolean => {
+    (resourceType: ScenarioResourceType): boolean => {
       if (!stableScenarioDataFields) return false;
       switch (resourceType) {
         case "names":
@@ -820,22 +784,64 @@ function ScenarioComponent({
         case "scenario_flags":
           return (
             stableScenarioDataFields.active_flag_resource?.generated ??
-            (false ||
-              stableScenarioDataFields.objectives_enabled_flag_resource
-                ?.generated) ??
-            (false ||
-              stableScenarioDataFields.images_enabled_flag_resource
-                ?.generated) ??
-            (false ||
-              stableScenarioDataFields.video_enabled_flag_resource
-                ?.generated) ??
-            (false ||
-              stableScenarioDataFields.questions_enabled_flag_resource
-                ?.generated) ??
-            (false ||
-              stableScenarioDataFields.problem_statement_enabled_flag_resource
-                ?.generated) ??
+            false ||
+            stableScenarioDataFields.objectives_enabled_flag_resource
+              ?.generated ||
+            stableScenarioDataFields.images_enabled_flag_resource?.generated ||
+            stableScenarioDataFields.video_enabled_flag_resource?.generated ||
+            stableScenarioDataFields.questions_enabled_flag_resource
+              ?.generated ||
+            stableScenarioDataFields.problem_statement_enabled_flag_resource
+              ?.generated ||
             false
+          );
+        case "departments":
+          return (
+            stableScenarioDataFields.department_resources?.some(
+              (d) => d.generated
+            ) ?? false
+          );
+        case "personas":
+          return (
+            stableScenarioDataFields.persona_resources?.some((p) => p.generated) ??
+            false
+          );
+        case "documents":
+          return (
+            stableScenarioDataFields.document_resources?.some((d) => d.generated) ??
+            false
+          );
+        case "templates":
+          return (
+            stableScenarioDataFields.template_resources?.some((t) => t.generated) ??
+            false
+          );
+        case "parameters":
+          return (
+            stableScenarioDataFields.parameter_resources?.some(
+              (p) => p.generated
+            ) ?? false
+          );
+        case "fields":
+          return (
+            stableScenarioDataFields.field_resources?.some((f) => f.generated) ??
+            false
+          );
+        case "images":
+          return (
+            stableScenarioDataFields.image_resources?.some((i) => i.generated) ??
+            false
+          );
+        case "videos":
+          return (
+            stableScenarioDataFields.video_resources?.some((v) => v.generated) ??
+            false
+          );
+        case "questions":
+          return (
+            stableScenarioDataFields.question_resources?.some(
+              (q) => q.generated
+            ) ?? false
           );
         default:
           return false;
@@ -844,80 +850,627 @@ function ScenarioComponent({
     [stableScenarioDataFields]
   );
 
-  // Individual resource generation handlers
-  const handleGenerateName = useCallback(() => {
-    handleGenerateResources(["names"]);
-  }, [handleGenerateResources]);
+  const disabled = useMemo(() => {
+    if (!scenarioData) return false;
+    return !scenarioData.can_edit;
+  }, [scenarioData]);
 
-  const handleGenerateDescription = useCallback(() => {
-    handleGenerateResources(["descriptions"]);
-  }, [handleGenerateResources]);
+  useEffect(() => {
+    if (scenarioData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "scenario",
+        canGenerate: true,
+        agentId: scenarioData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "scenario",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [
+    scenarioData?.general_agent_id,
+    setGenerationCapability,
+    clearGenerationCapability,
+  ]);
 
-  const handleGenerateFlags = useCallback(() => {
-    handleGenerateResources(["scenario_flags"]);
-  }, [handleGenerateResources]);
+  useEffect(() => {
+    if (!socket || !isConnected) return;
 
-  const handleGenerateProblemStatements = useCallback(() => {
-    handleGenerateResources(["problem_statements"]);
-  }, [handleGenerateResources]);
+    const currentGroupId = scenarioData?.group_id;
 
-  const handleGenerateObjectives = useCallback(() => {
-    handleGenerateResources(["objectives"]);
-  }, [handleGenerateResources]);
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      resource_id?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      problem_statement_id?: string | null;
+      objective_ids?: string[];
+      department_ids?: string[];
+      persona_ids?: string[];
+      document_ids?: string[];
+      template_ids?: string[];
+      parameter_ids?: string[];
+      field_ids?: string[];
+      image_ids?: string[];
+      video_ids?: string[];
+      question_ids?: string[];
+      active_flag_id?: string | null;
+      objectives_enabled_flag_id?: string | null;
+      images_enabled_flag_id?: string | null;
+      video_enabled_flag_id?: string | null;
+      questions_enabled_flag_id?: string | null;
+      problem_statement_enabled_flag_id?: string | null;
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      if (
+        data.artifact_type !== "scenario" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
 
-  // Helper function to determine agent_type from resource types
+      const validResourceTypes: ScenarioResourceType[] = [
+        "names",
+        "descriptions",
+        "problem_statements",
+        "objectives",
+        "scenario_flags",
+        "departments",
+        "personas",
+        "documents",
+        "templates",
+        "parameters",
+        "fields",
+        "images",
+        "videos",
+        "questions",
+        "ranges",
+      ];
+
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ScenarioResourceType)
+      ) {
+        setFormState((prev) => {
+          const updates: Partial<ScenarioFormState> = {};
+
+          if (data.name_id) updates.name_id = data.name_id;
+          if (data.description_id) updates.description_id = data.description_id;
+          if (data.problem_statement_id)
+            updates.problem_statement_id = data.problem_statement_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.objectives_enabled_flag_id)
+            updates.objectives_enabled_flag_id =
+              data.objectives_enabled_flag_id;
+          if (data.images_enabled_flag_id)
+            updates.images_enabled_flag_id = data.images_enabled_flag_id;
+          if (data.video_enabled_flag_id)
+            updates.video_enabled_flag_id = data.video_enabled_flag_id;
+          if (data.questions_enabled_flag_id)
+            updates.questions_enabled_flag_id = data.questions_enabled_flag_id;
+          if (data.problem_statement_enabled_flag_id)
+            updates.problem_statement_enabled_flag_id =
+              data.problem_statement_enabled_flag_id;
+
+          if (data.objective_ids && data.objective_ids.length > 0) {
+            const newIds = data.objective_ids.filter(
+              (id) => !prev.objective_ids.includes(id)
+            );
+            updates.objective_ids = [...prev.objective_ids, ...newIds];
+          }
+          if (data.department_ids && data.department_ids.length > 0) {
+            const newIds = data.department_ids.filter(
+              (id) => !prev.department_ids.includes(id)
+            );
+            updates.department_ids = [...prev.department_ids, ...newIds];
+          }
+          if (data.persona_ids && data.persona_ids.length > 0) {
+            const newIds = data.persona_ids.filter(
+              (id) => !prev.persona_ids.includes(id)
+            );
+            updates.persona_ids = [...prev.persona_ids, ...newIds];
+          }
+          if (data.document_ids && data.document_ids.length > 0) {
+            const newIds = data.document_ids.filter(
+              (id) => !prev.document_ids.includes(id)
+            );
+            updates.document_ids = [...prev.document_ids, ...newIds];
+          }
+          if (data.template_ids && data.template_ids.length > 0) {
+            const newIds = data.template_ids.filter(
+              (id) => !prev.template_ids.includes(id)
+            );
+            updates.template_ids = [...prev.template_ids, ...newIds];
+          }
+          if (data.parameter_ids && data.parameter_ids.length > 0) {
+            const newIds = data.parameter_ids.filter(
+              (id) => !prev.parameter_ids.includes(id)
+            );
+            updates.parameter_ids = [...prev.parameter_ids, ...newIds];
+          }
+          if (data.field_ids && data.field_ids.length > 0) {
+            const newIds = data.field_ids.filter(
+              (id) => !prev.field_ids.includes(id)
+            );
+            updates.field_ids = [...prev.field_ids, ...newIds];
+          }
+          if (data.image_ids && data.image_ids.length > 0) {
+            const newIds = data.image_ids.filter(
+              (id) => !prev.image_ids.includes(id)
+            );
+            updates.image_ids = [...prev.image_ids, ...newIds];
+          }
+          if (data.video_ids && data.video_ids.length > 0) {
+            updates.video_ids = data.video_ids;
+          }
+          if (data.question_ids && data.question_ids.length > 0) {
+            const newIds = data.question_ids.filter(
+              (id) => !prev.question_ids.includes(id)
+            );
+            updates.question_ids = [...prev.question_ids, ...newIds];
+          }
+
+          if (data.resource_id && data.resource_type) {
+            const resourceId = data.resource_id;
+            switch (data.resource_type) {
+              case "names":
+                updates.name_id = resourceId;
+                break;
+              case "descriptions":
+                updates.description_id = resourceId;
+                break;
+              case "problem_statements":
+                updates.problem_statement_id = resourceId;
+                break;
+              case "objectives":
+                updates.objective_ids = prev.objective_ids.includes(resourceId)
+                  ? prev.objective_ids
+                  : [...prev.objective_ids, resourceId];
+                break;
+              case "departments":
+                updates.department_ids = prev.department_ids.includes(resourceId)
+                  ? prev.department_ids
+                  : [...prev.department_ids, resourceId];
+                break;
+              case "personas":
+                updates.persona_ids = prev.persona_ids.includes(resourceId)
+                  ? prev.persona_ids
+                  : [...prev.persona_ids, resourceId];
+                break;
+              case "documents":
+                updates.document_ids = prev.document_ids.includes(resourceId)
+                  ? prev.document_ids
+                  : [...prev.document_ids, resourceId];
+                break;
+              case "templates":
+                updates.template_ids = prev.template_ids.includes(resourceId)
+                  ? prev.template_ids
+                  : [...prev.template_ids, resourceId];
+                break;
+              case "parameters":
+                updates.parameter_ids = prev.parameter_ids.includes(resourceId)
+                  ? prev.parameter_ids
+                  : [...prev.parameter_ids, resourceId];
+                break;
+              case "fields":
+                updates.field_ids = prev.field_ids.includes(resourceId)
+                  ? prev.field_ids
+                  : [...prev.field_ids, resourceId];
+                break;
+              case "images":
+                updates.image_ids = prev.image_ids.includes(resourceId)
+                  ? prev.image_ids
+                  : [...prev.image_ids, resourceId];
+                break;
+              case "videos":
+                updates.video_ids = [resourceId];
+                break;
+              case "questions":
+                updates.question_ids = prev.question_ids.includes(resourceId)
+                  ? prev.question_ids
+                  : [...prev.question_ids, resourceId];
+                break;
+              default:
+                break;
+            }
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ScenarioResourceType);
+          return next;
+        });
+
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      if (
+        data.artifact_type !== "scenario" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      if (
+        data.artifact_type !== "scenario" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return;
+      }
+
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          next.delete(rt as ScenarioResourceType);
+        });
+        return next;
+      });
+
+      toast.error(data.message || "Generation failed");
+    };
+
+    socket.on("scenario_generation_progress", handleGenerationProgress);
+    socket.on("scenario_generation_complete", handleGenerationComplete);
+    socket.on("scenario_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("scenario_generation_progress", handleGenerationProgress);
+      socket.off("scenario_generation_complete", handleGenerationComplete);
+      socket.off("scenario_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, scenarioData?.group_id]);
+
   const determineAgentType = useCallback(
-    (resourceTypes: ResourceType[]): string | null => {
-      // For scenarios, we can use "scenario" as the agent type
-      // or map individual resource types if needed
+    (resourceTypes: ScenarioResourceType[]): string | null => {
+      const basicResources: ScenarioResourceType[] = [
+        "names",
+        "descriptions",
+        "scenario_flags",
+        "departments",
+      ];
+      const contentResources: ScenarioResourceType[] = [
+        "problem_statements",
+        "objectives",
+        "images",
+        "videos",
+        "questions",
+      ];
+
+      const isBasicCombo =
+        resourceTypes.length === basicResources.length &&
+        resourceTypes.every((rt) => basicResources.includes(rt));
+      const isContentCombo =
+        resourceTypes.length === contentResources.length &&
+        resourceTypes.every((rt) => contentResources.includes(rt));
+
+      if (isBasicCombo) {
+        return "basic";
+      }
+      if (isContentCombo) {
+        return "content";
+      }
+
       if (resourceTypes.length === 1) {
-        const agentTypeMap: Record<ResourceType, string> = {
+        const agentTypeMap: Partial<Record<ScenarioResourceType, string>> = {
           names: "name",
           descriptions: "description",
-          problem_statements: "problem_statement",
-          objectives: "objectives",
-          ranges: "ranges",
-          scenario_flags: "scenario_flags",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType];
+          return agentTypeMap[firstType] ?? null;
         }
       }
-      // For multiple resources, use "scenario" as general type
-      return "scenario";
+
+      return "general";
     },
     []
   );
 
-  // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
     async (
-      resourceTypes: ResourceType[],
+      resourceTypes: ScenarioResourceType[],
       agentType: string | null,
       userInstructions?: string
     ) => {
-      // Set all resources as generating
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
       setGeneratingResources((prev) => {
         const next = new Set(prev);
         resourceTypes.forEach((rt) => next.add(rt));
         return next;
       });
 
-      // TODO: Implement generation via API endpoint instead of WebSocket
-      toast.error("Generation not yet implemented");
+      const formData = formDataRef.current;
+      const draftIdValue = (formData["draftId"] as string | undefined) ?? null;
+      const personaSearch =
+        (formData["personaSearch"] as string | undefined) ?? null;
+      const documentSearch =
+        (formData["documentSearch"] as string | undefined) ?? null;
+      const parameterSearch =
+        (formData["parameterSearch"] as string | undefined) ?? null;
+      const personaShowSelected =
+        (formData["personaShowSelected"] as boolean | undefined) ?? false;
+      const documentShowSelected =
+        (formData["documentShowSelected"] as boolean | undefined) ?? false;
+      const parameterShowSelected =
+        (formData["parameterShowSelected"] as boolean | undefined) ?? false;
+
+      socket.emit("scenario_generate", {
+        resource_types: resourceTypes,
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        scenario_id: scenarioId || null,
+        use_image: !!formState.images_enabled_flag_id,
+        use_objectives: !!formState.objectives_enabled_flag_id,
+        use_video: !!formState.video_enabled_flag_id,
+        document_ids: formState.document_ids.length
+          ? formState.document_ids
+          : null,
+        problem_statement_ids: formState.problem_statement_id
+          ? [formState.problem_statement_id]
+          : null,
+        template_document_ids: formState.template_ids.length
+          ? formState.template_ids
+          : null,
+        filter_department_ids: formState.department_ids.length
+          ? formState.department_ids
+          : null,
+        filter_persona_ids: formState.persona_ids.length
+          ? formState.persona_ids
+          : null,
+        filter_document_ids: formState.document_ids.length
+          ? formState.document_ids
+          : null,
+        filter_parameter_ids: formState.parameter_ids.length
+          ? formState.parameter_ids
+          : null,
+        filter_field_ids: formState.field_ids.length
+          ? formState.field_ids
+          : null,
+        persona_search: personaSearch,
+        document_search: documentSearch,
+        parameter_search: parameterSearch,
+        persona_show_selected: personaShowSelected,
+        document_show_selected: documentShowSelected,
+        parameter_show_selected: parameterShowSelected,
+        draft_id: draftIdValue,
+        mcp: false,
+      });
     },
-    [scenarioId, urlDraftId]
+    [
+      socket,
+      isConnected,
+      scenarioId,
+      formState.images_enabled_flag_id,
+      formState.objectives_enabled_flag_id,
+      formState.video_enabled_flag_id,
+      formState.document_ids,
+      formState.problem_statement_id,
+      formState.template_ids,
+      formState.department_ids,
+      formState.persona_ids,
+      formState.parameter_ids,
+      formState.field_ids,
+    ]
   );
 
-  // Handler to open modal for step card generation
+  const handleGenerateName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDescription = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["descriptions"],
+        determineAgentType(["descriptions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateProblemStatements = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["problem_statements"],
+        determineAgentType(["problem_statements"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateObjectives = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["objectives"],
+        determineAgentType(["objectives"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDepartments = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["departments"],
+        determineAgentType(["departments"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGeneratePersonas = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["personas"],
+        determineAgentType(["personas"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDocuments = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["documents"],
+        determineAgentType(["documents"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateTemplates = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["templates"],
+        determineAgentType(["templates"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateParameters = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["parameters"],
+        determineAgentType(["parameters"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFields = useCallback(
+    async () =>
+      handleGenerateResources(["fields"], determineAgentType(["fields"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateImages = useCallback(
+    async () =>
+      handleGenerateResources(["images"], determineAgentType(["images"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateVideos = useCallback(
+    async () =>
+      handleGenerateResources(["videos"], determineAgentType(["videos"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateQuestions = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["questions"],
+        determineAgentType(["questions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["scenario_flags"],
+        determineAgentType(["scenario_flags"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const stepResources: Record<string, ScenarioResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "scenario_flags", "departments"],
+      configuration: ["scenario_flags"],
+      content: ["problem_statements", "objectives"],
+      resources: [
+        "personas",
+        "documents",
+        "templates",
+        "parameters",
+        "fields",
+      ],
+      media: ["images", "videos", "questions"],
+      all: [
+        "names",
+        "descriptions",
+        "problem_statements",
+        "objectives",
+        "scenario_flags",
+        "departments",
+        "personas",
+        "documents",
+        "templates",
+        "parameters",
+        "fields",
+        "images",
+        "videos",
+        "questions",
+      ],
+    }),
+    []
+  );
+
+  const resourceLabels: Record<ScenarioResourceType, string> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      problem_statements: "Problem Statements",
+      objectives: "Objectives",
+      scenario_flags: "Flags",
+      departments: "Departments",
+      personas: "Personas",
+      documents: "Documents",
+      templates: "Templates",
+      parameters: "Parameters",
+      fields: "Fields",
+      images: "Images",
+      videos: "Videos",
+      questions: "Questions",
+      ranges: "Ranges",
+    }),
+    []
+  );
+
   const handleOpenStepCardModal = useCallback(
     (stepId: string, mode: "generate" | "regenerate") => {
       const resourceTypes = stepResources[stepId] || [];
       const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
         (rt) => ({
           id: rt,
-          label: resourceLabels[rt],
+          label: resourceLabels[rt] ?? "",
           active: mode === "regenerate" ? canRegenerate(rt) : true,
         })
       );
@@ -930,10 +1483,9 @@ function ScenarioComponent({
     [stepResources, resourceLabels, canRegenerate]
   );
 
-  // Handler for modal generate/regenerate action
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
+      const resourceTypes = selectedResources as ScenarioResourceType[];
       const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
@@ -946,2356 +1498,87 @@ function ScenarioComponent({
     [handleGenerateResources, determineAgentType]
   );
 
-  // Set generation capability when scenario data is loaded
-  useEffect(() => {
-    // TODO: Check for general_agent_id once scenarioData structure is updated with agent IDs
-    // For now, check if group_id exists as a proxy for generation capability
-    if (scenarioData?.group_id) {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: true,
-        agentId: null, // TODO: Set to actual general_agent_id once available
-      });
-    } else {
-      setGenerationCapability({
-        artifactType: "scenario",
-        canGenerate: false,
-        agentId: null,
-      });
-    }
-    return () => clearGenerationCapability();
-  }, [
-    scenarioData?.group_id,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
-
-  // Step-to-resources mapping for multi-generation
-  const stepResources: Record<string, ResourceType[]> = useMemo(
-    () => ({
-      basic: ["names", "descriptions", "scenario_flags"],
-      content: ["problem_statements", "objectives"],
-      all: [
-        "names",
-        "descriptions",
-        "problem_statements",
-        "objectives",
-        "scenario_flags",
-      ], // All resources for full-page generation
-    }),
-    []
-  );
-
-  // Resource labels for modal
-  const resourceLabels: Record<ResourceType, string> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      problem_statements: "Problem Statements",
-      objectives: "Objectives",
-      ranges: "Ranges",
-      scenario_flags: "Scenario Flags",
-    }),
-    []
-  );
-
-  // Listen for full-page-generate event from layout
   useEffect(() => {
     const handleFullPageGenerate = () => {
-      // TODO: Check for general_agent_id once scenarioData structure is updated
-      if (scenarioData?.group_id) {
-        // Open modal instead of directly generating
+      if (scenarioData?.general_agent_id) {
         handleOpenStepCardModal("all", "generate");
       }
     };
     window.addEventListener("full-page-generate", handleFullPageGenerate);
     return () =>
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [scenarioData?.group_id, handleOpenStepCardModal]);
+  }, [scenarioData?.general_agent_id, handleOpenStepCardModal]);
 
-  // Extract body type for type safety
-  type GenerateAIScenarioBody = GenerateAIScenarioIn;
-
-  // Form data state
-  const defaultDepartmentIds = useMemo(
-    () =>
-      getDefaultDepartmentIds(
-        isSuperadmin,
-        effectiveProfile?.primary_department_id || null
-      ),
-    [isSuperadmin, effectiveProfile?.primary_department_id]
-  );
-
-  // defaultParameterIds removed - not used (empty array means "all parameters")
-
-  const initialFormData = useMemo(() => {
-    return {
-      departmentIds: defaultDepartmentIds,
-      parameterIds: [] as string[], // Empty means "all parameters"
-    };
-  }, [defaultDepartmentIds]);
-
-  // State for basic info section (agents and active)
-  const [basicInfoState, setBasicInfoState] = useState<{
-    scenarioDomainId: string | null;
-    imageDomainId: string | null;
-    videoDomainId: string | null;
-    active: boolean;
-  }>({
-    scenarioDomainId: null,
-    imageDomainId: null,
-    videoDomainId: null,
-    active: true,
-  });
-
-  // Form data: merged object of draftState (form fields) + urlParams (search/filter params)
-  // Following Persona.tsx pattern: formData = { ...draftState, ...urlParams }
-  // Note: Range params (personaMin/Max, etc.) exist in both draftState and urlParams
-  // URL params take precedence for filtering, but draftState values are used for form persistence
-  const formData = useMemo(() => {
-    return {
-      ...draftState,
-      // Override range params with URL params if present (for filtering)
-      personaMin: urlParams.personaMin ?? draftState.personaMin ?? null,
-      personaMax: urlParams.personaMax ?? draftState.personaMax ?? null,
-      documentMin: urlParams.documentMin ?? draftState.documentMin ?? null,
-      // Legacy range params removed - use resource-based approach instead
-      // URL-only params (search/filter)
-      draftId: urlParams.draftId || null,
-      personaSearch: urlParams.personaSearch || null,
-      documentSearch: urlParams.documentSearch || null,
-      parameterSearch: urlParams.parameterSearch || null,
-      documentShowSelected: urlParams.documentShowSelected || null,
-      documentShowTemplate: urlParams.documentShowTemplate || null,
-      personaShowSelected: urlParams.personaShowSelected || null,
-      parameterShowSelected: urlParams.parameterShowSelected || null,
-    } as Record<string, unknown>;
-  }, [draftState, urlParams]);
-
-  // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
-  const setFormData = useCallback(
-    (
-      updates:
-        | Partial<Record<string, unknown>>
-        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
-    ) => {
-      // Handle function form
-      const resolvedUpdates =
-        typeof updates === "function" ? updates(formData) : updates;
-
-      const draftUpdates: Partial<DraftState> = {};
-      const urlUpdates: Partial<Record<string, unknown>> = {};
-
-      Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        // Form fields go to draftState (excluding resource fields: name, problemStatement, objectives)
-        // Resource fields are managed via formState resource IDs only
-        if (
-          key === "departmentIds" ||
-          key === "personaIds" ||
-          key === "documentIds" ||
-          key === "templateDocumentIds" ||
-          key === "parameterIds" ||
-          key === "fieldIds" ||
-          key === "imageIds" ||
-          key === "objectiveIds" ||
-          key === "problemStatementIds" ||
-          key === "useImage" ||
-          key === "useVideo" ||
-          key === "useObjectives" ||
-          key === "useQuestions" ||
-          key === "useProblemStatement" ||
-          key === "videoLength" ||
-          key === "active" ||
-          key === "randomize" ||
-          key === "randomizePersonas" ||
-          key === "randomizeDocuments" ||
-          key === "randomizeParameters" ||
-          key === "scenarioDomainId" ||
-          key === "imageDomainId" ||
-          key === "videoDomainId"
-        ) {
-          draftUpdates[key as keyof DraftState] = value as never;
-        }
-
-        // Legacy range params removed - use resource-based approach instead
-
-        // Search/filter params go to urlParams only
-        if (
-          key === "draftId" ||
-          key === "personaSearch" ||
-          key === "documentSearch" ||
-          key === "parameterSearch" ||
-          key === "documentShowSelected" ||
-          key === "documentShowTemplate" ||
-          key === "personaShowSelected" ||
-          key === "parameterShowSelected"
-        ) {
-          urlUpdates[key] = value;
-        }
-      });
-
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-
-      if (Object.keys(urlUpdates).length > 0) {
-        setUrlParams((prev) => ({ ...prev, ...urlUpdates }));
-      }
-    },
-    [formData, setUrlParams]
-  );
-
-  // Merged object combining draftState and urlParams
-  const q = useMemo(() => {
-    return {
-      ...draftState,
-      ...urlParams,
-    };
-  }, [draftState, urlParams]);
-
-  // Track if form data has been initialized (prevents re-initialization on re-renders)
-  const formDataInitializedRef = useRef<boolean>(false);
-
-  // Helper to update draft state (form fields)
-  const handleInputChange = useCallback(
-    (key: keyof DraftState, value: unknown) => {
-      setDraftState((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
-
-  // Extract values from formData (merged draftState + urlParams)
-  const personaSearchTerm = (formData["personaSearch"] as string | null) || "";
-  const documentSearchTerm =
-    (formData["documentSearch"] as string | null) || "";
-  const parameterSearchTerm =
-    (formData["parameterSearch"] as string | null) || "";
-  const documentShowSelected =
-    (formData["documentShowSelected"] as boolean | null) ?? false;
-  const documentShowTemplate =
-    (formData["documentShowTemplate"] as boolean | null) ?? false;
-  const personaShowSelected =
-    (formData["personaShowSelected"] as boolean | null) ?? false;
-  const parameterShowSelected =
-    (formData["parameterShowSelected"] as boolean | null) ?? false;
-
-  // Resource-first: Extract values from resource objects, not legacy state
-  const name = useMemo(
-    () => scenarioData?.name_resource?.name || "New Scenario",
-    [scenarioData?.name_resource?.name]
-  );
-  const problemStatement = useMemo(
-    () => scenarioData?.problem_statement_resource?.problem_statement || "",
-    [scenarioData?.problem_statement_resource?.problem_statement]
-  );
-  const selectedPersonaIds = useMemo(
-    () => draftState.personaIds || [],
-    [draftState.personaIds]
-  );
-  const currentDocumentIds = useMemo(
-    () => draftState.documentIds || [],
-    [draftState.documentIds]
-  );
-  const templateDocumentIds = useMemo(
-    () => draftState.templateDocumentIds || [],
-    [draftState.templateDocumentIds]
-  );
-  const currentFieldIds = useMemo(
-    () => draftState.fieldIds || [],
-    [draftState.fieldIds]
-  );
-  const currentProblemStatementIds = useMemo(
-    () => draftState.problemStatementIds || [],
-    [draftState.problemStatementIds]
-  );
-  const currentObjectiveIds = useMemo(
-    () => draftState.objectiveIds || [],
-    [draftState.objectiveIds]
-  );
-  const fieldShowSelectedByParam = useMemo(
-    () => draftState.fieldShowSelected || {},
-    [draftState.fieldShowSelected]
-  );
-  const fieldMinMax = useMemo(
-    () => draftState.fieldRanges || {},
-    [draftState.fieldRanges]
-  );
-  const [_previewDocumentId, setPreviewDocumentId] = useState<string | null>(
-    null
-  );
-  // Local state for preview dialog in documents step (moved outside renderStep)
-  const [localPreviewDocId, setLocalPreviewDocId] = useState<string | null>(
-    null
-  );
-  // Problem statement ID will come from URL parameters, not stored in state
-  // Track local problem statement versions during creation (before scenario is saved)
-  const [localProblemStatementVersions, setLocalProblemStatementVersions] =
-    useState<
-      Array<{
-        id: string;
-        problem_statement: string;
-        created_at: string;
-        updated_at: string;
-      }>
-    >([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
-  const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
-  const [regenerationInstructions, setRegenerationInstructions] = useState("");
-  const [regenerateObjectives, setRegenerateObjectives] = useState(true);
-  // Feature flags from draft state
-  const useObjectives = draftState.useObjectives ?? false;
-  const useImage = draftState.useImage ?? false;
-  const useVideo = draftState.useVideo ?? false;
-  const useQuestions = draftState.useQuestions ?? false;
-  const useProblemStatement = draftState.useProblemStatement ?? false;
-
-  // Video length from draft state
-  const selectedVideoLength = draftState.videoLength ?? null;
-
-  // Resource-first: Extract objectives from resource objects, not legacy state
-  const currentObjectives = useMemo(() => {
-    if (
-      formState.objective_ids &&
-      formState.objective_ids.length > 0 &&
-      scenarioData?.objective_resources
-    ) {
-      return scenarioData.objective_resources
-        .filter((obj) => formState.objective_ids?.includes(String(obj.id)))
-        .map((obj) => obj.objective);
-    }
-    return [];
-  }, [formState.objective_ids, scenarioData?.objective_resources]);
-  // State for content section (image, video, questions, objectives)
-  const [contentState, setContentState] = useState<{
-    image: { id: string; name: string; upload_id: string } | null;
-    selectedVideo: {
-      id: string;
-      name: string;
-      length_seconds: number;
-      upload_id?: string;
-    } | null;
-    activeVideoId: string | null;
-    questions: Array<{
-      id: string;
-      question_text: string;
-      allow_multiple: boolean;
-      options: Array<{
-        id: string;
-        option_text: string;
-        type?: "discrete" | "freeform";
-        is_correct: boolean;
-      }>;
-      times?: number[];
-    }>;
-    currentQuestionIds: string[];
-    objectives: string[];
-    scenarioPreviewDocumentId: string | null;
-  }>({
-    image: null,
-    selectedVideo: null,
-    activeVideoId: null,
-    questions: [],
-    currentQuestionIds: [],
-    objectives: [],
-    scenarioPreviewDocumentId: null,
-  });
-
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-
-  const [isPending] = useTransition();
-
-  // Min/max state for randomization (from draft state, fallback to server values)
-  // Initialize from draft state, fallback to server's current values
-  const personaMinMax = useMemo(() => {
-    const personaMin = draftState.personaMin;
-    const personaMax = draftState.personaMax;
-    if (
-      personaMin !== null &&
-      personaMin !== undefined &&
-      personaMax !== null &&
-      personaMax !== undefined
-    ) {
-      return { min: personaMin, max: personaMax };
-    }
-    // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && isScenarioNewOut(scenarioData)) {
-      return {
-        min: scenarioData.persona_range_min ?? 1,
-        max: scenarioData.persona_range_max ?? 1,
-      };
-    }
-    return { min: 1, max: 1 };
-  }, [draftState.personaMin, draftState.personaMax, scenarioData]);
-
-  const documentMinMax = useMemo(() => {
-    const documentMin = draftState.documentMin;
-    const documentMax = draftState.documentMax;
-    if (
-      documentMin !== null &&
-      documentMin !== undefined &&
-      documentMax !== null &&
-      documentMax !== undefined
-    ) {
-      return { min: documentMin, max: documentMax };
-    }
-    // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && isScenarioNewOut(scenarioData)) {
-      return {
-        min: scenarioData.document_range_min ?? 0,
-        max: scenarioData.document_range_max ?? 1,
-      };
-    }
-    return { min: 0, max: 1 };
-  }, [draftState.documentMin, draftState.documentMax, scenarioData]);
-
-  const parameterSelectionMinMax = useMemo(() => {
-    const parameterSelectionMin = draftState.parameterSelectionMin;
-    const parameterSelectionMax = draftState.parameterSelectionMax;
-    if (
-      parameterSelectionMin !== null &&
-      parameterSelectionMin !== undefined &&
-      parameterSelectionMax !== null &&
-      parameterSelectionMax !== undefined
-    ) {
-      return { min: parameterSelectionMin, max: parameterSelectionMax };
-    }
-    // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && isScenarioNewOut(scenarioData)) {
-      return {
-        min: scenarioData.parameter_range_min ?? 0,
-        max: scenarioData.parameter_range_max ?? 3,
-      };
-    }
-    // Use parameter_range_min and parameter_range_max directly from API response
-    const newDataForRanges = isScenarioNewOut(scenarioData)
-      ? scenarioData
-      : null;
-    if (newDataForRanges) {
-      const min = newDataForRanges.parameter_range_min;
-      const max = newDataForRanges.parameter_range_max;
-      if (
-        min !== null &&
-        min !== undefined &&
-        max !== null &&
-        max !== undefined
-      ) {
-        return {
-          min,
-          max,
-        };
-      }
-    }
-    return { min: 0, max: 3 };
-  }, [
-    draftState.parameterSelectionMin,
-    draftState.parameterSelectionMax,
-    scenarioData,
-  ]);
-  // fieldMinMax is now derived from URL params above
-
-  // Staged selections per department (preserved when departments are deselected)
-  type StagedSelections = {
-    persona_ids?: string[];
-    document_ids?: string[];
-    field_ids?: string[];
-  };
-  const [_stagedSelections, setStagedSelections] = useState<
-    Record<string, StagedSelections>
-  >({});
-  const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    []
-  );
-
-  // Build mappings from arrays (arrays are now the source of truth)
-  const fieldMapping = useMemo(() => {
-    if (!scenarioData) return {};
-    const fields =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.fields
-        : undefined;
-    const map: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        parameter_id: string;
-        parameter_name: string;
-        conditional_parameter_ids: string[];
-      }
-    > = {};
-    if (fields && Array.isArray(fields)) {
-      fields.forEach((f) => {
-        const field = f as {
-          field_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          parameter_id?: string | null;
-          parameter_name?: string | null;
-          conditional_parameter_ids?: Array<string | null> | null;
-        };
-        if (field.field_id) {
-          map[String(field.field_id)] = {
-            name: field.name || "",
-            description: field.description || "",
-            parameter_id: field.parameter_id ? String(field.parameter_id) : "",
-            parameter_name: field.parameter_name || "",
-            conditional_parameter_ids:
-              field.conditional_parameter_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-          };
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-
-  // Helper to get objective mapping from arrays
-  const getObjectiveMapping = useMemo(() => {
-    const map: Record<string, { name: string }> = {};
-    if (!scenarioData) return map;
-    const objectives =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.objectives
-        : undefined;
-    if (objectives && Array.isArray(objectives)) {
-      objectives.forEach((obj) => {
-        const objective = obj as {
-          objective_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-        };
-        if (objective.objective_id) {
-          map[String(objective.objective_id)] = {
-            name: objective.name || objective.description || "",
-          };
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-
-  // Helper functions to update draft state directly
-  const updatePersonaIds = useCallback(
-    (ids: string[] | ((prev: string[]) => string[])) => {
-      const newIds = typeof ids === "function" ? ids(selectedPersonaIds) : ids;
-      setDraftState((prev) => ({ ...prev, personaIds: newIds }));
-    },
-    [selectedPersonaIds]
-  );
-
-  const updateDocumentIds = useCallback(
-    (ids: string[] | ((prev: string[]) => string[])) => {
-      const newIds = typeof ids === "function" ? ids(currentDocumentIds) : ids;
-      setDraftState((prev) => ({ ...prev, documentIds: newIds }));
-    },
-    [currentDocumentIds]
-  );
-
-  const updateTemplateDocumentIds = useCallback(
-    (ids: string[] | ((prev: string[]) => string[])) => {
-      const newIds = typeof ids === "function" ? ids(templateDocumentIds) : ids;
-      setDraftState((prev) => ({ ...prev, templateDocumentIds: newIds }));
-    },
-    [templateDocumentIds]
-  );
-
-  const updateFieldIds = useCallback(
-    (ids: string[] | ((prev: string[]) => string[])) => {
-      const newIds = typeof ids === "function" ? ids(currentFieldIds) : ids;
-      setDraftState((prev) => ({ ...prev, fieldIds: newIds }));
-    },
-    [currentFieldIds]
-  );
-
-  const updateProblemStatementIds = useCallback(
-    (ids: string[] | ((prev: string[]) => string[])) => {
-      const newIds =
-        typeof ids === "function" ? ids(currentProblemStatementIds) : ids;
-      setDraftState((prev) => ({ ...prev, problemStatementIds: newIds }));
-    },
-    [currentProblemStatementIds]
-  );
-
-  const updateObjectiveIds = useCallback(
-    (ids: string[] | ((prev: string[]) => string[])) => {
-      const newIds = typeof ids === "function" ? ids(currentObjectiveIds) : ids;
-      setDraftState((prev) => ({ ...prev, objectiveIds: newIds }));
-    },
-    [currentObjectiveIds]
-  );
-
-  // Helper to update objectives (array in draft state)
-  const updateObjectives = useCallback(
-    (objectives: string[] | ((prev: string[]) => string[])) => {
-      const newObjectives =
-        typeof objectives === "function"
-          ? objectives(currentObjectives)
-          : objectives;
-      setDraftState((prev) => ({ ...prev, objectives: newObjectives }));
-    },
-    [currentObjectives]
-  );
-
-  // Helper to update videoLength (in draft state)
-  const updateVideoLength = useCallback((length: number | null) => {
-    // Validate length is 4, 8, or 12, or null
-    if (length !== null && ![4, 8, 12].includes(length)) {
-      return;
-    }
-    setDraftState((prev) => ({ ...prev, videoLength: length }));
-  }, []);
-
-  const updateFieldRanges = useCallback(
-    (
-      value:
-        | Record<string, { min: number; max: number }>
-        | ((
-            prev: Record<string, { min: number; max: number }>
-          ) => Record<string, { min: number; max: number }>)
-    ) => {
-      const newValue = typeof value === "function" ? value(fieldMinMax) : value;
-      setDraftState((prev) => ({ ...prev, fieldRanges: newValue }));
-    },
-    [fieldMinMax]
-  );
-
-  const handleGenerateAIScenario = useCallback(
-    async (body: GenerateAIScenarioBody): Promise<GenerateAIScenarioOut> => {
-      // TODO: Implement generation via API endpoint instead of WebSocket
-      throw new Error("Generation not yet implemented");
-    },
-    [
-      updateProblemStatementIds,
-      updateObjectiveIds,
-      updateDocumentIds,
-      basicInfoState,
-      useImage,
-      useVideo,
-      useObjectives,
-      useQuestions,
-      selectedVideoLength,
-    ]
-  );
-
-  // Helper function to build search params - imported from scenario-helpers.ts
-  const buildSearchParamsCallback = useCallback(() => {
-    return buildSearchParams({
-      draftState,
-      selectedPersonaIds,
-      currentDocumentIds,
-      templateDocumentIds,
-      currentFieldIds,
-      currentProblemStatementIds,
-      currentObjectiveIds,
-      personaSearchTerm,
-      documentSearchTerm,
-      parameterSearchTerm,
-      documentShowSelected,
-      documentShowTemplate,
-      personaShowSelected,
-      parameterShowSelected,
-      fieldShowSelectedByParam,
-      personaMinMax,
-      documentMinMax,
-      parameterSelectionMinMax,
-      fieldMinMax,
-      useObjectives,
-      useImage,
-      useVideo,
-      useQuestions,
-      useProblemStatement,
-      queryParamConfig,
-      searchParams,
-      problemStatement,
-      currentObjectives,
-      name,
-      isEditMode,
-      scenarioData,
-    });
-  }, [
-    draftState,
-    selectedPersonaIds,
-    currentDocumentIds,
-    templateDocumentIds,
-    currentFieldIds,
-    currentProblemStatementIds,
-    currentObjectiveIds,
-    personaSearchTerm,
-    documentSearchTerm,
-    parameterSearchTerm,
-    documentShowSelected,
-    documentShowTemplate,
-    personaShowSelected,
-    parameterShowSelected,
-    fieldShowSelectedByParam,
-    personaMinMax,
-    documentMinMax,
-    parameterSelectionMinMax,
-    fieldMinMax,
-    useObjectives,
-    useImage,
-    useVideo,
-    useQuestions,
-    useProblemStatement,
-    queryParamConfig,
-    searchParams,
-    problemStatement,
-    currentObjectives,
-    name,
-    isEditMode,
-    scenarioData,
-  ]);
-
-  // Convert arrays to lookup maps for performance (prefer arrays, fallback to mappings for backward compatibility)
-  const personaMapping = useMemo(() => {
-    if (!scenarioData || typeof scenarioData !== "object") return {};
-    const typedData = scenarioData as GetScenarioOut;
-    if (!("personas" in typedData)) return {};
-    const personas = typedData.personas;
-    const map: Record<
-      string,
-      {
-        persona_id: string | null;
-        name: string | null;
-        description: string | null;
-        color: string | null;
-        icon: string | null;
-        image_model: boolean | null;
-        parameter_ids: string[] | null;
-        field_ids: string[] | null;
-        example: string | null;
-      }
-    > = {};
-    if (personas && Array.isArray(personas) && personas.length > 0) {
-      personas.forEach((p) => {
-        const persona = p as {
-          persona_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          color?: string | null;
-          icon?: string | null;
-          image_model?: boolean | null;
-          parameter_ids?: Array<string | null> | null;
-          field_ids?: Array<string | null> | null;
-          example?: unknown;
-        };
-        if (persona.persona_id) {
-          map[String(persona.persona_id)] = {
-            persona_id: persona.persona_id,
-            name: persona.name || null,
-            description: persona.description || null,
-            color: persona.color || null,
-            icon: persona.icon || null,
-            image_model: persona.image_model ?? null,
-            parameter_ids:
-              persona.parameter_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || null,
-            field_ids:
-              persona.field_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || null,
-            example: (persona.example as string | null) || null,
-          };
-        }
-      });
-      return map;
-    }
-    // Fallback to empty object (no persona_mapping in new format)
-    return {};
-  }, [scenarioData]);
-
-  const documentMapping = useMemo((): Record<string, DocumentMappingItem> => {
-    // Use arrays directly (server is source of truth - arrays are guaranteed)
-    if (!scenarioData) return {};
-    const documents =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.documents
-        : undefined;
-    const map: Record<string, DocumentMappingItem> = {};
-    if (documents && Array.isArray(documents)) {
-      documents.forEach((d) => {
-        const doc = d as {
-          document_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          file_path?: string | null;
-          mime_type?: string | null;
-          parameter_ids?: Array<string | null> | null;
-          field_ids?: Array<string | null> | null;
-          parent_document_id?: string | null;
-        };
-        if (doc.document_id) {
-          const mappingItem: DocumentMappingItem = {
-            name: doc.name || "",
-            description: doc.description || "",
-            parameter_ids:
-              doc.parameter_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-            field_ids:
-              doc.field_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-            parent_document_id: doc.parent_document_id
-              ? String(doc.parent_document_id)
-              : null,
-          };
-          if (doc.file_path) {
-            mappingItem.filePath = doc.file_path;
-          }
-          if (doc.mime_type) {
-            mappingItem.mimeType = doc.mime_type;
-          }
-          map[String(doc.document_id)] = mappingItem;
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-
-  const parameterMapping = useMemo(() => {
-    // Use arrays directly (server is source of truth - arrays are guaranteed)
-    if (!scenarioData) return {};
-    const parameters =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.parameters
-        : undefined;
-    const map: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        numerical: boolean;
-        document_parameter: boolean;
-        persona_parameter: boolean;
-        scenario_parameter: boolean;
-        video_parameter: boolean;
-      }
-    > = {};
-    if (parameters && Array.isArray(parameters)) {
-      parameters.forEach((p) => {
-        const param = p as {
-          parameter_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          document_parameter?: boolean | null;
-          persona_parameter?: boolean | null;
-          scenario_parameter?: boolean | null;
-          video_parameter?: boolean | null;
-        };
-        if (param.parameter_id) {
-          map[String(param.parameter_id)] = {
-            name: param.name || "",
-            description: param.description || "",
-            numerical: false,
-            document_parameter: param.document_parameter || false,
-            persona_parameter: param.persona_parameter || false,
-            scenario_parameter: param.scenario_parameter || false,
-            video_parameter: param.video_parameter || false,
-          };
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-
-  // fieldMapping is defined above (before buildSearchParams) so it can be used there
-  const simulationMapping = useMemo(() => {
-    // Use arrays directly (server is source of truth - arrays are guaranteed)
-    // simulations only exist on ScenarioDetailOut
-    if (!scenarioData) return {};
-    const simulations = scenarioData.simulations;
-    const map: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        time_limit?: number | null;
-        department_ids: string[];
-      }
-    > = {};
-    if (simulations && Array.isArray(simulations)) {
-      simulations.forEach((s) => {
-        const sim = s as {
-          simulation_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          time_limit?: number | null;
-          department_ids?: Array<string | null> | null;
-        };
-        if (sim.simulation_id) {
-          map[String(sim.simulation_id)] = {
-            name: sim.name || "",
-            description: sim.description || "",
-            time_limit: sim.time_limit ?? null,
-            department_ids:
-              sim.department_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-          };
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-
-  const departmentMapping = useMemo(() => {
-    // Use arrays directly (server is source of truth - arrays are guaranteed)
-    if (!scenarioData) return {};
-    const departments =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.departments
-        : undefined;
-    const map: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        persona_ids: string[];
-        document_ids: string[];
-        parameter_ids: string[];
-        parameter_item_ids: string[];
-      }
-    > = {};
-    if (departments && Array.isArray(departments)) {
-      departments.forEach((d) => {
-        const dept = d as {
-          department_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          persona_ids?: Array<string | null> | null;
-          document_ids?: Array<string | null> | null;
-          parameter_ids?: Array<string | null> | null;
-          field_ids?: Array<string | null> | null;
-        };
-        if (dept.department_id) {
-          map[String(dept.department_id)] = {
-            name: dept.name || "",
-            description: dept.description || "",
-            persona_ids:
-              dept.persona_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-            document_ids:
-              dept.document_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-            parameter_ids:
-              dept.parameter_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-            parameter_item_ids:
-              dept.field_ids
-                ?.map((id) => String(id))
-                .filter(
-                  (id): id is string => id !== "null" && id !== "undefined"
-                ) || [],
-          };
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-
-  const agentMapping = useMemo(() => {
-    // Use arrays directly (server is source of truth - arrays are guaranteed)
-    if (!scenarioData) return {};
-    const agents =
-      isScenarioDetailOut(scenarioData) || isScenarioNewOut(scenarioData)
-        ? scenarioData.agents
-        : undefined;
-    const map: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        roles: string[];
-      }
-    > = {};
-    if (agents && Array.isArray(agents)) {
-      agents.forEach((a) => {
-        const agent = a as {
-          agent_id?: string | null;
-          name?: string | null;
-          description?: string | null;
-          roles?: Array<string | null> | null;
-        };
-        if (agent.agent_id) {
-          map[String(agent.agent_id)] = {
-            name: agent.name || "",
-            description: agent.description || "",
-            roles:
-              agent.roles?.filter(
-                (role): role is string => role !== null && role !== undefined
-              ) || [],
-          };
-        }
-      });
-    }
-    return map;
-  }, [scenarioData]);
-  // Merge server problem statement mapping with local versions (for create mode)
-  // IDs from database are unique, so just merge - local versions override server versions if same ID
-  const problemStatementMapping = useMemo(() => {
-    const data = scenarioData as ScenarioNewOut | null | undefined;
-    // Build mapping from problem_statements array
-    const serverMapping: Record<
-      string,
-      {
-        name: string;
-        problem_statement: string;
-        created_at: string;
-        updated_at: string;
-      }
-    > = {};
-    if (data?.problem_statements) {
-      data.problem_statements.forEach((ps) => {
-        if (ps.problem_statement_id) {
-          serverMapping[String(ps.problem_statement_id)] = {
-            name: ps.name || "", // Ensure name field exists
-            problem_statement: ps.problem_statement || "",
-            created_at: ps.created_at || "",
-            updated_at: ps.updated_at || "",
-          };
-        }
-      });
-    }
-
-    const localMapping: Record<
-      string,
-      {
-        name: string;
-        problem_statement: string;
-        created_at: string;
-        updated_at: string;
-      }
-    > = {};
-
-    // Convert local versions to ProblemStatementInfo format
-    localProblemStatementVersions.forEach((version) => {
-      localMapping[version.id] = {
-        name: "", // Local versions don't have name, use empty string as fallback
-        problem_statement: version.problem_statement,
-        created_at: version.created_at,
-        updated_at: version.updated_at,
-      };
-    });
-
-    // Simple merge: server versions + local versions (local takes precedence if same ID)
-    return { ...serverMapping, ...localMapping };
-  }, [scenarioData, localProblemStatementVersions]);
-
-  // Compute selected problem statement ID for picker (DHH-style: derive from state, not effects)
-  const selectedProblemStatementId = useMemo(() => {
-    // If we have IDs from URL, use the first one
-    if (currentProblemStatementIds.length > 0) {
-      return currentProblemStatementIds[0];
-    }
-    // Otherwise, find the ID that matches the current problem statement text
-    if (problemStatement && problemStatement.trim()) {
-      const matchingId = Object.entries(problemStatementMapping).find(
-        ([_id, info]) => info.problem_statement === problemStatement
-      )?.[0];
-      return matchingId;
-    }
-    return undefined;
-  }, [currentProblemStatementIds, problemStatement, problemStatementMapping]);
-
-  // Combine currentDocumentIds and templateDocumentIds for preview
-  // Filter out parent template documents if we have their children (dynamic documents)
-  // Also filter templateDocumentIds to exclude parents of children
-  const filteredTemplateDocumentIds = useMemo(() => {
-    // Get parent_document_id for each document in currentDocumentIds
-    const childParentIds = new Set<string>();
-    if (!scenarioData || typeof scenarioData !== "object") {
-      return templateDocumentIds;
-    }
-    const typedData = scenarioData as GetScenarioOut;
-    if (!("document_details" in typedData) || !typedData.document_details) {
-      return templateDocumentIds;
-    }
-    currentDocumentIds.forEach((docId) => {
-      const docDetail = typedData.document_details?.find(
-        (d) => d.document_id === docId
-      );
-      const parentId = (docDetail as { parent_document_id?: string })
-        ?.parent_document_id;
-      if (parentId) {
-        childParentIds.add(parentId);
-      }
-    });
-    // Filter out parent documents from templateDocumentIds if we have their children
-    return templateDocumentIds.filter((docId) => !childParentIds.has(docId));
-  }, [currentDocumentIds, templateDocumentIds, scenarioData]);
-
-  // For display: replace parent template documents with their children
-  // This ensures we show the actual dynamic document instead of the template
-  const allPreviewDocumentIds = useMemo(() => {
-    // Build a map of parent -> child for quick lookup
-    // Check ALL document_details, not just currentDocumentIds, to find children
-    const parentToChildMap = new Map<string, string>();
-    if (scenarioData?.document_details) {
-      scenarioData.document_details.forEach((docDetail) => {
-        const parentId = (docDetail as { parent_document_id?: string })
-          ?.parent_document_id;
-        if (parentId && docDetail.document_id) {
-          // If we already have a child for this parent, keep the most recent one
-          // (or we could keep the first one - either way, we just need one child)
-          if (!parentToChildMap.has(parentId)) {
-            parentToChildMap.set(parentId, docDetail.document_id);
-          }
-        }
-      });
-    }
-
-    // Start with all currentDocumentIds (includes children)
-    const result = [...currentDocumentIds];
-
-    // Replace any parent templates in currentDocumentIds with their children
-    const resultWithChildren = result.map((docId) => {
-      const childId = parentToChildMap.get(docId);
-      return childId || docId; // Use child if exists, otherwise keep original
-    });
-
-    // Add templateDocumentIds, but replace parents with their children if children exist
-    filteredTemplateDocumentIds.forEach((templateDocId) => {
-      const childId = parentToChildMap.get(templateDocId);
-      if (childId) {
-        // Parent has a child - use child instead
-        if (!resultWithChildren.includes(childId)) {
-          resultWithChildren.push(childId);
-        }
-      } else {
-        // No child exists - add template document
-        if (!resultWithChildren.includes(templateDocId)) {
-          resultWithChildren.push(templateDocId);
-        }
-      }
-    });
-
-    return resultWithChildren;
-  }, [
-    currentDocumentIds,
-    filteredTemplateDocumentIds,
-    scenarioData?.document_details,
-  ]);
-
-  // Extract image mapping from scenario_images array
-  type ImageMappingItem = {
-    id: string;
-    name: string;
-    upload_id?: string;
-    file_path?: string;
-    mime_type?: string;
-    created_at: string;
-    updated_at: string;
-  };
-  const imageMapping = useMemo((): Record<string, ImageMappingItem> => {
-    // Create mode: No images in initial state
-    const scenarioImages =
-      scenarioData && "scenario_images" in scenarioData
-        ? (
-            scenarioData as {
-              scenario_images?: Array<{
-                id?: string;
-                name?: string;
-                upload_id?: string;
-                file_path?: string;
-                mime_type?: string;
-                created_at?: string;
-                updated_at?: string;
-              }>;
-            }
-          ).scenario_images
-        : undefined;
-
-    if (!scenarioImages || !Array.isArray(scenarioImages)) {
-      return {};
-    }
-
-    const mapping: Record<string, ImageMappingItem> = {};
-
-    scenarioImages.forEach((img) => {
-      const imgTyped = img as {
-        id?: string;
-        name?: string;
-        upload_id?: string;
-        file_path?: string;
-        mime_type?: string;
-        created_at?: string;
-        updated_at?: string;
-      };
-      const imageId = imgTyped.upload_id || imgTyped.id;
-      if (imageId) {
-        const uploadId = imgTyped.upload_id || imgTyped.id;
-        const imageItem: ImageMappingItem = {
-          id: imageId,
-          name: imgTyped.name || "Untitled Image",
-          ...(uploadId ? { upload_id: uploadId } : {}),
-          ...(imgTyped.file_path ? { file_path: imgTyped.file_path } : {}),
-          ...(imgTyped.mime_type ? { mime_type: imgTyped.mime_type } : {}),
-          created_at: imgTyped.created_at || new Date().toISOString(),
-          updated_at: imgTyped.updated_at || new Date().toISOString(),
-        };
-        mapping[imageId] = imageItem;
-      }
-    });
-
-    return mapping;
-  }, [scenarioData]);
-
-  // Extract video mapping from scenario_videos array
-  type VideoMappingItem = {
-    id: string;
-    name: string;
-    length_seconds: number;
-    upload_id?: string;
-  };
-  const videoMapping = useMemo((): Record<string, VideoMappingItem> => {
-    // Create mode: No videos in initial state (videos are added via selection)
-    return {};
-  }, []);
-
-  // Filter objectives_history based on selected departments
-  const objectivesHistory = useMemo(() => {
-    if (
-      !scenarioData ||
-      typeof scenarioData !== "object" ||
-      !("objectives_history" in scenarioData)
-    ) {
-      return [];
-    }
-    const typedData = scenarioData as GetScenarioOut;
-    const rawHistory = typedData.objectives_history || [];
-    const selectedDeptIds = draftState.departmentIds || [];
-
-    // Convert to array of strings for autocomplete
-    const objectives: string[] = [];
-
-    // If no departments selected, return all objectives
-    if (selectedDeptIds.length === 0) {
-      rawHistory.forEach((obj) => {
-        if (typeof obj === "string") {
-          objectives.push(obj);
-        } else if (obj && typeof obj === "object") {
-          const objWithDept = obj as {
-            objective: string;
-            department_ids?: string[];
-          };
-          if ("objective" in objWithDept) {
-            objectives.push(objWithDept.objective);
-          }
-        }
-      });
-      return objectives;
-    }
-
-    // Filter objectives that:
-    // 1. Have department_ids that intersect with selected departments
-    // 2. Are cross-department (empty department_ids array)
-    rawHistory.forEach((obj) => {
-      // Handle both new format (object with department_ids) and legacy format (string)
-      if (typeof obj === "string") {
-        objectives.push(obj); // Legacy format - include all
-      } else if (obj && typeof obj === "object") {
-        const objWithDept = obj as {
-          objective: string;
-          department_ids?: string[];
-        };
-        if ("objective" in objWithDept) {
-          const deptIds = objWithDept.department_ids || [];
-          // Include if cross-department (empty) or has intersection with selected departments
-          if (
-            deptIds.length === 0 ||
-            deptIds.some((id: string) => selectedDeptIds.includes(id))
-          ) {
-            objectives.push(objWithDept.objective);
-          }
-        }
-      }
-    });
-
-    return objectives;
-  }, [scenarioData, draftState.departmentIds]);
-
-  // Use server-provided filtered valid IDs (replacing client-side filtering)
-  // Server now handles all filtering logic based on query parameters
-  const validPersonaIds = useMemo(() => {
-    if (
-      !scenarioData ||
-      typeof scenarioData !== "object" ||
-      !("valid_persona_ids" in scenarioData)
-    ) {
-      return [];
-    }
-    const typedData = scenarioData as GetScenarioOut;
-    return typedData.valid_persona_ids || [];
-  }, [scenarioData]);
-
-  // Use server-provided filtered valid document IDs
-  const validDocumentIds = useMemo(() => {
-    if (
-      !scenarioData ||
-      typeof scenarioData !== "object" ||
-      !("valid_document_ids" in scenarioData)
-    ) {
-      return [];
-    }
-    const typedData = scenarioData as GetScenarioOut;
-    return typedData.valid_document_ids || [];
-  }, [scenarioData]);
-
-  // Use server-provided filtered valid parameter item IDs
-  const validParameterItemIds = useMemo(() => {
-    // Use server-provided filtered IDs if available, otherwise fall back to mapping keys
-    if (
-      scenarioData &&
-      typeof scenarioData === "object" &&
-      "valid_field_ids" in scenarioData &&
-      scenarioData.valid_field_ids
-    ) {
-      const typedData = scenarioData as GetScenarioOut;
-      return typedData.valid_field_ids;
-    }
-    // Fallback for backward compatibility
-    return Object.keys(fieldMapping || {});
-  }, [scenarioData, fieldMapping]);
-
-  // Use server-provided filtered valid general parameter item IDs
-  const validGeneralParameterItemIds = useMemo(() => {
-    // Use server-provided filtered IDs (valid_field_ids exists on both types)
-    // Fallback for backward compatibility
-    return validParameterItemIds;
-  }, [validParameterItemIds]);
-
-  const generalParameterMapping = useMemo(() => {
-    // Top parameter selection is the source of truth for section 4
-    // Show all selected parameters (or none if empty), regardless of whether they have fields
-    // This allows debugging - parameters with 0 fields will still be visible
-    const selectedParamIds = draftState.parameterIds || [];
-    const conditionalParamIds = new Set<string>();
-
-    // Get conditional parameters from currently selected fields
-    currentFieldIds.forEach((fieldId) => {
-      const field = fieldMapping[fieldId];
-      if (field?.conditional_parameter_ids) {
-        field.conditional_parameter_ids.forEach((paramId: string) =>
-          conditionalParamIds.add(paramId)
-        );
-      }
-    });
-
-    // If no parameters selected, show no parameters (empty means "none")
-    if (selectedParamIds.length === 0) {
-      // Only include conditional parameters if any fields are selected
-      if (conditionalParamIds.size === 0) {
-        return {};
-      }
-      // Include conditional parameters even if no parameters explicitly selected
-      const filtered: typeof parameterMapping = {};
-      Object.keys(parameterMapping).forEach((paramId) => {
-        if (conditionalParamIds.has(paramId)) {
-          const param = parameterMapping[paramId];
-          if (param) {
-            filtered[paramId] = param;
-          }
-        }
-      });
-      return filtered;
-    }
-
-    // Parameters are selected - include all selected parameters and conditional ones
-    // Include them even if they have 0 fields (for debugging/visibility)
-    const filtered: typeof parameterMapping = {};
-    Object.keys(parameterMapping).forEach((paramId) => {
-      if (
-        selectedParamIds.includes(paramId) ||
-        conditionalParamIds.has(paramId)
-      ) {
-        const param = parameterMapping[paramId];
-        if (param) {
-          filtered[paramId] = param;
-        }
-      }
-    });
-    return filtered;
-  }, [
-    parameterMapping,
-    draftState.parameterIds,
-    currentFieldIds,
-    fieldMapping,
-  ]);
-
-  // Track department changes and manage staged selections
-  useEffect(() => {
-    const currentDeptIds = draftState.departmentIds || [];
-    const prevDeptIds = previousDepartmentIds || [];
-
-    // Skip if no change (initial load or same selection)
-    if (
-      currentDeptIds.length === prevDeptIds.length &&
-      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
-    ) {
-      // Initialize on first load
-      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
-        setPreviousDepartmentIds(currentDeptIds);
-      }
-      return;
-    }
-
-    // Find departments that were deselected
-    const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
-    );
-
-    // Find departments that were newly selected
-    const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
-    );
-
-    // Save selections for deselected departments
-    if (deselectedDepts.length > 0) {
-      setStagedSelections((prev) => {
-        const updated = { ...prev };
-        deselectedDepts.forEach((deptId) => {
-          updated[deptId] = {
-            persona_ids: selectedPersonaIds,
-            document_ids: [...currentDocumentIds],
-            field_ids: [...currentFieldIds],
-          };
-        });
-        return updated;
-      });
-    }
-
-    // Restore selections for newly selected departments
-    if (newlySelectedDepts.length > 0) {
-      setStagedSelections((prev) => {
-        newlySelectedDepts.forEach((deptId) => {
-          const staged = prev[deptId];
-          if (staged) {
-            // Restore persona if valid
-            if (staged.persona_ids && staged.persona_ids.length > 0) {
-              // Restore personas that are still valid
-              const validPersonaSet = new Set(validPersonaIds);
-              const validPersonas = staged.persona_ids.filter((id) =>
-                validPersonaSet.has(id)
-              );
-              if (validPersonas.length > 0) {
-                updatePersonaIds((prevPersonas) => {
-                  // Merge staged personas with existing ones, deduplicate
-                  const combined = new Set([...prevPersonas, ...validPersonas]);
-                  return Array.from(combined);
-                });
-              }
-            }
-
-            // Restore documents if valid
-            if (staged.document_ids && staged.document_ids.length > 0) {
-              const validDocSet = new Set(validDocumentIds);
-              const validDocs = staged.document_ids.filter((id) =>
-                validDocSet.has(id)
-              );
-              if (validDocs.length > 0) {
-                updateDocumentIds((prevDocs) => {
-                  // Deduplicate when merging staged documents back
-                  const combined = new Set([...prevDocs, ...validDocs]);
-                  return Array.from(combined);
-                });
-              }
-            }
-
-            // Restore parameter items if valid
-            if (staged.field_ids && staged.field_ids.length > 0) {
-              const validParamSet = new Set(validParameterItemIds);
-              const validParams = staged.field_ids.filter((id) =>
-                validParamSet.has(id)
-              );
-              if (validParams.length > 0) {
-                updateFieldIds((prevParams) => {
-                  const combined = new Set([...prevParams, ...validParams]);
-                  return Array.from(combined);
-                });
-              }
-            }
-          }
-        });
-        return prev; // Return unchanged since we're using separate setters
-      });
-    }
-
-    // Update previous department IDs
-    setPreviousDepartmentIds(currentDeptIds);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftState.departmentIds,
-    previousDepartmentIds,
-    selectedPersonaIds,
-    currentDocumentIds,
-    currentFieldIds,
-    validPersonaIds,
-    validDocumentIds,
-    validParameterItemIds,
-    // updatePersonaIds, updateDocumentIds, updateFieldIds intentionally omitted to prevent infinite loops
-  ]);
-
-  // Clean up staged selections for departments that are no longer valid
-  useEffect(() => {
-    // valid_department_ids exists on ScenarioNewOut
-    const newDataForDepts =
-      scenarioData && isScenarioNewOut(scenarioData)
-        ? (scenarioData as ScenarioNewOut)
-        : null;
-    const validDeptIdsArray =
-      newDataForDepts &&
-      "valid_department_ids" in newDataForDepts &&
-      newDataForDepts.valid_department_ids
-        ? (newDataForDepts.valid_department_ids as string[]).map(String)
-        : [];
-    const validDeptIds = new Set(validDeptIdsArray);
-    setStagedSelections((prev) => {
-      const cleaned: Record<string, StagedSelections> = {};
-      Object.keys(prev).forEach((deptId) => {
-        if (validDeptIds.has(deptId) && prev[deptId]) {
-          cleaned[deptId] = prev[deptId];
-        }
-      });
-      return cleaned;
-    });
-  }, [scenarioData]);
-
-  // Clear selections when they become invalid after department changes
-  // (but preserve cross-department entities and staged selections)
-  useEffect(() => {
-    // Clear personas that are no longer valid
-    // BUT: Skip cleanup if filters are active - selected personas might be filtered out temporarily
-    // Only clean up when filters are NOT active (to avoid clearing selections due to UI filters)
-    if (selectedPersonaIds.length > 0 && !personaShowSelected) {
-      const validSet = new Set(validPersonaIds);
-      const filtered = selectedPersonaIds.filter((id) => validSet.has(id));
-      if (filtered.length !== selectedPersonaIds.length) {
-        updatePersonaIds(filtered);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPersonaIds, validPersonaIds, personaShowSelected]); // updatePersonaIds intentionally omitted
-
-  useEffect(() => {
-    // Clear documents that are no longer valid
-    // BUT: Skip cleanup if filters are active - selected documents might be filtered out temporarily
-    // Only clean up when filters are NOT active (to avoid clearing selections due to UI filters)
-    if (
-      currentDocumentIds.length > 0 &&
-      !documentShowSelected &&
-      !documentShowTemplate
-    ) {
-      const validSet = new Set(validDocumentIds);
-      const filtered = currentDocumentIds.filter((id) => validSet.has(id));
-      if (filtered.length !== currentDocumentIds.length) {
-        updateDocumentIds(filtered);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    currentDocumentIds,
-    validDocumentIds,
-    documentShowSelected,
-    documentShowTemplate,
-  ]); // updateDocumentIds intentionally omitted
-
-  // Initialize/update scenarioPreviewDocumentId when allPreviewDocumentIds changes
-  // Use allPreviewDocumentIds (not currentDocumentIds) because it already handles parent->child replacement
-  // This ensures we preview the actual child document instead of the parent template
-  useEffect(() => {
-    if (allPreviewDocumentIds.length > 0) {
-      // If current preview is not in the preview documents, or no preview is set, select the first one
-      const firstDocId = allPreviewDocumentIds[0];
-      if (
-        !contentState.scenarioPreviewDocumentId ||
-        (firstDocId &&
-          !allPreviewDocumentIds.includes(
-            contentState.scenarioPreviewDocumentId
-          ))
-      ) {
-        setContentState((prev) => ({
-          ...prev,
-          scenarioPreviewDocumentId: firstDocId || null,
-        }));
-      }
-    } else {
-      // No documents selected, clear preview
-      setContentState((prev) => ({
-        ...prev,
-        scenarioPreviewDocumentId: null,
-      }));
-    }
-  }, [allPreviewDocumentIds, contentState.scenarioPreviewDocumentId]);
-
-  // Note: Document/persona parameter syncing removed - parameters are now selected independently
-  // Filtering happens automatically via validGeneralParameterItemIds based on selected personas/documents
-
-  useEffect(() => {
-    // Clear parameter items (fields) that are no longer valid
-    // BUT: Skip cleanup if any parameter's filter is active - selected fields might be filtered out temporarily
-    // Only clean up when filters are NOT active (to avoid clearing selections due to UI filters)
-    const hasAnyFieldFilterActive = Object.values(
-      fieldShowSelectedByParam
-    ).some(Boolean);
-    if (currentFieldIds.length > 0 && !hasAnyFieldFilterActive) {
-      const validSet = new Set(validParameterItemIds);
-      const filtered = currentFieldIds.filter((id) => validSet.has(id));
-      if (filtered.length !== currentFieldIds.length) {
-        updateFieldIds(filtered);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFieldIds, validParameterItemIds, fieldShowSelectedByParam]); // updateFieldIds intentionally omitted
-
-  // Note: problemStatementIds, objectiveIds, and templateDocumentIds are now derived from URL params
-  // No need for sync effects - they're automatically synced via nuqs
-
-  // Note: name, problemStatement, objectives, and videoLength are now managed by nuqs
-  // No manual URL sync effects needed - nuqs handles URL sync automatically
-
-  // Don't auto-select images - user must explicitly choose or upload via picker
-
-  // Populate currentObjectives from currentObjectiveIds when objective_mapping becomes available
-  // This handles the case where objectiveIds are loaded from URL before scenarioData is available
-  // BUT: Only if URL doesn't have objectives text (text takes priority over IDs)
-  useEffect(() => {
-    // Check if URL has objectives text - if so, don't populate from IDs
-    const objectivesParam = searchParams.get("objectives");
-    if (objectivesParam) {
-      // URL has objectives text - don't override with IDs
-      return;
-    }
-
-    // No URL text - populate from IDs if available
-    if (
-      currentObjectiveIds.length > 0 &&
-      Object.keys(getObjectiveMapping).length > 0
-    ) {
-      const objectivesFromIds = getObjectivesFromMapping(
-        currentObjectiveIds,
-        getObjectiveMapping
-      );
-      // Only update if different (avoid unnecessary re-renders)
-      const currentObjectivesString = JSON.stringify(contentState.objectives);
-      const newObjectivesString = JSON.stringify(objectivesFromIds);
-      if (currentObjectivesString !== newObjectivesString) {
-        updateObjectives(objectivesFromIds);
-        setContentState((prev) => ({ ...prev, objectives: objectivesFromIds }));
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentObjectiveIds, getObjectiveMapping, searchParams]);
-
-  // Debounce timeout ref for URL updates
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Track last params string to prevent duplicate updates
-  const lastParamsStringRef = useRef<string>("");
-  // Track if we're currently resetting to prevent buildSearchParams from interfering
-  const isResettingRef = useRef<boolean>(false);
-
-  // Helper to normalize URLSearchParams for comparison (sort keys and values)
-  const normalizeParamsString = (params: URLSearchParams): string => {
-    const sorted = Array.from(params.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join("&");
-    return sorted;
-  };
-
-  // Update URL params when selections change (for server-driven filtering)
-  // Follows analytics pattern: Form state → URL → router.refresh() → Server re-fetch → Filtered data
-  // Server already parses URL params and returns filtered data, so no need for URL → Form sync
-  useEffect(() => {
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Debounce URL updates (100ms, like analytics)
-    // Skip if we're currently resetting (prevents re-adding params that were just cleared)
-    debounceTimeoutRef.current = setTimeout(() => {
-      // Skip buildSearchParams if we're resetting - let reset handlers manage URL directly
-      if (isResettingRef.current) {
-        return;
-      }
-
-      const newParams = buildSearchParamsCallback();
-      const newParamsString = normalizeParamsString(newParams);
-      const currentParamsString = normalizeParamsString(searchParams);
-
-      // Only update URL if params actually changed (prevents unnecessary updates and loops)
-      if (
-        newParamsString !== currentParamsString &&
-        newParamsString !== lastParamsStringRef.current
-      ) {
-        lastParamsStringRef.current = newParamsString;
-        router.replace(`${pathname}?${newParams.toString()}`, {
-          scroll: false,
-        });
-        // Force server components to re-render with updated search params (like analytics)
-        router.refresh();
-      }
-    }, 100);
-
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-    // Remove buildSearchParams from dependencies - it's already covered by its own dependencies
-    // Remove searchParams and router from dependencies to prevent loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    draftState.departmentIds,
-    selectedPersonaIds,
-    currentDocumentIds,
-    templateDocumentIds,
-    draftState.parameterIds,
-    currentFieldIds, // Renamed from currentParameterItemIds
-    currentProblemStatementIds,
-    currentObjectiveIds,
-    personaSearchTerm,
-    documentSearchTerm,
-    parameterSearchTerm,
-    documentShowSelected,
-    documentShowTemplate,
-    personaShowSelected,
-    parameterShowSelected,
-    fieldShowSelectedByParam,
-    personaMinMax,
-    documentMinMax,
-    parameterSelectionMinMax,
-    fieldMinMax,
-    useObjectives, // Include useObjectives to trigger URL updates when useObjectives changes
-    useImage, // Include useImage to trigger URL updates when useImage changes
-    useVideo, // Include useVideo to trigger URL updates when useVideo changes
-    useQuestions, // Include useQuestions to trigger URL updates when useQuestions changes
-    problemStatement, // Include problemStatement to trigger URL updates when text changes
-    currentObjectives, // Include objectives to trigger URL updates when text changes
-    name, // Include name to trigger URL updates when text changes
-    pathname,
-  ]);
-
-  // Load scenario data from V2 response
-  useEffect(() => {
-    // Initialize from scenarioData (only once)
-    if (scenarioData && !formDataInitializedRef.current) {
-      // Resource-first: Don't initialize name/problemStatement/objectives in draftState
-      // These are managed via formState resource IDs only
-      const newData = isScenarioNewOut(scenarioData)
-        ? (scenarioData as ScenarioNewOut)
-        : null;
-
-      // Create mode: Initialize basic info state from server defaults
-      if (newData) {
-        setBasicInfoState({
-          scenarioDomainId: newData.scenario_domain_id || null,
-          imageDomainId: newData.image_domain_id || null,
-          videoDomainId: null,
-          active: true, // Default for create mode
-        });
-      }
-      formDataInitializedRef.current = true;
-    }
-  }, [scenarioData]);
-
-  // Problem statement ID is now managed via URL parameters, not state
-
-  // Note: getScenarioAgentRole and expectedScenarioRole removed - scenarios now always use base 'scenario' role
-
-  // Reset initialization flag when scenario data changes
-  useEffect(() => {
-    formDataInitializedRef.current = false;
-  }, [scenarioData]);
-
-  // Note: Domain ID validation removed - domains are already validated by artifact type
-  // No need to check agent roles since domain IDs are already scoped to the correct artifact
-
-  // Auto-select domains when there's only one option (similar to Document.tsx)
-  // Note: This assumes the API returns domain IDs in scenario_domain_id, image_domain_id, video_domain_id fields
-  // If the API still returns agent IDs, this will need to be updated to look up domain IDs from agent IDs
-  useEffect(() => {
-    if (!scenarioData) return;
-
-    // Auto-select scenario domain if only one option and not already set
-    // TODO: Update this when API returns valid_domain_ids instead of valid_agent_ids
-    if (scenarioData.scenario_domain_id && !basicInfoState.scenarioDomainId) {
-      setBasicInfoState((prev) => ({
-        ...prev,
-        scenarioDomainId: scenarioData.scenario_domain_id || null,
-      }));
-    }
-
-    // Auto-select image domain if only one option and not already set
-    if (scenarioData.image_domain_id && !basicInfoState.imageDomainId) {
-      setBasicInfoState((prev) => ({
-        ...prev,
-        imageDomainId: scenarioData.image_domain_id || null,
-      }));
-    }
-
-    // Auto-select video domain if only one option and not already set
-    // Note: video_domain_id may not exist on ScenarioNewOut, skip for create mode
-  }, [
-    scenarioData,
-    basicInfoState.scenarioDomainId,
-    basicInfoState.imageDomainId,
-    basicInfoState.videoDomainId,
-  ]);
-
-  // Store original name and problemStatement for change tracking (from server data)
-  // No original state tracking needed for create mode
-
-  // No hasChanges check needed for create mode
-
-  // Disabled logic based on can_edit flag - standardized for all resource components
-  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
-  const disabled = useMemo(() => {
-    if (!scenarioData) return false;
-    // can_edit exists on GetScenarioOut (unified response)
-    if ("can_edit" in scenarioData) {
-      return !scenarioData.can_edit;
-    }
-    return false;
-  }, [scenarioData]);
-
-  // Alias for backward compatibility during migration
-  const isReadonly = disabled;
-
-  // No breadcrumb context needed for create mode (only needed in edit mode)
-
-  // Calculate step status for GenericForm
-  // Note: formData parameter is urlParams (search/filter only), but status is calculated from formState (resource IDs)
-  const getStepStatus = useCallback(
-    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // Resource-first: Check resource objects, not legacy state
-      if (problemStatement && problemStatement.trim()) {
-        return "completed";
-      }
-
-      switch (stepId) {
-        case "basic":
-          // Check resource IDs from formState
-          return formState.name_id ? "completed" : "active";
-        case "persona":
-          // Can start immediately, doesn't depend on name
-          return selectedPersonaIds.length > 0 ? "completed" : "active";
-        case "documents":
-          return selectedPersonaIds.length === 0
-            ? "pending"
-            : currentDocumentIds.length > 0
-              ? "completed"
-              : "active";
-        case "parameters":
-          return selectedPersonaIds.length === 0
-            ? "pending"
-            : (draftState.parameterIds || []).length > 0
-              ? "completed"
-              : "active";
-        case "content":
-          // Check resource IDs from formState
-          const hasProblemStatement = !!formState.problem_statement_id;
-          const hasObjectives =
-            formState.objective_ids && formState.objective_ids.length > 0;
-          return selectedPersonaIds.length === 0
-            ? "pending"
-            : hasProblemStatement || hasObjectives
-              ? "completed"
-              : "active";
-        default:
-          // Handle individual parameter steps (parameter-{paramId})
-          if (stepId.startsWith("parameter-")) {
-            const paramId = stepId.replace("parameter-", "");
-            const paramItems = currentFieldIds.filter(
-              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
-            );
-            return selectedPersonaIds.length === 0
-              ? "pending"
-              : paramItems.length > 0
-                ? "completed"
-                : "active";
-          }
-          return "pending";
-      }
-    },
-    [
-      problemStatement,
-      selectedPersonaIds,
-      currentDocumentIds,
-      currentFieldIds,
-      fieldMapping,
-      formState.name_id,
-      formState.problem_statement_id,
-      formState.objective_ids,
-      draftState.parameterIds,
-    ]
-  );
-
-  // Steps configuration for GenericForm
   const steps = useMemo(
     () => [
       {
         id: "basic",
         title: "Basic Information",
         description:
-          "Set scenario name, departments, agents, and active status.",
-        resetFields: [
-          "name",
-          "departmentIds",
-          "scenarioDomainId",
-          "imageDomainId",
-          "videoDomainId",
-          "active",
-        ],
+          "Set the scenario name, description, departments, and active status.",
+        resetFields: ["name", "description", "departments"],
       },
       {
-        id: "persona",
-        title: "Persona Selection",
-        description: "Select personas for this scenario.",
-        resetFields: ["personaIds"],
-        filters: [{ key: "personaShowSelected", label: "Show selected" }],
+        id: "configuration",
+        title: "Configuration",
+        description: "Enable or disable scenario features.",
+        resetFields: ["configuration"],
       },
-      {
-        id: "documents",
-        title: "Document Selection",
-        description: "Select documents and templates for this scenario.",
-        resetFields: ["documentIds", "templateDocumentIds"],
-        filters: [
-          { key: "documentShowSelected", label: "Show selected" },
-          { key: "documentShowTemplate", label: "Show templates" },
-        ],
-      },
-      {
-        id: "parameters",
-        title: "Parameter Selection",
-        description: "Select parameters for this scenario.",
-        resetFields: ["parameterIds"],
-        filters: [{ key: "parameterShowSelected", label: "Show selected" }],
-      },
-      // Dynamic parameter item steps added via contentSections
       {
         id: "content",
         title: "Content",
-        description:
-          "Define problem statement, objectives, images, videos, and questions.",
-        resetFields: [
-          "problem_statement_id",
-          "objective_ids",
-          "useImage",
-          "useVideo",
-          "useObjectives",
-          "useQuestions",
-          "useProblemStatement",
-        ],
+        description: "Define the problem statement and learning objectives.",
+        resetFields: ["problem_statement", "objectives"],
       },
       {
-        id: "preview",
-        title: "Preview",
-        description: "Preview scenario messages, hints, and documents.",
-        resetFields: [],
+        id: "resources",
+        title: "Resources",
+        description: "Select personas, documents, templates, parameters, fields.",
+        resetFields: ["resources"],
+      },
+      {
+        id: "media",
+        title: "Media & Questions",
+        description: "Select images, videos, and questions.",
+        resetFields: ["media"],
       },
     ],
     []
   );
 
-  // Content sections will be defined after renderStep (see below)
-
-  // Form initialization function for GenericForm
-  // Create mode: Returns empty object (form fields are handled via formState resource IDs)
-  const initializeForm = useCallback(
-    (_serverData: unknown, _editMode: boolean) => {
-      // Resource-first: Don't initialize name/problemStatement/objectives in draftState
-      // These are managed via formState resource IDs only
-      // Return empty object for GenericForm compatibility
-      return {};
-    },
+  const formFieldKeys = useMemo(
+    () => [
+      "draftId",
+      "personaSearch",
+      "documentSearch",
+      "parameterSearch",
+      "personaShowSelected",
+      "documentShowSelected",
+      "parameterShowSelected",
+    ],
     []
   );
 
-  const handleResetParameter = useCallback(
-    (paramId: string) => {
-      try {
-        // Get default min/max for this parameter from server or use defaults
-        // field_ranges is an array on ScenarioDetailOut, not an object
-        // For create mode, we don't have field_ranges, so use defaults
-        const defaultMin = 1;
-        const defaultMax = 3;
-
-        // Set resetting flag to prevent buildSearchParams from interfering
-        isResettingRef.current = true;
-
-        // Remove this parameter's items from URL params and local state
-        const currentParamItems = currentFieldIds.filter(
-          (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-        );
-
-        // Build URL updates - clear field IDs and range params for this parameter
-        const urlUpdates: Record<string, string | string[] | null> = {
-          fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
-        };
-        // Clear range params for this parameter
-        urlUpdates[`fieldMin_${paramId}`] = null;
-        urlUpdates[`fieldMax_${paramId}`] = null;
-
-        // Clear draft state (form fields are in draft state, not URL params)
-        handleInputChange("fieldIds", null);
-        // Clear dynamic field range params manually
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete(`fieldMin_${paramId}`);
-        params.delete(`fieldMax_${paramId}`);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-
-        // Update local state after URL update completes (next frame)
-        requestAnimationFrame(() => {
-          // Reset local state for this parameter's range
-          updateFieldRanges((prev) => ({
-            ...prev,
-            [paramId]: { min: defaultMin, max: defaultMax },
-          }));
-          // Update local state - remove this parameter's fields
-          updateFieldIds(currentParamItems);
-          // Refresh after state updates to get fresh server data
-          router.refresh();
-          // Reset flag after refresh completes
-          setTimeout(() => {
-            isResettingRef.current = false;
-          }, 200);
-        });
-
-        toast.success(
-          `${generalParameterMapping[paramId]?.name || "Parameter"} reset`
-        );
-      } catch {
-        isResettingRef.current = false;
-        toast.error("Failed to reset parameter");
-      }
-    },
-    [
-      currentFieldIds,
-      fieldMapping,
-      handleInputChange,
-      searchParams,
-      router,
-      pathname,
-      updateFieldRanges,
-      updateFieldIds,
-      generalParameterMapping,
-    ]
+  const submitButton = useMemo(
+    () => ({
+      backUrl: "/create/scenarios",
+      backLabel: "Back",
+      createLabel: "Save Scenario",
+      updateLabel: "Save Scenario",
+    }),
+    []
   );
 
-  // Document removal handler - removes document from selection
-  const handleDocumentRemove = useCallback(
-    (docId: string) => {
-      // Check if document is in currentDocumentIds (could be regular or child document)
-      if (currentDocumentIds.includes(docId)) {
-        updateDocumentIds((prev) => prev.filter((id) => id !== docId));
-      }
-      // Check if document is in templateDocumentIds (template document)
-      if (templateDocumentIds.includes(docId)) {
-        updateTemplateDocumentIds((prev) => prev.filter((id) => id !== docId));
-      }
-      // Note: URL params are automatically updated via useEffect that watches currentDocumentIds and templateDocumentIds
-    },
-    [
-      currentDocumentIds,
-      templateDocumentIds,
-      updateDocumentIds,
-      updateTemplateDocumentIds,
-    ]
-  );
-
-  // Helper functions removed - filtering now handled by server
-
-  const handleResetContent = useCallback(() => {
-    try {
-      // Clear problem statement and turn off objectives
-      handleInputChange("problemStatement", null);
-      // Clear objectives array via contentState
-      setContentState((prev) => ({ ...prev, objectives: [] }));
-      // Clear selected problem statement ID
-      toast.success("Scenario content reset");
-    } catch {
-      toast.error("Failed to reset content");
-    }
-  }, [handleInputChange, setContentState]);
-
-  const handleProblemStatementVersionSelect = useCallback(
-    (id: string) => {
-      if (id && problemStatementMapping[id]) {
-        handleInputChange(
-          "problemStatement",
-          problemStatementMapping[id].problem_statement
-        );
-      }
-    },
-    [problemStatementMapping, handleInputChange]
-  );
-
-  // Note: Objective, question, option, and image/video handlers are now in ContentSection
-
-  const handleImageUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file");
-        return;
-      }
-
-      setIsUploadingImage(true);
-      const toastId = toast.loading(`Uploading image: ${file.name}`, {
-        description: "0% complete",
-        dismissible: true,
-      });
-
-      try {
-        // Generate a unique fileId for tracking
-        const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-        let tusUploadInstance: tus.Upload | null = null;
-        // Create TUS upload
-        tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/uploads/upload`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          metadata: {
-            filename: file.name,
-            filetype: file.type,
-            fileId: fileId,
-          },
-          onError: (error) => {
-            toast.error(`Upload failed: ${file.name}`, {
-              description: error.message || "An error occurred during upload",
-              id: toastId,
-            });
-            setIsUploadingImage(false);
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
-            toast.loading(`Uploading image: ${file.name}`, {
-              description: `${percentage}% complete`,
-              id: toastId,
-            });
-          },
-          onSuccess: async () => {
-            // Extract TUS upload_id from upload URL
-            const uploadUrl = tusUploadInstance?.url || "";
-            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
-            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
-              toast.error("Failed to extract upload ID from upload URL", {
-                id: toastId,
-              });
-              setIsUploadingImage(false);
-              return;
-            }
-            const tusUploadId = tusUploadIdMatch[1];
-
-            // Finalize upload to get database upload_id
-            try {
-              const finalizeResponse = await fetch(
-                `/api/uploads/upload/${tusUploadId}/finalize`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({}),
-                }
-              );
-
-              const finalizeResult = await finalizeResponse.json();
-
-              if (!finalizeResult.success || !finalizeResult.upload_id) {
-                throw new Error(
-                  finalizeResult.message || "Failed to finalize upload"
-                );
-              }
-
-              const databaseUploadId = finalizeResult.upload_id;
-
-              // Store upload_id directly (no image creation needed)
-              // Image will be linked to scenario when form is submitted
-              setContentState((prev) => ({
-                ...prev,
-                image: {
-                  id: databaseUploadId, // Use upload_id as id
-                  name: file.name,
-                  upload_id: databaseUploadId,
-                },
-              }));
-              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-            } catch (finalizeError) {
-              toast.error(
-                `Failed to finalize upload: ${
-                  finalizeError instanceof Error
-                    ? finalizeError.message
-                    : "Unknown error"
-                }`,
-                { id: toastId }
-              );
-            } finally {
-              setIsUploadingImage(false);
-            }
-          },
-        });
-
-        tusUploadInstance.start();
-      } catch (error) {
-        toast.error(
-          `Failed to upload image: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-          {
-            id: toastId,
-          }
-        );
-        setIsUploadingImage(false);
-      }
-
-      // Reset input
-      e.target.value = "";
-    },
-    [setContentState]
-  );
-
-  const handleGenerateScenario = useCallback(
-    async (
-      userInstructions?: string,
-      _shouldRegenerateObjectives?: boolean
-    ) => {
-      setIsGeneratingScenario(true);
-
-      try {
-        // Get department ID from first valid department
-        const departmentId = effectiveProfile?.primary_department_id || "";
-        if (!departmentId) {
-          throw new Error("No valid department found");
-        }
-
-        const result = await handleGenerateAIScenario({
-          departmentId,
-          personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-          documentIds:
-            currentDocumentIds.length > 0 ? currentDocumentIds : null,
-          fieldIds: currentFieldIds.length > 0 ? currentFieldIds : null,
-          profileId: effectiveProfile?.id || null,
-          userInstructions: userInstructions || null,
-          objectivesEnabled: useObjectives,
-          imagesEnabled: useImage,
-          videoEnabled: useVideo,
-          questionsEnabled: useQuestions,
-        });
-
-        if (!result.success) {
-          throw new Error(result.message || "Failed to generate scenario");
-        }
-
-        // Handle generated IDs from tool completion events
-        // Note: Document IDs are already updated in real-time via handleDocumentComplete
-        // This is just for showing success message
-        if (result.document_ids && result.document_ids.length > 0) {
-          toast.success(
-            `Created ${result.document_ids.length} dynamic document(s)`
-          );
-        }
-
-        if (result.objective_ids && result.objective_ids.length > 0) {
-          // Objectives will be loaded from the API when scenario detail is fetched
-          // For now, we just note that they were created
-          toast.success(`Created ${result.objective_ids.length} objective(s)`);
-        }
-
-        if (result.image_ids && result.image_ids.length > 0) {
-          // Images will be loaded from the API when scenario detail is fetched
-          toast.success(`Created ${result.image_ids.length} image(s)`);
-        }
-
-        // If we have a problem statement ID, we'll need to fetch it from the API
-        // For now, we'll trigger a refresh of the scenario data if in edit mode
-        if (result.problem_statement_id) {
-          // Create mode: Update formState with generated problem statement ID
-          // The problem statement will be linked when the scenario is saved
-          toast.success("Problem statement created successfully");
-        }
-
-        // Note: title and description are no longer in the completion event
-        // They will be fetched from the API when the scenario detail is loaded
-        // If in edit mode, refresh scenario data to get the newly generated content
-        // No scenarioId needed for create mode
-        if (false) {
-          // Trigger a refetch of scenario data to get the new problem statement, objectives, etc.
-          // This will be handled by the parent component or query invalidation
-        }
-      } catch (error) {
-        // Error toast is already handled in handleGenerateAIScenario
-        // Only show toast for errors that occur BEFORE calling handleGenerateAIScenario
-        // (e.g., validation errors)
-        if (error instanceof Error) {
-          // Pre-generation errors that should show a toast:
-          const preGenerationErrors = [
-            "No valid department found",
-            "No scenario content was generated",
-          ];
-          const isPreGenerationError = preGenerationErrors.some((msg) =>
-            error.message.includes(msg)
-          );
-          // All other errors come from handleGenerateAIScenario and already have toasts
-          if (isPreGenerationError) {
-            toast.error(
-              `Failed to generate scenario: ${error.message || "Unknown error"}`
-            );
-          }
-        }
-      } finally {
-        setIsGeneratingScenario(false);
-      }
-    },
-    [
-      effectiveProfile,
-      handleGenerateAIScenario,
-      selectedPersonaIds,
-      currentDocumentIds,
-      currentFieldIds,
-      useObjectives,
-      useImage,
-      useVideo,
-      useQuestions,
-    ]
-  );
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    try {
-      // Validate required resource IDs using {resource}_required flags from scenarioData
+  const handleSubmit = useCallback(
+    async (_formData: Record<string, unknown>) => {
       if (scenarioData?.name_required && !formState.name_id) {
         toast.error("Scenario name is required");
-        setIsSubmitting(false);
-        return;
+        throw new Error("Scenario name is required");
+      }
+
+      if (scenarioData?.description_required && !formState.description_id) {
+        toast.error("Scenario description is required");
+        throw new Error("Scenario description is required");
       }
 
       if (
@@ -3303,231 +1586,131 @@ function ScenarioComponent({
         !formState.problem_statement_id
       ) {
         toast.error("Problem statement is required");
-        setIsSubmitting(false);
-        return;
+        throw new Error("Problem statement is required");
       }
 
       if (
         scenarioData?.objectives_required &&
-        (!formState.objective_ids || formState.objective_ids.length === 0)
+        formState.objective_ids.length === 0
       ) {
-        toast.error("At least one objective is required");
-        setIsSubmitting(false);
-        return;
+        toast.error("Objectives are required");
+        throw new Error("Objectives are required");
       }
 
-      // Ensure profileId exists - required for API calls
+      if (
+        scenarioData?.departments_required &&
+        formState.department_ids.length === 0
+      ) {
+        toast.error("Departments are required");
+        throw new Error("Departments are required");
+      }
+
+      if (
+        scenarioData?.personas_required &&
+        formState.persona_ids.length === 0
+      ) {
+        toast.error("Personas are required");
+        throw new Error("Personas are required");
+      }
+
+      if (
+        scenarioData?.documents_required &&
+        formState.document_ids.length === 0
+      ) {
+        toast.error("Documents are required");
+        throw new Error("Documents are required");
+      }
+
+      if (
+        scenarioData?.templates_required &&
+        formState.template_ids.length === 0
+      ) {
+        toast.error("Templates are required");
+        throw new Error("Templates are required");
+      }
+
+      if (
+        scenarioData?.parameters_required &&
+        formState.parameter_ids.length === 0
+      ) {
+        toast.error("Parameters are required");
+        throw new Error("Parameters are required");
+      }
+
+      if (
+        scenarioData?.fields_required &&
+        formState.field_ids.length === 0
+      ) {
+        toast.error("Fields are required");
+        throw new Error("Fields are required");
+      }
+
+      if (
+        scenarioData?.images_required &&
+        formState.image_ids.length === 0
+      ) {
+        toast.error("Images are required");
+        throw new Error("Images are required");
+      }
+
+      if (
+        scenarioData?.videos_required &&
+        formState.video_ids.length === 0
+      ) {
+        toast.error("Videos are required");
+        throw new Error("Videos are required");
+      }
+
+      if (
+        scenarioData?.questions_required &&
+        formState.question_ids.length === 0
+      ) {
+        toast.error("Questions are required");
+        throw new Error("Questions are required");
+      }
+
       if (!effectiveProfile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
-        setIsSubmitting(false);
-        return;
+        throw new Error("Profile not loaded");
       }
 
-      // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
-      const newDataForDepts = isScenarioNewOut(scenarioData)
-        ? (scenarioData as ScenarioNewOut)
-        : null;
-      const validDeptIds =
-        newDataForDepts &&
-        "valid_department_ids" in newDataForDepts &&
-        newDataForDepts.valid_department_ids
-          ? (newDataForDepts.valid_department_ids as string[]).map(String)
-          : [];
-      const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        formState.department_ids || [],
-        isSuperadmin,
-        validDeptIds
-      );
-
-      // Resource-first: Extract values ONLY from resource objects, never from legacy state
-      const nameValue = scenarioData?.name_resource?.name || "";
-      const descriptionValue =
-        scenarioData?.description_resource?.description || null;
-      const problemStatementValue =
-        scenarioData?.problem_statement_resource?.problem_statement || "";
-      // Extract objective texts from resources when objective_ids are present
-      // Note: objective_resources has id (not objective_id) and objective fields
-      const objectiveTexts =
-        formState.objective_ids && scenarioData?.objective_resources
-          ? scenarioData.objective_resources
-              .filter((obj) =>
-                formState.objective_ids?.includes(String(obj.id))
-              )
-              .map((obj) => obj.objective)
-          : [];
-      // Extract flag values: if flag_id is set, the flag is enabled (true), otherwise use legacy state
-      // Note: Flag resources don't have a value field - if flag_id exists, the flag is enabled
-      const activeValue = formState.active_flag_id
-        ? true
-        : basicInfoState.active;
-      const objectivesEnabledValue = formState.objectives_enabled_flag_id
-        ? true
-        : useObjectives;
-      const imagesEnabledValue = formState.images_enabled_flag_id
-        ? true
-        : useImage;
-      const videoEnabledValue = formState.video_enabled_flag_id
-        ? true
-        : useVideo;
-      const questionsEnabledValue = formState.questions_enabled_flag_id
-        ? true
-        : useQuestions;
-      const problemStatementEnabledValue =
-        formState.problem_statement_enabled_flag_id
-          ? true
-          : useProblemStatement;
-
-      // Prepare payload for V2 API
-      const parametersDict = groupFieldsByParameterId(
-        currentFieldIds, // Renamed from currentParameterItemIds
-        fieldMapping // Renamed from parameterItemMapping
-      );
-      // Convert parameters dict to array format required by API: [{ parameter_id: string, field_ids: string[] }]
-      const parametersArray: Array<{
-        parameter_id: string;
-        field_ids: string[];
-      }> = Object.entries(parametersDict).map(([paramId, fieldIds]) => ({
-        parameter_id: paramId,
-        field_ids: fieldIds,
-      }));
-      // Flatten parameters dict to parameter_item_ids array (required by API)
-      const parameterItemIds = Object.values(parametersDict).flat();
-      const parameterIds = Object.keys(parametersDict);
-      const payload: {
-        name: string;
-        description?: string | null;
-        problem_statement: string;
-        problem_statement_versions?: string[];
-        department_ids: string[] | null;
-        active: boolean;
-        persona_ids: string[] | null;
-        document_ids: string[];
-        template_document_ids?: string[] | null;
-        objective_ids: string[];
-        upload_ids: string[] | null;
-        image_names: string[] | null;
-        parameters: Array<{ parameter_id: string; field_ids: string[] }>;
-        parameter_item_ids: string[];
-        parameter_ids?: string[] | null;
-        scenario_domain_id?: string | null;
-        image_domain_id?: string | null;
-        video_enabled?: boolean;
-        questions_enabled?: boolean;
-        video_domain_id?: string | null;
-        video_ids?: string[] | null;
-        active_video_id?: string | null;
-        question_ids?: string[] | null;
-        question_timestamps?: Array<{
-          question_id: string | null;
-          video_id: string | null;
-          timestamps: number[] | null;
-        }> | null;
-        video_length?: number | null;
-      } = {
-        name: nameValue,
-        description: descriptionValue,
-        problem_statement: problemStatementValue,
-        department_ids: finalDepartmentIds,
-        active: activeValue,
-        persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-        document_ids: currentDocumentIds,
-        template_document_ids:
-          templateDocumentIds.length > 0 ? templateDocumentIds : null,
-        objective_ids: objectiveTexts, // Send objective texts from resources
-        upload_ids: contentState.image?.upload_id
-          ? [contentState.image.upload_id]
-          : null,
-        image_names: contentState.image?.name
-          ? [contentState.image.name]
-          : null,
-        parameters: parametersArray,
-        parameter_item_ids: parameterItemIds,
-        parameter_ids: parameterIds.length > 0 ? parameterIds : null,
-        scenario_domain_id: basicInfoState.scenarioDomainId || null,
-        image_domain_id: basicInfoState.imageDomainId || null,
-        video_enabled: useVideo,
-        questions_enabled: useQuestions,
-        video_domain_id: basicInfoState.videoDomainId || null,
-        video_ids: contentState.selectedVideo
-          ? [contentState.selectedVideo.id]
-          : null,
-        active_video_id: contentState.activeVideoId || null,
-        question_ids:
-          contentState.currentQuestionIds.length > 0
-            ? contentState.currentQuestionIds
-            : null,
-        question_timestamps:
-          contentState.questions.length > 0 && contentState.selectedVideo
-            ? contentState.questions
-                .filter((q) => q.times && q.times.length > 0)
-                .map((q) => ({
-                  question_id: q.id,
-                  video_id: contentState.selectedVideo!.id,
-                  timestamps: q.times!,
-                }))
-            : null,
-        video_length: selectedVideoLength || null,
-      };
-
-      // Include problem_statement_versions if we have local versions
-      if (localProblemStatementVersions.length > 0) {
-        const versions = localProblemStatementVersions.map(
-          (v) => v.problem_statement
-        );
-        // Ensure current problem statement is included as the last version (most recent)
-        const currentProblemStatement = problemStatementValue;
-        if (
-          currentProblemStatement &&
-          !versions.includes(currentProblemStatement)
-        ) {
-          versions.push(currentProblemStatement);
-        }
-        payload.problem_statement_versions = versions;
-      }
-
-      // Use unified saveScenarioAction for both create and edit modes
       if (!saveScenarioAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
+
+      if (!formState.name_id) {
+        toast.error("Scenario name is required");
+        throw new Error("Scenario name is required");
+      }
+
       try {
         await saveScenarioAction({
           body: {
             input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
-            name: nameValue,
-            description: descriptionValue,
-            problem_statement: problemStatementValue,
-            problem_statement_versions: payload.problem_statement_versions,
-            department_ids: finalDepartmentIds,
-            active: activeValue,
-            persona_ids:
-              selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-            document_ids: currentDocumentIds,
-            template_document_ids:
-              templateDocumentIds.length > 0 ? templateDocumentIds : null,
-            objective_ids: objectiveTexts,
-            upload_ids: payload.upload_ids,
-            image_names: payload.image_names,
-            parameters: parametersArray,
-            parameter_item_ids: parameterItemIds,
-            parameter_ids: parameterIds.length > 0 ? parameterIds : null,
-            scenario_domain_id: basicInfoState.scenarioDomainId || null,
-            image_domain_id: basicInfoState.imageDomainId || null,
-            video_enabled: videoEnabledValue,
-            questions_enabled: questionsEnabledValue,
-            video_domain_id: basicInfoState.videoDomainId || null,
-            video_ids: payload.video_ids,
-            active_video_id: payload.active_video_id,
-            question_ids: payload.question_ids,
-            question_timestamps: payload.question_timestamps,
-            video_length: selectedVideoLength || null,
-            objectives_enabled: objectivesEnabledValue,
-            images_enabled: imagesEnabledValue,
-            problem_statement_enabled: problemStatementEnabledValue,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            problem_statement_id: formState.problem_statement_id,
+            active_flag_id: formState.active_flag_id,
+            objectives_enabled_flag_id: formState.objectives_enabled_flag_id,
+            images_enabled_flag_id: formState.images_enabled_flag_id,
+            video_enabled_flag_id: formState.video_enabled_flag_id,
+            questions_enabled_flag_id: formState.questions_enabled_flag_id,
+            problem_statement_enabled_flag_id:
+              formState.problem_statement_enabled_flag_id,
+            department_ids: formState.department_ids,
+            persona_ids: formState.persona_ids,
+            document_ids: formState.document_ids,
+            template_document_ids: formState.template_ids,
+            parameter_ids: formState.parameter_ids,
+            field_ids: formState.field_ids,
+            image_ids: formState.image_ids,
+            objective_ids: formState.objective_ids,
+            video_ids: formState.video_ids,
+            question_ids: formState.question_ids,
           },
         });
-        // Clear local versions after successful save
-        setLocalProblemStatementVersions([]);
+
         toast.success(
           `Scenario ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -3536,35 +1719,102 @@ function ScenarioComponent({
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
         );
-        setIsSubmitting(false);
+        throw error;
       }
-    } catch (error) {
-      toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handler for PersonaPicker multi-select
-  const handlePersonaSelect = useCallback(
-    (ids: string[]) => {
-      updatePersonaIds(ids);
     },
-    [updatePersonaIds]
+    [
+      formState,
+      scenarioData?.name_required,
+      scenarioData?.description_required,
+      scenarioData?.problem_statement_required,
+      scenarioData?.objectives_required,
+      scenarioData?.departments_required,
+      scenarioData?.personas_required,
+      scenarioData?.documents_required,
+      scenarioData?.templates_required,
+      scenarioData?.parameters_required,
+      scenarioData?.fields_required,
+      scenarioData?.images_required,
+      scenarioData?.videos_required,
+      scenarioData?.questions_required,
+      effectiveProfile?.id,
+      saveScenarioAction,
+      isEditMode,
+      scenarioId,
+      router,
+    ]
   );
 
-  // Render step callback for GenericForm
-  // Migrates all custom sections inline using StepCard/SelectableGrid pattern
+  const getStepStatus = useCallback(
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!formState.name_id;
+      const hasDescription = !!formState.description_id;
+      const hasDepartments = formState.department_ids.length > 0;
+      const hasProblemStatement = !!formState.problem_statement_id;
+      const hasObjectives = formState.objective_ids.length > 0;
+      const hasResources =
+        formState.persona_ids.length > 0 ||
+        formState.document_ids.length > 0 ||
+        formState.template_ids.length > 0 ||
+        formState.parameter_ids.length > 0 ||
+        formState.field_ids.length > 0;
+      const hasMedia =
+        formState.image_ids.length > 0 ||
+        formState.video_ids.length > 0 ||
+        formState.question_ids.length > 0;
+
+      switch (stepId) {
+        case "basic":
+          return hasName && hasDescription && hasDepartments
+            ? "completed"
+            : "active";
+        case "configuration":
+          if (!hasName || !hasDescription) return "pending";
+          return "active";
+        case "content":
+          if (!hasName || !hasDescription) return "pending";
+          return hasProblemStatement || hasObjectives ? "completed" : "active";
+        case "resources":
+          if (!hasName || !hasDescription) return "pending";
+          return hasResources ? "completed" : "active";
+        case "media":
+          if (!hasName || !hasDescription) return "pending";
+          return hasMedia ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [formState]
+  );
+
+  const createScenarioFlagsWrapper = useCallback(
+    async (input: CreateFlagsIn): Promise<CreateFlagsOut> => {
+      if (!createScenarioFlagsAction) {
+        return { flag_id: null };
+      }
+      const result = await createScenarioFlagsAction({
+        body: {
+          agent_id: input.body.agent_id,
+          group_id: input.body.group_id,
+          mcp: input.body.mcp,
+        },
+      });
+      return { flag_id: result.scenario_flags_id ?? null };
+    },
+    [createScenarioFlagsAction]
+  );
+
   const renderStep = useCallback(
     ({
       stepId,
-      stepStatus,
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: _stepFormData,
-      setFormData: _setStepFormData,
+      stepStatus,
+      isOptional,
+      formData,
+      setFormData,
+      filters,
       onReset,
     }: {
       stepId: string;
@@ -3583,19 +1833,31 @@ function ScenarioComponent({
       }>;
       onReset?: () => void;
     }) => {
-      // Use stableScenarioDataFields to prevent callback recreation
       const currentScenarioData = stableScenarioDataFields;
+      const personaSearch = (formData["personaSearch"] as string | undefined) ?? "";
+      const documentSearch = (formData["documentSearch"] as string | undefined) ?? "";
+      const parameterSearch =
+        (formData["parameterSearch"] as string | undefined) ?? "";
+      const personaShowSelected =
+        (formData["personaShowSelected"] as boolean | undefined) ?? false;
+      const documentShowSelected =
+        (formData["documentShowSelected"] as boolean | undefined) ?? false;
+      const parameterShowSelected =
+        (formData["parameterShowSelected"] as boolean | undefined) ?? false;
+
+      const shouldShowGenerateAction = (stepKey: string, agentId?: string | null) =>
+        stepResources[stepKey] && stepResources[stepKey].length > 0 && agentId;
 
       switch (stepId) {
-        case "basic": {
+        case "basic":
           return (
             <StepCard
               stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
-              isEditMode={false}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
@@ -3603,13 +1865,13 @@ function ScenarioComponent({
                   show_name={currentScenarioData?.show_name ?? true}
                   name_suggestions={currentScenarioData?.name_suggestions ?? []}
                   names={currentScenarioData?.names ?? []}
-                  disabled={isReadonly}
+                  disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={handleGenerateName}
                   isGenerating={isGenerating("names")}
-                  placeholder="e.g., Customer Service Scenario"
+                  placeholder="e.g., Customer Support Escalation"
                   defaultName="New Scenario"
                   required={currentScenarioData?.name_required ?? false}
                   hideDescription={true}
@@ -3624,16 +1886,12 @@ function ScenarioComponent({
                   }
                 />
               }
-              resetFields={[
-                "name",
-                "description",
-                "department_ids",
-                "active_flag_id",
-              ]}
+              resetFields={["name", "description", "departments"]}
               actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 &&
-                currentScenarioData?.basic_agent_id ? (
+                shouldShowGenerateAction(
+                  "basic",
+                  currentScenarioData?.basic_agent_id
+                ) ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -3641,1794 +1899,797 @@ function ScenarioComponent({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "basic",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            isReadonly ||
-                            stepResources["basic"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
+                          onClick={() => handleOpenStepCardModal("basic", "generate")}
+                          disabled={disabled}
                         >
-                          {stepResources["basic"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
+                          <Sparkles className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
+                      <TooltipContent>Generate</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                ) : undefined
+                ) : null
               }
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
             >
-              <div className="space-y-4">
-                {/* Description field - using Descriptions resource component */}
-                <Descriptions
-                  description_id={formState.description_id ?? null}
-                  description_resource={
-                    currentScenarioData?.description_resource ?? null
-                  }
-                  show_description={
-                    currentScenarioData?.show_description ?? true
-                  }
-                  description_suggestions={
-                    currentScenarioData?.description_suggestions ?? []
-                  }
-                  descriptions={currentScenarioData?.descriptions ?? []}
-                  disabled={isReadonly}
-                  onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      description_id: descriptionId,
-                    }))
-                  }
-                  searchTerm={
-                    (_stepFormData["descriptionSearch"] as
-                      | string
-                      | null
-                      | undefined) || ""
-                  }
-                  onSearchChange={(term: string) =>
-                    _setStepFormData({ descriptionSearch: term || null })
-                  }
-                  onGenerate={handleGenerateDescription}
-                  isGenerating={isGenerating("descriptions")}
-                  label="Description"
-                  placeholder="Detailed scenario description"
-                  required={currentScenarioData?.description_required ?? false}
-                  rows={4}
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.description_agent_id ?? null}
-                  createDescriptionsAction={createDescriptionsAction}
-                />
-
-                {/* Department Selection */}
-                {(() => {
-                  const newDataForDepts =
-                    scenarioData &&
-                    !isEditMode &&
-                    isScenarioNewOut(scenarioData)
-                      ? (scenarioData as ScenarioNewOut)
-                      : null;
-                  const validDeptIds =
-                    newDataForDepts &&
-                    "valid_department_ids" in newDataForDepts &&
-                    newDataForDepts.valid_department_ids
-                      ? (newDataForDepts.valid_department_ids as string[]).map(
-                          String
-                        )
-                      : [];
-                  return validDeptIds.length > 1 ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department</Label>
-                      <GenericPicker
-                        items={departmentMapping}
-                        itemIds={Array.from(
-                          new Set([
-                            ...validDeptIds,
-                            ...(formState.department_ids || []),
-                          ])
-                        )}
-                        selectedIds={formState.department_ids || []}
-                        onSelect={(ids) =>
-                          setFormState((prev) => ({
-                            ...prev,
-                            department_ids: ids,
-                          }))
-                        }
-                        getId={(dept) => (dept as unknown as { id: string }).id}
-                        getLabel={(dept) => dept.name || ""}
-                        getSearchText={(dept) =>
-                          `${dept.name} ${dept.description || ""}`
-                        }
-                        placeholder="All Departments"
-                        disabled={isReadonly}
-                        multiSelect={true}
-                        hideSelectedChips={true}
-                        buttonClassName="w-full"
-                      />
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* Agent Selection */}
-                {(() => {
-                  const agentIds =
-                    scenarioData && "valid_agent_ids" in scenarioData
-                      ? (scenarioData as ScenarioNewOut).valid_agent_ids || []
-                      : [];
-                  const filteredScenarioAgentIds = agentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("scenario");
-                  });
-                  const imageDomainIds = agentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("image");
-                  });
-                  const videoDomainIds = agentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("video");
-                  });
-                  const showScenarioPicker =
-                    filteredScenarioAgentIds.length > 0;
-                  const showImagePicker = imageDomainIds.length > 0;
-                  const showVideoPicker = videoDomainIds.length > 0;
-
-                  return showScenarioPicker ||
-                    showImagePicker ||
-                    showVideoPicker ? (
-                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                      {/* Scenario Agent Selection */}
-                      {showScenarioPicker && (
-                        <div className="space-y-2">
-                          <Label htmlFor="scenarioDomainId">
-                            Scenario Agent
-                          </Label>
-                          <GenericPicker
-                            items={agentMapping}
-                            itemIds={filteredScenarioAgentIds}
-                            selectedIds={
-                              basicInfoState.scenarioDomainId
-                                ? [basicInfoState.scenarioDomainId]
-                                : []
-                            }
-                            onSelect={(ids) =>
-                              setBasicInfoState((prev) => ({
-                                ...prev,
-                                scenarioDomainId: ids[0] || null,
-                              }))
-                            }
-                            getId={(item) =>
-                              (item as unknown as { id: string }).id
-                            }
-                            getLabel={(item) => item.name || ""}
-                            getSearchText={(item) =>
-                              `${item.name} ${item.description || ""}`
-                            }
-                            renderPreview={(item) => (
-                              <div className="grid gap-2">
-                                <h4 className="font-medium leading-none">
-                                  {item.name || "No agent selected"}
-                                </h4>
-                                <div className="text-sm text-muted-foreground">
-                                  {item.description ||
-                                    "No description available"}
-                                </div>
-                              </div>
-                            )}
-                            renderItem={(item, _isSelected) => (
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="truncate">{item.name}</div>
-                                    {item.description && (
-                                      <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                        {item.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            placeholder="Select scenario agent"
-                            disabled={isReadonly}
-                            multiSelect={false}
-                            hideSelectedChips={true}
-                            buttonClassName="w-full"
-                            groupHeading="Agents"
-                          />
-                        </div>
-                      )}
-
-                      {/* Image Agent Selection */}
-                      {showImagePicker && (
-                        <div className="space-y-2">
-                          <Label htmlFor="imageDomainId">Image Agent</Label>
-                          <GenericPicker
-                            items={agentMapping}
-                            itemIds={imageDomainIds}
-                            selectedIds={
-                              basicInfoState.imageDomainId
-                                ? [basicInfoState.imageDomainId]
-                                : []
-                            }
-                            onSelect={(ids) =>
-                              setBasicInfoState((prev) => ({
-                                ...prev,
-                                imageDomainId: ids[0] || null,
-                              }))
-                            }
-                            getId={(item) =>
-                              (item as unknown as { id: string }).id
-                            }
-                            getLabel={(item) => item.name || ""}
-                            getSearchText={(item) =>
-                              `${item.name} ${item.description || ""}`
-                            }
-                            renderPreview={(item) => (
-                              <div className="grid gap-2">
-                                <h4 className="font-medium leading-none">
-                                  {item.name || "No agent selected"}
-                                </h4>
-                                <div className="text-sm text-muted-foreground">
-                                  {item.description ||
-                                    "No description available"}
-                                </div>
-                              </div>
-                            )}
-                            renderItem={(item, _isSelected) => (
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="truncate">{item.name}</div>
-                                    {item.description && (
-                                      <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                        {item.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            placeholder="Select image agent"
-                            disabled={isReadonly}
-                            multiSelect={false}
-                            hideSelectedChips={true}
-                            buttonClassName="w-full"
-                            groupHeading="Agents"
-                          />
-                        </div>
-                      )}
-
-                      {/* Video Agent Selection */}
-                      {showVideoPicker && (
-                        <div className="space-y-2">
-                          <Label htmlFor="videoDomainId">Video Agent</Label>
-                          <GenericPicker
-                            items={agentMapping}
-                            itemIds={videoDomainIds}
-                            selectedIds={
-                              basicInfoState.videoDomainId
-                                ? [basicInfoState.videoDomainId]
-                                : []
-                            }
-                            onSelect={(ids) =>
-                              setBasicInfoState((prev) => ({
-                                ...prev,
-                                videoDomainId: ids[0] || null,
-                              }))
-                            }
-                            getId={(item) =>
-                              (item as unknown as { id: string }).id
-                            }
-                            getLabel={(item) => item.name || ""}
-                            getSearchText={(item) =>
-                              `${item.name} ${item.description || ""}`
-                            }
-                            renderPreview={(item) => (
-                              <div className="grid gap-2">
-                                <h4 className="font-medium leading-none">
-                                  {item.name || "No agent selected"}
-                                </h4>
-                                <div className="text-sm text-muted-foreground">
-                                  {item.description ||
-                                    "No description available"}
-                                </div>
-                              </div>
-                            )}
-                            renderItem={(item, _isSelected) => (
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="truncate">{item.name}</div>
-                                    {item.description && (
-                                      <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                        {item.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            placeholder="Select video agent"
-                            disabled={isReadonly}
-                            multiSelect={false}
-                            hideSelectedChips={true}
-                            buttonClassName="w-full"
-                            groupHeading="Agents"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* Active Flag - using Flags resource component */}
-                <Flags
-                  flag_id={formState.active_flag_id ?? null}
-                  flag_resource={
-                    currentScenarioData?.active_flag_resource ?? null
-                  }
-                  show_flag={currentScenarioData?.show_active_flag ?? false}
-                  disabled={isReadonly}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      active_flag_id: flagId,
-                    }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  label="Active"
-                  helpText="Inactive scenarios will not be available for other simulations"
-                  required={currentScenarioData?.active_flag_required ?? false}
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.active_flag_agent_id ?? null}
-                  createFlagsAction={createScenarioFlagsAction}
-                />
-
-                {/* Objectives Enabled Flag */}
-                <Flags
-                  flag_id={formState.objectives_enabled_flag_id ?? null}
-                  flag_resource={
-                    currentScenarioData?.objectives_enabled_flag_resource ??
-                    null
-                  }
-                  show_flag={
-                    currentScenarioData?.show_objectives_enabled_flag ?? false
-                  }
-                  disabled={isReadonly}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      objectives_enabled_flag_id: flagId,
-                    }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  label="Enable Objectives"
-                  helpText="Enable objectives for this scenario"
-                  required={
-                    currentScenarioData?.objectives_enabled_flag_required ??
-                    false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.objectives_enabled_flag_agent_id ??
-                    null
-                  }
-                  createFlagsAction={createScenarioFlagsAction}
-                />
-
-                {/* Images Enabled Flag */}
-                <Flags
-                  flag_id={formState.images_enabled_flag_id ?? null}
-                  flag_resource={
-                    currentScenarioData?.images_enabled_flag_resource ?? null
-                  }
-                  show_flag={
-                    currentScenarioData?.show_images_enabled_flag ?? false
-                  }
-                  disabled={isReadonly}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      images_enabled_flag_id: flagId,
-                    }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  label="Enable Images"
-                  helpText="Enable image support for this scenario"
-                  required={
-                    currentScenarioData?.images_enabled_flag_required ?? false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.images_enabled_flag_agent_id ?? null
-                  }
-                  createFlagsAction={createScenarioFlagsAction}
-                />
-
-                {/* Video Enabled Flag */}
-                <Flags
-                  flag_id={formState.video_enabled_flag_id ?? null}
-                  flag_resource={
-                    currentScenarioData?.video_enabled_flag_resource ?? null
-                  }
-                  show_flag={
-                    currentScenarioData?.show_video_enabled_flag ?? false
-                  }
-                  disabled={isReadonly}
-                  onFlagIdChange={(flagId) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      video_enabled_flag_id: flagId,
-                    }));
-                    // Clear video-related state if disabled
-                    if (!flagId) {
-                      setContentState((prev) => ({
-                        ...prev,
-                        selectedVideo: null,
-                        activeVideoId: null,
-                      }));
-                      setFormState((prev) => ({
-                        ...prev,
-                        questions_enabled_flag_id: null,
-                      }));
-                    }
-                  }}
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  label="Enable Video"
-                  helpText="Enable video support for this scenario"
-                  required={
-                    currentScenarioData?.video_enabled_flag_required ?? false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.video_enabled_flag_agent_id ?? null
-                  }
-                  createFlagsAction={createScenarioFlagsAction}
-                />
-
-                {/* Questions Enabled Flag */}
-                <Flags
-                  flag_id={formState.questions_enabled_flag_id ?? null}
-                  flag_resource={
-                    currentScenarioData?.questions_enabled_flag_resource ?? null
-                  }
-                  show_flag={
-                    currentScenarioData?.show_questions_enabled_flag ?? false
-                  }
-                  disabled={isReadonly || !formState.video_enabled_flag_id}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      questions_enabled_flag_id: flagId,
-                    }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  label="Enable Questions"
-                  helpText="Enable questions for this scenario"
-                  required={
-                    currentScenarioData?.questions_enabled_flag_required ??
-                    false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.questions_enabled_flag_agent_id ?? null
-                  }
-                  createFlagsAction={createScenarioFlagsAction}
-                />
-
-                {/* Problem Statement Enabled Flag */}
-                <Flags
-                  flag_id={formState.problem_statement_enabled_flag_id ?? null}
-                  flag_resource={
-                    currentScenarioData?.problem_statement_enabled_flag_resource ??
-                    null
-                  }
-                  show_flag={
-                    currentScenarioData?.show_problem_statement_enabled_flag ??
-                    false
-                  }
-                  disabled={isReadonly}
-                  onFlagIdChange={(flagId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      problem_statement_enabled_flag_id: flagId,
-                    }))
-                  }
-                  onGenerate={handleGenerateFlags}
-                  isGenerating={isGenerating("scenario_flags")}
-                  label="Enable Problem Statement"
-                  helpText="Enable problem statement for this scenario"
-                  required={
-                    currentScenarioData?.problem_statement_enabled_flag_required ??
-                    false
-                  }
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.problem_statement_enabled_flag_agent_id ??
-                    null
-                  }
-                  createFlagsAction={createScenarioFlagsAction}
-                />
-              </div>
-            </StepCard>
-          );
-        }
-        case "persona": {
-          // Inline PersonaSection using StepCard + SelectableGrid pattern
-          const newDataForRanges =
-            scenarioData && isScenarioNewOut(scenarioData)
-              ? scenarioData
-              : null;
-          const sliderMin =
-            newDataForRanges?.persona_range_min ?? personaMinMax.min ?? 1;
-          const sliderMax =
-            newDataForRanges?.persona_range_max ?? personaMinMax.max ?? 1;
-
-          // Server handles filtering via validPersonaIds (showSelected filter applied server-side)
-          // Client only applies search term filtering (for instant feedback while typing)
-          // Note: Filtering is handled by StepCard's searchTerm prop, so we use validPersonaIds directly
-          // Create persona items for SelectableGrid
-          const personaItems = validPersonaIds
-            .filter((personaId) => {
-              // Client-side search filtering (StepCard also handles this, but we filter here for SelectableGrid)
-              if (!personaSearchTerm.trim()) return true;
-              const persona = personaMapping[personaId];
-              if (!persona) return false;
-              const searchLower = personaSearchTerm.toLowerCase();
-              const searchText =
-                `${persona.name} ${persona.description || ""}`.toLowerCase();
-              return searchText.includes(searchLower);
-            })
-            .map((personaId) => {
-              const persona = personaMapping[personaId];
-              return {
-                id: personaId,
-                persona,
-              };
-            });
-
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={isReadonly}
-              isEditMode={false}
-              searchTerm={personaSearchTerm}
-              onSearchChange={(term: string) =>
-                setUrlParams({ personaSearch: term || null })
-              }
-              searchPlaceholder="Search personas..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: personaShowSelected,
-                  onChange: (value: boolean) =>
-                    setUrlParams({ personaShowSelected: value || null }),
-                },
-              ]}
-              actions={
-                <div className="flex items-center gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={onReset}
-                        disabled={isReadonly}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Reset</TooltipContent>
-                  </Tooltip>
-                </div>
-              }
-              resetFields={["personaIds"]}
-              {...(onReset ? { onReset } : {})}
-            >
-              <SelectableGrid<{
-                id: string;
-                persona: (typeof personaMapping)[string];
-              }>
-                items={personaItems.filter(
-                  (
-                    item
-                  ): item is {
-                    id: string;
-                    persona: NonNullable<(typeof personaMapping)[string]>;
-                  } => item.persona !== undefined
-                )}
-                selectedId={null}
-                selectedIds={selectedPersonaIds}
-                onSelect={(ids) =>
-                  handlePersonaSelect(Array.isArray(ids) ? ids : [ids])
+              <Descriptions
+                description_id={formState.description_id ?? null}
+                description_resource={
+                  currentScenarioData?.description_resource ?? null
                 }
-                getId={(item) => item.id}
-                renderItem={(item, isSelected) => {
-                  const persona = item.persona;
-                  const IconComponent =
-                    getPersonaIconComponent(persona.icon || "") || Brain;
-                  const hexColor = persona.color || "#64748b";
-
-                  return (
-                    <div
-                      className={cn(
-                        "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                        "hover:shadow-md hover:bg-accent/50",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        isSelected && "ring-2 ring-primary bg-accent"
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="p-2 rounded-lg shadow-lg flex-shrink-0"
-                          style={{
-                            background: generateGradientFromHex(hexColor),
-                          }}
-                        >
-                          <IconComponent className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">
-                            {persona.name}
-                          </div>
-                          {persona.description && (
-                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {persona.description}
-                            </div>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                }}
-                emptyMessage="No personas found. Try adjusting your search."
-                disabled={isReadonly}
-              />
-            </StepCard>
-          );
-        }
-        case "documents": {
-          // Inline DocumentSection using StepCard + SelectableGrid pattern
-          const newDataForRanges =
-            scenarioData && isScenarioNewOut(scenarioData)
-              ? scenarioData
-              : null;
-          const sliderMin =
-            newDataForRanges?.document_range_min ?? documentMinMax.min ?? 0;
-          const sliderMax =
-            newDataForRanges?.document_range_max ?? documentMinMax.max ?? 1;
-
-          // Create document items for SelectableGrid
-          const documentItems = validDocumentIds
-            .filter((docId) => {
-              // Client-side search filtering
-              if (!documentSearchTerm.trim()) return true;
-              const doc = documentMapping[docId];
-              if (!doc) return false;
-              const searchLower = documentSearchTerm.toLowerCase();
-              const searchText =
-                `${doc.name} ${doc.description || ""}`.toLowerCase();
-              return searchText.includes(searchLower);
-            })
-            .map((docId) => {
-              const doc = documentMapping[docId];
-              if (!doc) return null;
-              const fullDoc =
-                scenarioData && "document_details" in scenarioData
-                  ? (scenarioData as ScenarioDetailOut).document_details?.find(
-                      (d) => d.document_id === docId
-                    )
-                  : undefined;
-              return {
-                id: docId,
-                doc,
-                fullDoc,
-              };
-            })
-            .filter((item): item is NonNullable<typeof item> => item !== null);
-
-          return (
-            <>
-              <StepCard
-                stepStatus={stepStatus}
-                stepNumber={stepNumber}
-                stepTitle={stepTitle}
-                stepDescription={stepDescription}
-                isReadonly={isReadonly}
-                isEditMode={false}
-                searchTerm={documentSearchTerm}
-                onSearchChange={(term: string) =>
-                  setUrlParams({ documentSearch: term || null })
+                show_description={currentScenarioData?.show_description ?? true}
+                description_suggestions={
+                  currentScenarioData?.description_suggestions ?? []
                 }
-                searchPlaceholder="Search documents..."
-                debounceMs={300}
-                filters={[
-                  {
-                    key: "showSelected",
-                    label: "Show selected",
-                    value: documentShowSelected,
-                    onChange: (value: boolean) =>
-                      setUrlParams({ documentShowSelected: value || null }),
-                  },
-                  {
-                    key: "showTemplate",
-                    label: "Show templates",
-                    value: documentShowTemplate,
-                    onChange: (value: boolean) =>
-                      setUrlParams({ documentShowTemplate: value || null }),
-                  },
-                ]}
-                actions={
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={onReset}
-                          disabled={isReadonly}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Reset</TooltipContent>
-                    </Tooltip>
-                  </div>
-                }
-                resetFields={["documentIds", "templateDocumentIds"]}
-                {...(onReset ? { onReset } : {})}
-              >
-                <SelectableGrid<{
-                  id: string;
-                  doc: DocumentMappingItem;
-                  fullDoc?: unknown;
-                }>
-                  items={documentItems}
-                  selectedId={null}
-                  selectedIds={currentDocumentIds}
-                  onSelect={(ids) =>
-                    updateDocumentIds(Array.isArray(ids) ? ids : [ids])
-                  }
-                  getId={(item) => item.id}
-                  renderItem={(item, isSelected) => {
-                    const fullDocTyped = item.fullDoc as
-                      | {
-                          document_id: string | null;
-                          name: string | null;
-                          updated_at: string | null;
-                          extension: string | null;
-                          scenario_ids: string[] | null;
-                          can_edit: boolean | null;
-                          can_delete: boolean | null;
-                          active: boolean | null;
-                          department_ids: string[] | null;
-                          upload_id: string | null;
-                          field_ids: string[];
-                        }
-                      | undefined;
-                    const docForViewer: DocumentItem = fullDocTyped
-                      ? {
-                          document_id: fullDocTyped.document_id || "",
-                          name: fullDocTyped.name || "",
-                          updated_at:
-                            fullDocTyped.updated_at || new Date().toISOString(),
-                          extension: fullDocTyped.extension || "",
-                          scenario_ids: fullDocTyped.scenario_ids || [],
-                          can_edit: fullDocTyped.can_edit ?? false,
-                          can_delete: fullDocTyped.can_delete ?? false,
-                          active: fullDocTyped.active ?? true,
-                          department_ids: fullDocTyped.department_ids || [],
-                          upload_id: fullDocTyped.upload_id ?? null,
-                          field_ids: fullDocTyped.field_ids || [],
-                          valid_field_ids: null,
-                          active_scenario_count: null,
-                          total_scenario_links: null,
-                        }
-                      : {
-                          document_id: item.id,
-                          name: item.doc.name || "Document",
-                          valid_field_ids: null,
-                          active_scenario_count: null,
-                          total_scenario_links: null,
-                          updated_at: new Date().toISOString(),
-                          extension: "",
-                          scenario_ids: [],
-                          can_edit: false,
-                          can_delete: false,
-                          active: true,
-                          department_ids: [],
-                          upload_id: null,
-                          field_ids: [],
-                        };
-
-                    return (
-                      <div
-                        className={cn(
-                          "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
-                          "hover:shadow-md",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          isSelected && "ring-2 ring-primary"
-                        )}
-                      >
-                        {/* Preview button */}
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const docId = item.id;
-                            setLocalPreviewDocId(docId);
-                            setPreviewDocumentId(docId);
-                          }}
-                          className="absolute top-2 left-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-primary-foreground" />
-                        </div>
-
-                        {/* Check icon */}
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                            <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                          </div>
-                        )}
-
-                        {/* Document preview */}
-                        <div className="w-full h-full">
-                          <DocumentViewer
-                            document={docForViewer}
-                            bare={true}
-                            isFormDocument={false}
-                            compact={true}
-                          />
-                        </div>
-
-                        {/* Document name */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
-                          <span className="truncate block">
-                            {item.doc.name}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }}
-                  emptyMessage="No documents found. Try adjusting your search."
-                  disabled={isReadonly}
-                />
-              </StepCard>
-
-              {/* Preview Dialog */}
-              <Dialog
-                open={localPreviewDocId !== null}
-                onOpenChange={(open) => {
-                  if (!open) {
-                    setLocalPreviewDocId(null);
-                    setPreviewDocumentId(null);
-                  }
-                }}
-              >
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {localPreviewDocId
-                        ? documentMapping[localPreviewDocId]?.name
-                        : "Document Preview"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      Preview document content
-                    </DialogDescription>
-                  </DialogHeader>
-                  {localPreviewDocId &&
-                    (() => {
-                      const fullDoc =
-                        scenarioData && "document_details" in scenarioData
-                          ? (
-                              scenarioData as ScenarioDetailOut
-                            ).document_details?.find(
-                              (d) => d.document_id === localPreviewDocId
-                            )
-                          : undefined;
-                      const fullDocTyped = fullDoc as
-                        | {
-                            document_id: string | null;
-                            name: string | null;
-                            updated_at: string | null;
-                            extension: string | null;
-                            scenario_ids: string[] | null;
-                            can_edit: boolean | null;
-                            can_delete: boolean | null;
-                            active: boolean | null;
-                            department_ids: string[] | null;
-                            upload_id: string | null;
-                            field_ids: string[];
-                          }
-                        | undefined;
-                      const docForViewer: DocumentItem = fullDocTyped
-                        ? {
-                            document_id: fullDocTyped.document_id || "",
-                            name: fullDocTyped.name || "",
-                            updated_at:
-                              fullDocTyped.updated_at ||
-                              new Date().toISOString(),
-                            extension: fullDocTyped.extension || "",
-                            scenario_ids: fullDocTyped.scenario_ids || [],
-                            can_edit: fullDocTyped.can_edit ?? false,
-                            can_delete: fullDocTyped.can_delete ?? false,
-                            active: fullDocTyped.active ?? true,
-                            department_ids: fullDocTyped.department_ids || [],
-                            upload_id: fullDocTyped.upload_id ?? null,
-                            field_ids: fullDocTyped.field_ids || [],
-                            valid_field_ids: null,
-                            active_scenario_count: null,
-                            total_scenario_links: null,
-                          }
-                        : {
-                            document_id: localPreviewDocId,
-                            valid_field_ids: null,
-                            active_scenario_count: null,
-                            total_scenario_links: null,
-                            name:
-                              documentMapping[localPreviewDocId]?.name ||
-                              "Document",
-                            updated_at: new Date().toISOString(),
-                            extension: "",
-                            scenario_ids: [],
-                            can_edit: false,
-                            can_delete: false,
-                            active: true,
-                            department_ids: [],
-                            upload_id: null,
-                            field_ids: [],
-                          };
-                      return (
-                        <DocumentViewer
-                          document={docForViewer}
-                          bare={false}
-                          isFormDocument={false}
-                        />
-                      );
-                    })()}
-                </DialogContent>
-              </Dialog>
-            </>
-          );
-        }
-        case "parameters": {
-          // Inline ParameterSection using StepCard + GenericPicker pattern
-          const newDataForRanges =
-            scenarioData && isScenarioNewOut(scenarioData)
-              ? scenarioData
-              : null;
-          const sliderMin =
-            newDataForRanges?.parameter_range_min ??
-            parameterSelectionMinMax.min ??
-            0;
-          const sliderMax =
-            newDataForRanges?.parameter_range_max ??
-            parameterSelectionMinMax.max ??
-            3;
-
-          const validParamIds =
-            scenarioData && "valid_parameter_ids" in scenarioData
-              ? (scenarioData as ScenarioNewOut).valid_parameter_ids || []
-              : [];
-          if (validParamIds.length === 0) {
-            return null;
-          }
-
-          // GenericPicker handles filtering internally
-          // No need to pre-filter here
-
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={isReadonly}
-              isEditMode={false}
-              searchTerm={parameterSearchTerm}
-              onSearchChange={(term: string) =>
-                setUrlParams({ parameterSearch: term || null })
-              }
-              searchPlaceholder="Search parameters..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: parameterShowSelected,
-                  onChange: (value: boolean) =>
-                    setUrlParams({ parameterShowSelected: value || null }),
-                },
-              ]}
-              actions={
-                <div className="flex items-center gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={onReset}
-                        disabled={isReadonly}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Reset</TooltipContent>
-                  </Tooltip>
-                </div>
-              }
-              resetFields={["parameterIds"]}
-              {...(onReset ? { onReset } : {})}
-            >
-              <GenericPicker
-                items={parameterMapping}
-                itemIds={validParamIds}
-                selectedIds={draftState.parameterIds || []}
-                onSelect={(ids) => {
-                  handleInputChange("parameterIds", ids);
-                  // When unselecting a parameter, also remove all its parameter items (fields)
-                  const unselectedParams = (
-                    draftState.parameterIds || []
-                  ).filter((id) => !ids.includes(id));
-                  if (unselectedParams.length > 0) {
-                    unselectedParams.forEach((paramId) => {
-                      updateFieldIds((prev) =>
-                        prev.filter(
-                          (itemId) =>
-                            fieldMapping[itemId]?.parameter_id !== paramId
-                        )
-                      );
-                    });
-                  }
-                }}
-                getId={(item) => (item as unknown as { id: string }).id}
-                getLabel={(item) => item.name || ""}
-                getSearchText={(item) =>
-                  `${item.name} ${item.description || ""}`
-                }
-                placeholder="Select parameters"
-                disabled={isReadonly}
-                multiSelect={true}
-                hideSelectedChips={true}
-                buttonClassName="w-full"
-              />
-            </StepCard>
-          );
-        }
-        case "content": {
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={isReadonly}
-              isEditMode={false}
-              resetFields={[
-                "problem_statement_id",
-                "objective_ids",
-                "useImage",
-                "useVideo",
-                "useQuestions",
-              ]}
-              actions={
-                stepResources["content"] &&
-                stepResources["content"].length > 0 &&
-                currentScenarioData?.content_agent_id ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "content"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "content",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            isReadonly ||
-                            stepResources["content"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["content"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["content"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : undefined
-              }
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <div className="space-y-4">
-                {/* Problem Statement - using ProblemStatements resource component */}
-                <ProblemStatements
-                  problem_statement_id={formState.problem_statement_id ?? null}
-                  problem_statement_resource={
-                    currentScenarioData?.problem_statement_resource ?? null
-                  }
-                  show_problem_statement={
-                    currentScenarioData?.show_problem_statement ?? true
-                  }
-                  problem_statement_suggestions={
-                    currentScenarioData?.problem_statement_suggestions ?? []
-                  }
-                  problem_statements={
-                    currentScenarioData?.problem_statements ?? []
-                  }
-                  disabled={isReadonly}
-                  onProblemStatementIdChange={(problemStatementId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      problem_statement_id: problemStatementId,
-                    }))
-                  }
-                  searchTerm={
-                    (_stepFormData["problemStatementSearch"] as
-                      | string
-                      | null
-                      | undefined) || ""
-                  }
-                  onSearchChange={(term: string) =>
-                    _setStepFormData({ problemStatementSearch: term || null })
-                  }
-                  onGenerate={handleGenerateProblemStatements}
-                  isGenerating={isGenerating("problem_statements")}
-                  label="Problem Statement"
-                  placeholder="Describe the problem or scenario context"
-                  required={
-                    currentScenarioData?.problem_statement_required ?? false
-                  }
-                  rows={4}
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={
-                    currentScenarioData?.problem_statement_agent_id ?? null
-                  }
-                  createProblemStatementsAction={createProblemStatementsAction}
-                />
-
-                {/* Objectives - using Objectives resource component */}
-                <Objectives
-                  objective_ids={formState.objective_ids ?? []}
-                  objective_resources={
-                    currentScenarioData?.objective_resources ?? []
-                  }
-                  show_objectives={
-                    currentScenarioData?.show_objectives ?? false
-                  }
-                  objective_suggestions={
-                    currentScenarioData?.objective_suggestions ?? []
-                  }
-                  objectives={currentScenarioData?.objectives ?? []}
-                  disabled={isReadonly}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, objective_ids: ids }))
-                  }
-                  onGenerate={handleGenerateObjectives}
-                  isGenerating={isGenerating("objectives")}
-                  required={currentScenarioData?.objectives_required ?? false}
-                  group_id={currentScenarioData?.group_id ?? null}
-                  agent_id={currentScenarioData?.objectives_agent_id ?? null}
-                  createObjectivesAction={createObjectivesAction}
-                />
-
-                {/* TODO: Images, Videos, Questions will be migrated to resources later */}
-                <ContentSection
-                  problemStatement={problemStatement || ""}
-                  problemStatementMapping={problemStatementMapping}
-                  currentProblemStatementIds={currentProblemStatementIds}
-                  {...(selectedProblemStatementId
-                    ? { selectedProblemStatementId }
-                    : {})}
-                  hasProblemStatementChanges={hasProblemStatementChanges}
-                  originalProblemStatement={originalProblemStatement}
-                  useProblemStatement={useProblemStatement}
-                  initialObjectives={contentState.objectives}
-                  objectivesHistory={objectivesHistory}
-                  useObjectives={useObjectives}
-                  onUseObjectivesChange={(enabled) => {
-                    handleInputChange("useObjectives", enabled || null);
-                  }}
-                  useImage={useImage}
-                  initialImage={contentState.image}
-                  imageMapping={imageMapping}
-                  isUploadingImage={isUploadingImage}
-                  allPreviewDocumentIds={allPreviewDocumentIds}
-                  documentMapping={documentMapping}
-                  initialScenarioPreviewDocumentId={
-                    contentState.scenarioPreviewDocumentId
-                  }
-                  {...(scenarioData?.document_details
-                    ? {
-                        documentDetails:
-                          scenarioData.document_details as Array<{
-                            document_id: string;
-                            upload_id?: string | null;
-                            [key: string]: unknown;
-                          }>,
-                      }
-                    : {})}
-                  templateDocumentIds={filteredTemplateDocumentIds}
-                  selectedPersonaIds={selectedPersonaIds}
-                  personaMapping={personaMapping}
-                  onProblemStatementChange={(value) => {
-                    // Resource-first: Update via formState, not draftState
-                    // This is handled by ProblemStatements component via onProblemStatementIdChange
-                  }}
-                  onProblemStatementVersionSelect={
-                    handleProblemStatementVersionSelect
-                  }
-                  onResetProblemStatement={() => {
-                    // Resource-first: Reset via formState
-                    setFormState((prev) => ({
-                      ...prev,
-                      problem_statement_id: null,
-                    }));
-                  }}
-                  onUseProblemStatementChange={(enabled) => {
-                    handleInputChange("useProblemStatement", enabled || null);
-                    if (!enabled) {
-                      handleInputChange("problemStatement", null);
-                    }
-                  }}
-                  onUseImageChange={(enabled) => {
-                    handleInputChange("useImage", enabled || null);
-                  }}
-                  onImageUpload={handleImageUpload}
-                  useVideo={useVideo}
-                  initialSelectedVideo={contentState.selectedVideo}
-                  videoMapping={videoMapping}
-                  initialActiveVideoId={contentState.activeVideoId}
-                  onUseVideoChange={(enabled) => {
-                    handleInputChange("useVideo", enabled || null);
-                    if (!enabled) {
-                      handleInputChange("useQuestions", null);
-                    }
-                  }}
-                  selectedVideoLength={selectedVideoLength}
-                  onVideoLengthChange={updateVideoLength}
-                  useQuestions={useQuestions}
-                  initialQuestions={contentState.questions}
-                  initialCurrentQuestionIds={contentState.currentQuestionIds}
-                  onUseQuestionsChange={(enabled) => {
-                    handleInputChange("useQuestions", enabled || null);
-                  }}
-                  onStateChange={setContentState}
-                  onScenarioPreviewDocumentChange={(docId) => {
-                    setContentState((prev) => ({
-                      ...prev,
-                      scenarioPreviewDocumentId: docId,
-                    }));
-                  }}
-                  onDocumentRemove={handleDocumentRemove}
-                  onGenerate={handleGenerateScenario}
-                  onResetContent={handleResetContent}
-                  onShowRegenerationDialog={() =>
-                    setShowRegenerationDialog(true)
-                  }
-                  stepStatus={stepStatus}
-                  stepTitle={stepTitle}
-                  stepDescription={stepDescription}
-                  stepNumber={stepNumber}
-                  isReadonly={isReadonly}
-                  isGeneratingScenario={isGeneratingScenario}
-                  isSubmitting={isSubmitting}
-                  imageInputRef={
-                    imageInputRef as React.RefObject<HTMLInputElement>
-                  }
-                  isEditMode={false}
-                />
-              </div>
-            </StepCard>
-          );
-        }
-        case "preview": {
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={isReadonly}
-              isEditMode={false}
-              resetFields={[]}
-              {...(onReset ? { onReset } : {})}
-            >
-              {/* TODO: Re-integrate preview sections in future */}
-              {/* <PreviewStep
-                selectedPersonaIds={selectedPersonaIds}
-                personaMapping={personaMapping}
-                allPreviewDocumentIds={allPreviewDocumentIds}
-                documentMapping={documentMapping}
-                {...(scenarioData?.document_details
-                  ? {
-                      documentDetails: scenarioData.document_details as Array<{
-                        document_id: string;
-                        upload_id?: string | null;
-                        [key: string]: unknown;
-                      }>,
-                    }
-                  : {})}
-                scenarioPreviewDocumentId={
-                  contentState.scenarioPreviewDocumentId ?? null
-                }
-                onScenarioPreviewDocumentChange={(docId) => {
-                  setContentState((prev) => ({
+                descriptions={currentScenarioData?.descriptions ?? []}
+                disabled={disabled}
+                onDescriptionIdChange={(descriptionId) =>
+                  setFormState((prev) => ({
                     ...prev,
-                    scenarioPreviewDocumentId: docId,
-                  }));
-                }}
-                onDocumentRemove={handleDocumentRemove}
-                useVideo={useVideo ?? false}
-                selectedVideo={contentState.selectedVideo ?? null}
-                image={contentState.image ?? null}
-                stepStatus={stepStatus}
-                stepTitle={stepTitle}
-                stepDescription={stepDescription}
-                stepNumber={stepNumber}
-                isReadonly={isReadonly}
-                disabled={isReadonly}
-              /> */}
-              <div className="text-muted-foreground text-sm">
-                Preview section temporarily disabled - will be re-integrated as
-                resources
-              </div>
+                    description_id: descriptionId,
+                  }))
+                }
+                onGenerate={handleGenerateDescription}
+                isGenerating={isGenerating("descriptions")}
+                label="Description"
+                placeholder="Describe the scenario"
+                required={currentScenarioData?.description_required ?? false}
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.description_agent_id ?? null}
+                createDescriptionsAction={
+                  createDescriptionsAction as
+                    | ((
+                        input: CreateDraftDescriptionsIn
+                      ) => Promise<CreateDraftDescriptionsOut>)
+                    | undefined
+                }
+              />
+
+              <Flags
+                flag_id={formState.active_flag_id ?? null}
+                flag_resource={currentScenarioData?.active_flag_resource ?? null}
+                show_flag={currentScenarioData?.show_active_flag ?? false}
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
+                }
+                label="Active"
+                helpText={currentScenarioData?.active_flag_resource?.description ?? undefined}
+                iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.active_flag_agent_id ?? null}
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={currentScenarioData?.active_flag_required ?? false}
+              />
+
+              <Departments
+                department_ids={formState.department_ids}
+                department_resources={
+                  currentScenarioData?.department_resources ?? []
+                }
+                show_departments={currentScenarioData?.show_departments ?? false}
+                department_suggestions={
+                  currentScenarioData?.department_suggestions ?? []
+                }
+                departments={currentScenarioData?.departments ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, department_ids: ids }))
+                }
+                label="Departments"
+                required={currentScenarioData?.departments_required ?? false}
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.departments_agent_id ?? null}
+                createDepartmentsAction={
+                  createDepartmentsAction as
+                    | ((
+                        input: CreateDraftDepartmentsIn
+                      ) => Promise<CreateDraftDepartmentsOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateDepartments}
+                isGenerating={isGenerating("departments")}
+              />
             </StepCard>
           );
-        }
-        default:
-          // Handle dynamic parameter steps (parameter-{paramId})
-          if (stepId.startsWith("parameter-")) {
-            // Inline ParameterItemSection for dynamic parameter steps
-            const paramId = stepId.replace("parameter-", "");
-            const param = generalParameterMapping[paramId];
-            if (!param) return null;
-
-            const validItemsForParam = validGeneralParameterItemIds.filter(
-              (itemId: string) => fieldMapping[itemId]?.parameter_id === paramId
-            );
-            const selectedItemsForParam = currentFieldIds.filter(
-              (itemId) => fieldMapping[itemId]?.parameter_id === paramId
-            );
-            const fullParam = parameterMapping[paramId] || param;
-            // field_ranges only exists on ScenarioDetailOut, not ScenarioDetailNew
-            // For create mode, use defaults
-            const sliderMin = 1;
-            const sliderMax = 3;
-
-            return (
-              <StepCard
-                stepStatus={stepStatus}
-                stepNumber={stepNumber}
-                stepTitle={fullParam.name}
-                stepDescription={fullParam.description || ""}
-                isReadonly={isReadonly}
-                isEditMode={false}
-                resetFields={[`fieldIds-${paramId}`]}
-                {...(onReset ? { onReset } : {})}
-                actions={
-                  <div className="flex items-center gap-2">
+        case "configuration":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["configuration"]}
+              actions={
+                shouldShowGenerateAction(
+                  "configuration",
+                  currentScenarioData?.basic_agent_id
+                ) ? (
+                  <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleResetParameter(paramId)}
-                          disabled={isReadonly}
+                          onClick={() =>
+                            handleOpenStepCardModal("configuration", "generate")
+                          }
+                          disabled={disabled}
                         >
-                          <RotateCcw className="h-4 w-4" />
+                          <Sparkles className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Reset</TooltipContent>
+                      <TooltipContent>Generate</TooltipContent>
                     </Tooltip>
-                  </div>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
+              <Flags
+                flag_id={formState.problem_statement_enabled_flag_id ?? null}
+                flag_resource={
+                  currentScenarioData?.problem_statement_enabled_flag_resource ??
+                  null
                 }
-              >
-                <ParameterSelector
-                  parameterMapping={{
-                    [paramId]: fullParam,
-                  }}
-                  fieldMapping={fieldMapping}
-                  validParameterItemIds={validItemsForParam}
-                  selectedParameterItemIds={selectedItemsForParam}
-                  onParameterItemIdsChange={(newIds) => {
-                    // Update only this parameter's items
-                    const otherFieldIds = currentFieldIds.filter(
-                      (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-                    );
-                    updateFieldIds([...otherFieldIds, ...newIds]);
-                  }}
-                  disabled={isReadonly}
-                />
-              </StepCard>
-            );
-          }
+                show_flag={
+                  currentScenarioData?.show_problem_statement_enabled_flag ??
+                  false
+                }
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    problem_statement_enabled_flag_id: flagId,
+                  }))
+                }
+                label="Problem Statement Enabled"
+                helpText={
+                  currentScenarioData?.problem_statement_enabled_flag_resource
+                    ?.description ?? undefined
+                }
+                iconId={
+                  currentScenarioData?.problem_statement_enabled_flag_resource
+                    ?.icon_id ?? undefined
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={
+                  currentScenarioData?.problem_statement_enabled_flag_agent_id ??
+                  null
+                }
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={
+                  currentScenarioData?.problem_statement_enabled_flag_required ??
+                  false
+                }
+              />
+
+              <Flags
+                flag_id={formState.objectives_enabled_flag_id ?? null}
+                flag_resource={
+                  currentScenarioData?.objectives_enabled_flag_resource ?? null
+                }
+                show_flag={
+                  currentScenarioData?.show_objectives_enabled_flag ?? false
+                }
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    objectives_enabled_flag_id: flagId,
+                  }))
+                }
+                label="Objectives Enabled"
+                helpText={
+                  currentScenarioData?.objectives_enabled_flag_resource
+                    ?.description ?? undefined
+                }
+                iconId={
+                  currentScenarioData?.objectives_enabled_flag_resource
+                    ?.icon_id ?? undefined
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={
+                  currentScenarioData?.objectives_enabled_flag_agent_id ?? null
+                }
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={
+                  currentScenarioData?.objectives_enabled_flag_required ?? false
+                }
+              />
+
+              <Flags
+                flag_id={formState.images_enabled_flag_id ?? null}
+                flag_resource={
+                  currentScenarioData?.images_enabled_flag_resource ?? null
+                }
+                show_flag={currentScenarioData?.show_images_enabled_flag ?? false}
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    images_enabled_flag_id: flagId,
+                  }))
+                }
+                label="Images Enabled"
+                helpText={
+                  currentScenarioData?.images_enabled_flag_resource?.description ??
+                  undefined
+                }
+                iconId={
+                  currentScenarioData?.images_enabled_flag_resource?.icon_id ??
+                  undefined
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.images_enabled_flag_agent_id ?? null}
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={currentScenarioData?.images_enabled_flag_required ?? false}
+              />
+
+              <Flags
+                flag_id={formState.video_enabled_flag_id ?? null}
+                flag_resource={
+                  currentScenarioData?.video_enabled_flag_resource ?? null
+                }
+                show_flag={currentScenarioData?.show_video_enabled_flag ?? false}
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    video_enabled_flag_id: flagId,
+                  }))
+                }
+                label="Video Enabled"
+                helpText={
+                  currentScenarioData?.video_enabled_flag_resource?.description ??
+                  undefined
+                }
+                iconId={
+                  currentScenarioData?.video_enabled_flag_resource?.icon_id ??
+                  undefined
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.video_enabled_flag_agent_id ?? null}
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={currentScenarioData?.video_enabled_flag_required ?? false}
+              />
+
+              <Flags
+                flag_id={formState.questions_enabled_flag_id ?? null}
+                flag_resource={
+                  currentScenarioData?.questions_enabled_flag_resource ?? null
+                }
+                show_flag={
+                  currentScenarioData?.show_questions_enabled_flag ?? false
+                }
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    questions_enabled_flag_id: flagId,
+                  }))
+                }
+                label="Questions Enabled"
+                helpText={
+                  currentScenarioData?.questions_enabled_flag_resource
+                    ?.description ?? undefined
+                }
+                iconId={
+                  currentScenarioData?.questions_enabled_flag_resource?.icon_id ??
+                  undefined
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.questions_enabled_flag_agent_id ?? null}
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={currentScenarioData?.questions_enabled_flag_required ?? false}
+              />
+            </StepCard>
+          );
+        case "content":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["problem_statement", "objectives"]}
+              actions={
+                shouldShowGenerateAction(
+                  "content",
+                  currentScenarioData?.content_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenStepCardModal("content", "generate")}
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
+              <ProblemStatements
+                problem_statement_id={formState.problem_statement_id ?? null}
+                problem_statement_resource={
+                  currentScenarioData?.problem_statement_resource ?? null
+                }
+                show_problem_statement={
+                  currentScenarioData?.show_problem_statement ?? true
+                }
+                problem_statement_suggestions={
+                  currentScenarioData?.problem_statement_suggestions ?? []
+                }
+                problem_statements={currentScenarioData?.problem_statements ?? []}
+                disabled={disabled}
+                onProblemStatementIdChange={(problemStatementId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    problem_statement_id: problemStatementId,
+                  }))
+                }
+                onGenerate={handleGenerateProblemStatements}
+                isGenerating={isGenerating("problem_statements")}
+                placeholder="Define the core problem"
+                required={currentScenarioData?.problem_statement_required ?? false}
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.problem_statement_agent_id ?? null}
+                createProblemStatementsAction={
+                  createProblemStatementsAction as
+                    | ((
+                        input: CreateDraftProblemStatementsIn
+                      ) => Promise<CreateDraftProblemStatementsOut>)
+                    | undefined
+                }
+              />
+
+              <Objectives
+                objective_ids={formState.objective_ids}
+                objective_resources={currentScenarioData?.objective_resources ?? []}
+                show_objectives={currentScenarioData?.show_objectives ?? false}
+                objectives_agent_id={currentScenarioData?.objectives_agent_id ?? null}
+                objectives_required={currentScenarioData?.objectives_required ?? false}
+                objective_suggestions={currentScenarioData?.objective_suggestions ?? []}
+                objectives={currentScenarioData?.objectives ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, objective_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.objectives_agent_id ?? null}
+                createObjectivesAction={
+                  createObjectivesAction as
+                    | ((
+                        input: CreateDraftObjectivesIn
+                      ) => Promise<CreateDraftObjectivesOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateObjectives}
+                isGenerating={isGenerating("objectives")}
+              />
+            </StepCard>
+          );
+        case "resources":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={personaSearch}
+              onSearchChange={(value) => setFormData({ personaSearch: value })}
+              resetFields={["resources"]}
+              filters={
+                filters ?? [
+                  {
+                    key: "personaShowSelected",
+                    label: "Show selected only",
+                    value: personaShowSelected,
+                    onChange: (value) =>
+                      setFormData({ personaShowSelected: value }),
+                  },
+                ]
+              }
+              actions={
+                shouldShowGenerateAction(
+                  "resources",
+                  currentScenarioData?.general_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("resources", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
+              <Personas
+                persona_ids={formState.persona_ids}
+                persona_resources={currentScenarioData?.persona_resources ?? []}
+                show_personas={currentScenarioData?.show_personas ?? false}
+                persona_suggestions={currentScenarioData?.persona_suggestions ?? []}
+                personas={currentScenarioData?.personas ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, persona_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                personas_agent_id={currentScenarioData?.personas_agent_id ?? null}
+                required={currentScenarioData?.personas_required ?? false}
+                createPersonasAction={
+                  createPersonasAction as
+                    | ((
+                        input: CreateDraftPersonasIn
+                      ) => Promise<CreateDraftPersonasOut>)
+                    | undefined
+                }
+                onGenerate={handleGeneratePersonas}
+                isGenerating={isGenerating("personas")}
+              />
+
+              <Documents
+                document_ids={formState.document_ids}
+                document_resources={currentScenarioData?.document_resources ?? []}
+                show_documents={currentScenarioData?.show_documents ?? false}
+                document_suggestions={currentScenarioData?.document_suggestions ?? []}
+                documents={currentScenarioData?.documents ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, document_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                documents_agent_id={currentScenarioData?.documents_agent_id ?? null}
+                required={currentScenarioData?.documents_required ?? false}
+                createDocumentsAction={
+                  createDocumentsAction as
+                    | ((
+                        input: CreateDraftDocumentsIn
+                      ) => Promise<CreateDraftDocumentsOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateDocuments}
+                isGenerating={isGenerating("documents")}
+              />
+
+              <Templates
+                template_ids={formState.template_ids}
+                template_resources={currentScenarioData?.template_resources ?? []}
+                show_templates={currentScenarioData?.show_templates ?? false}
+                template_suggestions={currentScenarioData?.template_suggestions ?? []}
+                templates={currentScenarioData?.templates ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, template_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                templates_agent_id={currentScenarioData?.templates_agent_id ?? null}
+                required={currentScenarioData?.templates_required ?? false}
+                createTemplatesAction={
+                  createTemplatesAction as
+                    | ((
+                        input: CreateDraftTemplatesIn
+                      ) => Promise<CreateDraftTemplatesOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateTemplates}
+                isGenerating={isGenerating("templates")}
+                searchTerm={documentSearch}
+                showSelectedFilter={documentShowSelected}
+              />
+
+              <Parameters
+                parameter_ids={formState.parameter_ids}
+                parameter_resources={
+                  currentScenarioData?.parameter_resources ?? []
+                }
+                show_parameters={currentScenarioData?.show_parameters ?? false}
+                parameter_suggestions={
+                  currentScenarioData?.parameter_suggestions ?? []
+                }
+                parameters={currentScenarioData?.parameters ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, parameter_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.parameters_agent_id ?? null}
+                required={currentScenarioData?.parameters_required ?? false}
+                createParametersAction={
+                  createParametersAction as
+                    | ((
+                        input: CreateDraftParametersIn
+                      ) => Promise<CreateDraftParametersOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateParameters}
+                isGenerating={isGenerating("parameters")}
+              />
+
+              <Fields
+                field_ids={formState.field_ids}
+                field_resources={currentScenarioData?.field_resources ?? []}
+                show_fields={currentScenarioData?.show_fields ?? false}
+                field_suggestions={currentScenarioData?.field_suggestions ?? []}
+                fields={currentScenarioData?.fields ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, field_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.fields_agent_id ?? null}
+                required={currentScenarioData?.fields_required ?? false}
+                createFieldsAction={
+                  createFieldsAction as
+                    | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
+                    | undefined
+                }
+                searchTerm={parameterSearch}
+                showSelectedFilter={parameterShowSelected}
+              />
+            </StepCard>
+          );
+        case "media":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["media"]}
+              actions={
+                shouldShowGenerateAction(
+                  "media",
+                  currentScenarioData?.content_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenStepCardModal("media", "generate")}
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
+              <Images
+                image_ids={formState.image_ids}
+                image_resources={currentScenarioData?.image_resources ?? []}
+                show_images={currentScenarioData?.show_images ?? false}
+                images_agent_id={currentScenarioData?.images_agent_id ?? null}
+                images_required={currentScenarioData?.images_required ?? false}
+                image_suggestions={currentScenarioData?.image_suggestions ?? []}
+                images={currentScenarioData?.images ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, image_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.images_agent_id ?? null}
+                createImagesAction={
+                  createImagesAction as
+                    | ((input: CreateDraftImagesIn) => Promise<CreateDraftImagesOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateImages}
+                isGenerating={isGenerating("images")}
+                multiSelect={true}
+                maxImages={3}
+              />
+
+              <Videos
+                video_ids={formState.video_ids}
+                video_resources={currentScenarioData?.video_resources ?? []}
+                show_videos={currentScenarioData?.show_videos ?? false}
+                videos_agent_id={currentScenarioData?.videos_agent_id ?? null}
+                videos_required={currentScenarioData?.videos_required ?? false}
+                video_suggestions={currentScenarioData?.video_suggestions ?? []}
+                videos={currentScenarioData?.videos ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, video_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.videos_agent_id ?? null}
+                createVideosAction={
+                  createVideosAction as
+                    | ((input: CreateDraftVideosIn) => Promise<CreateDraftVideosOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateVideos}
+                isGenerating={isGenerating("videos")}
+              />
+
+              <Questions
+                question_ids={formState.question_ids}
+                question_resources={currentScenarioData?.question_resources ?? []}
+                show_questions={currentScenarioData?.show_questions ?? false}
+                questions_agent_id={currentScenarioData?.questions_agent_id ?? null}
+                questions_required={currentScenarioData?.questions_required ?? false}
+                question_suggestions={currentScenarioData?.question_suggestions ?? []}
+                questions={currentScenarioData?.questions ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, question_ids: ids }))
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.questions_agent_id ?? null}
+                createQuestionsAction={
+                  createQuestionsAction as
+                    | ((input: CreateDraftQuestionsIn) => Promise<CreateDraftQuestionsOut>)
+                    | undefined
+                }
+                onGenerate={handleGenerateQuestions}
+                isGenerating={isGenerating("questions")}
+              />
+            </StepCard>
+          );
+        default:
           return null;
       }
     },
     [
-      name,
-      draftState.departmentIds,
-      draftState.parameterIds,
-      scenarioData,
-      localPreviewDocId,
-      departmentMapping,
-      agentMapping,
-      basicInfoState,
-      setBasicInfoState,
-      handlePersonaSelect,
-      handleResetParameter,
-      updateDocumentIds,
-      updateFieldIds,
-      updateFieldRanges,
-      setPreviewDocumentId,
-      isReadonly,
+      stableScenarioDataFields,
+      disabled,
       isEditMode,
-      isPending,
-      personaSearchTerm,
-      personaShowSelected,
-      personaMinMax,
-      validPersonaIds,
-      personaMapping,
-      selectedPersonaIds,
-      documentSearchTerm,
-      documentShowSelected,
-      documentShowTemplate,
-      documentMinMax,
-      validDocumentIds,
-      documentMapping,
-      currentDocumentIds,
-      parameterSearchTerm,
-      parameterShowSelected,
-      parameterSelectionMinMax,
-      parameterMapping,
-      fieldMapping,
-      generalParameterMapping,
-      validGeneralParameterItemIds,
-      currentFieldIds,
-      fieldMinMax,
-      setUrlParams,
-      handleInputChange,
-      handleGenerateScenario,
-      handleResetContent,
-      handleProblemStatementVersionSelect,
-      handleImageUpload,
-      handleDocumentRemove,
-      problemStatement,
-      problemStatementMapping,
-      currentProblemStatementIds,
-      selectedProblemStatementId,
-      hasProblemStatementChanges,
-      originalProblemStatement,
-      useProblemStatement,
-      useObjectives,
-      useImage,
-      useVideo,
-      useQuestions,
-      objectivesHistory,
-      imageMapping,
-      videoMapping,
-      allPreviewDocumentIds,
-      filteredTemplateDocumentIds,
-      selectedVideoLength,
-      updateVideoLength,
-      contentState,
-      isUploadingImage,
-      isGeneratingScenario,
-      isSubmitting,
-      imageInputRef,
-      setShowRegenerationDialog,
+      handleGenerateName,
+      handleGenerateDescription,
+      handleGenerateProblemStatements,
+      handleGenerateObjectives,
+      handleGenerateDepartments,
+      handleGeneratePersonas,
+      handleGenerateDocuments,
+      handleGenerateTemplates,
+      handleGenerateParameters,
+      handleGenerateFields,
+      handleGenerateImages,
+      handleGenerateVideos,
+      handleGenerateQuestions,
+      handleGenerateFlags,
+      isGenerating,
+      formState,
+      createNamesAction,
+      createDescriptionsAction,
+      createProblemStatementsAction,
+      createObjectivesAction,
+      createScenarioFlagsWrapper,
+      createDepartmentsAction,
+      createPersonasAction,
+      createDocumentsAction,
+      createTemplatesAction,
+      createParametersAction,
+      createFieldsAction,
+      createImagesAction,
+      createVideosAction,
+      createQuestionsAction,
+      canRegenerate,
+      handleOpenStepCardModal,
+      stepResources,
     ]
   );
 
-  // Content sections for dynamic parameter steps (defined after renderStep)
-  const contentSections = useMemo(() => {
-    return Object.entries(generalParameterMapping).map(
-      ([paramId, param], index) => {
-        const stepIndex = 4 + index; // After basic (0), persona (1), documents (2), parameters (3)
-        return {
-          id: `parameter-${paramId}`,
-          render: ({
-            formData,
-            setFormData,
-          }: {
-            formData: Record<string, unknown>;
-            setFormData: (updates: Partial<Record<string, unknown>>) => void;
-          }) => {
-            return renderStep({
-              stepId: `parameter-${paramId}`,
-              stepStatus: getStepStatus(`parameter-${paramId}`, formData),
-              stepTitle: param.name,
-              stepDescription: param.description || "",
-              stepNumber: stepIndex + 1,
-              isOptional: false,
-              formData,
-              setFormData,
-            });
-          },
-          insertAfter: "parameters",
-        };
-      }
-    );
-  }, [generalParameterMapping, getStepStatus, renderStep]);
-
   return (
-    <div className="w-full p-6 space-y-8">
-      {isReadonly && (
+    <TooltipProvider>
+      <div className="w-full p-6 space-y-8" data-page={`scenario-${isEditMode ? "edit" : "new"}`}>
         <ReadOnlyBanner
-          disabledReason={
-            scenarioData &&
-            typeof scenarioData === "object" &&
-            "disabled_reason" in scenarioData
-              ? ((scenarioData as GetScenarioOut).disabled_reason ?? null)
-              : null
+          disabled={disabled}
+          disabledReason={scenarioData?.disabled_reason ?? null}
+          entityType="scenario"
+        />
+
+        <GenericForm
+          nuqsParsers={
+            scenarioSearchParamsClient as Record<string, Parser<unknown>>
           }
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={scenarioData}
+          formFieldKeys={formFieldKeys}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
         />
-      )}
 
-      {/* Config Section - Feature Flags */}
-      <div className="mb-6">
-        <ConfigSection
-          useProblemStatement={useProblemStatement ?? false}
-          useObjectives={useObjectives ?? false}
-          useImages={useImage ?? false}
-          useVideos={useVideo ?? false}
-          useQuestions={useQuestions ?? false}
-          onUseProblemStatementChange={(enabled) => {
-            handleInputChange("useProblemStatement", enabled || null);
-            if (!enabled) {
-              handleInputChange("problemStatement", null);
-            }
-          }}
-          onUseObjectivesChange={(enabled) => {
-            handleInputChange("useObjectives", enabled || null);
-          }}
-          onUseImagesChange={(enabled) => {
-            handleInputChange("useImage", enabled || null);
-          }}
-          onUseVideosChange={(enabled) => {
-            handleInputChange("useVideo", enabled || null);
-            if (!enabled) {
-              handleInputChange("useQuestions", null);
-            }
-          }}
-          onUseQuestionsChange={(enabled) => {
-            handleInputChange("useQuestions", enabled || null);
-          }}
-          disabled={isReadonly}
-        />
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ScenarioResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
       </div>
-
-      <GenerateRegenerateModal
-        open={showGenerateModal}
-        onOpenChange={setShowGenerateModal}
-        mode={modalMode}
-        resources={modalResources}
-        instructions={modalInstructions}
-        onInstructionsChange={setModalInstructions}
-        onGenerate={handleModalGenerate}
-      />
-      <GenericForm
-        nuqsParsers={
-          scenarioSearchParamsClient as Record<string, Parser<unknown>>
-        }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        formData={
-          formData as unknown as Values<Record<string, Parser<unknown>>>
-        }
-        setFormData={
-          setFormData as unknown as (
-            updates:
-              | Partial<Values<Record<string, Parser<unknown>>>>
-              | ((
-                  prev: Values<Record<string, Parser<unknown>>>
-                ) => Partial<Values<Record<string, Parser<unknown>>>>)
-          ) => void
-        }
-        serverData={scenarioData}
-        initializeForm={initializeForm}
-        formFieldKeys={[
-          "name_id",
-          "description_id",
-          "problem_statement_id",
-          "objective_ids",
-          "departmentIds",
-          "personaIds",
-          "documentIds",
-          "templateDocumentIds",
-          "parameterIds",
-          "fieldIds",
-          "imageIds",
-          "problemStatementIds",
-          "useImage",
-          "useVideo",
-          "useObjectives",
-          "useQuestions",
-          "useProblemStatement",
-          "videoLength",
-          "active",
-          "scenarioDomainId",
-          "imageDomainId",
-          "videoDomainId",
-        ]}
-        onSubmit={async () => {
-          await handleSubmit();
-        }}
-        submitButton={{
-          backUrl: "/create/scenarios",
-          backLabel: "Back",
-          createLabel: "Save Scenario",
-        }}
-        isReadonly={isReadonly}
-        isEditMode={false}
-        renderStep={renderStep}
-        contentSections={contentSections}
-      />
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-3">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/create/scenarios")}
-          disabled={isSubmitting || isGeneratingScenario}
-        >
-          Back
-        </Button>
-        <Button
-          data-testid="btn-submit-scenario"
-          onClick={handleSubmit}
-          disabled={isSubmitting || isGeneratingScenario || isReadonly}
-          className="min-w-[120px]"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            "Save Scenario"
-          )}
-        </Button>
-      </div>
-
-      {/* Regeneration Dialog */}
-      <AlertDialog
-        open={showRegenerationDialog}
-        onOpenChange={setShowRegenerationDialog}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Regenerate Scenario</AlertDialogTitle>
-            <AlertDialogDescription className="pb-2">
-              Provide instructions for what you'd like to change.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="regeneration-instructions">Instructions</Label>
-              <Textarea
-                id="regeneration-instructions"
-                value={regenerationInstructions}
-                onChange={(e) => setRegenerationInstructions(e.target.value)}
-                placeholder="e.g., Make it more challenging, focus on time management..."
-                className="min-h-[100px]"
-                disabled={isGeneratingScenario}
-              />
-            </div>
-            {
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="regenerate-objectives"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
-                    Regenerate Objectives
-                  </Label>
-                  <Switch
-                    id="regenerate-objectives"
-                    checked={regenerateObjectives}
-                    onCheckedChange={setRegenerateObjectives}
-                    disabled={isGeneratingScenario}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Replace current objectives; previous versions remain in
-                  history
-                </p>
-              </div>
-            }
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isGeneratingScenario}
-              onClick={() => {
-                setRegenerationInstructions("");
-                setRegenerateObjectives(true);
-                setShowRegenerationDialog(false);
-              }}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                handleGenerateScenario(
-                  regenerationInstructions.trim() || undefined,
-                  regenerateObjectives
-                );
-                setShowRegenerationDialog(false);
-                setRegenerationInstructions("");
-                setRegenerateObjectives(true);
-              }}
-              disabled={isGeneratingScenario}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isGeneratingScenario ? "Regenerating..." : "Regenerate"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </TooltipProvider>
   );
 }
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
-  // Compare scenarioData by resource IDs, not object reference
-  // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
   const prevScenarioData = prevProps.scenarioId
     ? prevProps.scenarioDetail
     : prevProps.scenarioDetailDefault;
@@ -5440,50 +2701,61 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     name_id: prevScenarioData?.name_id,
     description_id: prevScenarioData?.description_id,
     problem_statement_id: prevScenarioData?.problem_statement_id,
+    active_flag_id: prevScenarioData?.active_flag_id,
+    objectives_enabled_flag_id: prevScenarioData?.objectives_enabled_flag_id,
+    images_enabled_flag_id: prevScenarioData?.images_enabled_flag_id,
+    video_enabled_flag_id: prevScenarioData?.video_enabled_flag_id,
+    questions_enabled_flag_id: prevScenarioData?.questions_enabled_flag_id,
+    problem_statement_enabled_flag_id:
+      prevScenarioData?.problem_statement_enabled_flag_id,
     department_ids: prevScenarioData?.department_ids,
     persona_ids: prevScenarioData?.persona_ids,
     document_ids: prevScenarioData?.document_ids,
+    template_ids: prevScenarioData?.template_ids,
     parameter_ids: prevScenarioData?.parameter_ids,
     field_ids: prevScenarioData?.field_ids,
-    objective_ids: prevScenarioData?.objective_ids,
     image_ids: prevScenarioData?.image_ids,
+    objective_ids: prevScenarioData?.objective_ids,
     video_ids: prevScenarioData?.video_ids,
     question_ids: prevScenarioData?.question_ids,
-    template_ids: prevScenarioData?.template_ids,
   };
   const nextIds = {
     name_id: nextScenarioData?.name_id,
     description_id: nextScenarioData?.description_id,
     problem_statement_id: nextScenarioData?.problem_statement_id,
+    active_flag_id: nextScenarioData?.active_flag_id,
+    objectives_enabled_flag_id: nextScenarioData?.objectives_enabled_flag_id,
+    images_enabled_flag_id: nextScenarioData?.images_enabled_flag_id,
+    video_enabled_flag_id: nextScenarioData?.video_enabled_flag_id,
+    questions_enabled_flag_id: nextScenarioData?.questions_enabled_flag_id,
+    problem_statement_enabled_flag_id:
+      nextScenarioData?.problem_statement_enabled_flag_id,
     department_ids: nextScenarioData?.department_ids,
     persona_ids: nextScenarioData?.persona_ids,
     document_ids: nextScenarioData?.document_ids,
+    template_ids: nextScenarioData?.template_ids,
     parameter_ids: nextScenarioData?.parameter_ids,
     field_ids: nextScenarioData?.field_ids,
-    objective_ids: nextScenarioData?.objective_ids,
     image_ids: nextScenarioData?.image_ids,
+    objective_ids: nextScenarioData?.objective_ids,
     video_ids: nextScenarioData?.video_ids,
     question_ids: nextScenarioData?.question_ids,
-    template_ids: nextScenarioData?.template_ids,
   };
 
-  // Compare primitive props
   if (
     prevProps.scenarioId !== nextProps.scenarioId ||
     JSON.stringify(prevIds) !== JSON.stringify(nextIds)
   ) {
-    return false; // Props changed, re-render
+    return false;
   }
 
-  // Compare function props by reference (should be stable from server actions)
   if (
     prevProps.saveScenarioAction !== nextProps.saveScenarioAction ||
     prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction
   ) {
-    return false; // Function props changed, re-render
+    return false;
   }
 
-  // All props are equivalent, skip re-render
   return true;
 });
 
