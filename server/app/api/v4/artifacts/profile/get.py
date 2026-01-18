@@ -11,11 +11,11 @@ from app.main import get_db
 from app.sql.types import (GetProfileApiRequest, GetProfileApiResponse,
                            GetProfileSqlParams, GetProfileSqlRow,
                            load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/profile/get_profile_complete.sql"
@@ -103,8 +103,16 @@ async def get_profile(
             audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add profile to audit context if target_profile_id was provided (detail mode)
             if target_profile_id:
+                # Construct name from first_name and last_name resources
+                profile_name = ""
+                if result.first_name_resource and result.last_name_resource:
+                    profile_name = f"{result.first_name_resource.name} {result.last_name_resource.name}"
+                elif result.first_name_resource:
+                    profile_name = result.first_name_resource.name
+                elif result.last_name_resource:
+                    profile_name = result.last_name_resource.name
                 audit_ctx["profile"] = {
-                    "name": result.name or "",
+                    "name": profile_name,
                     "id": str(result.profile_id) if result.profile_id else "",
                 }
             audit_set(http_request, **audit_ctx)

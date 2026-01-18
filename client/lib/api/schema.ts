@@ -10086,12 +10086,6 @@ export interface components {
             last_name_suggestions?: string[] | null;
             /** Last Names */
             last_names?: components["schemas"]["QGetProfileV4NameResource"][] | null;
-            /** First Name */
-            first_name?: string | null;
-            /** Last Name */
-            last_name?: string | null;
-            /** Name */
-            name?: string | null;
             /** Email Ids */
             email_ids?: string[] | null;
             /** Email Resources */
@@ -10106,14 +10100,6 @@ export interface components {
             email_suggestions?: string[] | null;
             /** Emails */
             emails?: components["schemas"]["QGetProfileV4EmailResource"][] | null;
-            /** Email Addresses */
-            email_addresses?: string[] | null;
-            /** Primary Email */
-            primary_email?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
             /** Request Limit Id */
             request_limit_id?: string | null;
             request_limit_resource?: components["schemas"]["QGetProfileV4RequestLimitResource"] | null;
@@ -10136,18 +10122,8 @@ export interface components {
             flag_agent_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
-            /** Requests Per Day */
-            requests_per_day?: number | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Cohort Ids */
-            valid_cohort_ids?: string[] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetProfileV4Department"][] | null;
             /** Show Departments */
@@ -10160,10 +10136,20 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetProfileV4Department"][] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Cohort Resources */
+            cohort_resources?: components["schemas"]["QGetProfileV4Cohort"][] | null;
+            /** Show Cohorts */
+            show_cohorts?: boolean | null;
+            /** Cohorts Agent Id */
+            cohorts_agent_id?: string | null;
+            /** Cohorts Required */
+            cohorts_required?: boolean | null;
+            /** Cohort Suggestions */
+            cohort_suggestions?: string[] | null;
             /** Cohorts */
             cohorts?: components["schemas"]["QGetProfileV4Cohort"][] | null;
-            /** Role Options */
-            role_options?: string[] | null;
         };
         /** GetProfileByEmailApiRequest */
         GetProfileByEmailApiRequest: {
@@ -16010,6 +15996,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetProfileV4Department */
         QGetProfileV4Department: {
@@ -16019,11 +16007,13 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetProfileV4EmailResource */
         QGetProfileV4EmailResource: {
-            /** Email Id */
-            email_id: string | null;
+            /** Id */
+            id: string | null;
             /** Email */
             email: string | null;
             /** Generated */
@@ -16031,8 +16021,8 @@ export interface components {
         };
         /** QGetProfileV4FlagResource */
         QGetProfileV4FlagResource: {
-            /** Flag Id */
-            flag_id: string | null;
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Description */
@@ -16044,8 +16034,8 @@ export interface components {
         };
         /** QGetProfileV4NameResource */
         QGetProfileV4NameResource: {
-            /** Name Id */
-            name_id: string | null;
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Generated */
@@ -16053,8 +16043,8 @@ export interface components {
         };
         /** QGetProfileV4RequestLimitResource */
         QGetProfileV4RequestLimitResource: {
-            /** Request Limit Id */
-            request_limit_id: string | null;
+            /** Id */
+            id: string | null;
             /** Requests Per Day */
             requests_per_day: number | null;
             /** Generated */

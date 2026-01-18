@@ -20756,6 +20756,7 @@ class QGetProfileV4Cohort(BaseModel):
     cohort_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
 
 
 
@@ -20765,13 +20766,14 @@ class QGetProfileV4Department(BaseModel):
     department_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
 
 
 
 
 class QGetProfileV4EmailResource(BaseModel):
 
-    email_id: UUID | None
+    id: UUID | None
     email: str | None
     generated: bool | None
 
@@ -20780,7 +20782,7 @@ class QGetProfileV4EmailResource(BaseModel):
 
 class QGetProfileV4FlagResource(BaseModel):
 
-    flag_id: UUID | None
+    id: UUID | None
     name: str | None
     description: str | None
     icon_id: UUID | None
@@ -20791,7 +20793,7 @@ class QGetProfileV4FlagResource(BaseModel):
 
 class QGetProfileV4NameResource(BaseModel):
 
-    name_id: UUID | None
+    id: UUID | None
     name: str | None
     generated: bool | None
 
@@ -20800,7 +20802,7 @@ class QGetProfileV4NameResource(BaseModel):
 
 class QGetProfileV4RequestLimitResource(BaseModel):
 
-    request_limit_id: UUID | None
+    id: UUID | None
     requests_per_day: int | None
     generated: bool | None
 
@@ -20826,9 +20828,6 @@ class GetProfileSqlRow(BaseModel):
     last_name_required: bool | None = None
     last_name_suggestions: list[UUID] | None = None
     last_names: list[QGetProfileV4NameResource] | None = None
-    first_name: str | None = None
-    last_name: str | None = None
-    name: str | None = None
     email_ids: list[UUID] | None = None
     email_resources: list[QGetProfileV4EmailResource] | None = None
     show_emails: bool | None = None
@@ -20836,10 +20835,6 @@ class GetProfileSqlRow(BaseModel):
     emails_required: bool | None = None
     email_suggestions: list[UUID] | None = None
     emails: list[QGetProfileV4EmailResource] | None = None
-    email_addresses: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
     request_limit_id: UUID | None = None
     request_limit_resource: QGetProfileV4RequestLimitResource | None = None
     show_request_limit: bool | None = None
@@ -20852,20 +20847,20 @@ class GetProfileSqlRow(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
-    requests_per_day: int | None = None
-    cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    primary_department_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_cohort_ids: list[UUID] | None = None
     department_resources: list[QGetProfileV4Department] | None = None
     show_departments: bool | None = None
     departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetProfileV4Department] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetProfileV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
     cohorts: list[QGetProfileV4Cohort] | None = None
-    role_options: list[str] | None = None
 
 class GetProfileApiRequest(BaseModel):
 
@@ -20893,9 +20888,6 @@ class GetProfileApiResponse(BaseModel):
     last_name_required: bool | None = None
     last_name_suggestions: list[UUID] | None = None
     last_names: list[QGetProfileV4NameResource] | None = None
-    first_name: str | None = None
-    last_name: str | None = None
-    name: str | None = None
     email_ids: list[UUID] | None = None
     email_resources: list[QGetProfileV4EmailResource] | None = None
     show_emails: bool | None = None
@@ -20903,10 +20895,6 @@ class GetProfileApiResponse(BaseModel):
     emails_required: bool | None = None
     email_suggestions: list[UUID] | None = None
     emails: list[QGetProfileV4EmailResource] | None = None
-    email_addresses: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
     request_limit_id: UUID | None = None
     request_limit_resource: QGetProfileV4RequestLimitResource | None = None
     show_request_limit: bool | None = None
@@ -20919,20 +20907,20 @@ class GetProfileApiResponse(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
-    requests_per_day: int | None = None
-    cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    primary_department_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_cohort_ids: list[UUID] | None = None
     department_resources: list[QGetProfileV4Department] | None = None
     show_departments: bool | None = None
     departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetProfileV4Department] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetProfileV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
     cohorts: list[QGetProfileV4Cohort] | None = None
-    role_options: list[str] | None = None
 
 
 

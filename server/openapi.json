@@ -43551,39 +43551,6 @@
             ],
             "title": "Last Names"
           },
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
           "email_ids": {
             "anyOf": [
               {
@@ -43675,53 +43642,6 @@
               }
             ],
             "title": "Emails"
-          },
-          "email_addresses": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email Addresses"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
           },
           "request_limit_id": {
             "anyOf": [
@@ -43864,32 +43784,6 @@
             ],
             "title": "Flag Required"
           },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
           "department_ids": {
             "anyOf": [
               {
@@ -43904,48 +43798,6 @@
               }
             ],
             "title": "Department Ids"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "valid_cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Cohort Ids"
           },
           "department_resources": {
             "anyOf": [
@@ -44024,6 +43876,84 @@
             ],
             "title": "Departments"
           },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "cohort_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileV4Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Resources"
+          },
+          "show_cohorts": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Cohorts"
+          },
+          "cohorts_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts Agent Id"
+          },
+          "cohorts_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts Required"
+          },
+          "cohort_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Suggestions"
+          },
           "cohorts": {
             "anyOf": [
               {
@@ -44037,20 +43967,6 @@
               }
             ],
             "title": "Cohorts"
-          },
-          "role_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role Options"
           }
         },
         "type": "object",
@@ -74005,13 +73921,25 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
           "cohort_id",
           "name",
-          "description"
+          "description",
+          "generated"
         ],
         "title": "QGetProfileV4Cohort"
       },
@@ -74050,19 +73978,31 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
           "department_id",
           "name",
-          "description"
+          "description",
+          "generated"
         ],
         "title": "QGetProfileV4Department"
       },
       "QGetProfileV4EmailResource": {
         "properties": {
-          "email_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -74072,7 +74012,7 @@
                 "type": "null"
               }
             ],
-            "title": "Email Id"
+            "title": "Id"
           },
           "email": {
             "anyOf": [
@@ -74099,7 +74039,7 @@
         },
         "type": "object",
         "required": [
-          "email_id",
+          "id",
           "email",
           "generated"
         ],
@@ -74107,7 +74047,7 @@
       },
       "QGetProfileV4FlagResource": {
         "properties": {
-          "flag_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -74117,7 +74057,7 @@
                 "type": "null"
               }
             ],
-            "title": "Flag Id"
+            "title": "Id"
           },
           "name": {
             "anyOf": [
@@ -74167,7 +74107,7 @@
         },
         "type": "object",
         "required": [
-          "flag_id",
+          "id",
           "name",
           "description",
           "icon_id",
@@ -74177,7 +74117,7 @@
       },
       "QGetProfileV4NameResource": {
         "properties": {
-          "name_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -74187,7 +74127,7 @@
                 "type": "null"
               }
             ],
-            "title": "Name Id"
+            "title": "Id"
           },
           "name": {
             "anyOf": [
@@ -74214,7 +74154,7 @@
         },
         "type": "object",
         "required": [
-          "name_id",
+          "id",
           "name",
           "generated"
         ],
@@ -74222,7 +74162,7 @@
       },
       "QGetProfileV4RequestLimitResource": {
         "properties": {
-          "request_limit_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -74232,7 +74172,7 @@
                 "type": "null"
               }
             ],
-            "title": "Request Limit Id"
+            "title": "Id"
           },
           "requests_per_day": {
             "anyOf": [
@@ -74259,7 +74199,7 @@
         },
         "type": "object",
         "required": [
-          "request_limit_id",
+          "id",
           "requests_per_day",
           "generated"
         ],
