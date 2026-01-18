@@ -9239,16 +9239,6 @@ export interface components {
             disabled_reason?: string | null;
             /** Group Id */
             group_id?: string | null;
-            /** Image Model */
-            image_model?: boolean | null;
-            /** Provider */
-            provider?: string | null;
-            /** Provider Name */
-            provider_name?: string | null;
-            /** Units */
-            units?: components["schemas"]["QGetModelV4Unit"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
             /** Name Id */
             name_id?: string | null;
             name_resource?: components["schemas"]["QGetModelV4NameResource"] | null;
@@ -15121,17 +15111,6 @@ export interface components {
             is_upper: boolean | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetModelV4Unit */
-        QGetModelV4Unit: {
-            /** Unit Id */
-            unit_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Unit Category */
-            unit_category: string | null;
-            /** Value */
-            value: number | null;
         };
         /** QGetModelV4ValueResource */
         QGetModelV4ValueResource: {

@@ -16908,16 +16908,6 @@ class QGetModelV4TemperatureLevelResource(BaseModel):
 
 
 
-class QGetModelV4Unit(BaseModel):
-
-    unit_id: UUID | None
-    name: str | None
-    unit_category: str | None
-    value: int | None
-
-
-
-
 class QGetModelV4ValueResource(BaseModel):
 
     id: UUID | None
@@ -16949,11 +16939,6 @@ class GetModelSqlRow(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     group_id: UUID | None = None
-    image_model: bool | None = None
-    provider: str | None = None
-    provider_name: str | None = None
-    units: list[QGetModelV4Unit] | None = None
-    draft_version: int | None = None
     name_id: UUID | None = None
     name_resource: QGetModelV4NameResource | None = None
     show_name: bool | None = None
@@ -17101,11 +17086,6 @@ class GetModelApiResponse(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     group_id: UUID | None = None
-    image_model: bool | None = None
-    provider: str | None = None
-    provider_name: str | None = None
-    units: list[QGetModelV4Unit] | None = None
-    draft_version: int | None = None
     name_id: UUID | None = None
     name_resource: QGetModelV4NameResource | None = None
     show_name: bool | None = None

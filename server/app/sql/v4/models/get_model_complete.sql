@@ -223,13 +223,6 @@ CREATE TYPE types.q_get_model_v4_voice_option AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_model_v4_unit AS (
-    unit_id uuid,
-    name text,
-    unit_category text,
-    value int
-);
-
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_model_v4(
     profile_id uuid,
@@ -244,12 +237,6 @@ RETURNS TABLE (
     can_edit boolean,
     disabled_reason text,
     group_id uuid,
-    -- Model fields (kept for backward compatibility, but should use resource IDs)
-    image_model boolean,
-    provider text,
-    provider_name text,
-    units types.q_get_model_v4_unit[],
-    draft_version int,
     -- Single-select resources: name
     name_id uuid,
     name_resource types.q_get_model_v4_name_resource,
@@ -485,19 +472,6 @@ user_departments_data AS (
     AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
--- Model data (only if model_id provided) - kept for backward compatibility
-model_data AS (
-    SELECT 
-        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
-        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'active' AND mf.value = TRUE) as active,
-        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1),
-        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
-        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name
-    FROM model_artifact m
-    WHERE m.id = (SELECT model_id FROM params)
-    AND (SELECT model_id FROM params) IS NOT NULL
-),
 -- Resource data CTEs - query from model_* tables or draft_* tables if draft_id provided
 -- NOTE: These must be defined BEFORE they are referenced in other CTEs
 name_resource_data AS (
@@ -598,16 +572,6 @@ endpoint_resource_data AS (
         (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM draft_endpoints de JOIN endpoints_resource e ON de.endpoints_id = e.id WHERE de.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_endpoint_resource,
         (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM model_endpoints me JOIN endpoints_resource e ON me.endpoint_id = e.id WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1) as model_endpoint_resource
     FROM params
-),
--- Determine if model is an image model (has 'image' output modality)
-image_model_check AS (
-    SELECT 
-        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities mm
-    JOIN modalities_resource mr ON mr.id = mm.modality_id
-    WHERE mm.model_id = (SELECT model_id FROM params)
-    AND (SELECT model_id FROM params) IS NOT NULL
-    AND mr.modality = 'image' AND mm.type = 'output'::type_model_modalities AND mm.active = true
 ),
 model_endpoint_data AS (
     SELECT 
@@ -761,16 +725,6 @@ model_voices_data AS (
     AND (SELECT model_id FROM params) IS NOT NULL
     AND v.active = true
     ORDER BY v.voice::text
-),
-all_units_data AS (
-    SELECT 
-        id as unit_id,
-        name,
-        unit_category::text as unit_category,
-        value
-    FROM units
-    WHERE active = true
-    ORDER BY unit_category, value, name
 ),
 -- Providers data (all available providers)
 providers_data AS (
@@ -1900,19 +1854,6 @@ voices_aggregated AS (
             ORDER BY avd.voice
         ) as voices
     FROM all_voices_data avd
-),
-units_aggregated AS (
-    SELECT 
-        ARRAY_AGG(
-            ROW(
-                aud.unit_id,
-                aud.name,
-                aud.unit_category,
-                aud.value
-            )::types.q_get_model_v4_unit
-            ORDER BY aud.unit_category, aud.value, aud.name
-        ) as units
-    FROM all_units_data aud
 )
 SELECT 
     -- Required fields (first 5)
@@ -1921,12 +1862,6 @@ SELECT
     perm.can_edit,
     perm.disabled_reason,
     dgd.group_id,
-    -- Model fields (kept for backward compatibility)
-    COALESCE(imc.image_model, false) as image_model,
-    md.provider,
-    md.provider_name,
-    COALESCE(ua.units, '{}'::types.q_get_model_v4_unit[]) as units,
-    COALESCE((SELECT draft_version FROM draft_group_data), 0) as draft_version,
     -- Single-select resources: name
     COALESCE(
         CASE 
@@ -2424,9 +2359,6 @@ CROSS JOIN providers_aggregated pa
 CROSS JOIN departments_aggregated da
 CROSS JOIN keys_aggregated ka
 CROSS JOIN voices_aggregated voa
-CROSS JOIN units_aggregated ua
-LEFT JOIN model_data md ON true
-LEFT JOIN image_model_check imc ON true
 LEFT JOIN model_departments_data mdd ON true
 LEFT JOIN model_departments_fallback mdf ON true
 LEFT JOIN input_modality_ids_data imid ON true
