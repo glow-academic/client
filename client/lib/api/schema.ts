@@ -8927,6 +8927,41 @@ export interface components {
             group_id?: string | null;
             /** Field Id */
             field_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetFieldV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetFieldV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetFieldV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetFieldV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            active_flag_resource?: components["schemas"]["QGetFieldV4FlagResource"] | null;
+            /** Show Active Flag */
+            show_active_flag?: boolean | null;
+            /** Active Flag Agent Id */
+            active_flag_agent_id?: string | null;
+            /** Active Flag Required */
+            active_flag_required?: boolean | null;
             /** Name */
             name?: string | null;
             /** Description */
@@ -8935,14 +8970,34 @@ export interface components {
             active?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetFieldV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetFieldV4Department"][] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Resources */
+            parameter_resources?: components["schemas"]["QGetFieldV4Parameter"][] | null;
+            /** Show Parameters */
+            show_parameters?: boolean | null;
+            /** Parameters Agent Id */
+            parameters_agent_id?: string | null;
+            /** Parameters Required */
+            parameters_required?: boolean | null;
+            /** Parameter Suggestions */
+            parameter_suggestions?: string[] | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
             /** Parameters */
             parameters?: components["schemas"]["QGetFieldV4Parameter"][] | null;
             /** Valid Parameter Ids */
@@ -9511,6 +9566,41 @@ export interface components {
             disabled_reason?: string | null;
             /** Group Id */
             group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetParameterV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetParameterV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetParameterV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetParameterV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            active_flag_resource?: components["schemas"]["QGetParameterV4FlagResource"] | null;
+            /** Show Active Flag */
+            show_active_flag?: boolean | null;
+            /** Active Flag Agent Id */
+            active_flag_agent_id?: string | null;
+            /** Active Flag Required */
+            active_flag_required?: boolean | null;
             /** Name */
             name?: string | null;
             /** Description */
@@ -9555,34 +9645,6 @@ export interface components {
             field_suggestions?: string[] | null;
             /** Fields */
             fields?: components["schemas"]["QGetParameterV4Field"][] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Persona Resources */
-            persona_resources?: components["schemas"]["QGetParameterV4Persona"][] | null;
-            /** Show Personas */
-            show_personas?: boolean | null;
-            /** Personas Agent Id */
-            personas_agent_id?: string | null;
-            /** Personas Required */
-            personas_required?: boolean | null;
-            /** Persona Suggestions */
-            persona_suggestions?: string[] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetParameterV4Persona"][] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Document Resources */
-            document_resources?: components["schemas"]["QGetParameterV4Document"][] | null;
-            /** Show Documents */
-            show_documents?: boolean | null;
-            /** Documents Agent Id */
-            documents_agent_id?: string | null;
-            /** Documents Required */
-            documents_required?: boolean | null;
-            /** Document Suggestions */
-            document_suggestions?: string[] | null;
-            /** Documents */
-            documents?: components["schemas"]["QGetParameterV4Document"][] | null;
             /** Parameter Items */
             parameter_items?: components["schemas"]["QGetParameterV4Item"][] | null;
             /** Field Connections */
@@ -9599,10 +9661,6 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Valid Field Ids */
             valid_field_ids?: string[] | null;
-            /** Valid Persona Ids */
-            valid_persona_ids?: string[] | null;
-            /** Valid Document Ids */
-            valid_document_ids?: string[] | null;
         };
         /** GetParametersListApiRequest */
         GetParametersListApiRequest: Record<string, never>;
@@ -10029,20 +10087,82 @@ export interface components {
             group_id?: string | null;
             /** Profile Id */
             profile_id?: string | null;
+            /** First Name Id */
+            first_name_id?: string | null;
+            first_name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
+            /** Show First Name */
+            show_first_name?: boolean | null;
+            /** First Name Agent Id */
+            first_name_agent_id?: string | null;
+            /** First Name Required */
+            first_name_required?: boolean | null;
+            /** First Name Suggestions */
+            first_name_suggestions?: string[] | null;
+            /** First Names */
+            first_names?: components["schemas"]["QGetProfileV4NameResource"][] | null;
+            /** Last Name Id */
+            last_name_id?: string | null;
+            last_name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
+            /** Show Last Name */
+            show_last_name?: boolean | null;
+            /** Last Name Agent Id */
+            last_name_agent_id?: string | null;
+            /** Last Name Required */
+            last_name_required?: boolean | null;
+            /** Last Name Suggestions */
+            last_name_suggestions?: string[] | null;
+            /** Last Names */
+            last_names?: components["schemas"]["QGetProfileV4NameResource"][] | null;
             /** First Name */
             first_name?: string | null;
             /** Last Name */
             last_name?: string | null;
             /** Name */
             name?: string | null;
+            /** Email Ids */
+            email_ids?: string[] | null;
+            /** Email Resources */
+            email_resources?: components["schemas"]["QGetProfileV4EmailResource"][] | null;
+            /** Show Emails */
+            show_emails?: boolean | null;
+            /** Emails Agent Id */
+            emails_agent_id?: string | null;
+            /** Emails Required */
+            emails_required?: boolean | null;
+            /** Email Suggestions */
+            email_suggestions?: string[] | null;
             /** Emails */
-            emails?: string[] | null;
+            emails?: components["schemas"]["QGetProfileV4EmailResource"][] | null;
+            /** Email Addresses */
+            email_addresses?: string[] | null;
             /** Primary Email */
             primary_email?: string | null;
             /** Role */
             role?: string | null;
             /** Active */
             active?: boolean | null;
+            /** Request Limit Id */
+            request_limit_id?: string | null;
+            request_limit_resource?: components["schemas"]["QGetProfileV4RequestLimitResource"] | null;
+            /** Show Request Limit */
+            show_request_limit?: boolean | null;
+            /** Request Limit Agent Id */
+            request_limit_agent_id?: string | null;
+            /** Request Limit Required */
+            request_limit_required?: boolean | null;
+            /** Request Limit Suggestions */
+            request_limit_suggestions?: string[] | null;
+            /** Request Limits */
+            request_limits?: components["schemas"]["QGetProfileV4RequestLimitResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetProfileV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /** Cohort Ids */
@@ -10055,6 +10175,16 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Valid Cohort Ids */
             valid_cohort_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetProfileV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetProfileV4Department"][] | null;
             /** Cohorts */
@@ -14453,6 +14583,37 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetFieldV4DescriptionResource */
+        QGetFieldV4DescriptionResource: {
+            /** Description Id */
+            description_id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetFieldV4FlagResource */
+        QGetFieldV4FlagResource: {
+            /** Flag Id */
+            flag_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetFieldV4NameResource */
+        QGetFieldV4NameResource: {
+            /** Name Id */
+            name_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetFieldV4Parameter */
         QGetFieldV4Parameter: {
             /** Parameter Id */
@@ -15091,12 +15252,10 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetParameterV4Document */
-        QGetParameterV4Document: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
+        /** QGetParameterV4DescriptionResource */
+        QGetParameterV4DescriptionResource: {
+            /** Description Id */
+            description_id: string | null;
             /** Description */
             description: string | null;
             /** Generated */
@@ -15126,6 +15285,19 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
+        /** QGetParameterV4FlagResource */
+        QGetParameterV4FlagResource: {
+            /** Flag Id */
+            flag_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetParameterV4Item */
         QGetParameterV4Item: {
             /** Parameter Item Id */
@@ -15141,14 +15313,12 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetParameterV4Persona */
-        QGetParameterV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
+        /** QGetParameterV4NameResource */
+        QGetParameterV4NameResource: {
+            /** Name Id */
+            name_id: string | null;
             /** Name */
             name: string | null;
-            /** Description */
-            description: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -15916,6 +16086,46 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetProfileV4EmailResource */
+        QGetProfileV4EmailResource: {
+            /** Email Id */
+            email_id: string | null;
+            /** Email */
+            email: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProfileV4FlagResource */
+        QGetProfileV4FlagResource: {
+            /** Flag Id */
+            flag_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProfileV4NameResource */
+        QGetProfileV4NameResource: {
+            /** Name Id */
+            name_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProfileV4RequestLimitResource */
+        QGetProfileV4RequestLimitResource: {
+            /** Request Limit Id */
+            request_limit_id: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetProviderV4DescriptionResource */
         QGetProviderV4DescriptionResource: {
