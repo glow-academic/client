@@ -18064,15 +18064,6 @@ class QGetParameterV4Field(BaseModel):
 
 
 
-class QGetParameterV4FieldConnection(BaseModel):
-
-    field_id: UUID | None
-    default: bool | None
-    active: bool | None
-
-
-
-
 class QGetParameterV4FlagResource(BaseModel):
 
     flag_id: UUID | None
@@ -18080,18 +18071,6 @@ class QGetParameterV4FlagResource(BaseModel):
     description: str | None
     icon_id: UUID | None
     generated: bool | None
-
-
-
-
-class QGetParameterV4Item(BaseModel):
-
-    parameter_item_id: UUID | None
-    name: str | None
-    description: str | None
-    default: bool | None
-    usage_count: int | None
-    department_ids: list[str] | None
 
 
 
@@ -18150,14 +18129,6 @@ class GetParameterSqlRow(BaseModel):
     fields_required: bool | None = None
     field_suggestions: list[UUID] | None = None
     fields: list[QGetParameterV4Field] | None = None
-    parameter_items: list[QGetParameterV4Item] | None = None
-    field_connections: list[QGetParameterV4FieldConnection] | None = None
-    draft_version: int | None = None
-    field_ids_jsonb: Any | None = None
-    field_active_states: Any | None = None
-    field_default_states: Any | None = None
-    valid_department_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
 
 class GetParameterApiRequest(BaseModel):
 
@@ -18215,14 +18186,6 @@ class GetParameterApiResponse(BaseModel):
     fields_required: bool | None = None
     field_suggestions: list[UUID] | None = None
     fields: list[QGetParameterV4Field] | None = None
-    parameter_items: list[QGetParameterV4Item] | None = None
-    field_connections: list[QGetParameterV4FieldConnection] | None = None
-    draft_version: int | None = None
-    field_ids_jsonb: Any | None = None
-    field_active_states: Any | None = None
-    field_default_states: Any | None = None
-    valid_department_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
 
 
 

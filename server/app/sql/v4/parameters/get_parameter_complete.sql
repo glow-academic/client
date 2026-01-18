@@ -70,21 +70,6 @@ CREATE TYPE types.q_get_parameter_v4_flag_resource AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_parameter_v4_item AS (
-    parameter_item_id uuid,
-    name text,
-    description text,
-    "default" boolean,
-    usage_count bigint,
-    department_ids text[]
-);
-
-CREATE TYPE types.q_get_parameter_v4_field_connection AS (
-    field_id uuid,
-    "default" boolean,
-    active boolean
-);
-
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_parameter_v4(
     profile_id uuid,
@@ -101,7 +86,7 @@ RETURNS TABLE (
     can_edit boolean,
     disabled_reason text,
     group_id uuid,
-    -- Basic parameter fields
+    -- Single-select resources: name
     name_id uuid,
     name_resource types.q_get_parameter_v4_name_resource,
     show_name boolean,
@@ -109,6 +94,7 @@ RETURNS TABLE (
     name_required boolean,
     name_suggestions uuid[],
     names types.q_get_parameter_v4_name_resource[],
+    -- Single-select resources: description
     description_id uuid,
     description_resource types.q_get_parameter_v4_description_resource,
     show_description boolean,
@@ -122,6 +108,7 @@ RETURNS TABLE (
     show_active_flag boolean,
     active_flag_agent_id uuid,
     active_flag_required boolean,
+    -- Parameter data fields
     name text,
     description text,
     active boolean,
@@ -145,17 +132,7 @@ RETURNS TABLE (
     fields_agent_id uuid,
     fields_required boolean,
     field_suggestions uuid[],
-    fields types.q_get_parameter_v4_field[],
-    -- Parameter items (fields connected to parameter)
-    parameter_items types.q_get_parameter_v4_item[],
-    field_connections types.q_get_parameter_v4_field_connection[],
-    -- Draft and field state
-    draft_version int,
-    field_ids_jsonb jsonb,
-    field_active_states jsonb,
-    field_default_states jsonb,
-    valid_department_ids text[],
-    valid_field_ids text[]
+    fields types.q_get_parameter_v4_field[]
 )
 LANGUAGE sql
 STABLE
@@ -177,16 +154,12 @@ parameter_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM parameter_artifact WHERE id = (SELECT parameter_id FROM params))::boolean
         END as parameter_exists
 ),
--- Draft data
+-- Draft data (no payload needed per ARTIFACT.md)
 draft_payload_data AS (
     SELECT 
-        NULL::jsonb as payload,
-        d.version as draft_version
+        NULL::jsonb as payload
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
-    
     LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
@@ -202,24 +175,49 @@ draft_group_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+user_profile AS (
+    SELECT 
+        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+    FROM params x
+    JOIN profile_artifact p ON p.id = x.profile_id
+),
+user_departments AS (
+    SELECT DISTINCT pd.department_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
+),
+-- Conditional: Get parameter department data only if parameter_id provided
+parameter_departments_data AS (
+    SELECT 
+        pd.parameter_id,
+        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) as department_ids
+    FROM params x
+    JOIN parameter_departments pd ON pd.parameter_id = x.parameter_id AND pd.active = true
+    WHERE x.parameter_id IS NOT NULL
+    GROUP BY pd.parameter_id
+),
+-- Name ID data
 name_id_data AS (
     SELECT 
         CASE 
             WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
-            ELSE (SELECT pn.name_id FROM parameter_names pn WHERE pn.parameter_id = (SELECT parameter_id FROM params) LIMIT 1)
+            ELSE (SELECT pn.name_id FROM parameter_names pn WHERE pn.parameter_id = (SELECT parameter_id FROM params) AND pn.active = true LIMIT 1)
         END as name_id
     FROM params
     LIMIT 1
 ),
+-- Description ID data
 description_id_data AS (
     SELECT 
         CASE 
             WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
-            ELSE (SELECT pd.description_id FROM parameter_descriptions pd WHERE pd.parameter_id = (SELECT parameter_id FROM params) LIMIT 1)
+            ELSE (SELECT pd.description_id FROM parameter_descriptions pd WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true LIMIT 1)
         END as description_id
     FROM params
     LIMIT 1
 ),
+-- Name suggestions: linked to parameters OR same group with generated=true
 name_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -255,6 +253,7 @@ name_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+-- Names suggestions objects
 names_suggestions_objects AS (
     SELECT 
         COALESCE(
@@ -273,6 +272,7 @@ names_suggestions_objects AS (
     FROM params
     LIMIT 1
 ),
+-- Description suggestions: linked to parameters OR same group with generated=true
 description_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -308,6 +308,7 @@ description_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+-- Descriptions suggestions objects
 descriptions_suggestions_objects AS (
     SELECT 
         COALESCE(
@@ -326,6 +327,7 @@ descriptions_suggestions_objects AS (
     FROM params
     LIMIT 1
 ),
+-- Active flag ID data
 active_flag_id_data AS (
     SELECT 
         CASE 
@@ -337,12 +339,14 @@ active_flag_id_data AS (
                 WHERE pf.parameter_id = (SELECT parameter_id FROM params)
                   AND f.name = 'active'
                   AND pf.value = true
+                  AND pf.active = true
                 LIMIT 1
             )
         END as active_flag_id
     FROM params
     LIMIT 1
 ),
+-- Active flag resource data
 active_flag_resource_data AS (
     SELECT 
         (
@@ -354,89 +358,59 @@ active_flag_resource_data AS (
     FROM params
     LIMIT 1
 ),
-user_profile AS (
-    SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
-    FROM params x
-    JOIN profile_artifact p ON p.id = x.profile_id
-),
-user_departments AS (
-    SELECT DISTINCT pd.department_id
-    FROM params x
-    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
-),
--- Conditional: Get parameter department data only if parameter_id provided
-parameter_departments_data AS (
-    SELECT 
-        pd.parameter_id,
-        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) as department_ids
-    FROM params x
-    JOIN parameter_departments pd ON pd.parameter_id = x.parameter_id AND pd.active = true
-    WHERE x.parameter_id IS NOT NULL
-    GROUP BY pd.parameter_id
-),
-field_departments_for_filter AS (
-    SELECT DISTINCT
-        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) as parameter_id,
-        fd.department_id
-    FROM fields_resource f
-    JOIN field_departments fd ON fd.field_id = f.id
-    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true) AND fd.active = true AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
-),
--- For new mode: get default parameter
-default_parameter AS (
-    SELECT p.id
-    FROM parameter_artifact p
-    LEFT JOIN field_departments_for_filter fdf ON fdf.parameter_id = p.id
-    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'active' AND pf.value = true)
-    GROUP BY p.id
-    HAVING 
-        -- Include if has matching department link via parameter_departments or field_departments OR has no department links at all (cross-dept)
-        COUNT(fdf.parameter_id) FILTER (WHERE fdf.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (
-            SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id
-        )
-        AND NOT EXISTS (
-            SELECT 1 FROM field_departments fd2 
-            JOIN fields_resource f2 ON f2.id = fd2.field_id 
-            JOIN parameter_fields pf2 ON pf2.field_id = f2.id WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags_resource fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'active' AND ff2.value = TRUE) AND fd2.active = true
-        )
-    ORDER BY p.created_at DESC
-    LIMIT 1
-),
--- Parameter departments aggregated (union of parameter_departments and field_departments)
-parameter_departments_aggregated AS (
-    SELECT 
-        ARRAY_AGG(DISTINCT dept_id::text ORDER BY dept_id::text) as department_ids
-    FROM (
-        -- Parameter-level departments
-        SELECT pd.department_id as dept_id
-        FROM params x
-        LEFT JOIN parameter_departments pd ON pd.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND pd.active = true
-        WHERE pd.department_id IS NOT NULL
-        UNION
-        -- Field-level departments
-        SELECT fd.department_id as dept_id
-        FROM params x
-        JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
-        JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    ) combined_depts
-),
 -- Parameter data (conditional based on mode)
 parameter_data AS (
     SELECT 
-        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) LIMIT 1),
-        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) LIMIT 1),
-        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND fl.name = 'active' AND paf.value = TRUE) as active,
-        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND fl.name = 'simulation_parameter' AND paf.value = TRUE) as simulation_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND fl.name = 'document_parameter' AND paf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND fl.name = 'persona_parameter' AND paf.value = TRUE) as persona_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND fl.name = 'scenario_parameter' AND paf.value = TRUE) as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND fl.name = 'video_parameter' AND paf.value = TRUE) as video_parameter,
-        COALESCE(pda.department_ids, NULL) as department_ids
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::text
+            ELSE (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT parameter_id FROM params) AND pn.active = true LIMIT 1)
+        END as name,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::text
+            ELSE (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true LIMIT 1)
+        END as description,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN false
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'active' AND paf.value = TRUE AND paf.active = true)
+        END as active,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN false
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'simulation_parameter' AND paf.value = TRUE AND paf.active = true)
+        END as simulation_parameter,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN false
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'document_parameter' AND paf.value = TRUE AND paf.active = true)
+        END as document_parameter,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN false
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'persona_parameter' AND paf.value = TRUE AND paf.active = true)
+        END as persona_parameter,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN false
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'scenario_parameter' AND paf.value = TRUE AND paf.active = true)
+        END as scenario_parameter,
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN false
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'video_parameter' AND paf.value = TRUE AND paf.active = true)
+        END as video_parameter
+    FROM params
+    LIMIT 1
+),
+-- Department mapping data (for multi-select resource pattern)
+department_mapping_data AS (
+    SELECT 
+        d.department_id,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
+        COALESCE(d.generated, false) as generated
     FROM params x
-    LEFT JOIN parameter_departments_aggregated pda ON true
+    CROSS JOIN user_profile up
+    JOIN departments_resource d ON (
+        -- Only include departments with active flag AND user is linked to them
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
+        AND
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
+    )
 ),
 -- All available fields (not just connected ones)
 all_fields_data AS (
@@ -456,69 +430,11 @@ all_fields_with_usage AS (
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(afd.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(f.generated, false) as generated
-    FROM fields_resource f LEFT JOIN all_fields_data afd ON afd.field_id = f.id
+    FROM fields_resource f 
+    LEFT JOIN all_fields_data afd ON afd.field_id = f.id
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
     GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), afd.department_ids, f.generated
-),
--- Parameter items FROM parameter_artifact (fields connected to parameter)
-field_departments_data AS (
-    SELECT 
-        f.id as field_id,
-        COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
-    FROM params x
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
-    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    GROUP BY f.id
-),
-fields_with_usage AS (
-    SELECT 
-        f.id,
-        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
-        false as "default",  -- Default flag no longer available after denormalization
-        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
-        COALESCE(fdd.department_ids, ARRAY[]::text[]) as department_ids
-    FROM params x
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = COALESCE(x.parameter_id, (SELECT id FROM default_parameter LIMIT 1)) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
-    LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
-    LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
-    GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), fdd.department_ids
-),
-field_connections_data AS (
-    SELECT 
-        f.id as field_id,
-        false as "default",  -- Default flag no longer available after denormalization
-        EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = TRUE) as connection_active
-    FROM params x
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
-    WHERE x.parameter_id IS NOT NULL
-),
--- Valid departments (user's departments)
-valid_depts AS (
-    SELECT 
-        d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM params x
-    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
-    JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
-),
--- Department mapping data (for multi-select resource pattern)
-department_mapping_data AS (
-    SELECT 
-        d.department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
-        COALESCE(d.generated, false) as generated
-    FROM params x
-    CROSS JOIN user_profile up
-    JOIN departments_resource d ON (
-        -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
-        AND
-        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
-    )
 ),
 -- Tool existence checks
 tools_existence_check AS (
@@ -629,7 +545,7 @@ fields_agent_data AS (
     FROM params
     LIMIT 1
 ),
--- Suggestions CTEs (UUID arrays)
+-- Department suggestions: linked to parameters with active=true OR same group with generated=true
 department_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -666,6 +582,7 @@ department_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+-- Field suggestions: linked to parameters with active=true OR same group with generated=true
 field_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -678,9 +595,7 @@ field_suggestions_data AS (
                  WHERE pf.field_id IS NOT NULL
                    AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f2.id AND fl.name = 'active' AND ff.value = true)
                    AND (
-                       -- Always include (parameter_fields junction table means it's validated/used)
-                       -- OR linked to same group with generated=true
-                       pf.generated = false
+                       pf.active = true
                        OR
                        (
                            pf.generated = true
@@ -728,6 +643,7 @@ field_ids_data AS (
                 (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
                  FROM parameter_fields pf
                  WHERE pf.parameter_id = (SELECT parameter_id FROM params)
+                   AND pf.active = true
                    AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = pf.field_id AND fl.name = 'active' AND ff.value = true)),
                 ARRAY[]::uuid[]
             )
@@ -742,7 +658,7 @@ SELECT
     perm_final.can_edit,
     perm_final.disabled_reason,
     dgd.group_id,
-    -- Basic parameter fields (merged with draft payload)
+    -- Single-select resources: name
     nid.name_id,
     (
         SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_parameter_v4_name_resource
@@ -755,6 +671,7 @@ SELECT
     true as name_required,
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     (SELECT names FROM names_suggestions_objects) as names,
+    -- Single-select resources: description
     did.description_id,
     (
         SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_parameter_v4_description_resource
@@ -767,65 +684,23 @@ SELECT
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     (SELECT descriptions FROM descriptions_suggestions_objects) as descriptions,
+    -- Single-select resources: active flag
     (SELECT active_flag_id FROM active_flag_id_data) as active_flag_id,
     (SELECT active_flag_resource FROM active_flag_resource_data) as active_flag_resource,
     true as show_active_flag,
     NULL::uuid as active_flag_agent_id,
     false as active_flag_required,
-    COALESCE(
-        (SELECT payload->>'name' FROM draft_payload_data),
-        pd.name::text
-    ) as name,
-    COALESCE(
-        (SELECT payload->>'description' FROM draft_payload_data),
-        pd.description::text
-    ) as description,
-    COALESCE(
-        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-        pd.active::boolean
-    ) as active,
-    COALESCE(
-        (SELECT (payload->>'simulation_parameter')::boolean FROM draft_payload_data),
-        (SELECT (payload->>'simulationParameter')::boolean FROM draft_payload_data),
-        pd.simulation_parameter::boolean
-    ) as simulation_parameter,
-    COALESCE(
-        (SELECT (payload->>'document_parameter')::boolean FROM draft_payload_data),
-        (SELECT (payload->>'documentParameter')::boolean FROM draft_payload_data),
-        pd.document_parameter::boolean
-    ) as document_parameter,
-    COALESCE(
-        (SELECT (payload->>'persona_parameter')::boolean FROM draft_payload_data),
-        (SELECT (payload->>'personaParameter')::boolean FROM draft_payload_data),
-        pd.persona_parameter::boolean
-    ) as persona_parameter,
-    COALESCE(
-        (SELECT (payload->>'scenario_parameter')::boolean FROM draft_payload_data),
-        (SELECT (payload->>'scenarioParameter')::boolean FROM draft_payload_data),
-        pd.scenario_parameter::boolean
-    ) as scenario_parameter,
-    COALESCE(
-        (SELECT (payload->>'video_parameter')::boolean FROM draft_payload_data),
-        (SELECT (payload->>'videoParameter')::boolean FROM draft_payload_data),
-        pd.video_parameter::boolean
-    ) as video_parameter,
+    -- Parameter data fields
+    pd.name::text as name,
+    pd.description::text as description,
+    COALESCE(pd.active, false)::boolean as active,
+    COALESCE(pd.simulation_parameter, false)::boolean as simulation_parameter,
+    COALESCE(pd.document_parameter, false)::boolean as document_parameter,
+    COALESCE(pd.persona_parameter, false)::boolean as persona_parameter,
+    COALESCE(pd.scenario_parameter, false)::boolean as scenario_parameter,
+    COALESCE(pd.video_parameter, false)::boolean as video_parameter,
     -- Multi-select resources: departments
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        CASE 
-            WHEN (SELECT parameter_id FROM params) IS NULL THEN
-                ARRAY[]::uuid[]
-            ELSE did_dept.department_ids
-        END
-    ) as department_ids,
+    did_dept.department_ids,
     -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -833,24 +708,7 @@ SELECT
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
-        WHERE dmd.department_id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                        WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                CASE 
-                    WHEN (SELECT parameter_id FROM params) IS NULL THEN
-                        ARRAY[]::uuid[]
-                    ELSE did_dept.department_ids
-                END
-            )
-        )),
+        WHERE dmd.department_id = ANY(did_dept.department_ids)),
         '{}'::types.q_get_parameter_v4_department[]
     ) as department_resources,
     CASE 
@@ -872,18 +730,7 @@ SELECT
         '{}'::types.q_get_parameter_v4_department[]
     ) as departments,
     -- Multi-select resources: fields
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'field_ids' IS NOT NULL AND jsonb_typeof(payload->'field_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'field_ids'))::uuid[]
-                WHEN payload->'fieldIds' IS NOT NULL AND jsonb_typeof(payload->'fieldIds') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'fieldIds'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        fid.field_ids
-    ) as field_ids,
+    fid.field_ids,
     -- Field resources (selected fields filtered by field_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -891,20 +738,7 @@ SELECT
             ORDER BY afwu.name
         )
         FROM all_fields_with_usage afwu
-        WHERE afwu.id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'field_ids' IS NOT NULL AND jsonb_typeof(payload->'field_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'field_ids'))::uuid[]
-                        WHEN payload->'fieldIds' IS NOT NULL AND jsonb_typeof(payload->'fieldIds') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'fieldIds'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                fid.field_ids
-            )
-        )),
+        WHERE afwu.id = ANY(fid.field_ids)),
         '{}'::types.q_get_parameter_v4_field[]
     ) as field_resources,
     CASE 
@@ -934,71 +768,11 @@ SELECT
                 -- Show selected filter: if enabled, only show selected fields
                 AND (
                     NOT p.field_show_selected OR
-                    afwu.id = ANY(
-                        COALESCE(
-                            (SELECT 
-                                CASE 
-                                    WHEN payload->'field_ids' IS NOT NULL AND jsonb_typeof(payload->'field_ids') = 'array' THEN
-                                        ARRAY(SELECT jsonb_array_elements_text(payload->'field_ids'))::uuid[]
-                                    WHEN payload->'fieldIds' IS NOT NULL AND jsonb_typeof(payload->'fieldIds') = 'array' THEN
-                                        ARRAY(SELECT jsonb_array_elements_text(payload->'fieldIds'))::uuid[]
-                                    ELSE NULL
-                                END
-                            FROM draft_payload_data),
-                            fid.field_ids
-                        )
-                    )
+                    afwu.id = ANY(fid.field_ids)
                 )
         ) afwu),
         '{}'::types.q_get_parameter_v4_field[]
-    ) as fields,
-    -- Parameter items (fields connected to parameter)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fwu.id, fwu.name, fwu.description, fwu."default", fwu.usage_count, fwu.department_ids)::types.q_get_parameter_v4_item
-            ORDER BY fwu.name
-        ) FROM fields_with_usage fwu),
-        '{}'::types.q_get_parameter_v4_item[]
-    ) as parameter_items,
-    -- Field connections
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fcd.field_id, fcd."default", fcd.connection_active)::types.q_get_parameter_v4_field_connection
-            ORDER BY fcd.field_id
-        ) FROM field_connections_data fcd),
-        '{}'::types.q_get_parameter_v4_field_connection[]
-    ) as field_connections,
-    -- Draft and field state
-    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
-    COALESCE(
-        (SELECT payload->'fieldIds' FROM draft_payload_data),
-        (SELECT payload->'field_ids' FROM draft_payload_data),
-        (SELECT jsonb_agg(fcd.field_id::text ORDER BY fcd.field_id) FROM field_connections_data fcd),
-        '[]'::jsonb
-    ) as field_ids_jsonb,
-    COALESCE(
-        (SELECT payload->'fieldActiveStates' FROM draft_payload_data),
-        (SELECT payload->'field_active_states' FROM draft_payload_data),
-        (SELECT jsonb_object_agg(fcd.field_id::text, fcd.connection_active) FROM field_connections_data fcd),
-        '{}'::jsonb
-    ) as field_active_states,
-    COALESCE(
-        (SELECT payload->'fieldDefaultStates' FROM draft_payload_data),
-        (SELECT payload->'field_default_states' FROM draft_payload_data),
-        (SELECT jsonb_object_agg(fcd.field_id::text, fcd."default") FROM field_connections_data fcd),
-        '{}'::jsonb
-    ) as field_default_states,
-    -- Valid IDs arrays
-    COALESCE(
-        (SELECT ARRAY_AGG(vd.department_id::text ORDER BY vd.department_id)
-         FROM valid_depts vd),
-        ARRAY[]::text[]
-    ) as valid_department_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(afwu.id::text ORDER BY afwu.id)
-         FROM all_fields_with_usage afwu),
-        ARRAY[]::text[]
-    ) as valid_field_ids
+    ) as fields
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf

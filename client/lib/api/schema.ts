@@ -9645,22 +9645,6 @@ export interface components {
             field_suggestions?: string[] | null;
             /** Fields */
             fields?: components["schemas"]["QGetParameterV4Field"][] | null;
-            /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetParameterV4Item"][] | null;
-            /** Field Connections */
-            field_connections?: components["schemas"]["QGetParameterV4FieldConnection"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Field Ids Jsonb */
-            field_ids_jsonb?: unknown | null;
-            /** Field Active States */
-            field_active_states?: unknown | null;
-            /** Field Default States */
-            field_default_states?: unknown | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Field Ids */
-            valid_field_ids?: string[] | null;
         };
         /** GetParametersListApiRequest */
         GetParametersListApiRequest: Record<string, never>;
@@ -15264,15 +15248,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetParameterV4FieldConnection */
-        QGetParameterV4FieldConnection: {
-            /** Field Id */
-            field_id: string | null;
-            /** Default */
-            default: boolean | null;
-            /** Active */
-            active: boolean | null;
-        };
         /** QGetParameterV4FlagResource */
         QGetParameterV4FlagResource: {
             /** Flag Id */
@@ -15285,21 +15260,6 @@ export interface components {
             icon_id: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetParameterV4Item */
-        QGetParameterV4Item: {
-            /** Parameter Item Id */
-            parameter_item_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Default */
-            default: boolean | null;
-            /** Usage Count */
-            usage_count: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
         };
         /** QGetParameterV4NameResource */
         QGetParameterV4NameResource: {
