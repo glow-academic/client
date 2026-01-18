@@ -38800,6 +38800,342 @@
             ],
             "title": "Flags"
           },
+          "modalities_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities Enabled Flag Id"
+          },
+          "modalities_enabled_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_modalities_enabled_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Modalities Enabled Flag"
+          },
+          "modalities_enabled_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities Enabled Flag Agent Id"
+          },
+          "modalities_enabled_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities Enabled Flag Required"
+          },
+          "temperature_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Enabled Flag Id"
+          },
+          "temperature_enabled_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_temperature_enabled_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Temperature Enabled Flag"
+          },
+          "temperature_enabled_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Enabled Flag Agent Id"
+          },
+          "temperature_enabled_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Enabled Flag Required"
+          },
+          "pricing_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Enabled Flag Id"
+          },
+          "pricing_enabled_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_pricing_enabled_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Pricing Enabled Flag"
+          },
+          "pricing_enabled_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Enabled Flag Agent Id"
+          },
+          "pricing_enabled_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Enabled Flag Required"
+          },
+          "voices_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Enabled Flag Id"
+          },
+          "voices_enabled_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_voices_enabled_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Voices Enabled Flag"
+          },
+          "voices_enabled_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Enabled Flag Agent Id"
+          },
+          "voices_enabled_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Enabled Flag Required"
+          },
+          "reasoning_levels_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Enabled Flag Id"
+          },
+          "reasoning_levels_enabled_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_reasoning_levels_enabled_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Reasoning Levels Enabled Flag"
+          },
+          "reasoning_levels_enabled_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Enabled Flag Agent Id"
+          },
+          "reasoning_levels_enabled_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Enabled Flag Required"
+          },
+          "qualities_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Enabled Flag Id"
+          },
+          "qualities_enabled_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_qualities_enabled_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Qualities Enabled Flag"
+          },
+          "qualities_enabled_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Enabled Flag Agent Id"
+          },
+          "qualities_enabled_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Enabled Flag Required"
+          },
           "value_id": {
             "anyOf": [
               {
@@ -94671,6 +95007,78 @@
               }
             ],
             "title": "Active Flag Id"
+          },
+          "modalities_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities Enabled Flag Id"
+          },
+          "temperature_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Enabled Flag Id"
+          },
+          "pricing_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Enabled Flag Id"
+          },
+          "voices_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Enabled Flag Id"
+          },
+          "reasoning_levels_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Enabled Flag Id"
+          },
+          "qualities_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Enabled Flag Id"
           },
           "value_id": {
             "anyOf": [

@@ -9266,6 +9266,60 @@ export interface components {
             flag_required?: boolean | null;
             /** Flags */
             flags?: components["schemas"]["QGetModelV4FlagOption"][] | null;
+            /** Modalities Enabled Flag Id */
+            modalities_enabled_flag_id?: string | null;
+            modalities_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Modalities Enabled Flag */
+            show_modalities_enabled_flag?: boolean | null;
+            /** Modalities Enabled Flag Agent Id */
+            modalities_enabled_flag_agent_id?: string | null;
+            /** Modalities Enabled Flag Required */
+            modalities_enabled_flag_required?: boolean | null;
+            /** Temperature Enabled Flag Id */
+            temperature_enabled_flag_id?: string | null;
+            temperature_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Temperature Enabled Flag */
+            show_temperature_enabled_flag?: boolean | null;
+            /** Temperature Enabled Flag Agent Id */
+            temperature_enabled_flag_agent_id?: string | null;
+            /** Temperature Enabled Flag Required */
+            temperature_enabled_flag_required?: boolean | null;
+            /** Pricing Enabled Flag Id */
+            pricing_enabled_flag_id?: string | null;
+            pricing_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Pricing Enabled Flag */
+            show_pricing_enabled_flag?: boolean | null;
+            /** Pricing Enabled Flag Agent Id */
+            pricing_enabled_flag_agent_id?: string | null;
+            /** Pricing Enabled Flag Required */
+            pricing_enabled_flag_required?: boolean | null;
+            /** Voices Enabled Flag Id */
+            voices_enabled_flag_id?: string | null;
+            voices_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Voices Enabled Flag */
+            show_voices_enabled_flag?: boolean | null;
+            /** Voices Enabled Flag Agent Id */
+            voices_enabled_flag_agent_id?: string | null;
+            /** Voices Enabled Flag Required */
+            voices_enabled_flag_required?: boolean | null;
+            /** Reasoning Levels Enabled Flag Id */
+            reasoning_levels_enabled_flag_id?: string | null;
+            reasoning_levels_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Reasoning Levels Enabled Flag */
+            show_reasoning_levels_enabled_flag?: boolean | null;
+            /** Reasoning Levels Enabled Flag Agent Id */
+            reasoning_levels_enabled_flag_agent_id?: string | null;
+            /** Reasoning Levels Enabled Flag Required */
+            reasoning_levels_enabled_flag_required?: boolean | null;
+            /** Qualities Enabled Flag Id */
+            qualities_enabled_flag_id?: string | null;
+            qualities_enabled_flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Qualities Enabled Flag */
+            show_qualities_enabled_flag?: boolean | null;
+            /** Qualities Enabled Flag Agent Id */
+            qualities_enabled_flag_agent_id?: string | null;
+            /** Qualities Enabled Flag Required */
+            qualities_enabled_flag_required?: boolean | null;
             /** Value Id */
             value_id?: string | null;
             value_resource?: components["schemas"]["QGetModelV4ValueResource"] | null;
@@ -19940,6 +19994,18 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Modalities Enabled Flag Id */
+            modalities_enabled_flag_id?: string | null;
+            /** Temperature Enabled Flag Id */
+            temperature_enabled_flag_id?: string | null;
+            /** Pricing Enabled Flag Id */
+            pricing_enabled_flag_id?: string | null;
+            /** Voices Enabled Flag Id */
+            voices_enabled_flag_id?: string | null;
+            /** Reasoning Levels Enabled Flag Id */
+            reasoning_levels_enabled_flag_id?: string | null;
+            /** Qualities Enabled Flag Id */
+            qualities_enabled_flag_id?: string | null;
             /** Value Id */
             value_id?: string | null;
             /** Endpoint Id */
