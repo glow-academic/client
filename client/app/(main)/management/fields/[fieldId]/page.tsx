@@ -105,9 +105,8 @@ async function patchFieldDraft(
 ): Promise<PatchFieldDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // TODO: Investigate - fields/draft endpoint doesn't exist on server
-  throw new Error("fields/draft endpoint doesn't exist on server");
-  // return api.patch("/fields/draft", input);
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.patch("/fields/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
