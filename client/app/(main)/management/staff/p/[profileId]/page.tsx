@@ -6,7 +6,7 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import NewStaffComponent from "@/components/staff/NewStaffComponent";
+import Profile from "@/components/staff/Profile";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -181,7 +181,7 @@ export default async function StaffEditPage({
         data-page="staff-edit"
         data-profile-id={profileId}
       >
-        <NewStaffComponent
+        <Profile
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           staffId={profileId}
           staffData={staffDetail}

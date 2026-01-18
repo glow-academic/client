@@ -2,7 +2,7 @@
  * app/(main)/system/auth/new/page.tsx
  * Auth create page - uses unified get/save endpoints and NewAuth component
  */
-import NewAuth from "@/components/auth/NewAuth";
+import Auth from "@/components/auth/Auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -147,7 +147,7 @@ export default async function AuthCreatePage({
 
   return (
     <div className="space-y-6" data-page="auth-create">
-      <NewAuth
+      <Auth
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         authData={authData}
         saveAuthAction={saveAuth}

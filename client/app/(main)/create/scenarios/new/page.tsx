@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import NewScenario from "@/components/scenarios/NewScenario";
+import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -175,7 +175,7 @@ export default async function NewScenarioPage({
       data-page="scenario-new"
       aria-label="Create new scenario page"
     >
-      <NewScenario
+      <Scenario
         scenarioDetailDefault={scenarioDetailDefault}
         saveScenarioAction={saveScenario}
         patchScenarioDraftAction={patchScenarioDraft}

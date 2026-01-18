@@ -5,16 +5,12 @@
  * 01/12/2026
  */
 
-import NewCohort from "@/components/cohorts/NewCohort";
+import Cohort from "@/components/cohorts/Cohort";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import {
-  createLoader,
-  parseAsBoolean,
-  parseAsString,
-} from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetCohortIn = InputOf<"/api/v4/cohorts/get", "post">;
@@ -216,7 +212,7 @@ export default async function CohortEditPage({
       data-page="cohort-edit"
       data-cohort-id={cohortId}
     >
-      <NewCohort
+      <Cohort
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         cohortId={cohortId}
         cohortData={cohortData}
@@ -235,8 +231,8 @@ export default async function CohortEditPage({
 export type {
   GetCohortIn,
   GetCohortOut,
-  SaveCohortIn,
-  SaveCohortOut,
   PatchCohortDraftIn,
   PatchCohortDraftOut,
+  SaveCohortIn,
+  SaveCohortOut,
 };

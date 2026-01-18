@@ -1,6 +1,6 @@
 /**
- * Staff.tsx
- * Used to display the staff page with faceted filters and data table.
+ * Profiles.tsx
+ * Used to display the profiles page with faceted filters and data table.
  * All data is fetched server-side and passed as props.
  * All actions use server actions - no client-side data fetching.
  * @AshokSaravanan222 & @siladiea
@@ -136,7 +136,7 @@ export type BulkCreateOrUpdateStaffAction = (
   input: BulkCreateOrUpdateStaffIn
 ) => Promise<BulkCreateOrUpdateStaffOut>;
 
-export interface StaffProps {
+export interface ProfilesProps {
   // Server-provided data (fetched server-side, no client fetching)
   listData: StaffListOut;
   initialCreateStaffData?: GetProfileOut;
@@ -408,7 +408,7 @@ export default function Staff({
   bulkDeleteStaffAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
-}: StaffProps) {
+}: ProfilesProps) {
   const router = useRouter();
   const { effectiveProfile, departmentIds: profileDepartmentIds } =
     useProfile();

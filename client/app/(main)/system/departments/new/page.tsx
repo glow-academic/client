@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewDepartment from "@/components/departments/NewDepartment";
+import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -34,10 +34,7 @@ type CreateDraftDescriptionsOut = OutputOf<
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
-type CreateDraftSettingsOut = OutputOf<
-  "/api/v4/resources/settings",
-  "post"
->;
+type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
@@ -149,7 +146,7 @@ export default async function NewDepartmentPage({
       data-page="department-new"
       aria-label="Create new department page"
     >
-      <NewDepartment
+      <Department
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         departmentData={departmentDetailDefault}
         saveDepartmentAction={saveDepartment}

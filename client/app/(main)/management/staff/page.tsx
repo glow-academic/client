@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Staff from "@/components/staff/Staff";
+import Profiles from "@/components/staff/Profiles";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -63,7 +63,7 @@ async function deleteStaff(input: DeleteStaffIn): Promise<DeleteStaffOut> {
 }
 
 async function bulkDeleteStaff(
-  input: BulkDeleteStaffIn,
+  input: BulkDeleteStaffIn
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -72,7 +72,7 @@ async function bulkDeleteStaff(
 
 // Use profiles/get with null profile_id to get create staff data (replaces staff/data/create)
 async function getCreateStaffData(
-  _input: GetProfileIn,
+  _input: GetProfileIn
 ): Promise<GetProfileOut> {
   "use server";
   return api.post("/profiles/get", {
@@ -89,7 +89,7 @@ async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn,
+  input: BulkCreateOrUpdateStaffIn
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -117,7 +117,7 @@ export default async function StaffPage() {
 
   return (
     <div className="space-y-6">
-      <Staff
+      <Profiles
         listData={listData}
         initialCreateStaffData={initialCreateStaffData}
         deleteStaffAction={deleteStaff}
@@ -137,11 +137,11 @@ export type {
   BulkDeleteStaffOut,
   BulkUpdateStaffIn,
   BulkUpdateStaffOut,
-  GetProfileIn,
-  GetProfileOut,
   CSVColumnMapping,
   DeleteStaffIn,
   DeleteStaffOut,
+  GetProfileIn,
+  GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
   ProcessedCSVRow,
@@ -151,6 +151,4 @@ export type {
   SearchStaffOut,
   StaffListIn,
   StaffListOut,
-  // UpdateStaffIn,
-  // UpdateStaffOut,
 };

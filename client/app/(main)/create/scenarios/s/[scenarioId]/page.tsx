@@ -20,18 +20,8 @@ import {
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/api/v4/scenarios/get", "post">;
 type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
-// Keep old types for backward compatibility during migration
-type ScenarioDetailIn = InputOf<"/api/v4/scenarios/detail", "post">;
-type ScenarioDetailOut = OutputOf<"/api/v4/scenarios/detail", "post">;
-type ScenarioNewIn = InputOf<"/api/v4/scenarios/new", "post">;
-type ScenarioNewOut = OutputOf<"/api/v4/scenarios/new", "post">;
 type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
 type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
-// Keep old types for backward compatibility
-type CreateScenarioIn = InputOf<"/api/v4/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/api/v4/scenarios/create", "post">;
-type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
 // Resource creation types
@@ -132,6 +122,7 @@ const getScenario = async (
   // Use proper type from InputOf to ensure type safety
   const body: GetScenarioIn["body"] = {
     scenario_id: scenarioId,
+    mcp: null,
   };
 
   if (filterParams) {
@@ -221,36 +212,18 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateScenario(
-  input: UpdateScenarioIn
-): Promise<UpdateScenarioOut> {
+async function saveScenario(input: SaveScenarioIn): Promise<SaveScenarioOut> {
   "use server";
-  // Convert to unified save endpoint
-  const saveInput: SaveScenarioIn = {
-    body: {
-      ...input.body,
-      input_scenario_id: input.body.scenario_id,
-    },
-  };
-  const result = await api.post("/scenarios/save", saveInput);
-  // Convert back to UpdateScenarioOut format for compatibility
-  return {
-    body: {
-      scenario_id: result.body.scenario_id,
-      actor_name: result.body.actor_name,
-      scenario_exists: true,
-      name: input.body.name,
-    },
-  };
+  // Use unified save endpoint (works for both create and edit)
+  return api.post("/scenarios/save", input);
 }
 
 async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  // TODO: Investigate - scenarios/draft endpoint doesn't exist on server
-  throw new Error("scenarios/draft endpoint doesn't exist on server");
-  // return api.patch("/scenarios/draft", input);
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.patch("/scenarios/draft", input);
 }
 
 async function createDraftNames(
@@ -439,9 +412,8 @@ export default async function EditScenarioPage({
       >
         <Scenario
           scenarioId={scenarioId}
-          mode="edit"
           scenarioDetail={scenarioDetail}
-          updateScenarioAction={updateScenario}
+          saveScenarioAction={saveScenario}
           patchScenarioDraftAction={patchScenarioDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}

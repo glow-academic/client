@@ -1,9 +1,9 @@
 /**
  * app/(main)/system/auth/a/[authId]/page.tsx
- * Auth edit page - uses unified get/save endpoints and NewAuth component
+ * Auth edit page - uses unified get/save endpoints and Auth component
  */
 
-import NewAuth from "@/components/auth/NewAuth";
+import Auth from "@/components/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -175,7 +175,7 @@ export default async function AuthEditPage({
 
     return (
       <div className="space-y-6" data-page="auth-edit" data-auth-id={authId}>
-        <NewAuth
+        <Auth
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           authId={authId}
           authData={authData}

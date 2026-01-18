@@ -68,21 +68,12 @@ type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
 
 type CohortData = OutputOf<"/api/v4/cohorts/get", "post">;
 
-// Legacy type aliases for backward compatibility
-type CohortDetailOut = CohortData;
-type CohortNewOut = CohortData;
-
 export interface CohortProps {
   cohortId?: string;
-  // Server-provided data (for server-side rendering) - uses unified get endpoint
-  cohortDetail?: CohortDetailOut;
-  cohortDetailDefault?: CohortNewOut;
-  // Server actions (replaces useMutation) - uses unified save endpoint
+  // Server-provided data (for server-side rendering)
+  cohortData?: CohortData;
+  // Server actions (replaces useMutation)
   saveCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
-  // Legacy prop names for backward compatibility
-  createCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
-  updateCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
-  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   patchCohortDraftAction?: (
     input: PatchCohortDraftIn
   ) => Promise<PatchCohortDraftOut>;
@@ -103,11 +94,8 @@ export interface CohortProps {
 
 function CohortComponent({
   cohortId,
-  cohortDetail: serverCohortDetail,
-  cohortDetailDefault: serverCohortDetailDefault,
+  cohortData,
   saveCohortAction,
-  createCohortAction,
-  updateCohortAction,
   patchCohortDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -126,12 +114,6 @@ function CohortComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
-
-  // Use unified cohortData prop - prefer cohortDetail in edit mode, cohortDetailDefault in new mode
-  const cohortData = isEditMode ? serverCohortDetail : serverCohortDetailDefault;
-
-  // Use unified saveCohortAction if provided, otherwise fall back to legacy actions
-  const effectiveSaveAction = saveCohortAction || (isEditMode ? updateCohortAction : createCohortAction);
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -211,7 +193,6 @@ function CohortComponent({
       simulations_agent_id: cohortData.simulations_agent_id,
       simulations: cohortData.simulations,
       basic_agent_id: cohortData.basic_agent_id,
-      general_agent_id: cohortData.general_agent_id,
     };
     // Intentionally depend on individual fields, not whole cohortData object
     // to prevent recreation when only object reference changes
@@ -247,7 +228,6 @@ function CohortComponent({
     cohortData?.simulations_agent_id,
     cohortData?.simulations,
     cohortData?.basic_agent_id,
-    cohortData?.general_agent_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -492,6 +472,7 @@ function CohortComponent({
   ]);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
+  // Note: Cohort generation events may not exist yet, but structure is ready
   useEffect(() => {
     if (!socket || !isConnected) return;
 
@@ -629,6 +610,7 @@ function CohortComponent({
     };
 
     // Listen to cohort-specific events filtered by artifact_type and group_id
+    // Note: These events may not exist yet, but structure is ready
     socket.on("cohort_generation_progress", handleGenerationProgress);
     socket.on("cohort_generation_complete", handleGenerationComplete);
     socket.on("cohort_generation_error", handleGenerationError);
@@ -717,6 +699,7 @@ function CohortComponent({
         (formData["simulationShowSelected"] as boolean | undefined) ?? false;
 
       // Emit cohort_generate event with GetCohortApiRequest fields
+      // Note: This event may not exist yet, but structure is ready
       socket.emit("cohort_generate", {
         resource_types: resourceTypes, // Simple array of strings
         agent_type: agentType,
@@ -838,13 +821,15 @@ function CohortComponent({
         throw new Error("Departments are required");
       }
 
+      // Pass department_ids and simulation_ids directly - SQL handles validation
+
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
 
-      if (!effectiveSaveAction) {
+      if (!saveCohortAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
@@ -856,7 +841,7 @@ function CohortComponent({
       }
 
       try {
-        await effectiveSaveAction({
+        await saveCohortAction({
           body: {
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
             name_id: formState.name_id,
@@ -882,7 +867,7 @@ function CohortComponent({
       isEditMode,
       cohortId,
       effectiveProfile?.id,
-      effectiveSaveAction,
+      saveCohortAction,
       router,
       cohortData?.name_required,
       cohortData?.departments_required,
@@ -1468,27 +1453,19 @@ function CohortComponent({
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(CohortComponent, (prevProps, nextProps) => {
   // Compare cohortData by resource IDs, not object reference
-  // Use unified cohortData prop (cohortDetail in edit mode, cohortDetailDefault in new mode)
-  const prevCohortData = prevProps.cohortId
-    ? prevProps.cohortDetail
-    : prevProps.cohortDetailDefault;
-  const nextCohortData = nextProps.cohortId
-    ? nextProps.cohortDetail
-    : nextProps.cohortDetailDefault;
-
   const prevIds = {
-    name_id: prevCohortData?.name_id,
-    description_id: prevCohortData?.description_id,
-    active_flag_id: prevCohortData?.active_flag_id,
-    department_ids: prevCohortData?.department_ids,
-    simulation_ids: prevCohortData?.simulation_ids,
+    name_id: prevProps.cohortData?.name_id,
+    description_id: prevProps.cohortData?.description_id,
+    active_flag_id: prevProps.cohortData?.active_flag_id,
+    department_ids: prevProps.cohortData?.department_ids,
+    simulation_ids: prevProps.cohortData?.simulation_ids,
   };
   const nextIds = {
-    name_id: nextCohortData?.name_id,
-    description_id: nextCohortData?.description_id,
-    active_flag_id: nextCohortData?.active_flag_id,
-    department_ids: nextCohortData?.department_ids,
-    simulation_ids: nextCohortData?.simulation_ids,
+    name_id: nextProps.cohortData?.name_id,
+    description_id: nextProps.cohortData?.description_id,
+    active_flag_id: nextProps.cohortData?.active_flag_id,
+    department_ids: nextProps.cohortData?.department_ids,
+    simulation_ids: nextProps.cohortData?.simulation_ids,
   };
 
   // Compare primitive props
@@ -1502,8 +1479,6 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
   // Compare function props by reference (should be stable from server actions)
   if (
     prevProps.saveCohortAction !== nextProps.saveCohortAction ||
-    prevProps.createCohortAction !== nextProps.createCohortAction ||
-    prevProps.updateCohortAction !== nextProps.updateCohortAction ||
     prevProps.patchCohortDraftAction !== nextProps.patchCohortDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||

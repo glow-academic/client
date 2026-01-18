@@ -1,19 +1,13 @@
 /**
  * Scenario.tsx
- * Progressive step-by-step scenario creation flow
+ * Implementation using modular resource components
+ * Used to create and manage scenarios - supports both creation and editing
+ * Follows Persona.tsx pattern, adapted for scenarios
  * @AshokSaravanan222 & @siladiea
- * 05/20/2025
+ * 01/15/2026
  */
 "use client";
-import {
-  Brain,
-  Check,
-  Eye,
-  Loader2,
-  RotateCcw,
-  Shuffle,
-  Sparkles,
-} from "lucide-react";
+import { Brain, Check, Eye, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   parseAsBoolean,
@@ -37,7 +31,6 @@ import * as tus from "tus-js-client";
 import DocumentViewer, {
   type DocumentItem,
 } from "@/components/common/chat/viewers/DocumentViewer";
-import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { ConfigSection } from "@/components/scenarios/ConfigSection";
 // TODO: Re-integrate preview sections in future
@@ -61,11 +54,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -119,19 +108,17 @@ const generateGradientFromHex = (hexColor: string): string => {
 
 // Types and API functions
 import type {
-  CreateScenarioIn,
-  CreateScenarioOut,
+  SaveScenarioIn,
+  SaveScenarioOut,
+} from "@/app/(main)/create/scenarios/new/page";
+import type {
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
   GetScenarioOut,
   PatchScenarioDraftIn,
   PatchScenarioDraftOut,
-  ScenarioDetailOut,
   ScenarioNewOut,
-  UpdateScenarioIn,
-  UpdateScenarioOut,
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import {
@@ -145,19 +132,11 @@ import {
 
 export interface ScenarioProps {
   scenarioId?: string;
-  mode?: "create" | "edit";
   // Server-provided data (for server-side rendering)
-  // Unified endpoint: both use GetScenarioOut (scenario_id null for new, provided for detail)
-  scenarioDetail?: GetScenarioOut;
-  scenarioDetailDefault?: GetScenarioOut;
-  // Server actions (replaces useMutation)
-  createScenarioAction?: (
-    input: CreateScenarioIn
-  ) => Promise<CreateScenarioOut>;
-  updateScenarioAction?: (
-    input: UpdateScenarioIn
-  ) => Promise<UpdateScenarioOut>;
-  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
+  scenarioDetailDefault?: GetScenarioOut; // For new mode
+  scenarioDetail?: GetScenarioOut; // For edit mode
+  // Server actions (unified save action like Persona)
+  saveScenarioAction?: (input: SaveScenarioIn) => Promise<SaveScenarioOut>;
   patchScenarioDraftAction?: (
     input: PatchScenarioDraftIn
   ) => Promise<PatchScenarioDraftOut>;
@@ -182,12 +161,10 @@ export interface ScenarioProps {
 // StepStatus type imported from GenericForm
 
 function ScenarioComponent({
-  mode = "create",
   scenarioId,
-  scenarioDetail: serverScenarioDetail,
   scenarioDetailDefault: serverScenarioDetailDefault,
-  createScenarioAction,
-  updateScenarioAction,
+  scenarioDetail: serverScenarioDetail,
+  saveScenarioAction,
   patchScenarioDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -198,18 +175,36 @@ function ScenarioComponent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const {
-    effectiveProfile,
-    socket,
-    isConnected,
-    selectedDraftId,
-    setSelectedDraftId,
-  } = useProfile();
+  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
+    useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { setGenerationCapability, clearGenerationCapability } =
     useGenerationContext();
-  const isEditMode = mode === "edit" && !!scenarioId;
+  const isEditMode = !!scenarioId;
+  // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
+  const scenarioData = isEditMode
+    ? serverScenarioDetail
+    : serverScenarioDetailDefault;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
+
+  // Set breadcrumb context when scenario data is loaded in edit mode
+  useEffect(() => {
+    const scenarioName = scenarioData?.name_resource?.name;
+    if (scenarioName && scenarioId && isEditMode) {
+      setEntityMetadata({
+        entityId: scenarioId,
+        entityName: scenarioName,
+        entityType: "scenario",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    scenarioData,
+    scenarioId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Generation state for AI workflows
   const [generatingResources, setGeneratingResources] = useState<
@@ -265,28 +260,12 @@ function ScenarioComponent({
 
   const draftId = urlDraftId;
 
-  // Use server-provided data directly (no fallback needed - server pages always provide data)
-  const scenarioDetail = serverScenarioDetail;
-  const scenarioDetailDefault = serverScenarioDetailDefault;
-
-  // Use edit detail when editing, default detail when creating
-  const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
-
   // Local draft state (not in URL) - initialized from server data or draft payload
   // DraftState type imported from scenario-types.ts
 
   // Centralized query parameter configuration (DHH-style: URL as source of truth)
   // Only include params in URL when they differ from defaults
   const queryParamConfig = useMemo(() => {
-    const serverCurrentValues = scenarioData as
-      | (ScenarioNewOut & {
-          objectives_enabled?: boolean;
-          images_enabled?: boolean;
-          video_enabled?: boolean;
-          questions_enabled?: boolean;
-        })
-      | undefined;
-
     // Default values (from server defaults)
     const defaults = {
       objectives_enabled: true,
@@ -295,7 +274,7 @@ function ScenarioComponent({
       questions_enabled: false,
     };
 
-    // Get current server values (edit mode) or defaults (create mode)
+    // Always use defaults for create mode
     const getServerValue = (
       field:
         | "objectives_enabled"
@@ -303,21 +282,6 @@ function ScenarioComponent({
         | "video_enabled"
         | "questions_enabled"
     ): boolean => {
-      if (isEditMode && serverCurrentValues) {
-        // Edit mode: compare against server's current value
-        if (field === "images_enabled") {
-          // In edit mode, check ScenarioDetailOut for image_input_enabled
-          if (isEditMode && "image_input_enabled" in serverCurrentValues) {
-            return (
-              (serverCurrentValues as ScenarioDetailOut).image_input_enabled ??
-              defaults[field]
-            );
-          }
-          return defaults[field];
-        }
-        return serverCurrentValues[field] ?? defaults[field];
-      }
-      // Create mode: compare against defaults
       return defaults[field];
     };
 
@@ -331,18 +295,18 @@ function ScenarioComponent({
         questions_enabled: "useQuestions",
       },
     };
-  }, [scenarioData, isEditMode]);
+  }, []);
 
   // Initialize draft state from server data or draft payload
-  // Use stable refs (scenarioDetail/scenarioDetailDefault) instead of raw props to prevent recomputation on every server render
-  // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
+  // Resource-first: Remove name, problemStatement, objectives from draftState
+  // These are now managed via resource IDs in formState only
   const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? scenarioDetail : scenarioDetailDefault;
+    const data = scenarioData;
     if (!data || typeof data !== "object") {
       return {
-        name: "",
-        problemStatement: "",
-        objectives: [],
+        name: "", // Legacy field - not used, kept for DraftState type compatibility
+        problemStatement: "", // Legacy field - not used, kept for DraftState type compatibility
+        objectives: [], // Legacy field - not used, kept for DraftState type compatibility
         departmentIds: [],
         personaIds: [],
         documentIds: [],
@@ -359,11 +323,6 @@ function ScenarioComponent({
         useProblemStatement: false,
         videoLength: null,
         active: true,
-        randomize: null,
-        randomizePersonas: null,
-        randomizeDocuments: null,
-        randomizeParameters: null,
-        // Legacy fields removed - use resource-based approach instead
         scenarioDomainId: null,
         imageDomainId: null,
         videoDomainId: null,
@@ -372,13 +331,7 @@ function ScenarioComponent({
 
     // Type assert data as GetScenarioOut after null check
     const typedData = data as GetScenarioOut;
-
-    // If draftId exists, server should have merged draft payload into data
-    // Otherwise, use server defaults
-    // Type narrowing: check isEditMode to determine which type we have
-    const isDetail = isEditMode && isScenarioDetailOut(typedData);
-    const detailData = isDetail ? typedData : null;
-    const newData = !isDetail && isScenarioNewOut(typedData) ? typedData : null;
+    const newData = isScenarioNewOut(typedData) ? typedData : null;
 
     // Safely access properties with type guards
     const departmentIds = Array.isArray(typedData.department_ids)
@@ -386,41 +339,20 @@ function ScenarioComponent({
       : [];
 
     return {
-      name:
-        (isDetail && detailData && "name" in detailData && detailData.name) ||
-        "",
-      problemStatement:
-        (detailData &&
-          "problem_statement" in detailData &&
-          detailData.problem_statement) ||
-        "",
-      objectives: [], // Will be populated from objective_ids if needed
+      name: "", // Legacy field - not used, values come from resource objects
+      problemStatement: "", // Legacy field - not used, values come from resource objects
+      objectives: [], // Legacy field - not used, values come from resource objects
       departmentIds,
-      personaIds:
-        detailData &&
-        "persona_ids" in detailData &&
-        Array.isArray(detailData.persona_ids)
-          ? detailData.persona_ids
-          : [],
-      documentIds:
-        detailData &&
-        "document_ids" in detailData &&
-        Array.isArray(detailData.document_ids)
-          ? detailData.document_ids
-          : [],
+      personaIds: [],
+      documentIds: [],
       templateDocumentIds:
         newData &&
         "selected_template_document_ids" in newData &&
         Array.isArray(newData.selected_template_document_ids)
           ? newData.selected_template_document_ids
           : [],
-      parameterIds:
-        detailData &&
-        "parameter_ids" in detailData &&
-        Array.isArray(detailData.parameter_ids)
-          ? detailData.parameter_ids
-          : [],
-      fieldIds: [], // Will be populated from scenario fields if needed
+      parameterIds: [],
+      fieldIds: [],
       imageIds:
         newData &&
         "scenario_images" in newData &&
@@ -429,45 +361,25 @@ function ScenarioComponent({
               String(img.upload_id || "")
             )
           : [],
-      objectiveIds:
-        detailData &&
-        "objective_ids" in detailData &&
-        Array.isArray(detailData.objective_ids)
-          ? detailData.objective_ids
-          : [],
-      problemStatementIds:
-        detailData &&
-        "problem_statement_id" in detailData &&
-        detailData.problem_statement_id
-          ? [String(detailData.problem_statement_id)]
-          : [],
-      useImage:
-        detailData && "image_input_enabled" in detailData
-          ? (detailData.image_input_enabled ?? false)
-          : false,
+      objectiveIds: [],
+      problemStatementIds: [],
+      useImage: false,
       useVideo:
         newData && "video_enabled" in newData
           ? (newData.video_enabled ?? false)
           : false,
-      useObjectives:
-        detailData && "objectives_enabled" in detailData
-          ? (detailData.objectives_enabled ?? true)
-          : true,
+      useObjectives: true,
       useQuestions:
         newData && "questions_enabled" in newData
           ? (newData.questions_enabled ?? false)
           : false,
-      useProblemStatement: false, // Not directly available in data
-      videoLength: null, // Will be set from selected video
-      active:
-        detailData && "active" in detailData
-          ? (detailData.active ?? true)
-          : true,
+      useProblemStatement: false,
+      videoLength: null,
+      active: true,
       randomize: null,
       randomizePersonas: null,
       randomizeDocuments: null,
       randomizeParameters: null,
-      // Legacy fields removed - use resource-based approach instead
       scenarioDomainId:
         "scenario_domain_id" in typedData && typedData.scenario_domain_id
           ? typedData.scenario_domain_id
@@ -476,36 +388,10 @@ function ScenarioComponent({
         "image_domain_id" in typedData && typedData.image_domain_id
           ? typedData.image_domain_id
           : null,
-      videoDomainId:
-        detailData &&
-        typeof detailData === "object" &&
-        "video_domain_id" in detailData
-          ? (detailData as { video_domain_id?: string }).video_domain_id || null
-          : null,
+      videoDomainId: null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isEditMode,
-    scenarioDetail,
-    scenarioDetailDefault,
-    draftId,
-    urlDraftId,
-    // Include actual content fields so it recomputes when server data changes (not just object reference)
-    scenarioDetailDefault?.department_ids,
-    // Extract complex expression to separate variable - only access name from scenarioDetail (ScenarioDetailOut)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    (() => {
-      if (isEditMode && scenarioDetail && isScenarioDetailOut(scenarioDetail)) {
-        return scenarioDetail.name;
-      }
-      return undefined;
-    })(),
-    scenarioDetail?.problem_statement,
-    scenarioDetail?.department_ids,
-    scenarioDetail?.persona_ids,
-    scenarioDetail?.document_ids,
-    scenarioDetail?.objective_ids,
-  ]);
+  }, [scenarioData, draftId, urlDraftId, scenarioData?.department_ids]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
 
@@ -695,10 +581,6 @@ function ScenarioComponent({
             useProblemStatement: "use_problem_statement",
             videoLength: "video_length",
             problemStatement: "problem_statement",
-            // Legacy fields removed - use resource-based approach instead
-            randomizePersonas: "randomize_personas",
-            randomizeDocuments: "randomize_documents",
-            randomizeParameters: "randomize_parameters",
             scenarioDomainId: "scenario_domain_id",
             imageDomainId: "image_domain_id",
             videoDomainId: "video_domain_id",
@@ -750,163 +632,6 @@ function ScenarioComponent({
       [router, searchParams]
     ),
   });
-
-  // WebSocket handlers for AI generation - unified handler for all resource types
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // Use group_id from scenarioData
-    const currentGroupId = scenarioData?.group_id;
-
-    const handleGenerationComplete = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      name_id?: string | null;
-      description_id?: string | null;
-      problem_statement_id?: string | null;
-      objective_ids?: string[];
-      active_flag_id?: string | null;
-      objectives_enabled_flag_id?: string | null;
-      hints_enabled_flag_id?: string | null;
-      message?: string;
-      success?: boolean;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "scenario" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this scenario or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "problem_statements",
-        "objectives",
-        "ranges",
-        "scenario_flags",
-      ];
-      if (
-        data.resource_type &&
-        validResourceTypes.includes(data.resource_type as ResourceType)
-      ) {
-        // Update formState with the resource ID that was generated
-        setFormState((prev) => {
-          const updates: Partial<ScenarioFormState> = {};
-
-          if (data.name_id) updates.name_id = String(data.name_id);
-          if (data.description_id)
-            updates.description_id = String(data.description_id);
-          if (data.problem_statement_id)
-            updates.problem_statement_id = String(data.problem_statement_id);
-          if (data.objective_ids && data.objective_ids.length > 0) {
-            // For arrays, append new IDs (avoid duplicates)
-            const newObjectiveIds = data.objective_ids
-              .map(String)
-              .filter((id) => !prev.objective_ids.includes(id));
-            updates.objective_ids = [...prev.objective_ids, ...newObjectiveIds];
-          }
-          if (data.active_flag_id)
-            updates.active_flag_id = String(data.active_flag_id);
-          if (data.objectives_enabled_flag_id)
-            updates.objectives_enabled_flag_id = String(
-              data.objectives_enabled_flag_id
-            );
-          if (data.hints_enabled_flag_id)
-            updates.objectives_enabled_flag_id = String(
-              data.hints_enabled_flag_id
-            );
-
-          return { ...prev, ...updates };
-        });
-
-        setGeneratingResources((prev) => {
-          const next = new Set(prev);
-          next.delete(data.resource_type as ResourceType);
-          return next;
-        });
-        if (data.success) {
-          toast.success(
-            data.message || `${data.resource_type} generated successfully`
-          );
-        } else {
-          toast.error(
-            data.message || `Failed to generate ${data.resource_type}`
-          );
-        }
-      }
-    };
-
-    const handleGenerationProgress = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      resource_type?: string;
-      [key: string]: unknown;
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "scenario" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this scenario or wrong group_id
-      }
-      // Handle progress updates if needed
-    };
-
-    const handleGenerationError = (data: {
-      artifact_type?: string;
-      group_id?: string;
-      message?: string;
-      resource_type?: string;
-      resource_types?: string[];
-    }) => {
-      // Filter by artifact_type and group_id
-      if (
-        data.artifact_type !== "scenario" ||
-        !data.group_id ||
-        data.group_id !== currentGroupId
-      ) {
-        return; // Not for this scenario or wrong group_id
-      }
-
-      const validResourceTypes: ResourceType[] = [
-        "names",
-        "descriptions",
-        "problem_statements",
-        "objectives",
-        "ranges",
-        "scenario_flags",
-      ];
-      const resourceTypes =
-        data.resource_types || (data.resource_type ? [data.resource_type] : []);
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => {
-          if (validResourceTypes.includes(rt as ResourceType)) {
-            next.delete(rt as ResourceType);
-          }
-        });
-        return next;
-      });
-      toast.error(data.message || "Generation failed");
-    };
-
-    // Listen to scenario-specific events filtered by artifact_type and group_id
-    socket.on("scenario_generation_progress", handleGenerationProgress);
-    socket.on("scenario_generation_complete", handleGenerationComplete);
-    socket.on("scenario_generation_error", handleGenerationError);
-
-    return () => {
-      socket.off("scenario_generation_progress", handleGenerationProgress);
-      socket.off("scenario_generation_complete", handleGenerationComplete);
-      socket.off("scenario_generation_error", handleGenerationError);
-    };
-  }, [socket, isConnected, scenarioData?.group_id]);
 
   // Memoize scenarioData fields used in renderStep to prevent callback recreation
   // when only object reference changes (but content is same)
@@ -1172,11 +897,6 @@ function ScenarioComponent({
       agentType: string | null,
       userInstructions?: string
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
       // Set all resources as generating
       setGeneratingResources((prev) => {
         const next = new Set(prev);
@@ -1184,21 +904,10 @@ function ScenarioComponent({
         return next;
       });
 
-      // Get draftId from URL params
-      const draftId = urlDraftId || null;
-
-      // Emit scenario_generate event with GetScenarioApiRequest fields
-      socket.emit("scenario_generate", {
-        resource_types: resourceTypes, // Simple array of strings
-        agent_type: agentType,
-        user_instructions: userInstructions ? [userInstructions] : null,
-        // GetScenarioApiRequest fields
-        draft_id: draftId || null,
-        scenario_id: scenarioId || null,
-        mcp: false,
-      });
+      // TODO: Implement generation via API endpoint instead of WebSocket
+      toast.error("Generation not yet implemented");
     },
-    [socket, isConnected, scenarioId, urlDraftId]
+    [scenarioId, urlDraftId]
   );
 
   // Handler to open modal for step card generation
@@ -1304,31 +1013,8 @@ function ScenarioComponent({
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [scenarioData?.group_id, handleOpenStepCardModal]);
 
-  // Extract body types for type safety
-  type CreateScenarioBody = CreateScenarioIn extends { body: infer B }
-    ? B
-    : never;
-  type UpdateScenarioBody = UpdateScenarioIn extends { body: infer B }
-    ? B
-    : never;
+  // Extract body type for type safety
   type GenerateAIScenarioBody = GenerateAIScenarioIn;
-
-  // Server action handlers
-  const handleCreateScenario = async (body: CreateScenarioBody) => {
-    if (!createScenarioAction) {
-      throw new Error("createScenarioAction is required");
-    }
-    return await createScenarioAction({ body });
-  };
-
-  const handleUpdateScenario = async (body: UpdateScenarioBody) => {
-    if (!updateScenarioAction) {
-      throw new Error("updateScenarioAction is required");
-    }
-    return await updateScenarioAction({ body });
-  };
-
-  // Note: Using handleCreateScenario and handleUpdateScenario directly
 
   // Form data state
   const defaultDepartmentIds = useMemo(
@@ -1401,11 +1087,9 @@ function ScenarioComponent({
       const urlUpdates: Partial<Record<string, unknown>> = {};
 
       Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        // Form fields go to draftState
+        // Form fields go to draftState (excluding resource fields: name, problemStatement, objectives)
+        // Resource fields are managed via formState resource IDs only
         if (
-          key === "name" ||
-          key === "problemStatement" ||
-          key === "objectives" ||
           key === "departmentIds" ||
           key === "personaIds" ||
           key === "documentIds" ||
@@ -1426,7 +1110,6 @@ function ScenarioComponent({
           key === "randomizePersonas" ||
           key === "randomizeDocuments" ||
           key === "randomizeParameters" ||
-          // Legacy fields removed - use resource-based approach instead
           key === "scenarioDomainId" ||
           key === "imageDomainId" ||
           key === "videoDomainId"
@@ -1462,8 +1145,7 @@ function ScenarioComponent({
     [formData, setUrlParams]
   );
 
-  // Merged object for WebSocket emits (combines draftState and urlParams)
-  // Used by randomize handlers to send current filter/search/range params to server
+  // Merged object combining draftState and urlParams
   const q = useMemo(() => {
     return {
       ...draftState,
@@ -1497,14 +1179,14 @@ function ScenarioComponent({
   const parameterShowSelected =
     (formData["parameterShowSelected"] as boolean | null) ?? false;
 
-  // Derived from draft state (form fields) - wrapped in useMemo to fix React hook dependencies
+  // Resource-first: Extract values from resource objects, not legacy state
   const name = useMemo(
-    () => draftState.name || "New Scenario",
-    [draftState.name]
+    () => scenarioData?.name_resource?.name || "New Scenario",
+    [scenarioData?.name_resource?.name]
   );
   const problemStatement = useMemo(
-    () => draftState.problemStatement || "",
-    [draftState.problemStatement]
+    () => scenarioData?.problem_statement_resource?.problem_statement || "",
+    [scenarioData?.problem_statement_resource?.problem_statement]
   );
   const selectedPersonaIds = useMemo(
     () => draftState.personaIds || [],
@@ -1556,18 +1238,11 @@ function ScenarioComponent({
         updated_at: string;
       }>
     >([]);
-  const [originalDocumentIds, setOriginalDocumentIds] = useState<string[]>([]);
-  const [originalTemplateDocumentIds, setOriginalTemplateDocumentIds] =
-    useState<string[]>([]);
-  const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
-  const [originalObjectives, setOriginalObjectives] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
   const [regenerationInstructions, setRegenerationInstructions] = useState("");
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
-  const [originalFormData, setOriginalFormData] = useState(initialFormData);
   // Feature flags from draft state
   const useObjectives = draftState.useObjectives ?? false;
   const useImage = draftState.useImage ?? false;
@@ -1578,11 +1253,19 @@ function ScenarioComponent({
   // Video length from draft state
   const selectedVideoLength = draftState.videoLength ?? null;
 
-  // Objectives from draft state (array, not JSON-encoded) - wrapped in useMemo to fix React hook dependencies
-  const currentObjectives = useMemo(
-    () => draftState.objectives || [],
-    [draftState.objectives]
-  );
+  // Resource-first: Extract objectives from resource objects, not legacy state
+  const currentObjectives = useMemo(() => {
+    if (
+      formState.objective_ids &&
+      formState.objective_ids.length > 0 &&
+      scenarioData?.objective_resources
+    ) {
+      return scenarioData.objective_resources
+        .filter((obj) => formState.objective_ids?.includes(String(obj.id)))
+        .map((obj) => obj.objective);
+    }
+    return [];
+  }, [formState.objective_ids, scenarioData?.objective_resources]);
   // State for content section (image, video, questions, objectives)
   const [contentState, setContentState] = useState<{
     image: { id: string; name: string; upload_id: string } | null;
@@ -1621,14 +1304,7 @@ function ScenarioComponent({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Use transition for smooth UI updates during randomization
-  // This ensures the old UI stays visible while new randomized selections are being applied
-  const [isPending, startTransition] = useTransition();
-
-  // Track which section is currently being randomized for loading indicators
-  const [randomizingSection, setRandomizingSection] = useState<
-    "persona" | "document" | "parameters" | `parameter_${string}` | "all" | null
-  >(null);
+  const [isPending] = useTransition();
 
   // Min/max state for randomization (from draft state, fallback to server values)
   // Initialize from draft state, fallback to server's current values
@@ -1644,14 +1320,14 @@ function ScenarioComponent({
       return { min: personaMin, max: personaMax };
     }
     // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && !isEditMode && isScenarioNewOut(scenarioData)) {
+    if (scenarioData && isScenarioNewOut(scenarioData)) {
       return {
         min: scenarioData.persona_range_min ?? 1,
         max: scenarioData.persona_range_max ?? 1,
       };
     }
     return { min: 1, max: 1 };
-  }, [draftState.personaMin, draftState.personaMax, scenarioData, isEditMode]);
+  }, [draftState.personaMin, draftState.personaMax, scenarioData]);
 
   const documentMinMax = useMemo(() => {
     const documentMin = draftState.documentMin;
@@ -1665,19 +1341,14 @@ function ScenarioComponent({
       return { min: documentMin, max: documentMax };
     }
     // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && !isEditMode && isScenarioNewOut(scenarioData)) {
+    if (scenarioData && isScenarioNewOut(scenarioData)) {
       return {
         min: scenarioData.document_range_min ?? 0,
         max: scenarioData.document_range_max ?? 1,
       };
     }
     return { min: 0, max: 1 };
-  }, [
-    draftState.documentMin,
-    draftState.documentMax,
-    scenarioData,
-    isEditMode,
-  ]);
+  }, [draftState.documentMin, draftState.documentMax, scenarioData]);
 
   const parameterSelectionMinMax = useMemo(() => {
     const parameterSelectionMin = draftState.parameterSelectionMin;
@@ -1691,17 +1362,16 @@ function ScenarioComponent({
       return { min: parameterSelectionMin, max: parameterSelectionMax };
     }
     // Fallback to server values (from ScenarioNewOut)
-    if (scenarioData && !isEditMode && isScenarioNewOut(scenarioData)) {
+    if (scenarioData && isScenarioNewOut(scenarioData)) {
       return {
         min: scenarioData.parameter_range_min ?? 0,
         max: scenarioData.parameter_range_max ?? 3,
       };
     }
     // Use parameter_range_min and parameter_range_max directly from API response
-    const newDataForRanges =
-      scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
-        ? scenarioData
-        : null;
+    const newDataForRanges = isScenarioNewOut(scenarioData)
+      ? scenarioData
+      : null;
     if (newDataForRanges) {
       const min = newDataForRanges.parameter_range_min;
       const max = newDataForRanges.parameter_range_max;
@@ -1722,7 +1392,6 @@ function ScenarioComponent({
     draftState.parameterSelectionMin,
     draftState.parameterSelectionMax,
     scenarioData,
-    isEditMode,
   ]);
   // fieldMinMax is now derived from URL params above
 
@@ -1897,319 +1566,14 @@ function ScenarioComponent({
 
   const handleGenerateAIScenario = useCallback(
     async (body: GenerateAIScenarioBody): Promise<GenerateAIScenarioOut> => {
-      if (!socket || !isConnected) {
-        throw new Error("WebSocket not connected");
-      }
-
-      // Determine if we're regenerating (problem statement exists) or generating new
-      const isRegenerating = !!problemStatement?.trim();
-      const initialMessage = isRegenerating
-        ? "Regenerating scenario..."
-        : "Generating scenario...";
-
-      // Create a single toast at the start
-      const toastId = toast.loading(initialMessage);
-
-      return new Promise((resolve, reject) => {
-        // Collect IDs from tool completion events
-        let problemStatementId: string | null = null;
-        let objectiveIds: string[] = [];
-        const documentIds: string[] = [];
-        const imageIds: string[] = [];
-        const title = "";
-        const description = "";
-        const objectives: string[] = [];
-        const dynamicDocumentMapping: Record<string, string> | null = null;
-
-        // Set up event listeners
-        const handleProgress = (data: {
-          type: string;
-          message?: string;
-          tool_name?: string;
-          trace_id?: string;
-        }) => {
-          // Update the same toast with progress messages
-          const progressMessage =
-            data.message ||
-            (data.type === "start"
-              ? initialMessage
-              : data.tool_name
-                ? `Calling ${data.tool_name}...`
-                : "Processing...");
-          toast.loading(progressMessage, { id: toastId });
-        };
-
-        // Tool completion event handlers
-        const handleProblemStatementComplete = (data: {
-          success: boolean;
-          problem_statement_id: string;
-          trace_id?: string;
-          message?: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Scenario] scenario_tool_problem_statement_complete event received:",
-            {
-              success: data.success,
-              problem_statement_id: data.problem_statement_id,
-              trace_id: data.trace_id,
-              message: data.message,
-            }
-          );
-          if (data.success) {
-            problemStatementId = data.problem_statement_id;
-            // Update state to trigger URL refresh
-            updateProblemStatementIds((prev) => {
-              if (prev.includes(data.problem_statement_id)) {
-                return prev;
-              }
-              return [...prev, data.problem_statement_id];
-            });
-          }
-        };
-
-        const handleObjectivesComplete = (data: {
-          success: boolean;
-          objective_ids: string[];
-          trace_id?: string;
-          message?: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Scenario] scenario_tool_objectives_complete event received:",
-            {
-              success: data.success,
-              objective_ids: data.objective_ids,
-              trace_id: data.trace_id,
-              message: data.message,
-            }
-          );
-          if (data.success) {
-            objectiveIds = data.objective_ids;
-            // Update state to trigger URL sync
-            updateObjectiveIds(data.objective_ids);
-          }
-        };
-
-        const handleDocumentComplete = (data: {
-          success: boolean;
-          document_id: string;
-          parent_document_id?: string;
-          trace_id?: string;
-          message?: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Scenario] scenario_tool_document_complete event received:",
-            {
-              success: data.success,
-              document_id: data.document_id,
-              parent_document_id: data.parent_document_id,
-              trace_id: data.trace_id,
-              message: data.message,
-            }
-          );
-
-          if (data.success) {
-            documentIds.push(data.document_id);
-
-            const parentDocumentId = data.parent_document_id;
-            if (parentDocumentId) {
-              // Document has a parent - this is a dynamic child document (created from a template)
-              // Add child to currentDocumentIds and remove parent from templateDocumentIds
-              // eslint-disable-next-line no-console
-              console.log("[Scenario] Adding dynamic child document:", {
-                parent_id: parentDocumentId,
-                document_id: data.document_id,
-              });
-              // Add child document to currentDocumentIds
-              // Keep parent in URL (for persistence) but add child for display
-              updateDocumentIds((prev) => {
-                // Add child if not already present
-                if (prev.includes(data.document_id)) {
-                  return prev;
-                }
-                return [...prev, data.document_id];
-              });
-              // Note: We keep parent in templateDocumentIds for URL persistence
-              // The display logic will filter/show child instead of parent
-            } else {
-              // Regular document (no parent) - add to currentDocumentIds
-              // eslint-disable-next-line no-console
-              console.log("[Scenario] Adding new document:", data.document_id);
-              updateDocumentIds((prev) => {
-                return [...prev, data.document_id];
-              });
-            }
-          } else {
-            // eslint-disable-next-line no-console
-            console.error(
-              "[Scenario] Document completion failed:",
-              data.message
-            );
-          }
-        };
-
-        const handleImageComplete = (data: {
-          success: boolean;
-          image_id: string;
-          trace_id?: string;
-          message?: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Scenario] scenario_tool_image_complete event received:",
-            {
-              success: data.success,
-              image_id: data.image_id,
-              trace_id: data.trace_id,
-              message: data.message,
-            }
-          );
-          if (data.success) {
-            imageIds.push(data.image_id);
-          }
-        };
-
-        const handleComplete = (data: {
-          success: boolean;
-          message: string;
-          trace_id?: string;
-        }) => {
-          // Clean up all listeners
-          socket.off("scenarios_generation_progress", handleProgress);
-          socket.off("scenarios_generation_complete", handleComplete);
-          socket.off("scenarios_generation_error", handleError);
-          socket.off(
-            "scenarios_tools_statement_complete",
-            handleProblemStatementComplete
-          );
-          socket.off(
-            "scenarios_tools_objectives_complete",
-            handleObjectivesComplete
-          );
-          socket.off(
-            "scenarios_tools_document_complete",
-            handleDocumentComplete
-          );
-          socket.off("scenarios_tools_image_complete", handleImageComplete);
-
-          if (data.success) {
-            // Convert toast to success
-            const successMessage = isRegenerating
-              ? "Scenario regenerated successfully!"
-              : "Scenario generated successfully!";
-            toast.success(successMessage, { id: toastId });
-
-            // Fetch problem statement details if we have an ID
-            // Note: title and description will need to be fetched separately if needed
-            // For now, we'll return empty strings and let the client fetch from the API
-            resolve({
-              success: true,
-              message: data.message,
-              title: title,
-              description: description,
-              objectives: objectives,
-              dynamic_document_mapping: dynamicDocumentMapping,
-              problem_statement_id: problemStatementId,
-              objective_ids: objectiveIds,
-              document_ids: documentIds,
-              image_ids: imageIds,
-            });
-          } else {
-            // Convert toast to error
-            toast.error(data.message || "Scenario generation failed", {
-              id: toastId,
-            });
-            reject(new Error(data.message || "Scenario generation failed"));
-          }
-        };
-
-        const handleError = (data: {
-          success: boolean;
-          message: string;
-          trace_id?: string;
-        }) => {
-          // Clean up all listeners
-          socket.off("scenarios_generation_progress", handleProgress);
-          socket.off("scenarios_generation_complete", handleComplete);
-          socket.off("scenarios_generation_error", handleError);
-          socket.off(
-            "scenarios_tools_statement_complete",
-            handleProblemStatementComplete
-          );
-          socket.off(
-            "scenarios_tools_objectives_complete",
-            handleObjectivesComplete
-          );
-          socket.off(
-            "scenarios_tools_document_complete",
-            handleDocumentComplete
-          );
-          socket.off("scenarios_tools_image_complete", handleImageComplete);
-
-          // Convert toast to error
-          toast.error(data.message || "Scenario generation failed", {
-            id: toastId,
-          });
-          reject(new Error(data.message || "Scenario generation failed"));
-        };
-
-        // Register listeners
-        socket.on("scenarios_generation_progress", handleProgress);
-        socket.on("scenarios_generation_complete", handleComplete);
-        socket.on("scenarios_generation_error", handleError);
-        socket.on(
-          "scenario_tool_problem_statement_complete",
-          handleProblemStatementComplete
-        );
-        socket.on(
-          "scenarios_tools_objectives_complete",
-          handleObjectivesComplete
-        );
-        socket.on("scenarios_tools_document_complete", handleDocumentComplete);
-        socket.on("scenarios_tools_image_complete", handleImageComplete);
-
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Scenario] Registered WebSocket event listeners for scenario generation"
-        );
-
-        // Emit the event
-        // scenarioDomainId is required - UI filters and selects appropriate agent for scenario generation
-        if (!basicInfoState.scenarioDomainId) {
-          toast.error("Please select a scenario agent before generating");
-          reject(new Error("Scenario agent ID is required"));
-          return;
-        }
-
-        socket.emit("generate_scenario", {
-          departmentId: body.departmentId,
-          scenarioDomainId: basicInfoState.scenarioDomainId, // Required: selected scenario agent ID
-          imageDomainId: basicInfoState.imageDomainId || undefined, // Optional: selected image agent ID
-          videoDomainId: basicInfoState.videoDomainId || undefined, // Optional: selected video agent ID
-          personaIds: body.personaIds,
-          documentIds: body.documentIds,
-          fieldIds: body.fieldIds, // Renamed from parameterItemIds
-          profileId: body.profileId,
-          scenarioId: scenarioId || undefined, // Pass scenarioId if in edit mode
-          imagesEnabled: useImage,
-          videoEnabled: useVideo,
-          objectivesEnabled: useObjectives,
-          questionsEnabled: useQuestions,
-          videoLength: selectedVideoLength || undefined,
-        });
-      });
+      // TODO: Implement generation via API endpoint instead of WebSocket
+      throw new Error("Generation not yet implemented");
     },
     [
-      socket,
-      isConnected,
-      problemStatement,
       updateProblemStatementIds,
       updateObjectiveIds,
       updateDocumentIds,
       basicInfoState,
-      scenarioId,
       useImage,
       useVideo,
       useObjectives,
@@ -2453,7 +1817,7 @@ function ScenarioComponent({
   const simulationMapping = useMemo(() => {
     // Use arrays directly (server is source of truth - arrays are guaranteed)
     // simulations only exist on ScenarioDetailOut
-    if (!scenarioData || !isScenarioDetailOut(scenarioData)) return {};
+    if (!scenarioData) return {};
     const simulations = scenarioData.simulations;
     const map: Record<
       string,
@@ -2595,11 +1959,7 @@ function ScenarioComponent({
   // Merge server problem statement mapping with local versions (for create mode)
   // IDs from database are unique, so just merge - local versions override server versions if same ID
   const problemStatementMapping = useMemo(() => {
-    const data = scenarioData as
-      | ScenarioDetailOut
-      | ScenarioNewOut
-      | null
-      | undefined;
+    const data = scenarioData as ScenarioNewOut | null | undefined;
     // Build mapping from problem_statements array
     const serverMapping: Record<
       string,
@@ -2753,19 +2113,23 @@ function ScenarioComponent({
     updated_at: string;
   };
   const imageMapping = useMemo((): Record<string, ImageMappingItem> => {
-    const scenarioImages = (
-      scenarioData as ScenarioDetailOut & {
-        scenario_images?: Array<{
-          id?: string;
-          name?: string;
-          upload_id?: string;
-          file_path?: string;
-          mime_type?: string;
-          created_at?: string;
-          updated_at?: string;
-        }>;
-      }
-    )?.scenario_images;
+    // Create mode: No images in initial state
+    const scenarioImages =
+      scenarioData && "scenario_images" in scenarioData
+        ? (
+            scenarioData as {
+              scenario_images?: Array<{
+                id?: string;
+                name?: string;
+                upload_id?: string;
+                file_path?: string;
+                mime_type?: string;
+                created_at?: string;
+                updated_at?: string;
+              }>;
+            }
+          ).scenario_images
+        : undefined;
 
     if (!scenarioImages || !Array.isArray(scenarioImages)) {
       return {};
@@ -2810,45 +2174,9 @@ function ScenarioComponent({
     upload_id?: string;
   };
   const videoMapping = useMemo((): Record<string, VideoMappingItem> => {
-    const scenarioVideos = (
-      scenarioData as ScenarioDetailOut & {
-        scenario_videos?: Array<{
-          id?: string;
-          name?: string;
-          length_seconds?: number;
-          active?: boolean;
-          upload_id?: string;
-        }>;
-      }
-    )?.scenario_videos;
-
-    if (!scenarioVideos || !Array.isArray(scenarioVideos)) {
-      return {};
-    }
-
-    const mapping: Record<string, VideoMappingItem> = {};
-    scenarioVideos.forEach((vid) => {
-      const vidTyped = vid as {
-        id?: string;
-        name?: string;
-        length_seconds?: number;
-        active?: boolean;
-        upload_id?: string;
-      };
-      const videoId = vidTyped["id"];
-      if (videoId) {
-        mapping[videoId] = {
-          id: videoId,
-          name: vidTyped["name"] || "",
-          length_seconds: vidTyped["length_seconds"] || 0,
-          ...(vidTyped["upload_id"]
-            ? { upload_id: vidTyped["upload_id"] }
-            : {}),
-        };
-      }
-    });
-    return mapping;
-  }, [scenarioData]);
+    // Create mode: No videos in initial state (videos are added via selection)
+    return {};
+  }, []);
 
   // Filter objectives_history based on selected departments
   const objectivesHistory = useMemo(() => {
@@ -3137,7 +2465,7 @@ function ScenarioComponent({
   useEffect(() => {
     // valid_department_ids exists on ScenarioNewOut
     const newDataForDepts =
-      scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+      scenarioData && isScenarioNewOut(scenarioData)
         ? (scenarioData as ScenarioNewOut)
         : null;
     const validDeptIdsArray =
@@ -3156,7 +2484,7 @@ function ScenarioComponent({
       });
       return cleaned;
     });
-  }, [scenarioData, isEditMode]);
+  }, [scenarioData]);
 
   // Clear selections when they become invalid after department changes
   // (but preserve cross-department entities and staged selections)
@@ -3284,99 +2612,6 @@ function ScenarioComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentObjectiveIds, getObjectiveMapping, searchParams]);
 
-  // Handle randomized selections from WebSocket event
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const handleRandomizeComplete = (data: {
-      success: boolean;
-      randomized_selections: {
-        personaIds?: string[] | null;
-        documentIds?: string[] | null;
-        parameterIds?: string[] | null;
-        fieldIds?: string[] | null;
-      };
-      message?: string;
-    }) => {
-      if (!data.success) {
-        toast.error(data.message || "Failed to randomize selections");
-        setRandomizingSection(null);
-        return;
-      }
-
-      const randomized = data.randomized_selections;
-
-      // Update state with randomized selections using transition for smooth UI updates
-      startTransition(() => {
-        if (randomized.personaIds) {
-          updatePersonaIds(randomized.personaIds);
-        }
-        if (randomized.documentIds) {
-          updateDocumentIds(randomized.documentIds);
-        }
-        if (randomized.parameterIds) {
-          handleInputChange("parameterIds", randomized.parameterIds);
-        }
-        // Clear randomizing section state when randomization completes
-        setRandomizingSection(null);
-      });
-
-      // Compute merged fieldIds if needed (for single parameter randomization)
-      let finalFieldIds: string[] | undefined;
-      if (randomized.fieldIds && randomized.fieldIds.length > 0) {
-        // Check which section was being randomized
-        if (randomizingSection && randomizingSection.startsWith("parameter_")) {
-          // Single parameter randomization: keep fields for other parameters, add randomized ones
-          const paramId = randomizingSection.replace("parameter_", "");
-          const otherParamFields = currentFieldIds.filter(
-            (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-          );
-          finalFieldIds = [...otherParamFields, ...randomized.fieldIds];
-        } else {
-          // Full randomization (randomize=all): replace all fields
-          finalFieldIds = randomized.fieldIds;
-        }
-        // Wrap field updates in transition too for smooth transitions
-        startTransition(() => {
-          updateFieldIds(finalFieldIds!);
-        });
-      }
-
-      // Update draft state with randomized selections (no URL update needed - form fields are in draft state)
-      // Note: URL params are only for search/filter, not form fields
-
-      if (data.message) {
-        toast.success(data.message);
-      }
-    };
-
-    const handleRandomizeError = (data: {
-      success: boolean;
-      message: string;
-    }) => {
-      toast.error(data.message || "Failed to randomize selections");
-      setRandomizingSection(null);
-    };
-
-    socket.on("scenario_randomize_complete", handleRandomizeComplete);
-    socket.on("scenario_randomize_error", handleRandomizeError);
-
-    return () => {
-      socket.off("scenario_randomize_complete", handleRandomizeComplete);
-      socket.off("scenario_randomize_error", handleRandomizeError);
-    };
-  }, [
-    socket,
-    isConnected,
-    randomizingSection,
-    currentFieldIds,
-    fieldMapping,
-    updatePersonaIds,
-    updateDocumentIds,
-    updateFieldIds,
-    handleInputChange,
-  ]);
-
   // Debounce timeout ref for URL updates
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Track last params string to prevent duplicate updates
@@ -3469,558 +2704,35 @@ function ScenarioComponent({
 
   // Load scenario data from V2 response
   useEffect(() => {
-    if (scenarioData && isEditMode && !formDataInitializedRef.current) {
-      // Edit mode: load existing scenario data (only once)
-      // In edit mode, scenarioData is ScenarioDetailOut
-      const detailData = scenarioData as ScenarioDetailOut;
-      const deptIds = detailData.department_ids || [];
-      // Initialize name and problemStatement in draft state
-      handleInputChange("name", detailData.name || null);
-      handleInputChange(
-        "problemStatement",
-        detailData.problem_statement || null
-      );
-      // Initialize basic info state
-      setBasicInfoState({
-        scenarioDomainId: detailData.scenario_domain_id || null,
-        imageDomainId: detailData.image_domain_id || null,
-        videoDomainId:
-          (detailData as ScenarioDetailOut & { video_domain_id?: string })
-            .video_domain_id || null,
-        active: detailData.active ?? true,
-      });
-      handleInputChange("departmentIds", deptIds);
-      handleInputChange("parameterIds", detailData.parameter_ids || []);
-      // Initialize previousDepartmentIds when loading scenario data
-      if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
-        setPreviousDepartmentIds(deptIds.map(String));
-      }
-      updatePersonaIds(detailData.persona_ids || []);
-      // Clear local versions when loading existing scenario (edit mode)
-      setLocalProblemStatementVersions([]);
-      const docIds = detailData.document_ids || [];
-      updateDocumentIds(docIds);
-      // Extract template document IDs from documentDetails (is_template field) for edit mode
-      const templateDocIds =
-        detailData.document_details
-          ?.filter((doc) => doc.is_template === true)
-          .map((doc) => doc.document_id)
-          .filter((id): id is string => id !== null) || [];
-      updateTemplateDocumentIds(templateDocIds);
-      // Extract field IDs from parameters array
-      const fieldIds = (detailData.parameters || [])
-        .flatMap((p) => {
-          // Parameters array contains objects with field_ids array
-          const paramWithFields = p as { field_ids?: string[] | null };
-          return paramWithFields.field_ids || [];
-        })
-        .filter((id): id is string => id !== null && id !== undefined);
-      updateFieldIds(fieldIds);
-      updateObjectives(
-        getObjectivesFromMapping(
-          detailData.objective_ids || [],
-          getObjectiveMapping
-        )
-      );
-      // Load scenario flags from server data
-      const scenarioDataWithFlags = scenarioData as ScenarioDetailOut & {
-        objectives_enabled?: boolean;
-        images_enabled?: boolean;
-        video_enabled?: boolean;
-        questions_enabled?: boolean;
-        problem_statement_enabled?: boolean;
-        scenario_images?: Array<{
-          id?: string;
-          name?: string;
-          upload_id?: string;
-        }>;
-        scenario_videos?: Array<{
-          id?: string;
-          name?: string;
-          length_seconds?: number;
-          active?: boolean;
-        }>;
-        question_ids?: string[];
-        questions?: Array<{
-          id?: string;
-          question_text?: string;
-          allow_multiple?: boolean;
-          options?: Array<{
-            id?: string;
-            option_text?: string;
-            is_correct?: boolean;
-          }>;
-          times?: number[];
-        }>;
-      };
-      // Load objectives_enabled and objectives
-      const objectivesEnabled =
-        scenarioDataWithFlags.objectives_enabled ?? false;
-      // Load images_enabled flag
-      const imagesEnabled = scenarioDataWithFlags.images_enabled ?? false;
-      // Load problem_statement_enabled flag
-      const problemStatementEnabled =
-        scenarioDataWithFlags.problem_statement_enabled ?? true;
+    // Initialize from scenarioData (only once)
+    if (scenarioData && !formDataInitializedRef.current) {
+      // Resource-first: Don't initialize name/problemStatement/objectives in draftState
+      // These are managed via formState resource IDs only
+      const newData = isScenarioNewOut(scenarioData)
+        ? (scenarioData as ScenarioNewOut)
+        : null;
 
-      // Update feature flags in draft state
-      handleInputChange("useObjectives", objectivesEnabled || null);
-      handleInputChange("useImage", imagesEnabled || null);
-      handleInputChange("useProblemStatement", problemStatementEnabled || null);
-      // In edit mode, load saved images from scenario (scenario_images represents saved images)
-      // In create mode, don't auto-select - user must explicitly choose or upload via picker
-      const scenarioImages = scenarioDataWithFlags.scenario_images;
-      if (
-        isEditMode &&
-        imagesEnabled &&
-        scenarioImages &&
-        Array.isArray(scenarioImages) &&
-        scenarioImages.length > 0
-      ) {
-        // In edit mode, load the first saved image (scenario_images contains saved images)
-        const firstImage = scenarioImages[0] as {
-          id?: string;
-          name?: string;
-          upload_id?: string;
-        };
-        const uploadId = firstImage.upload_id || firstImage.id;
-        if (uploadId) {
-          setContentState((prev) => ({
-            ...prev,
-            image: {
-              id: uploadId,
-              name: firstImage.name || "",
-              upload_id: uploadId,
-            },
-          }));
-        } else {
-          setContentState((prev) => ({ ...prev, image: null }));
-        }
-      } else {
-        // Create mode or no saved images - don't auto-select
-        setContentState((prev) => ({ ...prev, image: null }));
-      }
-
-      // Load video_enabled and scenario video (only active video)
-      const videoEnabled = scenarioDataWithFlags.video_enabled ?? false;
-      handleInputChange("useVideo", videoEnabled || null);
-      const scenarioVideos = scenarioDataWithFlags.scenario_videos;
-      if (
-        videoEnabled &&
-        scenarioVideos &&
-        Array.isArray(scenarioVideos) &&
-        scenarioVideos.length > 0
-      ) {
-        // Find active video (only one should be active)
-        const activeVideo =
-          scenarioVideos.find((v) => {
-            const vTyped = v as { active?: boolean };
-            return vTyped["active"] === true;
-          }) || scenarioVideos[0];
-        const activeVideoTyped = activeVideo as {
-          id?: string;
-          name?: string;
-          length_seconds?: number;
-          upload_id?: string;
-        };
-        const videoId = activeVideoTyped["id"];
-        const uploadId = activeVideoTyped["upload_id"];
-        if (videoId) {
-          setContentState((prev) => ({
-            ...prev,
-            selectedVideo: {
-              id: videoId,
-              name: activeVideoTyped["name"] || "",
-              length_seconds: activeVideoTyped["length_seconds"] || 0,
-              ...(uploadId ? { upload_id: uploadId } : {}),
-            },
-            activeVideoId: videoId,
-          }));
-        } else {
-          setContentState((prev) => ({
-            ...prev,
-            selectedVideo: null,
-            activeVideoId: null,
-          }));
-        }
-      } else {
-        setContentState((prev) => ({
-          ...prev,
-          selectedVideo: null,
-          activeVideoId: null,
-        }));
-      }
-
-      // Load questions_enabled and questions
-      const questionsEnabled = scenarioDataWithFlags.questions_enabled ?? false;
-      handleInputChange("useQuestions", questionsEnabled || null);
-      const questionIds = scenarioDataWithFlags.question_ids || [];
-      const questionsData = scenarioDataWithFlags.questions || [];
-      if (
-        questionsData &&
-        Array.isArray(questionsData) &&
-        questionsData.length > 0
-      ) {
-        const mappedQuestions = questionsData.map((q) => {
-          const qTyped = q as {
-            id?: string;
-            question_text?: string;
-            allow_multiple?: boolean;
-            options?: Array<{
-              id?: string;
-              option_text?: string;
-              type?: "discrete" | "freeform";
-              is_correct?: boolean;
-            }>;
-            times?: number[];
-          };
-          return {
-            id: qTyped["id"] || "",
-            question_text: qTyped["question_text"] || "",
-            allow_multiple: qTyped["allow_multiple"] || false,
-            options: (qTyped["options"] || []).map((opt) => ({
-              id: opt["id"] || "",
-              option_text: opt["option_text"] || "",
-              type: opt["type"] || "discrete",
-              is_correct: opt["is_correct"] || false,
-            })),
-            times: qTyped["times"] || [],
-          };
+      // Create mode: Initialize basic info state from server defaults
+      if (newData) {
+        setBasicInfoState({
+          scenarioDomainId: newData.scenario_domain_id || null,
+          imageDomainId: newData.image_domain_id || null,
+          videoDomainId: null,
+          active: true, // Default for create mode
         });
-        setContentState((prev) => ({
-          ...prev,
-          questions: mappedQuestions,
-          currentQuestionIds: questionIds,
-        }));
-      } else {
-        setContentState((prev) => ({
-          ...prev,
-          questions: [],
-          currentQuestionIds: [],
-        }));
       }
-      // Store originals for change tracking (name and problemStatement now tracked via nuqs)
-      // Basic info state (agents, active) tracked separately
-      setOriginalFormData({
-        departmentIds: detailData.department_ids || [],
-        parameterIds: detailData.parameter_ids || [],
-      });
-      setOriginalDocumentIds(detailData.document_ids || []);
-      // Store template document IDs for original tracking (already extracted above as templateDocIds)
-      setOriginalTemplateDocumentIds(templateDocIds);
-      // Extract field IDs from parameters structure
-      const fieldIdsFromParams = (detailData.parameters || [])
-        .flatMap((p) => {
-          const paramWithFields = p as { field_ids?: string[] | null };
-          return paramWithFields.field_ids || [];
-        })
-        .filter((id): id is string => id !== null && id !== undefined);
-      setOriginalFieldIds(fieldIdsFromParams);
-      setOriginalObjectives(
-        getObjectivesFromMapping(
-          detailData.objective_ids || [],
-          getObjectiveMapping
-        )
-      );
-      formDataInitializedRef.current = true;
-    } else if (!isEditMode && scenarioData && !formDataInitializedRef.current) {
-      // Create mode: initialize from server response (server-driven approach)
-      // Server already parsed URL params and returns selected IDs, search terms, ranges
-      const newData = scenarioData as ScenarioNewOut;
-      // Preserve problem statement and name if they were set from URL params (don't reset to empty/default)
-      // Name and problemStatement are now managed by nuqs, so they're already in q
-      // Only initialize if not already set in URL
-      if (!problemStatement) {
-        // No problem statement in URL - keep empty or use default
-      }
-      if (!name || name === "New Scenario") {
-        // Name is default or not set - keep as is (nuqs will handle default)
-      }
-      // Initialize basic info state
-      setBasicInfoState({
-        scenarioDomainId: scenarioData.scenario_domain_id || null,
-        imageDomainId: scenarioData.image_domain_id || null,
-        videoDomainId:
-          (scenarioData as ScenarioDetailOut & { video_domain_id?: string })
-            .video_domain_id || null,
-        active: true, // Default for create mode
-      });
-      // Initialize draft state from initialFormData and server response
-      setDraftState((prev) => ({
-        ...prev,
-        ...initialFormData,
-        parameterIds:
-          ("selected_parameter_ids" in newData &&
-            Array.isArray(newData.selected_parameter_ids) &&
-            newData.selected_parameter_ids) ||
-          [],
-      }));
-
-      // Initialize selections from server response (filtered to valid IDs)
-      // Only update URL if server values differ from current URL values
-      if (
-        "selected_persona_ids" in newData &&
-        Array.isArray(newData.selected_persona_ids) &&
-        newData.selected_persona_ids.length > 0
-      ) {
-        const currentPersonaIds = selectedPersonaIds;
-        if (
-          JSON.stringify([...currentPersonaIds].sort()) !==
-          JSON.stringify([...newData.selected_persona_ids].sort())
-        ) {
-          updatePersonaIds(newData.selected_persona_ids);
-        }
-      }
-      if (
-        "selected_document_ids" in newData &&
-        Array.isArray(newData.selected_document_ids) &&
-        newData.selected_document_ids.length > 0
-      ) {
-        const currentDocIds = currentDocumentIds;
-        if (
-          JSON.stringify([...currentDocIds].sort()) !==
-          JSON.stringify([...newData.selected_document_ids].sort())
-        ) {
-          updateDocumentIds(newData.selected_document_ids);
-        }
-      }
-      // Template document IDs: prioritize URL params over server response
-      // URL params are the source of truth (DHH-style)
-      const currentTemplateIds = q.templateDocumentIds ?? [];
-      if (currentTemplateIds.length > 0) {
-        // URL params take precedence - no update needed
-      } else if (
-        "selected_template_document_ids" in newData &&
-        Array.isArray(newData.selected_template_document_ids) &&
-        newData.selected_template_document_ids.length > 0
-      ) {
-        // Fallback to server response if no URL params
-        updateTemplateDocumentIds(newData.selected_template_document_ids);
-      }
-      if (
-        "selected_field_ids" in newData &&
-        Array.isArray(newData.selected_field_ids) &&
-        newData.selected_field_ids.length > 0
-      ) {
-        const currentFieldIdsFromQ = currentFieldIds;
-        if (
-          JSON.stringify([...currentFieldIdsFromQ].sort()) !==
-          JSON.stringify([...newData.selected_field_ids].sort())
-        ) {
-          updateFieldIds(newData.selected_field_ids);
-        }
-      }
-
-      // Don't auto-select images - user must explicitly choose or upload
-
-      // Initialize objective IDs from URL params (server doesn't return selected_objective_ids)
-      // URL params are the source of truth (DHH-style)
-      const currentObjectiveIdsFromQ = currentObjectiveIds;
-      if (currentObjectiveIdsFromQ.length > 0) {
-        // Populate currentObjectives from objective IDs using objective mapping
-        // Use the helper function that prefers arrays, falls back to mapping
-        if (Object.keys(getObjectiveMapping).length > 0) {
-          const objectivesFromIds = getObjectivesFromMapping(
-            currentObjectiveIdsFromQ,
-            getObjectiveMapping
-          );
-          updateObjectives(objectivesFromIds);
-          setContentState((prev) => ({
-            ...prev,
-            objectives: objectivesFromIds,
-          }));
-        }
-      }
-
-      // Initialize problem statement IDs from URL params (server doesn't return selected_problem_statement_ids)
-      const currentProblemStatementIdsFromQ = currentProblemStatementIds;
-      if (currentProblemStatementIdsFromQ.length > 0) {
-        // Set first as active and update name if needed
-        // Use problemStatementMapping which prefers arrays, falls back to mapping
-        const firstId = currentProblemStatementIdsFromQ[0];
-        if (firstId) {
-          const firstProblemStatementRaw = problemStatementMapping[firstId];
-          if (firstProblemStatementRaw) {
-            // Normalize to ensure name field exists (for backward compatibility)
-            const firstProblemStatement = {
-              name: (firstProblemStatementRaw as { name?: string }).name || "",
-              problem_statement: (
-                firstProblemStatementRaw as { problem_statement: string }
-              ).problem_statement,
-              created_at: (firstProblemStatementRaw as { created_at: string })
-                .created_at,
-              updated_at: (firstProblemStatementRaw as { updated_at: string })
-                .updated_at,
-            };
-            // Set as active - but only if URL doesn't have problem statement text (text takes priority)
-            const problemStatementFromUrl =
-              searchParams.get("problemStatement");
-            if (
-              !problemStatementFromUrl &&
-              (!problemStatement || !problemStatement.trim())
-            ) {
-              handleInputChange(
-                "problemStatement",
-                firstProblemStatement.problem_statement || null
-              );
-            }
-            // Set name in new mode (using name field)
-            const isNewMode =
-              !isEditMode &&
-              (!name || name === "New Scenario" || name.trim() === "");
-            if (isNewMode && firstProblemStatement.name) {
-              handleInputChange("name", firstProblemStatement.name || null);
-            }
-          }
-        }
-      }
-
-      // Initialize search terms and ranges from server response (update URL via nuqs)
-      // Only update if server values differ from current URL values
-      const updates: Partial<Record<string, string | number | null>> = {};
-      if (
-        "persona_search" in newData &&
-        typeof newData.persona_search === "string" &&
-        newData.persona_search &&
-        newData.persona_search !== personaSearchTerm
-      ) {
-        updates["personaSearch"] = newData.persona_search;
-      }
-      if (
-        "document_search" in newData &&
-        typeof newData.document_search === "string" &&
-        newData.document_search &&
-        newData.document_search !== documentSearchTerm
-      ) {
-        updates["documentSearch"] = newData.document_search;
-      }
-      if (
-        "parameter_search" in newData &&
-        typeof newData.parameter_search === "string" &&
-        newData.parameter_search &&
-        newData.parameter_search !== parameterSearchTerm
-      ) {
-        updates["parameterSearch"] = newData.parameter_search;
-      }
-
-      // Update ranges if server values differ
-      const serverPersonaMin = isScenarioNewOut(newData)
-        ? (newData.persona_range_min ?? 1)
-        : 1;
-      const serverPersonaMax = isScenarioNewOut(newData)
-        ? (newData.persona_range_max ?? 1)
-        : 1;
-      if (
-        personaMinMax.min !== serverPersonaMin ||
-        personaMinMax.max !== serverPersonaMax
-      ) {
-        updates["personaMin"] = serverPersonaMin;
-        updates["personaMax"] = serverPersonaMax;
-      }
-
-      const serverDocumentMin = isScenarioNewOut(newData)
-        ? (newData.document_range_min ?? 0)
-        : 0;
-      const serverDocumentMax = isScenarioNewOut(newData)
-        ? (newData.document_range_max ?? 1)
-        : 1;
-      if (
-        documentMinMax.min !== serverDocumentMin ||
-        documentMinMax.max !== serverDocumentMax
-      ) {
-        updates["documentMin"] = serverDocumentMin;
-        updates["documentMax"] = serverDocumentMax;
-      }
-
-      const parameterDefault = parameterSelectionMinMax;
-      const serverParameterMin = isScenarioNewOut(newData)
-        ? (newData.parameter_range_min ?? parameterDefault.min)
-        : parameterDefault.min;
-      const serverParameterMax = isScenarioNewOut(newData)
-        ? (newData.parameter_range_max ?? parameterDefault.max)
-        : parameterDefault.max;
-      if (
-        parameterSelectionMinMax.min !== serverParameterMin ||
-        parameterSelectionMinMax.max !== serverParameterMax
-      ) {
-        updates["parameterSelectionMin"] = serverParameterMin;
-        updates["parameterSelectionMax"] = serverParameterMax;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        setFormData(updates);
-      }
-
-      // Initialize per-parameter item ranges from server response
-      // Always update field ranges (even if empty) to ensure reset works
-      if ("field_ranges" in newData && newData.field_ranges) {
-        const result: Record<string, { min: number; max: number }> = {};
-        Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
-          // Type assertion needed for index signature - use bracket notation
-          const typedRange = range as { min?: number; max?: number };
-          result[paramId] = {
-            min: typedRange["min"] ?? 1,
-            max: typedRange["max"] ?? 3,
-          };
-        });
-        // Update URL with field ranges if they differ from current URL values
-        const currentFieldRanges = fieldMinMax;
-        if (JSON.stringify(result) !== JSON.stringify(currentFieldRanges)) {
-          updateFieldRanges(result);
-        }
-      } else {
-        // If no field_ranges in response, initialize with defaults for all parameters
-        // This ensures reset works even if server doesn't return field_ranges
-        // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
-        const defaultFieldRanges: Record<string, { min: number; max: number }> =
-          {};
-        Object.keys(parameterMapping).forEach((paramId) => {
-          defaultFieldRanges[paramId] = { min: 1, max: 3 };
-        });
-        const currentFieldRanges = fieldMinMax;
-        if (
-          JSON.stringify(defaultFieldRanges) !==
-          JSON.stringify(currentFieldRanges)
-        ) {
-          updateFieldRanges(defaultFieldRanges);
-        }
-      }
-
       formDataInitializedRef.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    scenarioData,
-    isEditMode,
-    previousDepartmentIds.length,
-    effectiveProfile?.primary_department_id,
-    initialFormData,
-    searchParams,
-    q.documentMax,
-    q.documentMin,
-    documentSearchTerm,
-    parameterSearchTerm,
-    parameterSelectionMinMax,
-    personaMinMax,
-    personaSearchTerm,
-    parameterMapping,
-    fieldMapping,
-    parameterSelectionMinMax, // Used as fallback value in effect
-    name,
-    problemStatement,
-    handleInputChange,
-    useImage,
-    // q.documentIds, q.fieldIds, etc. intentionally omitted - only specific q fields needed
-    // update* functions intentionally omitted to prevent infinite loops
-  ]);
+  }, [scenarioData]);
 
   // Problem statement ID is now managed via URL parameters, not state
 
   // Note: getScenarioAgentRole and expectedScenarioRole removed - scenarios now always use base 'scenario' role
 
-  // Reset initialization flag when switching between edit/create modes or scenario changes
+  // Reset initialization flag when scenario data changes
   useEffect(() => {
     formDataInitializedRef.current = false;
-  }, [scenarioId, isEditMode]);
+  }, [scenarioData]);
 
   // Note: Domain ID validation removed - domains are already validated by artifact type
   // No need to check agent roles since domain IDs are already scoped to the correct artifact
@@ -4049,18 +2761,7 @@ function ScenarioComponent({
     }
 
     // Auto-select video domain if only one option and not already set
-    if (
-      (scenarioData as ScenarioDetailOut & { video_domain_id?: string })
-        ?.video_domain_id &&
-      !basicInfoState.videoDomainId
-    ) {
-      setBasicInfoState((prev) => ({
-        ...prev,
-        videoDomainId:
-          (scenarioData as ScenarioDetailOut & { video_domain_id?: string })
-            ?.video_domain_id || null,
-      }));
-    }
+    // Note: video_domain_id may not exist on ScenarioNewOut, skip for create mode
   }, [
     scenarioData,
     basicInfoState.scenarioDomainId,
@@ -4069,109 +2770,9 @@ function ScenarioComponent({
   ]);
 
   // Store original name and problemStatement for change tracking (from server data)
-  const originalName = useMemo(() => {
-    if (!isEditMode || !scenarioData) return "New Scenario";
-    // In edit mode, scenarioData is ScenarioDetailOut
-    if ("name" in scenarioData) {
-      return (scenarioData as ScenarioDetailOut).name || "New Scenario";
-    }
-    return "New Scenario";
-  }, [isEditMode, scenarioData]);
+  // No original state tracking needed for create mode
 
-  const originalProblemStatement = useMemo(() => {
-    if (!isEditMode || !scenarioData) return "";
-    return (scenarioData as ScenarioDetailOut).problem_statement || "";
-  }, [isEditMode, scenarioData]);
-
-  // Store original basic info state for change tracking
-  const originalBasicInfoState = useMemo(() => {
-    if (!isEditMode || !scenarioData) {
-      return {
-        scenarioDomainId: null,
-        imageDomainId: null,
-        videoDomainId: null,
-        active: true,
-      };
-    }
-    // In edit mode, scenarioData is ScenarioDetailOut
-    const detailData = scenarioData as ScenarioDetailOut;
-    return {
-      scenarioDomainId: detailData.scenario_domain_id || null,
-      imageDomainId: detailData.image_domain_id || null,
-      videoDomainId:
-        (detailData as ScenarioDetailOut & { video_domain_id?: string })
-          .video_domain_id || null,
-      active: detailData.active ?? true,
-    };
-  }, [isEditMode, scenarioData]);
-
-  // Check if form has changes
-  const hasChanges = useMemo(() => {
-    if (!isEditMode) return false;
-
-    const current = formData;
-    const original = originalFormData;
-    // In edit mode, get persona_ids from ScenarioDetailOut
-    const originalPersonaIds =
-      isEditMode && scenarioData && "persona_ids" in scenarioData
-        ? (scenarioData as ScenarioDetailOut).persona_ids || []
-        : [];
-
-    return (
-      JSON.stringify(selectedPersonaIds.sort()) !==
-        JSON.stringify(originalPersonaIds.sort()) ||
-      name !== originalName ||
-      problemStatement !== originalProblemStatement ||
-      basicInfoState.active !== originalBasicInfoState.active ||
-      basicInfoState.scenarioDomainId !==
-        originalBasicInfoState.scenarioDomainId ||
-      basicInfoState.imageDomainId !== originalBasicInfoState.imageDomainId ||
-      basicInfoState.videoDomainId !== originalBasicInfoState.videoDomainId ||
-      JSON.stringify(
-        (current["departmentIds"] as string[] | undefined)?.sort() || []
-      ) !== JSON.stringify((original.departmentIds || []).sort()) ||
-      JSON.stringify([...currentDocumentIds].sort()) !==
-        JSON.stringify([...(originalDocumentIds || [])].sort()) ||
-      JSON.stringify([...templateDocumentIds].sort()) !==
-        JSON.stringify([...(originalTemplateDocumentIds || [])].sort()) ||
-      JSON.stringify([...currentFieldIds].sort()) !==
-        JSON.stringify([...(originalFieldIds || [])].sort()) ||
-      JSON.stringify(currentObjectives) !==
-        JSON.stringify(originalObjectives || [])
-    );
-  }, [
-    formData,
-    originalFormData,
-    name,
-    originalName,
-    problemStatement,
-    originalProblemStatement,
-    basicInfoState.active,
-    basicInfoState.scenarioDomainId,
-    basicInfoState.imageDomainId,
-    basicInfoState.videoDomainId,
-    originalBasicInfoState.active,
-    originalBasicInfoState.scenarioDomainId,
-    originalBasicInfoState.imageDomainId,
-    originalBasicInfoState.videoDomainId,
-    isEditMode,
-    selectedPersonaIds,
-    scenarioData,
-    currentDocumentIds,
-    originalDocumentIds,
-    templateDocumentIds,
-    originalTemplateDocumentIds,
-    currentFieldIds, // Renamed from currentParameterItemIds
-    originalFieldIds, // Renamed from originalParameterItemIds
-    currentObjectives,
-    originalObjectives,
-  ]);
-
-  // Check if problem statement has changes (for reset button)
-  const hasProblemStatementChanges = useMemo(() => {
-    if (!isEditMode) return false;
-    return problemStatement !== originalProblemStatement;
-  }, [isEditMode, problemStatement, originalProblemStatement]);
+  // No hasChanges check needed for create mode
 
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
@@ -4187,58 +2788,13 @@ function ScenarioComponent({
   // Alias for backward compatibility during migration
   const isReadonly = disabled;
 
-  // Set breadcrumb context when scenario data is loaded
-  useEffect(() => {
-    if (
-      !scenarioData ||
-      typeof scenarioData !== "object" ||
-      !("name_resource" in scenarioData)
-    ) {
-      return;
-    }
-    const typedData = scenarioData as GetScenarioOut;
-    const scenarioName = typedData.name_resource?.name;
-    if (scenarioName && scenarioId && isEditMode) {
-      setEntityMetadata({
-        entityId: scenarioId,
-        entityName: scenarioName,
-        entityType: "scenario",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    scenarioData,
-    scenarioId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
-
-  // Generation capability is handled by parent components
-  // Removed useGenerationContext integration - no longer needed
-
-  // Get affected simulations from unified API data
-  const affectedSimulations = useMemo(() => {
-    // simulation_ids exists on GetScenarioOut when scenario_exists is true
-    if (isEditMode && scenarioData && isScenarioDetailOut(scenarioData)) {
-      if (!scenarioData.simulation_ids) return [];
-      return scenarioData.simulation_ids.map((id: string) => {
-        const sim = simulationMapping[id] as { name?: string } | undefined;
-        return {
-          id,
-          name: sim?.name || "",
-          active: true, // These are active simulations from server
-        };
-      });
-    }
-    return [];
-  }, [isEditMode, scenarioData, simulationMapping]);
+  // No breadcrumb context needed for create mode (only needed in edit mode)
 
   // Calculate step status for GenericForm
-  // Note: formData parameter is urlParams (search/filter only), but status is calculated from draftState (form fields)
+  // Note: formData parameter is urlParams (search/filter only), but status is calculated from formState (resource IDs)
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      // If we have a scenario description, mark all sections as completed
+      // Resource-first: Check resource objects, not legacy state
       if (problemStatement && problemStatement.trim()) {
         return "completed";
       }
@@ -4289,10 +2845,11 @@ function ScenarioComponent({
       }
     },
     [
+      problemStatement,
       selectedPersonaIds,
       currentDocumentIds,
-      currentFieldIds, // Renamed from currentParameterItemIds
-      fieldMapping, // Renamed from parameterItemMapping
+      currentFieldIds,
+      fieldMapping,
       formState.name_id,
       formState.problem_statement_id,
       formState.objective_ids,
@@ -4348,8 +2905,8 @@ function ScenarioComponent({
         description:
           "Define problem statement, objectives, images, videos, and questions.",
         resetFields: [
-          "problemStatement",
-          "objectives",
+          "problem_statement_id",
+          "objective_ids",
           "useImage",
           "useVideo",
           "useObjectives",
@@ -4370,130 +2927,15 @@ function ScenarioComponent({
   // Content sections will be defined after renderStep (see below)
 
   // Form initialization function for GenericForm
-  // Updates draftState directly (like Cohort.tsx), returns empty object for GenericForm
+  // Create mode: Returns empty object (form fields are handled via formState resource IDs)
   const initializeForm = useCallback(
-    (serverData: unknown, editMode: boolean) => {
-      if (
-        !editMode ||
-        !serverData ||
-        typeof serverData !== "object" ||
-        !("department_ids" in serverData)
-      ) {
-        return {};
-      }
-
-      const scenarioDetail = serverData as ScenarioDetailOut;
-      const deptIds = scenarioDetail.department_ids || [];
-
-      // Update draftState directly
-      const draftUpdates: Partial<DraftState> = {};
-
-      if (scenarioDetail.name) draftUpdates.name = scenarioDetail.name;
-      if (scenarioDetail.problem_statement)
-        draftUpdates.problemStatement = scenarioDetail.problem_statement;
-      if (deptIds.length > 0)
-        draftUpdates.departmentIds = deptIds.map((id) => String(id));
-      if (scenarioDetail.persona_ids && scenarioDetail.persona_ids.length > 0)
-        draftUpdates.personaIds = scenarioDetail.persona_ids;
-      if (scenarioDetail.document_ids && scenarioDetail.document_ids.length > 0)
-        draftUpdates.documentIds = scenarioDetail.document_ids;
-      if (
-        scenarioDetail.parameter_ids &&
-        scenarioDetail.parameter_ids.length > 0
-      )
-        draftUpdates.parameterIds = scenarioDetail.parameter_ids;
-      if (scenarioDetail.active !== undefined)
-        draftUpdates.active = scenarioDetail.active ?? true;
-      if (scenarioDetail.scenario_domain_id)
-        draftUpdates.scenarioDomainId = scenarioDetail.scenario_domain_id;
-      if (scenarioDetail.image_domain_id)
-        draftUpdates.imageDomainId = scenarioDetail.image_domain_id;
-      if (
-        (scenarioDetail as ScenarioDetailOut & { video_domain_id?: string })
-          .video_domain_id
-      )
-        draftUpdates.videoDomainId =
-          (scenarioDetail as ScenarioDetailOut & { video_domain_id?: string })
-            .video_domain_id || null;
-      if (scenarioDetail.image_input_enabled !== undefined)
-        draftUpdates.useImage = scenarioDetail.image_input_enabled ?? false;
-      if (
-        (scenarioDetail as ScenarioDetailOut & { video_enabled?: boolean })
-          .video_enabled !== undefined
-      )
-        draftUpdates.useVideo =
-          (scenarioDetail as ScenarioDetailOut & { video_enabled?: boolean })
-            .video_enabled ?? false;
-      if (scenarioDetail.objectives_enabled !== undefined)
-        draftUpdates.useObjectives = scenarioDetail.objectives_enabled ?? true;
-      if (
-        (scenarioDetail as ScenarioDetailOut & { questions_enabled?: boolean })
-          .questions_enabled !== undefined
-      )
-        draftUpdates.useQuestions =
-          (
-            scenarioDetail as ScenarioDetailOut & {
-              questions_enabled?: boolean;
-            }
-          ).questions_enabled ?? false;
-
-      // Apply updates to draftState
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-
-      // Return empty object for GenericForm compatibility (form fields are handled via draftState)
+    (_serverData: unknown, _editMode: boolean) => {
+      // Resource-first: Don't initialize name/problemStatement/objectives in draftState
+      // These are managed via formState resource IDs only
+      // Return empty object for GenericForm compatibility
       return {};
     },
     []
-  );
-
-  // Parameter actions - WebSocket randomization per parameter
-  const handleRandomizeParameterClient = useCallback(
-    (paramId: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      // Set loading state for this specific parameter section
-      setRandomizingSection(`parameter_${paramId}`);
-
-      // Emit WebSocket event with all current filter/search/range params
-      socket.emit("scenario_randomize", {
-        scenarioId: isEditMode ? scenarioId : null,
-        randomize: `parameter_${paramId}`,
-        departmentIds: q.departmentIds ?? null,
-        personaIds: q.personaIds ?? null,
-        documentIds: q.documentIds ?? null,
-        templateDocumentIds: q.templateDocumentIds ?? null,
-        parameterIds: q.parameterIds ?? null,
-        fieldIds: q.fieldIds ?? null,
-        personaSearch: q.personaSearch ?? null,
-        documentSearch: q.documentSearch ?? null,
-        parameterSearch: q.parameterSearch ?? null,
-        personaMin: q.personaMin ?? null,
-        personaMax: q.personaMax ?? null,
-        documentMin: q.documentMin ?? null,
-        documentMax: q.documentMax ?? null,
-        parameterSelectionMin: q.parameterSelectionMin ?? null,
-        parameterSelectionMax: q.parameterSelectionMax ?? null,
-        fieldRanges: fieldMinMax,
-        useImage: q.useImage ?? null,
-        useVideo: q.useVideo ?? null,
-        profileId: effectiveProfile?.id ?? "",
-      });
-    },
-    [
-      socket,
-      isConnected,
-      setRandomizingSection,
-      isEditMode,
-      scenarioId,
-      q,
-      fieldMinMax,
-      effectiveProfile?.id,
-    ]
   );
 
   const handleResetParameter = useCallback(
@@ -4516,7 +2958,6 @@ function ScenarioComponent({
         // Build URL updates - clear field IDs and range params for this parameter
         const urlUpdates: Record<string, string | string[] | null> = {
           fieldIds: currentParamItems.length > 0 ? currentParamItems : null,
-          randomize: null,
         };
         // Clear range params for this parameter
         urlUpdates[`fieldMin_${paramId}`] = null;
@@ -4524,7 +2965,6 @@ function ScenarioComponent({
 
         // Clear draft state (form fields are in draft state, not URL params)
         handleInputChange("fieldIds", null);
-        handleInputChange("randomize", null);
         // Clear dynamic field range params manually
         const params = new URLSearchParams(searchParams.toString());
         params.delete(`fieldMin_${paramId}`);
@@ -4569,96 +3009,6 @@ function ScenarioComponent({
     ]
   );
 
-  // Persona actions - WebSocket randomization
-  const handleRandomizePersonaClient = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
-
-    // Set loading state for persona section
-    setRandomizingSection("persona");
-
-    // Emit WebSocket event with all current filter/search/range params
-    socket.emit("scenario_randomize", {
-      scenarioId: isEditMode ? scenarioId : null,
-      randomize: "persona",
-      departmentIds: q.departmentIds ?? null,
-      personaIds: q.personaIds ?? null,
-      documentIds: q.documentIds ?? null,
-      templateDocumentIds: q.templateDocumentIds ?? null,
-      parameterIds: q.parameterIds ?? null,
-      fieldIds: q.fieldIds ?? null,
-      personaSearch: q.personaSearch ?? null,
-      documentSearch: q.documentSearch ?? null,
-      parameterSearch: q.parameterSearch ?? null,
-      personaMin: q.personaMin ?? null,
-      personaMax: q.personaMax ?? null,
-      documentMin: q.documentMin ?? null,
-      documentMax: q.documentMax ?? null,
-      parameterSelectionMin: q.parameterSelectionMin ?? null,
-      parameterSelectionMax: q.parameterSelectionMax ?? null,
-      fieldRanges: fieldMinMax,
-      useImage: q.useImage ?? null,
-      useVideo: q.useVideo ?? null,
-      profileId: effectiveProfile?.id ?? "",
-    });
-  }, [
-    socket,
-    isConnected,
-    setRandomizingSection,
-    isEditMode,
-    scenarioId,
-    q,
-    fieldMinMax,
-    effectiveProfile?.id,
-  ]);
-
-  // Documents actions - WebSocket randomization
-  const handleRandomizeDocumentsClient = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
-
-    // Set loading state for document section
-    setRandomizingSection("document");
-
-    // Emit WebSocket event with all current filter/search/range params
-    socket.emit("scenario_randomize", {
-      scenarioId: isEditMode ? scenarioId : null,
-      randomize: "document",
-      departmentIds: q.departmentIds ?? null,
-      personaIds: q.personaIds ?? null,
-      documentIds: q.documentIds ?? null,
-      templateDocumentIds: q.templateDocumentIds ?? null,
-      parameterIds: q.parameterIds ?? null,
-      fieldIds: q.fieldIds ?? null,
-      personaSearch: q.personaSearch ?? null,
-      documentSearch: q.documentSearch ?? null,
-      parameterSearch: q.parameterSearch ?? null,
-      personaMin: q.personaMin ?? null,
-      personaMax: q.personaMax ?? null,
-      documentMin: q.documentMin ?? null,
-      documentMax: q.documentMax ?? null,
-      parameterSelectionMin: q.parameterSelectionMin ?? null,
-      parameterSelectionMax: q.parameterSelectionMax ?? null,
-      fieldRanges: fieldMinMax,
-      useImage: q.useImage ?? null,
-      useVideo: q.useVideo ?? null,
-      profileId: effectiveProfile?.id ?? "",
-    });
-  }, [
-    socket,
-    isConnected,
-    setRandomizingSection,
-    isEditMode,
-    scenarioId,
-    q,
-    fieldMinMax,
-    effectiveProfile?.id,
-  ]);
-
   // Document removal handler - removes document from selection
   const handleDocumentRemove = useCallback(
     (docId: string) => {
@@ -4680,102 +3030,7 @@ function ScenarioComponent({
     ]
   );
 
-  // Parameters actions - WebSocket randomization
-  const handleRandomizeParametersClient = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
-
-    // Set loading state for parameters section
-    setRandomizingSection("parameters");
-
-    // Emit WebSocket event with all current filter/search/range params
-    socket.emit("scenario_randomize", {
-      scenarioId: isEditMode ? scenarioId : null,
-      randomize: "parameters",
-      departmentIds: q.departmentIds ?? null,
-      personaIds: q.personaIds ?? null,
-      documentIds: q.documentIds ?? null,
-      templateDocumentIds: q.templateDocumentIds ?? null,
-      parameterIds: q.parameterIds ?? null,
-      fieldIds: q.fieldIds ?? null,
-      personaSearch: q.personaSearch ?? null,
-      documentSearch: q.documentSearch ?? null,
-      parameterSearch: q.parameterSearch ?? null,
-      personaMin: q.personaMin ?? null,
-      personaMax: q.personaMax ?? null,
-      documentMin: q.documentMin ?? null,
-      documentMax: q.documentMax ?? null,
-      parameterSelectionMin: q.parameterSelectionMin ?? null,
-      parameterSelectionMax: q.parameterSelectionMax ?? null,
-      fieldRanges: fieldMinMax,
-      useImage: q.useImage ?? null,
-      useVideo: q.useVideo ?? null,
-      profileId: effectiveProfile?.id ?? "",
-    });
-  }, [
-    socket,
-    isConnected,
-    setRandomizingSection,
-    isEditMode,
-    scenarioId,
-    q,
-    fieldMinMax,
-    effectiveProfile?.id,
-  ]);
-
   // Helper functions removed - filtering now handled by server
-
-  // Randomize all: personas, documents, and all parameters (WebSocket)
-  const handleRandomizeAll = useCallback(() => {
-    if (!socket || !isConnected) {
-      toast.error("WebSocket not connected. Please refresh the page.");
-      return;
-    }
-
-    try {
-      // Set loading state for all sections
-      setRandomizingSection("all");
-
-      // Emit WebSocket event with all current filter/search/range params
-      socket.emit("scenario_randomize", {
-        scenarioId: isEditMode ? scenarioId : null,
-        randomize: "all",
-        departmentIds: q.departmentIds ?? null,
-        personaIds: q.personaIds ?? null,
-        documentIds: q.documentIds ?? null,
-        templateDocumentIds: q.templateDocumentIds ?? null,
-        parameterIds: q.parameterIds ?? null,
-        fieldIds: q.fieldIds ?? null,
-        personaSearch: q.personaSearch ?? null,
-        documentSearch: q.documentSearch ?? null,
-        parameterSearch: q.parameterSearch ?? null,
-        personaMin: q.personaMin ?? null,
-        personaMax: q.personaMax ?? null,
-        documentMin: q.documentMin ?? null,
-        documentMax: q.documentMax ?? null,
-        parameterSelectionMin: q.parameterSelectionMin ?? null,
-        parameterSelectionMax: q.parameterSelectionMax ?? null,
-        fieldRanges: fieldMinMax,
-        useImage: q.useImage ?? null,
-        useVideo: q.useVideo ?? null,
-        profileId: effectiveProfile?.id ?? "",
-      });
-    } catch {
-      toast.error("Failed to randomize all selections");
-      setRandomizingSection(null);
-    }
-  }, [
-    socket,
-    isConnected,
-    setRandomizingSection,
-    isEditMode,
-    scenarioId,
-    q,
-    fieldMinMax,
-    effectiveProfile?.id,
-  ]);
 
   const handleResetContent = useCallback(() => {
     try {
@@ -4981,12 +3236,8 @@ function ScenarioComponent({
 
         // If we have a problem statement ID, we'll need to fetch it from the API
         // For now, we'll trigger a refresh of the scenario data if in edit mode
-        if (result.problem_statement_id && isEditMode) {
-          // In edit mode, refresh scenario data to get the new problem statement
-          // This will be handled by the parent component refreshing the data
-          toast.success("Problem statement created successfully");
-        } else if (result.problem_statement_id && !isEditMode) {
-          // In create mode, we'll store the ID for later linking
+        if (result.problem_statement_id) {
+          // Create mode: Update formState with generated problem statement ID
           // The problem statement will be linked when the scenario is saved
           toast.success("Problem statement created successfully");
         }
@@ -4994,26 +3245,26 @@ function ScenarioComponent({
         // Note: title and description are no longer in the completion event
         // They will be fetched from the API when the scenario detail is loaded
         // If in edit mode, refresh scenario data to get the newly generated content
-        if (isEditMode && scenarioId) {
+        // No scenarioId needed for create mode
+        if (false) {
           // Trigger a refetch of scenario data to get the new problem statement, objectives, etc.
           // This will be handled by the parent component or query invalidation
         }
       } catch (error) {
-        // Error toast is already handled in handleGenerateAIScenario for WebSocket errors
+        // Error toast is already handled in handleGenerateAIScenario
         // Only show toast for errors that occur BEFORE calling handleGenerateAIScenario
-        // (e.g., validation errors, connection errors before WebSocket call)
+        // (e.g., validation errors)
         if (error instanceof Error) {
-          // Pre-WebSocket errors that should show a toast:
-          const preWebSocketErrors = [
-            "WebSocket not connected",
+          // Pre-generation errors that should show a toast:
+          const preGenerationErrors = [
             "No valid department found",
             "No scenario content was generated",
           ];
-          const isPreWebSocketError = preWebSocketErrors.some((msg) =>
+          const isPreGenerationError = preGenerationErrors.some((msg) =>
             error.message.includes(msg)
           );
           // All other errors come from handleGenerateAIScenario and already have toasts
-          if (isPreWebSocketError) {
+          if (isPreGenerationError) {
             toast.error(
               `Failed to generate scenario: ${error.message || "Unknown error"}`
             );
@@ -5033,8 +3284,6 @@ function ScenarioComponent({
       useImage,
       useVideo,
       useQuestions,
-      isEditMode,
-      scenarioId,
     ]
   );
 
@@ -5075,10 +3324,9 @@ function ScenarioComponent({
       }
 
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
-      const newDataForDepts =
-        scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
-          ? (scenarioData as ScenarioNewOut)
-          : null;
+      const newDataForDepts = isScenarioNewOut(scenarioData)
+        ? (scenarioData as ScenarioNewOut)
+        : null;
       const validDeptIds =
         newDataForDepts &&
         "valid_department_ids" in newDataForDepts &&
@@ -5091,25 +3339,12 @@ function ScenarioComponent({
         validDeptIds
       );
 
-      // Extract values from resources when resource IDs are present
-      const nameValue =
-        formState.name_id && scenarioData?.name_resource
-          ? scenarioData.name_resource.name
-          : name?.trim() || "";
+      // Resource-first: Extract values ONLY from resource objects, never from legacy state
+      const nameValue = scenarioData?.name_resource?.name || "";
       const descriptionValue =
-        formState.description_id && scenarioData?.description_resource
-          ? scenarioData.description_resource.description
-          : scenarioData &&
-              typeof scenarioData === "object" &&
-              "description" in scenarioData
-            ? ((scenarioData as { description?: string | null }).description ??
-              null)
-            : null;
+        scenarioData?.description_resource?.description || null;
       const problemStatementValue =
-        formState.problem_statement_id &&
-        scenarioData?.problem_statement_resource
-          ? scenarioData.problem_statement_resource.problem_statement
-          : problemStatement?.trim() || "";
+        scenarioData?.problem_statement_resource?.problem_statement || "";
       // Extract objective texts from resources when objective_ids are present
       // Note: objective_resources has id (not objective_id) and objective fields
       const objectiveTexts =
@@ -5119,7 +3354,7 @@ function ScenarioComponent({
                 formState.objective_ids?.includes(String(obj.id))
               )
               .map((obj) => obj.objective)
-          : contentState.objectives.filter((obj) => obj.trim());
+          : [];
       // Extract flag values: if flag_id is set, the flag is enabled (true), otherwise use legacy state
       // Note: Flag resources don't have a value field - if flag_id exists, the flag is enabled
       const activeValue = formState.active_flag_id
@@ -5234,9 +3469,8 @@ function ScenarioComponent({
         video_length: selectedVideoLength || null,
       };
 
-      // Include problem_statement_versions if in create mode and we have local versions
-      // Use the extracted problem statement value instead of legacy state
-      if (!isEditMode && localProblemStatementVersions.length > 0) {
+      // Include problem_statement_versions if we have local versions
+      if (localProblemStatementVersions.length > 0) {
         const versions = localProblemStatementVersions.map(
           (v) => v.problem_statement
         );
@@ -5251,47 +3485,58 @@ function ScenarioComponent({
         payload.problem_statement_versions = versions;
       }
 
-      if (isEditMode) {
-        // UPDATE mode - V2 handles all junction tables automatically
-        try {
-          await handleUpdateScenario({
-            scenario_id: scenarioId!,
-            ...payload,
-            objectives_enabled: objectivesEnabledValue,
-            images_enabled: imagesEnabledValue,
+      // Use unified saveScenarioAction for both create and edit modes
+      if (!saveScenarioAction) {
+        toast.error("Save action not available");
+        throw new Error("Save action not available");
+      }
+      try {
+        await saveScenarioAction({
+          body: {
+            input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
+            name: nameValue,
+            description: descriptionValue,
+            problem_statement: problemStatementValue,
+            problem_statement_versions: payload.problem_statement_versions,
+            department_ids: finalDepartmentIds,
+            active: activeValue,
+            persona_ids:
+              selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
+            document_ids: currentDocumentIds,
+            template_document_ids:
+              templateDocumentIds.length > 0 ? templateDocumentIds : null,
+            objective_ids: objectiveTexts,
+            upload_ids: payload.upload_ids,
+            image_names: payload.image_names,
+            parameters: parametersArray,
+            parameter_item_ids: parameterItemIds,
+            parameter_ids: parameterIds.length > 0 ? parameterIds : null,
+            scenario_domain_id: basicInfoState.scenarioDomainId || null,
+            image_domain_id: basicInfoState.imageDomainId || null,
             video_enabled: videoEnabledValue,
             questions_enabled: questionsEnabledValue,
-            problem_statement_enabled: problemStatementEnabledValue,
-          });
-          toast.success("Scenario updated successfully!");
-          router.push("/create/scenarios");
-        } catch (error) {
-          toast.error(
-            `Failed to update scenario: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          setIsSubmitting(false);
-        }
-      } else {
-        // CREATE mode - V2 handles all junction tables automatically
-        try {
-          await handleCreateScenario({
-            ...payload,
+            video_domain_id: basicInfoState.videoDomainId || null,
+            video_ids: payload.video_ids,
+            active_video_id: payload.active_video_id,
+            question_ids: payload.question_ids,
+            question_timestamps: payload.question_timestamps,
+            video_length: selectedVideoLength || null,
             objectives_enabled: objectivesEnabledValue,
             images_enabled: imagesEnabledValue,
-            video_enabled: videoEnabledValue,
-            questions_enabled: questionsEnabledValue,
             problem_statement_enabled: problemStatementEnabledValue,
-          });
-          // Clear local versions after successful creation
-          setLocalProblemStatementVersions([]);
-          toast.success("Scenario created successfully!");
-          router.push("/create/scenarios");
-        } catch (error) {
-          toast.error(
-            `Failed to create scenario: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          setIsSubmitting(false);
-        }
+          },
+        });
+        // Clear local versions after successful save
+        setLocalProblemStatementVersions([]);
+        toast.success(
+          `Scenario ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        router.push("/create/scenarios");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        setIsSubmitting(false);
       }
     } catch (error) {
       toast.error(
@@ -5299,19 +3544,6 @@ function ScenarioComponent({
       );
       setIsSubmitting(false);
     }
-  };
-
-  const handleUpdateClick = () => {
-    if (isEditMode && affectedSimulations.length > 0) {
-      setShowUpdateDialog(true);
-    } else {
-      handleSubmit();
-    }
-  };
-
-  const handleConfirmUpdate = () => {
-    setShowUpdateDialog(false);
-    handleSubmit();
   };
 
   // Handler for PersonaPicker multi-select
@@ -5363,7 +3595,7 @@ function ScenarioComponent({
               stepTitle={stepTitle}
               stepDescription={stepDescription}
               isReadonly={isReadonly}
-              isEditMode={isEditMode}
+              isEditMode={false}
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
@@ -5948,7 +4180,7 @@ function ScenarioComponent({
         case "persona": {
           // Inline PersonaSection using StepCard + SelectableGrid pattern
           const newDataForRanges =
-            scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+            scenarioData && isScenarioNewOut(scenarioData)
               ? scenarioData
               : null;
           const sliderMin =
@@ -5986,7 +4218,7 @@ function ScenarioComponent({
               stepTitle={stepTitle}
               stepDescription={stepDescription}
               isReadonly={isReadonly}
-              isEditMode={isEditMode}
+              isEditMode={false}
               searchTerm={personaSearchTerm}
               onSearchChange={(term: string) =>
                 setUrlParams({ personaSearch: term || null })
@@ -6004,70 +4236,6 @@ function ScenarioComponent({
               ]}
               actions={
                 <div className="flex items-center gap-2">
-                  <Popover>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={
-                              isReadonly ||
-                              isPending ||
-                              randomizingSection === "persona" ||
-                              randomizingSection === "all"
-                            }
-                          >
-                            {randomizingSection === "persona" ||
-                            randomizingSection === "all" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Shuffle className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>Randomize</TooltipContent>
-                    </Tooltip>
-                    <PopoverContent className="w-80 p-4" align="end">
-                      <div className="space-y-4">
-                        <RangeSlider
-                          min={sliderMin}
-                          max={sliderMax}
-                          value={[
-                            personaMinMax.min ?? sliderMin,
-                            personaMinMax.max ?? sliderMax,
-                          ]}
-                          onValueChange={([min, max]) => {
-                            handleInputChange("personaMin", min ?? sliderMin);
-                            handleInputChange("personaMax", max ?? sliderMax);
-                          }}
-                          disabled={isReadonly}
-                          label="Range"
-                        />
-                        <Button
-                          onClick={handleRandomizePersonaClient}
-                          disabled={
-                            isReadonly ||
-                            randomizingSection === "persona" ||
-                            randomizingSection === "all"
-                          }
-                          className="w-full"
-                          size="sm"
-                        >
-                          {randomizingSection === "persona" ||
-                          randomizingSection === "all" ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Randomizing...
-                            </>
-                          ) : (
-                            "Randomize"
-                          )}
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -6154,7 +4322,7 @@ function ScenarioComponent({
         case "documents": {
           // Inline DocumentSection using StepCard + SelectableGrid pattern
           const newDataForRanges =
-            scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+            scenarioData && isScenarioNewOut(scenarioData)
               ? scenarioData
               : null;
           const sliderMin =
@@ -6199,7 +4367,7 @@ function ScenarioComponent({
                 stepTitle={stepTitle}
                 stepDescription={stepDescription}
                 isReadonly={isReadonly}
-                isEditMode={isEditMode}
+                isEditMode={false}
                 searchTerm={documentSearchTerm}
                 onSearchChange={(term: string) =>
                   setUrlParams({ documentSearch: term || null })
@@ -6224,76 +4392,6 @@ function ScenarioComponent({
                 ]}
                 actions={
                   <div className="flex items-center gap-2">
-                    <Popover>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={
-                                isReadonly ||
-                                isPending ||
-                                randomizingSection === "document" ||
-                                randomizingSection === "all"
-                              }
-                            >
-                              {randomizingSection === "document" ||
-                              randomizingSection === "all" ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Shuffle className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>Randomize</TooltipContent>
-                      </Tooltip>
-                      <PopoverContent className="w-80 p-4" align="end">
-                        <div className="space-y-4">
-                          <RangeSlider
-                            min={sliderMin}
-                            max={sliderMax}
-                            value={[
-                              documentMinMax.min ?? sliderMin,
-                              documentMinMax.max ?? sliderMax,
-                            ]}
-                            onValueChange={([min, max]) => {
-                              handleInputChange(
-                                "documentMin",
-                                min ?? sliderMin
-                              );
-                              handleInputChange(
-                                "documentMax",
-                                max ?? sliderMax
-                              );
-                            }}
-                            disabled={isReadonly}
-                            label="Range"
-                          />
-                          <Button
-                            onClick={handleRandomizeDocumentsClient}
-                            disabled={
-                              isReadonly ||
-                              randomizingSection === "document" ||
-                              randomizingSection === "all"
-                            }
-                            className="w-full"
-                            size="sm"
-                          >
-                            {randomizingSection === "document" ||
-                            randomizingSection === "all" ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Randomizing...
-                              </>
-                            ) : (
-                              "Randomize"
-                            )}
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -6527,7 +4625,7 @@ function ScenarioComponent({
         case "parameters": {
           // Inline ParameterSection using StepCard + GenericPicker pattern
           const newDataForRanges =
-            scenarioData && !isEditMode && isScenarioNewOut(scenarioData)
+            scenarioData && isScenarioNewOut(scenarioData)
               ? scenarioData
               : null;
           const sliderMin =
@@ -6557,7 +4655,7 @@ function ScenarioComponent({
               stepTitle={stepTitle}
               stepDescription={stepDescription}
               isReadonly={isReadonly}
-              isEditMode={isEditMode}
+              isEditMode={false}
               searchTerm={parameterSearchTerm}
               onSearchChange={(term: string) =>
                 setUrlParams({ parameterSearch: term || null })
@@ -6575,76 +4673,6 @@ function ScenarioComponent({
               ]}
               actions={
                 <div className="flex items-center gap-2">
-                  <Popover>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={
-                              isReadonly ||
-                              isPending ||
-                              randomizingSection === "parameters" ||
-                              randomizingSection === "all"
-                            }
-                          >
-                            {randomizingSection === "parameters" ||
-                            randomizingSection === "all" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Shuffle className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>Randomize</TooltipContent>
-                    </Tooltip>
-                    <PopoverContent className="w-80 p-4" align="end">
-                      <div className="space-y-4">
-                        <RangeSlider
-                          min={sliderMin}
-                          max={sliderMax}
-                          value={[
-                            parameterSelectionMinMax.min ?? sliderMin,
-                            parameterSelectionMinMax.max ?? sliderMax,
-                          ]}
-                          onValueChange={([min, max]) => {
-                            handleInputChange(
-                              "parameterSelectionMin",
-                              min ?? sliderMin
-                            );
-                            handleInputChange(
-                              "parameterSelectionMax",
-                              max ?? sliderMax
-                            );
-                          }}
-                          disabled={isReadonly}
-                          label="Range"
-                        />
-                        <Button
-                          onClick={handleRandomizeParametersClient}
-                          disabled={
-                            isReadonly ||
-                            randomizingSection === "parameters" ||
-                            randomizingSection === "all"
-                          }
-                          className="w-full"
-                          size="sm"
-                        >
-                          {randomizingSection === "parameters" ||
-                          randomizingSection === "all" ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Randomizing...
-                            </>
-                          ) : (
-                            "Randomize"
-                          )}
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -6706,7 +4734,7 @@ function ScenarioComponent({
               stepTitle={stepTitle}
               stepDescription={stepDescription}
               isReadonly={isReadonly}
-              isEditMode={isEditMode}
+              isEditMode={false}
               resetFields={[
                 "problem_statement_id",
                 "objective_ids",
@@ -6875,18 +4903,20 @@ function ScenarioComponent({
                   templateDocumentIds={filteredTemplateDocumentIds}
                   selectedPersonaIds={selectedPersonaIds}
                   personaMapping={personaMapping}
-                  onProblemStatementChange={(value) =>
-                    handleInputChange("problemStatement", value)
-                  }
+                  onProblemStatementChange={(value) => {
+                    // Resource-first: Update via formState, not draftState
+                    // This is handled by ProblemStatements component via onProblemStatementIdChange
+                  }}
                   onProblemStatementVersionSelect={
                     handleProblemStatementVersionSelect
                   }
-                  onResetProblemStatement={() =>
-                    handleInputChange(
-                      "problemStatement",
-                      originalProblemStatement || null
-                    )
-                  }
+                  onResetProblemStatement={() => {
+                    // Resource-first: Reset via formState
+                    setFormState((prev) => ({
+                      ...prev,
+                      problem_statement_id: null,
+                    }));
+                  }}
                   onUseProblemStatementChange={(enabled) => {
                     handleInputChange("useProblemStatement", enabled || null);
                     if (!enabled) {
@@ -6938,7 +4968,7 @@ function ScenarioComponent({
                   imageInputRef={
                     imageInputRef as React.RefObject<HTMLInputElement>
                   }
-                  isEditMode={isEditMode}
+                  isEditMode={false}
                 />
               </div>
             </StepCard>
@@ -6952,7 +4982,7 @@ function ScenarioComponent({
               stepTitle={stepTitle}
               stepDescription={stepDescription}
               isReadonly={isReadonly}
-              isEditMode={isEditMode}
+              isEditMode={false}
               resetFields={[]}
               {...(onReset ? { onReset } : {})}
             >
@@ -7014,15 +5044,9 @@ function ScenarioComponent({
             );
             const fullParam = parameterMapping[paramId] || param;
             // field_ranges only exists on ScenarioDetailOut, not ScenarioDetailNew
-            // For new scenarios, use defaults
-            const fieldRange =
-              isEditMode && scenarioData && isScenarioDetailOut(scenarioData)
-                ? scenarioData.field_ranges?.find(
-                    (range) => range.parameter_id === paramId
-                  )
-                : undefined;
-            const sliderMin = fieldRange?.min_count ?? 1;
-            const sliderMax = fieldRange?.max_count ?? 3;
+            // For create mode, use defaults
+            const sliderMin = 1;
+            const sliderMax = 3;
 
             return (
               <StepCard
@@ -7031,82 +5055,11 @@ function ScenarioComponent({
                 stepTitle={fullParam.name}
                 stepDescription={fullParam.description || ""}
                 isReadonly={isReadonly}
-                isEditMode={isEditMode}
+                isEditMode={false}
                 resetFields={[`fieldIds-${paramId}`]}
                 {...(onReset ? { onReset } : {})}
                 actions={
                   <div className="flex items-center gap-2">
-                    <Popover>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={
-                                isReadonly ||
-                                isPending ||
-                                randomizingSection === `parameter_${paramId}` ||
-                                randomizingSection === "all"
-                              }
-                            >
-                              {randomizingSection === `parameter_${paramId}` ||
-                              randomizingSection === "all" ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Shuffle className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>Randomize</TooltipContent>
-                      </Tooltip>
-                      <PopoverContent className="w-80 p-4" align="end">
-                        <div className="space-y-4">
-                          <RangeSlider
-                            min={sliderMin}
-                            max={sliderMax}
-                            value={[
-                              fieldMinMax[paramId]?.min ?? sliderMin,
-                              fieldMinMax[paramId]?.max ?? sliderMax,
-                            ]}
-                            onValueChange={([min, max]) =>
-                              updateFieldRanges((prev) => ({
-                                ...prev,
-                                [paramId]: {
-                                  min: min ?? sliderMin,
-                                  max: max ?? sliderMax,
-                                },
-                              }))
-                            }
-                            disabled={isReadonly}
-                            label="Range"
-                          />
-                          <Button
-                            onClick={() =>
-                              handleRandomizeParameterClient(paramId)
-                            }
-                            disabled={
-                              isReadonly ||
-                              randomizingSection === `parameter_${paramId}` ||
-                              randomizingSection === "all"
-                            }
-                            className="w-full"
-                            size="sm"
-                          >
-                            {randomizingSection === `parameter_${paramId}` ||
-                            randomizingSection === "all" ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Randomizing...
-                              </>
-                            ) : (
-                              "Randomize"
-                            )}
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -7155,12 +5108,7 @@ function ScenarioComponent({
       agentMapping,
       basicInfoState,
       setBasicInfoState,
-      handleRandomizeAll,
-      handleRandomizePersonaClient,
       handlePersonaSelect,
-      handleRandomizeDocumentsClient,
-      handleRandomizeParametersClient,
-      handleRandomizeParameterClient,
       handleResetParameter,
       updateDocumentIds,
       updateFieldIds,
@@ -7169,7 +5117,6 @@ function ScenarioComponent({
       isReadonly,
       isEditMode,
       isPending,
-      randomizingSection,
       personaSearchTerm,
       personaShowSelected,
       personaMinMax,
@@ -7334,9 +5281,10 @@ function ScenarioComponent({
         serverData={scenarioData}
         initializeForm={initializeForm}
         formFieldKeys={[
-          "name",
-          "problemStatement",
-          "objectives",
+          "name_id",
+          "description_id",
+          "problem_statement_id",
+          "objective_ids",
           "departmentIds",
           "personaIds",
           "documentIds",
@@ -7344,7 +5292,6 @@ function ScenarioComponent({
           "parameterIds",
           "fieldIds",
           "imageIds",
-          "objectiveIds",
           "problemStatementIds",
           "useImage",
           "useVideo",
@@ -7358,20 +5305,15 @@ function ScenarioComponent({
           "videoDomainId",
         ]}
         onSubmit={async () => {
-          if (isEditMode) {
-            await handleUpdateClick();
-          } else {
-            await handleSubmit();
-          }
+          await handleSubmit();
         }}
         submitButton={{
           backUrl: "/create/scenarios",
           backLabel: "Back",
           createLabel: "Save Scenario",
-          updateLabel: "Update Scenario",
         }}
         isReadonly={isReadonly}
-        isEditMode={isEditMode}
+        isEditMode={false}
         renderStep={renderStep}
         contentSections={contentSections}
       />
@@ -7387,22 +5329,15 @@ function ScenarioComponent({
         </Button>
         <Button
           data-testid="btn-submit-scenario"
-          onClick={isEditMode ? handleUpdateClick : handleSubmit}
-          disabled={
-            isSubmitting ||
-            isGeneratingScenario ||
-            (isEditMode && !hasChanges) ||
-            isReadonly
-          }
+          onClick={handleSubmit}
+          disabled={isSubmitting || isGeneratingScenario || isReadonly}
           className="min-w-[120px]"
         >
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {isEditMode ? "Updating..." : "Saving..."}
+              Saving...
             </>
-          ) : isEditMode ? (
-            "Update Scenario"
           ) : (
             "Save Scenario"
           )}
@@ -7486,44 +5421,6 @@ function ScenarioComponent({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Update Confirmation Dialog */}
-      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Update Scenario</AlertDialogTitle>
-            <AlertDialogDescription>
-              This scenario is currently used by {affectedSimulations.length}{" "}
-              simulation{affectedSimulations.length !== 1 ? "s" : ""}:
-              <ul className="mt-2 list-disc list-inside">
-                {affectedSimulations.map(
-                  (sim: { id: string; name: string }) => (
-                    <li key={sim.id} className="text-sm">
-                      {sim.name}
-                    </li>
-                  )
-                )}
-              </ul>
-              <div className="mt-3 text-sm font-medium">
-                Updating this scenario will affect all of these simulations. Are
-                you sure you want to proceed?
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmUpdate}
-              disabled={isSubmitting}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isSubmitting ? "Updating..." : "Update"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
@@ -7531,41 +5428,48 @@ function ScenarioComponent({
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
   // Compare scenarioData by resource IDs, not object reference
+  // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
+  const prevScenarioData = prevProps.scenarioId
+    ? prevProps.scenarioDetail
+    : prevProps.scenarioDetailDefault;
+  const nextScenarioData = nextProps.scenarioId
+    ? nextProps.scenarioDetail
+    : nextProps.scenarioDetailDefault;
+
   const prevIds = {
-    name_id: prevProps.scenarioDetail?.name_id,
-    description_id: prevProps.scenarioDetail?.description_id,
-    problem_statement_id: prevProps.scenarioDetail?.problem_statement_id,
-    department_ids: prevProps.scenarioDetail?.department_ids,
-    persona_ids: prevProps.scenarioDetail?.persona_ids,
-    document_ids: prevProps.scenarioDetail?.document_ids,
-    parameter_ids: prevProps.scenarioDetail?.parameter_ids,
-    field_ids: prevProps.scenarioDetail?.field_ids,
-    objective_ids: prevProps.scenarioDetail?.objective_ids,
-    image_ids: prevProps.scenarioDetail?.image_ids,
-    video_ids: prevProps.scenarioDetail?.video_ids,
-    question_ids: prevProps.scenarioDetail?.question_ids,
-    template_ids: prevProps.scenarioDetail?.template_ids,
+    name_id: prevScenarioData?.name_id,
+    description_id: prevScenarioData?.description_id,
+    problem_statement_id: prevScenarioData?.problem_statement_id,
+    department_ids: prevScenarioData?.department_ids,
+    persona_ids: prevScenarioData?.persona_ids,
+    document_ids: prevScenarioData?.document_ids,
+    parameter_ids: prevScenarioData?.parameter_ids,
+    field_ids: prevScenarioData?.field_ids,
+    objective_ids: prevScenarioData?.objective_ids,
+    image_ids: prevScenarioData?.image_ids,
+    video_ids: prevScenarioData?.video_ids,
+    question_ids: prevScenarioData?.question_ids,
+    template_ids: prevScenarioData?.template_ids,
   };
   const nextIds = {
-    name_id: nextProps.scenarioDetail?.name_id,
-    description_id: nextProps.scenarioDetail?.description_id,
-    problem_statement_id: nextProps.scenarioDetail?.problem_statement_id,
-    department_ids: nextProps.scenarioDetail?.department_ids,
-    persona_ids: nextProps.scenarioDetail?.persona_ids,
-    document_ids: nextProps.scenarioDetail?.document_ids,
-    parameter_ids: nextProps.scenarioDetail?.parameter_ids,
-    field_ids: nextProps.scenarioDetail?.field_ids,
-    objective_ids: nextProps.scenarioDetail?.objective_ids,
-    image_ids: nextProps.scenarioDetail?.image_ids,
-    video_ids: nextProps.scenarioDetail?.video_ids,
-    question_ids: nextProps.scenarioDetail?.question_ids,
-    template_ids: nextProps.scenarioDetail?.template_ids,
+    name_id: nextScenarioData?.name_id,
+    description_id: nextScenarioData?.description_id,
+    problem_statement_id: nextScenarioData?.problem_statement_id,
+    department_ids: nextScenarioData?.department_ids,
+    persona_ids: nextScenarioData?.persona_ids,
+    document_ids: nextScenarioData?.document_ids,
+    parameter_ids: nextScenarioData?.parameter_ids,
+    field_ids: nextScenarioData?.field_ids,
+    objective_ids: nextScenarioData?.objective_ids,
+    image_ids: nextScenarioData?.image_ids,
+    video_ids: nextScenarioData?.video_ids,
+    question_ids: nextScenarioData?.question_ids,
+    template_ids: nextScenarioData?.template_ids,
   };
 
   // Compare primitive props
   if (
     prevProps.scenarioId !== nextProps.scenarioId ||
-    prevProps.mode !== nextProps.mode ||
     JSON.stringify(prevIds) !== JSON.stringify(nextIds)
   ) {
     return false; // Props changed, re-render
@@ -7573,8 +5477,7 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
 
   // Compare function props by reference (should be stable from server actions)
   if (
-    prevProps.createScenarioAction !== nextProps.createScenarioAction ||
-    prevProps.updateScenarioAction !== nextProps.updateScenarioAction ||
+    prevProps.saveScenarioAction !== nextProps.saveScenarioAction ||
     prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction
   ) {
     return false; // Function props changed, re-render
@@ -7583,3 +5486,5 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
   // All props are equivalent, skip re-render
   return true;
 });
+
+export type { ScenarioProps };

@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewModel from "@/components/models/NewModel";
+import Model from "@/components/models/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -97,8 +97,8 @@ export default async function NewModelPage({
 
   return (
     <div className="space-y-6">
-      <NewModel
-        modelData={modelDetailDefault}
+      <Model
+        modelDetailDefault={modelDetailDefault}
         saveModelAction={saveModel}
         patchModelDraftAction={patchModelDraft}
       />

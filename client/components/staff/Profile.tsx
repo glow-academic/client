@@ -1,7 +1,7 @@
 /**
- * NewStaffComponent.tsx
+ * Profile.tsx
  * Implementation using modular resource components
- * Used to create and manage staff - supports both creation and editing
+ * Used to create and manage profiles - supports both creation and editing
  * Follows Persona.tsx pattern exactly
  */
 "use client";
@@ -76,7 +76,7 @@ type CreateDraftRequestLimitsOut = OutputOf<
 
 type StaffData = OutputOf<"/api/v4/staff/get", "post">;
 
-export interface NewStaffComponentProps {
+export interface ProfileProps {
   staffId?: string;
   // Server-provided data (for server-side rendering)
   staffData?: StaffData;
@@ -100,7 +100,7 @@ export interface NewStaffComponentProps {
   ) => Promise<CreateDraftRequestLimitsOut>;
 }
 
-function NewStaffComponent({
+function ProfileComponent({
   staffId,
   staffData,
   saveStaffAction,
@@ -109,7 +109,7 @@ function NewStaffComponent({
   createDepartmentsAction,
   createEmailsAction,
   createRequestLimitsAction,
-}: NewStaffComponentProps) {
+}: ProfileProps) {
   const router = useRouter();
   const isEditMode = !!staffId;
   const {
@@ -1560,7 +1560,7 @@ function NewStaffComponent({
 }
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
-export default React.memo(NewStaffComponent, (prevProps, nextProps) => {
+export default React.memo(ProfileComponent, (prevProps, nextProps) => {
   // Compare staffData by resource IDs, not object reference
   const prevIds = {
     first_name_id: prevProps.staffData?.first_name_id,

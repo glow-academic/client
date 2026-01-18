@@ -5,7 +5,7 @@
  * 12/04/2025
  */
 
-import NewStaffComponent from "@/components/staff/NewStaffComponent";
+import Profile from "@/components/staff/Profile";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -152,7 +152,7 @@ export default async function NewStaffPage({
       data-page="staff-new"
       aria-label="Create new staff page"
     >
-      <NewStaffComponent
+      <Profile
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         staffData={staffDetailDefault}
         saveStaffAction={saveStaff}
