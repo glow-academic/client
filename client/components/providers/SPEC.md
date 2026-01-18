@@ -25,12 +25,13 @@
 - `names_resource`(<u>id</u>, name, created_at, updated_at, active, generated, call_id, mcp)
 - `descriptions_resource`(<u>id</u>, description, created_at, updated_at, active, generated, call_id, mcp)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
+- `values_resource`(<u>id</u>, value, created_at, updated_at, active, generated, call_id, mcp)
 
 ### Draft persistence
 - `draft_providers`(<u>draft_id</u>, <u>providers_id</u>, <u>version</u>, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: Names, Descriptions, Flags
+- **Resources used**: Names, Descriptions, Flags, Values
 - **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
 
 ## Component Responsibilities

@@ -17,20 +17,17 @@
 
 ### Junction + relationship tables
 - `simulation_analyses`(<u>simulation_id</u>, <u>analysis_id</u>, created_at, updated_at, active, generated, mcp)
-- `simulation_attempts`(created_at, infinite_mode, archived, <u>id</u>, simulation_id, generated, mcp, active, updated_at)
 - `simulation_departments`(active, created_at, updated_at, <u>department_id</u>, <u>simulation_id</u>, generated, mcp)
 - `simulation_descriptions`(<u>simulation_id</u>, <u>description_id</u>, created_at, updated_at, generated, mcp, active)
-- `simulation_eval_rubric_grade_agents`(<u>simulation_id</u>, <u>eval_rubric_grade_agents_id</u>, created_at, updated_at, active, generated, mcp)
 - `simulation_feedbacks`(<u>simulation_id</u>, <u>feedback_id</u>, created_at, updated_at, active, generated, mcp)
 - `simulation_flags`(<u>simulation_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
 - `simulation_improvements`(<u>simulation_id</u>, <u>improvement_id</u>, created_at, updated_at, active, generated, mcp)
 - `simulation_names`(<u>simulation_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
-- `simulation_scenario_flags`(<u>simulation_id</u>, <u>scenario_id</u>, <u>scenario_flag_id</u>, value, created_at, updated_at, generated, mcp, active)
-- `simulation_scenario_positions`(<u>simulation_id</u>, <u>scenario_id</u>, created_at, updated_at, active, generated, mcp)
-- `simulation_scenario_rubric_grade_agents`(<u>simulation_id</u>, <u>scenario_rubric_grade_agent_id</u>, created_at, updated_at, active, generated, mcp)
+- `simulation_scenario_flags`(<u>simulation_id</u>, <u>scenario_flag_id</u>, value, created_at, updated_at, generated, mcp, active) - junction table linking simulation to scenario_flags_resource
+- `simulation_scenario_positions`(<u>simulation_id</u>, <u>scenario_position_id</u>, created_at, updated_at, generated, mcp, active) - junction table linking simulation to scenario_positions_resource
+- `simulation_scenario_rubrics`(<u>simulation_id</u>, <u>scenario_rubric_id</u>, created_at, updated_at, generated, mcp, active) - junction table linking simulation to scenario_rubrics_resource
+- `simulation_scenario_time_limits`(<u>simulation_id</u>, <u>scenario_time_limit_id</u>, created_at, updated_at, generated, mcp, active) - junction table linking simulation to scenario_time_limits_resource
 - `simulation_scenarios`(created_at, updated_at, <u>scenario_id</u>, <u>simulation_id</u>, generated, mcp, active)
-- `simulation_scenarios_scenario_rubric_grade_agents`(<u>simulation_id</u>, <u>scenario_id</u>, <u>scenario_rubric_grade_agent_id</u>, created_at, updated_at, generated, mcp, active)
-- `simulation_simulation_scenario_flags`(<u>simulation_id</u>, <u>simulation_scenario_flag_id</u>, created_at, updated_at, active, generated, mcp)
 - `simulation_strengths`(<u>simulation_id</u>, <u>strength_id</u>, created_at, updated_at, active, generated, mcp)
 - `simulation_times`(<u>simulation_id</u>, <u>time_id</u>, created_at, updated_at, active, generated, mcp)
 
@@ -39,17 +36,19 @@
 - `descriptions_resource`(<u>id</u>, description, created_at, updated_at, active, generated, call_id, mcp)
 - `departments_resource`(created_at, updated_at, department_id, active, generated, mcp, call_id, <u>id</u>, group_id)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
-- `scenario_flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, mcp, call_id)
-- `scenario_positions_resource`(<u>simulation_id</u>, <u>scenario_id</u>, value, created_at, updated_at, generated, mcp, call_id)
-- `scenario_rubric_grade_agents_resource`(<u>id</u>, rubric_id, grade_agent_id, agent_id, created_at, updated_at, active, generated, call_id, mcp)
+- `scenario_flags_resource`(<u>id</u>, scenario_id, flag_id, created_at, updated_at, active, generated, mcp, call_id) - resource table with call_id, links scenarios to flags_resource
+- `scenario_positions_resource`(<u>id</u>, scenario_id, value, created_at, updated_at, generated, mcp, call_id) - resource table with call_id, positions for scenarios
+- `scenario_rubrics_resource`(<u>id</u>, scenario_id, rubric_id, created_at, updated_at, generated, mcp, active, call_id) - resource table with call_id, rubrics linked to scenarios
+- `scenario_time_limits_resource`(<u>id</u>, scenario_id, time_limit_seconds, created_at, updated_at, generated, mcp, active, call_id) - resource table with call_id, time limits for scenarios
 - `scenarios_resource`(created_at, updated_at, scenario_id, active, generated, mcp, call_id, id)
 
 ### Draft persistence
 - `draft_simulations`(<u>draft_id</u>, <u>simulations_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: Names, Descriptions, Departments, Flags, ScenarioFlags, ScenarioPositions, ScenarioRubricGradeAgents, Scenarios
+- **Resources used**: Names, Descriptions, Departments, Flags, Rubrics, ScenarioFlags, ScenarioPositions, ScenarioTimeLimits, Scenarios
 - **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
+- **Note**: All scenario-level resources (`scenario_flags_resource`, `scenario_positions_resource`, `scenario_rubrics_resource`, `scenario_time_limits_resource`) are resource tables with `call_id` and are managed from simulation context, not scenario context. Simulations link to these resources via junction tables (`simulation_scenario_flags`, `simulation_scenario_positions`, `simulation_scenario_rubrics`, `simulation_scenario_time_limits`) which connect `simulation_id` + `resource_id` (scenario_id is already in the resource table). `simulation_attempts` is not a resource table and is not included in this spec. `scenario_flags_resource` references `flags_resource` via `flag_id` (does not store name/description/icon directly). Simulations do not have direct `rubrics_resource` - they get rubrics through `scenario_rubrics_resource`.
 
 ## Component Responsibilities
 ### Simulation.tsx (detail/create/edit)

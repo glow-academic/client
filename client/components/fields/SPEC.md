@@ -23,14 +23,18 @@
 - `field_parameters`(<u>field_id</u>, <u>parameter_id</u>, <u>type</u>, created_at, updated_at, active, generated, mcp)
 
 ### Resource tables referenced by the UI
-- (none used directly in UI)
+- `names_resource`(<u>id</u>, name, created_at, updated_at, active, generated, call_id, mcp)
+- `descriptions_resource`(<u>id</u>, description, created_at, updated_at, active, generated, call_id, mcp)
+- `departments_resource`(created_at, updated_at, department_id, active, generated, mcp, call_id, <u>id</u>, group_id)
+- `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
+- `parameters_resource`(created_at, updated_at, parameter_id, active, generated, mcp, call_id, <u>id</u>)
 
 ### Draft persistence
 - `draft_fields`(<u>draft_id</u>, <u>fields_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: None (artifact-specific fields only).
-- **IDs**: All relationships remain keyed by `field_id` and resource IDs returned from create/update endpoints.
+- **Resources used**: Names, Descriptions, Departments, Flags, Parameters
+- **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
 
 ## Component Responsibilities
 ### Field.tsx (detail/create/edit)

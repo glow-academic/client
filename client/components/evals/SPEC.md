@@ -25,22 +25,23 @@
 - `eval_flags`(<u>eval_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
 - `eval_group_positions`(<u>eval_id</u>, <u>group_positions_id</u>, created_at, updated_at, active, generated, mcp)
 - `eval_groups`(<u>eval_id</u>, <u>group_id</u>, created_at, updated_at, generated, mcp, active)
-- `eval_groups_rubric_grade_agents`(<u>eval_id</u>, <u>group_id</u>, <u>rubric_grade_agent_id</u>, created_at, updated_at, generated, mcp, active)
+- `eval_groups_rubrics`(<u>eval_id</u>, <u>group_id</u>, <u>rubric_id</u>, created_at, updated_at, generated, mcp, active)
 - `eval_names`(<u>eval_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
 - `eval_run_positions`(<u>eval_id</u>, <u>run_positions_id</u>, created_at, updated_at, active, generated, mcp)
 - `eval_runs`(completed, created_at, updated_at, <u>eval_id</u>, <u>run_id</u>, generated, mcp, active)
-- `eval_runs_rubric_grade_agents`(<u>eval_id</u>, <u>run_id</u>, <u>rubric_grade_agent_id</u>, created_at, updated_at, generated, mcp, active)
+- `eval_runs_rubrics`(<u>eval_id</u>, <u>run_id</u>, <u>rubric_id</u>, created_at, updated_at, generated, mcp, active)
 - `eval_times`(<u>eval_id</u>, <u>times_id</u>, created_at, updated_at, active, generated, mcp)
 
 ### Resource tables referenced by the UI
-- (none used directly in UI)
+- `rubrics_resource`(created_at, updated_at, rubric_id, active, generated, mcp, call_id, <u>id</u>)
 
 ### Draft persistence
 - `draft_evals`(<u>draft_id</u>, <u>evals_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: None (artifact-specific fields only).
-- **IDs**: All relationships remain keyed by `eval_id` and resource IDs returned from create/update endpoints.
+- **Resources used**: Rubrics (via `eval_runs_rubrics` and `eval_groups_rubrics` junction tables)
+- **IDs**: Use `rubric_id` for direct rubric links to eval runs and eval groups. All relationships remain keyed by `eval_id` and resource IDs returned from create/update endpoints.
+- **Note**: Rubrics are linked directly to `eval_runs` and `eval_groups` via `eval_runs_rubrics` and `eval_groups_rubrics` tables. The old `rubric_grade_agents` pattern has been removed.
 
 ## Component Responsibilities
 ### Eval.tsx (detail/create/edit)

@@ -320,7 +320,7 @@ restore-db:
 # Migrate database (most recent migration only)
 migrate-db:
 	@echo "Running database migrations (most recent only)..."
-	@cd database && yarn migrate
+	@cd database && bash scripts/start.sh --migrate
 	@echo "✅ Database migrations completed"
 
 # Migrate database (all migrations)

@@ -16,11 +16,10 @@
 - `profiles_resource`(updated_at, last_login, created_at, role, profile_id, active, generated, mcp, call_id, id)
 
 ### Junction + relationship tables
-- `profile_activity`(last_active, created_at, <u>id</u>, profile_id, generated, mcp, active, updated_at)
+- `profile_cohorts`(profile_id, cohort_id, active, created_at, updated_at, generated, mcp)
 - `profile_departments`(is_primary, created_at, active, updated_at, <u>department_id</u>, <u>profile_id</u>, generated, mcp)
 - `profile_emails`(email, is_primary, active, created_at, updated_at, <u>profile_id</u>, <u>email_id</u>, generated, mcp)
 - `profile_flags`(<u>profile_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
-- `profile_logins`(<u>profile_id</u>, <u>login_id</u>, created_at, updated_at, generated, mcp, active)
 - `profile_names`(<u>profile_id</u>, <u>name_id</u>, <u>type</u>, created_at, updated_at, generated, mcp, active)
 - `profile_request_limits`(requests_per_day, active, created_at, updated_at, profile_id, request_limit_id, generated, mcp)
 - `profile_roles`(<u>profile_id</u>, <u>role_id</u>, created_at, updated_at, generated, mcp, active)
@@ -36,8 +35,9 @@
 - `draft_profiles`(<u>draft_id</u>, <u>profiles_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: Names, Departments, Emails, Flags, RequestLimits
+- **Resources used**: Names, Departments, Emails, Flags, RequestLimits, Cohorts
 - **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
+- **Note**: `profile_logins` and `profile_activity` are separate entities (not profile resources) - they exist as junction tables but are not part of the profile resource model. Profiles own cohorts via `profile_cohorts` junction table (not `cohort_profiles`).
 
 ## Component Responsibilities
 ### Profile.tsx (detail/create/edit)

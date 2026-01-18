@@ -36,6 +36,7 @@
 - `descriptions_resource`(<u>id</u>, description, created_at, updated_at, active, generated, call_id, mcp)
 - `endpoints_resource`(<u>id</u>, base_url, active, created_at, updated_at, generated, call_id, mcp)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
+- `keys_resource`(<u>id</u>, key_id, created_at, updated_at, active, generated, mcp, call_id, key)
 - `modalities_resource`(<u>id</u>, modality, created_at, updated_at, active, generated, mcp, call_id)
 - `pricing_resource`(<u>id</u>, pricing_type, price, unit_id, created_at, updated_at, active, generated, mcp, call_id)
 - `qualities_resource`(<u>id</u>, quality, created_at, updated_at, active, generated, mcp, call_id)
@@ -48,8 +49,9 @@
 - `draft_models`(<u>draft_id</u>, <u>models_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: Names, Descriptions, Endpoints, Flags, Modalities, Pricing, Qualities, ReasoningLevels, TemperatureLevels, Values, Voices
+- **Resources used**: Names, Descriptions, Endpoints, Flags, Keys, Modalities, Pricing, Qualities, ReasoningLevels, TemperatureLevels, Values, Voices
 - **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
+- **Note**: `models_resource.modality` is a direct column (type: `modality_type`, default: 'text'). Keys are linked via `model_keys` junction table to `keys_resource`. API key flag can be set via `model_flags` with appropriate flag type.
 
 ## Component Responsibilities
 ### Model.tsx (detail/create/edit)

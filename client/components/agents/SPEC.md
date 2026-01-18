@@ -35,7 +35,8 @@
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
 - `instructions_resource`(<u>id</u>, template, active, created_at, updated_at, generated, call_id, mcp)
 - `prompts_resource`(created_at, updated_at, system_prompt, name, description, active, <u>id</u>, generated, call_id, mcp)
-- `models_resource`(created_at, updated_at, value, model_id, active, generated, mcp, call_id, <u>id</u>)
+- `models_resource`(created_at, updated_at, value, model_id, active, generated, mcp, call_id, <u>id</u>, modality)
+- `modalities_resource`(<u>id</u>, modality, created_at, updated_at, active, generated, mcp, call_id)
 - `tools_resource` (not listed in schema extract)
 - `reasoning_levels_resource`(<u>id</u>, reasoning_level_id, reasoning_level, created_at, updated_at, active, generated, call_id, mcp)
 - `temperature_levels_resource`(<u>id</u>, temperature_level_id, temperature, is_upper, created_at, updated_at, active, generated, call_id, mcp)
@@ -45,8 +46,9 @@
 - `draft_agents`(<u>draft_id</u>, <u>agents_id</u>, version, created_at, updated_at, generated, mcp, active)
 
 ## UI Resource Mapping
-- **Resources used**: Names, Descriptions, Departments, Flags, Instructions, Prompts, Models, Tools, ReasoningLevels, TemperatureLevels, Voices
+- **Resources used**: Names, Descriptions, Departments, Flags, Instructions, Prompts, Models, Modalities, Tools, ReasoningLevels, TemperatureLevels, Voices
 - **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
+- **Note**: `models_resource.modality` is a direct column (type: `modality_type`, default: 'text'), not a junction table. The `model_modalities` junction table exists for multi-modality support via `modalities_resource`.
 
 ## Component Responsibilities
 ### Agent.tsx (detail/create/edit)

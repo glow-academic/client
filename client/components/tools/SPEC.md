@@ -21,7 +21,6 @@
 - `tool_domains`(<u>tool_id</u>, <u>domain_id</u>, active, created_at, updated_at, generated, mcp)
 - `tool_flags`(<u>tool_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
 - `tool_names`(<u>tool_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
-- `tool_schema_field_items`(<u>tool_id</u>, <u>schema_field_item_id</u>, active, created_at, updated_at, generated, mcp)
 
 ### Resource tables referenced by the UI
 - `args_resource`(<u>id</u>, name, description, field_type, required, default_value, position, created_at, updated_at, active, generated, call_id, mcp, type)

@@ -508,40 +508,6 @@ class CreateCohortDepartmentLinkApiResponse(BaseModel):
 
 
 
-# Generated from: create_cohort_profile_link
-
-class CreateCohortProfileLinkSqlParams(BaseModel):
-
-    input_cohort_id: UUID
-    input_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_cohort_id,
-            self.input_profile_id,
-        )
-
-class CreateCohortProfileLinkSqlRow(BaseModel):
-
-    cohort_id: UUID | None = None
-    profile_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-
-class CreateCohortProfileLinkApiRequest(BaseModel):
-
-    input_cohort_id: UUID
-    input_profile_id: UUID
-
-class CreateCohortProfileLinkApiResponse(BaseModel):
-
-    cohort_id: UUID | None = None
-    profile_id: UUID | None = None
-    active: bool | None = None
-    created_at: str | None = None
-
-
-
 # Generated from: create_profile_department_link
 
 class CreateProfileDepartmentLinkSqlParams(BaseModel):
@@ -3816,12 +3782,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateCohortDepartmentLinkApiRequest",
         "CreateCohortDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql": (
-        "CreateCohortProfileLinkSqlParams",
-        "CreateCohortProfileLinkSqlRow",
-        "CreateCohortProfileLinkApiRequest",
-        "CreateCohortProfileLinkApiResponse",
-    ),
     "tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql": (
         "CreateProfileDepartmentLinkSqlParams",
         "CreateProfileDepartmentLinkSqlRow",
@@ -4545,11 +4505,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

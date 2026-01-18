@@ -20,9 +20,6 @@
 - `rubric_departments`(active, created_at, updated_at, <u>department_id</u>, <u>rubric_id</u>, generated, mcp)
 - `rubric_descriptions`(<u>rubric_id</u>, <u>description_id</u>, created_at, updated_at, generated, mcp, active)
 - `rubric_flags`(<u>rubric_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
-- `rubric_grade_agents`(<u>id</u>, rubric_id, grade_agent_id, created_at, updated_at, agent_id, generated, mcp, active)
-- `rubric_grade_agents_audio`(<u>rubric_grade_agent_id</u>, <u>audio_agent_id</u>, created_at, updated_at, generated, mcp, active)
-- `rubric_groups`(created_at, updated_at, <u>group_id</u>, <u>rubric_id</u>, generated, mcp, active)
 - `rubric_names`(<u>rubric_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
 - `rubric_points`(<u>rubric_id</u>, <u>point_id</u>, <u>type</u>, created_at, updated_at, generated, mcp, active)
 - `rubric_standard_groups`(<u>rubric_id</u>, <u>standard_group_id</u>, position, active, created_at, updated_at, generated, mcp)
@@ -36,6 +33,7 @@
 ## UI Resource Mapping
 - **Resources used**: None (artifact-specific fields only).
 - **IDs**: All relationships remain keyed by `rubric_id` and resource IDs returned from create/update endpoints.
+- **Note**: `rubric_artifact.group_id` provides the group relationship (redundant `rubric_groups` table removed). `rubric_grade_agents` and `rubric_grade_agents_audio` tables have been removed - rubrics are now linked directly to evals and simulations via `eval_runs_rubrics`, `eval_groups_rubrics`, `simulation_rubrics`, and `scenario_rubrics` tables.
 
 ## Component Responsibilities
 ### Rubric.tsx (detail/create/edit)

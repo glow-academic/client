@@ -20,8 +20,7 @@
 - `cohort_descriptions`(<u>cohort_id</u>, <u>description_id</u>, created_at, updated_at, generated, mcp, active)
 - `cohort_flags`(<u>cohort_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
 - `cohort_names`(<u>cohort_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
-- `cohort_profiles`(active, created_at, updated_at, <u>cohort_id</u>, <u>profile_id</u>, generated, mcp)
-- `cohort_simulations`(active, created_at, updated_at, position, <u>cohort_id</u>, <u>simulation_id</u>, generated, mcp)
+- `cohort_simulations`(active, created_at, updated_at, <u>cohort_id</u>, <u>simulation_id</u>, generated, mcp)
 
 ### Resource tables referenced by the UI
 - `names_resource`(<u>id</u>, name, created_at, updated_at, active, generated, call_id, mcp)
@@ -29,6 +28,7 @@
 - `departments_resource`(created_at, updated_at, department_id, active, generated, mcp, call_id, <u>id</u>, group_id)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
 - `simulations_resource`(created_at, updated_at, simulation_id, active, generated, mcp, call_id, id)
+- `simulation_positions_resource`(simulation_id, cohort_id, value, created_at, updated_at, generated, mcp, call_id)
 
 ### Draft persistence
 - `draft_cohorts`(<u>draft_id</u>, <u>cohorts_id</u>, version, created_at, updated_at, generated, mcp, active)

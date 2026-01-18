@@ -23,8 +23,6 @@
 - `document_groups`(created_at, updated_at, <u>document_id</u>, <u>group_id</u>, generated, mcp, active)
 - `document_names`(<u>document_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
 - `document_parameters`(<u>document_id</u>, <u>parameter_id</u>, <u>type</u>, created_at, updated_at, active, generated, mcp)
-- `document_schema_field_items`(<u>document_id</u>, <u>schema_field_item_id</u>, active, created_at, updated_at, generated, mcp)
-- `document_tree`(active, created_at, updated_at, <u>child_id</u>, <u>parent_id</u>, generated, mcp)
 - `document_uploads_resource`(active, created_at, updated_at, document_id, uploads_id)
 
 ### Resource tables referenced by the UI
@@ -41,6 +39,7 @@
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Departments, Fields, Flags, Uploads
 - **IDs**: Use `<resource>_id` for single-select and `<resource>_ids` for multi-select resources (matching each resource component listed above).
+- **Note**: `document_tree` and `document_schema_field_items` tables have been removed. Document hierarchy and schema field items are no longer supported via these tables.
 
 ## Component Responsibilities
 ### Document.tsx (detail/create/edit)
