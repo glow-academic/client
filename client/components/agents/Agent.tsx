@@ -94,7 +94,6 @@ type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftModelsIn = InputOf<"/api/v4/resources/models", "post">;
 type CreateDraftModelsOut = OutputOf<"/api/v4/resources/models", "post">;
 
-
 export interface AgentProps {
   agentId?: string;
   // Optional server-provided data and actions (for server-side rendering)
@@ -753,8 +752,7 @@ export default function Agent({
 
         // Note: profileId is added by the server action
         // Use input_agent_id = null for create, agent_id for update
-        const nameText =
-          agentData?.name_resource?.name || "New Agent";
+        const nameText = agentData?.name_resource?.name || "New Agent";
         const descriptionText =
           agentData?.description_resource?.description || null;
 
