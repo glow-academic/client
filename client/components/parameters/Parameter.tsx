@@ -1533,6 +1533,52 @@ function ParameterComponent({
               resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["fields"] &&
+                stepResources["fields"].length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "fields"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "fields",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["fields"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["fields"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["fields"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
               <Fields
                 field_ids={formState.field_ids ?? []}
