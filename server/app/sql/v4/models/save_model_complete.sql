@@ -39,6 +39,12 @@ CREATE OR REPLACE FUNCTION api_save_model_v4(
     name_id uuid DEFAULT NULL,
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
+    modalities_enabled_flag_id uuid DEFAULT NULL,
+    temperature_enabled_flag_id uuid DEFAULT NULL,
+    pricing_enabled_flag_id uuid DEFAULT NULL,
+    voices_enabled_flag_id uuid DEFAULT NULL,
+    reasoning_levels_enabled_flag_id uuid DEFAULT NULL,
+    qualities_enabled_flag_id uuid DEFAULT NULL,
     value_id uuid DEFAULT NULL,
     endpoint_id uuid DEFAULT NULL,
     input_model_id uuid DEFAULT NULL,
@@ -154,6 +160,93 @@ BEGIN
         DELETE FROM model_flags mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.name = 'active');
+    END IF;
+
+    -- Handle modalities_enabled flag
+    IF modalities_enabled_flag_id IS NOT NULL THEN
+        -- Delete existing flag of this type first
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'modalities_enabled'::flag_type);
+        -- Insert new flag
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        VALUES (v_model_id, modalities_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    ELSE
+        -- Remove flag if flag_id is NULL
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'modalities_enabled'::flag_type);
+    END IF;
+
+    -- Handle temperature_enabled flag
+    IF temperature_enabled_flag_id IS NOT NULL THEN
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'temperature_enabled'::flag_type);
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        VALUES (v_model_id, temperature_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    ELSE
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'temperature_enabled'::flag_type);
+    END IF;
+
+    -- Handle pricing_enabled flag
+    IF pricing_enabled_flag_id IS NOT NULL THEN
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'pricing_enabled'::flag_type);
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        VALUES (v_model_id, pricing_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    ELSE
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'pricing_enabled'::flag_type);
+    END IF;
+
+    -- Handle voices_enabled flag
+    IF voices_enabled_flag_id IS NOT NULL THEN
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'voices_enabled'::flag_type);
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        VALUES (v_model_id, voices_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    ELSE
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'voices_enabled'::flag_type);
+    END IF;
+
+    -- Handle reasoning_levels_enabled flag
+    IF reasoning_levels_enabled_flag_id IS NOT NULL THEN
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'reasoning_levels_enabled'::flag_type);
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        VALUES (v_model_id, reasoning_levels_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    ELSE
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'reasoning_levels_enabled'::flag_type);
+    END IF;
+
+    -- Handle qualities_enabled flag
+    IF qualities_enabled_flag_id IS NOT NULL THEN
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'qualities_enabled'::flag_type);
+        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        VALUES (v_model_id, qualities_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
+        ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    ELSE
+        DELETE FROM model_flags mf
+        WHERE mf.model_id = v_model_id
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'qualities_enabled'::flag_type);
     END IF;
 
     -- Handle value (using value_id resource ID)

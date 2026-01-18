@@ -16920,6 +16920,36 @@ class GetModelSqlRow(BaseModel):
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
     flags: list[QGetModelV4FlagOption] | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    modalities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_modalities_enabled_flag: bool | None = None
+    modalities_enabled_flag_agent_id: UUID | None = None
+    modalities_enabled_flag_required: bool | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_temperature_enabled_flag: bool | None = None
+    temperature_enabled_flag_agent_id: UUID | None = None
+    temperature_enabled_flag_required: bool | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_pricing_enabled_flag: bool | None = None
+    pricing_enabled_flag_agent_id: UUID | None = None
+    pricing_enabled_flag_required: bool | None = None
+    voices_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_voices_enabled_flag: bool | None = None
+    voices_enabled_flag_agent_id: UUID | None = None
+    voices_enabled_flag_required: bool | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_reasoning_levels_enabled_flag: bool | None = None
+    reasoning_levels_enabled_flag_agent_id: UUID | None = None
+    reasoning_levels_enabled_flag_required: bool | None = None
+    qualities_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_qualities_enabled_flag: bool | None = None
+    qualities_enabled_flag_agent_id: UUID | None = None
+    qualities_enabled_flag_required: bool | None = None
     value_id: UUID | None = None
     value_resource: QGetModelV4ValueResource | None = None
     show_value: bool | None = None
@@ -17042,6 +17072,36 @@ class GetModelApiResponse(BaseModel):
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
     flags: list[QGetModelV4FlagOption] | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    modalities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_modalities_enabled_flag: bool | None = None
+    modalities_enabled_flag_agent_id: UUID | None = None
+    modalities_enabled_flag_required: bool | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_temperature_enabled_flag: bool | None = None
+    temperature_enabled_flag_agent_id: UUID | None = None
+    temperature_enabled_flag_required: bool | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_pricing_enabled_flag: bool | None = None
+    pricing_enabled_flag_agent_id: UUID | None = None
+    pricing_enabled_flag_required: bool | None = None
+    voices_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_voices_enabled_flag: bool | None = None
+    voices_enabled_flag_agent_id: UUID | None = None
+    voices_enabled_flag_required: bool | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_reasoning_levels_enabled_flag: bool | None = None
+    reasoning_levels_enabled_flag_agent_id: UUID | None = None
+    reasoning_levels_enabled_flag_required: bool | None = None
+    qualities_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_resource: QGetModelV4FlagResource | None = None
+    show_qualities_enabled_flag: bool | None = None
+    qualities_enabled_flag_agent_id: UUID | None = None
+    qualities_enabled_flag_required: bool | None = None
     value_id: UUID | None = None
     value_resource: QGetModelV4ValueResource | None = None
     show_value: bool | None = None
@@ -17492,6 +17552,12 @@ class SaveModelSqlParams(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
     value_id: UUID | None = None
     endpoint_id: UUID | None = None
     input_model_id: UUID | None = None
@@ -17511,6 +17577,12 @@ class SaveModelSqlParams(BaseModel):
             self.name_id,
             self.description_id,
             self.active_flag_id,
+            self.modalities_enabled_flag_id,
+            self.temperature_enabled_flag_id,
+            self.pricing_enabled_flag_id,
+            self.voices_enabled_flag_id,
+            self.reasoning_levels_enabled_flag_id,
+            self.qualities_enabled_flag_id,
             self.value_id,
             self.endpoint_id,
             self.input_model_id,
@@ -17535,6 +17607,12 @@ class SaveModelApiRequest(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
     value_id: UUID | None = None
     endpoint_id: UUID | None = None
     input_model_id: UUID | None = None

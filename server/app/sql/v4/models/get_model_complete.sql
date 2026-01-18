@@ -273,6 +273,42 @@ RETURNS TABLE (
     flag_agent_id uuid,
     flag_required boolean,
     flags types.q_get_model_v4_flag_option[],
+    -- Single-select resources: modalities_enabled flag
+    modalities_enabled_flag_id uuid,
+    modalities_enabled_flag_resource types.q_get_model_v4_flag_resource,
+    show_modalities_enabled_flag boolean,
+    modalities_enabled_flag_agent_id uuid,
+    modalities_enabled_flag_required boolean,
+    -- Single-select resources: temperature_enabled flag
+    temperature_enabled_flag_id uuid,
+    temperature_enabled_flag_resource types.q_get_model_v4_flag_resource,
+    show_temperature_enabled_flag boolean,
+    temperature_enabled_flag_agent_id uuid,
+    temperature_enabled_flag_required boolean,
+    -- Single-select resources: pricing_enabled flag
+    pricing_enabled_flag_id uuid,
+    pricing_enabled_flag_resource types.q_get_model_v4_flag_resource,
+    show_pricing_enabled_flag boolean,
+    pricing_enabled_flag_agent_id uuid,
+    pricing_enabled_flag_required boolean,
+    -- Single-select resources: voices_enabled flag
+    voices_enabled_flag_id uuid,
+    voices_enabled_flag_resource types.q_get_model_v4_flag_resource,
+    show_voices_enabled_flag boolean,
+    voices_enabled_flag_agent_id uuid,
+    voices_enabled_flag_required boolean,
+    -- Single-select resources: reasoning_levels_enabled flag
+    reasoning_levels_enabled_flag_id uuid,
+    reasoning_levels_enabled_flag_resource types.q_get_model_v4_flag_resource,
+    show_reasoning_levels_enabled_flag boolean,
+    reasoning_levels_enabled_flag_agent_id uuid,
+    reasoning_levels_enabled_flag_required boolean,
+    -- Single-select resources: qualities_enabled flag
+    qualities_enabled_flag_id uuid,
+    qualities_enabled_flag_resource types.q_get_model_v4_flag_resource,
+    show_qualities_enabled_flag boolean,
+    qualities_enabled_flag_agent_id uuid,
+    qualities_enabled_flag_required boolean,
     -- Single-select resources: value
     value_id uuid,
     value_resource types.q_get_model_v4_value_resource,
@@ -492,6 +528,42 @@ flag_resource_data AS (
         ) as active_flag_id,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'active' AND mf.value = TRUE LIMIT 1) as model_flag_resource
+    FROM params
+),
+modalities_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as modalities_enabled_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as modalities_enabled_flag_resource
+    FROM params
+),
+temperature_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as temperature_enabled_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as temperature_enabled_flag_resource
+    FROM params
+),
+pricing_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as pricing_enabled_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as pricing_enabled_flag_resource
+    FROM params
+),
+voices_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as voices_enabled_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as voices_enabled_flag_resource
+    FROM params
+),
+reasoning_levels_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_resource
+    FROM params
+),
+qualities_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as qualities_enabled_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as qualities_enabled_flag_resource
     FROM params
 ),
 value_resource_data AS (
@@ -1932,6 +2004,60 @@ SELECT
     NULL::uuid as flag_agent_id,
     false as flag_required,
     COALESCE((SELECT flags FROM flags_aggregated), '{}'::types.q_get_model_v4_flag_option[]) as flags,
+    -- Single-select resources: modalities_enabled flag
+    (SELECT modalities_enabled_flag_id FROM modalities_enabled_flag_resource_data) as modalities_enabled_flag_id,
+    (SELECT modalities_enabled_flag_resource FROM modalities_enabled_flag_resource_data) as modalities_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.flags_has_tools THEN false
+        ELSE true
+    END as show_modalities_enabled_flag,
+    NULL::uuid as modalities_enabled_flag_agent_id,
+    false as modalities_enabled_flag_required,
+    -- Single-select resources: temperature_enabled flag
+    (SELECT temperature_enabled_flag_id FROM temperature_enabled_flag_resource_data) as temperature_enabled_flag_id,
+    (SELECT temperature_enabled_flag_resource FROM temperature_enabled_flag_resource_data) as temperature_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.flags_has_tools THEN false
+        ELSE true
+    END as show_temperature_enabled_flag,
+    NULL::uuid as temperature_enabled_flag_agent_id,
+    false as temperature_enabled_flag_required,
+    -- Single-select resources: pricing_enabled flag
+    (SELECT pricing_enabled_flag_id FROM pricing_enabled_flag_resource_data) as pricing_enabled_flag_id,
+    (SELECT pricing_enabled_flag_resource FROM pricing_enabled_flag_resource_data) as pricing_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.flags_has_tools THEN false
+        ELSE true
+    END as show_pricing_enabled_flag,
+    NULL::uuid as pricing_enabled_flag_agent_id,
+    false as pricing_enabled_flag_required,
+    -- Single-select resources: voices_enabled flag
+    (SELECT voices_enabled_flag_id FROM voices_enabled_flag_resource_data) as voices_enabled_flag_id,
+    (SELECT voices_enabled_flag_resource FROM voices_enabled_flag_resource_data) as voices_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.flags_has_tools THEN false
+        ELSE true
+    END as show_voices_enabled_flag,
+    NULL::uuid as voices_enabled_flag_agent_id,
+    false as voices_enabled_flag_required,
+    -- Single-select resources: reasoning_levels_enabled flag
+    (SELECT reasoning_levels_enabled_flag_id FROM reasoning_levels_enabled_flag_resource_data) as reasoning_levels_enabled_flag_id,
+    (SELECT reasoning_levels_enabled_flag_resource FROM reasoning_levels_enabled_flag_resource_data) as reasoning_levels_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.flags_has_tools THEN false
+        ELSE true
+    END as show_reasoning_levels_enabled_flag,
+    NULL::uuid as reasoning_levels_enabled_flag_agent_id,
+    false as reasoning_levels_enabled_flag_required,
+    -- Single-select resources: qualities_enabled flag
+    (SELECT qualities_enabled_flag_id FROM qualities_enabled_flag_resource_data) as qualities_enabled_flag_id,
+    (SELECT qualities_enabled_flag_resource FROM qualities_enabled_flag_resource_data) as qualities_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.flags_has_tools THEN false
+        ELSE true
+    END as show_qualities_enabled_flag,
+    NULL::uuid as qualities_enabled_flag_agent_id,
+    false as qualities_enabled_flag_required,
     -- Single-select resources: value
     COALESCE(
         CASE 
@@ -2258,6 +2384,12 @@ CROSS JOIN draft_payload_data dpd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN flag_resource_data frd
+CROSS JOIN modalities_enabled_flag_resource_data mefrd
+CROSS JOIN temperature_enabled_flag_resource_data tefrd
+CROSS JOIN pricing_enabled_flag_resource_data pefrd
+CROSS JOIN voices_enabled_flag_resource_data vefrd
+CROSS JOIN reasoning_levels_enabled_flag_resource_data rlefrd
+CROSS JOIN qualities_enabled_flag_resource_data qefrd
 CROSS JOIN value_resource_data vrd
 CROSS JOIN endpoint_resource_data erd
 CROSS JOIN provider_resource_data prd

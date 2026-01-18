@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import {
@@ -40,14 +39,11 @@ import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import { cn } from "@/lib/utils";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import {
-  Brain,
   Check,
-  DollarSign,
   Edit,
   Image,
   Power,
   Settings,
-  Thermometer,
   Volume2,
   X,
 } from "lucide-react";
@@ -129,6 +125,12 @@ export default function Model({
     name_id: string | null;
     description_id: string | null;
     active_flag_id: string | null;
+    modalities_enabled_flag_id: string | null;
+    temperature_enabled_flag_id: string | null;
+    pricing_enabled_flag_id: string | null;
+    voices_enabled_flag_id: string | null;
+    reasoning_levels_enabled_flag_id: string | null;
+    qualities_enabled_flag_id: string | null;
     value_id: string | null;
     endpoint_id: string | null;
     // Multi-select resource IDs
@@ -142,13 +144,6 @@ export default function Model({
     // Other fields
     provider_id: string;
     departmentIds: string[];
-    // Feature toggles (kept for UI state)
-    enableModalities: boolean;
-    enableTemperature: boolean;
-    enablePricing: boolean;
-    enableVoices: boolean;
-    enableReasoningLevels: boolean;
-    enableQualities: boolean;
   };
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -168,6 +163,12 @@ export default function Model({
         name_id: null,
         description_id: null,
         active_flag_id: null,
+        modalities_enabled_flag_id: null,
+        temperature_enabled_flag_id: null,
+        pricing_enabled_flag_id: null,
+        voices_enabled_flag_id: null,
+        reasoning_levels_enabled_flag_id: null,
+        qualities_enabled_flag_id: null,
         value_id: null,
         endpoint_id: null,
         input_modality_ids: [],
@@ -179,12 +180,6 @@ export default function Model({
         voice_ids: [],
         provider_id: "",
         departmentIds: defaultDepartmentIds,
-        enableModalities: true,
-        enableTemperature: false,
-        enablePricing: false,
-        enableVoices: false,
-        enableReasoningLevels: false,
-        enableQualities: false,
       };
     }
 
@@ -192,20 +187,16 @@ export default function Model({
     // Note: Server data may have display values, but we only store IDs here
     const data = modelData as ModelDetailOut | ModelNewOut;
 
-    // Determine feature toggles based on whether IDs exist
-    const hasModalities =
-      (data?.input_modality_ids?.length ?? 0) > 0 ||
-      (data?.output_modality_ids?.length ?? 0) > 0;
-    const hasTemperature = (data?.temperature_level_ids?.length ?? 0) > 0;
-    const hasPricing = (data?.pricing_ids?.length ?? 0) > 0;
-    const hasVoices = (data?.voice_ids?.length ?? 0) > 0;
-    const hasReasoningLevels = (data?.reasoning_level_ids?.length ?? 0) > 0;
-    const hasQualities = (data?.quality_ids?.length ?? 0) > 0;
-
     return {
       name_id: data?.name_id ?? null,
       description_id: data?.description_id ?? null,
       active_flag_id: data?.active_flag_id ?? null,
+      modalities_enabled_flag_id: (data as any)?.modalities_enabled_flag_id ?? null,
+      temperature_enabled_flag_id: (data as any)?.temperature_enabled_flag_id ?? null,
+      pricing_enabled_flag_id: (data as any)?.pricing_enabled_flag_id ?? null,
+      voices_enabled_flag_id: (data as any)?.voices_enabled_flag_id ?? null,
+      reasoning_levels_enabled_flag_id: (data as any)?.reasoning_levels_enabled_flag_id ?? null,
+      qualities_enabled_flag_id: (data as any)?.qualities_enabled_flag_id ?? null,
       value_id: data?.value_id ?? null,
       endpoint_id: data?.endpoint_id ?? null,
       input_modality_ids: data?.input_modality_ids ?? [],
@@ -217,12 +208,6 @@ export default function Model({
       voice_ids: data?.voice_ids ?? [],
       provider_id: data?.provider_id ?? "",
       departmentIds: data?.department_ids ?? defaultDepartmentIds,
-      enableModalities: hasModalities,
-      enableTemperature: hasTemperature,
-      enablePricing: hasPricing,
-      enableVoices: hasVoices,
-      enableReasoningLevels: hasReasoningLevels,
-      enableQualities: hasQualities,
     };
   }, [modelData, defaultDepartmentIds]);
 
@@ -480,6 +465,12 @@ export default function Model({
       const hasInputModalities = input_modality_ids.length > 0;
       const hasOutputModalities = output_modality_ids.length > 0;
       const hasModalities = hasInputModalities && hasOutputModalities;
+      const modalities_enabled_flag_id = formData["modalities_enabled_flag_id"] as string | null | undefined;
+      const temperature_enabled_flag_id = formData["temperature_enabled_flag_id"] as string | null | undefined;
+      const pricing_enabled_flag_id = formData["pricing_enabled_flag_id"] as string | null | undefined;
+      const voices_enabled_flag_id = formData["voices_enabled_flag_id"] as string | null | undefined;
+      const reasoning_levels_enabled_flag_id = formData["reasoning_levels_enabled_flag_id"] as string | null | undefined;
+      const qualities_enabled_flag_id = formData["qualities_enabled_flag_id"] as string | null | undefined;
 
       switch (stepId) {
         case "basic":
@@ -493,65 +484,61 @@ export default function Model({
         case "inputModalities":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
+          if (!modalities_enabled_flag_id) return "pending";
           return hasInputModalities ? "completed" : "active";
         case "outputModalities":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasInputModalities) return "pending";
+          if (!modalities_enabled_flag_id || !hasInputModalities) return "pending";
           return hasOutputModalities ? "completed" : "active";
         case "temperature":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasInputModalities || !hasOutputModalities) return "pending";
-          const enableTemperature = formData["enableTemperature"] as boolean | null | undefined;
+          if (!modalities_enabled_flag_id || !hasInputModalities || !hasOutputModalities) return "pending";
           const temperature_level_ids = (formData["temperature_level_ids"] as string[] | null | undefined) || [];
-          return enableTemperature && temperature_level_ids.length > 0
+          return temperature_enabled_flag_id && temperature_level_ids.length > 0
             ? "completed"
-            : enableTemperature
+            : temperature_enabled_flag_id
               ? "active"
               : "pending";
         case "pricing":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasInputModalities || !hasOutputModalities) return "pending";
-          const enablePricing = formData["enablePricing"] as boolean | null | undefined;
+          if (!modalities_enabled_flag_id || !hasInputModalities || !hasOutputModalities) return "pending";
           const pricing_ids = (formData["pricing_ids"] as string[] | null | undefined) || [];
-          return enablePricing && pricing_ids.length > 0
+          return pricing_enabled_flag_id && pricing_ids.length > 0
             ? "completed"
-            : enablePricing
+            : pricing_enabled_flag_id
               ? "active"
               : "pending";
         case "reasoning":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasInputModalities || !hasOutputModalities) return "pending";
-          const enableReasoningLevels = formData["enableReasoningLevels"] as boolean | null | undefined;
+          if (!modalities_enabled_flag_id || !hasInputModalities || !hasOutputModalities) return "pending";
           const reasoning_level_ids = (formData["reasoning_level_ids"] as string[] | null | undefined) || [];
-          return enableReasoningLevels && reasoning_level_ids.length > 0
+          return reasoning_levels_enabled_flag_id && reasoning_level_ids.length > 0
             ? "completed"
-            : enableReasoningLevels
+            : reasoning_levels_enabled_flag_id
               ? "active"
               : "pending";
         case "voices":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasInputModalities || !hasOutputModalities) return "pending";
-          const enableVoices = formData["enableVoices"] as boolean | null | undefined;
+          if (!modalities_enabled_flag_id || !hasInputModalities || !hasOutputModalities) return "pending";
           const voice_ids = (formData["voice_ids"] as string[] | null | undefined) || [];
-          return enableVoices && voice_ids.length > 0
+          return voices_enabled_flag_id && voice_ids.length > 0
             ? "completed"
-            : enableVoices
+            : voices_enabled_flag_id
               ? "active"
               : "pending";
         case "qualities":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
-          if (!hasInputModalities || !hasOutputModalities) return "pending";
-          const enableQualities = formData["enableQualities"] as boolean | null | undefined;
+          if (!modalities_enabled_flag_id || !hasInputModalities || !hasOutputModalities) return "pending";
           const quality_ids = (formData["quality_ids"] as string[] | null | undefined) || [];
-          return enableQualities && quality_ids.length > 0
+          return qualities_enabled_flag_id && quality_ids.length > 0
             ? "completed"
-            : enableQualities
+            : qualities_enabled_flag_id
               ? "active"
               : "pending";
         default:
@@ -574,14 +561,14 @@ export default function Model({
           "description_id",
           "value_id",
           "active_flag_id",
+          "modalities_enabled_flag_id",
+          "temperature_enabled_flag_id",
+          "pricing_enabled_flag_id",
+          "voices_enabled_flag_id",
+          "reasoning_levels_enabled_flag_id",
+          "qualities_enabled_flag_id",
           "endpoint_id",
           "departmentIds",
-          "enableModalities",
-          "enableTemperature",
-          "enablePricing",
-          "enableVoices",
-          "enableReasoningLevels",
-          "enableQualities",
         ],
       },
       {
@@ -667,16 +654,16 @@ export default function Model({
       "name_id",
       "description_id",
       "active_flag_id",
+      "modalities_enabled_flag_id",
+      "temperature_enabled_flag_id",
+      "pricing_enabled_flag_id",
+      "voices_enabled_flag_id",
+      "reasoning_levels_enabled_flag_id",
+      "qualities_enabled_flag_id",
       "value_id",
       "endpoint_id",
       "provider_id",
       "departmentIds",
-      "enableModalities",
-      "enableTemperature",
-      "enablePricing",
-      "enableVoices",
-      "enableReasoningLevels",
-      "enableQualities",
       "input_modality_ids",
       "output_modality_ids",
       "temperature_level_ids",
@@ -700,6 +687,12 @@ export default function Model({
       const name_id = formData["name_id"] as string | null | undefined;
       const description_id = formData["description_id"] as string | null | undefined;
       const active_flag_id = formData["active_flag_id"] as string | null | undefined;
+      const modalities_enabled_flag_id = formData["modalities_enabled_flag_id"] as string | null | undefined;
+      const temperature_enabled_flag_id = formData["temperature_enabled_flag_id"] as string | null | undefined;
+      const pricing_enabled_flag_id = formData["pricing_enabled_flag_id"] as string | null | undefined;
+      const voices_enabled_flag_id = formData["voices_enabled_flag_id"] as string | null | undefined;
+      const reasoning_levels_enabled_flag_id = formData["reasoning_levels_enabled_flag_id"] as string | null | undefined;
+      const qualities_enabled_flag_id = formData["qualities_enabled_flag_id"] as string | null | undefined;
       const value_id = formData["value_id"] as string | null | undefined;
       const endpoint_id = formData["endpoint_id"] as string | null | undefined;
       const provider_id = formData["provider_id"] as string | null | undefined;
@@ -751,6 +744,12 @@ export default function Model({
           name_id: name_id || null,
           description_id: description_id || null,
           active_flag_id: active_flag_id || null,
+          modalities_enabled_flag_id: modalities_enabled_flag_id || null,
+          temperature_enabled_flag_id: temperature_enabled_flag_id || null,
+          pricing_enabled_flag_id: pricing_enabled_flag_id || null,
+          voices_enabled_flag_id: voices_enabled_flag_id || null,
+          reasoning_levels_enabled_flag_id: reasoning_levels_enabled_flag_id || null,
+          qualities_enabled_flag_id: qualities_enabled_flag_id || null,
           value_id: value_id || null,
           endpoint_id: endpoint_id || null,
           department_ids: departmentIds || null,
@@ -850,27 +849,18 @@ export default function Model({
       const name_id = (stepFormData["name_id"] as string | null | undefined) ?? null;
       const description_id = (stepFormData["description_id"] as string | null | undefined) ?? null;
       const active_flag_id = (stepFormData["active_flag_id"] as string | null | undefined) ?? null;
+      const modalities_enabled_flag_id = (stepFormData["modalities_enabled_flag_id"] as string | null | undefined) ?? null;
+      const temperature_enabled_flag_id = (stepFormData["temperature_enabled_flag_id"] as string | null | undefined) ?? null;
+      const pricing_enabled_flag_id = (stepFormData["pricing_enabled_flag_id"] as string | null | undefined) ?? null;
+      const voices_enabled_flag_id = (stepFormData["voices_enabled_flag_id"] as string | null | undefined) ?? null;
+      const reasoning_levels_enabled_flag_id = (stepFormData["reasoning_levels_enabled_flag_id"] as string | null | undefined) ?? null;
+      const qualities_enabled_flag_id = (stepFormData["qualities_enabled_flag_id"] as string | null | undefined) ?? null;
       const value_id = (stepFormData["value_id"] as string | null | undefined) ?? null;
       const endpoint_id = (stepFormData["endpoint_id"] as string | null | undefined) ?? null;
       const provider_id =
         (stepFormData["provider_id"] as string | null | undefined) ?? "";
       const departmentIds =
         (stepFormData["departmentIds"] as string[] | null | undefined) || [];
-      const enableModalities =
-        (stepFormData["enableModalities"] as boolean | null | undefined) ?? true;
-      const enableTemperature =
-        (stepFormData["enableTemperature"] as boolean | null | undefined) ??
-        false;
-      const enablePricing =
-        (stepFormData["enablePricing"] as boolean | null | undefined) ?? false;
-      const enableVoices =
-        (stepFormData["enableVoices"] as boolean | null | undefined) ?? false;
-      const enableReasoningLevels =
-        (stepFormData["enableReasoningLevels"] as boolean | null | undefined) ??
-        false;
-      const enableQualities =
-        (stepFormData["enableQualities"] as boolean | null | undefined) ??
-        false;
       const input_modality_ids =
         (stepFormData["input_modality_ids"] as string[] | null | undefined) || [];
       const output_modality_ids =
@@ -920,14 +910,14 @@ export default function Model({
                 "description_id",
                 "value_id",
                 "active_flag_id",
+                "modalities_enabled_flag_id",
+                "temperature_enabled_flag_id",
+                "pricing_enabled_flag_id",
+                "voices_enabled_flag_id",
+                "reasoning_levels_enabled_flag_id",
+                "qualities_enabled_flag_id",
                 "endpoint_id",
                 "departmentIds",
-                "enableModalities",
-                "enableTemperature",
-                "enablePricing",
-                "enableVoices",
-                "enableReasoningLevels",
-                "enableQualities",
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1016,99 +1006,167 @@ export default function Model({
                 />
 
 
-                  <div className="space-y-2 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor="enable-temperature"
-                          className="text-sm flex items-center gap-1.5"
-                        >
-                          <Thermometer className="h-3.5 w-3.5 text-muted-foreground" />
-                          Temperature
-                        </Label>
-                        <Switch
-                          id="enable-temperature"
-                          data-testid="switch-model-temperature"
-                          checked={enableTemperature}
-                          onCheckedChange={(checked) => {
-                            setStepFormData({
-                              enableTemperature: checked,
-                              temperature_level_ids: checked ? temperature_level_ids : [],
-                            });
-                          }}
-                          disabled={isReadonly}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground pl-5">
-                        Configure temperature levels for this model
-                      </p>
-                    </div>
-                  </div>
+                <Flags
+                  flag_id={modalities_enabled_flag_id ?? null}
+                  flag_resource={(modelData as any)?.modalities_enabled_flag_resource ?? null}
+                  show_flag={(modelData as any)?.show_modalities_enabled_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) => {
+                    // Flags component calls this with null when toggling off, or with flag_id when creating/selecting
+                    // For feature toggles, we want to use existing flag resources, not create new ones
+                    // So if id is provided, use it; if null, check if we should look up existing flag
+                    let flagId = id;
+                    if (!flagId && !modalities_enabled_flag_id && modelData?.flags) {
+                      // User toggled on but no flag_id - look up existing flag resource
+                      const modalitiesFlag = (modelData.flags as Array<{ id: string; name: string }>).find(
+                        (f) => f.name === "modalities_enabled"
+                      );
+                      flagId = modalitiesFlag?.id ?? null;
+                    }
+                    setStepFormData({
+                      modalities_enabled_flag_id: flagId,
+                      input_modality_ids: flagId ? input_modality_ids : [],
+                      output_modality_ids: flagId ? output_modality_ids : [],
+                    });
+                  }}
+                  label="Modalities"
+                  helpText="Enable input/output modalities configuration"
+                  required={(modelData as any)?.modalities_enabled_flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={(modelData as any)?.modalities_enabled_flag_agent_id ?? null}
+                />
 
-                  <div className="space-y-2 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor="enable-pricing"
-                          className="text-sm flex items-center gap-1.5"
-                        >
-                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                          Pricing
-                        </Label>
-                        <Switch
-                          id="enable-pricing"
-                          data-testid="switch-model-pricing"
-                          checked={enablePricing}
-                          onCheckedChange={(checked) => {
-                            setStepFormData({
-                              enablePricing: checked,
-                              pricing_ids: checked ? pricing_ids : [],
-                            });
-                          }}
-                          disabled={isReadonly}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground pl-5">
-                        Configure pricing for this model
-                      </p>
-                    </div>
-                  </div>
+                <Flags
+                  flag_id={temperature_enabled_flag_id ?? null}
+                  flag_resource={(modelData as any)?.temperature_enabled_flag_resource ?? null}
+                  show_flag={(modelData as any)?.show_temperature_enabled_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) => {
+                    let flagId = id;
+                    if (!flagId && !temperature_enabled_flag_id && modelData?.flags) {
+                      const temperatureFlag = (modelData.flags as Array<{ id: string; name: string }>).find(
+                        (f) => f.name === "temperature_enabled"
+                      );
+                      flagId = temperatureFlag?.id ?? null;
+                    }
+                    setStepFormData({
+                      temperature_enabled_flag_id: flagId,
+                      temperature_level_ids: flagId ? temperature_level_ids : [],
+                    });
+                  }}
+                  label="Temperature"
+                  helpText="Configure temperature levels for this model"
+                  required={(modelData as any)?.temperature_enabled_flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={(modelData as any)?.temperature_enabled_flag_agent_id ?? null}
+                />
 
-                  <div className="space-y-2 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor="enable-reasoning"
-                          className="text-sm flex items-center gap-1.5"
-                        >
-                          <Brain className="h-3.5 w-3.5 text-muted-foreground" />
-                          Reasoning
-                        </Label>
-                        <Switch
-                          id="enable-reasoning"
-                          data-testid="switch-model-reasoning"
-                          checked={enableReasoningLevels}
-                          onCheckedChange={(checked) => {
-                            setStepFormData({
-                              enableReasoningLevels: checked,
-                              reasoning_level_ids: checked ? reasoning_level_ids : [],
-                            });
-                          }}
-                          disabled={isReadonly}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground pl-5">
-                        Select reasoning levels for this model
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <Flags
+                  flag_id={pricing_enabled_flag_id ?? null}
+                  flag_resource={(modelData as any)?.pricing_enabled_flag_resource ?? null}
+                  show_flag={(modelData as any)?.show_pricing_enabled_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) => {
+                    let flagId = id;
+                    if (!flagId && !pricing_enabled_flag_id && modelData?.flags) {
+                      const pricingFlag = (modelData.flags as Array<{ id: string; name: string }>).find(
+                        (f) => f.name === "pricing_enabled"
+                      );
+                      flagId = pricingFlag?.id ?? null;
+                    }
+                    setStepFormData({
+                      pricing_enabled_flag_id: flagId,
+                      pricing_ids: flagId ? pricing_ids : [],
+                    });
+                  }}
+                  label="Pricing"
+                  helpText="Configure pricing for this model"
+                  required={(modelData as any)?.pricing_enabled_flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={(modelData as any)?.pricing_enabled_flag_agent_id ?? null}
+                />
+
+                <Flags
+                  flag_id={voices_enabled_flag_id ?? null}
+                  flag_resource={(modelData as any)?.voices_enabled_flag_resource ?? null}
+                  show_flag={(modelData as any)?.show_voices_enabled_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) => {
+                    let flagId = id;
+                    if (!flagId && !voices_enabled_flag_id && modelData?.flags) {
+                      const voicesFlag = (modelData.flags as Array<{ id: string; name: string }>).find(
+                        (f) => f.name === "voices_enabled"
+                      );
+                      flagId = voicesFlag?.id ?? null;
+                    }
+                    setStepFormData({
+                      voices_enabled_flag_id: flagId,
+                      voice_ids: flagId ? voice_ids : [],
+                    });
+                  }}
+                  label="Voices"
+                  helpText="Select voices for this model"
+                  required={(modelData as any)?.voices_enabled_flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={(modelData as any)?.voices_enabled_flag_agent_id ?? null}
+                />
+
+                <Flags
+                  flag_id={reasoning_levels_enabled_flag_id ?? null}
+                  flag_resource={(modelData as any)?.reasoning_levels_enabled_flag_resource ?? null}
+                  show_flag={(modelData as any)?.show_reasoning_levels_enabled_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) => {
+                    let flagId = id;
+                    if (!flagId && !reasoning_levels_enabled_flag_id && modelData?.flags) {
+                      const reasoningFlag = (modelData.flags as Array<{ id: string; name: string }>).find(
+                        (f) => f.name === "reasoning_levels_enabled"
+                      );
+                      flagId = reasoningFlag?.id ?? null;
+                    }
+                    setStepFormData({
+                      reasoning_levels_enabled_flag_id: flagId,
+                      reasoning_level_ids: flagId ? reasoning_level_ids : [],
+                    });
+                  }}
+                  label="Reasoning Levels"
+                  helpText="Select reasoning levels for this model"
+                  required={(modelData as any)?.reasoning_levels_enabled_flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={(modelData as any)?.reasoning_levels_enabled_flag_agent_id ?? null}
+                />
+
+                <Flags
+                  flag_id={qualities_enabled_flag_id ?? null}
+                  flag_resource={(modelData as any)?.qualities_enabled_flag_resource ?? null}
+                  show_flag={(modelData as any)?.show_qualities_enabled_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) => {
+                    let flagId = id;
+                    if (!flagId && !qualities_enabled_flag_id && modelData?.flags) {
+                      const qualitiesFlag = (modelData.flags as Array<{ id: string; name: string }>).find(
+                        (f) => f.name === "qualities_enabled"
+                      );
+                      flagId = qualitiesFlag?.id ?? null;
+                    }
+                    setStepFormData({
+                      qualities_enabled_flag_id: flagId,
+                      quality_ids: flagId ? quality_ids : [],
+                    });
+                  }}
+                  label="Qualities"
+                  helpText="Select quality levels for this model"
+                  required={(modelData as any)?.qualities_enabled_flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={(modelData as any)?.qualities_enabled_flag_agent_id ?? null}
+                />
+              </div>
               </div>
             </StepCard>
           );
 
         case "customUrl":
-          if (!endpoint_id && !enableModalities) return null; // Show if endpoint is set or modalities enabled
+          if (!endpoint_id && !modalities_enabled_flag_id) return null; // Show if endpoint is set or modalities enabled
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1201,7 +1259,7 @@ export default function Model({
           );
 
         case "inputModalities":
-          if (!enableModalities) return null;
+          if (!modalities_enabled_flag_id) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1267,7 +1325,7 @@ export default function Model({
           );
 
         case "temperature":
-          if (!enableTemperature) return null;
+          if (!temperature_enabled_flag_id) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1333,7 +1391,7 @@ export default function Model({
           );
 
         case "reasoning":
-          if (!enableReasoningLevels) return null;
+          if (!reasoning_levels_enabled_flag_id) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1399,7 +1457,7 @@ export default function Model({
           );
 
         case "qualities":
-          if (!enableQualities) return null;
+          if (!qualities_enabled_flag_id) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
