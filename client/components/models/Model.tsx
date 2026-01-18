@@ -21,18 +21,18 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
-import {
-  TemperatureBoundsPicker,
-  type TemperatureBounds,
-} from "@/components/common/forms/TemperatureBoundsPicker";
-import { InputModalityCardGrid } from "@/components/common/models/InputModalityCardGrid";
-import { OutputModalityCardGrid } from "@/components/common/models/OutputModalityCardGrid";
-import { PricingTypeCardGrid } from "@/components/common/models/PricingTypeCardGrid";
+import { Names } from "@/components/resources/Names";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Flags } from "@/components/resources/Flags";
+import { Values } from "@/components/resources/Values";
+import { Endpoints } from "@/components/resources/Endpoints";
+import { Modalities } from "@/components/resources/Modalities";
+import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import { Qualities } from "@/components/resources/Qualities";
+import { Pricing } from "@/components/resources/Pricing";
+import { Voices } from "@/components/resources/Voices";
 import { ProviderCardGrid } from "@/components/common/models/ProviderCardGrid";
-import { QualityCardGrid } from "@/components/common/models/QualityCardGrid";
-import { ReasoningCardGrid } from "@/components/common/models/ReasoningCardGrid";
-import { UnitCardGrid } from "@/components/common/models/UnitCardGrid";
-import { VoiceCardGrid } from "@/components/common/models/VoiceCardGrid";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -56,11 +56,11 @@ import type { Parser } from "nuqs";
 import { parseAsString, useQueryStates } from "nuqs";
 
 interface FormErrors {
-  name?: string;
-  description?: string;
+  name_id?: string;
+  description_id?: string;
   provider_id?: string;
-  value?: string;
-  baseUrl?: string;
+  value_id?: string;
+  endpoint_id?: string;
 }
 
 // Type-only import from server pages
@@ -77,193 +77,6 @@ function isModelDetailOut(d: unknown): d is ModelDetailOut {
   return typeof d === "object" && d !== null && "name" in d;
 }
 
-// Custom URL step component (separate component to use hooks properly)
-function CustomUrlStep({
-  stepStatus,
-  stepNumber,
-  stepTitle,
-  stepDescription,
-  isReadonly,
-  isEditMode,
-  baseUrl,
-  setStepFormData,
-  errors,
-  isSubmitting,
-  onReset,
-}: {
-  stepStatus: StepStatus;
-  stepNumber: number;
-  stepTitle: string;
-  stepDescription: string;
-  isReadonly: boolean;
-  isEditMode: boolean;
-  baseUrl: string;
-  setStepFormData: (updates: Partial<Record<string, unknown>>) => void;
-  errors: FormErrors;
-  isSubmitting: boolean;
-  onReset?: () => void;
-}) {
-  const [isEditingBaseUrl, setIsEditingBaseUrl] = useState(false);
-  const [editingBaseUrlValue, setEditingBaseUrlValue] = useState("");
-  const dotsContainerRef = useRef<HTMLDivElement>(null);
-  const [dotsCount, setDotsCount] = useState(100);
-
-  // Initialize editing value when entering edit mode
-  useEffect(() => {
-    if (isEditingBaseUrl) {
-      setEditingBaseUrlValue(baseUrl || "");
-    }
-  }, [isEditingBaseUrl, baseUrl]);
-
-  // Calculate dots dynamically
-  useEffect(() => {
-    const calculateDots = () => {
-      if (!dotsContainerRef.current) return;
-      const container = dotsContainerRef.current;
-      const containerWidth = container.offsetWidth;
-      const padding = 24;
-      const availableWidth = containerWidth - padding;
-      const tempSpan = document.createElement("span");
-      tempSpan.style.fontSize = "18px";
-      tempSpan.style.visibility = "hidden";
-      tempSpan.style.position = "absolute";
-      tempSpan.textContent = "•";
-      document.body.appendChild(tempSpan);
-      const dotWidth = tempSpan.offsetWidth;
-      document.body.removeChild(tempSpan);
-      const dotsNeeded = Math.floor(availableWidth / dotWidth);
-      setDotsCount(Math.max(50, dotsNeeded));
-    };
-    calculateDots();
-    const resizeObserver = new ResizeObserver(calculateDots);
-    if (dotsContainerRef.current) {
-      resizeObserver.observe(dotsContainerRef.current);
-    }
-    window.addEventListener("resize", calculateDots);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", calculateDots);
-    };
-  }, []);
-
-  return (
-    <StepCard
-      stepStatus={stepStatus}
-      stepNumber={stepNumber}
-      stepTitle={stepTitle}
-      stepDescription={stepDescription}
-      isReadonly={isReadonly}
-      isEditMode={isEditMode}
-      resetFields={["baseUrl", "customModel"]}
-      {...(onReset ? { onReset } : {})}
-      resetLabel="Reset"
-    >
-      <div className="space-y-2">
-        <Label htmlFor="baseUrl">Base URL</Label>
-        {!isEditMode || isEditingBaseUrl ? (
-          <div className="flex items-center gap-2">
-            <Textarea
-              id="baseUrl"
-              data-testid="input-model-base-url"
-              value={isEditingBaseUrl ? editingBaseUrlValue : baseUrl}
-              onChange={(e) => {
-                if (isEditingBaseUrl) {
-                  setEditingBaseUrlValue(e.target.value);
-                } else {
-                  setStepFormData({ baseUrl: e.target.value || null });
-                }
-              }}
-              placeholder="e.g. https://api.example.com/v1"
-              className={cn(
-                "flex-1 h-10 resize-none",
-                errors.baseUrl ? "border-destructive" : ""
-              )}
-              disabled={isReadonly}
-              onKeyDown={(e) => {
-                if (isEditingBaseUrl) {
-                  if (e.key === "Enter" && e.ctrlKey) {
-                    setStepFormData({ baseUrl: editingBaseUrlValue || null });
-                    setIsEditingBaseUrl(false);
-                    setEditingBaseUrlValue("");
-                  } else if (e.key === "Escape") {
-                    setIsEditingBaseUrl(false);
-                    setEditingBaseUrlValue("");
-                  }
-                }
-              }}
-            />
-            {isEditingBaseUrl && (
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setStepFormData({ baseUrl: editingBaseUrlValue || null });
-                    setIsEditingBaseUrl(false);
-                    setEditingBaseUrlValue("");
-                  }}
-                  disabled={isReadonly}
-                  className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setIsEditingBaseUrl(false);
-                    setEditingBaseUrlValue("");
-                  }}
-                  disabled={isReadonly}
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 w-full">
-            <div
-              ref={dotsContainerRef}
-              className="flex-1 p-3 bg-muted rounded-md border h-10 flex items-center w-full overflow-hidden"
-            >
-              {baseUrl ? (
-                <code className="text-sm break-all w-full">{baseUrl}</code>
-              ) : (
-                <span className="text-muted-foreground text-lg whitespace-nowrap">
-                  {"•".repeat(dotsCount)}
-                </span>
-              )}
-            </div>
-            {!isReadonly && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setIsEditingBaseUrl(true);
-                  setEditingBaseUrlValue(baseUrl || "");
-                }}
-                disabled={isSubmitting}
-                className="shrink-0"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        )}
-        {errors.baseUrl && (
-          <p className="text-sm text-destructive">{errors.baseUrl}</p>
-        )}
-      </div>
-    </StepCard>
-  );
-}
 
 export interface ModelProps {
   modelId?: string;
@@ -312,27 +125,30 @@ export default function Model({
 
   // Draft state type (all form fields that should be saved to draft)
   type DraftState = {
-    name: string;
-    description: string;
+    // Single-select resource IDs (following Persona pattern)
+    name_id: string | null;
+    description_id: string | null;
+    active_flag_id: string | null;
+    value_id: string | null;
+    endpoint_id: string | null;
+    // Multi-select resource IDs
+    input_modality_ids: string[];
+    output_modality_ids: string[];
+    temperature_level_ids: string[];
+    reasoning_level_ids: string[];
+    quality_ids: string[];
+    pricing_ids: string[];
+    voice_ids: string[];
+    // Other fields
     provider_id: string;
-    value: string;
-    active: boolean;
     departmentIds: string[];
-    customModel: boolean;
-    baseUrl: string;
+    // Feature toggles (kept for UI state)
     enableModalities: boolean;
     enableTemperature: boolean;
     enablePricing: boolean;
     enableVoices: boolean;
     enableReasoningLevels: boolean;
     enableQualities: boolean;
-    temperature_bounds?: TemperatureBounds;
-    pricing?: Record<string, { unit_id: string; price: number }[]>;
-    selectedPricingTypes?: string[];
-    modalities?: { input: string[]; output: string[] };
-    reasoning_levels?: string[];
-    voices?: string[];
-    qualities?: string[];
   };
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -345,146 +161,68 @@ export default function Model({
     [isSuperadmin, effectiveProfile?.primary_department_id]
   );
 
-  // Initialize draft state from server data or draft payload
+  // Initialize draft state from server data - extract resource IDs (following Persona pattern)
   const initialDraftState = useMemo((): DraftState => {
     if (!modelData) {
       return {
-        name: "New Model",
-        description: "",
+        name_id: null,
+        description_id: null,
+        active_flag_id: null,
+        value_id: null,
+        endpoint_id: null,
+        input_modality_ids: [],
+        output_modality_ids: [],
+        temperature_level_ids: [],
+        reasoning_level_ids: [],
+        quality_ids: [],
+        pricing_ids: [],
+        voice_ids: [],
         provider_id: "",
-        value: "",
-        active: true,
         departmentIds: defaultDepartmentIds,
-        customModel: false,
-        baseUrl: "",
         enableModalities: true,
         enableTemperature: false,
         enablePricing: false,
         enableVoices: false,
         enableReasoningLevels: false,
         enableQualities: false,
-        modalities: { input: ["text"], output: ["text"] },
-        pricing: {},
-        selectedPricingTypes: [],
-        reasoning_levels: [],
-        voices: [],
-        qualities: [],
       };
     }
 
-    // If draftId exists, server should have merged draft payload into data
-    // Otherwise, use server defaults
+    // Extract resource IDs from server data (following Persona pattern)
+    // Note: Server data may have display values, but we only store IDs here
     const data = modelData as ModelDetailOut | ModelNewOut;
 
-    // Parse temperature bounds if present
-    let temperature_bounds: TemperatureBounds | undefined;
-    if (
-      data?.temperature_lower !== undefined &&
-      data?.temperature_upper !== undefined
-    ) {
-      const tempLower = data.temperature_lower ?? 0.0;
-      const tempUpper = data.temperature_upper ?? 1.0;
-      const tempValues = data.temperature_values;
-      if (tempValues && tempValues.length > 0) {
-        temperature_bounds = {
-          type: "range",
-          lower: tempLower,
-          upper: tempUpper,
-        };
-      }
-    }
-
-    // Parse pricing
-    const pricingArray =
-      data?.pricing && Array.isArray(data.pricing)
-        ? data.pricing
-            .filter((p): p is NonNullable<typeof p> => p != null)
-            .map((p) => ({
-              type: (p?.pricing_type ?? "input") as
-                | "input"
-                | "output"
-                | "cached",
-              unit_id: p?.unit_id || "",
-              price: p?.price ?? 0,
-            }))
-        : [];
-    const pricing: Record<string, { unit_id: string; price: number }[]> = {};
-    const selectedPricingTypesSet = new Set<string>();
-    pricingArray.forEach((entry) => {
-      const type = entry.type;
-      selectedPricingTypesSet.add(type);
-      if (!pricing[type]) {
-        pricing[type] = [];
-      }
-      pricing[type].push({
-        unit_id: entry.unit_id,
-        price: entry.price,
-      });
-    });
-    const selectedPricingTypes = Array.from(selectedPricingTypesSet);
-
-    // Parse modalities
-    const modalities =
-      data?.modalities && typeof data.modalities === "object"
-        ? {
-            input: Array.isArray(data.modalities.input)
-              ? data.modalities.input || ["text"]
-              : ["text"],
-            output: Array.isArray(data.modalities.output)
-              ? data.modalities.output || ["text"]
-              : ["text"],
-          }
-        : { input: ["text"], output: ["text"] };
-
-    // Determine feature toggles
+    // Determine feature toggles based on whether IDs exist
     const hasModalities =
-      modalities.input.length > 0 || modalities.output.length > 0;
-    const hasTemperature = !!temperature_bounds;
-    const hasPricing = pricing && Object.keys(pricing).length > 0;
-    const hasVoices =
-      data?.voices && Array.isArray(data.voices) && data.voices.length > 0;
-    const hasReasoningLevels =
-      data?.reasoning_levels &&
-      Array.isArray(data.reasoning_levels) &&
-      data.reasoning_levels.length > 0;
-    const hasQualities =
-      data?.qualities &&
-      Array.isArray(data.qualities) &&
-      data.qualities.length > 0;
-
-    // Determine if custom model
-    const baseUrl = data?.base_url || "";
-    const customModel = baseUrl !== "" && baseUrl.trim() !== "";
+      (data?.input_modality_ids?.length ?? 0) > 0 ||
+      (data?.output_modality_ids?.length ?? 0) > 0;
+    const hasTemperature = (data?.temperature_level_ids?.length ?? 0) > 0;
+    const hasPricing = (data?.pricing_ids?.length ?? 0) > 0;
+    const hasVoices = (data?.voice_ids?.length ?? 0) > 0;
+    const hasReasoningLevels = (data?.reasoning_level_ids?.length ?? 0) > 0;
+    const hasQualities = (data?.quality_ids?.length ?? 0) > 0;
 
     return {
-      name: data?.name ?? "New Model",
-      description: data?.description ?? "",
+      name_id: data?.name_id ?? null,
+      description_id: data?.description_id ?? null,
+      active_flag_id: data?.active_flag_id ?? null,
+      value_id: data?.value_id ?? null,
+      endpoint_id: data?.endpoint_id ?? null,
+      input_modality_ids: data?.input_modality_ids ?? [],
+      output_modality_ids: data?.output_modality_ids ?? [],
+      temperature_level_ids: data?.temperature_level_ids ?? [],
+      reasoning_level_ids: data?.reasoning_level_ids ?? [],
+      quality_ids: data?.quality_ids ?? [],
+      pricing_ids: data?.pricing_ids ?? [],
+      voice_ids: data?.voice_ids ?? [],
       provider_id: data?.provider_id ?? "",
-      value: data?.value ?? "",
-      active: data?.active ?? true,
       departmentIds: data?.department_ids ?? defaultDepartmentIds,
-      customModel,
-      baseUrl,
       enableModalities: hasModalities,
-      enableTemperature: hasTemperature ?? false,
-      enablePricing: hasPricing ?? false,
-      enableVoices: hasVoices ?? false,
-      enableReasoningLevels: hasReasoningLevels ?? false,
-      enableQualities: hasQualities ?? false,
-      ...(temperature_bounds ? { temperature_bounds } : {}),
-      pricing,
-      selectedPricingTypes,
-      modalities,
-      reasoning_levels: data?.reasoning_levels || [],
-      voices:
-        data?.voices && Array.isArray(data.voices)
-          ? data.voices
-              .map((v: string | { voice: string }) =>
-                typeof v === "string" ? v : v.voice
-              )
-              .filter(Boolean)
-          : [],
-      qualities: data?.qualities || [],
+      enableTemperature: hasTemperature,
+      enablePricing: hasPricing,
+      enableVoices: hasVoices,
+      enableReasoningLevels: hasReasoningLevels,
+      enableQualities: hasQualities,
     };
   }, [modelData, defaultDepartmentIds]);
 
@@ -569,33 +307,14 @@ export default function Model({
       const draftUpdates: Partial<DraftState> = {};
       const urlUpdates: Partial<Record<string, unknown>> = {};
 
+      // Typed adapter pattern: check URL parsers vs draft state (following Persona pattern)
       Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        if (
-          key === "name" ||
-          key === "description" ||
-          key === "provider_id" ||
-          key === "value" ||
-          key === "active" ||
-          key === "departmentIds" ||
-          key === "customModel" ||
-          key === "baseUrl" ||
-          key === "enableModalities" ||
-          key === "enableTemperature" ||
-          key === "enablePricing" ||
-          key === "enableVoices" ||
-          key === "enableReasoningLevels" ||
-          key === "enableQualities" ||
-          key === "temperature_bounds" ||
-          key === "pricing" ||
-          key === "selectedPricingTypes" ||
-          key === "modalities" ||
-          key === "reasoning_levels" ||
-          key === "voices" ||
-          key === "qualities"
-        ) {
+        // If key exists in URL parsers, update URL params
+        if (key in modelSearchParamsClient) {
+          urlUpdates[key] = value;
+        } else {
+          // Otherwise, update draft state
           draftUpdates[key as keyof DraftState] = value as never;
-        } else if (key === "draftId") {
-          urlUpdates["draftId"] = value;
         }
       });
 
@@ -614,7 +333,7 @@ export default function Model({
         }
       }
     },
-    [formData, setUrlParams, urlParams]
+    [formData, setUrlParams, modelSearchParamsClient]
   );
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -680,7 +399,7 @@ export default function Model({
 
   // Set breadcrumb context for model (edit mode only)
   useEffect(() => {
-    const detailName = modelDetail?.name ?? null;
+    const detailName = modelDetail?.name_resource?.name ?? null;
     if (detailName && modelId && isEditMode) {
       setEntityMetadata({
         entityId: modelId,
@@ -694,7 +413,7 @@ export default function Model({
       }
     };
   }, [
-    modelDetail,
+    modelDetail?.name_resource?.name,
     modelId,
     isEditMode,
     setEntityMetadata,
@@ -748,31 +467,18 @@ export default function Model({
     setErrors({});
   }, [initialDraftState]);
 
-  // Step status logic (for GenericForm)
+  // Step status logic (for GenericForm) - using resource IDs
   const getStepStatus = useCallback(
     (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
-      const hasValue = !!(
-        formData["value"] as string | null | undefined
-      )?.trim();
-      const hasDescription = !!(
-        formData["description"] as string | null | undefined
-      )?.trim();
-      const hasProvider = !!(
-        formData["provider_id"] as string | null | undefined
-      )?.trim();
-      const hasCustomUrl =
-        !(formData["customModel"] as boolean | null | undefined) ||
-        ((formData["customModel"] as boolean) &&
-          !!(formData["baseUrl"] as string | null | undefined)?.trim());
-      const modalities = formData["modalities"] as
-        | { input: string[]; output: string[] }
-        | null
-        | undefined;
-      const hasInputModalities =
-        modalities && modalities.input && modalities.input.length > 0;
-      const hasOutputModalities =
-        modalities && modalities.output && modalities.output.length > 0;
+      const hasName = !!(formData["name_id"] as string | null | undefined);
+      const hasValue = !!(formData["value_id"] as string | null | undefined);
+      const hasDescription = !!(formData["description_id"] as string | null | undefined);
+      const hasProvider = !!(formData["provider_id"] as string | null | undefined)?.trim();
+      const hasEndpoint = !!(formData["endpoint_id"] as string | null | undefined);
+      const input_modality_ids = (formData["input_modality_ids"] as string[] | null | undefined) || [];
+      const output_modality_ids = (formData["output_modality_ids"] as string[] | null | undefined) || [];
+      const hasInputModalities = input_modality_ids.length > 0;
+      const hasOutputModalities = output_modality_ids.length > 0;
       const hasModalities = hasInputModalities && hasOutputModalities;
 
       switch (stepId) {
@@ -780,7 +486,7 @@ export default function Model({
           return hasName && hasValue && hasDescription ? "completed" : "active";
         case "customUrl":
           if (!hasName || !hasValue || !hasDescription) return "pending";
-          return hasCustomUrl ? "completed" : "active";
+          return hasEndpoint ? "completed" : "active";
         case "provider":
           if (!hasName || !hasValue || !hasDescription) return "pending";
           return hasProvider ? "completed" : "active";
@@ -793,24 +499,13 @@ export default function Model({
             return "pending";
           if (!hasInputModalities) return "pending";
           return hasOutputModalities ? "completed" : "active";
-        case "modalities":
-          // Keep for backward compatibility, but use inputModalities and outputModalities instead
-          if (!hasName || !hasValue || !hasDescription || !hasProvider)
-            return "pending";
-          return hasModalities ? "completed" : "active";
         case "temperature":
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           if (!hasInputModalities || !hasOutputModalities) return "pending";
-          const enableTemperature = formData["enableTemperature"] as
-            | boolean
-            | null
-            | undefined;
-          const temperature_bounds = formData["temperature_bounds"] as
-            | TemperatureBounds
-            | null
-            | undefined;
-          return enableTemperature && temperature_bounds
+          const enableTemperature = formData["enableTemperature"] as boolean | null | undefined;
+          const temperature_level_ids = (formData["temperature_level_ids"] as string[] | null | undefined) || [];
+          return enableTemperature && temperature_level_ids.length > 0
             ? "completed"
             : enableTemperature
               ? "active"
@@ -819,22 +514,9 @@ export default function Model({
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           if (!hasInputModalities || !hasOutputModalities) return "pending";
-          // Check if pricing has any entries (new Record structure)
-          const enablePricing = formData["enablePricing"] as
-            | boolean
-            | null
-            | undefined;
-          const pricing = formData["pricing"] as
-            | Record<string, { unit_id: string; price: number }[]>
-            | null
-            | undefined;
-          const hasPricingEntries =
-            enablePricing &&
-            pricing &&
-            Object.values(pricing).some(
-              (entries) => entries && entries.length > 0
-            );
-          return hasPricingEntries
+          const enablePricing = formData["enablePricing"] as boolean | null | undefined;
+          const pricing_ids = (formData["pricing_ids"] as string[] | null | undefined) || [];
+          return enablePricing && pricing_ids.length > 0
             ? "completed"
             : enablePricing
               ? "active"
@@ -843,18 +525,9 @@ export default function Model({
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           if (!hasInputModalities || !hasOutputModalities) return "pending";
-          if (!modalities?.output?.includes("text")) return "pending";
-          const enableReasoningLevels = formData["enableReasoningLevels"] as
-            | boolean
-            | null
-            | undefined;
-          const reasoning_levels = formData["reasoning_levels"] as
-            | string[]
-            | null
-            | undefined;
-          return enableReasoningLevels &&
-            reasoning_levels &&
-            reasoning_levels.length > 0
+          const enableReasoningLevels = formData["enableReasoningLevels"] as boolean | null | undefined;
+          const reasoning_level_ids = (formData["reasoning_level_ids"] as string[] | null | undefined) || [];
+          return enableReasoningLevels && reasoning_level_ids.length > 0
             ? "completed"
             : enableReasoningLevels
               ? "active"
@@ -863,17 +536,9 @@ export default function Model({
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           if (!hasInputModalities || !hasOutputModalities) return "pending";
-          if (
-            !modalities?.input?.includes("audio") ||
-            !modalities?.output?.includes("audio")
-          )
-            return "pending";
-          const enableVoices = formData["enableVoices"] as
-            | boolean
-            | null
-            | undefined;
-          const voices = formData["voices"] as string[] | null | undefined;
-          return enableVoices && voices && voices.length > 0
+          const enableVoices = formData["enableVoices"] as boolean | null | undefined;
+          const voice_ids = (formData["voice_ids"] as string[] | null | undefined) || [];
+          return enableVoices && voice_ids.length > 0
             ? "completed"
             : enableVoices
               ? "active"
@@ -882,20 +547,9 @@ export default function Model({
           if (!hasName || !hasValue || !hasDescription || !hasProvider)
             return "pending";
           if (!hasInputModalities || !hasOutputModalities) return "pending";
-          if (
-            !modalities?.output?.includes("image") &&
-            !modalities?.output?.includes("audio")
-          )
-            return "pending";
-          const enableQualities = formData["enableQualities"] as
-            | boolean
-            | null
-            | undefined;
-          const qualities = formData["qualities"] as
-            | string[]
-            | null
-            | undefined;
-          return enableQualities && qualities && qualities.length > 0
+          const enableQualities = formData["enableQualities"] as boolean | null | undefined;
+          const quality_ids = (formData["quality_ids"] as string[] | null | undefined) || [];
+          return enableQualities && quality_ids.length > 0
             ? "completed"
             : enableQualities
               ? "active"
@@ -916,12 +570,12 @@ export default function Model({
         description:
           "Set the model name, description, value, departments, and switches.",
         resetFields: [
-          "name",
-          "description",
-          "value",
+          "name_id",
+          "description_id",
+          "value_id",
+          "active_flag_id",
+          "endpoint_id",
           "departmentIds",
-          "active",
-          "customModel",
           "enableModalities",
           "enableTemperature",
           "enablePricing",
@@ -934,7 +588,7 @@ export default function Model({
         id: "customUrl",
         title: "Custom Model URL",
         description: "Configure custom base URL for this model (optional).",
-        resetFields: ["baseUrl", "customModel"],
+        resetFields: ["endpoint_id"],
         optional: true,
       },
       {
@@ -947,47 +601,47 @@ export default function Model({
         id: "inputModalities",
         title: "Input Modalities",
         description: "Configure input modalities.",
-        resetFields: ["modalities"],
+        resetFields: ["input_modality_ids"],
       },
       {
         id: "outputModalities",
         title: "Output Modalities",
         description: "Configure output modalities.",
-        resetFields: ["modalities"],
+        resetFields: ["output_modality_ids"],
       },
       {
         id: "temperature",
         title: "Temperature",
-        description: "Configure temperature bounds (optional).",
-        resetFields: ["temperature_bounds", "enableTemperature"],
+        description: "Configure temperature levels (optional).",
+        resetFields: ["temperature_level_ids"],
         optional: true,
       },
       {
         id: "pricing",
         title: "Pricing",
         description: "Configure pricing for this model (optional).",
-        resetFields: ["pricing", "selectedPricingTypes", "enablePricing"],
+        resetFields: ["pricing_ids"],
         optional: true,
       },
       {
         id: "reasoning",
         title: "Reasoning Levels",
-        description: "Select reasoning levels (optional, text output only).",
-        resetFields: ["reasoning_levels", "enableReasoningLevels"],
+        description: "Select reasoning levels (optional).",
+        resetFields: ["reasoning_level_ids"],
         optional: true,
       },
       {
         id: "voices",
         title: "Voices",
-        description: "Select voices (optional, audio input/output only).",
-        resetFields: ["voices", "enableVoices"],
+        description: "Select voices (optional).",
+        resetFields: ["voice_ids"],
         optional: true,
       },
       {
         id: "qualities",
         title: "Qualities",
-        description: "Select qualities (optional, image/audio output only).",
-        resetFields: ["qualities", "enableQualities"],
+        description: "Select qualities (optional).",
+        resetFields: ["quality_ids"],
         optional: true,
       },
     ],
@@ -1007,30 +661,29 @@ export default function Model({
     []
   );
 
-  // Form field keys (for GenericForm)
+  // Form field keys (for GenericForm) - using resource IDs
   const formFieldKeys = useMemo(
     () => [
-      "name",
-      "description",
+      "name_id",
+      "description_id",
+      "active_flag_id",
+      "value_id",
+      "endpoint_id",
       "provider_id",
-      "value",
-      "active",
       "departmentIds",
-      "customModel",
-      "baseUrl",
       "enableModalities",
       "enableTemperature",
       "enablePricing",
       "enableVoices",
       "enableReasoningLevels",
       "enableQualities",
-      "temperature_bounds",
-      "pricing",
-      "selectedPricingTypes",
-      "modalities",
-      "reasoning_levels",
-      "voices",
-      "qualities",
+      "input_modality_ids",
+      "output_modality_ids",
+      "temperature_level_ids",
+      "pricing_ids",
+      "reasoning_level_ids",
+      "voice_ids",
+      "quality_ids",
     ],
     []
   );
@@ -1043,27 +696,29 @@ export default function Model({
   // Submit handler for GenericForm
   const handleSubmit = useCallback(
     async (formData: Record<string, unknown>): Promise<void> => {
-      const name = formData["name"] as string | null | undefined;
-      const description = formData["description"] as string | null | undefined;
+      // Extract resource IDs directly from formData (following Persona pattern)
+      const name_id = formData["name_id"] as string | null | undefined;
+      const description_id = formData["description_id"] as string | null | undefined;
+      const active_flag_id = formData["active_flag_id"] as string | null | undefined;
+      const value_id = formData["value_id"] as string | null | undefined;
+      const endpoint_id = formData["endpoint_id"] as string | null | undefined;
       const provider_id = formData["provider_id"] as string | null | undefined;
-      const value = formData["value"] as string | null | undefined;
-      const customModel = formData["customModel"] as boolean | null | undefined;
-      const baseUrl = formData["baseUrl"] as string | null | undefined;
+      const input_modality_ids = formData["input_modality_ids"] as string[] | null | undefined;
+      const output_modality_ids = formData["output_modality_ids"] as string[] | null | undefined;
+      const temperature_level_ids = formData["temperature_level_ids"] as string[] | null | undefined;
+      const reasoning_level_ids = formData["reasoning_level_ids"] as string[] | null | undefined;
+      const quality_ids = formData["quality_ids"] as string[] | null | undefined;
+      const pricing_ids = formData["pricing_ids"] as string[] | null | undefined;
+      const voice_ids = formData["voice_ids"] as string[] | null | undefined;
+      const departmentIds = formData["departmentIds"] as string[] | null | undefined;
 
-      if (!name || !name.trim()) {
-        setErrors((prev) => ({ ...prev, name: "Name is required" }));
+      // Validation
+      if (!name_id) {
+        setErrors((prev) => ({ ...prev, name_id: "Name is required" }));
         return;
       }
 
-      if (!description || !description.trim()) {
-        setErrors((prev) => ({
-          ...prev,
-          description: "Description is required",
-        }));
-        return;
-      }
-
-      if (!provider_id || !provider_id.trim()) {
+      if (!provider_id) {
         setErrors((prev) => ({
           ...prev,
           provider_id: "Provider is required",
@@ -1071,154 +726,41 @@ export default function Model({
         return;
       }
 
-      if (!value || !value.trim()) {
+      if (!value_id) {
         setErrors((prev) => ({
           ...prev,
-          value: "Model value is required",
+          value_id: "Model value is required",
         }));
         return;
       }
 
-      // Validate base_url if custom model
-      if (customModel && (!baseUrl || baseUrl.trim() === "")) {
-        setErrors((prev) => ({
-          ...prev,
-          baseUrl: "Base URL is required for custom models",
-        }));
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        setIsSubmitting(false);
         return;
       }
 
       setIsSubmitting(true);
 
       try {
-        // Transform temperature bounds for API (only if enabled)
-        const enableTemperature = formData["enableTemperature"] as
-          | boolean
-          | null
-          | undefined;
-        const temperature_bounds = formData["temperature_bounds"] as
-          | TemperatureBounds
-          | null
-          | undefined;
-        const apiTemperatureBounds =
-          enableTemperature && temperature_bounds
-            ? {
-                bounds_type: "range" as const,
-                lower_bound: temperature_bounds.lower ?? 0.0,
-                upper_bound: temperature_bounds.upper ?? 1.0,
-                values_array: null,
-              }
-            : undefined;
-
-        // Transform pricing for API (only if enabled)
-        const enablePricing = formData["enablePricing"] as
-          | boolean
-          | null
-          | undefined;
-        const pricing = formData["pricing"] as
-          | Record<string, { unit_id: string; price: number }[]>
-          | null
-          | undefined;
-        const apiPricing =
-          enablePricing && pricing && Object.keys(pricing).length > 0
-            ? Object.entries(pricing).flatMap(([type, entries]) =>
-                entries.map((entry) => ({
-                  pricing_type: type as "input" | "output" | "cached",
-                  unit_id: entry.unit_id,
-                  price: entry.price,
-                }))
-              )
-            : undefined;
-
-        // Transform modalities for API (default to text/text if not set)
-        // Note: Modalities removed from API type - not used in server
-
-        // Ensure profileId exists - required for API calls
-        if (!effectiveProfile?.id) {
-          toast.error("Profile not loaded. Please refresh the page.");
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Transform voices for API (only if enabled, otherwise all voices)
-        const enableVoices = formData["enableVoices"] as
-          | boolean
-          | null
-          | undefined;
-        const voices = formData["voices"] as string[] | null | undefined;
-        const apiVoices =
-          enableVoices && voices && voices.length > 0 ? voices : null;
-
-        const departmentIds = formData["departmentIds"] as
-          | string[]
-          | null
-          | undefined;
-        const active = formData["active"] as boolean | null | undefined;
-        const enableReasoningLevels = formData["enableReasoningLevels"] as
-          | boolean
-          | null
-          | undefined;
-        const reasoning_levels = formData["reasoning_levels"] as
-          | string[]
-          | null
-          | undefined;
-        const enableQualities = formData["enableQualities"] as
-          | boolean
-          | null
-          | undefined;
-        const qualities = formData["qualities"] as string[] | null | undefined;
-
-        // Transform voices for API - convert voice_ids (uuid[]) to voices (text[])
-        // The API expects voice_ids (uuid[]), but we have voices (text[])
-        // We need to map voice text to voice_ids from the modelData
-        const apiVoiceIds =
-          enableVoices && voices && voices.length > 0
-            ? (() => {
-                // Map voice text to voice_ids from modelData
-                const voiceIdMap = new Map<string, string>();
-                modelData?.voices?.forEach((v) => {
-                  if (v.id && v.voice) {
-                    voiceIdMap.set(v.voice, v.id);
-                  }
-                });
-                return voices
-                  .map((voiceText) => voiceIdMap.get(voiceText))
-                  .filter((id): id is string => !!id);
-              })()
-            : null;
-
-        // Transform modalities for API
-        const apiModalities = {
-          input: modalities.input || ["text"],
-          output: modalities.output || ["text"],
-        };
-
+        // Forward IDs directly to save endpoint (no transformations needed)
         await handleSaveModel({
           input_model_id: isEditMode && modelId ? modelId : null,
           provider_id: provider_id!,
-          name: name!,
-          description: description!,
-          active: active ?? true,
-          value: value!,
+          name_id: name_id || null,
+          description_id: description_id || null,
+          active_flag_id: active_flag_id || null,
+          value_id: value_id || null,
+          endpoint_id: endpoint_id || null,
           department_ids: departmentIds || null,
-          base_url: customModel ? baseUrl || null : null,
-          ...(apiTemperatureBounds
-            ? { temperature_bounds: apiTemperatureBounds }
-            : {}),
-          ...(apiPricing ? { pricing: apiPricing } : {}),
-          input_modalities: apiModalities.input,
-          output_modalities: apiModalities.output,
-          reasoning_levels:
-            enableReasoningLevels &&
-            reasoning_levels &&
-            reasoning_levels.length > 0
-              ? reasoning_levels
-              : null,
-          voice_ids: apiVoiceIds,
-          qualities:
-            enableQualities && qualities && qualities.length > 0
-              ? qualities
-              : null,
+          input_modality_ids: input_modality_ids && input_modality_ids.length > 0 ? input_modality_ids : null,
+          output_modality_ids: output_modality_ids && output_modality_ids.length > 0 ? output_modality_ids : null,
+          temperature_level_ids: temperature_level_ids && temperature_level_ids.length > 0 ? temperature_level_ids : null,
+          reasoning_level_ids: reasoning_level_ids && reasoning_level_ids.length > 0 ? reasoning_level_ids : null,
+          quality_ids: quality_ids && quality_ids.length > 0 ? quality_ids : null,
+          pricing_ids: pricing_ids && pricing_ids.length > 0 ? pricing_ids : null,
+          voice_ids: voice_ids && voice_ids.length > 0 ? voice_ids : null,
         });
         resetFormAndState();
         toast.success(
@@ -1240,7 +782,6 @@ export default function Model({
       handleSaveModel,
       resetFormAndState,
       router,
-      modelData,
     ]
   );
 
@@ -1305,21 +846,18 @@ export default function Model({
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
       onReset?: () => void;
     }) => {
-      // Get current form values with proper typing
-      const name = (stepFormData["name"] as string | null | undefined) ?? "";
-      const description =
-        (stepFormData["description"] as string | null | undefined) ?? "";
-      const value = (stepFormData["value"] as string | null | undefined) ?? "";
+      // Get current form values with proper typing (using resource IDs)
+      const name_id = (stepFormData["name_id"] as string | null | undefined) ?? null;
+      const description_id = (stepFormData["description_id"] as string | null | undefined) ?? null;
+      const active_flag_id = (stepFormData["active_flag_id"] as string | null | undefined) ?? null;
+      const value_id = (stepFormData["value_id"] as string | null | undefined) ?? null;
+      const endpoint_id = (stepFormData["endpoint_id"] as string | null | undefined) ?? null;
       const provider_id =
         (stepFormData["provider_id"] as string | null | undefined) ?? "";
-      const active =
-        (stepFormData["active"] as boolean | null | undefined) ?? true;
       const departmentIds =
         (stepFormData["departmentIds"] as string[] | null | undefined) || [];
-      const customModel =
-        (stepFormData["customModel"] as boolean | null | undefined) ?? false;
-      const baseUrl =
-        (stepFormData["baseUrl"] as string | null | undefined) ?? "";
+      const enableModalities =
+        (stepFormData["enableModalities"] as boolean | null | undefined) ?? true;
       const enableTemperature =
         (stepFormData["enableTemperature"] as boolean | null | undefined) ??
         false;
@@ -1333,27 +871,20 @@ export default function Model({
       const enableQualities =
         (stepFormData["enableQualities"] as boolean | null | undefined) ??
         false;
-      const temperature_bounds = stepFormData["temperature_bounds"] as
-        | TemperatureBounds
-        | null
-        | undefined;
-      const pricing = stepFormData["pricing"] as
-        | Record<string, { unit_id: string; price: number }[]>
-        | null
-        | undefined;
-      const selectedPricingTypes =
-        (stepFormData["selectedPricingTypes"] as string[] | null | undefined) ||
-        [];
-      const modalities = (stepFormData["modalities"] as
-        | { input: string[]; output: string[] }
-        | null
-        | undefined) || { input: ["text"], output: ["text"] };
-      const reasoning_levels =
-        (stepFormData["reasoning_levels"] as string[] | null | undefined) || [];
-      const voices =
-        (stepFormData["voices"] as string[] | null | undefined) || [];
-      const qualities =
-        (stepFormData["qualities"] as string[] | null | undefined) || [];
+      const input_modality_ids =
+        (stepFormData["input_modality_ids"] as string[] | null | undefined) || [];
+      const output_modality_ids =
+        (stepFormData["output_modality_ids"] as string[] | null | undefined) || [];
+      const temperature_level_ids =
+        (stepFormData["temperature_level_ids"] as string[] | null | undefined) || [];
+      const reasoning_level_ids =
+        (stepFormData["reasoning_level_ids"] as string[] | null | undefined) || [];
+      const quality_ids =
+        (stepFormData["quality_ids"] as string[] | null | undefined) || [];
+      const pricing_ids =
+        (stepFormData["pricing_ids"] as string[] | null | undefined) || [];
+      const voice_ids =
+        (stepFormData["voice_ids"] as string[] | null | undefined) || [];
 
       switch (stepId) {
         case "basic":
@@ -1365,20 +896,32 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              editableTitle={{
-                value: name,
-                onChange: (value) => setStepFormData({ name: value || null }),
-                placeholder: "New Model",
-                defaultName: "New Model",
-                required: true,
-              }}
+              customHeader={
+                <Names
+                  name_id={name_id ?? null}
+                  name_resource={modelData?.name_resource ?? null}
+                  show_name={modelData?.show_name ?? true}
+                  name_suggestions={modelData?.name_suggestions ?? []}
+                  names={modelData?.names ?? []}
+                  disabled={isReadonly}
+                  onNameIdChange={(id) =>
+                    setStepFormData({ name_id: id })
+                  }
+                  placeholder="e.g., GPT-4"
+                  defaultName="New Model"
+                  required={modelData?.name_required ?? true}
+                  hideDescription={true}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={modelData?.name_agent_id ?? null}
+                />
+              }
               resetFields={[
-                "name",
-                "description",
-                "value",
+                "name_id",
+                "description_id",
+                "value_id",
+                "active_flag_id",
+                "endpoint_id",
                 "departmentIds",
-                "active",
-                "customModel",
                 "enableModalities",
                 "enableTemperature",
                 "enablePricing",
@@ -1390,49 +933,39 @@ export default function Model({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    data-testid="input-model-description"
-                    value={description}
-                    onChange={(e) =>
-                      setStepFormData({
-                        description: e.target.value || null,
-                      })
-                    }
-                    placeholder="Enter a brief description"
-                    rows={3}
-                    disabled={isReadonly}
-                    className={errors.description ? "border-destructive" : ""}
-                  />
-                  {errors.description && (
-                    <p className="text-sm text-destructive">
-                      {errors.description}
-                    </p>
-                  )}
-                </div>
+                <Descriptions
+                  description_id={description_id ?? null}
+                  description_resource={modelData?.description_resource ?? null}
+                  show_description={modelData?.show_description ?? true}
+                  description_suggestions={modelData?.description_suggestions ?? []}
+                  descriptions={modelData?.descriptions ?? []}
+                  disabled={isReadonly}
+                  onDescriptionIdChange={(id) =>
+                    setStepFormData({ description_id: id })
+                  }
+                  placeholder="Enter a brief description"
+                  required={modelData?.description_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={modelData?.description_agent_id ?? null}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="value">Value</Label>
-                  <Input
-                    id="value"
-                    data-testid="input-model-value"
-                    value={value}
-                    onChange={(e) =>
-                      setStepFormData({ value: e.target.value || null })
-                    }
-                    placeholder="Enter model value identifier (e.g., gpt-4, gemini-pro)"
-                    className={errors.value ? "border-destructive" : ""}
-                    disabled={isReadonly}
-                  />
-                  {errors.value && (
-                    <p className="text-sm text-destructive">{errors.value}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Unique identifier for this model (used in API calls)
-                  </p>
-                </div>
+                <Values
+                  value_ids={value_id ? [value_id] : []}
+                  value_resources={value_id && modelData?.value_resource ? [modelData.value_resource] : []}
+                  show_values={modelData?.show_value ?? true}
+                  value_suggestions={modelData?.value_suggestions ?? []}
+                  values={modelData?.values ?? []}
+                  disabled={isReadonly}
+                  onChange={(ids) =>
+                    setStepFormData({ value_id: ids.length > 0 ? ids[0] : null })
+                  }
+                  label="Value"
+                  placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
+                  required={modelData?.value_required ?? true}
+                  description="Unique identifier for this model (used in API calls)"
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={modelData?.value_agent_id ?? null}
+                />
 
                 {validDepartmentIds && validDepartmentIds.length > 1 && (
                   <div className="space-y-2">
@@ -1467,57 +1000,21 @@ export default function Model({
                   </div>
                 )}
 
-                <div className="space-y-2 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="active"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                        Active
-                      </Label>
-                      <Switch
-                        id="active"
-                        data-testid="switch-model-active"
-                        checked={active}
-                        onCheckedChange={(checked) =>
-                          setStepFormData({ active: checked })
-                        }
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Inactive models will not be available for selection
-                    </p>
-                  </div>
+                <Flags
+                  flag_id={active_flag_id ?? null}
+                  flag_resource={modelData?.flag_resource ?? null}
+                  show_flag={modelData?.show_flag ?? false}
+                  disabled={isReadonly}
+                  onFlagIdChange={(id) =>
+                    setStepFormData({ active_flag_id: id })
+                  }
+                  label="Active"
+                  helpText="Inactive models will not be available for selection"
+                  required={modelData?.flag_required ?? false}
+                  group_id={modelData?.group_id ?? null}
+                  agent_id={modelData?.flag_agent_id ?? null}
+                />
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="customModel"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                        Custom Model
-                      </Label>
-                      <Switch
-                        id="customModel"
-                        data-testid="switch-model-custom"
-                        checked={customModel}
-                        onCheckedChange={(checked) => {
-                          setStepFormData({
-                            customModel: checked,
-                            ...(checked ? {} : { baseUrl: null }),
-                          });
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Use a custom base URL for this model
-                    </p>
-                  </div>
 
                   <div className="space-y-2 pt-2">
                     <div className="space-y-1">
@@ -1534,27 +1031,16 @@ export default function Model({
                           data-testid="switch-model-temperature"
                           checked={enableTemperature}
                           onCheckedChange={(checked) => {
-                            if (checked) {
-                              setStepFormData({
-                                enableTemperature: true,
-                                temperature_bounds: temperature_bounds || {
-                                  type: "range",
-                                  lower: 0.0,
-                                  upper: 1.0,
-                                },
-                              });
-                            } else {
-                              setStepFormData({
-                                enableTemperature: false,
-                                temperature_bounds: null,
-                              });
-                            }
+                            setStepFormData({
+                              enableTemperature: checked,
+                              temperature_level_ids: checked ? temperature_level_ids : [],
+                            });
                           }}
                           disabled={isReadonly}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground pl-5">
-                        Configure temperature bounds for this model
+                        Configure temperature levels for this model
                       </p>
                     </div>
                   </div>
@@ -1576,10 +1062,7 @@ export default function Model({
                           onCheckedChange={(checked) => {
                             setStepFormData({
                               enablePricing: checked,
-                              pricing: checked ? pricing || {} : {},
-                              selectedPricingTypes: checked
-                                ? selectedPricingTypes || []
-                                : [],
+                              pricing_ids: checked ? pricing_ids : [],
                             });
                           }}
                           disabled={isReadonly}
@@ -1606,20 +1089,10 @@ export default function Model({
                           data-testid="switch-model-reasoning"
                           checked={enableReasoningLevels}
                           onCheckedChange={(checked) => {
-                            if (checked) {
-                              setStepFormData({
-                                enableReasoningLevels: true,
-                                reasoning_levels:
-                                  reasoning_levels.length > 0
-                                    ? reasoning_levels
-                                    : [],
-                              });
-                            } else {
-                              setStepFormData({
-                                enableReasoningLevels: false,
-                                reasoning_levels: null,
-                              });
-                            }
+                            setStepFormData({
+                              enableReasoningLevels: checked,
+                              reasoning_level_ids: checked ? reasoning_level_ids : [],
+                            });
                           }}
                           disabled={isReadonly}
                         />
@@ -1635,21 +1108,37 @@ export default function Model({
           );
 
         case "customUrl":
-          if (!customModel) return null;
+          if (!endpoint_id && !enableModalities) return null; // Show if endpoint is set or modalities enabled
           return (
-            <CustomUrlStep
+            <StepCard
               stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              baseUrl={baseUrl}
-              setStepFormData={setStepFormData}
-              errors={errors}
-              isSubmitting={isSubmitting}
+              resetFields={["endpoint_id"]}
               {...(onReset ? { onReset } : {})}
-            />
+              resetLabel="Reset"
+            >
+              <Endpoints
+                endpoint_ids={endpoint_id ? [endpoint_id] : []}
+                endpoint_resources={endpoint_id && modelData?.endpoint_resource ? [modelData.endpoint_resource] : []}
+                show_endpoints={modelData?.show_endpoint ?? true}
+                endpoint_suggestions={modelData?.endpoint_suggestions ?? []}
+                endpoints={modelData?.endpoints ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ endpoint_id: ids.length > 0 ? ids[0] : null })
+                }
+                label="Endpoint"
+                placeholder="Select endpoint base URL"
+                required={modelData?.endpoint_required ?? false}
+                description="Custom base URL for this model"
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.endpoint_agent_id ?? null}
+              />
+            </StepCard>
           );
 
         case "provider":
@@ -1712,6 +1201,7 @@ export default function Model({
           );
 
         case "inputModalities":
+          if (!enableModalities) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1720,26 +1210,31 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["modalities"]}
+              resetFields={["input_modality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <InputModalityCardGrid
-                selectedIds={modalities.input || ["text"]}
-                onSelect={(ids) =>
-                  setStepFormData({
-                    modalities: {
-                      input: ids.length > 0 ? ids : ["text"],
-                      output: modalities.output || ["text"],
-                    },
-                  })
+              <Modalities
+                modality_ids={input_modality_ids}
+                modality_resources={modelData?.input_modality_resources ?? []}
+                show_modalities={modelData?.show_input_modalities ?? true}
+                modality_suggestions={modelData?.input_modality_suggestions ?? []}
+                modalities={modelData?.input_modalities ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ input_modality_ids: ids })
                 }
-                readonly={isReadonly}
+                label="Input Modalities"
+                placeholder="Select input modalities"
+                required={modelData?.input_modalities_required ?? true}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.input_modalities_agent_id ?? null}
               />
             </StepCard>
           );
 
         case "outputModalities":
+          if (!enableModalities) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1748,21 +1243,25 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["modalities"]}
+              resetFields={["output_modality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <OutputModalityCardGrid
-                selectedIds={modalities.output || ["text"]}
-                onSelect={(ids) =>
-                  setStepFormData({
-                    modalities: {
-                      input: modalities.input || ["text"],
-                      output: ids.length > 0 ? ids : ["text"],
-                    },
-                  })
+              <Modalities
+                modality_ids={output_modality_ids}
+                modality_resources={modelData?.output_modality_resources ?? []}
+                show_modalities={modelData?.show_output_modalities ?? true}
+                modality_suggestions={modelData?.output_modality_suggestions ?? []}
+                modalities={modelData?.output_modalities ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ output_modality_ids: ids })
                 }
-                readonly={isReadonly}
+                label="Output Modalities"
+                placeholder="Select output modalities"
+                required={modelData?.output_modalities_required ?? true}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.output_modalities_agent_id ?? null}
               />
             </StepCard>
           );
@@ -1777,24 +1276,25 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["temperature_bounds", "enableTemperature"]}
+              resetFields={["temperature_level_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <TemperatureBoundsPicker
-                bounds={
-                  temperature_bounds || {
-                    type: "range",
-                    lower: 0.0,
-                    upper: 1.0,
-                  }
-                }
-                onBoundsChange={(bounds) =>
-                  setStepFormData({
-                    temperature_bounds: bounds,
-                  })
-                }
+              <TemperatureLevels
+                temperature_level_ids={temperature_level_ids}
+                temperature_level_resources={modelData?.temperature_level_resources ?? []}
+                show_temperature_levels={modelData?.show_temperature_levels ?? true}
+                temperature_level_suggestions={modelData?.temperature_level_suggestions ?? []}
+                temperature_levels={modelData?.temperature_levels ?? []}
                 disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ temperature_level_ids: ids })
+                }
+                label="Temperature Levels"
+                placeholder="Select temperature levels"
+                required={modelData?.temperature_levels_required ?? false}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.temperature_levels_agent_id ?? null}
               />
             </StepCard>
           );
@@ -1802,152 +1302,38 @@ export default function Model({
         case "pricing":
           if (!enablePricing) return null;
           return (
-            <>
-              <StepCard
-                stepStatus={stepStatus}
-                stepNumber={stepNumber}
-                stepTitle={stepTitle}
-                stepDescription={stepDescription}
-                isReadonly={isReadonly}
-                isEditMode={isEditMode}
-                resetFields={[
-                  "pricing",
-                  "selectedPricingTypes",
-                  "enablePricing",
-                ]}
-                {...(onReset ? { onReset } : {})}
-                resetLabel="Reset"
-              >
-                <PricingTypeCardGrid
-                  selectedIds={selectedPricingTypes}
-                  onSelect={(ids) => {
-                    const newPricing = { ...pricing };
-                    const newSelectedTypes = ids;
-
-                    Object.keys(newPricing).forEach((type) => {
-                      if (!newSelectedTypes.includes(type)) {
-                        delete newPricing[type];
-                      }
-                    });
-
-                    newSelectedTypes.forEach((type) => {
-                      if (!newPricing[type]) {
-                        newPricing[type] = [];
-                      }
-                    });
-
-                    setStepFormData({
-                      selectedPricingTypes: newSelectedTypes,
-                      pricing: newPricing,
-                    });
-                  }}
-                  readonly={isReadonly}
-                />
-              </StepCard>
-
-              {selectedPricingTypes.map((pricingType) => {
-                const pricingEntries = pricing?.[pricingType] || [];
-                const selectedUnitIds = pricingEntries.map((e) => e.unit_id);
-                const typeLabel =
-                  pricingType.charAt(0).toUpperCase() + pricingType.slice(1);
-
-                return (
-                  <StepCard
-                    key={pricingType}
-                    stepStatus={
-                      pricingEntries.length > 0 ? "completed" : stepStatus
-                    }
-                    stepNumber={stepNumber}
-                    stepTitle={`${typeLabel} Pricing`}
-                    stepDescription={`Configure pricing entries for ${pricingType} tokens`}
-                    isReadonly={isReadonly}
-                    isEditMode={isEditMode}
-                    resetFields={["pricing"]}
-                    {...(onReset ? { onReset } : {})}
-                    resetLabel="Reset"
-                  >
-                    <UnitCardGrid
-                      units={units}
-                      selectedIds={selectedUnitIds}
-                      onSelect={(unitIds) => {
-                        const newPricing = { ...pricing };
-                        if (!newPricing[pricingType]) {
-                          newPricing[pricingType] = [];
-                        }
-
-                        const currentEntries = newPricing[pricingType] || [];
-                        const currentUnitIds = new Set(
-                          currentEntries.map((e) => e.unit_id)
-                        );
-                        const newUnitIds = new Set(unitIds);
-                        const addedUnitIds = unitIds.filter(
-                          (id) => !currentUnitIds.has(id)
-                        );
-                        const removedUnitIds = Array.from(
-                          currentUnitIds
-                        ).filter((id) => !newUnitIds.has(id));
-
-                        const updatedEntries = currentEntries.filter(
-                          (e) => !removedUnitIds.includes(e.unit_id)
-                        );
-
-                        addedUnitIds.forEach((unitId) => {
-                          updatedEntries.push({
-                            unit_id: unitId,
-                            price: 0.0,
-                          });
-                        });
-
-                        newPricing[pricingType] = updatedEntries;
-
-                        setStepFormData({
-                          pricing: newPricing,
-                        });
-                      }}
-                      readonly={isReadonly}
-                      enablePriceEditing={true}
-                      prices={Object.fromEntries(
-                        pricingEntries.map((e) => [e.unit_id, e.price])
-                      )}
-                      onPriceChange={(unitId, price) => {
-                        const newPricing = { ...pricing };
-                        if (!newPricing[pricingType]) {
-                          newPricing[pricingType] = [];
-                        }
-
-                        const entries = newPricing[pricingType] || [];
-                        const entryIndex = entries.findIndex(
-                          (e) => e.unit_id === unitId
-                        );
-
-                        if (entryIndex >= 0 && entries[entryIndex]) {
-                          entries[entryIndex] = {
-                            unit_id: entries[entryIndex].unit_id,
-                            price,
-                          };
-                        } else {
-                          entries.push({
-                            unit_id: unitId,
-                            price,
-                          });
-                        }
-
-                        newPricing[pricingType] = entries;
-
-                        setStepFormData({
-                          pricing: newPricing,
-                        });
-                      }}
-                    />
-                  </StepCard>
-                );
-              })}
-            </>
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              resetFields={["pricing_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Pricing
+                pricing_ids={pricing_ids}
+                pricing_resources={modelData?.pricing_resources ?? []}
+                show_pricing={modelData?.show_pricing ?? true}
+                pricing_suggestions={modelData?.pricing_suggestions ?? []}
+                pricings={modelData?.pricings ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ pricing_ids: ids })
+                }
+                label="Pricing"
+                placeholder="Select pricing configurations"
+                required={modelData?.pricing_required ?? false}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.pricing_agent_id ?? null}
+              />
+            </StepCard>
           );
 
         case "reasoning":
-          if (!modalities.output?.includes("text") || !enableReasoningLevels)
-            return null;
+          if (!enableReasoningLevels) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1956,29 +1342,31 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["reasoning_levels", "enableReasoningLevels"]}
+              resetFields={["reasoning_level_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <ReasoningCardGrid
-                selectedIds={reasoning_levels}
-                onSelect={(ids) =>
-                  setStepFormData({
-                    reasoning_levels: ids,
-                  })
+              <ReasoningLevels
+                reasoning_level_ids={reasoning_level_ids}
+                reasoning_level_resources={modelData?.reasoning_level_resources ?? []}
+                show_reasoning_levels={modelData?.show_reasoning_levels ?? true}
+                reasoning_level_suggestions={modelData?.reasoning_level_suggestions ?? []}
+                reasoning_levels={modelData?.reasoning_levels ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ reasoning_level_ids: ids })
                 }
-                readonly={isReadonly}
+                label="Reasoning Levels"
+                placeholder="Select reasoning levels"
+                required={modelData?.reasoning_levels_required ?? false}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.reasoning_levels_agent_id ?? null}
               />
             </StepCard>
           );
 
         case "voices":
-          if (
-            !modalities.input?.includes("audio") ||
-            !modalities.output?.includes("audio") ||
-            !enableVoices
-          )
-            return null;
+          if (!enableVoices) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1987,66 +1375,31 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["voices", "enableVoices"]}
+              resetFields={["voice_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4 text-muted-foreground" />
-                  <Label
-                    htmlFor="enable-voices"
-                    className="text-sm font-medium"
-                  >
-                    Enable Voice Selection
-                  </Label>
-                  <Switch
-                    id="enable-voices"
-                    checked={enableVoices}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setStepFormData({
-                          enableVoices: true,
-                          voices: voices.length > 0 ? voices : [],
-                        });
-                      } else {
-                        setStepFormData({
-                          enableVoices: false,
-                          voices: null,
-                        });
-                      }
-                    }}
-                    disabled={isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Select specific voices for this model. If disabled or none
-                  selected, all available voices are allowed.
-                </p>
-              </div>
-              {enableVoices && (
-                <div className="pt-2">
-                  <VoiceCardGrid
-                    selectedIds={voices}
-                    onSelect={(ids) =>
-                      setStepFormData({
-                        voices: ids.length > 0 ? ids : [],
-                      })
-                    }
-                    readonly={isReadonly}
-                  />
-                </div>
-              )}
+              <Voices
+                voice_ids={voice_ids}
+                voice_resources={modelData?.voice_resources ?? []}
+                show_voices={modelData?.show_voices ?? true}
+                voice_suggestions={modelData?.voice_suggestions ?? []}
+                voices={modelData?.voices ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ voice_ids: ids })
+                }
+                label="Voices"
+                placeholder="Select voices"
+                required={modelData?.voices_required ?? false}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.voices_agent_id ?? null}
+              />
             </StepCard>
           );
 
         case "qualities":
-          if (
-            (!modalities.output?.includes("image") &&
-              !modalities.output?.includes("audio")) ||
-            !enableQualities
-          )
-            return null;
+          if (!enableQualities) return null;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2055,56 +1408,26 @@ export default function Model({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={["qualities", "enableQualities"]}
+              resetFields={["quality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                  <Image
-                    className="h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Label
-                    htmlFor="enable-qualities"
-                    className="text-sm font-medium"
-                  >
-                    Enable Qualities
-                  </Label>
-                  <Switch
-                    id="enable-qualities"
-                    checked={enableQualities}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setStepFormData({
-                          enableQualities: true,
-                          qualities: qualities.length > 0 ? qualities : [],
-                        });
-                      } else {
-                        setStepFormData({
-                          enableQualities: false,
-                          qualities: null,
-                        });
-                      }
-                    }}
-                    disabled={isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Select specific quality levels for this model. If disabled,
-                  all available quality levels are allowed.
-                </p>
-              </div>
-              {enableQualities && (
-                <div className="pt-2">
-                  <QualityCardGrid
-                    selectedIds={qualities}
-                    onSelect={(ids) => setStepFormData({ qualities: ids })}
-                    readonly={isReadonly}
-                  />
-                </div>
-              )}
+              <Qualities
+                quality_ids={quality_ids}
+                quality_resources={modelData?.quality_resources ?? []}
+                show_qualities={modelData?.show_qualities ?? true}
+                quality_suggestions={modelData?.quality_suggestions ?? []}
+                qualities={modelData?.qualities ?? []}
+                disabled={isReadonly}
+                onChange={(ids) =>
+                  setStepFormData({ quality_ids: ids })
+                }
+                label="Qualities"
+                placeholder="Select quality levels"
+                required={modelData?.qualities_required ?? false}
+                group_id={modelData?.group_id ?? null}
+                agent_id={modelData?.qualities_agent_id ?? null}
+              />
             </StepCard>
           );
 
@@ -2120,7 +1443,7 @@ export default function Model({
       validDepartmentIds,
       departments,
       providers,
-      units,
+      modelData,
     ]
   );
 
