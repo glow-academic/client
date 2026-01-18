@@ -1,10 +1,10 @@
-# WebSocket v3 Standards
+# WebSocket v4 Standards
 
-This document defines the standards and best practices for WebSocket v3 event handlers. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
+This document defines the standards and best practices for WebSocket v4 event handlers. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
 
 ## Overview
 
-WebSocket v3 endpoints follow the agents-style architecture pattern, which uses:
+WebSocket v4 endpoints follow the agents-style architecture pattern, which uses:
 
 - **PostgreSQL functions** with `RETURNS TABLE` instead of raw SQL queries
 - **Composite types** in the `types` schema for strongly typed nested structures
@@ -135,30 +135,30 @@ For main operations (generate, regenerate), **ALL** of the following event files
 
 1. **`generate.py`**: Handles the generation/processing event (client-to-server) - **REQUIRED**
    - Event name: `rubric_generate`, `scenario_generate`, etc.
-   - SQL function: `socket_get_rubric_run_context_and_create_run_v3(...)`
+   - SQL function: `socket_get_rubric_run_context_and_create_run_v4(...)`
    - Runs AI agent, performs database operations
    - Emits progress/complete/error events via `emit_to_internal()` (server-to-server)
 
 2. **`regenerate.py`**: Handles regeneration events (client-to-server) - **REQUIRED**
    - Event name: `rubric_regenerate`, `scenario_regenerate`, etc.
-   - SQL function: `socket_get_rubric_regeneration_run_context_and_create_run_v3(...)`
+   - SQL function: `socket_get_rubric_regeneration_run_context_and_create_run_v4(...)`
    - Uses `group_id` to get previous context from previous run
    - Takes user instructions for second turn
    - Runs same agent as generate (second turn)
 
 3. **`progress.py`**: Handles progress update events (server-to-server) - **REQUIRED**
    - Event name: `rubric_progress`, `scenario_progress`, etc.
-   - SQL function: `socket_rubric_generation_progress_v3(...)` (can be no-op)
+   - SQL function: `socket_rubric_generation_progress_v4(...)` (can be no-op)
    - Receives internal event, emits progress events to client with typed payload
 
 4. **`complete.py`**: Handles the completion event (server-to-server) - **REQUIRED**
    - Event name: `rubric_complete`, `scenario_complete`, etc.
-   - SQL function: `socket_rubric_generation_complete_v3(...)` (can be no-op)
+   - SQL function: `socket_rubric_generation_complete_v4(...)` (can be no-op)
    - Receives internal event, emits final completion event to client with typed payload
 
 5. **`error.py`**: Handles error events (server-to-server) - **REQUIRED**
    - Event name: `rubric_error`, `scenario_error`, etc.
-   - SQL function: `socket_rubric_generation_error_v3(...)` (can be no-op)
+   - SQL function: `socket_rubric_generation_error_v4(...)` (can be no-op)
    - Receives internal event, emits error events to client with typed payload
 
 ### 7. Tool Event Structure - Tools Under Agents
@@ -317,7 +317,7 @@ Similar pattern but with `tool_id` instead of `agent_id`:
 
 ### 11. Database Connection Pattern
 
-- **Use `get_db_connection()` helper**: Always use `get_db_connection()` from `app.infra.v3.websocket.get_db_connection` instead of manual pool checks
+- **Use `get_db_connection()` helper**: Always use `get_db_connection()` from `app.infra.v4.websocket.get_db_connection` instead of manual pool checks
 - **No manual pool checks**: Never check `get_pool()` manually - `get_db_connection()` handles it and raises `RuntimeError` if pool unavailable
 - **Consistent with HTTP routes**: Same pattern as HTTP routes using `Depends(get_db)` - clean, consistent, and maintainable
 - **Error handling**: Catch `RuntimeError` and emit error events (don't log - Socket.IO already logs framework errors)
@@ -411,10 +411,10 @@ All WebSocket endpoints should use the infrastructure helpers to ensure consiste
 ### Client Event Handler (Using Infrastructure Helpers)
 
 ```python
-from app.infra.v3.websocket.get_db_connection import get_db_connection
-from app.infra.v3.websocket.handler_wrapper import handle_client_event
-from app.infra.v3.websocket.openapi_helpers import register_client_endpoint
-from app.infra.v3.websocket.typed_emit import emit_to_client, emit_to_internal
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.handler_wrapper import handle_client_event
+from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
+from app.infra.v4.websocket.typed_emit import emit_to_client, emit_to_internal
 from app.main import sio
 from app.sql.types import (
     GetRubricRunContextApiRequest,
@@ -471,9 +471,9 @@ async def _rubric_generate_impl(
 ### Internal Event Handler (Using Infrastructure Helpers)
 
 ```python
-from app.infra.v3.websocket.get_db_connection import get_db_connection
-from app.infra.v3.websocket.handler_wrapper import handle_internal_event
-from app.infra.v3.websocket.typed_emit import emit_to_client
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.handler_wrapper import handle_internal_event
+from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
 from app.sql.types import (
     UpdateStandardDescriptionsApiRequest,
@@ -515,7 +515,7 @@ logger = get_logger(__name__)
 logger.info(f"Received rubric_generate request from {sid}")
 
 # ✅ GOOD: Use get_db_connection() helper - NO logger imports
-from app.infra.v3.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 
 try:
     async with get_db_connection() as conn:
@@ -554,7 +554,7 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
     profile_id = data.get("profile_id")  # Never do this!
 
 # ✅ GOOD: Retrieve profile_id from sid lookup
-from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 
 @sio.event
 async def rubric_generate(sid: str, data: dict[str, Any]) -> None:

@@ -20,17 +20,11 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Settings } from "@/components/resources/Settings";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import type { ResourceType } from "@/lib/resources/types";
 import { parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
@@ -49,15 +43,9 @@ type CreateDraftDescriptionsOut = OutputOf<
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
-type CreateDraftSettingsOut = OutputOf<
-  "/api/v4/resources/settings",
-  "post"
->;
+type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 type PatchDepartmentDraftIn = InputOf<"/api/v4/departments/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<
-  "/api/v4/departments/draft",
-  "patch"
->;
+type PatchDepartmentDraftOut = OutputOf<"/api/v4/departments/draft", "patch">;
 
 type DepartmentData = OutputOf<"/api/v4/departments/get", "post">;
 
@@ -99,9 +87,24 @@ function DepartmentComponent({
 }: DepartmentProps) {
   const router = useRouter();
   const isEditMode = !!departmentId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+
+  // Generation state for AI workflows
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
+
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
 
   // Local form state (not in URL) - stores only resource IDs
   // Display values are managed inside resource components
@@ -270,24 +273,148 @@ function DepartmentComponent({
     }
   }, [draftId, selectedDraftId, setSelectedDraftId]);
 
-  // Listen for full-page-generate event from layout
+  // WebSocket handlers for AI generation - unified handler for all resource types
   useEffect(() => {
-    const handleFullPageGenerate = () => {
-      // TODO: Implement generation logic for departments
-      // For now, check if generation capability exists
-      if (departmentData?.general_agent_id) {
-        // When generation is implemented, trigger it here
-        // handleGenerateResources([...]);
-        toast.info("Generation not yet implemented for departments");
+    if (!socket || !isConnected) return;
+
+    // Use single group_id from departmentData
+    const currentGroupId = departmentData?.group_id;
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      active_flag_id?: string | null;
+      settings_ids?: string[];
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "department" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this department or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "settings",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        // Update formState with the resource ID that was generated
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.name_id) updates.name_id = data.name_id;
+          if (data.description_id) updates.description_id = data.description_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.settings_ids && data.settings_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newSettingsIds = data.settings_ids.filter(
+              (id) => !prev.settings_ids.includes(id)
+            );
+            updates.settings_ids = [...prev.settings_ids, ...newSettingsIds];
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
       }
     };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [departmentData?.general_agent_id]);
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "department" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this department or wrong group_id
+      }
+      // Handle progress updates if needed
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "department" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this department or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "settings",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    // Listen to department-specific events filtered by artifact_type and group_id
+    socket.on("department_generation_progress", handleGenerationProgress);
+    socket.on("department_generation_complete", handleGenerationComplete);
+    socket.on("department_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("department_generation_progress", handleGenerationProgress);
+      socket.off("department_generation_complete", handleGenerationComplete);
+      socket.off("department_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, departmentData?.group_id]);
 
   // Use ref to stabilize patchDepartmentDraftAction to prevent effect recreation when prop reference changes
-  const patchDepartmentDraftActionRef = React.useRef(patchDepartmentDraftAction);
+  const patchDepartmentDraftActionRef = React.useRef(
+    patchDepartmentDraftAction
+  );
   React.useEffect(() => {
     patchDepartmentDraftActionRef.current = patchDepartmentDraftAction;
   }, [patchDepartmentDraftAction]);
@@ -378,6 +505,92 @@ function DepartmentComponent({
     // patchDepartmentDraftAction and setDraftId are accessed via refs
   ]);
 
+  // Helper function to determine agent_type from resource types
+  // Departments don't have basic/content agents, so return individual agent IDs
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
+      if (resourceTypes.length === 1) {
+        // Single resource type - map to agent_type
+        const agentTypeMap: Partial<Record<ResourceType, string>> = {
+          names: "name",
+          descriptions: "description",
+          flags: "flags",
+          settings: "settings",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType] ?? null;
+        }
+      }
+      return null;
+    },
+    []
+  );
+
+  // Multi-generation handler - accepts list of resource types and optional user instructions
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      // Read draftId from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+      // Emit department_generate event
+      socket.emit("department_generate", {
+        resource_types: resourceTypes,
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        draft_id: draftId || null,
+        mcp: false,
+        department_id: departmentId || null,
+      });
+    },
+    [socket, isConnected, departmentId]
+  );
+
+  // Individual generation handlers - generate directly without modals
+  const handleGenerateName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDescription = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["descriptions"],
+        determineAgentType(["descriptions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateSettings = useCallback(
+    async () =>
+      handleGenerateResources(["settings"], determineAgentType(["settings"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
@@ -433,11 +646,15 @@ function DepartmentComponent({
       try {
         await saveDepartmentAction({
           body: {
-            input_department_id: isEditMode && departmentId ? departmentId : null,
+            input_department_id:
+              isEditMode && departmentId ? departmentId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
-            settings_id: formState.settings_ids && formState.settings_ids.length > 0 ? formState.settings_ids[0] : null,
+            settings_id:
+              formState.settings_ids && formState.settings_ids.length > 0
+                ? formState.settings_ids[0]
+                : null,
           },
         });
         toast.success(
@@ -569,12 +786,16 @@ function DepartmentComponent({
                   name_id={formState.name_id ?? null}
                   name_resource={currentDepartmentData?.name_resource ?? null}
                   show_name={currentDepartmentData?.show_name ?? true}
-                  name_suggestions={currentDepartmentData?.name_suggestions ?? []}
+                  name_suggestions={
+                    currentDepartmentData?.name_suggestions ?? []
+                  }
                   names={currentDepartmentData?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGenerating("names")}
                   placeholder="e.g., Computer Science"
                   defaultName="New Department"
                   required={currentDepartmentData?.name_required ?? false}
@@ -609,9 +830,13 @@ function DepartmentComponent({
                       description_id: descriptionId,
                     }))
                   }
+                  onGenerate={handleGenerateDescription}
+                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Enter a brief description (optional)"
-                  required={currentDepartmentData?.description_required ?? false}
+                  required={
+                    currentDepartmentData?.description_required ?? false
+                  }
                   rows={4}
                   data-testid="input-department-description"
                   group_id={currentDepartmentData?.group_id ?? null}
@@ -624,6 +849,7 @@ function DepartmentComponent({
                   flag_id={formState.active_flag_id ?? null}
                   flag_resource={currentDepartmentData?.flag_resource ?? null}
                   show_flag={currentDepartmentData?.show_flag ?? false}
+                  flags={currentDepartmentData?.flags ?? []}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
                     setFormState((prev) => ({
@@ -631,6 +857,8 @@ function DepartmentComponent({
                       active_flag_id: flagId,
                     }))
                   }
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("flags")}
                   label="Active"
                   helpText="Inactive departments will not be visible to users"
                   required={currentDepartmentData?.flag_required ?? false}
@@ -654,6 +882,8 @@ function DepartmentComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, settings_ids: ids }))
                   }
+                  onGenerate={handleGenerateSettings}
+                  isGenerating={isGenerating("settings")}
                   required={currentDepartmentData?.settings_required ?? false}
                   group_id={currentDepartmentData?.group_id ?? null}
                   agent_id={currentDepartmentData?.settings_agent_id ?? null}
@@ -683,6 +913,11 @@ function DepartmentComponent({
       createDescriptionsAction,
       createFlagsAction,
       createSettingsAction,
+      handleGenerateName,
+      handleGenerateDescription,
+      handleGenerateFlags,
+      handleGenerateSettings,
+      isGenerating,
     ]
   );
 

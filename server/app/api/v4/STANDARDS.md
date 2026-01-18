@@ -1,10 +1,10 @@
-# API v3 Standards
+# API v4 Standards
 
-This document defines the standards and best practices for API v3 endpoints. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
+This document defines the standards and best practices for API v4 endpoints. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
 
 ## Overview
 
-API v3 endpoints follow the agents-style architecture pattern, which uses:
+API v4 endpoints follow the agents-style architecture pattern, which uses:
 
 - **PostgreSQL functions** with `RETURNS TABLE` instead of raw SQL queries
 - **Composite types** in the `types` schema for strongly typed nested structures
@@ -33,7 +33,7 @@ API v3 endpoints follow the agents-style architecture pattern, which uses:
 
 ### 2. PostgreSQL Functions with Composite Types
 
-- **One function per route**: Function name follows `api_{operation}_{resource}_v3` pattern
+- **One function per route**: Function name follows `api_{operation}_{resource}_v4` pattern
 - **RETURNS TABLE**: Functions return structured rows with explicit column types
 - **Composite types**: Nested structures use composite types in `types` schema
 - **Idempotent**: Files use `BEGIN; DROP FUNCTION; DROP TYPE; CREATE TYPE; CREATE FUNCTION; COMMIT;`
@@ -61,7 +61,7 @@ When defining composite types, use native PostgreSQL types (`uuid`, `timestamptz
 1. **Use native PostgreSQL types for IDs and timestamps:**
    ```sql
    -- ✅ Good: native types
-   CREATE TYPE types.q_list_agents_v3_agent AS (
+   CREATE TYPE types.q_list_agents_v4_agent AS (
        agent_id uuid,           -- Not text!
        model_id uuid,           -- Not text!
        updated_at timestamptz,  -- Not text!
@@ -238,22 +238,22 @@ The `make sql-format` command includes `check_enum_comparisons.py` which validat
 **Example Structure:**
 
 ```
-server/app/api/v3/agents/
+server/app/api/v4/artifacts/agent/
 ├── list.py          # Route handler
-├── detail.py        # Route handler
-└── create.py        # Route handler
+├── get.py           # Route handler
+└── draft.py         # Route handler
 
 server/app/sql/v4/agents/
 ├── get_agents_list_complete.sql    # One SQL file per route
-├── get_agent_detail_complete.sql  # One SQL file per route
-└── create_agent_complete.sql      # One SQL file per route
+├── get_agent_complete.sql          # One SQL file per route
+└── patch_agent_draft_complete.sql  # One SQL file per route
 ```
 
 ## Composite Types
 
 - **Schema**: All query-specific composite types live in `types` schema
-- **Naming**: `types.q_{operation}_{resource}_v3_{item_name}` (e.g., `types.q_list_agents_v3_agent`)
-- **Versioned**: Include `v3` in type names for future compatibility
+- **Naming**: `types.q_{operation}_{resource}_v4_{item_name}` (e.g., `types.q_list_agents_v4_agent`)
+- **Versioned**: Include `v4` in type names for future compatibility
 - **Shared**: Types can be reused across API, WebSocket, and infrastructure endpoints
 
 ## Type Generation
@@ -377,7 +377,7 @@ GROUP BY g.id
 ### Simple Function (No Composite Types)
 
 ```sql
-CREATE OR REPLACE FUNCTION api_delete_agent_v3(
+CREATE OR REPLACE FUNCTION api_delete_agent_v4(
     agent_id uuid,
     profile_id uuid
 )
@@ -397,7 +397,7 @@ $$;
 ### Function with Composite Type Array
 
 ```sql
-CREATE TYPE types.q_list_agents_v3_agent AS (
+CREATE TYPE types.q_list_agents_v4_agent AS (
     agent_id uuid,                -- ✅ Native uuid type
     name text,
     description text,
@@ -406,10 +406,10 @@ CREATE TYPE types.q_list_agents_v3_agent AS (
     department_ids text[],         -- ✅ text[] for arrays (frontend compatibility)
 );
 
-CREATE OR REPLACE FUNCTION api_list_agents_v3(profile_id uuid)
+CREATE OR REPLACE FUNCTION api_list_agents_v4(profile_id uuid)
 RETURNS TABLE (
     actor_name text,
-    agents types.q_list_agents_v3_agent[]
+    agents types.q_list_agents_v4_agent[]
 )
 LANGUAGE sql
 STABLE
@@ -419,10 +419,10 @@ SELECT
     COALESCE(
         ARRAY_AGG(
             (a.id, a.name, a.description, a.model_id, a.updated_at, 
-             ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at))::types.q_list_agents_v3_agent
+             ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at))::types.q_list_agents_v4_agent
             ORDER BY a.name
         ),
-        '{}'::types.q_list_agents_v3_agent[]
+        '{}'::types.q_list_agents_v4_agent[]
     ) as agents
 FROM agents a
 -- ...
@@ -446,7 +446,7 @@ json_agg(
 
 -- ✅ Good: Composite type array
 ARRAY_AGG(
-    (a.id, a.name)::types.q_list_agents_v3_agent
+    (a.id, a.name)::types.q_list_agents_v4_agent
     ORDER BY a.name
 ) as agents
 ```
@@ -792,11 +792,11 @@ audit_set(
 
 ### Reference Implementation
 
-See `server/app/api/v4/personas/draft.py` and `server/app/sql/v4/personas/patch_persona_draft_complete.sql` as the reference implementation.
+See `server/app/api/v4/artifacts/persona/draft.py` and `server/app/sql/v4/personas/patch_persona_draft_complete.sql` as the reference implementation.
 
 ## Reference Implementation
 
-See `server/app/api/v3/agents/list.py` and `server/app/sql/v4/agents/get_agents_list_complete.sql` as the reference implementation.
+See `server/app/api/v4/artifacts/agent/list.py` and `server/app/sql/v4/agents/get_agents_list_complete.sql` as the reference implementation.
 
 ## MCP Documentation Pattern
 
@@ -807,7 +807,7 @@ See `server/app/api/v3/agents/list.py` and `server/app/sql/v4/agents/get_agents_
 Each artifact should have a `docs.py` file alongside its API route files:
 
 ```
-server/app/api/v4/personas/
+server/app/api/v4/artifacts/persona/
 ├── get.py
 ├── save.py
 ├── list.py
@@ -823,7 +823,7 @@ server/app/api/v4/personas/
 
 **Example**:
 ```python
-# server/app/api/v4/personas/docs.py
+# server/app/api/v4/artifacts/persona/docs.py
 def get_personas_docs() -> dict[str, Any]:
     """Get comprehensive documentation for the personas artifact."""
     return {
@@ -856,7 +856,7 @@ The MCP server imports artifact docs from API routes:
 ```python
 # server/app/mcp/endpoints.py
 try:
-    from app.api.v4.personas.docs import get_personas_docs
+    from app.api.v4.artifacts.persona.docs import get_personas_docs
     ARTIFACT_DOCS["personas"] = get_personas_docs
 except ImportError:
     pass
@@ -907,4 +907,3 @@ The MCP server exposes documentation via:
 6. **Developer Experience**: Auto-completion, type checking, fewer runtime errors
 7. **Consistency**: Same pattern for API, WebSocket, and infrastructure endpoints
 8. **Documentation**: Artifact docs live with routes, MCP server exposes them for tool-based access
-

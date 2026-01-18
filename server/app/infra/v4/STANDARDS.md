@@ -1,10 +1,10 @@
-# Infrastructure v3 Standards
+# Infrastructure v4 Standards
 
-This document defines the standards and best practices for Infrastructure v3 utilities. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
+This document defines the standards and best practices for Infrastructure v4 utilities. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
 
 ## Overview
 
-Infrastructure v3 utilities follow the agents-style architecture pattern, which uses:
+Infrastructure v4 utilities follow the agents-style architecture pattern, which uses:
 
 - **PostgreSQL functions** with `RETURNS TABLE` instead of raw SQL queries (for database operations)
 - **Composite types** in the `types` schema for strongly typed nested structures
@@ -28,7 +28,7 @@ Infrastructure utilities are categorized into three types:
 - **One SQL file per infra function**: Each database operation has exactly one SQL file in `server/app/sql/v4/infrastructure/[category]/[operation]_complete.sql`
 - **No inline SQL**: All SQL must be in the `.sql` file, never embedded as strings in Python code
 - **Function-based**: SQL files define PostgreSQL functions, not raw queries
-- **File naming**: Pattern `[operation]_[category]_complete.sql` (e.g., `profile_exists_activity_complete.sql`)
+- **File naming**: Pattern `infrastructure_{category}_{operation}_complete.sql` (e.g., `infrastructure_activity_profile_exists_complete.sql`)
 
 **Why This Matters:**
 
@@ -39,7 +39,7 @@ Infrastructure utilities are categorized into three types:
 
 ### 2. PostgreSQL Functions with Composite Types
 
-- **One function per infra operation**: Function name follows `infra_{operation}_{category}_v3` pattern
+- **One function per infra operation**: Function name follows `infra_{operation}_{category}_v4` pattern
 - **RETURNS TABLE**: Functions return structured rows with explicit column types
 - **Composite types**: Nested structures use composite types in `types` schema
 - **Idempotent**: Files use `BEGIN; DROP FUNCTION; DROP TYPE; CREATE TYPE; CREATE FUNCTION; COMMIT;`
@@ -67,7 +67,7 @@ When defining composite types, use native PostgreSQL types (`uuid`, `timestamptz
 1. **Use native PostgreSQL types for IDs and timestamps:**
    ```sql
    -- ✅ Good: native types
-   CREATE TYPE types.q_infra_profile_exists_v3_result AS (
+   CREATE TYPE types.q_infra_profile_exists_v4_result AS (
        profile_exists boolean
    );
    ```
@@ -165,20 +165,23 @@ async def get_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
 **Example Structure:**
 
 ```
-server/app/infra/v3/activity/
+server/app/infra/v4/activity/
 ├── profile_exists.py          # Python function
 └── insert.py                  # Python function
 
 server/app/sql/v4/infrastructure/activity/
-├── profile_exists_complete.sql    # One SQL file per function
-└── insert_complete.sql            # One SQL file per function
+└── get_profile_name_for_logging_complete.sql    # One SQL file per function
+
+server/app/sql/v4/infrastructure/
+├── infrastructure_activity_profile_exists_complete.sql    # One SQL file per function
+└── infrastructure_activity_insert_complete.sql            # One SQL file per function
 ```
 
 ## Composite Types
 
 - **Schema**: All query-specific composite types live in `types` schema
-- **Naming**: `types.q_infra_{operation}_{category}_v3_{item_name}` (e.g., `types.q_infra_profile_exists_v3_result`)
-- **Versioned**: Include `v3` in type names for future compatibility
+- **Naming**: `types.q_infra_{operation}_{category}_v4_{item_name}` (e.g., `types.q_infra_profile_exists_v4_result`)
+- **Versioned**: Include `v4` in type names for future compatibility
 - **Shared**: Types can be reused across API, WebSocket, and infrastructure endpoints
 
 ## Type Generation
@@ -203,12 +206,12 @@ BEGIN;
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
-    DROP FUNCTION IF EXISTS infra_profile_exists_v3(uuid);
+    DROP FUNCTION IF EXISTS infra_profile_exists_v4(uuid);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 -- Create function
-CREATE OR REPLACE FUNCTION infra_profile_exists_v3(
+CREATE OR REPLACE FUNCTION infra_profile_exists_v4(
     profile_id uuid
 )
 RETURNS TABLE (
@@ -232,12 +235,12 @@ import asyncpg  # type: ignore
 from typing import cast
 
 from app.sql.types import (
-    InfraProfileExistsSqlParams,
-    InfraProfileExistsSqlRow,
+    InfrastructureActivityProfileExistsSqlParams,
+    InfrastructureActivityProfileExistsSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/infrastructure/activity/profile_exists_complete.sql"
+SQL_PATH = "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"
 
 
 async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
@@ -251,9 +254,9 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
         True if profile exists, False otherwise
     """
     try:
-        params = InfraProfileExistsSqlParams(profile_id=profile_id)
+        params = InfrastructureActivityProfileExistsSqlParams(profile_id=profile_id)
         result = cast(
-            InfraProfileExistsSqlRow,
+            InfrastructureActivityProfileExistsSqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
         return result.profile_exists if result else False
@@ -268,13 +271,13 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
 
 ```python
 # ❌ BAD: Raw SQL with load_sql()
-sql = load_sql("app/sql/v4/infrastructure/activity/profile_exists_complete.sql")
+sql = load_sql("app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql")
 result = await conn.fetchval(sql, profile_id)
 
 # ✅ GOOD: PostgreSQL function with execute_sql_typed()
-params = InfraProfileExistsSqlParams(profile_id=profile_id)
+params = InfrastructureActivityProfileExistsSqlParams(profile_id=profile_id)
 result = cast(
-    InfraProfileExistsSqlRow,
+    InfrastructureActivityProfileExistsSqlRow,
     await execute_sql_typed(conn, SQL_PATH, params=params),
 )
 ```
@@ -317,7 +320,7 @@ json_agg(
 
 -- ✅ GOOD: Composite type array
 ARRAY_AGG(
-    (p.id, p.name)::types.q_infra_list_profiles_v3_profile
+    (p.id, p.name)::types.q_infra_list_profiles_v4_profile
     ORDER BY p.name
 ) as profiles
 ```
@@ -329,7 +332,7 @@ ARRAY_AGG(
 - [ ] **One SQL file per function** (e.g., `profile_exists_complete.sql`)
 - [ ] **No inline SQL** (all SQL in `.sql` files, none in Python code)
 - [ ] **PostgreSQL function** (uses `CREATE OR REPLACE FUNCTION` with `RETURNS TABLE`)
-- [ ] **Function naming** (follows `infra_{operation}_{category}_v3` pattern)
+- [ ] **Function naming** (follows `infra_{operation}_{category}_v4` pattern)
 - [ ] **Idempotent SQL** (uses `BEGIN; DROP FUNCTION; CREATE FUNCTION; COMMIT;`)
 - [ ] SQL file compiles (`make sql-compile`)
 - [ ] Types generated correctly (`server/app/sql/types.py`)
@@ -361,7 +364,7 @@ ARRAY_AGG(
 
 ## Reference Implementation
 
-See `server/app/infra/v3/activity/profile_exists.py` and `server/app/sql/v4/infrastructure/activity/profile_exists_complete.sql` as the reference implementation for database operations.
+See `server/app/infra/v4/activity/profile_exists.py` and `server/app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql` as the reference implementation for database operations.
 
 ## Benefits
 
@@ -372,4 +375,3 @@ See `server/app/infra/v3/activity/profile_exists.py` and `server/app/sql/v4/infr
 5. **No JSONB Parsing Errors**: Types are enforced at database level - no runtime `json.loads()` failures or type mismatches
 6. **Developer Experience**: Auto-completion, type checking, fewer runtime errors
 7. **Consistency**: Same pattern for API, WebSocket, and infrastructure endpoints
-
