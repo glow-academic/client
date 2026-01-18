@@ -7986,30 +7986,6 @@ export interface components {
             tool_suggestions?: string[] | null;
             /** Tools */
             tools?: components["schemas"]["QGetAgentV4Tool"][] | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Role */
-            role?: string | null;
-            /** Valid Model Ids */
-            valid_model_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Temperature Levels Jsonb */
-            temperature_levels_jsonb?: unknown | null;
-            /** Reasoning Options Jsonb */
-            reasoning_options_jsonb?: unknown | null;
-            /** Available Voices Jsonb */
-            available_voices_jsonb?: unknown | null;
-            /** Debug Info */
-            debug_info?: {
-                [key: string]: unknown;
-            }[] | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
         };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;

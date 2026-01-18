@@ -3112,17 +3112,6 @@ class GetAgentSqlRow(BaseModel):
     tools_required: bool | None = None
     tool_suggestions: list[UUID] | None = None
     tools: list[QGetAgentV4Tool] | None = None
-    system_prompt: str | None = None
-    active: bool | None = None
-    role: str | None = None
-    valid_model_ids: list[UUID] | None = None
-    valid_department_ids: list[UUID] | None = None
-    temperature_levels_jsonb: Any | None = None
-    reasoning_options_jsonb: Any | None = None
-    available_voices_jsonb: Any | None = None
-    debug_info: list[dict[str, Any]] | None = None
-    name: str | None = None
-    description: str | None = None
 
 class GetAgentApiRequest(BaseModel):
 
@@ -3212,17 +3201,6 @@ class GetAgentApiResponse(BaseModel):
     tools_required: bool | None = None
     tool_suggestions: list[UUID] | None = None
     tools: list[QGetAgentV4Tool] | None = None
-    system_prompt: str | None = None
-    active: bool | None = None
-    role: str | None = None
-    valid_model_ids: list[UUID] | None = None
-    valid_department_ids: list[UUID] | None = None
-    temperature_levels_jsonb: Any | None = None
-    reasoning_options_jsonb: Any | None = None
-    available_voices_jsonb: Any | None = None
-    debug_info: list[dict[str, Any]] | None = None
-    name: str | None = None
-    description: str | None = None
 
 
 
