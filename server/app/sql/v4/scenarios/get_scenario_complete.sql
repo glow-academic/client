@@ -1166,6 +1166,15 @@ scenario_objectives_array AS (
         OR NOT EXISTS (SELECT 1 FROM objective_departments od2 WHERE od2.objective_id = o.id AND od2.active = true)
     )
 ),
+objective_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(so.objective_id ORDER BY so.idx, so.objective_id)
+             FROM scenario_objectives so
+             WHERE so.scenario_id = (SELECT scenario_id FROM params LIMIT 1)),
+            ARRAY[]::uuid[]
+        ) as objective_suggestions
+),
 scenario_simulations_agg AS (
     SELECT 
         COALESCE(ARRAY_AGG(DISTINCT simulation_id::text), ARRAY[]::text[]) as simulation_ids,
@@ -1439,6 +1448,16 @@ persona_data AS (
             OR (SELECT array_length(filter_persona_ids, 1) FROM params LIMIT 1) = 0
             OR pdb.id = ANY((SELECT filter_persona_ids FROM params LIMIT 1)::uuid[])
         )
+),
+persona_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pdb.id ORDER BY pdb.name)
+             FROM persona_data pdb),
+            ARRAY[]::uuid[]
+        ) as persona_suggestions
+    FROM params
+    LIMIT 1
 ),
 -- Persona parameter relationships: via fields (persona_fields → (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = fields.id LIMIT 1)) and persona_parameter flag
 persona_parameter_relationships AS (
@@ -1784,6 +1803,16 @@ document_data AS (
             OR (SELECT array_length(filter_document_ids, 1) FROM params LIMIT 1) = 0
             OR ddb.id = ANY((SELECT filter_document_ids FROM params LIMIT 1)::uuid[])
         )
+),
+document_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(ddb.id ORDER BY ddb.name)
+             FROM document_data ddb),
+            ARRAY[]::uuid[]
+        ) as document_suggestions
+    FROM params
+    LIMIT 1
 ),
 document_parameter_relationships AS (
     SELECT DISTINCT
@@ -2997,7 +3026,7 @@ SELECT
         WHEN uf.show_objectives AND sc.objectives_enabled THEN true
         ELSE false
     END as objectives_required,
-    ARRAY[]::uuid[] as objective_suggestions,
+    COALESCE((SELECT objective_suggestions FROM objective_suggestions_data), ARRAY[]::uuid[]) as objective_suggestions,
     CASE 
         WHEN sc.objectives_enabled THEN COALESCE((
             SELECT ARRAY_AGG((o.objective_id, o.name, false)::types.q_get_scenario_v4_objective_resource)
@@ -3171,7 +3200,7 @@ SELECT
         WHEN uf.show_personas THEN true
         ELSE false
     END as personas_required,
-    ARRAY[]::uuid[] as persona_suggestions,
+    COALESCE((SELECT persona_suggestions FROM persona_suggestions_data), ARRAY[]::uuid[]) as persona_suggestions,
     '{}'::types.q_get_scenario_v4_persona[] as personas,
     -- Multi-select resources: documents (placeholder - will be populated)
     ARRAY[]::uuid[] as document_ids,
@@ -3185,7 +3214,7 @@ SELECT
         WHEN uf.show_documents THEN true
         ELSE false
     END as documents_required,
-    ARRAY[]::uuid[] as document_suggestions,
+    COALESCE((SELECT document_suggestions FROM document_suggestions_data), ARRAY[]::uuid[]) as document_suggestions,
     '{}'::types.q_get_scenario_v4_document[] as documents,
     -- Multi-select resources: parameters (placeholder - will be populated)
     ARRAY[]::uuid[] as parameter_ids,

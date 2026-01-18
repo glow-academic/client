@@ -50,17 +50,23 @@ CREATE TYPE types.q_get_parameter_v4_field AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_parameter_v4_persona AS (
-    persona_id uuid,
+CREATE TYPE types.q_get_parameter_v4_name_resource AS (
+    name_id uuid,
     name text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_parameter_v4_description_resource AS (
+    description_id uuid,
     description text,
     generated boolean
 );
 
-CREATE TYPE types.q_get_parameter_v4_document AS (
-    document_id uuid,
+CREATE TYPE types.q_get_parameter_v4_flag_resource AS (
+    flag_id uuid,
     name text,
     description text,
+    icon_id uuid,
     generated boolean
 );
 
@@ -96,6 +102,26 @@ RETURNS TABLE (
     disabled_reason text,
     group_id uuid,
     -- Basic parameter fields
+    name_id uuid,
+    name_resource types.q_get_parameter_v4_name_resource,
+    show_name boolean,
+    name_agent_id uuid,
+    name_required boolean,
+    name_suggestions uuid[],
+    names types.q_get_parameter_v4_name_resource[],
+    description_id uuid,
+    description_resource types.q_get_parameter_v4_description_resource,
+    show_description boolean,
+    description_agent_id uuid,
+    description_required boolean,
+    description_suggestions uuid[],
+    descriptions types.q_get_parameter_v4_description_resource[],
+    -- Single-select resources: active flag
+    active_flag_id uuid,
+    active_flag_resource types.q_get_parameter_v4_flag_resource,
+    show_active_flag boolean,
+    active_flag_agent_id uuid,
+    active_flag_required boolean,
     name text,
     description text,
     active boolean,
@@ -120,22 +146,6 @@ RETURNS TABLE (
     fields_required boolean,
     field_suggestions uuid[],
     fields types.q_get_parameter_v4_field[],
-    -- Multi-select resources: personas
-    persona_ids uuid[],
-    persona_resources types.q_get_parameter_v4_persona[],
-    show_personas boolean,
-    personas_agent_id uuid,
-    personas_required boolean,
-    persona_suggestions uuid[],
-    personas types.q_get_parameter_v4_persona[],
-    -- Multi-select resources: documents
-    document_ids uuid[],
-    document_resources types.q_get_parameter_v4_document[],
-    show_documents boolean,
-    documents_agent_id uuid,
-    documents_required boolean,
-    document_suggestions uuid[],
-    documents types.q_get_parameter_v4_document[],
     -- Parameter items (fields connected to parameter)
     parameter_items types.q_get_parameter_v4_item[],
     field_connections types.q_get_parameter_v4_field_connection[],
@@ -145,9 +155,7 @@ RETURNS TABLE (
     field_active_states jsonb,
     field_default_states jsonb,
     valid_department_ids text[],
-    valid_field_ids text[],
-    valid_persona_ids text[],
-    valid_document_ids text[]
+    valid_field_ids text[]
 )
 LANGUAGE sql
 STABLE
@@ -194,6 +202,158 @@ draft_group_data AS (
     WHERE TRUE
     LIMIT 1
 ),
+name_id_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
+            ELSE (SELECT pn.name_id FROM parameter_names pn WHERE pn.parameter_id = (SELECT parameter_id FROM params) LIMIT 1)
+        END as name_id
+    FROM params
+    LIMIT 1
+),
+description_id_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
+            ELSE (SELECT pd.description_id FROM parameter_descriptions pd WHERE pd.parameter_id = (SELECT parameter_id FROM params) LIMIT 1)
+        END as description_id
+    FROM params
+    LIMIT 1
+),
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
+                 FROM parameter_names pn
+                 JOIN names_resource n ON n.id = pn.name_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pn.name_id IS NOT NULL
+                   AND n.name IS NOT NULL
+                   AND n.name != ''
+                   AND (
+                       COALESCE(n.generated, false) = false
+                       OR (
+                           COALESCE(n.generated, false) = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = n.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY pn.name_id
+                 ORDER BY MAX(pn.created_at) DESC
+                 LIMIT 20
+             ) pn),
+            ARRAY[]::uuid[]
+        ) as name_suggestions
+    FROM params
+    LIMIT 1
+),
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(n.generated, false))::types.q_get_parameter_v4_name_resource
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_parameter_v4_name_resource[]
+        ) as names
+    FROM params
+    LIMIT 1
+),
+description_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pd.description_id ORDER BY pd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pd.description_id, MAX(pd.created_at) as created_at
+                 FROM parameter_descriptions pd
+                 JOIN descriptions_resource d ON d.id = pd.description_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pd.description_id IS NOT NULL
+                   AND d.description IS NOT NULL
+                   AND d.description != ''
+                   AND (
+                       COALESCE(d.generated, false) = false
+                       OR (
+                           COALESCE(d.generated, false) = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY pd.description_id
+                 ORDER BY MAX(pd.created_at) DESC
+                 LIMIT 20
+             ) pd),
+            ARRAY[]::uuid[]
+        ) as description_suggestions
+    FROM params
+    LIMIT 1
+),
+descriptions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (d.id, d.description, COALESCE(d.generated, false))::types.q_get_parameter_v4_description_resource
+                    ORDER BY array_position(dsd.description_suggestions, d.id)
+                )
+                FROM description_suggestions_data dsd
+                CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
+                WHERE d.description IS NOT NULL AND d.description != ''
+            ),
+            ARRAY[]::types.q_get_parameter_v4_description_resource[]
+        ) as descriptions
+    FROM params
+    LIMIT 1
+),
+active_flag_id_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
+            ELSE (
+                SELECT pf.flag_id
+                FROM parameter_flags pf
+                JOIN flags_resource f ON f.id = pf.flag_id
+                WHERE pf.parameter_id = (SELECT parameter_id FROM params)
+                  AND f.name = 'active'
+                  AND pf.value = true
+                LIMIT 1
+            )
+        END as active_flag_id
+    FROM params
+    LIMIT 1
+),
+active_flag_resource_data AS (
+    SELECT 
+        (
+            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_parameter_v4_flag_resource
+            FROM flags_resource f
+            WHERE f.id = (SELECT active_flag_id FROM active_flag_id_data)
+            LIMIT 1
+        ) as active_flag_resource
+    FROM params
+    LIMIT 1
+),
 user_profile AS (
     SELECT 
         (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
@@ -215,25 +375,6 @@ parameter_departments_data AS (
     JOIN parameter_departments pd ON pd.parameter_id = x.parameter_id AND pd.active = true
     WHERE x.parameter_id IS NOT NULL
     GROUP BY pd.parameter_id
-),
--- Conditional: Get parameter persona/document IDs only if parameter_id provided
--- Note: parameter_personas and parameter_documents tables may not exist yet
--- Return empty arrays for now (matching existing SQL behavior)
-parameter_personas_data AS (
-    SELECT 
-        x.parameter_id,
-        ARRAY[]::uuid[] as persona_ids
-    FROM params x
-    WHERE x.parameter_id IS NOT NULL
-    LIMIT 1
-),
-parameter_documents_data AS (
-    SELECT 
-        x.parameter_id,
-        ARRAY[]::uuid[] as document_ids
-    FROM params x
-    WHERE x.parameter_id IS NOT NULL
-    LIMIT 1
 ),
 field_departments_for_filter AS (
     SELECT DISTINCT
@@ -379,46 +520,6 @@ department_mapping_data AS (
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
 ),
--- Personas filtered by parameter's departments (or user's departments for new mode)
-filtered_personas AS (
-    SELECT DISTINCT 
-        p.id as persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
-        COALESCE(p.generated, false) as generated
-    FROM params x
-    JOIN persona_artifact p ON EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
-    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-    CROSS JOIN parameter_departments_aggregated pda
-    WHERE (
-        (pda.department_ids IS NULL OR array_length(pda.department_ids, 1) = 0)
-        OR (pda.department_ids IS NOT NULL AND pd.department_id = ANY(pda.department_ids::uuid[]))
-        OR NOT EXISTS (
-            SELECT 1 FROM persona_departments pd2 
-            WHERE pd2.persona_id = p.id AND pd2.active = true
-        )
-    )
-),
--- Documents filtered by parameter's departments (or user's departments for new mode)
-filtered_documents AS (
-    SELECT DISTINCT 
-        d.id as document_id,
-        (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM document_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.document_id = d.id LIMIT 1), '') as description,
-        COALESCE(d.generated, false) as generated
-    FROM params x
-    JOIN document_artifact d ON EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
-    LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
-    CROSS JOIN parameter_departments_aggregated pda
-    WHERE (
-        (pda.department_ids IS NULL OR array_length(pda.department_ids, 1) = 0)
-        OR (pda.department_ids IS NOT NULL AND dd.department_id = ANY(pda.department_ids::uuid[]))
-        OR NOT EXISTS (
-            SELECT 1 FROM document_departments dd2 
-            WHERE dd2.document_id = d.id AND dd2.active = true
-        )
-    )
-),
 -- Tool existence checks
 tools_existence_check AS (
     SELECT 
@@ -433,19 +534,7 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'fields'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
-        ) as fields_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'personas'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
-        ) as personas_has_tools,
-        EXISTS (
-            SELECT 1 FROM resource_tools rt
-            JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'documents'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
-        ) as documents_has_tools
+        ) as fields_has_tools
     FROM params x
 ),
 -- UI flags (show flags for resources)
@@ -458,15 +547,7 @@ ui_flags AS (
         CASE 
             WHEN (SELECT COUNT(*) FROM all_fields_with_usage) > 0 THEN true
             ELSE false
-        END as show_fields,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM filtered_personas) > 0 THEN true
-            ELSE false
-        END as show_personas,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM filtered_documents) > 0 THEN true
-            ELSE false
-        END as show_documents
+        END as show_fields
     FROM params x
 ),
 -- Missing tools check
@@ -474,9 +555,7 @@ missing_tools_check AS (
     SELECT 
         ARRAY_REMOVE(ARRAY[
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
-            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END,
-            CASE WHEN NOT tec.personas_has_tools AND uf.show_personas THEN 'personas' ELSE NULL END,
-            CASE WHEN NOT tec.documents_has_tools AND uf.show_documents THEN 'documents' ELSE NULL END
+            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
@@ -546,16 +625,6 @@ departments_agent_data AS (
     LIMIT 1
 ),
 fields_agent_data AS (
-    SELECT NULL::uuid as agent_id
-    FROM params
-    LIMIT 1
-),
-personas_agent_data AS (
-    SELECT NULL::uuid as agent_id
-    FROM params
-    LIMIT 1
-),
-documents_agent_data AS (
     SELECT NULL::uuid as agent_id
     FROM params
     LIMIT 1
@@ -635,18 +704,6 @@ field_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
-persona_suggestions_data AS (
-    SELECT 
-        ARRAY[]::uuid[] as persona_suggestions
-    FROM params
-    LIMIT 1
-),
-document_suggestions_data AS (
-    SELECT 
-        ARRAY[]::uuid[] as document_suggestions
-    FROM params
-    LIMIT 1
-),
 -- Resource IDs data (selected IDs for parameter)
 department_ids_data AS (
     SELECT 
@@ -677,18 +734,6 @@ field_ids_data AS (
         END as field_ids
     FROM params
     LIMIT 1
-),
-persona_ids_data AS (
-    SELECT 
-        ARRAY[]::uuid[] as persona_ids
-    FROM params
-    LIMIT 1
-),
-document_ids_data AS (
-    SELECT 
-        ARRAY[]::uuid[] as document_ids
-    FROM params
-    LIMIT 1
 )
 SELECT
     -- Required fields (first 5)
@@ -698,6 +743,35 @@ SELECT
     perm_final.disabled_reason,
     dgd.group_id,
     -- Basic parameter fields (merged with draft payload)
+    nid.name_id,
+    (
+        SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_parameter_v4_name_resource
+        FROM names_resource n
+        WHERE n.id = nid.name_id
+        LIMIT 1
+    ) as name_resource,
+    true as show_name,
+    NULL::uuid as name_agent_id,
+    true as name_required,
+    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
+    (SELECT names FROM names_suggestions_objects) as names,
+    did.description_id,
+    (
+        SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_parameter_v4_description_resource
+        FROM descriptions_resource d
+        WHERE d.id = did.description_id
+        LIMIT 1
+    ) as description_resource,
+    true as show_description,
+    NULL::uuid as description_agent_id,
+    false as description_required,
+    COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
+    (SELECT descriptions FROM descriptions_suggestions_objects) as descriptions,
+    (SELECT active_flag_id FROM active_flag_id_data) as active_flag_id,
+    (SELECT active_flag_resource FROM active_flag_resource_data) as active_flag_resource,
+    true as show_active_flag,
+    NULL::uuid as active_flag_agent_id,
+    false as active_flag_required,
     COALESCE(
         (SELECT payload->>'name' FROM draft_payload_data),
         pd.name::text
@@ -878,112 +952,6 @@ SELECT
         ) afwu),
         '{}'::types.q_get_parameter_v4_field[]
     ) as fields,
-    -- Multi-select resources: personas
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'persona_ids' IS NOT NULL AND jsonb_typeof(payload->'persona_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'persona_ids'))::uuid[]
-                WHEN payload->'personaIds' IS NOT NULL AND jsonb_typeof(payload->'personaIds') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'personaIds'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        pid.persona_ids
-    ) as persona_ids,
-    -- Persona resources (selected personas filtered by persona_ids)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fp.persona_id, fp.name, fp.description, fp.generated)::types.q_get_parameter_v4_persona
-            ORDER BY fp.name
-        )
-        FROM filtered_personas fp
-        WHERE fp.persona_id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'persona_ids' IS NOT NULL AND jsonb_typeof(payload->'persona_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'persona_ids'))::uuid[]
-                        WHEN payload->'personaIds' IS NOT NULL AND jsonb_typeof(payload->'personaIds') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'personaIds'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                pid.persona_ids
-            )
-        )),
-        '{}'::types.q_get_parameter_v4_persona[]
-    ) as persona_resources,
-    CASE 
-        WHEN NOT tec.personas_has_tools AND uf.show_personas THEN false
-        ELSE uf.show_personas
-    END as show_personas,
-    (SELECT agent_id FROM personas_agent_data) as personas_agent_id,
-    CASE 
-        WHEN uf.show_personas THEN true
-        ELSE false
-    END as personas_required,
-    COALESCE((SELECT persona_suggestions FROM persona_suggestions_data), ARRAY[]::uuid[]) as persona_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fp.persona_id, fp.name, fp.description, fp.generated)::types.q_get_parameter_v4_persona
-            ORDER BY fp.name
-        ) FROM (SELECT DISTINCT persona_id, name, description, generated FROM filtered_personas) fp),
-        '{}'::types.q_get_parameter_v4_persona[]
-    ) as personas,
-    -- Multi-select resources: documents
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'document_ids' IS NOT NULL AND jsonb_typeof(payload->'document_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'document_ids'))::uuid[]
-                WHEN payload->'documentIds' IS NOT NULL AND jsonb_typeof(payload->'documentIds') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'documentIds'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        did_doc.document_ids
-    ) as document_ids,
-    -- Document resources (selected documents filtered by document_ids)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fd.document_id, fd.name, fd.description, fd.generated)::types.q_get_parameter_v4_document
-            ORDER BY fd.name
-        )
-        FROM filtered_documents fd
-        WHERE fd.document_id = ANY(
-            COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'document_ids' IS NOT NULL AND jsonb_typeof(payload->'document_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'document_ids'))::uuid[]
-                        WHEN payload->'documentIds' IS NOT NULL AND jsonb_typeof(payload->'documentIds') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'documentIds'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
-                did_doc.document_ids
-            )
-        )),
-        '{}'::types.q_get_parameter_v4_document[]
-    ) as document_resources,
-    CASE 
-        WHEN NOT tec.documents_has_tools AND uf.show_documents THEN false
-        ELSE uf.show_documents
-    END as show_documents,
-    (SELECT agent_id FROM documents_agent_data) as documents_agent_id,
-    CASE 
-        WHEN uf.show_documents THEN true
-        ELSE false
-    END as documents_required,
-    COALESCE((SELECT document_suggestions FROM document_suggestions_data), ARRAY[]::uuid[]) as document_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (fd.document_id, fd.name, fd.description, fd.generated)::types.q_get_parameter_v4_document
-            ORDER BY fd.name
-        ) FROM (SELECT DISTINCT document_id, name, description, generated FROM filtered_documents) fd),
-        '{}'::types.q_get_parameter_v4_document[]
-    ) as documents,
     -- Parameter items (fields connected to parameter)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -1030,26 +998,16 @@ SELECT
         (SELECT ARRAY_AGG(afwu.id::text ORDER BY afwu.id)
          FROM all_fields_with_usage afwu),
         ARRAY[]::text[]
-    ) as valid_field_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(fp.persona_id::text ORDER BY fp.persona_id)
-         FROM filtered_personas fp),
-        ARRAY[]::text[]
-    ) as valid_persona_ids,
-    COALESCE(
-        (SELECT ARRAY_AGG(fd.document_id::text ORDER BY fd.document_id)
-         FROM filtered_documents fd),
-        ARRAY[]::text[]
-    ) as valid_document_ids
+    ) as valid_field_ids
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 LEFT JOIN parameter_departments_data pdd ON true
 CROSS JOIN draft_group_data dgd
+CROSS JOIN name_id_data nid
+CROSS JOIN description_id_data did
 CROSS JOIN parameter_data pd
 CROSS JOIN department_ids_data did_dept
 CROSS JOIN field_ids_data fid
-CROSS JOIN persona_ids_data pid
-CROSS JOIN document_ids_data did_doc
 $$;

@@ -288,6 +288,21 @@ department_mapping_data AS (
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
 ),
+department_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(dmd.department_id ORDER BY dmd.name)
+             FROM (
+                 SELECT DISTINCT department_id, name
+                 FROM department_mapping_data
+                 ORDER BY name
+                 LIMIT 20
+             ) dmd),
+            ARRAY[]::uuid[]
+        ) as department_suggestions
+    FROM params
+    LIMIT 1
+),
 primary_department_id_data AS (
     SELECT department_id
     FROM params x
@@ -349,6 +364,112 @@ description_resource_data AS (
             LIMIT 1
         ) as description_resource
     FROM params
+),
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(en.name_id ORDER BY en.created_at DESC)
+             FROM (
+                 SELECT DISTINCT en.name_id, MAX(en.created_at) as created_at
+                 FROM eval_names en
+                 JOIN names_resource n ON n.id = en.name_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE en.name_id IS NOT NULL
+                   AND n.name IS NOT NULL
+                   AND n.name != ''
+                   AND (
+                       COALESCE(n.generated, false) = false
+                       OR (
+                           COALESCE(n.generated, false) = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = n.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY en.name_id
+                 ORDER BY MAX(en.created_at) DESC
+                 LIMIT 20
+             ) en),
+            ARRAY[]::uuid[]
+        ) as name_suggestions
+    FROM params
+    LIMIT 1
+),
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(n.generated, false))::types.q_get_eval_v4_name_resource
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_eval_v4_name_resource[]
+        ) as names
+    FROM params
+    LIMIT 1
+),
+description_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(ed.description_id ORDER BY ed.created_at DESC)
+             FROM (
+                 SELECT DISTINCT ed.description_id, MAX(ed.created_at) as created_at
+                 FROM eval_descriptions ed
+                 JOIN descriptions_resource d ON d.id = ed.description_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE ed.description_id IS NOT NULL
+                   AND d.description IS NOT NULL
+                   AND d.description != ''
+                   AND (
+                       COALESCE(d.generated, false) = false
+                       OR (
+                           COALESCE(d.generated, false) = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY ed.description_id
+                 ORDER BY MAX(ed.created_at) DESC
+                 LIMIT 20
+             ) ed),
+            ARRAY[]::uuid[]
+        ) as description_suggestions
+    FROM params
+    LIMIT 1
+),
+descriptions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (d.id, d.description, COALESCE(d.generated, false))::types.q_get_eval_v4_description_resource
+                    ORDER BY array_position(dsd.description_suggestions, d.id)
+                )
+                FROM description_suggestions_data dsd
+                CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
+                WHERE d.description IS NOT NULL AND d.description != ''
+            ),
+            ARRAY[]::types.q_get_eval_v4_description_resource[]
+        ) as descriptions
+    FROM params
+    LIMIT 1
 ),
 -- Flag resource data for active flag
 active_flag_resource_data AS (
@@ -481,6 +602,12 @@ agents_array AS (
     COALESCE(ARRAY_AGG(vae.id ORDER BY vae.name), ARRAY[]::uuid[]) as agent_ids
     FROM valid_agents_for_eval_list vae
 ),
+agent_suggestions_data AS (
+    SELECT 
+        COALESCE((SELECT agent_ids FROM agents_array), ARRAY[]::uuid[]) as agent_suggestions
+    FROM params
+    LIMIT 1
+),
 -- Valid rubrics for evals
 user_department_ids_for_rubrics AS (
     SELECT ARRAY_AGG(id) as ids
@@ -510,6 +637,12 @@ rubrics_array AS (
     ) as rubrics,
     COALESCE(ARRAY_AGG(vr.id), ARRAY[]::uuid[]) as rubric_ids
     FROM valid_rubrics_data vr
+),
+rubric_suggestions_data AS (
+    SELECT 
+        COALESCE((SELECT rubric_ids FROM rubrics_array), ARRAY[]::uuid[]) as rubric_suggestions
+    FROM params
+    LIMIT 1
 ),
 -- Available model runs query (adapted from get_eval_detail_complete.sql)
 available_model_runs_params AS (
@@ -702,16 +835,16 @@ SELECT
     true::boolean as show_name,
     NULL::uuid as name_agent_id,
     true::boolean as name_required,
-    ARRAY[]::uuid[] as name_suggestions,
-    ARRAY[]::types.q_get_eval_v4_name_resource[] as names,
+    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
+    (SELECT names FROM names_suggestions_objects) as names,
     -- Single-select resources: description
     (SELECT description_id FROM description_resource_data) as description_id,
     drd.description_resource,
     true::boolean as show_description,
     NULL::uuid as description_agent_id,
     false::boolean as description_required,
-    ARRAY[]::uuid[] as description_suggestions,
-    ARRAY[]::types.q_get_eval_v4_description_resource[] as descriptions,
+    COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
+    (SELECT descriptions FROM descriptions_suggestions_objects) as descriptions,
     -- Single-select resources: active flag
     (SELECT active_flag_id FROM active_flag_resource_data) as active_flag_id,
     afrd.active_flag_resource,
@@ -747,7 +880,7 @@ SELECT
     END as show_departments,
     NULL::uuid as departments_agent_id,
     false::boolean as departments_required,
-    ARRAY[]::uuid[] as department_suggestions,
+    COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
             (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_eval_v4_department
@@ -771,7 +904,7 @@ SELECT
     END as show_agents,
     NULL::uuid as agents_agent_id,
     false::boolean as agents_required,
-    ARRAY[]::uuid[] as agent_suggestions,
+    COALESCE((SELECT agent_suggestions FROM agent_suggestions_data), ARRAY[]::uuid[]) as agent_suggestions,
     COALESCE((SELECT agents FROM agents_array), '{}'::types.q_get_eval_v4_agent[]) as agents,
     -- Multi-select resources: rubrics
     ARRAY[]::uuid[] as rubric_ids,
@@ -782,7 +915,7 @@ SELECT
     END as show_rubrics,
     NULL::uuid as rubrics_agent_id,
     false::boolean as rubrics_required,
-    ARRAY[]::uuid[] as rubric_suggestions,
+    COALESCE((SELECT rubric_suggestions FROM rubric_suggestions_data), ARRAY[]::uuid[]) as rubric_suggestions,
     COALESCE((SELECT rubrics FROM rubrics_array), '{}'::types.q_get_eval_v4_rubric[]) as rubrics,
     -- Additional eval-specific fields
     COALESCE((SELECT available_model_runs FROM available_model_runs_array), '{}'::types.q_get_eval_v4_available_model_run[]) as available_model_runs,

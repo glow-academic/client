@@ -998,7 +998,10 @@ scenarios_full_data AS (
             (SELECT scenario_show_selected FROM params LIMIT 1) = false
             OR (SELECT array_length(ids, 1) FROM scenario_filter_ids LIMIT 1) IS NULL
             OR (SELECT array_length(ids, 1) FROM scenario_filter_ids LIMIT 1) = 0
-            OR vsl.id = ANY((SELECT ids FROM scenario_filter_ids LIMIT 1)::uuid[])
+            OR EXISTS (
+                SELECT 1 FROM scenario_filter_ids sfi
+                WHERE vsl.id = ANY(sfi.ids)
+            )
         )
 ),
 user_departments_for_mapping AS (
@@ -1866,6 +1869,92 @@ scenario_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+scenario_flag_ids_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(DISTINCT ssf.scenario_flag_id ORDER BY ssf.scenario_flag_id)
+             FROM simulation_scenario_flags ssf
+             WHERE ssf.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
+               AND ssf.value = true),
+            ARRAY[]::uuid[]
+        ) as scenario_flag_ids
+    FROM params
+    LIMIT 1
+),
+scenario_flag_resources_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
+                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+                )::types.q_get_simulation_v4_scenario_flag_resource
+                ORDER BY f.name
+            )
+            FROM flags_resource f
+            CROSS JOIN scenario_flag_ids_data sfid
+            WHERE f.id = ANY(sfid.scenario_flag_ids)),
+            '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
+        ) as scenario_flag_resources
+),
+scenario_flag_suggestions_data AS (
+    SELECT 
+        COALESCE((SELECT scenario_flag_ids FROM scenario_flag_ids_data), ARRAY[]::uuid[]) as scenario_flag_suggestions
+    FROM params
+    LIMIT 1
+),
+scenario_flags_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
+                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+                )::types.q_get_simulation_v4_scenario_flag_resource
+                ORDER BY f.name
+            )
+            FROM flags_resource f
+            WHERE EXISTS (
+                SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.scenario_flag_id = f.id
+            )),
+            '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
+        ) as scenario_flags
+),
+scenario_position_ids_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sp.scenario_id ORDER BY sp.value)
+             FROM scenario_positions_resource sp
+             WHERE sp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))),
+            ARRAY[]::uuid[]
+        ) as scenario_position_ids
+    FROM params
+    LIMIT 1
+),
+scenario_position_resources_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (sp.simulation_id, sp.scenario_id, sp.value, COALESCE(sp.generated, false),
+                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = sp.call_id LIMIT 1)
+                )::types.q_get_simulation_v4_scenario_position_resource
+                ORDER BY sp.value
+            )
+            FROM scenario_positions_resource sp
+            WHERE sp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))),
+            '{}'::types.q_get_simulation_v4_scenario_position_resource[]
+        ) as scenario_position_resources
+),
+scenario_position_suggestions_data AS (
+    SELECT 
+        COALESCE((SELECT scenario_position_ids FROM scenario_position_ids_data), ARRAY[]::uuid[]) as scenario_position_suggestions
+    FROM params
+    LIMIT 1
+),
+scenario_positions_data AS (
+    SELECT 
+        COALESCE((SELECT scenario_position_resources FROM scenario_position_resources_data), '{}'::types.q_get_simulation_v4_scenario_position_resource[]) as scenario_positions
+    FROM params
+    LIMIT 1
+),
 -- Agent selection for 'general' - agent with ALL simulation tools
 general_agent_data AS (
     WITH eligible_agents AS (
@@ -2257,22 +2346,28 @@ SELECT
         WHERE s.active = true),
         '{}'::types.q_get_simulation_v4_scenario_resource[]
     ) as scenarios,
-    -- Multi-select resources: scenario_flags (placeholder - will be implemented)
-    ARRAY[]::uuid[] as scenario_flag_ids,
-    '{}'::types.q_get_simulation_v4_scenario_flag_resource[] as scenario_flag_resources,
-    false as show_scenario_flags,
+    -- Multi-select resources: scenario_flags
+    COALESCE((SELECT scenario_flag_ids FROM scenario_flag_ids_data), ARRAY[]::uuid[]) as scenario_flag_ids,
+    COALESCE((SELECT scenario_flag_resources FROM scenario_flag_resources_data), '{}'::types.q_get_simulation_v4_scenario_flag_resource[]) as scenario_flag_resources,
+    CASE 
+        WHEN COALESCE(array_length((SELECT scenario_flag_ids FROM scenario_flag_ids_data), 1), 0) > 0 THEN true
+        ELSE false
+    END as show_scenario_flags,
     NULL::uuid as scenario_flags_agent_id,
     false as scenario_flags_required,
-    ARRAY[]::uuid[] as scenario_flag_suggestions,
-    '{}'::types.q_get_simulation_v4_scenario_flag_resource[] as scenario_flags,
-    -- Multi-select resources: scenario_positions (placeholder - will be implemented)
-    ARRAY[]::uuid[] as scenario_position_ids,
-    '{}'::types.q_get_simulation_v4_scenario_position_resource[] as scenario_position_resources,
-    false as show_scenario_positions,
+    COALESCE((SELECT scenario_flag_suggestions FROM scenario_flag_suggestions_data), ARRAY[]::uuid[]) as scenario_flag_suggestions,
+    COALESCE((SELECT scenario_flags FROM scenario_flags_data), '{}'::types.q_get_simulation_v4_scenario_flag_resource[]) as scenario_flags,
+    -- Multi-select resources: scenario_positions
+    COALESCE((SELECT scenario_position_ids FROM scenario_position_ids_data), ARRAY[]::uuid[]) as scenario_position_ids,
+    COALESCE((SELECT scenario_position_resources FROM scenario_position_resources_data), '{}'::types.q_get_simulation_v4_scenario_position_resource[]) as scenario_position_resources,
+    CASE 
+        WHEN COALESCE(array_length((SELECT scenario_position_ids FROM scenario_position_ids_data), 1), 0) > 0 THEN true
+        ELSE false
+    END as show_scenario_positions,
     NULL::uuid as scenario_positions_agent_id,
     false as scenario_positions_required,
-    ARRAY[]::uuid[] as scenario_position_suggestions,
-    '{}'::types.q_get_simulation_v4_scenario_position_resource[] as scenario_positions,
+    COALESCE((SELECT scenario_position_suggestions FROM scenario_position_suggestions_data), ARRAY[]::uuid[]) as scenario_position_suggestions,
+    COALESCE((SELECT scenario_positions FROM scenario_positions_data), '{}'::types.q_get_simulation_v4_scenario_position_resource[]) as scenario_positions,
     -- Multi-select resources: scenario_rubric_grade_agents (placeholder - will be implemented)
     ARRAY[]::uuid[] as scenario_rubric_grade_agent_ids,
     '{}'::types.q_get_simulation_v4_scenario_rubric_grade_agent_resource[] as scenario_rubric_grade_agent_resources,

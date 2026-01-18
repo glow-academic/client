@@ -12258,6 +12258,35 @@ class QGetFieldV4Department(BaseModel):
 
 
 
+class QGetFieldV4DescriptionResource(BaseModel):
+
+    description_id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetFieldV4FlagResource(BaseModel):
+
+    flag_id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetFieldV4NameResource(BaseModel):
+
+    name_id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
 class QGetFieldV4Parameter(BaseModel):
 
     parameter_id: UUID | None
@@ -12272,14 +12301,43 @@ class GetFieldSqlRow(BaseModel):
     disabled_reason: str | None = None
     group_id: UUID | None = None
     field_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetFieldV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetFieldV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetFieldV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetFieldV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetFieldV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
     department_ids: list[str] | None = None
-    parameter_ids: list[str] | None = None
-    conditional_parameter_ids: list[str] | None = None
+    department_resources: list[QGetFieldV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
     departments: list[QGetFieldV4Department] | None = None
+    parameter_ids: list[str] | None = None
+    parameter_resources: list[QGetFieldV4Parameter] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
     valid_department_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
     parameters: list[QGetFieldV4Parameter] | None = None
     valid_parameter_ids: list[str] | None = None
     draft_version: int | None = None
@@ -12297,14 +12355,43 @@ class GetFieldApiResponse(BaseModel):
     disabled_reason: str | None = None
     group_id: UUID | None = None
     field_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetFieldV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetFieldV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetFieldV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetFieldV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetFieldV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
     department_ids: list[str] | None = None
-    parameter_ids: list[str] | None = None
-    conditional_parameter_ids: list[str] | None = None
+    department_resources: list[QGetFieldV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
     departments: list[QGetFieldV4Department] | None = None
+    parameter_ids: list[str] | None = None
+    parameter_resources: list[QGetFieldV4Parameter] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
     valid_department_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
     parameters: list[QGetFieldV4Parameter] | None = None
     valid_parameter_ids: list[str] | None = None
     draft_version: int | None = None
@@ -17956,10 +18043,9 @@ class QGetParameterV4Department(BaseModel):
 
 
 
-class QGetParameterV4Document(BaseModel):
+class QGetParameterV4DescriptionResource(BaseModel):
 
-    document_id: UUID | None
-    name: str | None
+    description_id: UUID | None
     description: str | None
     generated: bool | None
 
@@ -17987,6 +18073,17 @@ class QGetParameterV4FieldConnection(BaseModel):
 
 
 
+class QGetParameterV4FlagResource(BaseModel):
+
+    flag_id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
 class QGetParameterV4Item(BaseModel):
 
     parameter_item_id: UUID | None
@@ -17999,11 +18096,10 @@ class QGetParameterV4Item(BaseModel):
 
 
 
-class QGetParameterV4Persona(BaseModel):
+class QGetParameterV4NameResource(BaseModel):
 
-    persona_id: UUID | None
+    name_id: UUID | None
     name: str | None
-    description: str | None
     generated: bool | None
 
 class GetParameterSqlRow(BaseModel):
@@ -18013,6 +18109,25 @@ class GetParameterSqlRow(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetParameterV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetParameterV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetParameterV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetParameterV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetParameterV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
@@ -18035,20 +18150,6 @@ class GetParameterSqlRow(BaseModel):
     fields_required: bool | None = None
     field_suggestions: list[UUID] | None = None
     fields: list[QGetParameterV4Field] | None = None
-    persona_ids: list[UUID] | None = None
-    persona_resources: list[QGetParameterV4Persona] | None = None
-    show_personas: bool | None = None
-    personas_agent_id: UUID | None = None
-    personas_required: bool | None = None
-    persona_suggestions: list[UUID] | None = None
-    personas: list[QGetParameterV4Persona] | None = None
-    document_ids: list[UUID] | None = None
-    document_resources: list[QGetParameterV4Document] | None = None
-    show_documents: bool | None = None
-    documents_agent_id: UUID | None = None
-    documents_required: bool | None = None
-    document_suggestions: list[UUID] | None = None
-    documents: list[QGetParameterV4Document] | None = None
     parameter_items: list[QGetParameterV4Item] | None = None
     field_connections: list[QGetParameterV4FieldConnection] | None = None
     draft_version: int | None = None
@@ -18057,8 +18158,6 @@ class GetParameterSqlRow(BaseModel):
     field_default_states: Any | None = None
     valid_department_ids: list[str] | None = None
     valid_field_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
 
 class GetParameterApiRequest(BaseModel):
 
@@ -18075,6 +18174,25 @@ class GetParameterApiResponse(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetParameterV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetParameterV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetParameterV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetParameterV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetParameterV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
@@ -18097,20 +18215,6 @@ class GetParameterApiResponse(BaseModel):
     fields_required: bool | None = None
     field_suggestions: list[UUID] | None = None
     fields: list[QGetParameterV4Field] | None = None
-    persona_ids: list[UUID] | None = None
-    persona_resources: list[QGetParameterV4Persona] | None = None
-    show_personas: bool | None = None
-    personas_agent_id: UUID | None = None
-    personas_required: bool | None = None
-    persona_suggestions: list[UUID] | None = None
-    personas: list[QGetParameterV4Persona] | None = None
-    document_ids: list[UUID] | None = None
-    document_resources: list[QGetParameterV4Document] | None = None
-    show_documents: bool | None = None
-    documents_agent_id: UUID | None = None
-    documents_required: bool | None = None
-    document_suggestions: list[UUID] | None = None
-    documents: list[QGetParameterV4Document] | None = None
     parameter_items: list[QGetParameterV4Item] | None = None
     field_connections: list[QGetParameterV4FieldConnection] | None = None
     draft_version: int | None = None
@@ -18119,8 +18223,6 @@ class GetParameterApiResponse(BaseModel):
     field_default_states: Any | None = None
     valid_department_ids: list[str] | None = None
     valid_field_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
 
 
 
@@ -20712,6 +20814,44 @@ class QGetProfileV4Department(BaseModel):
     name: str | None
     description: str | None
 
+
+
+
+class QGetProfileV4EmailResource(BaseModel):
+
+    email_id: UUID | None
+    email: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4FlagResource(BaseModel):
+
+    flag_id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4NameResource(BaseModel):
+
+    name_id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetProfileV4RequestLimitResource(BaseModel):
+
+    request_limit_id: UUID | None
+    requests_per_day: int | None
+    generated: bool | None
+
 class GetProfileSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -20720,19 +20860,57 @@ class GetProfileSqlRow(BaseModel):
     disabled_reason: str | None = None
     group_id: UUID | None = None
     profile_id: UUID | None = None
+    first_name_id: UUID | None = None
+    first_name_resource: QGetProfileV4NameResource | None = None
+    show_first_name: bool | None = None
+    first_name_agent_id: UUID | None = None
+    first_name_required: bool | None = None
+    first_name_suggestions: list[UUID] | None = None
+    first_names: list[QGetProfileV4NameResource] | None = None
+    last_name_id: UUID | None = None
+    last_name_resource: QGetProfileV4NameResource | None = None
+    show_last_name: bool | None = None
+    last_name_agent_id: UUID | None = None
+    last_name_required: bool | None = None
+    last_name_suggestions: list[UUID] | None = None
+    last_names: list[QGetProfileV4NameResource] | None = None
     first_name: str | None = None
     last_name: str | None = None
     name: str | None = None
-    emails: list[str] | None = None
+    email_ids: list[UUID] | None = None
+    email_resources: list[QGetProfileV4EmailResource] | None = None
+    show_emails: bool | None = None
+    emails_agent_id: UUID | None = None
+    emails_required: bool | None = None
+    email_suggestions: list[UUID] | None = None
+    emails: list[QGetProfileV4EmailResource] | None = None
+    email_addresses: list[str] | None = None
     primary_email: str | None = None
     role: str | None = None
     active: bool | None = None
+    request_limit_id: UUID | None = None
+    request_limit_resource: QGetProfileV4RequestLimitResource | None = None
+    show_request_limit: bool | None = None
+    request_limit_agent_id: UUID | None = None
+    request_limit_required: bool | None = None
+    request_limit_suggestions: list[UUID] | None = None
+    request_limits: list[QGetProfileV4RequestLimitResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetProfileV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
     requests_per_day: int | None = None
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
     valid_department_ids: list[UUID] | None = None
     valid_cohort_ids: list[UUID] | None = None
+    department_resources: list[QGetProfileV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
     departments: list[QGetProfileV4Department] | None = None
     cohorts: list[QGetProfileV4Cohort] | None = None
     role_options: list[str] | None = None
@@ -20749,19 +20927,57 @@ class GetProfileApiResponse(BaseModel):
     disabled_reason: str | None = None
     group_id: UUID | None = None
     profile_id: UUID | None = None
+    first_name_id: UUID | None = None
+    first_name_resource: QGetProfileV4NameResource | None = None
+    show_first_name: bool | None = None
+    first_name_agent_id: UUID | None = None
+    first_name_required: bool | None = None
+    first_name_suggestions: list[UUID] | None = None
+    first_names: list[QGetProfileV4NameResource] | None = None
+    last_name_id: UUID | None = None
+    last_name_resource: QGetProfileV4NameResource | None = None
+    show_last_name: bool | None = None
+    last_name_agent_id: UUID | None = None
+    last_name_required: bool | None = None
+    last_name_suggestions: list[UUID] | None = None
+    last_names: list[QGetProfileV4NameResource] | None = None
     first_name: str | None = None
     last_name: str | None = None
     name: str | None = None
-    emails: list[str] | None = None
+    email_ids: list[UUID] | None = None
+    email_resources: list[QGetProfileV4EmailResource] | None = None
+    show_emails: bool | None = None
+    emails_agent_id: UUID | None = None
+    emails_required: bool | None = None
+    email_suggestions: list[UUID] | None = None
+    emails: list[QGetProfileV4EmailResource] | None = None
+    email_addresses: list[str] | None = None
     primary_email: str | None = None
     role: str | None = None
     active: bool | None = None
+    request_limit_id: UUID | None = None
+    request_limit_resource: QGetProfileV4RequestLimitResource | None = None
+    show_request_limit: bool | None = None
+    request_limit_agent_id: UUID | None = None
+    request_limit_required: bool | None = None
+    request_limit_suggestions: list[UUID] | None = None
+    request_limits: list[QGetProfileV4RequestLimitResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetProfileV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
     requests_per_day: int | None = None
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     primary_department_id: UUID | None = None
     valid_department_ids: list[UUID] | None = None
     valid_cohort_ids: list[UUID] | None = None
+    department_resources: list[QGetProfileV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
     departments: list[QGetProfileV4Department] | None = None
     cohorts: list[QGetProfileV4Cohort] | None = None
     role_options: list[str] | None = None
