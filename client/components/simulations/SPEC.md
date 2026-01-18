@@ -10,7 +10,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `simulation_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
 - `simulations_resource`(created_at, updated_at, simulation_id, active, generated, mcp, call_id, id)
@@ -36,7 +36,7 @@
 - `descriptions_resource`(<u>id</u>, description, created_at, updated_at, active, generated, call_id, mcp)
 - `departments_resource`(created_at, updated_at, department_id, active, generated, mcp, call_id, <u>id</u>, group_id)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
-- `scenario_flags_resource`(<u>id</u>, scenario_id, flag_id, created_at, updated_at, active, generated, mcp, call_id) - resource table with call_id, links scenarios to flags_resource
+- `scenario_flags_resource`(<u>id</u>, scenario_id, flag_id, created_at, updated_at, generated, mcp, active, call_id) - resource table with call_id, links scenarios to flags_resource
 - `scenario_positions_resource`(<u>id</u>, scenario_id, value, created_at, updated_at, generated, mcp, call_id) - resource table with call_id, positions for scenarios
 - `scenario_rubrics_resource`(<u>id</u>, scenario_id, rubric_id, created_at, updated_at, generated, mcp, active, call_id) - resource table with call_id, rubrics linked to scenarios
 - `scenario_time_limits_resource`(<u>id</u>, scenario_id, time_limit_seconds, created_at, updated_at, generated, mcp, active, call_id) - resource table with call_id, time limits for scenarios
@@ -44,6 +44,9 @@
 
 ### Draft persistence
 - `draft_simulations`(<u>draft_id</u>, <u>simulations_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_simulations_v4` returns only the new resource `id`; it does not return metadata columns from `simulations_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Departments, Flags, Rubrics, ScenarioFlags, ScenarioPositions, ScenarioTimeLimits, Scenarios

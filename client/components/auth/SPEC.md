@@ -10,7 +10,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `auth_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
 - `auths_resource`(created_at, updated_at, auth_id, active, generated, mcp, call_id, <u>id</u>, group_id)
@@ -32,6 +32,9 @@
 
 ### Draft persistence
 - `draft_auths`(<u>draft_id</u>, <u>auths_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_auths_v4` returns only the new resource `id`; it does not return metadata columns from `auths_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Flags, Protocols, Slugs

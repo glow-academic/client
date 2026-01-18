@@ -10,7 +10,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `agent_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
 - `agents_resource`(created_at, updated_at, agent_id, active, generated, mcp, call_id, id)
@@ -37,13 +37,17 @@
 - `prompts_resource`(created_at, updated_at, system_prompt, name, description, active, <u>id</u>, generated, call_id, mcp)
 - `models_resource`(created_at, updated_at, value, model_id, active, generated, mcp, call_id, <u>id</u>, modality)
 - `modalities_resource`(<u>id</u>, modality, created_at, updated_at, active, generated, mcp, call_id)
-- `tools_resource` (not listed in schema extract)
+- `tools_resource` (no table in schema.sql; tool data is stored in `tool_artifact` and related `tool_*` tables)
 - `reasoning_levels_resource`(<u>id</u>, reasoning_level_id, reasoning_level, created_at, updated_at, active, generated, call_id, mcp)
 - `temperature_levels_resource`(<u>id</u>, temperature_level_id, temperature, is_upper, created_at, updated_at, active, generated, call_id, mcp)
 - `voices_resource`(<u>id</u>, voice_id, voice, created_at, updated_at, active, generated, call_id, mcp)
 
 ### Draft persistence
 - `draft_agents`(<u>draft_id</u>, <u>agents_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_agents_v4` returns only the new resource `id`; it does not return metadata columns from `agents_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
+- There is no `tools_resource` table in `schema.sql`, so the API cannot return tool resources from a tools-specific resource table; tool metadata must be sourced from `tool_artifact` and related `tool_*` tables.
 
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Departments, Flags, Instructions, Prompts, Models, Modalities, Tools, ReasoningLevels, TemperatureLevels, Voices

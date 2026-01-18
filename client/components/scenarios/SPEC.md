@@ -12,7 +12,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 
 ### Artifact + resource containers
 - `scenario_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
@@ -25,7 +25,7 @@
 - `scenario_descriptions`(<u>scenario_id</u>, <u>description_id</u>, created_at, updated_at, generated, mcp, active)
 - `scenario_documents`(active, created_at, updated_at, <u>document_id</u>, <u>scenario_id</u>, generated, mcp)
 - `scenario_fields`(active, created_at, updated_at, <u>field_id</u>, <u>scenario_id</u>, generated, mcp)
-- `scenario_flags`(<u>scenario_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active, type)
+- `scenario_flags`(<u>scenario_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
 - `scenario_hints`(<u>scenario_id</u>, <u>hint_id</u>, created_at, updated_at, active, generated, mcp)
 - `scenario_images`(active, created_at, updated_at, <u>image_id</u>, <u>scenario_id</u>, generated, mcp)
 - `scenario_names`(<u>scenario_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
@@ -47,11 +47,11 @@
 - `scenario_time_limits_resource`(<u>id</u>, scenario_id, time_limit_seconds, created_at, updated_at, generated, mcp, active, call_id)
 
 ### Simulation-scenario relationship tables (simulation context)
-- `simulation_scenarios`(simulation_id, scenario_id) - Base relationship
-- `simulation_scenario_flags`(simulation_id, scenario_flag_id, value, created_at, updated_at) - Links to `scenario_flags_resource`
-- `simulation_scenario_positions`(simulation_id, scenario_position_id, created_at, updated_at) - Links to `scenario_positions_resource`
-- `simulation_scenario_rubrics`(simulation_id, scenario_rubric_id, created_at, updated_at) - Links to `scenario_rubrics_resource`
-- `simulation_scenario_time_limits`(simulation_id, scenario_time_limit_id, created_at, updated_at) - Links to `scenario_time_limits_resource`
+- `simulation_scenarios`(created_at, updated_at, <u>scenario_id</u>, <u>simulation_id</u>, generated, mcp, active) - Base relationship
+- `simulation_scenario_flags`(<u>simulation_id</u>, <u>scenario_flag_id</u>, value, created_at, updated_at, generated, mcp, active) - Links to `scenario_flags_resource`
+- `simulation_scenario_positions`(<u>simulation_id</u>, <u>scenario_position_id</u>, created_at, updated_at, generated, mcp, active) - Links to `scenario_positions_resource`
+- `simulation_scenario_rubrics`(<u>simulation_id</u>, <u>scenario_rubric_id</u>, created_at, updated_at, generated, mcp, active) - Links to `scenario_rubrics_resource`
+- `simulation_scenario_time_limits`(<u>simulation_id</u>, <u>scenario_time_limit_id</u>, created_at, updated_at, generated, mcp, active) - Links to `scenario_time_limits_resource`
 
 ### Resource tables referenced by the UI
 - `names_resource`(<u>id</u>, name, created_at, updated_at, active, generated, call_id, mcp)
@@ -59,21 +59,24 @@
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
 - `objectives_resource`(created_at, updated_at, objective, <u>id</u>, active, generated, call_id, mcp)
 - `problem_statements_resource`(created_at, updated_at, name, problem_statement, <u>id</u>, active, generated, call_id, mcp)
-- `images_resource`(<u>id</u>, name, created_at, updated_at, active, generated, call_id, mcp)
-- `videos_resource`(<u>id</u>, name, length_seconds, completed, active, created_at, updated_at)
-- `questions_resource`(<u>id</u>, question_text, allow_multiple, active, created_at, updated_at)
-- `options_resource`(<u>id</u>, option_text, is_correct, active, created_at, updated_at)
-- `hints_resource`(<u>id</u>, hint_text, created_at, updated_at, active, generated, call_id, mcp)
-- `templates_resource`(<u>id</u>, name, template, created_at, updated_at, active, generated, call_id, mcp)
-- `conversations_resource`(<u>id</u>, created_at, updated_at, active, generated, call_id, mcp)
-- `content_resource`(<u>id</u>, content, created_at, updated_at, active, generated, call_id, mcp)
-- `responses_resource`(<u>id</u>, response_text, created_at, updated_at, active, generated, call_id, mcp)
+- `images_resource`(created_at, updated_at, name, active, completed, <u>id</u>, description, generated, call_id, mcp)
+- `videos_resource`(created_at, updated_at, name, length_seconds, active, completed, <u>id</u>, description, generated, call_id, mcp)
+- `questions_resource`(created_at, updated_at, question_text, allow_multiple, active, <u>id</u>, generated, call_id, mcp)
+- `options_resource`(created_at, updated_at, option_text, active, <u>id</u>, is_correct, generated, call_id, mcp)
+- `hints_resource`(<u>id</u>, hint, created_at, updated_at, active, generated, call_id, mcp)
+- `templates_resource`(<u>id</u>, html, name, description, created_at, updated_at, active, generated, mcp, call_id)
+- `conversations_resource`(<u>id</u>, created_at, updated_at, end_reason, active, generated, call_id, mcp)
+- `contents_resource`(<u>id</u>, content_id, created_at, updated_at, active, generated, mcp, call_id)
+- `responses_resource`(created_at, updated_at, completed, <u>id</u>, option_id, question_id, active, generated, call_id, mcp)
 
 ### Other related tables
-- `scenario_tree`(parent_id, child_id) - Hierarchical relationships (not a resource table)
+- `scenario_tree`(active, created_at, updated_at, <u>child_id</u>, <u>parent_id</u>, generated, mcp) - Hierarchical relationships (not a resource table)
 - `draft_scenarios`(<u>draft_id</u>, <u>scenarios_id</u>, version, created_at, updated_at, generated, mcp, active)
-- `draft_scenario_flags`(draft_id, scenario_flag_id, value, created_at, updated_at)
-- `draft_scenario_rubric_grade_agents`(draft_id, scenario_rubric_grade_agent_id, created_at, updated_at)
+- `draft_scenario_flags`(<u>draft_id</u>, <u>scenario_flags_id</u>, version, created_at, updated_at, generated, mcp, active)
+- `draft_scenario_rubric_grade_agents`(<u>draft_id</u>, <u>scenario_rubric_grade_agents_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_scenarios_v4` returns only the new resource `id`; it does not return metadata columns from `scenarios_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 
@@ -99,7 +102,7 @@ Based on `ScenarioFormState` type and actual component usage:
 - **Options**: `option_ids` → `scenario_options` → `options_resource` (linked to questions)
 - **Hints**: `hint_ids` → `scenario_hints` → `hints_resource`
 - **Conversations**: `conversation_ids` → `scenario_conversations` → `conversations_resource`
-- **Content**: `content_ids` → `scenario_content` → `content_resource`
+- **Content**: `content_ids` → `scenario_content` → `contents_resource`
 - **Responses**: `response_ids` → `scenario_responses` → `responses_resource`
 
 #### Flag Resources (stored as `_flag_id`)

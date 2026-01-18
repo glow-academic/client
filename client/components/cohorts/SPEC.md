@@ -10,7 +10,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `cohort_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
 - `cohorts_resource`(created_at, updated_at, cohort_id, active, generated, mcp, call_id, id)
@@ -28,10 +28,13 @@
 - `departments_resource`(created_at, updated_at, department_id, active, generated, mcp, call_id, <u>id</u>, group_id)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
 - `simulations_resource`(created_at, updated_at, simulation_id, active, generated, mcp, call_id, id)
-- `simulation_positions_resource`(simulation_id, cohort_id, value, created_at, updated_at, generated, mcp, call_id)
+- `simulation_positions_resource`(<u>simulation_id</u>, <u>cohort_id</u>, value, created_at, updated_at, generated, mcp, call_id)
 
 ### Draft persistence
 - `draft_cohorts`(<u>draft_id</u>, <u>cohorts_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_cohorts_v4` returns only the new resource `id`; it does not return metadata columns from `cohorts_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Departments, Flags, Simulations

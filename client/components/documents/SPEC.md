@@ -10,7 +10,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `document_artifact`(created_at, updated_at, <u>id</u>, generated, mcp, group_id)
 - `documents_resource`(created_at, updated_at, document_id, active, generated, mcp, call_id, id)
@@ -23,7 +23,7 @@
 - `document_groups`(created_at, updated_at, <u>document_id</u>, <u>group_id</u>, generated, mcp, active)
 - `document_names`(<u>document_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
 - `document_parameters`(<u>document_id</u>, <u>parameter_id</u>, <u>type</u>, created_at, updated_at, active, generated, mcp)
-- `document_uploads_resource`(active, created_at, updated_at, document_id, uploads_id)
+- `document_uploads_resource`(active, created_at, updated_at, <u>document_id</u>, <u>uploads_id</u>)
 
 ### Resource tables referenced by the UI
 - `names_resource`(<u>id</u>, name, created_at, updated_at, active, generated, call_id, mcp)
@@ -35,6 +35,9 @@
 
 ### Draft persistence
 - `draft_documents`(<u>draft_id</u>, <u>documents_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_documents_v4` returns only the new resource `id`; it does not return metadata columns from `documents_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 - **Resources used**: Names, Descriptions, Departments, Fields, Flags, Uploads

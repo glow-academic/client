@@ -10,7 +10,7 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `tool_artifact`(<u>id</u>, created_at, updated_at, group_id, generated, mcp)
 
@@ -23,11 +23,14 @@
 - `tool_names`(<u>tool_id</u>, <u>name_id</u>, created_at, updated_at, generated, mcp, active)
 
 ### Resource tables referenced by the UI
-- `args_resource`(<u>id</u>, name, description, field_type, required, default_value, position, created_at, updated_at, active, generated, call_id, mcp, type)
+- `args_resource`(<u>id</u>, name, description, field_type, required, default_value, created_at, updated_at, active, generated, call_id, mcp, type)
 - `args_outputs_resource`(<u>id</u>, args_id, name, template, created_at, updated_at, active, generated, call_id, mcp)
 
 ### Draft persistence
 - (no artifact draft table listed for this UI flow)
+
+## SQL/API Coverage Gaps
+- `api_create_tools_v4` returns only the new resource `id`; it does not return metadata columns from `args_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 - **Resources used**: Args, ArgsOutputs

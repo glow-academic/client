@@ -10,13 +10,13 @@
 - **Group + call context**: Resource creation requires `group_id` and produces a `calls` row that ties tool execution to the resource record.
 - **MCP flagging**: `mcp` and `generated` are persisted in resource tables and junction tables to preserve provenance.
 
-## Schema Tables (database_schema.md)
+## Schema Tables (schema.sql)
 ### Artifact + resource containers
 - `profile_artifact`(updated_at, created_at, <u>id</u>, generated, mcp, group_id)
 - `profiles_resource`(updated_at, last_login, created_at, role, profile_id, active, generated, mcp, call_id, id)
 
 ### Junction + relationship tables
-- `profile_cohorts`(profile_id, cohort_id, active, created_at, updated_at, generated, mcp)
+- `profile_cohorts`(<u>profile_id</u>, <u>cohort_id</u>, active, created_at, updated_at, generated, mcp)
 - `profile_departments`(is_primary, created_at, active, updated_at, <u>department_id</u>, <u>profile_id</u>, generated, mcp)
 - `profile_emails`(email, is_primary, active, created_at, updated_at, <u>profile_id</u>, <u>email_id</u>, generated, mcp)
 - `profile_flags`(<u>profile_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)
@@ -33,6 +33,9 @@
 
 ### Draft persistence
 - `draft_profiles`(<u>draft_id</u>, <u>profiles_id</u>, version, created_at, updated_at, generated, mcp, active)
+
+## SQL/API Coverage Gaps
+- `api_create_profiles_v4` returns only the new resource `id`; it does not return metadata columns from `profiles_resource` (created_at, updated_at, active, generated, mcp, call_id, group_id when present). If the UI needs those without a follow-up fetch, extend the SQL response or add a read endpoint.
 
 ## UI Resource Mapping
 - **Resources used**: Names, Departments, Emails, Flags, RequestLimits, Cohorts
