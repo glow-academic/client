@@ -8,7 +8,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -37,11 +43,7 @@ import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
-import {
-  parseAsString,
-  useQueryStates,
-  type Parser,
-} from "nuqs";
+import { parseAsString, useQueryStates, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
@@ -347,16 +349,22 @@ function FieldComponent({
         formStateUpdates.name_id = updates.name_id as string | null;
       }
       if ("description_id" in updates) {
-        formStateUpdates.description_id = updates.description_id as string | null;
+        formStateUpdates.description_id = updates.description_id as
+          | string
+          | null;
       }
       if ("active_flag_id" in updates) {
-        formStateUpdates.active_flag_id = updates.active_flag_id as string | null;
+        formStateUpdates.active_flag_id = updates.active_flag_id as
+          | string
+          | null;
       }
       if ("department_ids" in updates) {
-        formStateUpdates.department_ids = (updates.department_ids as string[]) ?? [];
+        formStateUpdates.department_ids =
+          (updates.department_ids as string[]) ?? [];
       }
       if ("parameter_ids" in updates) {
-        formStateUpdates.parameter_ids = (updates.parameter_ids as string[]) ?? [];
+        formStateUpdates.parameter_ids =
+          (updates.parameter_ids as string[]) ?? [];
       }
       if (Object.keys(formStateUpdates).length > 0) {
         setFormState((prev) => ({ ...prev, ...formStateUpdates }));
@@ -642,13 +650,7 @@ function FieldComponent({
       });
     }
     return () => clearEntityMetadata();
-  }, [
-    fieldData,
-    fieldId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  }, [fieldData, fieldId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Set generation capability when field data is loaded
   // Check if any agent_id exists for generation capability
@@ -688,13 +690,7 @@ function FieldComponent({
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
       parameters: ["parameters"],
-      all: [
-        "names",
-        "descriptions",
-        "departments",
-        "flags",
-        "parameters",
-      ],
+      all: ["names", "descriptions", "departments", "flags", "parameters"],
     }),
     []
   );
@@ -804,13 +800,17 @@ function FieldComponent({
         title: "Basic Information",
         description:
           "Set the field name, description, departments, and active status.",
-        resetFields: ["name_id", "description_id", "department_ids", "active_flag_id"],
+        resetFields: [
+          "name_id",
+          "description_id",
+          "department_ids",
+          "active_flag_id",
+        ],
       },
       {
         id: "parameters",
         title: "Conditional Parameters",
-        description:
-          "Select parameters to show when this field is selected.",
+        description: "Select parameters to show when this field is selected.",
         resetFields: ["parameter_ids"],
       },
     ],
@@ -1013,7 +1013,12 @@ function FieldComponent({
                   }
                 />
               }
-              resetFields={["name_id", "description_id", "department_ids", "active_flag_id"]}
+              resetFields={[
+                "name_id",
+                "description_id",
+                "department_ids",
+                "active_flag_id",
+              ]}
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
@@ -1071,9 +1076,7 @@ function FieldComponent({
                   description_resource={
                     currentFieldData?.description_resource ?? null
                   }
-                  show_description={
-                    currentFieldData?.show_description ?? true
-                  }
+                  show_description={currentFieldData?.show_description ?? true}
                   description_suggestions={
                     currentFieldData?.description_suggestions ?? []
                   }
@@ -1102,9 +1105,7 @@ function FieldComponent({
                   department_resources={
                     currentFieldData?.department_resources ?? []
                   }
-                  show_departments={
-                    currentFieldData?.show_departments ?? false
-                  }
+                  show_departments={currentFieldData?.show_departments ?? false}
                   department_suggestions={
                     currentFieldData?.department_suggestions ?? []
                   }
@@ -1207,7 +1208,9 @@ function FieldComponent({
             >
               <Parameters
                 parameter_ids={formState.parameter_ids ?? []}
-                parameter_resources={currentFieldData?.parameter_resources ?? []}
+                parameter_resources={
+                  currentFieldData?.parameter_resources ?? []
+                }
                 show_parameters={currentFieldData?.show_parameters ?? false}
                 parameter_suggestions={
                   currentFieldData?.parameter_suggestions ?? []

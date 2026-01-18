@@ -279,7 +279,12 @@ function ProviderComponent({
       description_id: formState.description_id,
       active_flag_id: formState.active_flag_id,
     });
-  }, [draftId, formState.name_id, formState.description_id, formState.active_flag_id]);
+  }, [
+    draftId,
+    formState.name_id,
+    formState.description_id,
+    formState.active_flag_id,
+  ]);
 
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
@@ -287,9 +292,7 @@ function ProviderComponent({
   // Draft change listener - watches resource IDs and patches draft
   useEffect(() => {
     const hasResourceIds =
-      formState.name_id ||
-      formState.description_id ||
-      formState.active_flag_id;
+      formState.name_id || formState.description_id || formState.active_flag_id;
 
     if (!hasResourceIds || !patchProviderDraftActionRef.current) {
       return;
@@ -376,10 +379,8 @@ function ProviderComponent({
           const updates: Partial<typeof prev> = {};
 
           if (data.name_id) updates.name_id = data.name_id;
-          if (data.description_id)
-            updates.description_id = data.description_id;
-          if (data.active_flag_id)
-            updates.active_flag_id = data.active_flag_id;
+          if (data.description_id) updates.description_id = data.description_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
 
           return { ...prev, ...updates };
         });
@@ -467,10 +468,7 @@ function ProviderComponent({
 
   // Generation handler - accepts list of resource types
   const handleGenerateResources = useCallback(
-    async (
-      resourceTypes: ResourceType[],
-      userInstructions?: string
-    ) => {
+    async (resourceTypes: ResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected");
         return;
@@ -554,12 +552,13 @@ function ProviderComponent({
     clearEntityMetadata,
   ]);
 
-  // Submit handler
+  // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (!formState.name_id) {
-        toast.error("Name is required");
-        throw new Error("Name is required");
+      // Validate required resource IDs using {resource}_required flags from providerData
+      if (providerData?.name_required && !formState.name_id) {
+        toast.error("Provider name is required");
+        throw new Error("Provider name is required");
       }
 
       if (!saveProviderAction) {
@@ -570,7 +569,7 @@ function ProviderComponent({
       try {
         await saveProviderAction({
           body: {
-            input_provider_id: providerId || null,
+            input_provider_id: isEditMode && providerId ? providerId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
@@ -589,7 +588,14 @@ function ProviderComponent({
         throw error;
       }
     },
-    [formState, providerId, isEditMode, saveProviderAction, router]
+    [
+      formState,
+      isEditMode,
+      providerId,
+      providerData?.name_required,
+      saveProviderAction,
+      router,
+    ]
   );
 
   // Step status logic
@@ -613,9 +619,12 @@ function ProviderComponent({
       {
         id: "basic",
         title: "Basic Information",
-        description:
-          "Set the provider name, description, and active status.",
-        resetFields: ["name_id", "description_id", "active_flag_id"] as string[],
+        description: "Set the provider name, description, and active status.",
+        resetFields: [
+          "name_id",
+          "description_id",
+          "active_flag_id",
+        ] as string[],
       },
     ],
     []
@@ -716,8 +725,7 @@ function ProviderComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["basic"] &&
-                stepResources["basic"].length > 0 ? (
+                stepResources["basic"] && stepResources["basic"].length > 0 ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -726,14 +734,7 @@ function ProviderComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "basic"
-                            ]!.some((rt) => canRegenerate(rt));
-                            if (hasRegeneratable) {
-                              handleGenerateResources(stepResources["basic"]!);
-                            } else {
-                              handleGenerateResources(stepResources["basic"]!);
-                            }
+                            handleGenerateResources(stepResources["basic"]!);
                           }}
                           disabled={
                             disabled ||
@@ -752,9 +753,7 @@ function ProviderComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["basic"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
+                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
                           ? "Regenerate"
                           : "Generate"}
                       </TooltipContent>
@@ -881,7 +880,7 @@ function ProviderComponent({
   );
 }
 
-// Memoize component to prevent re-renders when only prop references change
+// Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(ProviderComponent, (prevProps, nextProps) => {
   // Compare providerData by resource IDs, not object reference
   const prevIds = {
