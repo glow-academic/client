@@ -836,7 +836,7 @@ function PersonaComponent({
         return "content";
       } else if (resourceTypes.length === 1) {
         // Single resource type - map to agent_type
-        const agentTypeMap: Record<ResourceType, string> = {
+        const agentTypeMap: Partial<Record<ResourceType, string>> = {
           names: "name",
           descriptions: "description",
           colors: "color",
@@ -849,7 +849,7 @@ function PersonaComponent({
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
-          return agentTypeMap[firstType];
+          return agentTypeMap[firstType] ?? null;
         }
       }
       return null;
@@ -1185,7 +1185,7 @@ function PersonaComponent({
   );
 
   // Resource labels for display
-  const resourceLabels: Record<ResourceType, string> = useMemo(
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
     () => ({
       names: "Names",
       descriptions: "Descriptions",
@@ -1207,7 +1207,7 @@ function PersonaComponent({
       const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
         (rt) => ({
           id: rt,
-          label: resourceLabels[rt],
+          label: resourceLabels[rt] ?? "",
           active: mode === "regenerate" ? canRegenerate(rt) : true,
         })
       );
