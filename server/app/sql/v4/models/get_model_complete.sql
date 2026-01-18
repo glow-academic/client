@@ -1,6 +1,6 @@
 -- Unified get model function - handles both new (model_id = NULL) and detail (model_id provided)
 -- Converted to function with composite types
--- Follows RETURN_STRUCTURE_GUIDELINES.md pattern
+-- Follows ARTIFACT.md pattern
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE

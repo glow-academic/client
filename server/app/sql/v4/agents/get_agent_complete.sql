@@ -1,6 +1,6 @@
 -- Unified get agent function - handles both new (agent_id = NULL) and detail (agent_id provided)
 -- Converted to function with composite types
--- Follows RETURN_STRUCTURE_GUIDELINES.md
+-- Follows ARTIFACT.md
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$

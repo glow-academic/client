@@ -39,7 +39,7 @@ END $$;
 
 -- 3) Recreate types
 -- Note: Composite types include `generated` boolean but NOT `group_id` (group_id is top-level field)
--- Following RETURN_STRUCTURE_GUIDELINES.md pattern
+-- Following ARTIFACT.md pattern
 
 CREATE TYPE types.q_get_scenario_v4_field_param_filter AS (
     parameter_id uuid,

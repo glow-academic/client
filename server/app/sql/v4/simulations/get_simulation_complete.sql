@@ -1,5 +1,5 @@
 -- Unified get simulation function - handles both new (simulation_id = NULL) and detail (simulation_id provided)
--- Converted to function with composite types following RETURN_STRUCTURE_GUIDELINES.md
+-- Converted to function with composite types following ARTIFACT.md
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -45,7 +45,7 @@ DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_position_resource;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_rubric_grade_agent_resource;
 
 -- 3) Recreate types
--- Create resource types first (following RETURN_STRUCTURE_GUIDELINES.md)
+-- Create resource types first (following ARTIFACT.md)
 CREATE TYPE types.q_get_simulation_v4_name_resource AS (
     id uuid,
     name text,
@@ -262,7 +262,7 @@ CREATE OR REPLACE FUNCTION api_get_simulation_v4(
     mcp boolean DEFAULT false
 )
 RETURNS TABLE (
-    -- Required fields (first 5) - following RETURN_STRUCTURE_GUIDELINES.md
+    -- Required fields (first 5) - following ARTIFACT.md
     actor_name text,
     simulation_exists boolean,
     can_edit boolean,
@@ -1038,7 +1038,7 @@ department_cohort_ids AS (
     WHERE (cd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
     GROUP BY ud.id
 ),
--- Department mapping data (filtered: active flag AND user linked) - following RETURN_STRUCTURE_GUIDELINES.md
+-- Department mapping data (filtered: active flag AND user linked) - following ARTIFACT.md
 department_mapping_data AS (
     SELECT 
         d.id as department_id,
@@ -1207,7 +1207,7 @@ default_member_agent AS (
     WHERE (SELECT COUNT(*) FROM valid_member_agents) = 1
     LIMIT 1
 ),
--- Resource CTEs following RETURN_STRUCTURE_GUIDELINES.md
+-- Resource CTEs following ARTIFACT.md
 -- Note: department_mapping_data will be defined after department_scenario_ids, etc. CTEs
 -- Name resource data
 name_resource_data AS (
@@ -2058,7 +2058,7 @@ missing_tools_check AS (
     CROSS JOIN ui_flags uf
     CROSS JOIN tools_existence_check tec
 ),
--- Calculate can_edit and disabled_reason (following RETURN_STRUCTURE_GUIDELINES.md)
+-- Calculate can_edit and disabled_reason (following ARTIFACT.md)
 permissions_data_with_tools AS (
     SELECT 
         CASE 
@@ -2114,7 +2114,7 @@ permissions_final AS (
     CROSS JOIN missing_tools_check mtc
 )
 SELECT 
-    -- Required fields (first 5) - following RETURN_STRUCTURE_GUIDELINES.md
+    -- Required fields (first 5) - following ARTIFACT.md
     COALESCE(uc.actor_name, '')::text as actor_name,
     (SELECT simulation_exists FROM simulation_exists_check) as simulation_exists,
     perm_final.can_edit,

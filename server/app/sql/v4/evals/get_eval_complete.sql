@@ -1,5 +1,5 @@
 -- Unified get eval function - handles both new (eval_id = NULL) and detail (eval_id provided)
--- Converted to function with composite types following RETURN_STRUCTURE_GUIDELINES.md
+-- Converted to function with composite types following ARTIFACT.md
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$

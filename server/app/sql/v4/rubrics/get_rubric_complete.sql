@@ -1,6 +1,6 @@
 -- Unified get rubric function - handles both new (rubric_id = NULL) and detail (rubric_id provided)
 -- Converted to function with composite types
--- Follows RETURN_STRUCTURE_GUIDELINES.md pattern
+-- Follows ARTIFACT.md pattern
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$

@@ -1,6 +1,6 @@
 -- Unified get document function - handles both new (document_id = NULL) and detail (document_id provided)
 -- Converted to function with composite types
--- Follows RETURN_STRUCTURE_GUIDELINES.md pattern
+-- Follows ARTIFACT.md pattern
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
