@@ -426,6 +426,34 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Token validation error details: {e}", exc_info=True)
             return oauth_401()
 
+        # Extract profile_id from OAuth claims and store in request.state.profile_id
+        # This makes MCP endpoints consistent with HTTP API endpoints
+        # Both use request.state.profile_id as the single source of truth
+        from app.main import get_pool
+        from app.utils.mcp.get_profile_id_from_claims import \
+            get_profile_id_from_claims
+
+        pool = get_pool()
+        if pool:
+            try:
+                async with pool.acquire() as conn:
+                    profile_id = await get_profile_id_from_claims(claims, conn)
+                    if profile_id:
+                        request.state.profile_id = profile_id
+                        logger.debug(
+                            f"MCP profile_id extracted from OAuth claims: {profile_id}"
+                        )
+                    else:
+                        logger.warning(
+                            f"MCP OAuth token valid but no matching profile found for email: {claims.get('email')}"
+                        )
+            except Exception as e:
+                # Log error but don't fail the request - let endpoint handle missing profile_id
+                logger.error(
+                    f"Failed to extract profile_id from OAuth claims: {e}",
+                    exc_info=True,
+                )
+
         # Rewrite path for Cursor compatibility
         # Cursor expects /mcp/messages and /mcp/sse/messages
         # FastMCP handles requests at /mcp directly

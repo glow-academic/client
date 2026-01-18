@@ -31,6 +31,8 @@ ARTIFACTS = [
 RESOURCES = [
     "agents",
     "analyses",
+    "args",
+    "args_outputs",
     "audios",
     "auths",
     "cohorts",
@@ -39,6 +41,7 @@ RESOURCES = [
     "contents",
     "conversations",
     "debug_info",
+    "default_accounts",
     "departments",
     "descriptions",
     "documents",
@@ -87,9 +90,6 @@ RESOURCES = [
     "scenario_positions",
     "scenario_rubric_grade_agents",
     "scenarios",
-    "schema_field_items",
-    "schema_fields",
-    "schemas",
     "settings",
     "simulation_scenario_flags",
     "simulations",
@@ -97,13 +97,12 @@ RESOURCES = [
     "standard_groups",
     "strengths",
     "temperature_levels",
-    "template_array_items",
-    "template_values",
     "templates",
     "texts",
     "thresholds",
     "times",
     "tools",
+    "uploads",
     "values",
     "videos",
     "voices",
@@ -159,16 +158,14 @@ RESOURCE_DESCRIPTIONS: dict[str, str] = {
     "feedbacks": "Feedback resources containing evaluation comments",
     "conversations": "Conversation resources for dialogue content",
     "debug_info": "Debug info resources containing diagnostic information",
-    "schemas": "Schema resources defining data structures",
-    "schema_fields": "Schema field resources for structured data",
-    "schema_field_items": "Schema field item resources for nested structures",
+    "default_accounts": "Default account resources for system configuration",
     "templates": "Template resources for reusable content patterns",
-    "template_array_items": "Template array item resources for list structures",
-    "template_values": "Template value resources for variable substitution",
     "standard_groups": "Standard group resources for organizing criteria",
     "times": "Time resources for duration and scheduling",
     "agents": "Agent resources for AI agent configurations",
     "analyses": "Analysis resources containing evaluation results",
+    "args": "Argument resources for function and tool arguments",
+    "args_outputs": "Argument output resources for function and tool outputs",
     "audios": "Audio resources for sound content",
     "auths": "Authentication resource configurations",
     "cohorts": "Cohort resources for student groups",
@@ -210,6 +207,7 @@ RESOURCE_DESCRIPTIONS: dict[str, str] = {
     "temperature_levels": "Temperature level resources for AI model temperature settings",
     "texts": "Text resources for text content",
     "tools": "Tool resources for tool configurations",
+    "uploads": "Upload resources for file uploads and media management",
     "values": "Value resources for configuration values",
     "voices": "Voice resources for voice configurations",
 }
@@ -242,11 +240,16 @@ def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) 
 
 # Static imports for all artifact handlers
 try:
-    from app.api.v4.artifacts.persona.delete import delete_persona
-    from app.api.v4.artifacts.persona.duplicate import duplicate_persona
-    from app.api.v4.artifacts.persona.get import get_persona
-    from app.api.v4.artifacts.persona.list import get_personas_list
-    from app.api.v4.artifacts.persona.save import save_persona
+    from app.api.v4.artifacts.persona.delete import \
+        delete_persona  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.duplicate import \
+        duplicate_persona  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.get import \
+        get_persona  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.list import \
+        get_personas_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.persona.save import \
+        save_persona  # type: ignore[attr-defined]
 
     PERSONAS_HANDLERS = {
         "get": get_persona,
@@ -260,11 +263,16 @@ except ImportError:
 
 # Scenarios handlers (uses unified get.py and save.py)
 try:
-    from app.api.v4.artifacts.scenario.delete import delete_scenario
-    from app.api.v4.artifacts.scenario.duplicate import duplicate_scenario
-    from app.api.v4.artifacts.scenario.get import get_scenario
-    from app.api.v4.artifacts.scenario.list import get_scenarios_list
-    from app.api.v4.artifacts.scenario.save import save_scenario
+    from app.api.v4.artifacts.scenario.delete import \
+        delete_scenario  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.duplicate import \
+        duplicate_scenario  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.get import \
+        get_scenario  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.list import \
+        get_scenarios_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.scenario.save import \
+        save_scenario  # type: ignore[attr-defined]
 
     SCENARIOS_HANDLERS = {
         "get": get_scenario,
@@ -278,11 +286,16 @@ except ImportError:
 
 # Simulations handlers
 try:
-    from app.api.v4.artifacts.simulation.delete import delete_simulation
-    from app.api.v4.artifacts.simulation.duplicate import duplicate_simulation
-    from app.api.v4.artifacts.simulation.get import get_simulation
-    from app.api.v4.artifacts.simulation.list import get_simulations_list
-    from app.api.v4.artifacts.simulation.save import save_simulation
+    from app.api.v4.artifacts.simulation.delete import \
+        delete_simulation  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.duplicate import \
+        duplicate_simulation  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.get import \
+        get_simulation  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.list import \
+        get_simulations_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.simulation.save import \
+        save_simulation  # type: ignore[attr-defined]
 
     SIMULATIONS_HANDLERS = {
         "get": get_simulation,
@@ -296,10 +309,14 @@ except ImportError:
 
 # Documents handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.document.delete import delete_document
-    from app.api.v4.artifacts.document.get import get_document
-    from app.api.v4.artifacts.document.list import get_documents_list
-    from app.api.v4.artifacts.document.save import save_document
+    from app.api.v4.artifacts.document.delete import \
+        delete_document  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.get import \
+        get_document  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.list import \
+        get_documents_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.document.save import \
+        save_document  # type: ignore[attr-defined]
 
     DOCUMENTS_HANDLERS = {
         "get": get_document,
@@ -313,11 +330,16 @@ except ImportError:
 
 # Departments handlers
 try:
-    from app.api.v4.artifacts.department.delete import delete_department
-    from app.api.v4.artifacts.department.duplicate import duplicate_department
-    from app.api.v4.artifacts.department.get import get_department
-    from app.api.v4.artifacts.department.list import get_departments_list
-    from app.api.v4.artifacts.department.save import save_department
+    from app.api.v4.artifacts.department.delete import \
+        delete_department  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.duplicate import \
+        duplicate_department  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.get import \
+        get_department  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.list import \
+        get_departments_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.department.save import \
+        save_department  # type: ignore[attr-defined]
 
     DEPARTMENTS_HANDLERS = {
         "get": get_department,
@@ -331,11 +353,16 @@ except ImportError:
 
 # Cohorts handlers
 try:
-    from app.api.v4.artifacts.cohort.delete import delete_cohort
-    from app.api.v4.artifacts.cohort.duplicate import duplicate_cohort
-    from app.api.v4.artifacts.cohort.get import get_cohort
-    from app.api.v4.artifacts.cohort.list import get_cohorts_list
-    from app.api.v4.artifacts.cohort.save import save_cohort
+    from app.api.v4.artifacts.cohort.delete import \
+        delete_cohort  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.duplicate import \
+        duplicate_cohort  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.get import \
+        get_cohort  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.list import \
+        get_cohorts_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.cohort.save import \
+        save_cohort  # type: ignore[attr-defined]
 
     COHORTS_HANDLERS = {
         "get": get_cohort,
@@ -349,10 +376,14 @@ except ImportError:
 
 # Evals handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.eval.delete import delete_eval
-    from app.api.v4.artifacts.eval.get import get_eval
-    from app.api.v4.artifacts.eval.list import get_evals_list
-    from app.api.v4.artifacts.eval.save import save_eval
+    from app.api.v4.artifacts.eval.delete import \
+        delete_eval  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.get import \
+        get_eval  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.list import \
+        get_evals_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.eval.save import \
+        save_eval  # type: ignore[attr-defined]
 
     EVALS_HANDLERS = {
         "get": get_eval,
@@ -366,11 +397,16 @@ except ImportError:
 
 # Rubrics handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.rubric.delete import delete_rubric
-    from app.api.v4.artifacts.rubric.duplicate import duplicate_rubric
-    from app.api.v4.artifacts.rubric.get import get_rubric
-    from app.api.v4.artifacts.rubric.list import get_rubrics_list
-    from app.api.v4.artifacts.rubric.save import save_rubric
+    from app.api.v4.artifacts.rubric.delete import \
+        delete_rubric  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.duplicate import \
+        duplicate_rubric  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.get import \
+        get_rubric  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.list import \
+        get_rubrics_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.rubric.save import \
+        save_rubric  # type: ignore[attr-defined]
 
     RUBRICS_HANDLERS = {
         "get": get_rubric,
@@ -384,11 +420,16 @@ except ImportError:
 
 # Agents handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.agent.delete import delete_agent
-    from app.api.v4.artifacts.agent.duplicate import duplicate_agent
-    from app.api.v4.artifacts.agent.get import get_agent
-    from app.api.v4.artifacts.agent.list import list_agents
-    from app.api.v4.artifacts.agent.save import save_agent
+    from app.api.v4.artifacts.agent.delete import \
+        delete_agent  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.agent.duplicate import \
+        duplicate_agent  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.agent.get import \
+        get_agent  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.agent.list import \
+        list_agents  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.agent.save import \
+        save_agent  # type: ignore[attr-defined]
 
     AGENTS_HANDLERS = {
         "get": get_agent,
@@ -402,11 +443,16 @@ except ImportError:
 
 # Models handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.model.delete import delete_model
-    from app.api.v4.artifacts.model.duplicate import duplicate_model
-    from app.api.v4.artifacts.model.get import get_model
-    from app.api.v4.artifacts.model.list import get_models_list
-    from app.api.v4.artifacts.model.save import save_model
+    from app.api.v4.artifacts.model.delete import \
+        delete_model  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.duplicate import \
+        duplicate_model  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.get import \
+        get_model  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.list import \
+        get_models_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.model.save import \
+        save_model  # type: ignore[attr-defined]
 
     MODELS_HANDLERS = {
         "get": get_model,
@@ -420,10 +466,14 @@ except ImportError:
 
 # Providers handlers
 try:
-    from app.api.v4.artifacts.provider.delete import delete_provider
-    from app.api.v4.artifacts.provider.get import get_provider
-    from app.api.v4.artifacts.provider.list import get_providers_list
-    from app.api.v4.artifacts.provider.save import save_provider
+    from app.api.v4.artifacts.provider.delete import \
+        delete_provider  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.get import \
+        get_provider  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.list import \
+        get_providers_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.provider.save import \
+        save_provider  # type: ignore[attr-defined]
 
     PROVIDERS_HANDLERS = {
         "get": get_provider,
@@ -437,11 +487,16 @@ except ImportError:
 
 # Parameters handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.parameter.delete import delete_parameter
-    from app.api.v4.artifacts.parameter.duplicate import duplicate_parameter
-    from app.api.v4.artifacts.parameter.get import get_parameter
-    from app.api.v4.artifacts.parameter.list import get_parameters_list
-    from app.api.v4.artifacts.parameter.save import save_parameter
+    from app.api.v4.artifacts.parameter.delete import \
+        delete_parameter  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.duplicate import \
+        duplicate_parameter  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.get import \
+        get_parameter  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.list import \
+        get_parameters_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.parameter.save import \
+        save_parameter  # type: ignore[attr-defined]
 
     PARAMETERS_HANDLERS = {
         "get": get_parameter,
@@ -455,11 +510,16 @@ except ImportError:
 
 # Fields handlers
 try:
-    from app.api.v4.artifacts.field.delete import delete_field
-    from app.api.v4.artifacts.field.duplicate import duplicate_field
-    from app.api.v4.artifacts.field.get import get_field
-    from app.api.v4.artifacts.field.list import get_fields_list
-    from app.api.v4.artifacts.field.save import save_field
+    from app.api.v4.artifacts.field.delete import \
+        delete_field  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.duplicate import \
+        duplicate_field  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.get import \
+        get_field  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.list import \
+        get_fields_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.field.save import \
+        save_field  # type: ignore[attr-defined]
 
     FIELDS_HANDLERS = {
         "get": get_field,
@@ -473,9 +533,12 @@ except ImportError:
 
 # Profile handlers (uses unified get.py and save.py)
 try:
-    from app.api.v4.artifacts.profile.delete import delete_profile
-    from app.api.v4.artifacts.profile.get import get_profile
-    from app.api.v4.artifacts.profile.save import save_profile
+    from app.api.v4.artifacts.profile.delete import \
+        delete_profile  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.profile.get import \
+        get_profile  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.profile.save import \
+        save_profile  # type: ignore[attr-defined]
 
     PROFILE_HANDLERS = {
         "get": get_profile,
@@ -489,11 +552,16 @@ except ImportError:
 
 # Auth handlers (uses unified save.py)
 try:
-    from app.api.v4.artifacts.auth.delete import delete_auth
-    from app.api.v4.artifacts.auth.duplicate import duplicate_auth
-    from app.api.v4.artifacts.auth.get import get_auth
-    from app.api.v4.artifacts.auth.list import get_auth_list
-    from app.api.v4.artifacts.auth.save import save_auth
+    from app.api.v4.artifacts.auth.delete import \
+        delete_auth  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.auth.duplicate import \
+        duplicate_auth  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.auth.get import \
+        get_auth  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.auth.list import \
+        get_auth_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.auth.save import \
+        save_auth  # type: ignore[attr-defined]
 
     AUTH_HANDLERS = {
         "get": get_auth,
@@ -507,11 +575,16 @@ except ImportError:
 
 # Tools handlers
 try:
-    from app.api.v4.artifacts.tool.delete import delete_tool
-    from app.api.v4.artifacts.tool.duplicate import duplicate_tool
-    from app.api.v4.artifacts.tool.get import get_tool
-    from app.api.v4.artifacts.tool.list import get_tools_list
-    from app.api.v4.artifacts.tool.save import save_tool
+    from app.api.v4.artifacts.tool.delete import \
+        delete_tool  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.tool.duplicate import \
+        duplicate_tool  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.tool.get import \
+        get_tool  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.tool.list import \
+        get_tools_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.tool.save import \
+        save_tool  # type: ignore[attr-defined]
 
     TOOLS_HANDLERS = {
         "get": get_tool,
@@ -528,19 +601,29 @@ KEYS_HANDLERS: dict[str, Any] = {}
 
 # Analytics handlers
 try:
-    from app.api.v4.analytics.activity.get import get_activity_bundle
-    from app.api.v4.analytics.activity.list import get_activity_list
-    from app.api.v4.analytics.benchmark.get import get_benchmark_overview
-    from app.api.v4.analytics.dashboard.get import get_dashboard
-    from app.api.v4.analytics.health.get import get_health
-    from app.api.v4.analytics.home.get import get_home_overview
-    from app.api.v4.analytics.leaderboard.get import get_leaderboard
-    from app.api.v4.analytics.practice.get import get_practice_overview
-    from app.api.v4.analytics.pricing.get import get_pricing
+    from app.api.v4.analytics.activity.get import \
+        get_activity_bundle  # type: ignore[attr-defined]
+    from app.api.v4.analytics.activity.list import \
+        get_activity_list  # type: ignore[attr-defined]
+    from app.api.v4.analytics.benchmark.get import \
+        get_benchmark_overview  # type: ignore[attr-defined]
+    from app.api.v4.analytics.dashboard.get import \
+        get_dashboard  # type: ignore[attr-defined]
+    from app.api.v4.analytics.health.get import \
+        get_health  # type: ignore[attr-defined]
+    from app.api.v4.analytics.home.get import \
+        get_home_overview  # type: ignore[attr-defined]
+    from app.api.v4.analytics.leaderboard.get import \
+        get_leaderboard  # type: ignore[attr-defined]
+    from app.api.v4.analytics.practice.get import \
+        get_practice_overview  # type: ignore[attr-defined]
+    from app.api.v4.analytics.pricing.get import \
+        get_pricing  # type: ignore[attr-defined]
     from app.api.v4.analytics.reports.get import \
-        get_reports  # Single profile report (merged overview + history)
+        get_reports  # type: ignore[attr-defined] # Single profile report (merged overview + history)
     from app.api.v4.analytics.reports.list import \
-        get_reports as get_reports_list  # List for multiple profiles
+        get_reports as \
+        get_reports_list  # type: ignore[attr-defined] # List for multiple profiles
 
     ANALYTICS_HANDLERS = {
         "home": get_home_overview,
@@ -559,8 +642,10 @@ except ImportError:
 
 # Groups handlers
 try:
-    from app.api.v4.analytics.pricing.list import get_pricing_list
-    from app.api.v4.artifacts.group import get_group
+    from app.api.v4.analytics.pricing.list import \
+        get_pricing_list  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.group import \
+        get_group  # type: ignore[attr-defined]
 
     GROUPS_HANDLERS = {
         "list": get_pricing_list,
@@ -571,18 +656,26 @@ except ImportError:
 
 # Attempts handlers
 try:
-    from app.api.v4.analytics.dashboard.list import get_dashboard_history
-    from app.api.v4.analytics.home.list import get_home_history
-    from app.api.v4.analytics.practice.list import get_practice_history
-    from app.api.v4.attempts.archive import bulk_archive_attempts
-    from app.api.v4.attempts.benchmark.get import get_eval_attempt_full
-    from app.api.v4.attempts.simulation.get import get_attempt_full
+    from app.api.v4.analytics.benchmark.list import \
+        get_benchmark_history  # type: ignore[attr-defined]
+    from app.api.v4.analytics.dashboard.list import \
+        get_dashboard_history  # type: ignore[attr-defined]
+    from app.api.v4.analytics.home.list import \
+        get_home_history  # type: ignore[attr-defined]
+    from app.api.v4.analytics.practice.list import \
+        get_practice_history  # type: ignore[attr-defined]
+    from app.api.v4.attempts.archive import \
+        bulk_archive_attempts  # type: ignore[import-untyped]
+    from app.api.v4.attempts.benchmark.get import \
+        get_eval_attempt_full  # type: ignore[attr-defined]
+    from app.api.v4.attempts.simulation.get import \
+        get_attempt_full  # type: ignore[attr-defined]
 
     ATTEMPTS_HANDLERS = {
         "list_home": get_home_history,
         "list_dashboard": get_dashboard_history,
         "list_practice": get_practice_history,
-        "list_benchmark": None,  # TODO: Will be implemented when benchmark/history endpoint is created
+        "list_benchmark": get_benchmark_history,
         "get_simulation": get_attempt_full,
         "get_eval": get_eval_attempt_full,
         "archive": bulk_archive_attempts,  # Currently supports simulation only, will support benchmark/eval later
@@ -592,8 +685,10 @@ except ImportError:
 
 # Settings handlers (embedded in artifacts)
 try:
-    from app.api.v4.artifacts.setting.list import list_settings
-    from app.api.v4.artifacts.setting.update import update_settings
+    from app.api.v4.artifacts.setting.list import \
+        list_settings  # type: ignore[attr-defined]
+    from app.api.v4.artifacts.setting.update import \
+        update_settings  # type: ignore[import-untyped]
 
     SETTINGS_HANDLERS = {
         "get": list_settings,
@@ -602,115 +697,180 @@ try:
 except ImportError:
     SETTINGS_HANDLERS = {}
 
-# Feedback handlers (for debug/report problem)
+# Debug handlers (for debug/report problem)
 try:
-    from app.api.v4.feedback.create import create_feedback
+    from app.api.v4.debug import \
+        create_feedback  # type: ignore[import-untyped]
 
-    FEEDBACK_HANDLER: Any = create_feedback
+    DEBUG_HANDLER: Any = create_feedback
 except ImportError:
-    FEEDBACK_HANDLER: Any = None
+    DEBUG_HANDLER: Any = None
 
 # Resource handlers (for create_resource tool)
 RESOURCE_HANDLERS: dict[str, Any] = {}
 try:
-    from app.api.v4.resources.agents import \
-        create_agent as create_agent_resource
-    from app.api.v4.resources.analyses import create_analyses
-    from app.api.v4.resources.audios import create_audio
-    from app.api.v4.resources.auths import create_auths
-    from app.api.v4.resources.cohorts import create_cohort
-    from app.api.v4.resources.colors import create_color
-    from app.api.v4.resources.conditional_parameters import \
-        create_conditional_parameters
-    from app.api.v4.resources.contents import create_contents
-    from app.api.v4.resources.conversations import create_conversation
-    from app.api.v4.resources.debug_info import create_debug_info
-    from app.api.v4.resources.departments import create_department
-    from app.api.v4.resources.descriptions import create_description
-    from app.api.v4.resources.documents import create_document
-    from app.api.v4.resources.emails import create_emails
-    from app.api.v4.resources.endpoints import create_endpoints
-    from app.api.v4.resources.evals import create_eval
-    from app.api.v4.resources.examples import create_example
-    from app.api.v4.resources.feedbacks import create_feedbacks
-    from app.api.v4.resources.fields import create_field
-    from app.api.v4.resources.flags import create_flag
-    from app.api.v4.resources.group_positions import create_group_positions
-    from app.api.v4.resources.groups import create_groups
-    from app.api.v4.resources.groups_rubric_grade_agents import \
-        create_groups_rubric_grade_agents
-    from app.api.v4.resources.hints import create_hint
-    from app.api.v4.resources.html import create_html
-    from app.api.v4.resources.icons import create_icon
-    from app.api.v4.resources.images import create_image
-    from app.api.v4.resources.improvements import create_improvement
-    from app.api.v4.resources.instructions import create_instruction
-    from app.api.v4.resources.items import create_items
-    from app.api.v4.resources.keys import create_key
-    from app.api.v4.resources.modalities import create_modalities
-    from app.api.v4.resources.models import \
-        create_model as create_model_resource
-    from app.api.v4.resources.names import create_name
-    from app.api.v4.resources.objectives import create_objective
-    from app.api.v4.resources.options import create_option
-    from app.api.v4.resources.parameters import \
-        create_parameter as create_parameter_resource
-    from app.api.v4.resources.personas import create_persona
-    from app.api.v4.resources.points import create_point
-    from app.api.v4.resources.pricing import create_pricing
-    from app.api.v4.resources.problem_statements import \
-        create_problem_statement
-    from app.api.v4.resources.profiles import \
-        create_profile as create_profile_resource
-    from app.api.v4.resources.prompts import create_prompt
-    from app.api.v4.resources.protocols import create_protocols
-    from app.api.v4.resources.providers import create_providers
-    from app.api.v4.resources.qualities import create_qualities
-    from app.api.v4.resources.questions import create_questions
-    from app.api.v4.resources.reasoning_levels import create_reasoning_levels
-    from app.api.v4.resources.request_limits import create_request_limits
-    from app.api.v4.resources.responses import create_response
-    from app.api.v4.resources.rubrics import \
-        create_rubric as create_rubric_resource
-    from app.api.v4.resources.run_positions import create_run_positions
-    from app.api.v4.resources.runs import create_runs
-    from app.api.v4.resources.runs_rubric_grade_agents import \
-        create_runs_rubric_grade_agents
-    from app.api.v4.resources.scenario_flags import create_scenario_flags
-    from app.api.v4.resources.scenario_positions import \
-        create_scenario_position
-    from app.api.v4.resources.scenario_rubric_grade_agents import \
-        create_scenario_rubric_grade_agent
-    from app.api.v4.resources.scenarios import \
-        create_scenario as create_scenario_resource
-    from app.api.v4.resources.schema_field_items import \
-        create_schema_field_item
-    from app.api.v4.resources.schema_fields import create_schema_field
-    from app.api.v4.resources.schemas import create_schema
-    from app.api.v4.resources.settings import create_setting
-    from app.api.v4.resources.simulation_scenario_flags import \
-        create_simulation_scenario_flag
-    from app.api.v4.resources.simulations import create_simulation
-    from app.api.v4.resources.slugs import create_slugs
-    from app.api.v4.resources.standard_groups import create_standard_group
-    from app.api.v4.resources.strengths import create_strength
-    from app.api.v4.resources.temperature_levels import \
-        create_temperature_levels
-    from app.api.v4.resources.template_array_items import \
-        create_template_array_item
-    from app.api.v4.resources.template_values import create_template_value
-    from app.api.v4.resources.templates import create_template
-    from app.api.v4.resources.texts import create_texts
-    from app.api.v4.resources.thresholds import create_threshold
-    from app.api.v4.resources.times import create_time
-    from app.api.v4.resources.tools import create_tools
-    from app.api.v4.resources.values import create_values
-    from app.api.v4.resources.videos import create_video
-    from app.api.v4.resources.voices import create_voices
+    from app.api.v4.resources.agents.create import \
+        create_agent as create_agent_resource  # type: ignore[attr-defined]
+    from app.api.v4.resources.analyses.create import \
+        create_analyses  # type: ignore[attr-defined]
+    from app.api.v4.resources.args.create import \
+        create_arg  # type: ignore[attr-defined]
+    from app.api.v4.resources.args_outputs.create import \
+        create_args_output  # type: ignore[attr-defined]
+    from app.api.v4.resources.audios.create import \
+        create_audio  # type: ignore[attr-defined]
+    from app.api.v4.resources.auths.create import \
+        create_auths  # type: ignore[attr-defined]
+    from app.api.v4.resources.cohorts.create import \
+        create_cohort  # type: ignore[attr-defined]
+    from app.api.v4.resources.colors.create import \
+        create_color  # type: ignore[attr-defined]
+    from app.api.v4.resources.conditional_parameters.create import \
+        create_conditional_parameters  # type: ignore[attr-defined]
+    from app.api.v4.resources.contents.create import \
+        create_contents  # type: ignore[attr-defined]
+    from app.api.v4.resources.conversations.create import \
+        create_conversation  # type: ignore[attr-defined]
+    from app.api.v4.resources.debug_info.create import \
+        create_debug_info  # type: ignore[attr-defined]
+    from app.api.v4.resources.default_accounts.create import \
+        create_default_accounts  # type: ignore[attr-defined]
+    from app.api.v4.resources.departments.create import \
+        create_department  # type: ignore[attr-defined]
+    from app.api.v4.resources.descriptions.create import \
+        create_description  # type: ignore[attr-defined]
+    from app.api.v4.resources.documents.create import \
+        create_document  # type: ignore[attr-defined]
+    from app.api.v4.resources.emails.create import \
+        create_emails  # type: ignore[attr-defined]
+    from app.api.v4.resources.endpoints.create import \
+        create_endpoints  # type: ignore[attr-defined]
+    from app.api.v4.resources.evals.create import \
+        create_eval  # type: ignore[attr-defined]
+    from app.api.v4.resources.examples.create import \
+        create_example  # type: ignore[attr-defined]
+    from app.api.v4.resources.feedbacks.create import \
+        create_feedbacks  # type: ignore[attr-defined]
+    from app.api.v4.resources.fields.create import \
+        create_field  # type: ignore[attr-defined]
+    from app.api.v4.resources.flags.create import \
+        create_flag  # type: ignore[attr-defined]
+    from app.api.v4.resources.group_positions.create import \
+        create_group_positions  # type: ignore[attr-defined]
+    from app.api.v4.resources.groups.create import \
+        create_groups  # type: ignore[attr-defined]
+    from app.api.v4.resources.groups_rubric_grade_agents.create import \
+        create_groups_rubric_grade_agents  # type: ignore[attr-defined]
+    from app.api.v4.resources.hints.create import \
+        create_hint  # type: ignore[attr-defined]
+    from app.api.v4.resources.html.create import \
+        create_html  # type: ignore[attr-defined]
+    from app.api.v4.resources.icons.create import \
+        create_icon  # type: ignore[attr-defined]
+    from app.api.v4.resources.images.create import \
+        create_image  # type: ignore[attr-defined]
+    from app.api.v4.resources.improvements.create import \
+        create_improvement  # type: ignore[attr-defined]
+    from app.api.v4.resources.instructions.create import \
+        create_instruction  # type: ignore[attr-defined]
+    from app.api.v4.resources.items.create import \
+        create_items  # type: ignore[attr-defined]
+    from app.api.v4.resources.keys.create import \
+        create_key  # type: ignore[attr-defined]
+    from app.api.v4.resources.modalities.create import \
+        create_modalities  # type: ignore[attr-defined]
+    from app.api.v4.resources.models.create import \
+        create_model as create_model_resource  # type: ignore[attr-defined]
+    from app.api.v4.resources.names.create import \
+        create_name  # type: ignore[attr-defined]
+    from app.api.v4.resources.objectives.create import \
+        create_objective  # type: ignore[attr-defined]
+    from app.api.v4.resources.options.create import \
+        create_option  # type: ignore[attr-defined]
+    from app.api.v4.resources.parameters.create import \
+        create_parameter as \
+        create_parameter_resource  # type: ignore[attr-defined]
+    from app.api.v4.resources.personas.create import \
+        create_persona  # type: ignore[attr-defined]
+    from app.api.v4.resources.points.create import \
+        create_point  # type: ignore[attr-defined]
+    from app.api.v4.resources.pricing.create import \
+        create_pricing  # type: ignore[attr-defined]
+    from app.api.v4.resources.problem_statements.create import \
+        create_problem_statement  # type: ignore[attr-defined]
+    from app.api.v4.resources.profiles.create import \
+        create_profile as create_profile_resource  # type: ignore[attr-defined]
+    from app.api.v4.resources.prompts.create import \
+        create_prompt  # type: ignore[attr-defined]
+    from app.api.v4.resources.protocols.create import \
+        create_protocols  # type: ignore[attr-defined]
+    from app.api.v4.resources.providers.create import \
+        create_providers  # type: ignore[attr-defined]
+    from app.api.v4.resources.qualities.create import \
+        create_qualities  # type: ignore[attr-defined]
+    from app.api.v4.resources.questions.create import \
+        create_questions  # type: ignore[attr-defined]
+    from app.api.v4.resources.reasoning_levels.create import \
+        create_reasoning_levels  # type: ignore[attr-defined]
+    from app.api.v4.resources.request_limits.create import \
+        create_request_limits  # type: ignore[attr-defined]
+    from app.api.v4.resources.responses.create import \
+        create_response  # type: ignore[attr-defined]
+    from app.api.v4.resources.rubrics.create import \
+        create_rubric as create_rubric_resource  # type: ignore[attr-defined]
+    from app.api.v4.resources.run_positions.create import \
+        create_run_positions  # type: ignore[attr-defined]
+    from app.api.v4.resources.runs.create import \
+        create_runs  # type: ignore[attr-defined]
+    from app.api.v4.resources.runs_rubric_grade_agents.create import \
+        create_runs_rubric_grade_agents  # type: ignore[attr-defined]
+    from app.api.v4.resources.scenario_flags.create import \
+        create_scenario_flags  # type: ignore[attr-defined]
+    from app.api.v4.resources.scenario_positions.create import \
+        create_scenario_position  # type: ignore[attr-defined]
+    from app.api.v4.resources.scenario_rubric_grade_agents.create import \
+        create_scenario_rubric_grade_agent  # type: ignore[attr-defined]
+    from app.api.v4.resources.scenarios.create import \
+        create_scenario as \
+        create_scenario_resource  # type: ignore[attr-defined]
+    from app.api.v4.resources.settings.create import \
+        create_setting  # type: ignore[attr-defined]
+    from app.api.v4.resources.simulation_scenario_flags.create import \
+        create_simulation_scenario_flag  # type: ignore[attr-defined]
+    from app.api.v4.resources.simulations.create import \
+        create_simulation  # type: ignore[attr-defined]
+    from app.api.v4.resources.slugs.create import \
+        create_slugs  # type: ignore[attr-defined]
+    from app.api.v4.resources.standard_groups.create import \
+        create_standard_group  # type: ignore[attr-defined]
+    from app.api.v4.resources.strengths.create import \
+        create_strength  # type: ignore[attr-defined]
+    from app.api.v4.resources.temperature_levels.create import \
+        create_temperature_levels  # type: ignore[attr-defined]
+    from app.api.v4.resources.templates.create import \
+        create_template  # type: ignore[attr-defined]
+    from app.api.v4.resources.texts.create import \
+        create_texts  # type: ignore[attr-defined]
+    from app.api.v4.resources.thresholds.create import \
+        create_threshold  # type: ignore[attr-defined]
+    from app.api.v4.resources.times.create import \
+        create_time  # type: ignore[attr-defined]
+    from app.api.v4.resources.tools.create import \
+        create_tools  # type: ignore[attr-defined]
+    from app.api.v4.resources.uploads.create import \
+        create_upload  # type: ignore[attr-defined]
+    from app.api.v4.resources.values.create import \
+        create_values  # type: ignore[attr-defined]
+    from app.api.v4.resources.videos.create import \
+        create_video  # type: ignore[attr-defined]
+    from app.api.v4.resources.voices.create import \
+        create_voices  # type: ignore[attr-defined]
 
     RESOURCE_HANDLERS = {
         "agents": create_agent_resource,
         "analyses": create_analyses,
+        "args": create_arg,
+        "args_outputs": create_args_output,
         "audios": create_audio,
         "auths": create_auths,
         "cohorts": create_cohort,
@@ -719,6 +879,7 @@ try:
         "contents": create_contents,
         "conversations": create_conversation,
         "debug_info": create_debug_info,
+        "default_accounts": create_default_accounts,
         "departments": create_department,
         "descriptions": create_description,
         "documents": create_document,
@@ -767,9 +928,6 @@ try:
         "scenario_positions": create_scenario_position,
         "scenario_rubric_grade_agents": create_scenario_rubric_grade_agent,
         "scenarios": create_scenario_resource,
-        "schema_field_items": create_schema_field_item,
-        "schema_fields": create_schema_field,
-        "schemas": create_schema,
         "settings": create_setting,
         "simulation_scenario_flags": create_simulation_scenario_flag,
         "simulations": create_simulation,
@@ -777,13 +935,12 @@ try:
         "standard_groups": create_standard_group,
         "strengths": create_strength,
         "temperature_levels": create_temperature_levels,
-        "template_array_items": create_template_array_item,
-        "template_values": create_template_value,
         "templates": create_template,
         "texts": create_texts,
         "thresholds": create_threshold,
         "times": create_time,
         "tools": create_tools,
+        "uploads": create_upload,
         "values": create_values,
         "videos": create_video,
         "voices": create_voices,
@@ -796,87 +953,104 @@ except ImportError:
 # Docs functions are imported from artifact endpoints
 ARTIFACT_DOCS: dict[str, Any] = {}
 try:
-    from app.api.v4.artifacts.persona.docs import get_personas_docs
+    from app.api.v4.artifacts.persona.docs import \
+        get_personas_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["persona"] = get_personas_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.scenario.docs import get_scenarios_docs
+    from app.api.v4.artifacts.scenario.docs import \
+        get_scenarios_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["scenario"] = get_scenarios_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.simulation.docs import get_simulations_docs
+    from app.api.v4.artifacts.simulation.docs import \
+        get_simulations_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["simulation"] = get_simulations_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.document.docs import get_documents_docs
+    from app.api.v4.artifacts.document.docs import \
+        get_documents_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["document"] = get_documents_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.department.docs import get_departments_docs
+    from app.api.v4.artifacts.department.docs import \
+        get_departments_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["department"] = get_departments_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.cohort.docs import get_cohorts_docs
+    from app.api.v4.artifacts.cohort.docs import \
+        get_cohorts_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["cohort"] = get_cohorts_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.eval.docs import get_evals_docs
+    from app.api.v4.artifacts.eval.docs import \
+        get_evals_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["eval"] = get_evals_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.rubric.docs import get_rubrics_docs
+    from app.api.v4.artifacts.rubric.docs import \
+        get_rubrics_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["rubric"] = get_rubrics_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.setting.docs import get_settings_docs
+    from app.api.v4.artifacts.setting.docs import \
+        get_settings_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["setting"] = get_settings_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.agent.docs import get_agents_docs
+    from app.api.v4.artifacts.agent.docs import \
+        get_agents_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["agent"] = get_agents_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.model.docs import get_models_docs
+    from app.api.v4.artifacts.model.docs import \
+        get_models_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["model"] = get_models_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.provider.docs import get_providers_docs
+    from app.api.v4.artifacts.provider.docs import \
+        get_providers_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["provider"] = get_providers_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.parameter.docs import get_parameters_docs
+    from app.api.v4.artifacts.parameter.docs import \
+        get_parameters_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["parameter"] = get_parameters_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.field.docs import get_fields_docs
+    from app.api.v4.artifacts.field.docs import \
+        get_fields_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["field"] = get_fields_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.profile.docs import get_profiles_docs
+    from app.api.v4.artifacts.profile.docs import \
+        get_profiles_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["profile"] = get_profiles_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.auth.docs import get_auths_docs
+    from app.api.v4.artifacts.auth.docs import \
+        get_auths_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["auth"] = get_auths_docs
 except ImportError:
     pass
 try:
-    from app.api.v4.artifacts.tool.docs import get_tools_docs
+    from app.api.v4.artifacts.tool.docs import \
+        get_tools_docs  # type: ignore[attr-defined]
     ARTIFACT_DOCS["tool"] = get_tools_docs
 except ImportError:
     pass
@@ -993,19 +1167,33 @@ def get_payload_schema(name: str) -> dict[str, Any]:
 
 
 async def call_handler(
-    name: str, operation: str, payload: dict[str, Any], profile_id: str
+    name: str, operation: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """Call a handler function with the given payload."""
+    """Call a handler function with the given payload.
+    
+    profile_id is automatically extracted from MCP request context.
+    """
+    from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+    # Extract profile_id from MCP context
+    profile_id = get_mcp_profile_id()
+    
     if name not in HANDLERS:
+        available_artifacts = list(HANDLERS.keys())
         return {
-            "error": f"TODO: '{name}' does not have handlers implemented yet.",
+            "error": f"'{name}' does not have handlers implemented yet.",
             "status": "not_implemented",
+            "available_artifacts": available_artifacts,
+            "note": f"Available artifacts: {', '.join(available_artifacts)}",
         }
 
     if operation not in HANDLERS[name]:
+        available_operations = list(HANDLERS[name].keys())
         return {
-            "error": f"TODO: Operation '{operation}' not available for '{name}'.",
+            "error": f"Operation '{operation}' not available for '{name}'.",
             "status": "not_implemented",
+            "available_operations": available_operations,
+            "note": f"Available operations for '{name}': {', '.join(available_operations)}",
         }
 
     handler = HANDLERS[name][operation]
@@ -1222,99 +1410,98 @@ def register_endpoints(server: FastMCP) -> None:
 
     @server.tool()
     async def get_artifact(
-        name: str, payload: dict[str, Any], profile_id: str
+        name: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Get an artifact or resource by name.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing parameters for the get operation.
-            profile_id: Profile ID for authentication.
 
         Returns:
             The artifact/resource data or error message.
         """
-        return await call_handler(name, "get", payload, profile_id)
+        return await call_handler(name, "get", payload)
 
     @server.tool()
     async def save_artifact(
-        name: str, payload: dict[str, Any], profile_id: str
+        name: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Save (create or update) an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing data to save.
-            profile_id: Profile ID for authentication.
 
         Returns:
             Success response or error message.
         """
-        return await call_handler(name, "save", payload, profile_id)
+        return await call_handler(name, "save", payload)
 
     @server.tool()
     async def list_artifact(
-        name: str, payload: dict[str, Any], profile_id: str
+        name: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """List items for an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing filter parameters.
-            profile_id: Profile ID for authentication.
 
         Returns:
             List of items or error message.
         """
-        return await call_handler(name, "list", payload, profile_id)
+        return await call_handler(name, "list", payload)
 
     @server.tool()
     async def duplicate_artifact(
-        name: str, payload: dict[str, Any], profile_id: str
+        name: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Duplicate an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing the item to duplicate.
-            profile_id: Profile ID for authentication.
 
         Returns:
             Duplicated item data or error message.
         """
-        return await call_handler(name, "duplicate", payload, profile_id)
+        return await call_handler(name, "duplicate", payload)
 
     @server.tool()
     async def delete_artifact(
-        name: str, payload: dict[str, Any], profile_id: str
+        name: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Delete an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing the item to delete.
-            profile_id: Profile ID for authentication.
 
         Returns:
             Success response or error message.
         """
-        return await call_handler(name, "delete", payload, profile_id)
+        return await call_handler(name, "delete", payload)
 
     # Resource-specific endpoints (create only)
     @server.tool()
     async def create_resource(
-        name: str, payload: dict[str, Any], profile_id: str
+        name: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Create a resource.
 
         Args:
             name: The name of the resource.
             payload: The payload containing data to create the resource.
-            profile_id: Profile ID for authentication.
 
         Returns:
             Success response or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         # Resources are create-only, not full CRUD
         if name not in RESOURCES:
             return {
@@ -1334,18 +1521,22 @@ def register_endpoints(server: FastMCP) -> None:
     # Analytics endpoints
     @server.tool()
     async def analytics(
-        type: str, payload: dict[str, Any], profile_id: str
+        type: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Call analytics endpoint by type.
 
         Args:
             type: Analytics type (home, dashboard, practice, leaderboard, reports, report, activity, pricing, health, benchmark)
             payload: Request payload
-            profile_id: Profile ID for authentication
 
         Returns:
             Analytics data or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         if type not in ANALYTICS_HANDLERS:
             return {
                 "error": f"'{type}' is not a valid analytics type.",
@@ -1404,17 +1595,21 @@ def register_endpoints(server: FastMCP) -> None:
     # Groups endpoints (pricing)
     @server.tool()
     async def list_groups(
-        payload: dict[str, Any], profile_id: str
+        payload: dict[str, Any]
     ) -> dict[str, Any]:
         """List pricing groups/runs.
 
         Args:
             payload: Request payload
-            profile_id: Profile ID for authentication
 
         Returns:
             List of pricing groups/runs or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         if "list" not in GROUPS_HANDLERS:
             return {
                 "error": "list_groups handler not available.",
@@ -1426,17 +1621,21 @@ def register_endpoints(server: FastMCP) -> None:
 
     @server.tool()
     async def get_group(
-        payload: dict[str, Any], profile_id: str
+        payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Get pricing group detail.
 
         Args:
             payload: Request payload (must include group_id)
-            profile_id: Profile ID for authentication
 
         Returns:
             Pricing group detail or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         if "get" not in GROUPS_HANDLERS:
             return {
                 "error": "get_group handler not available.",
@@ -1449,18 +1648,22 @@ def register_endpoints(server: FastMCP) -> None:
     # Attempts endpoints
     @server.tool()
     async def list_attempts(
-        type: str, payload: dict[str, Any], profile_id: str
+        type: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """List attempts by type.
 
         Args:
             type: Attempt type (home, dashboard, practice, benchmark)
             payload: Request payload
-            profile_id: Profile ID for authentication
 
         Returns:
             List of attempts or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         type_map = {
             "home": "list_home",
             "dashboard": "list_dashboard",
@@ -1487,14 +1690,13 @@ def register_endpoints(server: FastMCP) -> None:
             return {
                 "error": f"list_attempts for type '{type}' is not implemented yet.",
                 "status": "not_implemented",
-                "note": "Benchmark history endpoint will be created in the future.",
             }
 
         return await call_endpoint_handler(handler, payload, profile_id)
 
     @server.tool()
     async def get_attempt(
-        type: str, attempt_id: str, payload: dict[str, Any], profile_id: str
+        type: str, attempt_id: str, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Get attempt by type and ID.
 
@@ -1502,11 +1704,15 @@ def register_endpoints(server: FastMCP) -> None:
             type: Attempt type (simulation, eval)
             attempt_id: Attempt ID
             payload: Request payload (will include attempt_id)
-            profile_id: Profile ID for authentication
 
         Returns:
             Attempt data or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         type_map = {
             "simulation": "get_simulation",
             "eval": "get_eval",
@@ -1538,7 +1744,6 @@ def register_endpoints(server: FastMCP) -> None:
         archive: bool,
         ids: list[str],
         payload: dict[str, Any],
-        profile_id: str,
     ) -> dict[str, Any]:
         """Archive or unarchive attempts.
 
@@ -1547,11 +1752,15 @@ def register_endpoints(server: FastMCP) -> None:
             archive: True to archive, False to unarchive
             ids: List of attempt IDs
             payload: Additional request payload
-            profile_id: Profile ID for authentication
 
         Returns:
             Archive result or error message.
         """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
         # Currently only simulation is supported
         if type != "simulation":
             return {
@@ -1580,19 +1789,23 @@ def register_endpoints(server: FastMCP) -> None:
     # Debug/Report Problem endpoint
     @server.tool()
     async def debug(
-        type: str, message: str, profile_id: str
+        type: str, message: str
     ) -> dict[str, Any]:
         """Report a problem or provide feedback (debug tool).
 
         Args:
             type: Problem type (feature, bug, question, other)
             message: Problem description or feedback message (max 1000 characters)
-            profile_id: Profile ID for authentication
 
         Returns:
             Feedback creation result or error message.
         """
-        if FEEDBACK_HANDLER is None:
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        # Extract profile_id from MCP context
+        profile_id = get_mcp_profile_id()
+        
+        if DEBUG_HANDLER is None:
             return {
                 "error": "debug/report problem handler not available.",
                 "status": "not_implemented",
@@ -1620,10 +1833,10 @@ def register_endpoints(server: FastMCP) -> None:
                 "status": "validation_error",
             }
 
-        # Create payload for feedback endpoint
+        # Create payload for debug endpoint
         payload = {
             "type": type,
             "message": message.strip(),
         }
 
-        return await call_endpoint_handler(FEEDBACK_HANDLER, payload, profile_id)
+        return await call_endpoint_handler(DEBUG_HANDLER, payload, profile_id)
