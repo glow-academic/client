@@ -35,12 +35,12 @@ END $$;
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_save_model_v4(
     provider_id uuid,
+    profile_id uuid,
     name_id uuid DEFAULT NULL,
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     value_id uuid DEFAULT NULL,
     endpoint_id uuid DEFAULT NULL,
-    profile_id uuid,
     input_model_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     temperature_level_ids uuid[] DEFAULT ARRAY[]::uuid[],

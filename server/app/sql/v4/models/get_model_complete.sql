@@ -388,14 +388,12 @@ model_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM model_artifact WHERE id = (SELECT model_id FROM params))::boolean
         END as model_exists
 ),
+-- Draft data is now stored in draft_* junction tables, not in payload
 draft_payload_data AS (
     SELECT 
-        NULL::jsonb as payload,
-        d.version as draft_version
+        NULL::jsonb as payload
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
-    WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
+    WHERE TRUE
     LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
@@ -404,7 +402,8 @@ draft_group_data AS (
         COALESCE(
             d.group_id,
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
-        ) as group_id
+        ) as group_id,
+        COALESCE(d.version, 0) as draft_version
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE TRUE
@@ -498,19 +497,23 @@ flag_resource_data AS (
 value_resource_data AS (
     SELECT 
         COALESCE(
-            CASE 
-                WHEN (SELECT payload->>'value_id' FROM draft_payload_data) IS NOT NULL THEN (SELECT payload->>'value_id')::uuid
-                ELSE NULL
-            END,
+            (SELECT 
+                CASE 
+                    WHEN payload->>'value_id' IS NOT NULL THEN (payload->>'value_id')::uuid
+                    ELSE NULL
+                END
+            FROM draft_payload_data),
             (SELECT mv.value_id FROM model_values mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1)
         ) as value_id,
-        CASE 
-            WHEN (SELECT payload->>'value_id' FROM draft_payload_data) IS NOT NULL THEN 
-                (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource 
-                 FROM values_resource v 
-                 WHERE v.id = (SELECT payload->>'value_id')::uuid LIMIT 1)
-            ELSE NULL
-        END as draft_value_resource,
+        (SELECT 
+            CASE 
+                WHEN payload->>'value_id' IS NOT NULL THEN 
+                    (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource 
+                     FROM values_resource v 
+                     WHERE v.id = (payload->>'value_id')::uuid LIMIT 1)
+                ELSE NULL
+            END
+        FROM draft_payload_data) as draft_value_resource,
         (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as model_value_resource
     FROM params
 ),
@@ -1838,20 +1841,6 @@ units_aggregated AS (
             ORDER BY aud.unit_category, aud.value, aud.name
         ) as units
     FROM all_units_data aud
-),
-pricing_aggregated AS (
-    SELECT 
-        ARRAY_AGG(
-            ROW(
-                mpd.pricing_type,
-                mpd.unit_id,
-                mpd.unit_name,
-                mpd.unit_category,
-                mpd.price
-            )::types.q_get_model_v4_pricing
-            ORDER BY mpd.pricing_type, mpd.unit_name
-        ) as pricing
-    FROM model_pricing_data mpd
 )
 SELECT 
     -- Required fields (first 5)
@@ -1865,7 +1854,7 @@ SELECT
     md.provider,
     md.provider_name,
     COALESCE(ua.units, '{}'::types.q_get_model_v4_unit[]) as units,
-    COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
+    COALESCE((SELECT draft_version FROM draft_group_data), 0) as draft_version,
     -- Single-select resources: name
     COALESCE(
         CASE 
@@ -2259,12 +2248,13 @@ SELECT
     NULL::uuid as voices_agent_id,
     false as voices_required,
     COALESCE((SELECT voice_suggestions FROM voice_suggestions_data), ARRAY[]::uuid[]) as voice_suggestions,
-    COALESCE(va.voices, '{}'::types.q_get_model_v4_voice_option[]) as voices
+    COALESCE(voa.voices, '{}'::types.q_get_model_v4_voice_option[]) as voices
 FROM user_profile up
 CROSS JOIN permissions_data perm
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN draft_group_data dgd
+CROSS JOIN draft_payload_data dpd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN flag_resource_data frd
@@ -2314,5 +2304,5 @@ LEFT JOIN reasoning_level_ids_data rlid ON true
 LEFT JOIN quality_ids_data qid ON true
 LEFT JOIN pricing_ids_data pid ON true
 LEFT JOIN voice_ids_data vid ON true
-LEFT JOIN voice_resources_data vrd ON true
+LEFT JOIN voice_resources_data vrd2 ON true
 $$;

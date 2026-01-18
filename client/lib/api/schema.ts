@@ -9219,39 +9219,77 @@ export interface components {
             disabled_reason?: string | null;
             /** Group Id */
             group_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
             /** Image Model */
             image_model?: boolean | null;
             /** Provider */
             provider?: string | null;
             /** Provider Name */
             provider_name?: string | null;
-            /** Value */
-            value?: string | null;
-            /** Base Url */
-            base_url?: string | null;
-            /** Temperature Lower */
-            temperature_lower?: number | null;
-            /** Temperature Upper */
-            temperature_upper?: number | null;
-            /** Temperature Values */
-            temperature_values?: string[] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["QGetModelV4Pricing"][] | null;
-            modalities?: components["schemas"]["QGetModelV4Modalities"] | null;
-            /** Reasoning Levels */
-            reasoning_levels?: string[] | null;
-            /** Qualities */
-            qualities?: string[] | null;
             /** Units */
             units?: components["schemas"]["QGetModelV4Unit"][] | null;
             /** Draft Version */
             draft_version?: number | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetModelV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetModelV4NameOption"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetModelV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetModelV4DescriptionOption"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetModelV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetModelV4FlagOption"][] | null;
+            /** Value Id */
+            value_id?: string | null;
+            value_resource?: components["schemas"]["QGetModelV4ValueResource"] | null;
+            /** Show Value */
+            show_value?: boolean | null;
+            /** Value Agent Id */
+            value_agent_id?: string | null;
+            /** Value Required */
+            value_required?: boolean | null;
+            /** Value Suggestions */
+            value_suggestions?: string[] | null;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
+            endpoint_resource?: components["schemas"]["QGetModelV4EndpointResource"] | null;
+            /** Show Endpoint */
+            show_endpoint?: boolean | null;
+            /** Endpoint Agent Id */
+            endpoint_agent_id?: string | null;
+            /** Endpoint Required */
+            endpoint_required?: boolean | null;
+            /** Endpoint Suggestions */
+            endpoint_suggestions?: string[] | null;
+            /** Endpoints */
+            endpoints?: components["schemas"]["QGetModelV4EndpointOption"][] | null;
             /** Provider Id */
             provider_id?: string | null;
             provider_resource?: components["schemas"]["QGetModelV4ProviderResource"] | null;
@@ -9292,6 +9330,90 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetModelV4Department"][] | null;
+            /** Input Modality Ids */
+            input_modality_ids?: string[] | null;
+            /** Input Modality Resources */
+            input_modality_resources?: components["schemas"]["QGetModelV4ModalityResource"][] | null;
+            /** Show Input Modalities */
+            show_input_modalities?: boolean | null;
+            /** Input Modalities Agent Id */
+            input_modalities_agent_id?: string | null;
+            /** Input Modalities Required */
+            input_modalities_required?: boolean | null;
+            /** Input Modality Suggestions */
+            input_modality_suggestions?: string[] | null;
+            /** Input Modalities */
+            input_modalities?: components["schemas"]["QGetModelV4ModalityOption"][] | null;
+            /** Output Modality Ids */
+            output_modality_ids?: string[] | null;
+            /** Output Modality Resources */
+            output_modality_resources?: components["schemas"]["QGetModelV4ModalityResource"][] | null;
+            /** Show Output Modalities */
+            show_output_modalities?: boolean | null;
+            /** Output Modalities Agent Id */
+            output_modalities_agent_id?: string | null;
+            /** Output Modalities Required */
+            output_modalities_required?: boolean | null;
+            /** Output Modality Suggestions */
+            output_modality_suggestions?: string[] | null;
+            /** Output Modalities */
+            output_modalities?: components["schemas"]["QGetModelV4ModalityOption"][] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Temperature Level Resources */
+            temperature_level_resources?: components["schemas"]["QGetModelV4TemperatureLevelResource"][] | null;
+            /** Show Temperature Levels */
+            show_temperature_levels?: boolean | null;
+            /** Temperature Levels Agent Id */
+            temperature_levels_agent_id?: string | null;
+            /** Temperature Levels Required */
+            temperature_levels_required?: boolean | null;
+            /** Temperature Level Suggestions */
+            temperature_level_suggestions?: string[] | null;
+            /** Temperature Levels */
+            temperature_levels?: components["schemas"]["QGetModelV4TemperatureLevelOption"][] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Reasoning Level Resources */
+            reasoning_level_resources?: components["schemas"]["QGetModelV4ReasoningLevelResource"][] | null;
+            /** Show Reasoning Levels */
+            show_reasoning_levels?: boolean | null;
+            /** Reasoning Levels Agent Id */
+            reasoning_levels_agent_id?: string | null;
+            /** Reasoning Levels Required */
+            reasoning_levels_required?: boolean | null;
+            /** Reasoning Level Suggestions */
+            reasoning_level_suggestions?: string[] | null;
+            /** Reasoning Levels */
+            reasoning_levels?: components["schemas"]["QGetModelV4ReasoningLevelOption"][] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Quality Resources */
+            quality_resources?: components["schemas"]["QGetModelV4QualityResource"][] | null;
+            /** Show Qualities */
+            show_qualities?: boolean | null;
+            /** Qualities Agent Id */
+            qualities_agent_id?: string | null;
+            /** Qualities Required */
+            qualities_required?: boolean | null;
+            /** Quality Suggestions */
+            quality_suggestions?: string[] | null;
+            /** Qualities */
+            qualities?: components["schemas"]["QGetModelV4QualityOption"][] | null;
+            /** Pricing Ids */
+            pricing_ids?: string[] | null;
+            /** Pricing Resources */
+            pricing_resources?: components["schemas"]["QGetModelV4PricingResource"][] | null;
+            /** Show Pricing */
+            show_pricing?: boolean | null;
+            /** Pricing Agent Id */
+            pricing_agent_id?: string | null;
+            /** Pricing Required */
+            pricing_required?: boolean | null;
+            /** Pricing Suggestions */
+            pricing_suggestions?: string[] | null;
+            /** Pricings */
+            pricings?: components["schemas"]["QGetModelV4PricingOption"][] | null;
             /** Voice Ids */
             voice_ids?: string[] | null;
             /** Voice Resources */
@@ -11547,26 +11669,6 @@ export interface components {
             active: boolean | null;
             /** Key Id */
             key_id: string | null;
-        };
-        /** ISaveModelV4Pricing */
-        ISaveModelV4Pricing: {
-            /** Pricing Type */
-            pricing_type: string | null;
-            /** Unit Id */
-            unit_id: string | null;
-            /** Price */
-            price: number | null;
-        };
-        /** ISaveModelV4TemperatureBounds */
-        ISaveModelV4TemperatureBounds: {
-            /** Bounds Type */
-            bounds_type: string | null;
-            /** Lower Bound */
-            lower_bound: number | null;
-            /** Upper Bound */
-            upper_bound: number | null;
-            /** Values Array */
-            values_array: number[] | null;
         };
         /** ISaveParameterV4FieldConnection */
         ISaveParameterV4FieldConnection: {
@@ -14640,6 +14742,68 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetModelV4DescriptionOption */
+        QGetModelV4DescriptionOption: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4DescriptionResource */
+        QGetModelV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4EndpointOption */
+        QGetModelV4EndpointOption: {
+            /** Id */
+            id: string | null;
+            /** Base Url */
+            base_url: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4EndpointResource */
+        QGetModelV4EndpointResource: {
+            /** Id */
+            id: string | null;
+            /** Base Url */
+            base_url: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4FlagOption */
+        QGetModelV4FlagOption: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4FlagResource */
+        QGetModelV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetModelV4KeyOption */
         QGetModelV4KeyOption: {
             /** Id */
@@ -14674,15 +14838,46 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetModelV4Modalities */
-        QGetModelV4Modalities: {
-            /** Input */
-            input: string[] | null;
-            /** Output */
-            output: string[] | null;
+        /** QGetModelV4ModalityOption */
+        QGetModelV4ModalityOption: {
+            /** Modality Id */
+            modality_id: string | null;
+            /** Modality */
+            modality: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetModelV4Pricing */
-        QGetModelV4Pricing: {
+        /** QGetModelV4ModalityResource */
+        QGetModelV4ModalityResource: {
+            /** Modality Id */
+            modality_id: string | null;
+            /** Modality */
+            modality: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4NameOption */
+        QGetModelV4NameOption: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4NameResource */
+        QGetModelV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4PricingOption */
+        QGetModelV4PricingOption: {
+            /** Pricing Id */
+            pricing_id: string | null;
             /** Pricing Type */
             pricing_type: string | null;
             /** Unit Id */
@@ -14693,6 +14888,25 @@ export interface components {
             unit_category: string | null;
             /** Price */
             price: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4PricingResource */
+        QGetModelV4PricingResource: {
+            /** Pricing Id */
+            pricing_id: string | null;
+            /** Pricing Type */
+            pricing_type: string | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Unit Name */
+            unit_name: string | null;
+            /** Unit Category */
+            unit_category: string | null;
+            /** Price */
+            price: number | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetModelV4ProviderOption */
         QGetModelV4ProviderOption: {
@@ -14716,6 +14930,64 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetModelV4QualityOption */
+        QGetModelV4QualityOption: {
+            /** Quality Id */
+            quality_id: string | null;
+            /** Quality */
+            quality: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4QualityResource */
+        QGetModelV4QualityResource: {
+            /** Quality Id */
+            quality_id: string | null;
+            /** Quality */
+            quality: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4ReasoningLevelOption */
+        QGetModelV4ReasoningLevelOption: {
+            /** Reasoning Level Id */
+            reasoning_level_id: string | null;
+            /** Reasoning Level */
+            reasoning_level: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4ReasoningLevelResource */
+        QGetModelV4ReasoningLevelResource: {
+            /** Reasoning Level Id */
+            reasoning_level_id: string | null;
+            /** Reasoning Level */
+            reasoning_level: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4TemperatureLevelOption */
+        QGetModelV4TemperatureLevelOption: {
+            /** Temperature Level Id */
+            temperature_level_id: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Is Upper */
+            is_upper: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4TemperatureLevelResource */
+        QGetModelV4TemperatureLevelResource: {
+            /** Temperature Level Id */
+            temperature_level_id: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Is Upper */
+            is_upper: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetModelV4Unit */
         QGetModelV4Unit: {
             /** Unit Id */
@@ -14726,6 +14998,15 @@ export interface components {
             unit_category: string | null;
             /** Value */
             value: number | null;
+        };
+        /** QGetModelV4ValueResource */
+        QGetModelV4ValueResource: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetModelV4VoiceOption */
         QGetModelV4VoiceOption: {
@@ -19653,33 +19934,34 @@ export interface components {
              * Format: uuid
              */
             provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Value */
-            value: string;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
             /** Input Model Id */
             input_model_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Base Url */
-            base_url?: string | null;
-            temperature_bounds?: components["schemas"]["ISaveModelV4TemperatureBounds"] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["ISaveModelV4Pricing"][] | null;
-            /** Input Modalities */
-            input_modalities?: string[] | null;
-            /** Output Modalities */
-            output_modalities?: string[] | null;
-            /** Reasoning Levels */
-            reasoning_levels?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Pricing Ids */
+            pricing_ids?: string[] | null;
+            /** Input Modality Ids */
+            input_modality_ids?: string[] | null;
+            /** Output Modality Ids */
+            output_modality_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
             /** Voice Ids */
             voice_ids?: string[] | null;
-            /** Qualities */
-            qualities?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
         };
         /** SaveModelApiResponse */
         SaveModelApiResponse: {

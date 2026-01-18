@@ -38502,39 +38502,6 @@
             ],
             "title": "Group Id"
           },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
           "image_model": {
             "anyOf": [
               {
@@ -38568,116 +38535,6 @@
             ],
             "title": "Provider Name"
           },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          },
-          "temperature_lower": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Upper"
-          },
-          "temperature_values": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Values"
-          },
-          "pricing": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelV4Pricing"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pricing"
-          },
-          "modalities": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetModelV4Modalities"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "reasoning_levels": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels"
-          },
-          "qualities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Qualities"
-          },
           "units": {
             "anyOf": [
               {
@@ -38702,6 +38559,402 @@
               }
             ],
             "title": "Draft Version"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "name_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4NameResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_name": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Name"
+          },
+          "name_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Agent Id"
+          },
+          "name_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Required"
+          },
+          "name_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Suggestions"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4NameOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Names"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "description_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4DescriptionResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_description": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Description"
+          },
+          "description_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Agent Id"
+          },
+          "description_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Required"
+          },
+          "description_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Suggestions"
+          },
+          "descriptions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4DescriptionOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descriptions"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Flag"
+          },
+          "flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Agent Id"
+          },
+          "flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Required"
+          },
+          "flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4FlagOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flags"
+          },
+          "value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Id"
+          },
+          "value_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4ValueResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Value"
+          },
+          "value_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Agent Id"
+          },
+          "value_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Required"
+          },
+          "value_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Suggestions"
+          },
+          "endpoint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Id"
+          },
+          "endpoint_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4EndpointResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_endpoint": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Endpoint"
+          },
+          "endpoint_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Agent Id"
+          },
+          "endpoint_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Required"
+          },
+          "endpoint_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Suggestions"
+          },
+          "endpoints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4EndpointOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoints"
           },
           "provider_id": {
             "anyOf": [
@@ -38964,6 +39217,558 @@
               }
             ],
             "title": "Departments"
+          },
+          "input_modality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modality Ids"
+          },
+          "input_modality_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4ModalityResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modality Resources"
+          },
+          "show_input_modalities": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Input Modalities"
+          },
+          "input_modalities_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modalities Agent Id"
+          },
+          "input_modalities_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modalities Required"
+          },
+          "input_modality_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modality Suggestions"
+          },
+          "input_modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4ModalityOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modalities"
+          },
+          "output_modality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modality Ids"
+          },
+          "output_modality_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4ModalityResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modality Resources"
+          },
+          "show_output_modalities": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Output Modalities"
+          },
+          "output_modalities_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modalities Agent Id"
+          },
+          "output_modalities_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modalities Required"
+          },
+          "output_modality_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modality Suggestions"
+          },
+          "output_modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4ModalityOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modalities"
+          },
+          "temperature_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Ids"
+          },
+          "temperature_level_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4TemperatureLevelResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Resources"
+          },
+          "show_temperature_levels": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Temperature Levels"
+          },
+          "temperature_levels_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels Agent Id"
+          },
+          "temperature_levels_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels Required"
+          },
+          "temperature_level_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Suggestions"
+          },
+          "temperature_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4TemperatureLevelOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels"
+          },
+          "reasoning_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Ids"
+          },
+          "reasoning_level_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4ReasoningLevelResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Resources"
+          },
+          "show_reasoning_levels": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Reasoning Levels"
+          },
+          "reasoning_levels_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Agent Id"
+          },
+          "reasoning_levels_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Required"
+          },
+          "reasoning_level_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Suggestions"
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4ReasoningLevelOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels"
+          },
+          "quality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Ids"
+          },
+          "quality_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4QualityResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Resources"
+          },
+          "show_qualities": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Qualities"
+          },
+          "qualities_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Agent Id"
+          },
+          "qualities_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Required"
+          },
+          "quality_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Suggestions"
+          },
+          "qualities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4QualityOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities"
+          },
+          "pricing_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Ids"
+          },
+          "pricing_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4PricingResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Resources"
+          },
+          "show_pricing": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Pricing"
+          },
+          "pricing_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Agent Id"
+          },
+          "pricing_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Required"
+          },
+          "pricing_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Suggestions"
+          },
+          "pricings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4PricingOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricings"
           },
           "voice_ids": {
             "anyOf": [
@@ -51543,110 +52348,6 @@
           "key_id"
         ],
         "title": "ISaveAuthV4AuthItem"
-      },
-      "ISaveModelV4Pricing": {
-        "properties": {
-          "pricing_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pricing Type"
-          },
-          "unit_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit Id"
-          },
-          "price": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Price"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pricing_type",
-          "unit_id",
-          "price"
-        ],
-        "title": "ISaveModelV4Pricing"
-      },
-      "ISaveModelV4TemperatureBounds": {
-        "properties": {
-          "bounds_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bounds Type"
-          },
-          "lower_bound": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lower Bound"
-          },
-          "upper_bound": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upper Bound"
-          },
-          "values_array": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "number"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Values Array"
-          }
-        },
-        "type": "object",
-        "required": [
-          "bounds_type",
-          "lower_bound",
-          "upper_bound",
-          "values_array"
-        ],
-        "title": "ISaveModelV4TemperatureBounds"
       },
       "ISaveParameterV4FieldConnection": {
         "properties": {
@@ -66348,6 +67049,326 @@
         ],
         "title": "QGetModelV4Department"
       },
+      "QGetModelV4DescriptionOption": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "generated"
+        ],
+        "title": "QGetModelV4DescriptionOption"
+      },
+      "QGetModelV4DescriptionResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "generated"
+        ],
+        "title": "QGetModelV4DescriptionResource"
+      },
+      "QGetModelV4EndpointOption": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "base_url",
+          "generated"
+        ],
+        "title": "QGetModelV4EndpointOption"
+      },
+      "QGetModelV4EndpointResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "base_url",
+          "generated"
+        ],
+        "title": "QGetModelV4EndpointResource"
+      },
+      "QGetModelV4FlagOption": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "icon_id",
+          "generated"
+        ],
+        "title": "QGetModelV4FlagOption"
+      },
+      "QGetModelV4FlagResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "icon_id",
+          "generated"
+        ],
+        "title": "QGetModelV4FlagResource"
+      },
       "QGetModelV4KeyOption": {
         "properties": {
           "id": {
@@ -66542,46 +67563,200 @@
         ],
         "title": "QGetModelV4KeyResource"
       },
-      "QGetModelV4Modalities": {
+      "QGetModelV4ModalityOption": {
         "properties": {
-          "input": {
+          "modality_id": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Input"
+            "title": "Modality Id"
           },
-          "output": {
+          "modality": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Output"
+            "title": "Modality"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
-          "input",
-          "output"
+          "modality_id",
+          "modality",
+          "generated"
         ],
-        "title": "QGetModelV4Modalities"
+        "title": "QGetModelV4ModalityOption"
       },
-      "QGetModelV4Pricing": {
+      "QGetModelV4ModalityResource": {
         "properties": {
+          "modality_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality Id"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modality_id",
+          "modality",
+          "generated"
+        ],
+        "title": "QGetModelV4ModalityResource"
+      },
+      "QGetModelV4NameOption": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "generated"
+        ],
+        "title": "QGetModelV4NameOption"
+      },
+      "QGetModelV4NameResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "generated"
+        ],
+        "title": "QGetModelV4NameResource"
+      },
+      "QGetModelV4PricingOption": {
+        "properties": {
+          "pricing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Id"
+          },
           "pricing_type": {
             "anyOf": [
               {
@@ -66637,17 +67812,124 @@
               }
             ],
             "title": "Price"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
+          "pricing_id",
           "pricing_type",
           "unit_id",
           "unit_name",
           "unit_category",
-          "price"
+          "price",
+          "generated"
         ],
-        "title": "QGetModelV4Pricing"
+        "title": "QGetModelV4PricingOption"
+      },
+      "QGetModelV4PricingResource": {
+        "properties": {
+          "pricing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Id"
+          },
+          "pricing_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Type"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "unit_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Name"
+          },
+          "unit_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Category"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_id",
+          "pricing_type",
+          "unit_id",
+          "unit_name",
+          "unit_category",
+          "price",
+          "generated"
+        ],
+        "title": "QGetModelV4PricingResource"
       },
       "QGetModelV4ProviderOption": {
         "properties": {
@@ -66763,6 +68045,300 @@
         ],
         "title": "QGetModelV4ProviderResource"
       },
+      "QGetModelV4QualityOption": {
+        "properties": {
+          "quality_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Id"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quality_id",
+          "quality",
+          "generated"
+        ],
+        "title": "QGetModelV4QualityOption"
+      },
+      "QGetModelV4QualityResource": {
+        "properties": {
+          "quality_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Id"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quality_id",
+          "quality",
+          "generated"
+        ],
+        "title": "QGetModelV4QualityResource"
+      },
+      "QGetModelV4ReasoningLevelOption": {
+        "properties": {
+          "reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Id"
+          },
+          "reasoning_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reasoning_level_id",
+          "reasoning_level",
+          "generated"
+        ],
+        "title": "QGetModelV4ReasoningLevelOption"
+      },
+      "QGetModelV4ReasoningLevelResource": {
+        "properties": {
+          "reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Id"
+          },
+          "reasoning_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reasoning_level_id",
+          "reasoning_level",
+          "generated"
+        ],
+        "title": "QGetModelV4ReasoningLevelResource"
+      },
+      "QGetModelV4TemperatureLevelOption": {
+        "properties": {
+          "temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Id"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "is_upper": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Upper"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "temperature_level_id",
+          "temperature",
+          "is_upper",
+          "generated"
+        ],
+        "title": "QGetModelV4TemperatureLevelOption"
+      },
+      "QGetModelV4TemperatureLevelResource": {
+        "properties": {
+          "temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Id"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "is_upper": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Upper"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "temperature_level_id",
+          "temperature",
+          "is_upper",
+          "generated"
+        ],
+        "title": "QGetModelV4TemperatureLevelResource"
+      },
       "QGetModelV4Unit": {
         "properties": {
           "unit_id": {
@@ -66819,6 +68395,51 @@
           "value"
         ],
         "title": "QGetModelV4Unit"
+      },
+      "QGetModelV4ValueResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetModelV4ValueResource"
       },
       "QGetModelV4VoiceOption": {
         "properties": {
@@ -93015,21 +94636,65 @@
             "format": "uuid",
             "title": "Provider Id"
           },
-          "name": {
-            "type": "string",
-            "title": "Name"
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
           },
-          "description": {
-            "type": "string",
-            "title": "Description"
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
           },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
           },
-          "value": {
-            "type": "string",
-            "title": "Value"
+          "value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Id"
+          },
+          "endpoint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Id"
           },
           "input_model_id": {
             "anyOf": [
@@ -93058,32 +94723,12 @@
             ],
             "title": "Department Ids"
           },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          },
-          "temperature_bounds": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ISaveModelV4TemperatureBounds"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "pricing": {
+          "temperature_level_ids": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ISaveModelV4Pricing"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -93091,13 +94736,14 @@
                 "type": "null"
               }
             ],
-            "title": "Pricing"
+            "title": "Temperature Level Ids"
           },
-          "input_modalities": {
+          "pricing_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -93105,13 +94751,14 @@
                 "type": "null"
               }
             ],
-            "title": "Input Modalities"
+            "title": "Pricing Ids"
           },
-          "output_modalities": {
+          "input_modality_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -93119,13 +94766,14 @@
                 "type": "null"
               }
             ],
-            "title": "Output Modalities"
+            "title": "Input Modality Ids"
           },
-          "reasoning_levels": {
+          "output_modality_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -93133,7 +94781,22 @@
                 "type": "null"
               }
             ],
-            "title": "Reasoning Levels"
+            "title": "Output Modality Ids"
+          },
+          "reasoning_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Ids"
           },
           "voice_ids": {
             "anyOf": [
@@ -93150,11 +94813,12 @@
             ],
             "title": "Voice Ids"
           },
-          "qualities": {
+          "quality_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -93162,16 +94826,12 @@
                 "type": "null"
               }
             ],
-            "title": "Qualities"
+            "title": "Quality Ids"
           }
         },
         "type": "object",
         "required": [
-          "provider_id",
-          "name",
-          "description",
-          "active",
-          "value"
+          "provider_id"
         ],
         "title": "SaveModelApiRequest"
       },

@@ -12664,12 +12664,70 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
-# Generated from: get_text_run_context_and_create_run
+# Generated from: get_generation_run_context_and_create_run
 
 class IPersonaResourceV4(BaseModel):
 
     resource_type: str | None
     resource_ids: list[UUID] | None
+
+class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    agent_id: UUID
+    profile_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.agent_id,
+            self.profile_id,
+            self.message_ids,
+            self.department_id,
+            self.group_id,
+            self.developer_instructions,
+            self.user_instructions,
+            resources_tuples,
+        )
+
+class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+
+
+# Generated from: get_text_run_context_and_create_run
 
 class GetTextRunContextAndCreateRunSqlParams(BaseModel):
 
@@ -16547,6 +16605,529 @@ class DuplicateModelApiResponse(BaseModel):
 
 
 
+# Generated from: get_model
+
+class GetModelSqlParams(BaseModel):
+
+    profile_id: UUID
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.model_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetModelV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4DescriptionOption(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4EndpointOption(BaseModel):
+
+    id: UUID | None
+    base_url: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4EndpointResource(BaseModel):
+
+    id: UUID | None
+    base_url: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4FlagOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4KeyOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4KeyResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ModalityOption(BaseModel):
+
+    modality_id: UUID | None
+    modality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ModalityResource(BaseModel):
+
+    modality_id: UUID | None
+    modality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4NameOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4PricingOption(BaseModel):
+
+    pricing_id: UUID | None
+    pricing_type: str | None
+    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    price: float | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4PricingResource(BaseModel):
+
+    pricing_id: UUID | None
+    pricing_type: str | None
+    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    price: float | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ProviderOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ProviderResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4QualityOption(BaseModel):
+
+    quality_id: UUID | None
+    quality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4QualityResource(BaseModel):
+
+    quality_id: UUID | None
+    quality: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ReasoningLevelOption(BaseModel):
+
+    reasoning_level_id: UUID | None
+    reasoning_level: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ReasoningLevelResource(BaseModel):
+
+    reasoning_level_id: UUID | None
+    reasoning_level: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4TemperatureLevelOption(BaseModel):
+
+    temperature_level_id: UUID | None
+    temperature: float | None
+    is_upper: bool | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4TemperatureLevelResource(BaseModel):
+
+    temperature_level_id: UUID | None
+    temperature: float | None
+    is_upper: bool | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4Unit(BaseModel):
+
+    unit_id: UUID | None
+    name: str | None
+    unit_category: str | None
+    value: int | None
+
+
+
+
+class QGetModelV4ValueResource(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4VoiceOption(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4VoiceResource(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+class GetModelSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    image_model: bool | None = None
+    provider: str | None = None
+    provider_name: str | None = None
+    units: list[QGetModelV4Unit] | None = None
+    draft_version: int | None = None
+    name_id: UUID | None = None
+    name_resource: QGetModelV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetModelV4NameOption] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetModelV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetModelV4DescriptionOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetModelV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetModelV4FlagOption] | None = None
+    value_id: UUID | None = None
+    value_resource: QGetModelV4ValueResource | None = None
+    show_value: bool | None = None
+    value_agent_id: UUID | None = None
+    value_required: bool | None = None
+    value_suggestions: list[UUID] | None = None
+    endpoint_id: UUID | None = None
+    endpoint_resource: QGetModelV4EndpointResource | None = None
+    show_endpoint: bool | None = None
+    endpoint_agent_id: UUID | None = None
+    endpoint_required: bool | None = None
+    endpoint_suggestions: list[UUID] | None = None
+    endpoints: list[QGetModelV4EndpointOption] | None = None
+    provider_id: UUID | None = None
+    provider_resource: QGetModelV4ProviderResource | None = None
+    show_provider: bool | None = None
+    provider_agent_id: UUID | None = None
+    provider_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetModelV4ProviderOption] | None = None
+    key_id: UUID | None = None
+    key_resource: QGetModelV4KeyResource | None = None
+    show_key: bool | None = None
+    key_agent_id: UUID | None = None
+    key_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetModelV4KeyOption] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetModelV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetModelV4Department] | None = None
+    input_modality_ids: list[UUID] | None = None
+    input_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_input_modalities: bool | None = None
+    input_modalities_agent_id: UUID | None = None
+    input_modalities_required: bool | None = None
+    input_modality_suggestions: list[UUID] | None = None
+    input_modalities: list[QGetModelV4ModalityOption] | None = None
+    output_modality_ids: list[UUID] | None = None
+    output_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_output_modalities: bool | None = None
+    output_modalities_agent_id: UUID | None = None
+    output_modalities_required: bool | None = None
+    output_modality_suggestions: list[UUID] | None = None
+    output_modalities: list[QGetModelV4ModalityOption] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    temperature_level_resources: list[QGetModelV4TemperatureLevelResource] | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetModelV4TemperatureLevelOption] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    reasoning_level_resources: list[QGetModelV4ReasoningLevelResource] | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetModelV4ReasoningLevelOption] | None = None
+    quality_ids: list[UUID] | None = None
+    quality_resources: list[QGetModelV4QualityResource] | None = None
+    show_qualities: bool | None = None
+    qualities_agent_id: UUID | None = None
+    qualities_required: bool | None = None
+    quality_suggestions: list[UUID] | None = None
+    qualities: list[QGetModelV4QualityOption] | None = None
+    pricing_ids: list[UUID] | None = None
+    pricing_resources: list[QGetModelV4PricingResource] | None = None
+    show_pricing: bool | None = None
+    pricing_agent_id: UUID | None = None
+    pricing_required: bool | None = None
+    pricing_suggestions: list[UUID] | None = None
+    pricings: list[QGetModelV4PricingOption] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetModelV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetModelV4VoiceOption] | None = None
+
+class GetModelApiRequest(BaseModel):
+
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetModelApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    image_model: bool | None = None
+    provider: str | None = None
+    provider_name: str | None = None
+    units: list[QGetModelV4Unit] | None = None
+    draft_version: int | None = None
+    name_id: UUID | None = None
+    name_resource: QGetModelV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetModelV4NameOption] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetModelV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetModelV4DescriptionOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetModelV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetModelV4FlagOption] | None = None
+    value_id: UUID | None = None
+    value_resource: QGetModelV4ValueResource | None = None
+    show_value: bool | None = None
+    value_agent_id: UUID | None = None
+    value_required: bool | None = None
+    value_suggestions: list[UUID] | None = None
+    endpoint_id: UUID | None = None
+    endpoint_resource: QGetModelV4EndpointResource | None = None
+    show_endpoint: bool | None = None
+    endpoint_agent_id: UUID | None = None
+    endpoint_required: bool | None = None
+    endpoint_suggestions: list[UUID] | None = None
+    endpoints: list[QGetModelV4EndpointOption] | None = None
+    provider_id: UUID | None = None
+    provider_resource: QGetModelV4ProviderResource | None = None
+    show_provider: bool | None = None
+    provider_agent_id: UUID | None = None
+    provider_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetModelV4ProviderOption] | None = None
+    key_id: UUID | None = None
+    key_resource: QGetModelV4KeyResource | None = None
+    show_key: bool | None = None
+    key_agent_id: UUID | None = None
+    key_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetModelV4KeyOption] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetModelV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetModelV4Department] | None = None
+    input_modality_ids: list[UUID] | None = None
+    input_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_input_modalities: bool | None = None
+    input_modalities_agent_id: UUID | None = None
+    input_modalities_required: bool | None = None
+    input_modality_suggestions: list[UUID] | None = None
+    input_modalities: list[QGetModelV4ModalityOption] | None = None
+    output_modality_ids: list[UUID] | None = None
+    output_modality_resources: list[QGetModelV4ModalityResource] | None = None
+    show_output_modalities: bool | None = None
+    output_modalities_agent_id: UUID | None = None
+    output_modalities_required: bool | None = None
+    output_modality_suggestions: list[UUID] | None = None
+    output_modalities: list[QGetModelV4ModalityOption] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    temperature_level_resources: list[QGetModelV4TemperatureLevelResource] | None = None
+    show_temperature_levels: bool | None = None
+    temperature_levels_agent_id: UUID | None = None
+    temperature_levels_required: bool | None = None
+    temperature_level_suggestions: list[UUID] | None = None
+    temperature_levels: list[QGetModelV4TemperatureLevelOption] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    reasoning_level_resources: list[QGetModelV4ReasoningLevelResource] | None = None
+    show_reasoning_levels: bool | None = None
+    reasoning_levels_agent_id: UUID | None = None
+    reasoning_levels_required: bool | None = None
+    reasoning_level_suggestions: list[UUID] | None = None
+    reasoning_levels: list[QGetModelV4ReasoningLevelOption] | None = None
+    quality_ids: list[UUID] | None = None
+    quality_resources: list[QGetModelV4QualityResource] | None = None
+    show_qualities: bool | None = None
+    qualities_agent_id: UUID | None = None
+    qualities_required: bool | None = None
+    quality_suggestions: list[UUID] | None = None
+    qualities: list[QGetModelV4QualityOption] | None = None
+    pricing_ids: list[UUID] | None = None
+    pricing_resources: list[QGetModelV4PricingResource] | None = None
+    show_pricing: bool | None = None
+    pricing_agent_id: UUID | None = None
+    pricing_required: bool | None = None
+    pricing_suggestions: list[UUID] | None = None
+    pricings: list[QGetModelV4PricingOption] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetModelV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetModelV4VoiceOption] | None = None
+
+
+
 # Generated from: get_model_detail
 
 class GetModelDetailSqlParams(BaseModel):
@@ -16899,6 +17480,77 @@ class PatchModelDraftApiResponse(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
+
+
+
+# Generated from: save_model
+
+class SaveModelSqlParams(BaseModel):
+
+    provider_id: UUID
+    profile_id: UUID
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
+    input_model_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    temperature_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    pricing_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voice_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.profile_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.value_id,
+            self.endpoint_id,
+            self.input_model_id,
+            self.department_ids,
+            self.temperature_level_ids,
+            self.pricing_ids,
+            self.input_modality_ids,
+            self.output_modality_ids,
+            self.reasoning_level_ids,
+            self.voice_ids,
+            self.quality_ids,
+        )
+
+class SaveModelSqlRow(BaseModel):
+
+    model_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveModelApiRequest(BaseModel):
+
+    provider_id: UUID
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
+    input_model_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    temperature_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    pricing_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voice_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SaveModelApiResponse(BaseModel):
+
+    model_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -36998,6 +37650,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
+    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql": (
+        "GetGenerationRunContextAndCreateRunSqlParams",
+        "GetGenerationRunContextAndCreateRunSqlRow",
+        "GetGenerationRunContextAndCreateRunApiRequest",
+        "GetGenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql": (
         "GetTextRunContextAndCreateRunSqlParams",
         "GetTextRunContextAndCreateRunSqlRow",
@@ -37538,6 +38196,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateModelApiRequest",
         "DuplicateModelApiResponse",
     ),
+    "app/sql/v4/models/get_model_complete.sql": (
+        "GetModelSqlParams",
+        "GetModelSqlRow",
+        "GetModelApiRequest",
+        "GetModelApiResponse",
+    ),
     "app/sql/v4/models/get_model_detail_complete.sql": (
         "GetModelDetailSqlParams",
         "GetModelDetailSqlRow",
@@ -37561,6 +38225,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchModelDraftSqlRow",
         "PatchModelDraftApiRequest",
         "PatchModelDraftApiResponse",
+    ),
+    "app/sql/v4/models/save_model_complete.sql": (
+        "SaveModelSqlParams",
+        "SaveModelSqlRow",
+        "SaveModelApiRequest",
+        "SaveModelApiResponse",
     ),
     "app/sql/v4/models/update_model_complete.sql": (
         "UpdateModelSqlParams",
@@ -40488,6 +41158,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -40938,6 +41613,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/models/get_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/models/get_model_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -40954,6 +41634,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/models/patch_model_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/models/save_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
