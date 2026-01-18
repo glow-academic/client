@@ -1,24 +1,17 @@
 /**
  * Tools.tsx
  * Resource component for tools selection
- * Uses GenericPicker to select existing tools resources
+ * Uses SelectableGrid to select existing tools resources
  * Manages tool_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { Button } from "@/components/ui/button";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftToolsIn = InputOf<"/api/v4/resources/tools", "post">;
@@ -60,6 +53,10 @@ export interface ToolsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  searchTerm?: string; // Search term for filtering tools
+  onSearchChange?: (term: string) => void; // Callback when search term changes
+  showSelectedFilter?: boolean; // Whether to show only selected tools
+  onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
 }
 
 export function Tools({
@@ -80,6 +77,10 @@ export function Tools({
   createToolsAction,
   onGenerate,
   isGenerating = false,
+  searchTerm = "",
+  onSearchChange,
+  showSelectedFilter = false,
+  onShowSelectedChange,
 }: ToolsProps) {
   const ids = useMemo(() => tool_ids ?? [], [tool_ids]);
   const show = show_tools ?? false;
@@ -97,7 +98,21 @@ export function Tools({
     ids.forEach((id) => createdToolsIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert tools array to ToolsItem format for GenericPicker
+  // Handle search term changes
+  useEffect(() => {
+    if (onSearchChange && searchTerm !== undefined) {
+      onSearchChange(searchTerm);
+    }
+  }, [searchTerm, onSearchChange]);
+
+  // Handle showSelected filter changes
+  useEffect(() => {
+    if (onShowSelectedChange && showSelectedFilter !== undefined) {
+      onShowSelectedChange(showSelectedFilter);
+    }
+  }, [showSelectedFilter, onShowSelectedChange]);
+
+  // Convert tools array to ToolsItem format for SelectableGrid
   const toolsItems = useMemo(() => {
     return allTools
       .filter((m) => m.tool_id && m.name) // Filter out nulls
@@ -108,25 +123,45 @@ export function Tools({
       }));
   }, [allTools]);
 
-  // Check if a tools is suggested
+  // Filter tools by search term
+  const filteredTools = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return toolsItems;
+    }
+    const searchLower = searchTerm.toLowerCase();
+    return toolsItems.filter(
+      (tool) =>
+        tool.name.toLowerCase().includes(searchLower) ||
+        (tool.description &&
+          tool.description.toLowerCase().includes(searchLower))
+    );
+  }, [toolsItems, searchTerm]);
+
+  // Filter by showSelected if enabled
+  const displayTools = useMemo(() => {
+    if (!showSelectedFilter) {
+      return filteredTools;
+    }
+    return filteredTools.filter((tool) => ids.includes(tool.id));
+  }, [filteredTools, showSelectedFilter, ids]);
+
+  // Check if a tool is suggested
   const isSuggested = useCallback(
-    (toolsId: string) => suggestionsList.includes(toolsId),
+    (toolId: string) => suggestionsList.includes(toolId),
     [suggestionsList]
   );
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Tools are generated, not selected from existing artifacts
-      // Update parent state
-      onChange(selectedIds);
+    (toolId: string) => {
+      // Toggle selection: if already selected, remove it; otherwise add it
+      const isSelected = ids.includes(toolId);
+      const newIds = isSelected
+        ? ids.filter((id) => id !== toolId)
+        : [...ids, toolId];
+      onChange(newIds);
     },
-    [onChange]
+    [ids, onChange]
   );
-
-  // Check if any tools resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return tool_resources?.some((m) => m.generated) ?? false;
-  }, [tool_resources]);
 
   // Don't render if show_tools is false (AFTER all hooks)
   if (!show) {
@@ -134,85 +169,57 @@ export function Tools({
   }
 
   return (
-    <div className="space-y-2">
-      {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
-            )}
-          </Label>
-          {onGenerate && agent_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      )}
-      <GenericPicker<ToolsItem>
-        items={toolsItems}
-        itemIds={allTools
-          .map((m) => m.tool_id)
-          .filter((id): id is string => id !== null)} // All tools IDs from array, filter nulls
+    <div className="space-y-4">
+      <Label htmlFor={id} className="flex items-center gap-1">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+        {description && (
+          <span className="text-xs text-muted-foreground ml-2">
+            {description}
+          </span>
+        )}
+      </Label>
+      <SelectableGrid<ToolsItem>
+        items={displayTools}
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                )}
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+            )}
+
+            {/* Suggested badge - top right */}
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+              {item.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  {item.description}
+                </p>
               )}
-            />
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No tools found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

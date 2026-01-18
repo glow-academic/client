@@ -1,27 +1,17 @@
 /**
  * Models.tsx
  * Resource component for model selection
- * Uses GenericPicker for selection
+ * Uses SelectableGrid for selection with search and filter
  * Creates resources independently and reports resource IDs to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { Button } from "@/components/ui/button";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
-
-type CreateDraftModelsIn = InputOf<"/api/v4/resources/models", "post">;
-type CreateDraftModelsOut = OutputOf<"/api/v4/resources/models", "post">;
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
+import { useCallback, useEffect, useMemo } from "react";
 
 export interface ModelsProps {
   model_id?: string | null; // Current model_id (standardized prop name)
@@ -49,19 +39,14 @@ export interface ModelsProps {
   }>; // Array of all available model options
   disabled?: boolean; // Based on can_edit flag
   onModelIdChange: (modelId: string | null) => void; // Update model_id in parent form state
-  onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   label?: string;
-  placeholder?: string;
   required?: boolean;
   id?: string;
-  "data-testid"?: string;
   helpText?: string;
-  group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
-  createModelsAction?:
-    | ((input: CreateDraftModelsIn) => Promise<CreateDraftModelsOut>)
-    | undefined;
+  searchTerm?: string; // Search term for filtering models
+  onSearchChange?: (term: string) => void; // Callback when search term changes
+  showSelectedFilter?: boolean; // Whether to show only selected models
+  onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   // Legacy props for backward compatibility
   modelResource?: {
     id: string;
@@ -76,30 +61,26 @@ export interface ModelsProps {
 
 export function Models({
   model_id,
-  model_resource,
+  model_resource: _model_resource,
   show_models = true,
   model_suggestions,
   models,
   disabled = false,
   onModelIdChange,
-  onGenerate,
-  isGenerating = false,
   label = "Model",
-  placeholder = "Select a model",
   required = false,
   id = "model",
-  "data-testid": dataTestId,
   helpText,
-  group_id,
-  agent_id,
-  createModelsAction,
+  searchTerm = "",
+  onSearchChange,
+  showSelectedFilter = false,
+  onShowSelectedChange,
   // Legacy props for backward compatibility
-  modelResource,
+  modelResource: _modelResource,
   modelId: _modelId,
   suggestions,
 }: ModelsProps) {
   // Use standardized props with fallback to legacy props
-  const resource = model_resource ?? modelResource ?? null;
   const resourceId = model_id ?? _modelId ?? null;
   const show = show_models ?? true;
   const suggestionsList = useMemo(
@@ -107,13 +88,75 @@ export function Models({
     [model_suggestions, suggestions]
   );
 
-  // Use models array for GenericPicker items
-  const pickerItems = useMemo(() => {
-    if (models && models.length > 0) {
-      return models;
+  // Handle search term changes
+  useEffect(() => {
+    if (onSearchChange && searchTerm !== undefined) {
+      onSearchChange(searchTerm);
     }
-    return [];
+  }, [searchTerm, onSearchChange]);
+
+  // Handle showSelected filter changes
+  useEffect(() => {
+    if (onShowSelectedChange && showSelectedFilter !== undefined) {
+      onShowSelectedChange(showSelectedFilter);
+    }
+  }, [showSelectedFilter, onShowSelectedChange]);
+
+  // Convert models array to items format for SelectableGrid
+  const modelsItems = useMemo(() => {
+    if (!models || models.length === 0) {
+      return [];
+    }
+    return models
+      .filter((m) => m.model_id && m.name) // Filter out nulls
+      .map((m) => ({
+        id: m.model_id!,
+        name: m.name!,
+        description: m.description || null,
+        input_modalities: m.input_modalities || null,
+        output_modalities: m.output_modalities || null,
+      }));
   }, [models]);
+
+  // Filter models by search term
+  const filteredModels = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return modelsItems;
+    }
+    const searchLower = searchTerm.toLowerCase();
+    return modelsItems.filter(
+      (model) =>
+        model.name.toLowerCase().includes(searchLower) ||
+        (model.description &&
+          model.description.toLowerCase().includes(searchLower))
+    );
+  }, [modelsItems, searchTerm]);
+
+  // Filter by showSelected if enabled
+  const displayModels = useMemo(() => {
+    if (!showSelectedFilter) {
+      return filteredModels;
+    }
+    return filteredModels.filter((model) => model.id === resourceId);
+  }, [filteredModels, showSelectedFilter, resourceId]);
+
+  // Check if a model is suggested
+  const isSuggested = useCallback(
+    (modelId: string) => suggestionsList.includes(modelId),
+    [suggestionsList]
+  );
+
+  const handleSelect = useCallback(
+    (modelId: string) => {
+      // Toggle selection: if already selected, unselect; otherwise select
+      if (modelId === resourceId) {
+        onModelIdChange(null);
+      } else {
+        onModelIdChange(modelId);
+      }
+    },
+    [resourceId, onModelIdChange]
+  );
 
   // Don't render if show_models is false (AFTER all hooks)
   if (!show) {
@@ -121,80 +164,70 @@ export function Models({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-end justify-between">
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-          </Label>
-          {onGenerate && agent_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      </div>
-      <GenericPicker
-        items={pickerItems}
-        selectedIds={resourceId ? [resourceId] : []}
-        onSelect={(ids) => onModelIdChange(ids[0] || null)}
-        multiSelect={false}
-        getId={(item) => item.model_id || ""}
-        getLabel={(item) => item.name || "Unknown Model"}
-        getSearchText={(item) =>
-          `${item.name || ""} ${item.description || ""}`.trim()
-        }
-        renderPreview={(item) => (
-          <div className="space-y-1">
-            <div className="font-medium">{item.name || "Unknown Model"}</div>
-            {item.description && (
-              <div className="text-sm text-muted-foreground">
-                {item.description}
+    <div className="space-y-4">
+      <Label htmlFor={id} className="flex items-center gap-1">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </Label>
+
+      <SelectableGrid<(typeof modelsItems)[0]>
+        items={displayModels}
+        selectedId={resourceId || null}
+        onSelect={handleSelect}
+        getId={(item) => item.id}
+        renderItem={(model, isSelected) => (
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
             )}
-            {item.input_modalities && item.input_modalities.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                Input: {item.input_modalities.join(", ")}
+
+            {/* Suggested badge - top right */}
+            {isSuggested(model.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
               </div>
             )}
-            {item.output_modalities && item.output_modalities.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                Output: {item.output_modalities.join(", ")}
+
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-tight">
+                  {model.name || "Unnamed Model"}
+                </h3>
+                {model.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {model.description}
+                  </p>
+                )}
+                {(model.input_modalities || model.output_modalities) && (
+                  <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                    {model.input_modalities &&
+                      model.input_modalities.length > 0 && (
+                        <div>Input: {model.input_modalities.join(", ")}</div>
+                      )}
+                    {model.output_modalities &&
+                      model.output_modalities.length > 0 && (
+                        <div>Output: {model.output_modalities.join(", ")}</div>
+                      )}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No models found. Try adjusting your search."
         disabled={disabled}
-        showLabel={false}
-        label={label}
-        description={helpText}
-        emptyMessage="No models available"
-        groupHeading="Models"
-        id={id}
-        data-testid={dataTestId}
       />
+      {helpText && <p className="text-sm text-muted-foreground">{helpText}</p>}
     </div>
   );
 }

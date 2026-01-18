@@ -1,7 +1,7 @@
 /**
  * Prompts.tsx
- * Resource component for prompt selection
- * Uses GenericPicker for selection
+ * Resource component for prompt selection and editing
+ * Inline Monaco editor for prompt content editing
  * Creates resources independently and reports resource IDs to parent
  */
 
@@ -17,8 +17,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { Eye } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// Dynamically import Monaco to avoid SSR issues
+const Monaco = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-32">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+    </div>
+  ),
+});
 
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
@@ -47,8 +58,6 @@ export interface PromptsProps {
   }>; // Array of all available prompt options
   disabled?: boolean; // Based on can_edit flag
   onPromptIdChange: (promptId: string | null) => void; // Update prompt_id in parent form state
-  onGenerate?: () => Promise<void>;
-  isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -76,12 +85,10 @@ export function Prompts({
   prompt_id,
   prompt_resource,
   show_prompts = true,
-  prompt_suggestions,
+  prompt_suggestions: _prompt_suggestions,
   prompts,
   disabled = false,
   onPromptIdChange,
-  onGenerate,
-  isGenerating = false,
   label = "Prompt",
   placeholder = "Select a prompt",
   required = false,
@@ -94,16 +101,11 @@ export function Prompts({
   // Legacy props for backward compatibility
   promptResource,
   promptId: _promptId,
-  suggestions,
+  suggestions: _suggestions,
 }: PromptsProps) {
   // Use standardized props with fallback to legacy props
   const resource = prompt_resource ?? promptResource ?? null;
   const resourceId = prompt_id ?? _promptId ?? null;
-  const show = show_prompts ?? true;
-  const suggestionsList = useMemo(
-    () => prompt_suggestions ?? suggestions ?? [],
-    [prompt_suggestions, suggestions]
-  );
 
   // Use prompts array for GenericPicker items
   const pickerItems = useMemo(() => {
@@ -113,88 +115,298 @@ export function Prompts({
     return [];
   }, [prompts]);
 
+  // Track prompt content in local state
+  const [promptContent, setPromptContent] = useState<string>(
+    resource?.system_prompt || ""
+  );
+  const [editorMode, setEditorMode] = useState<"editor" | "preview">("editor");
+  const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedContentRef = useRef<string>(resource?.system_prompt || "");
+  const isInitialMountRef = useRef(true);
+
+  // Detect dark mode for Monaco editor
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      setTheme("vs-dark");
+    } else {
+      setTheme("light");
+    }
+  }, []);
+
+  // Update prompt content when resource or resourceId changes
+  useEffect(() => {
+    if (resource?.system_prompt !== undefined) {
+      setPromptContent(resource.system_prompt || "");
+      lastSavedContentRef.current = resource.system_prompt || "";
+    } else if (resourceId && prompts) {
+      // Find prompt by ID and load its content
+      const selectedPrompt = prompts.find((p) => p.prompt_id === resourceId);
+      if (selectedPrompt?.system_prompt !== undefined) {
+        setPromptContent(selectedPrompt.system_prompt || "");
+        lastSavedContentRef.current = selectedPrompt.system_prompt || "";
+      }
+    }
+  }, [resource?.system_prompt, resourceId, prompts]);
+
+  // Debounced resource creation/update
+  useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastSavedContentRef.current = promptContent;
+      return;
+    }
+
+    // Skip if content hasn't changed
+    if (promptContent === lastSavedContentRef.current) {
+      return;
+    }
+
+    // Skip if no action or empty content
+    if (!createPromptsAction || !promptContent.trim()) {
+      return;
+    }
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        if (!agent_id || !group_id) {
+          return;
+        }
+
+        // If we have a resourceId, update existing prompt; otherwise create new
+        const result = await createPromptsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            system_prompt: promptContent,
+            name: resource?.name || "Untitled Prompt",
+            description: resource?.description || "",
+            mcp: false,
+            ...(resourceId ? { prompt_id: resourceId } : {}),
+          },
+        });
+
+        if (result && typeof result === "object" && "prompt_id" in result) {
+          const newPromptId = (result as { prompt_id?: string | null })
+            .prompt_id;
+          if (newPromptId && newPromptId !== resourceId) {
+            // New prompt created, update parent
+            onPromptIdChange(newPromptId);
+          }
+        }
+        lastSavedContentRef.current = promptContent;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to create/update prompt resource:", error);
+      }
+    }, 1000);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [
+    promptContent,
+    createPromptsAction,
+    agent_id,
+    group_id,
+    resourceId,
+    resource?.name,
+    resource?.description,
+    onPromptIdChange,
+  ]);
+
+  const handlePromptSelect = (selectedPromptId: string | null) => {
+    if (selectedPromptId && prompts) {
+      const selectedPrompt = prompts.find(
+        (p) => p.prompt_id === selectedPromptId
+      );
+      if (selectedPrompt?.system_prompt !== undefined) {
+        setPromptContent(selectedPrompt.system_prompt || "");
+        lastSavedContentRef.current = selectedPrompt.system_prompt || "";
+      }
+    }
+    onPromptIdChange(selectedPromptId);
+  };
+
+  const handlePromptContentChange = useCallback(
+    (value: string) => {
+      setPromptContent(value);
+      // Clear prompt_id when editing, indicating new prompt
+      if (resourceId) {
+        onPromptIdChange(null);
+      }
+    },
+    [resourceId, onPromptIdChange]
+  );
+
+  // Dynamically import markdown renderer to avoid SSR issues
+  const MarkdownRenderer = dynamic(
+    () => import("@/components/common/chat/markdown/MarkdownRenderer"),
+    {
+      ssr: false,
+      loading: () => (
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        </div>
+      ),
+    }
+  );
+
+  const renderEditorContent = useCallback(() => {
+    if (editorMode === "preview") {
+      return (
+        <div className="w-full h-full border rounded-md p-4 overflow-auto">
+          <MarkdownRenderer content={promptContent || ""} />
+        </div>
+      );
+    }
+    return (
+      <div className="w-full h-full">
+        <Monaco
+          height="100%"
+          defaultLanguage="markdown"
+          value={promptContent || ""}
+          onChange={(val) => handlePromptContentChange(val || "")}
+          theme={theme}
+          options={{
+            readOnly: disabled,
+            wordWrap: "on",
+            minimap: { enabled: false },
+            fontSize: 13,
+            lineNumbers: "on",
+            scrollBeyondLastLine: false,
+            folding: true,
+            lineDecorationsWidth: 10,
+            lineNumbersMinChars: 3,
+            renderLineHighlight: "all",
+            selectOnLineNumbers: true,
+            roundedSelection: false,
+            scrollbar: {
+              vertical: "visible",
+              horizontal: "visible",
+              verticalScrollbarSize: 8,
+              horizontalScrollbarSize: 8,
+            },
+            placeholder:
+              "System prompt that defines how the agent should behave and respond. You can use markdown formatting.",
+          }}
+        />
+      </div>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorMode, promptContent, disabled, theme, handlePromptContentChange]);
+
   // Don't render if show_prompts is false (AFTER all hooks)
-  if (!show) {
+  if (show_prompts === false) {
     return null;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Prompt Selection */}
       <div className="flex items-end justify-between">
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="flex items-center gap-1">
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && agent_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        </div>
+        {/* Preview button and GenericPicker */}
+        <div className="flex items-center gap-2">
+          {/* Preview icon button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={editorMode === "preview" ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() =>
+                    setEditorMode(
+                      editorMode === "preview" ? "editor" : "preview"
+                    )
+                  }
+                  className="h-8 w-8 p-0"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Preview</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          {/* GenericPicker for version history */}
+          {pickerItems.length > 0 && (
+            <GenericPicker
+              items={pickerItems}
+              selectedIds={resourceId ? [resourceId] : []}
+              onSelect={(ids) => handlePromptSelect(ids[0] || null)}
+              multiSelect={false}
+              getId={(item) => item.prompt_id || ""}
+              getLabel={(item) =>
+                item.name || item.system_prompt || "Unknown Prompt"
+              }
+              getSearchText={(item) =>
+                `${item.name || ""} ${item.description || ""} ${item.system_prompt || ""}`.trim()
+              }
+              renderPreview={(item) => (
+                <div className="space-y-1">
+                  <div className="font-medium">
+                    {item.name || "Untitled Prompt"}
+                  </div>
+                  {item.description && (
+                    <div className="text-sm text-muted-foreground">
+                      {item.description}
+                    </div>
+                  )}
+                  {item.system_prompt && (
+                    <div className="text-xs text-muted-foreground max-w-md line-clamp-3">
+                      {item.system_prompt}
+                    </div>
+                  )}
+                  {item.department_ids && item.department_ids.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Departments: {item.department_ids.length}
+                    </div>
+                  )}
+                </div>
+              )}
+              placeholder={placeholder}
+              disabled={disabled}
+              compact={true}
+              buttonClassName="h-8"
+              showLabel={false}
+              emptyMessage="No prompts available"
+              groupHeading="Prompts"
+              data-testid={dataTestId}
+            />
           )}
         </div>
       </div>
-      <GenericPicker
-        items={pickerItems}
-        selectedIds={resourceId ? [resourceId] : []}
-        onSelect={(ids) => onPromptIdChange(ids[0] || null)}
-        multiSelect={false}
-        getId={(item) => item.prompt_id || ""}
-        getLabel={(item) => item.name || item.system_prompt || "Unknown Prompt"}
-        getSearchText={(item) =>
-          `${item.name || ""} ${item.description || ""} ${item.system_prompt || ""}`.trim()
-        }
-        renderPreview={(item) => (
-          <div className="space-y-1">
-            <div className="font-medium">
-              {item.name || "Untitled Prompt"}
-            </div>
-            {item.description && (
-              <div className="text-sm text-muted-foreground">
-                {item.description}
-              </div>
-            )}
-            {item.system_prompt && (
-              <div className="text-xs text-muted-foreground max-w-md line-clamp-3">
-                {item.system_prompt}
-              </div>
-            )}
-            {item.department_ids && item.department_ids.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                Departments: {item.department_ids.length}
-              </div>
-            )}
-          </div>
+
+      {/* Prompt Editor */}
+      <div className="space-y-2">
+        <div className="h-[500px]" data-testid={`${dataTestId || id}-editor`}>
+          {renderEditorContent()}
+        </div>
+        {helpText && (
+          <p className="text-sm text-muted-foreground">{helpText}</p>
         )}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        label={label}
-        description={helpText}
-        emptyMessage="No prompts available"
-        groupHeading="Prompts"
-        id={id}
-        data-testid={dataTestId}
-      />
+      </div>
     </div>
   );
 }

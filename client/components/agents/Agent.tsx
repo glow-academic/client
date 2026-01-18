@@ -20,7 +20,6 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
@@ -29,6 +28,7 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Instructions } from "@/components/resources/Instructions";
+import { Models } from "@/components/resources/Models";
 import { Names } from "@/components/resources/Names";
 import { Prompts } from "@/components/resources/Prompts";
 import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
@@ -47,13 +47,18 @@ import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 import type { ResourceType } from "@/lib/resources/types";
-import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Check, Loader2, Sparkles } from "lucide-react";
-import { parseAsString, useQueryStates, type Parser, type Values } from "nuqs";
+import { Loader2, Sparkles } from "lucide-react";
+import {
+  parseAsBoolean,
+  parseAsString,
+  useQueryStates,
+  type Parser,
+  type Values,
+} from "nuqs";
 
 // Type-only import from server page
 import type {
@@ -86,6 +91,8 @@ type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
+type CreateDraftModelsIn = InputOf<"/api/v4/resources/models", "post">;
+type CreateDraftModelsOut = OutputOf<"/api/v4/resources/models", "post">;
 
 // Build model_mapping type from models array
 // The API returns models array, we build a mapping from model_id to model info
@@ -132,6 +139,9 @@ export interface AgentProps {
   createPromptsAction?: (
     input: CreateDraftPromptsIn
   ) => Promise<CreateDraftPromptsOut>;
+  createModelsAction?: (
+    input: CreateDraftModelsIn
+  ) => Promise<CreateDraftModelsOut>;
 }
 
 interface FormErrors {
@@ -151,6 +161,7 @@ export default function Agent({
   createTemperatureLevelsAction,
   createVoicesAction,
   createPromptsAction,
+  createModelsAction: _createModelsAction,
 }: AgentProps) {
   const router = useRouter();
   const isEditMode = !!agentId;
@@ -290,6 +301,9 @@ export default function Agent({
     draftId: parseAsString,
     // Search params for filtering (URL-backed for browser back/forward)
     modelSearch: parseAsString,
+    toolSearch: parseAsString,
+    toolShowSelected: parseAsBoolean,
+    modelShowSelected: parseAsBoolean,
     reasoningSearch: parseAsString,
     voiceSearch: parseAsString,
     _promptSearch: parseAsString,
@@ -551,11 +565,6 @@ export default function Agent({
     },
     []
   );
-
-  // Filter valid_model_ids - tools don't determine model capabilities, so return all valid models
-  const filteredValidModelIds = useMemo(() => {
-    return agentData?.valid_model_ids || [];
-  }, [agentData?.valid_model_ids]);
 
   // Get selected model capabilities
   const selectedModelCapabilities = useMemo(() => {
@@ -1117,21 +1126,6 @@ export default function Agent({
       handleGenerateResources(
         ["temperature_levels"],
         determineAgentType(["temperature_levels"])
-      ),
-    [handleGenerateResources, determineAgentType]
-  );
-
-  const handleGeneratePrompts = useCallback(
-    async () =>
-      handleGenerateResources(["prompts"], determineAgentType(["prompts"])),
-    [handleGenerateResources, determineAgentType]
-  );
-
-  const handleGenerateInstructions = useCallback(
-    async () =>
-      handleGenerateResources(
-        ["instructions"],
-        determineAgentType(["instructions"])
       ),
     [handleGenerateResources, determineAgentType]
   );
@@ -1767,41 +1761,29 @@ export default function Agent({
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
                         required={agentData?.tools_required ?? false}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.tools_agent_id ?? null}
+                        searchTerm={
+                          (stepFormData["toolSearch"] as string) || ""
+                        }
+                        onSearchChange={(term) =>
+                          setStepFormData({ toolSearch: term || null })
+                        }
+                        showSelectedFilter={
+                          (stepFormData["toolShowSelected"] as boolean) || false
+                        }
+                        onShowSelectedChange={(value) =>
+                          setStepFormData({ toolShowSelected: value })
+                        }
                       />
                     </StepCard>
                   );
                 }
 
                 case "model": {
+                  const selectedModel = agentData?.models?.find(
+                    (m) => m.model_id === draftState.modelId
+                  );
                   const modelSearch =
                     (stepFormData["modelSearch"] as string) || "";
-
-                  // Build models from mapping (computed directly, not with useMemo inside callback)
-                  const baseModels = filteredValidModelIds
-                    .map((id) => ({
-                      id,
-                      name: modelMapping[id]?.name || "Unnamed Model",
-                      description: modelMapping[id]?.description,
-                    }))
-                    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-
-                  // Apply search filter, then sort selected first
-                  let filteredModels = baseModels;
-                  if (modelSearch.trim()) {
-                    const searchLower = modelSearch.toLowerCase();
-                    filteredModels = filteredModels.filter(
-                      (model) =>
-                        model.name?.toLowerCase().includes(searchLower) ||
-                        model.description?.toLowerCase().includes(searchLower)
-                    );
-                  }
-                  filteredModels = filteredModels.sort((a, b) => {
-                    if (a.id === draftState.modelId) return -1;
-                    if (b.id === draftState.modelId) return 1;
-                    return (a.name || "").localeCompare(b.name || "");
-                  });
-
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1868,81 +1850,61 @@ export default function Agent({
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
                     >
-                      {filteredValidModelIds.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">
-                          No models available. Please configure models in the
-                          system.
+                      <Models
+                        model_id={draftState.modelId || null}
+                        model_resource={
+                          selectedModel
+                            ? {
+                                id: draftState.modelId,
+                                name:
+                                  modelMapping[draftState.modelId]?.name ||
+                                  null,
+                                description:
+                                  modelMapping[draftState.modelId]
+                                    ?.description || null,
+                                active: null,
+                                generated:
+                                  (selectedModel as { generated?: boolean })
+                                    ?.generated || null,
+                              }
+                            : null
+                        }
+                        show_models={true}
+                        model_suggestions={agentData?.model_suggestions ?? []}
+                        models={agentData?.models ?? []}
+                        disabled={isReadonly}
+                        onModelIdChange={(modelId) => {
+                          setDraftState((prev) => ({
+                            ...prev,
+                            modelId: modelId || "",
+                          }));
+                          if (errors.modelId) {
+                            setErrors((prev) => {
+                              const { modelId: _, ...rest } = prev;
+                              return rest;
+                            });
+                          }
+                        }}
+                        label="Model"
+                        required={true}
+                        id="model"
+                        helpText="Select the AI model for this agent."
+                        searchTerm={modelSearch}
+                        onSearchChange={(term) =>
+                          setStepFormData({ modelSearch: term || null })
+                        }
+                        showSelectedFilter={
+                          (stepFormData["modelShowSelected"] as boolean) ||
+                          false
+                        }
+                        onShowSelectedChange={(value) =>
+                          setStepFormData({ modelShowSelected: value })
+                        }
+                      />
+                      {errors?.modelId && (
+                        <p className="text-sm text-destructive">
+                          {errors.modelId}
                         </p>
-                      ) : (
-                        <>
-                          <SelectableGrid
-                            items={filteredModels}
-                            selectedId={draftState.modelId || null}
-                            onSelect={(modelId) => {
-                              // Allow unselecting by clicking the same model again
-                              if (modelId === draftState.modelId) {
-                                setDraftState((prev) => ({
-                                  ...prev,
-                                  modelId: "",
-                                }));
-                              } else {
-                                setDraftState((prev) => ({ ...prev, modelId }));
-
-                                // Bidirectional filtering: Auto-set role based on model capabilities
-                                if (
-                                  modelId &&
-                                  modelMapping &&
-                                  modelId in modelMapping
-                                ) {
-                                  // Audio models are valid for any agent (no role-based filtering)
-                                  // Model capabilities checked elsewhere if needed
-                                }
-                              }
-                              if (errors.modelId) {
-                                setErrors((prev) => {
-                                  const { modelId: _, ...rest } = prev;
-                                  return rest;
-                                });
-                              }
-                            }}
-                            getId={(model) => model.id}
-                            renderItem={(model, isSelected) => (
-                              <div
-                                className={cn(
-                                  "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                                  "hover:shadow-md hover:bg-accent/50",
-                                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                  isSelected && "ring-2 ring-primary bg-accent"
-                                )}
-                              >
-                                {isSelected && (
-                                  <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                                    <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                                  </div>
-                                )}
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-sm leading-tight">
-                                      {model.name || "Unnamed Model"}
-                                    </h3>
-                                    {model.description && (
-                                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                        {model.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            emptyMessage="No models found. Try adjusting your search."
-                            disabled={isReadonly}
-                          />
-                          {errors?.modelId && (
-                            <p className="text-sm text-destructive">
-                              {errors.modelId}
-                            </p>
-                          )}
-                        </>
                       )}
                     </StepCard>
                   );
@@ -2337,10 +2299,7 @@ export default function Agent({
                             });
                           }
                         }}
-                        onGenerate={handleGeneratePrompts}
-                        isGenerating={isGenerating("prompts")}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.prompts_agent_id ?? null}
                         createPromptsAction={createPromptsAction}
                       />
                       {errors?.prompt_id && (
@@ -2422,10 +2381,7 @@ export default function Agent({
                             instructions_id: id,
                           }))
                         }
-                        onGenerate={handleGenerateInstructions}
-                        isGenerating={isGenerating("instructions")}
                         group_id={agentData?.group_id ?? null}
-                        agent_id={agentData?.instructions_agent_id ?? null}
                       />
                     </StepCard>
                   );

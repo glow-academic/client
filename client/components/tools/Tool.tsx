@@ -31,8 +31,14 @@ type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
 type SaveToolOut = OutputOf<"/api/v4/tools/save", "post">;
 type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
-type CreateDraftArgsOutputsIn = InputOf<"/api/v4/resources/args_outputs", "post">;
-type CreateDraftArgsOutputsOut = OutputOf<"/api/v4/resources/args_outputs", "post">;
+type CreateDraftArgsOutputsIn = InputOf<
+  "/api/v4/resources/args_outputs",
+  "post"
+>;
+type CreateDraftArgsOutputsOut = OutputOf<
+  "/api/v4/resources/args_outputs",
+  "post"
+>;
 type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
 
@@ -50,9 +56,7 @@ export interface ToolProps {
     input: PatchToolDraftIn
   ) => Promise<PatchToolDraftOut>;
   // Resource creation actions
-  createArgsAction?: (
-    input: CreateDraftArgsIn
-  ) => Promise<CreateDraftArgsOut>;
+  createArgsAction?: (input: CreateDraftArgsIn) => Promise<CreateDraftArgsOut>;
   createArgsOutputsAction?: (
     input: CreateDraftArgsOutputsIn
   ) => Promise<CreateDraftArgsOutputsOut>;
@@ -192,8 +196,7 @@ function ToolComponent({
       if (
         prev.name !== newState.name ||
         prev.description !== newState.description ||
-        JSON.stringify(prev.args_ids) !==
-          JSON.stringify(newState.args_ids) ||
+        JSON.stringify(prev.args_ids) !== JSON.stringify(newState.args_ids) ||
         JSON.stringify(prev.args_outputs_ids) !==
           JSON.stringify(newState.args_outputs_ids)
       ) {
@@ -249,11 +252,7 @@ function ToolComponent({
       args_ids: formState.args_ids,
       args_outputs_ids: formState.args_outputs_ids,
     });
-  }, [
-    draftId,
-    formState.args_ids,
-    formState.args_outputs_ids,
-  ]);
+  }, [draftId, formState.args_ids, formState.args_outputs_ids]);
 
   const lastPatchedKeyRef = React.useRef<string | null>(null);
 
@@ -372,10 +371,7 @@ function ToolComponent({
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
       // Validate required resource IDs
-      if (
-        toolData?.args_required &&
-        formState.args_ids.length === 0
-      ) {
+      if (toolData?.args_required && formState.args_ids.length === 0) {
         toast.error("Args are required");
         throw new Error("Args are required");
       }
@@ -534,12 +530,7 @@ function ToolComponent({
   );
 
   const formFieldKeys = useMemo(
-    () => [
-      "name",
-      "description",
-      "args_ids",
-      "args_outputs_ids",
-    ],
+    () => ["name", "description", "args_ids", "args_outputs_ids"],
     []
   );
 
@@ -786,7 +777,9 @@ function ToolComponent({
                     generated: f.generated ?? false,
                   }))}
                 disabled={disabled}
-                {...(createArgsOutputsAction ? { createArgsOutputsAction } : {})}
+                {...(createArgsOutputsAction
+                  ? { createArgsOutputsAction }
+                  : {})}
                 group_id={currentToolData?.group_id ?? null}
                 agent_id={currentToolData?.args_outputs_agent_id ?? null}
               />
