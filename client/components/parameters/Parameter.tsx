@@ -1,180 +1,782 @@
 /**
  * Parameter.tsx
+ * Implementation using modular resource components
  * Used to create and manage parameters - supports both creation and editing
- * Migrated to GenericForm pattern with nuqs and draft autosave
  * @AshokSaravanan222 & @siladiea
- * 07/26/2025
+ * 01/08/2026
  */
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Departments } from "@/components/resources/Departments";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Fields } from "@/components/resources/Fields";
+import { Flags } from "@/components/resources/Flags";
+import { Names } from "@/components/resources/Names";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDraftAutosave } from "@/hooks/use-draft-autosave";
-import { cn } from "@/lib/utils";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
-import { ArrowDown, ArrowUp, Check, GripVertical, Power } from "lucide-react";
-import {
-  parseAsBoolean,
-  parseAsString,
-  useQueryStates,
-  type Parser,
-} from "nuqs";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { ResourceType } from "@/lib/resources/types";
+import { Loader2, Sparkles } from "lucide-react";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-// Type-only import from server page
-import type {
-  ParameterGetOut,
-  PatchParameterDraftIn,
-  PatchParameterDraftOut,
-  SaveParameterIn,
-  SaveParameterOut,
-} from "@/app/(main)/management/parameters/p/[parameterId]/page";
-import { Documents } from "@/components/resources/Documents";
-import { Personas } from "@/components/resources/Personas";
+// Types defined inline using InputOf/OutputOf
+type SaveParameterIn = InputOf<"/api/v4/parameters/save", "post">;
+type SaveParameterOut = OutputOf<"/api/v4/parameters/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type PatchParameterDraftIn = InputOf<"/api/v4/parameters/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/api/v4/parameters/draft", "patch">;
+
+type ParameterData = OutputOf<"/api/v4/parameters/get", "post">;
 
 export interface ParameterProps {
   parameterId?: string;
   mode?: "create" | "edit";
-  // Server-provided data (for server-side rendering) - unified data prop
-  parameterData?: ParameterGetOut;
-  // Server actions (replaces useMutation) - unified save action
+  // Server-provided data (for server-side rendering)
+  parameterData?: ParameterData;
+  // Server actions (replaces useMutation)
   saveParameterAction?: (input: SaveParameterIn) => Promise<SaveParameterOut>;
-  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   patchParameterDraftAction?: (
     input: PatchParameterDraftIn
   ) => Promise<PatchParameterDraftOut>;
   // Resource creation actions
-  createPersonasAction?: (
-    input: Parameters<typeof Personas>[0]["createPersonasAction"]
-  ) => Promise<ReturnType<typeof Personas>[0]["createPersonasAction"]>;
-  createDocumentsAction?: (
-    input: Parameters<typeof Documents>[0]["createDocumentsAction"]
-  ) => Promise<ReturnType<typeof Documents>[0]["createDocumentsAction"]>;
+  createNamesAction?: (
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
+  createDescriptionsAction?: (
+    input: CreateDraftDescriptionsIn
+  ) => Promise<CreateDraftDescriptionsOut>;
+  createFlagsAction?: (
+    input: CreateDraftFlagsIn
+  ) => Promise<CreateDraftFlagsOut>;
+  createFieldsAction?: (
+    input: CreateDraftFieldsIn
+  ) => Promise<CreateDraftFieldsOut>;
+  createDepartmentsAction?: (
+    input: CreateDraftDepartmentsIn
+  ) => Promise<CreateDraftDepartmentsOut>;
 }
 
 function ParameterComponent({
   parameterId,
-  mode = parameterId ? "edit" : "create",
-  parameterData: serverParameterData,
+  parameterData,
   saveParameterAction,
   patchParameterDraftAction,
-  createPersonasAction,
-  createDocumentsAction,
+  createNamesAction,
+  createDescriptionsAction,
+  createFlagsAction,
+  createFieldsAction,
+  createDepartmentsAction,
 }: ParameterProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isEditMode = mode === "edit" && !!parameterId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const isEditMode = !!parameterId;
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const { setGenerationCapability, clearGenerationCapability } =
+    useGenerationContext();
 
-  // Use ref to track latest server data
-  const latestServerParameterDataRef = React.useRef(serverParameterData);
-  latestServerParameterDataRef.current = serverParameterData;
+  // Generation state for AI workflows - simplified using ResourceType
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
 
-  // Stabilize server prop to prevent unnecessary re-renders
-  const parameterDataId = React.useMemo(() => {
-    if (!serverParameterData) return null;
-    if (
-      typeof serverParameterData === "object" &&
-      serverParameterData !== null
-    ) {
-      if (
-        "parameter_id" in serverParameterData &&
-        serverParameterData.parameter_id
-      ) {
-        return `parameter_id:${String(serverParameterData.parameter_id)}`;
-      }
-      const keyFields: Record<string, unknown> = {};
-      // Handle valid IDs - may be arrays or may need to derive from resource arrays
-      const validDeptIds =
-        "valid_department_ids" in serverParameterData &&
-        Array.isArray(serverParameterData["valid_department_ids"]) &&
-        serverParameterData["valid_department_ids"].length > 0
-          ? serverParameterData["valid_department_ids"]
-          : "departments" in serverParameterData &&
-              Array.isArray(serverParameterData["departments"])
-            ? serverParameterData["departments"]
-                .map((d: { department_id: string | null }) =>
-                  String(d.department_id)
-                )
-                .filter(Boolean)
-            : [];
-      const validFieldIds =
-        "valid_field_ids" in serverParameterData &&
-        Array.isArray(serverParameterData["valid_field_ids"]) &&
-        serverParameterData["valid_field_ids"].length > 0
-          ? serverParameterData["valid_field_ids"]
-          : "fields" in serverParameterData &&
-              Array.isArray(serverParameterData["fields"])
-            ? serverParameterData["fields"]
-                .map((f: { field_id: string | null }) => String(f.field_id))
-                .filter(Boolean)
-            : [];
-      if (validDeptIds.length > 0) {
-        keyFields["valid_department_ids"] = Array.isArray(validDeptIds)
-          ? validDeptIds.sort().join(",")
-          : String(validDeptIds);
-      }
-      if (validFieldIds.length > 0) {
-        keyFields["valid_field_ids"] = Array.isArray(validFieldIds)
-          ? validFieldIds.sort().join(",")
-          : String(validFieldIds);
-      }
-      const sortedKeys = Object.keys(keyFields).sort();
-      const hash = sortedKeys
-        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-        .join("|");
-      return `new:${hash.length}:${hash.slice(0, 100)}`;
-    }
-    return String(serverParameterData);
-  }, [serverParameterData]);
+  // Modal state for generate/regenerate
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
+    null
+  );
+  const [modalResources, setModalResources] = useState<
+    GenerateRegenerateModalResource[]
+  >([]);
+  const [modalInstructions, setModalInstructions] = useState("");
 
-  const stableParameterDataRef = React.useRef<{
-    data: typeof serverParameterData;
-    id: string | null;
-  }>({
-    data: serverParameterData,
-    id: parameterDataId,
-  });
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
 
+  // nuqs parsers for URL-backed state (will be passed to GenericForm)
+  // Memoize to prevent new object reference on every render
+  const parameterSearchParamsClient = useMemo(
+    () => ({
+      // Draft ID (URL-backed, updated when draft is created)
+      draftId: parseAsString,
+      // Search params (URL-backed, updated via debounced callback in StepCard)
+      fieldSearch: parseAsString,
+      // Filter params (URL-backed)
+      fieldShowSelected: parseAsBoolean,
+    }),
+    []
+  );
+
+  // Local form state (not in URL) - stores only resource IDs
+  // Display values are managed inside resource components
+  // Use ref to store parameterData to prevent callback recreation on every render
+  const parameterDataRef = React.useRef(parameterData);
   React.useEffect(() => {
-    if (stableParameterDataRef.current.id !== parameterDataId) {
-      stableParameterDataRef.current = {
-        data: latestServerParameterDataRef.current,
-        id: parameterDataId,
+    parameterDataRef.current = parameterData;
+  }, [parameterData]);
+
+  // Memoize parameterData fields used in renderStep to prevent callback recreation
+  // when only object reference changes (but content is same)
+  const stableParameterDataFields = React.useMemo(() => {
+    if (!parameterData) return null;
+    return {
+      group_id: parameterData.group_id,
+      name_resource: parameterData.name_resource,
+      show_name: parameterData.show_name,
+      name_suggestions: parameterData.name_suggestions,
+      names: parameterData.names,
+      name_required: parameterData.name_required,
+      name_agent_id: parameterData.name_agent_id,
+      description_resource: parameterData.description_resource,
+      show_description: parameterData.show_description,
+      description_suggestions: parameterData.description_suggestions,
+      description_required: parameterData.description_required,
+      description_agent_id: parameterData.description_agent_id,
+      descriptions: parameterData.descriptions,
+      department_resources: parameterData.department_resources,
+      show_departments: parameterData.show_departments,
+      department_suggestions: parameterData.department_suggestions,
+      departments_required: parameterData.departments_required,
+      departments_agent_id: parameterData.departments_agent_id,
+      departments: parameterData.departments,
+      active_flag_resource: parameterData.active_flag_resource,
+      show_active_flag: parameterData.show_active_flag,
+      active_flag_required: parameterData.active_flag_required,
+      active_flag_agent_id: parameterData.active_flag_agent_id,
+      field_resources: parameterData.field_resources,
+      show_fields: parameterData.show_fields,
+      field_suggestions: parameterData.field_suggestions,
+      fields_required: parameterData.fields_required,
+      fields_agent_id: parameterData.fields_agent_id,
+      fields: parameterData.fields,
+      simulation_parameter: parameterData.simulation_parameter,
+      document_parameter: parameterData.document_parameter,
+      persona_parameter: parameterData.persona_parameter,
+      scenario_parameter: parameterData.scenario_parameter,
+      video_parameter: parameterData.video_parameter,
+      active: parameterData.active,
+    };
+    // Intentionally depend on individual fields, not whole parameterData object
+    // to prevent recreation when only object reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    parameterData?.group_id,
+    parameterData?.name_resource,
+    parameterData?.show_name,
+    parameterData?.name_suggestions,
+    parameterData?.names,
+    parameterData?.name_required,
+    parameterData?.name_agent_id,
+    parameterData?.description_resource,
+    parameterData?.show_description,
+    parameterData?.description_suggestions,
+    parameterData?.description_required,
+    parameterData?.description_agent_id,
+    parameterData?.descriptions,
+    parameterData?.department_resources,
+    parameterData?.show_departments,
+    parameterData?.department_suggestions,
+    parameterData?.departments_required,
+    parameterData?.departments_agent_id,
+    parameterData?.departments,
+    parameterData?.active_flag_resource,
+    parameterData?.show_active_flag,
+    parameterData?.active_flag_required,
+    parameterData?.active_flag_agent_id,
+    parameterData?.field_resources,
+    parameterData?.show_fields,
+    parameterData?.field_suggestions,
+    parameterData?.fields_required,
+    parameterData?.fields_agent_id,
+    parameterData?.fields,
+    parameterData?.simulation_parameter,
+    parameterData?.document_parameter,
+    parameterData?.persona_parameter,
+    parameterData?.scenario_parameter,
+    parameterData?.video_parameter,
+    parameterData?.active,
+  ]);
+
+  // Helper to check if a resource type can be regenerated
+  // Use stableParameterDataFields to prevent callback recreation when parameterData object reference changes
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!stableParameterDataFields) return false;
+      switch (resourceType) {
+        case "names":
+          return stableParameterDataFields.name_resource?.generated ?? false;
+        case "descriptions":
+          return (
+            stableParameterDataFields.description_resource?.generated ?? false
+          );
+        case "flags":
+          return (
+            stableParameterDataFields.active_flag_resource?.generated ?? false
+          );
+        case "departments":
+          return (
+            stableParameterDataFields.department_resources?.some(
+              (d) => d.generated
+            ) ?? false
+          );
+        case "fields":
+          return (
+            stableParameterDataFields.field_resources?.some(
+              (f) => f.generated
+            ) ?? false
+          );
+        default:
+          return false;
+      }
+    },
+    [stableParameterDataFields]
+  );
+
+  const getInitialFormState = useCallback(() => {
+    const data = parameterDataRef.current;
+    if (!data) {
+      return {
+        name_id: null as string | null,
+        description_id: null as string | null,
+        active_flag_id: null as string | null,
+        department_ids: [] as string[],
+        field_ids: [] as string[],
+        simulation_parameter: false,
+        document_parameter: false,
+        persona_parameter: false,
+        scenario_parameter: false,
+        video_parameter: false,
+        active: false,
       };
     }
-  }, [parameterDataId]);
+    // Extract resource IDs from server data
+    // Note: Server data may have display values, but we only store IDs here
+    return {
+      name_id: data.name_id ?? null,
+      description_id: data.description_id ?? null,
+      active_flag_id: data.active_flag_id ?? null,
+      department_ids: data.department_ids ?? [],
+      field_ids: data.field_ids ?? [],
+      simulation_parameter: data.simulation_parameter ?? false,
+      document_parameter: data.document_parameter ?? false,
+      persona_parameter: data.persona_parameter ?? false,
+      scenario_parameter: data.scenario_parameter ?? false,
+      video_parameter: data.video_parameter ?? false,
+      active: data.active ?? false,
+    };
+    // Remove parameterData from dependencies - use ref instead to prevent callback recreation
+  }, []);
 
-  const parameterData = stableParameterDataRef.current.data;
+  const [formState, setFormState] = useState(getInitialFormState);
+  // Use ref to access formState in renderStep without depending on it
+  const formStateRef = React.useRef(formState);
+  React.useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
+  const departmentIdsStr = React.useMemo(
+    () => JSON.stringify(parameterData?.department_ids ?? []),
+    [parameterData?.department_ids]
+  );
+  const fieldIdsStr = React.useMemo(
+    () => JSON.stringify(parameterData?.field_ids ?? []),
+    [parameterData?.field_ids]
+  );
+
+  // Memoize stringified formState arrays for draft listener effect dependencies
+  const formStateDepartmentIdsStr = React.useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids]
+  );
+
+  // Update form state when server data changes
+  // Use parameterData directly in dependency array, not getInitialFormState
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      // Only update if resource IDs actually changed
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.field_ids) !== JSON.stringify(newState.field_ids) ||
+        prev.simulation_parameter !== newState.simulation_parameter ||
+        prev.document_parameter !== newState.document_parameter ||
+        prev.persona_parameter !== newState.persona_parameter ||
+        prev.scenario_parameter !== newState.scenario_parameter ||
+        prev.video_parameter !== newState.video_parameter ||
+        prev.active !== newState.active
+      ) {
+        return newState;
+      }
+      return prev;
+    });
+    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
+    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    parameterData?.name_id,
+    parameterData?.description_id,
+    parameterData?.active_flag_id,
+    departmentIdsStr,
+    fieldIdsStr,
+    parameterData?.simulation_parameter,
+    parameterData?.document_parameter,
+    parameterData?.persona_parameter,
+    parameterData?.scenario_parameter,
+    parameterData?.video_parameter,
+    parameterData?.active,
+  ]);
+
+  // Draft version tracking for optimistic concurrency control
+  // Keep version in a ref so updating it doesn't retrigger the effect
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
+  const lastSavedVersionRef = React.useRef(0);
+  React.useEffect(() => {
+    lastSavedVersionRef.current = lastSavedVersion;
+  }, [lastSavedVersion]);
+
+  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = React.useRef<
+    null | ((updates: Record<string, unknown>) => void)
+  >(null);
+
+  // Store formData from GenericForm to access search params
+  const formDataRef = React.useRef<Record<string, unknown>>({});
+
+  // Memoized callback to sync draftId from GenericForm - only update if value changed
+  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
+    // Store formData for access in handleGenerateResources
+    formDataRef.current = fd;
+    const next = (fd["draftId"] as string | undefined) ?? null;
+    setDraftId((prev) => (prev === next ? prev : next));
+  }, []);
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (draftId !== selectedDraftId) {
+      setSelectedDraftId(draftId);
+    }
+  }, [draftId, selectedDraftId, setSelectedDraftId]);
+
+  // Use ref to stabilize patchParameterDraftAction to prevent effect recreation when prop reference changes
+  const patchParameterDraftActionRef = React.useRef(patchParameterDraftAction);
+  React.useEffect(() => {
+    patchParameterDraftActionRef.current = patchParameterDraftAction;
+  }, [patchParameterDraftAction]);
+
+  // Build a stable key for "what would we patch" - only changes when form data actually changes
+  const draftPatchKey = React.useMemo(() => {
+    return JSON.stringify({
+      draftId: draftId || null,
+      name_id: formState.name_id,
+      description_id: formState.description_id,
+      active_flag_id: formState.active_flag_id,
+      department_ids: formState.department_ids,
+    });
+    // Use stringified arrays to prevent recreation when array references change but content is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    draftId,
+    formState.name_id,
+    formState.description_id,
+    formState.active_flag_id,
+    formStateDepartmentIdsStr,
+  ]);
+
+  // Track last patched payload so we don't repatch identical state
+  const lastPatchedKeyRef = React.useRef<string | null>(null);
+
+  // Draft change listener - watches resource IDs and patches draft
+  // Only triggers when the payload actually changes, not when version changes
+  useEffect(() => {
+    const hasResourceIds =
+      formState.name_id ||
+      formState.description_id ||
+      formState.active_flag_id ||
+      formState.department_ids.length > 0;
+
+    if (!hasResourceIds || !patchParameterDraftActionRef.current) {
+      return;
+    }
+
+    // ✅ If nothing changed since the last successful patch, do nothing.
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        if (!patchParameterDraftActionRef.current) return;
+        const result = await patchParameterDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            active_flag_id: formState.active_flag_id,
+            department_ids: formState.department_ids,
+            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
+          },
+        });
+
+        // Mark this payload as patched so we don't loop
+        lastPatchedKeyRef.current = draftPatchKey;
+
+        if (!draftId && result.draft_id) {
+          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        }
+
+        // This can stay as state (for UI), but it won't re-trigger patching
+        // because the effect is gated by payload changes.
+        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
+          setLastSavedVersion(result.new_version ?? 0);
+          lastSavedVersionRef.current = result.new_version ?? 0;
+        }
+      } catch {
+        // Failed to save draft - error already logged by API
+        // Don't update lastPatchedKeyRef on failure so we retry on next change
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+    // ✅ Trigger only when payload changes, not when version changes
+    // patchParameterDraftAction and setDraftId are accessed via refs to prevent effect recreation
+    // when prop/function references change but functionality is the same
+    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
+    // to prevent unnecessary effect recreation when individual fields change but payload is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    draftPatchKey, // ✅ trigger only when payload changes
+    // patchParameterDraftAction and setDraftId are accessed via refs
+  ]);
+
+  // WebSocket handlers for AI generation - unified handler for all resource types
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    // Use single group_id from parameterData (no need to track multiple)
+    const currentGroupId = parameterData?.group_id;
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      active_flag_id?: string | null;
+      field_ids?: string[];
+      department_ids?: string[];
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "parameter" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this parameter or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "fields",
+        "departments",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        // Update formState with the resource ID that was generated
+        // Only update the field that matches resource_type (others will be null)
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.name_id) updates.name_id = data.name_id;
+          if (data.description_id) updates.description_id = data.description_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.field_ids && data.field_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newFieldIds = data.field_ids.filter(
+              (id) => !prev.field_ids.includes(id)
+            );
+            updates.field_ids = [...prev.field_ids, ...newFieldIds];
+          }
+          if (data.department_ids && data.department_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newDeptIds = data.department_ids.filter(
+              (id) => !prev.department_ids.includes(id)
+            );
+            updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "parameter" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this parameter or wrong group_id
+      }
+      // Handle progress updates if needed
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "parameter" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this parameter or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "fields",
+        "departments",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    // Listen to parameter-specific events filtered by artifact_type and group_id
+    socket.on("parameter_generation_progress", handleGenerationProgress);
+    socket.on("parameter_generation_complete", handleGenerationComplete);
+    socket.on("parameter_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("parameter_generation_progress", handleGenerationProgress);
+      socket.off("parameter_generation_complete", handleGenerationComplete);
+      socket.off("parameter_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, parameterData?.group_id]);
+
+  // Multi-generation handler - accepts list of resource types and optional user instructions
+  // Helper function to determine agent_type from resource types
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
+      const basicResources: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+      ];
+      const allResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "fields",
+        "departments",
+      ];
+
+      const isBasicCombo =
+        resourceTypes.length === basicResources.length &&
+        resourceTypes.every((rt) => basicResources.includes(rt));
+      const isAllResources =
+        resourceTypes.length === allResourceTypes.length &&
+        resourceTypes.every((rt) => allResourceTypes.includes(rt));
+
+      if (isAllResources) {
+        return "general";
+      } else if (isBasicCombo) {
+        return "basic";
+      } else if (resourceTypes.length === 1) {
+        // Single resource type - map to agent_type
+        const agentTypeMap: Partial<Record<ResourceType, string>> = {
+          names: "name",
+          descriptions: "description",
+          flags: "flags",
+          departments: "departments",
+          fields: "fields",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType] ?? null;
+        }
+      }
+      return null;
+    },
+    []
+  );
+
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      // Read search params from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      const fieldSearch =
+        (formData["fieldSearch"] as string | undefined) ?? null;
+      const fieldShowSelected =
+        (formData["fieldShowSelected"] as boolean | undefined) ?? false;
+
+      // Emit parameter_generate event
+      socket.emit("parameter_generate", {
+        resource_types: resourceTypes, // Simple array of strings
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        // GetParameterApiRequest fields from formData
+        draft_id: draftId || null,
+        field_search: fieldSearch || null,
+        field_show_selected: fieldShowSelected || false,
+        mcp: false,
+        parameter_id: parameterId || null,
+      });
+    },
+    [socket, isConnected, parameterId]
+  );
+
+  // Individual generation handlers - generate directly without modals
+  const handleGenerateName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDescription = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["descriptions"],
+        determineAgentType(["descriptions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDepartments = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["departments"],
+        determineAgentType(["departments"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // GenericForm will manage URL state via nuqs parsers
+  // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
@@ -183,342 +785,9 @@ function ParameterComponent({
     return !parameterData.can_edit;
   }, [parameterData]);
 
-  const defaultDepartmentIds = useMemo(
-    () =>
-      getDefaultDepartmentIds(
-        isSuperadmin,
-        effectiveProfile?.primary_department_id ?? null
-      ),
-    [isSuperadmin, effectiveProfile?.primary_department_id]
-  );
-
-  // Inline parsers for URL-backed state (navigation/search params only)
-  const parameterSearchParamsClient = {
-    // Draft ID (URL-backed, updated when draft is created)
-    draftId: parseAsString,
-    // Search params (URL-backed, updated via debounced callback in StepCard)
-    fieldSearch: parseAsString,
-    // Filter params (URL-backed)
-    fieldShowSelected: parseAsBoolean,
-  } as const;
-
-  // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(
-    parameterSearchParamsClient,
-    {
-      history: "replace",
-      shallow: true, // Use shallow routing to prevent server component re-renders
-    }
-  );
-
-  // Get draftId from URL (managed by nuqs via urlParams)
-  const urlDraftId = urlParams.draftId || null;
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (urlDraftId !== selectedDraftId) {
-      setSelectedDraftId(urlDraftId);
-    }
-  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
-
-  const draftId = urlDraftId;
-
-  // Trigger server component refetch when search/filter params change (for SQL-side filtering)
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const prevSearchParamsRef = useRef<{
-    search: string | null;
-    showSelected: boolean | null;
-  }>({
-    search: null,
-    showSelected: null,
-  });
-
-  useEffect(() => {
-    const currentSearch = urlParams.fieldSearch || null;
-    const currentShowSelected = urlParams.fieldShowSelected ?? null;
-    const prevSearch = prevSearchParamsRef.current.search;
-    const prevShowSelected = prevSearchParamsRef.current.showSelected;
-
-    // Check if search or filter params actually changed
-    const hasChanged =
-      prevSearch !== currentSearch || prevShowSelected !== currentShowSelected;
-
-    if (hasChanged) {
-      // Update ref for next comparison
-      prevSearchParamsRef.current = {
-        search: currentSearch,
-        showSelected: currentShowSelected,
-      };
-
-      // Clear existing timeout
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-
-      // Debounce router.refresh() calls (300ms to match search debounce)
-      refreshTimeoutRef.current = setTimeout(() => {
-        router.refresh();
-      }, 300);
-    }
-
-    return () => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-    };
-  }, [urlParams.fieldSearch, urlParams.fieldShowSelected, router]);
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      // TODO: Implement generation logic for parameters
-      // For now, check if generation capability exists
-      if (parameterData?.general_agent_id) {
-        // When generation is implemented, trigger it here
-        // handleGenerateResources([...]);
-        toast.info("Generation not yet implemented for parameters");
-      }
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [parameterData?.general_agent_id]);
-
-  // Local draft state (not in URL) - initialized from server data or draft payload
-  type DraftState = {
-    name: string;
-    description: string;
-    active: boolean;
-    simulation_parameter: boolean;
-    document_parameter: boolean;
-    persona_parameter: boolean;
-    scenario_parameter: boolean;
-    video_parameter: boolean;
-    departmentIds: string[];
-    fieldIds: string[]; // Ordered array of field IDs
-    fieldActiveStates: Record<string, boolean>; // Active states for fields
-    fieldDefaultStates: Record<string, boolean>; // Default states for fields
-  };
-
-  // Initialize draft state from server data or draft payload
-  // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
-  const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? parameterData : undefined;
-
-    if (!data) {
-      return {
-        name: "",
-        description: "",
-        active: false,
-        simulation_parameter: false,
-        document_parameter: false,
-        persona_parameter: false,
-        scenario_parameter: false,
-        video_parameter: false,
-        departmentIds: defaultDepartmentIds || [],
-        fieldIds: [],
-        fieldActiveStates: {},
-        fieldDefaultStates: {},
-      };
-    }
-
-    // Initialize field states from server data or draft payload
-    let fieldIds: string[] = [];
-    let fieldActiveStates: Record<string, boolean> = {};
-    let fieldDefaultStates: Record<string, boolean> = {};
-
-    // Try to read from draft payload fields (returned by SQL when draft exists)
-    if (data && "field_ids" in data && data.field_ids) {
-      try {
-        const parsed =
-          typeof data.field_ids === "string"
-            ? JSON.parse(data.field_ids)
-            : data.field_ids;
-        if (Array.isArray(parsed)) {
-          fieldIds = parsed.map((id) => String(id));
-        }
-      } catch {
-        // Ignore parse errors, fall back to extracting from array data
-      }
-    }
-
-    if (data && "field_active_states" in data && data.field_active_states) {
-      try {
-        const parsed =
-          typeof data.field_active_states === "string"
-            ? JSON.parse(data.field_active_states)
-            : data.field_active_states;
-        if (parsed && typeof parsed === "object") {
-          fieldActiveStates = parsed as Record<string, boolean>;
-        }
-      } catch {
-        // Ignore parse errors, fall back to extracting from array data
-      }
-    }
-
-    if (data && "field_default_states" in data && data.field_default_states) {
-      try {
-        const parsed =
-          typeof data.field_default_states === "string"
-            ? JSON.parse(data.field_default_states)
-            : data.field_default_states;
-        if (parsed && typeof parsed === "object") {
-          fieldDefaultStates = parsed as Record<string, boolean>;
-        }
-      } catch {
-        // Ignore parse errors, fall back to extracting from array data
-      }
-    }
-
-    // If draft payload didn't have these fields, fall back to extracting from array data (edit mode only)
-    if (
-      fieldIds.length === 0 &&
-      isEditMode &&
-      parameterData &&
-      "field_connections" in parameterData &&
-      parameterData.field_connections
-    ) {
-      // Extract from field_connections array
-      parameterData.field_connections?.forEach((conn) => {
-        const fieldId = conn.field_id;
-        if (fieldId) {
-          fieldIds.push(fieldId);
-          fieldActiveStates[fieldId] = conn.active ?? true;
-          fieldDefaultStates[fieldId] = conn.default ?? false;
-        }
-      });
-    }
-
-    // If draftId exists, server should have merged draft payload into data
-    // Otherwise, use server defaults
-    return {
-      name: data.name || "",
-      description: data.description || "",
-      active: data.active ?? false,
-      simulation_parameter: data.simulation_parameter ?? false,
-      document_parameter: data.document_parameter ?? false,
-      persona_parameter: data.persona_parameter ?? false,
-      scenario_parameter: data.scenario_parameter ?? false,
-      video_parameter: data.video_parameter ?? false,
-      departmentIds: data.department_ids || defaultDepartmentIds || [],
-      fieldIds,
-      fieldActiveStates,
-      fieldDefaultStates,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isEditMode,
-    parameterData,
-    parameterDataId,
-    draftId,
-    urlDraftId,
-    defaultDepartmentIds,
-    // Include actual content fields so it recomputes when server data changes
-    parameterData?.name,
-    parameterData?.description,
-    parameterData?.active,
-    parameterData?.simulation_parameter,
-    parameterData?.document_parameter,
-    parameterData?.persona_parameter,
-    parameterData?.scenario_parameter,
-    parameterData?.video_parameter,
-    parameterData?.department_ids,
-    parameterData?.field_ids,
-    parameterData?.field_active_states,
-    parameterData?.field_default_states,
-  ]);
-
-  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
-
-  // Track previous initialDraftState content to avoid unnecessary updates
-  const prevInitialDraftStateRef = useRef<string>(
-    JSON.stringify(initialDraftState)
-  );
-
-  // Update draft state when server data changes (e.g., draft selected)
-  useEffect(() => {
-    const currentStateStr = prevInitialDraftStateRef.current;
-    const newStateStr = JSON.stringify(initialDraftState);
-
-    if (currentStateStr !== newStateStr) {
-      prevInitialDraftStateRef.current = newStateStr;
-      setDraftState(initialDraftState);
-    }
-  }, [initialDraftState]);
-
-  // Merge draftState with urlParams for formData (GenericForm expects single formData object)
-  const formData = useMemo(() => {
-    return {
-      ...draftState,
-      fieldSearch: urlParams.fieldSearch || null,
-      fieldShowSelected: urlParams.fieldShowSelected ?? false,
-    } as Record<string, unknown>;
-  }, [draftState, urlParams.fieldSearch, urlParams.fieldShowSelected]);
-
-  // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
-  const setFormData = useCallback(
-    (
-      updates:
-        | Partial<Record<string, unknown>>
-        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
-    ) => {
-      // Handle function form
-      const resolvedUpdates =
-        typeof updates === "function" ? updates(formData) : updates;
-
-      const draftUpdates: Partial<DraftState> = {};
-      const urlUpdates: Partial<Record<string, unknown>> = {};
-
-      Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        if (
-          key === "name" ||
-          key === "description" ||
-          key === "active" ||
-          key === "simulation_parameter" ||
-          key === "document_parameter" ||
-          key === "persona_parameter" ||
-          key === "scenario_parameter" ||
-          key === "video_parameter" ||
-          key === "departmentIds" ||
-          key === "fieldIds" ||
-          key === "fieldActiveStates" ||
-          key === "fieldDefaultStates"
-        ) {
-          draftUpdates[key as keyof DraftState] = value as never;
-        } else if (key === "fieldSearch") {
-          // Update URL params for search/filter operations
-          urlUpdates["fieldSearch"] =
-            (value as string) && (value as string).length > 0
-              ? (value as string)
-              : null;
-        } else if (key === "fieldShowSelected") {
-          // Update URL params for filter operations
-          urlUpdates["fieldShowSelected"] = value === true ? true : null;
-        }
-      });
-
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-      if (Object.keys(urlUpdates).length > 0) {
-        // Check if URL params actually changed before updating
-        const hasChanges = Object.keys(urlUpdates).some((key) => {
-          const newValue = urlUpdates[key];
-          const currentValue = urlParams[key as keyof typeof urlParams];
-          return newValue !== currentValue;
-        });
-
-        if (hasChanges) {
-          setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
-        }
-      }
-    },
-    [formData, setUrlParams, urlParams]
-  );
-
   // Set breadcrumb context when parameter data is loaded
   useEffect(() => {
-    const parameterName = parameterData?.actor_name;
+    const parameterName = parameterData?.name_resource?.name;
     if (parameterName && parameterId && isEditMode) {
       setEntityMetadata({
         entityId: parameterId,
@@ -528,252 +797,48 @@ function ParameterComponent({
     }
     return () => clearEntityMetadata();
   }, [
-    parameterData?.actor_name,
+    parameterData,
     parameterId,
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
   ]);
 
-  // Draft autosave integration
-  const {
-    saveStatus: _saveStatus,
-    saveNow: _saveNow,
-    lastSavedVersion: _lastSavedVersion,
-  } = useDraftAutosave({
-    draftId,
-    draftState,
-    patchDraftAction: patchParameterDraftAction
-      ? async (input) => {
-          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
-          const camelToSnake: Record<string, string> = {
-            departmentIds: "department_ids",
-            fieldIds: "field_ids",
-            fieldActiveStates: "field_active_states",
-            fieldDefaultStates: "field_default_states",
-          };
-          const transformedPatch: Record<string, unknown> = {};
-          Object.entries(input.body.patch as Record<string, unknown>).forEach(
-            ([key, value]) => {
-              const snakeKey = camelToSnake[key] || key;
-              transformedPatch[snakeKey] = value;
-            }
-          );
+  // Set generation capability when parameter data is loaded
+  // Parameters don't have general_agent_id, so generation is not available
+  useEffect(() => {
+    setGenerationCapability({
+      artifactType: "parameter",
+      canGenerate: false,
+      agentId: null,
+    });
+    return () => clearGenerationCapability();
+  }, [setGenerationCapability, clearGenerationCapability]);
 
-          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
-          // Note: profile_id is added server-side from header
-          const result = await patchParameterDraftAction({
-            body: {
-              input_draft_id: input.body.draft_id || null,
-              patch: transformedPatch,
-              expected_version: input.body.expected_version,
-            } as PatchParameterDraftIn["body"],
-          });
-          // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
-          return {
-            draftId: result.draft_id || "",
-            newVersion: result.new_version || 0,
-            draftExists: result.draft_exists || false,
-          };
-        }
-      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
-    debounceMs: 1000,
-    onDraftCreated: useCallback(
-      (newDraftId: string) => {
-        // Only update URL if draftId actually changed
-        const currentUrlDraftId = searchParams.get("draftId");
-        if (newDraftId === currentUrlDraftId) {
-          return;
-        }
-        // Update URL with new draftId and trigger server-side refetch
-        // This ensures the server component gets fresh data with the new draft
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("draftId", newDraftId);
-        const newUrl = `?${params.toString()}`;
-        router.replace(newUrl, { scroll: false });
-        // Force server components to re-render with updated search params
-        router.refresh();
-      },
-      [router, searchParams]
-    ),
-  });
-
-  // Readonly logic using server-provided can_edit flag (use disabled instead)
-  const isReadonly = disabled;
-
-  // Convert departments array to dictionary for efficient lookups (GenericPicker needs Record format)
-  const departmentMapping = useMemo(() => {
-    const departments = parameterData?.departments || [];
-    // Handle both array (new format) and object (legacy format) for backward compatibility
-    if (Array.isArray(departments)) {
-      return Object.fromEntries(
-        departments.map((item) => [item.department_id, item])
-      ) as Record<
-        string,
-        {
-          department_id: string;
-          name: string;
-          description: string;
-        }
-      >;
-    }
-    // Legacy format (already a dictionary)
-    return departments as Record<
-      string,
-      {
-        department_id: string;
-        name: string;
-        description: string;
-      }
-    >;
-  }, [parameterData?.departments]);
-
-  // Convert fields array to array format for SelectableGrid
-  const fieldsArray = useMemo(() => {
-    const fields = parameterData?.fields || [];
-    // Handle both array (new format) and object (legacy format) for backward compatibility
-    if (Array.isArray(fields)) {
-      return fields as Array<{
-        field_id: string;
-        name: string;
-        description: string;
-        usage_count: number;
-        department_ids: string[];
-      }>;
-    }
-    // Legacy format (dictionary) - convert to array
-    return Object.values(fields) as Array<{
-      field_id: string;
-      name: string;
-      description: string;
-      usage_count: number;
-      department_ids: string[];
-    }>;
-  }, [parameterData?.fields]);
-
-  // Convert to dictionary for efficient lookups (used in contentSections)
-  const fieldMapping = useMemo(() => {
-    return Object.fromEntries(
-      fieldsArray.map((item) => [item.field_id, item])
-    ) as Record<
-      string,
-      {
-        field_id: string;
-        name: string;
-        description: string;
-        usage_count: number;
-        department_ids: string[];
-      }
-    >;
-  }, [fieldsArray]);
-
-  const validFieldIds = useMemo(() => {
-    // Use valid_field_ids if available, otherwise derive from fields array
-    if (
-      parameterData?.valid_field_ids &&
-      parameterData.valid_field_ids.length > 0
-    ) {
-      return parameterData.valid_field_ids.map(String);
-    }
-    // Fallback: extract IDs from fields array
-    const fields = parameterData?.fields || [];
-    return fields
-      .map((f: { field_id: string | null }) => String(f.field_id))
-      .filter(Boolean);
-  }, [parameterData?.valid_field_ids, parameterData?.fields]);
-
-  // Form initialization function for GenericForm
-  const initializeForm = useCallback(
-    (serverData: unknown, editMode: boolean) => {
-      if (
-        !editMode ||
-        !serverData ||
-        typeof serverData !== "object" ||
-        !("department_ids" in serverData)
-      ) {
-        return {};
-      }
-
-      const parameterData = serverData as ParameterGetOut;
-      const deptIds = parameterData.department_ids || [];
-      const fieldIds: string[] = [];
-      const fieldActiveStates: Record<string, boolean> = {};
-      const fieldDefaultStates: Record<string, boolean> = {};
-
-      if (parameterData.field_connections) {
-        parameterData.field_connections.forEach((conn) => {
-          const fieldId = conn.field_id;
-          if (fieldId) {
-            fieldIds.push(String(fieldId));
-            fieldActiveStates[String(fieldId)] = conn.active ?? true;
-            fieldDefaultStates[String(fieldId)] = conn.default ?? false;
-          }
-        });
-      }
-
-      // Update draftState directly
-      const draftUpdates: Partial<DraftState> = {};
-
-      if (parameterData.name) draftUpdates.name = parameterData.name;
-      if (parameterData.description)
-        draftUpdates.description = parameterData.description;
-      if (parameterData.active !== undefined)
-        draftUpdates.active = parameterData.active ?? false;
-      if (parameterData.simulation_parameter !== undefined)
-        draftUpdates.simulation_parameter =
-          parameterData.simulation_parameter ?? false;
-      if (parameterData.document_parameter !== undefined)
-        draftUpdates.document_parameter =
-          parameterData.document_parameter ?? false;
-      if (parameterData.persona_parameter !== undefined)
-        draftUpdates.persona_parameter =
-          parameterData.persona_parameter ?? false;
-      if (parameterData.scenario_parameter !== undefined)
-        draftUpdates.scenario_parameter =
-          parameterData.scenario_parameter ?? false;
-      if (parameterData.video_parameter !== undefined)
-        draftUpdates.video_parameter = parameterData.video_parameter ?? false;
-      if (deptIds.length > 0) draftUpdates.departmentIds = deptIds.map(String);
-      if (fieldIds.length > 0) draftUpdates.fieldIds = fieldIds;
-      if (Object.keys(fieldActiveStates).length > 0)
-        draftUpdates.fieldActiveStates = fieldActiveStates;
-      if (Object.keys(fieldDefaultStates).length > 0)
-        draftUpdates.fieldDefaultStates = fieldDefaultStates;
-
-      // Apply updates to draftState
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-
-      // Return empty object for GenericForm compatibility (form fields are handled via draftState)
-      return {};
-    },
-    []
-  );
-
-  // Submit handler for GenericForm (uses draftState, not formData parameter)
+  // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (!draftState.name?.trim()) {
+      // Validate required resource IDs using {resource}_required flags from parameterData
+      if (parameterData?.name_required && !formState.name_id) {
         toast.error("Parameter name is required");
         throw new Error("Parameter name is required");
       }
 
-      // Use valid_department_ids if available, otherwise derive from departments array
-      const validDepartmentIds =
-        parameterData?.valid_department_ids &&
-        parameterData.valid_department_ids.length > 0
-          ? parameterData.valid_department_ids.map(String)
-          : (parameterData?.departments || [])
-              .map((d: { department_id: string | null }) =>
-                String(d.department_id)
-              )
-              .filter(Boolean);
-      const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        draftState.departmentIds || [],
-        isSuperadmin,
-        validDepartmentIds
-      );
+      if (
+        parameterData?.departments_required &&
+        (!formState.department_ids || formState.department_ids.length === 0)
+      ) {
+        toast.error("Departments are required");
+        throw new Error("Departments are required");
+      }
+
+      if (
+        parameterData?.fields_required &&
+        (!formState.field_ids || formState.field_ids.length === 0)
+      ) {
+        toast.error("Fields are required");
+        throw new Error("Fields are required");
+      }
 
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
@@ -781,70 +846,57 @@ function ParameterComponent({
         throw new Error("Profile not loaded");
       }
 
-      // Prepare field connections for submission
-      const orderedFieldIds = draftState.fieldIds || [];
-      const fieldActiveStates = draftState.fieldActiveStates || {};
-      const fieldDefaultStates = draftState.fieldDefaultStates || {};
-
-      const connectionEntries = orderedFieldIds
-        .map((fieldId) => {
-          const active = fieldActiveStates[fieldId] ?? true;
-          const defaultState = fieldDefaultStates[fieldId] ?? false;
-          return {
-            field_id: fieldId,
-            default: defaultState,
-            active,
-          };
-        })
-        .filter((conn) => conn); // Only include fields with connections
-
-      const defaultCount = connectionEntries.filter(
-        (conn) => conn.default
-      ).length;
-
-      // Ensure exactly one default
-      let fieldConnectionsToSubmit = connectionEntries.map((conn, index) => {
-        return {
-          ...conn,
-          default: defaultCount === 0 ? index === 0 : conn.default,
-        };
-      });
-
-      if (defaultCount === 0 && fieldConnectionsToSubmit.length > 0) {
-        fieldConnectionsToSubmit[0]!.default = true;
-      } else if (defaultCount > 1) {
-        // Keep only the first default
-        let foundFirst = false;
-        fieldConnectionsToSubmit = fieldConnectionsToSubmit.map((conn) => {
-          if (conn.default && !foundFirst) {
-            foundFirst = true;
-            return { ...conn, default: true };
-          }
-          return { ...conn, default: false };
-        });
-      }
-
       if (!saveParameterAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
 
+      // Ensure required fields are present (TypeScript guard)
+      if (!formState.name_id) {
+        toast.error("Required fields are missing");
+        throw new Error("Required fields are missing");
+      }
+
+      // Get name and description text from resources
+      // Use ref to get latest parameterData without adding to dependencies
+      const currentParameterData = parameterDataRef.current;
+      const nameResource =
+        currentParameterData?.names?.find(
+          (n) => n.name_id === formState.name_id
+        ) || currentParameterData?.name_resource;
+      const nameText = nameResource?.name || currentParameterData?.name || "";
+
+      const descriptionResource =
+        currentParameterData?.descriptions?.find(
+          (d) => d.description_id === formState.description_id
+        ) || currentParameterData?.description_resource;
+      const descriptionText =
+        descriptionResource?.description ||
+        currentParameterData?.description ||
+        "";
+
+      // Build field_connections from field_ids
+      // For now, all fields are active and first one is default
+      const field_connections = formState.field_ids.map((fieldId, index) => ({
+        field_id: fieldId,
+        default: index === 0,
+        active: true,
+      }));
+
       try {
         await saveParameterAction({
           body: {
             input_parameter_id: isEditMode && parameterId ? parameterId : null,
-            name: draftState.name || "",
-            description: draftState.description || "",
-            active: draftState.active ?? false,
-            simulation_parameter: draftState.simulation_parameter ?? false,
-            document_parameter: draftState.document_parameter ?? false,
-            persona_parameter: draftState.persona_parameter ?? false,
-            scenario_parameter: draftState.scenario_parameter ?? false,
-            video_parameter: draftState.video_parameter ?? false,
-            department_ids: finalDepartmentIds || [],
-            field_connections: fieldConnectionsToSubmit,
-            persona_ids: [], // TODO: Add persona_ids from form state when implemented
-            document_ids: [], // TODO: Add document_ids from form state when implemented
+            name: nameText,
+            description: descriptionText,
+            active: formState.active,
+            simulation_parameter: formState.simulation_parameter,
+            document_parameter: formState.document_parameter,
+            persona_parameter: formState.persona_parameter,
+            scenario_parameter: formState.scenario_parameter,
+            video_parameter: formState.video_parameter,
+            department_ids: formState.department_ids || [],
+            field_connections: field_connections,
           },
         });
         toast.success(
@@ -859,24 +911,24 @@ function ParameterComponent({
       }
     },
     [
-      draftState,
+      formState,
       isEditMode,
       parameterId,
-      isSuperadmin,
-      parameterData,
       effectiveProfile?.id,
       saveParameterAction,
       router,
+      parameterData?.name_required,
+      parameterData?.departments_required,
+      parameterData?.fields_required,
     ]
   );
 
-  // Step status logic (for GenericForm)
+  // Step status logic (for GenericForm) - check resource IDs instead of display values
   const getStepStatus = useCallback(
-    (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
-      const hasFields =
-        ((formData["fieldIds"] as string[] | null | undefined) || []).length >
-        0;
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      // Check resource IDs from formState (components manage their own display state)
+      const hasName = !!formState.name_id;
+      const hasFields = formState.field_ids.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -891,8 +943,78 @@ function ParameterComponent({
           return "pending";
       }
     },
+    [formState]
+  );
+
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      fields: ["fields"],
+      all: ["names", "descriptions", "departments", "flags", "fields"], // All resources for full-page generation
+    }),
     []
   );
+
+  // Resource labels for display
+  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      flags: "Flags",
+      examples: "Examples",
+      fields: "Fields",
+      departments: "Departments",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt] ?? "",
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
+  // Handler for modal generate/regenerate action
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      const resourceTypes = selectedResources as ResourceType[];
+      const agentType = determineAgentType(resourceTypes);
+      await handleGenerateResources(
+        resourceTypes,
+        agentType,
+        instructions.trim() || undefined
+      );
+      setShowGenerateModal(false);
+      setModalInstructions("");
+    },
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // Listen for full-page-generate event from layout
+  // Parameters don't support full-page generation (no general_agent_id)
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      // Parameters don't support full-page generation
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, []);
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -903,11 +1025,11 @@ function ParameterComponent({
         description:
           "Set the parameter name, description, departments, and active status.",
         resetFields: [
-          "name",
-          "description",
-          "departmentIds",
-          "active",
-        ] as string[],
+          "name_id",
+          "description_id",
+          "department_ids",
+          "active_flag_id",
+        ],
       },
       {
         id: "parameter-config",
@@ -920,17 +1042,13 @@ function ParameterComponent({
           "persona_parameter",
           "scenario_parameter",
           "video_parameter",
-        ] as string[],
+        ],
       },
       {
         id: "fields",
         title: "Fields",
         description: "Select fields to include in this parameter.",
-        resetFields: [
-          "fieldIds",
-          "fieldSearch",
-          "fieldShowSelected",
-        ] as (keyof typeof parameterSearchParamsClient)[],
+        resetFields: ["field_ids", "fieldSearch", "fieldShowSelected"],
       },
     ],
     []
@@ -939,18 +1057,17 @@ function ParameterComponent({
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
     () => [
-      "name",
-      "description",
-      "active",
+      "name_id",
+      "description_id",
+      "active_flag_id",
+      "department_ids",
+      "field_ids",
       "simulation_parameter",
       "document_parameter",
       "persona_parameter",
       "scenario_parameter",
       "video_parameter",
-      "departmentIds",
-      "fieldIds",
-      "fieldActiveStates",
-      "fieldDefaultStates",
+      "active",
     ],
     []
   );
@@ -980,6 +1097,9 @@ function ParameterComponent({
     []
   );
 
+  // Filter onChange callbacks will be created inline in renderStep
+  // to have access to setStepFormData
+
   // Memoize renderStep to prevent GenericForm re-renders
   const renderStep = useCallback(
     ({
@@ -1008,6 +1128,8 @@ function ParameterComponent({
       }>;
       onReset?: () => void;
     }) => {
+      // Use memoized fields to avoid dependency on parameterData object reference
+      const currentParameterData = stableParameterDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -1016,118 +1138,214 @@ function ParameterComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
-              editableTitle={{
-                value:
-                  (stepFormData["name"] as string | null | undefined) ?? "",
-                onChange: (value) => setStepFormData({ name: value || null }),
-                placeholder: "e.g., Student Age",
-                defaultName: "New Parameter",
-                required: true,
-              }}
-              resetFields={["name", "description", "departmentIds", "active"]}
+              customHeader={
+                <Names
+                  name_id={formState.name_id ?? null}
+                  name_resource={
+                    currentParameterData?.name_resource
+                      ? {
+                          id: currentParameterData.name_resource.name_id,
+                          name: currentParameterData.name_resource.name,
+                          generated:
+                            currentParameterData.name_resource.generated,
+                        }
+                      : null
+                  }
+                  show_name={currentParameterData?.show_name ?? true}
+                  name_suggestions={
+                    currentParameterData?.name_suggestions ?? []
+                  }
+                  names={
+                    currentParameterData?.names?.map((n) => ({
+                      id: n.name_id,
+                      name: n.name,
+                      generated: n.generated,
+                    })) ?? []
+                  }
+                  disabled={disabled}
+                  onNameIdChange={(nameId) =>
+                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                  }
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGenerating("names")}
+                  placeholder="e.g., Student Age"
+                  defaultName="New Parameter"
+                  required={currentParameterData?.name_required ?? false}
+                  hideDescription={true}
+                  group_id={currentParameterData?.group_id ?? null}
+                  agent_id={currentParameterData?.name_agent_id ?? null}
+                  createNamesAction={
+                    createNamesAction as
+                      | ((
+                          input: CreateDraftNamesIn
+                        ) => Promise<CreateDraftNamesOut>)
+                      | undefined
+                  }
+                />
+              }
+              resetFields={[
+                "name_id",
+                "description_id",
+                "department_ids",
+                "active_flag_id",
+              ]}
+              actions={
+                stepResources["basic"] && stepResources["basic"].length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "basic"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "basic",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["basic"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["basic"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    data-testid="input-parameter-description"
-                    value={
-                      (stepFormData["description"] as
-                        | string
-                        | null
-                        | undefined) || ""
-                    }
-                    onChange={(e) =>
-                      setStepFormData({
-                        description: e.target.value || null,
-                      })
-                    }
-                    placeholder="Enter a brief description (optional)"
-                    rows={3}
-                    disabled={isReadonly}
-                  />
-                </div>
+                {/* Description field - using Descriptions resource component */}
+                <Descriptions
+                  description_id={formState.description_id ?? null}
+                  description_resource={
+                    currentParameterData?.description_resource
+                      ? {
+                          id: currentParameterData.description_resource
+                            .description_id,
+                          description:
+                            currentParameterData.description_resource
+                              .description,
+                          generated:
+                            currentParameterData.description_resource.generated,
+                        }
+                      : null
+                  }
+                  show_description={
+                    currentParameterData?.show_description ?? true
+                  }
+                  description_suggestions={
+                    currentParameterData?.description_suggestions ?? []
+                  }
+                  descriptions={
+                    currentParameterData?.descriptions?.map((d) => ({
+                      id: d.description_id,
+                      description: d.description,
+                      generated: d.generated,
+                    })) ?? []
+                  }
+                  disabled={disabled}
+                  onDescriptionIdChange={(descriptionId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description_id: descriptionId,
+                    }))
+                  }
+                  onGenerate={handleGenerateDescription}
+                  isGenerating={isGenerating("descriptions")}
+                  label="Description"
+                  placeholder="Enter a brief description (optional)"
+                  required={currentParameterData?.description_required ?? false}
+                  rows={3}
+                  data-testid="input-parameter-description"
+                  group_id={currentParameterData?.group_id ?? null}
+                  agent_id={currentParameterData?.description_agent_id ?? null}
+                  createDescriptionsAction={createDescriptionsAction}
+                />
 
                 {/* Department Selection */}
-                {(() => {
-                  const validDeptIds =
-                    parameterData?.valid_department_ids &&
-                    parameterData.valid_department_ids.length > 0
-                      ? parameterData.valid_department_ids.map(String)
-                      : (parameterData?.departments || [])
-                          .map((d: { department_id: string | null }) =>
-                            String(d.department_id)
-                          )
-                          .filter(Boolean);
-                  return validDeptIds.length > 1 ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department</Label>
-                      <GenericPicker
-                        items={departmentMapping}
-                        itemIds={validDeptIds}
-                        selectedIds={
-                          (stepFormData["departmentIds"] as
-                            | string[]
-                            | null
-                            | undefined) || []
-                        }
-                        onSelect={(ids) =>
-                          setStepFormData({
-                            departmentIds: ids.length > 0 ? ids : null,
-                          })
-                        }
-                        getId={(dept) => (dept as unknown as { id: string }).id}
-                        getLabel={(dept) => String(dept["name"] || "")}
-                        getSearchText={(dept) =>
-                          `${dept["name"]} ${dept["description"] || ""}`
-                        }
-                        placeholder="All Departments"
-                        disabled={isReadonly}
-                        multiSelect={true}
-                        hideSelectedChips={true}
-                        buttonClassName="w-full"
-                      />
-                    </div>
-                  ) : null;
-                })()}
+                <Departments
+                  department_ids={formState.department_ids ?? []}
+                  department_resources={
+                    currentParameterData?.department_resources ?? []
+                  }
+                  show_departments={
+                    currentParameterData?.show_departments ?? false
+                  }
+                  department_suggestions={
+                    currentParameterData?.department_suggestions ?? []
+                  }
+                  departments={currentParameterData?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  onGenerate={handleGenerateDepartments}
+                  isGenerating={isGenerating("departments")}
+                  required={currentParameterData?.departments_required ?? false}
+                  group_id={currentParameterData?.group_id ?? null}
+                  agent_id={currentParameterData?.departments_agent_id ?? null}
+                  createDepartmentsAction={createDepartmentsAction}
+                />
 
-                {/* Active Switch */}
-                <div className="space-y-2 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="active"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                        Active
-                      </Label>
-                      <Switch
-                        id="active"
-                        checked={
-                          (stepFormData["active"] as
-                            | boolean
-                            | null
-                            | undefined) ??
-                          (parameterData as { active?: boolean })?.active ??
-                          false
+                {/* Active Switch - using Flags resource component */}
+                <Flags
+                  flag_id={formState.active_flag_id ?? null}
+                  flag_resource={
+                    currentParameterData?.active_flag_resource
+                      ? {
+                          id: currentParameterData.active_flag_resource.flag_id,
+                          name: currentParameterData.active_flag_resource.name,
+                          description:
+                            currentParameterData.active_flag_resource
+                              .description,
+                          icon_id:
+                            currentParameterData.active_flag_resource.icon_id,
+                          generated:
+                            currentParameterData.active_flag_resource.generated,
                         }
-                        onCheckedChange={(checked) =>
-                          setStepFormData({ active: checked })
-                        }
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Inactive parameters will not be available for selection
-                    </p>
-                  </div>
-                </div>
+                      : null
+                  }
+                  show_flag={currentParameterData?.show_active_flag ?? false}
+                  disabled={disabled}
+                  onFlagIdChange={(flagId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      active_flag_id: flagId,
+                    }))
+                  }
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("flags")}
+                  label="Active"
+                  helpText="Inactive parameters will not be available for selection"
+                  required={currentParameterData?.active_flag_required ?? false}
+                  group_id={currentParameterData?.group_id ?? null}
+                  agent_id={currentParameterData?.active_flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
+                />
               </div>
             </StepCard>
           );
@@ -1139,7 +1357,7 @@ function ParameterComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
               resetFields={[
                 "simulation_parameter",
@@ -1161,43 +1379,27 @@ function ParameterComponent({
                       </Label>
                       <Switch
                         id="simulation_parameter"
-                        checked={
-                          (stepFormData["simulation_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) ?? false
-                        }
+                        checked={formState.simulation_parameter}
                         onCheckedChange={(checked) => {
-                          setStepFormData({
+                          setFormState((prev) => ({
+                            ...prev,
                             simulation_parameter: checked,
                             // Reset child switches when toggling simulation_parameter
                             document_parameter: checked
                               ? false
-                              : ((stepFormData["document_parameter"] as
-                                  | boolean
-                                  | null
-                                  | undefined) ?? false),
+                              : prev.document_parameter,
                             persona_parameter: checked
                               ? false
-                              : ((stepFormData["persona_parameter"] as
-                                  | boolean
-                                  | null
-                                  | undefined) ?? false),
+                              : prev.persona_parameter,
                             scenario_parameter: checked
                               ? false
-                              : ((stepFormData["scenario_parameter"] as
-                                  | boolean
-                                  | null
-                                  | undefined) ?? false),
+                              : prev.scenario_parameter,
                             video_parameter: checked
                               ? false
-                              : ((stepFormData["video_parameter"] as
-                                  | boolean
-                                  | null
-                                  | undefined) ?? false),
-                          });
+                              : prev.video_parameter,
+                          }));
                         }}
-                        disabled={isReadonly}
+                        disabled={disabled}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -1213,22 +1415,14 @@ function ParameterComponent({
                       </Label>
                       <Switch
                         id="document_parameter"
-                        checked={
-                          (stepFormData["document_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) ?? false
-                        }
+                        checked={formState.document_parameter}
                         onCheckedChange={(checked) =>
-                          setStepFormData({ document_parameter: checked })
+                          setFormState((prev) => ({
+                            ...prev,
+                            document_parameter: checked,
+                          }))
                         }
-                        disabled={
-                          isReadonly ||
-                          (stepFormData["simulation_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) === true
-                        }
+                        disabled={disabled || formState.simulation_parameter}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -1244,22 +1438,14 @@ function ParameterComponent({
                       </Label>
                       <Switch
                         id="persona_parameter"
-                        checked={
-                          (stepFormData["persona_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) ?? false
-                        }
+                        checked={formState.persona_parameter}
                         onCheckedChange={(checked) =>
-                          setStepFormData({ persona_parameter: checked })
+                          setFormState((prev) => ({
+                            ...prev,
+                            persona_parameter: checked,
+                          }))
                         }
-                        disabled={
-                          isReadonly ||
-                          (stepFormData["simulation_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) === true
-                        }
+                        disabled={disabled || formState.simulation_parameter}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -1275,22 +1461,14 @@ function ParameterComponent({
                       </Label>
                       <Switch
                         id="scenario_parameter"
-                        checked={
-                          (stepFormData["scenario_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) ?? false
-                        }
+                        checked={formState.scenario_parameter}
                         onCheckedChange={(checked) =>
-                          setStepFormData({ scenario_parameter: checked })
+                          setFormState((prev) => ({
+                            ...prev,
+                            scenario_parameter: checked,
+                          }))
                         }
-                        disabled={
-                          isReadonly ||
-                          (stepFormData["simulation_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) === true
-                        }
+                        disabled={disabled || formState.simulation_parameter}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -1304,22 +1482,14 @@ function ParameterComponent({
                       <Label htmlFor="video_parameter">Video Parameter</Label>
                       <Switch
                         id="video_parameter"
-                        checked={
-                          (stepFormData["video_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) ?? false
-                        }
+                        checked={formState.video_parameter}
                         onCheckedChange={(checked) =>
-                          setStepFormData({ video_parameter: checked })
+                          setFormState((prev) => ({
+                            ...prev,
+                            video_parameter: checked,
+                          }))
                         }
-                        disabled={
-                          isReadonly ||
-                          (stepFormData["simulation_parameter"] as
-                            | boolean
-                            | null
-                            | undefined) === true
-                        }
+                        disabled={disabled || formState.simulation_parameter}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -1332,52 +1502,20 @@ function ParameterComponent({
           );
 
         case "fields": {
+          const fieldSearchTerm =
+            (stepFormData["fieldSearch"] as string | null | undefined) || "";
           const fieldShowSelected =
             (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
             false;
-          const selectedFieldIds =
-            (stepFormData["fieldIds"] as string[] | null | undefined) || [];
-          const fieldSearch =
-            (stepFormData["fieldSearch"] as string | null | undefined) || "";
-
-          // Filter fields: department-based + client-side search/show_selected for immediate UI feedback
-          let filteredFields = fieldsArray.filter((field) =>
-            validFieldIds.includes(field.field_id)
-          );
-
-          // Apply client-side search filter (for immediate UI feedback while server request is in flight)
-          if (fieldSearch.trim()) {
-            const searchLower = fieldSearch.toLowerCase();
-            filteredFields = filteredFields.filter(
-              (field) =>
-                field.name.toLowerCase().includes(searchLower) ||
-                (field.description || "").toLowerCase().includes(searchLower)
-            );
-          }
-
-          // Apply client-side "show selected" filter (for immediate UI feedback)
-          if (fieldShowSelected && selectedFieldIds.length > 0) {
-            filteredFields = filteredFields.filter((field) =>
-              selectedFieldIds.includes(field.field_id)
-            );
-          }
-
-          // Create filter onChange handler (inline function, not useCallback)
-          const createFieldFilterOnChange = (value: boolean) => {
-            setStepFormData({ fieldShowSelected: value });
-          };
-
           return (
             <StepCard
               stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={
-                (stepFormData["fieldSearch"] as string | null | undefined) || ""
-              }
+              searchTerm={fieldSearchTerm}
               onSearchChange={(term: string) =>
                 setStepFormData({ fieldSearch: term || null })
               }
@@ -1388,81 +1526,33 @@ function ParameterComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: fieldShowSelected,
-                  onChange: createFieldFilterOnChange,
+                  onChange: (value: boolean) =>
+                    setStepFormData({ fieldShowSelected: value || null }),
                 },
               ]}
-              resetFields={["fieldIds", "fieldSearch", "fieldShowSelected"]}
+              resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-              <SelectableGrid
-                items={filteredFields}
-                selectedId={null}
-                selectedIds={selectedFieldIds}
-                onSelect={(fieldId) => {
-                  const isSelected = selectedFieldIds.includes(fieldId);
-                  const newIds = isSelected
-                    ? selectedFieldIds.filter((id) => id !== fieldId)
-                    : [...selectedFieldIds, fieldId];
-                  setStepFormData({
-                    fieldIds: newIds.length > 0 ? newIds : null,
-                    // Initialize active/default states for new fields
-                    fieldActiveStates: {
-                      ...((stepFormData["fieldActiveStates"] as
-                        | Record<string, boolean>
-                        | null
-                        | undefined) || {}),
-                      [fieldId]: !isSelected ? true : undefined,
-                    },
-                    fieldDefaultStates: {
-                      ...((stepFormData["fieldDefaultStates"] as
-                        | Record<string, boolean>
-                        | null
-                        | undefined) || {}),
-                      [fieldId]: !isSelected ? false : undefined,
-                    },
-                  });
-                }}
-                getId={(field) => field.field_id}
-                renderItem={(field, isSelected) => (
-                  <div
-                    className={cn(
-                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                      "hover:shadow-md hover:bg-accent/50",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isSelected && "ring-2 ring-primary bg-accent"
-                    )}
-                  >
-                    {/* Check icon - top right */}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                      </div>
-                    )}
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm leading-tight">
-                          {field.name || "Unnamed Field"}
-                        </h3>
-                        {field.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {field.description}
-                          </p>
-                        )}
-                        {field.usage_count !== undefined &&
-                          field.usage_count > 0 && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Used in {field.usage_count} scenario
-                              {field.usage_count !== 1 ? "s" : ""}
-                            </p>
-                          )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                emptyMessage="No fields found. Try adjusting your search or filters."
-                disabled={isReadonly}
+              <Fields
+                field_ids={formState.field_ids ?? []}
+                field_resources={currentParameterData?.field_resources ?? []}
+                show_fields={currentParameterData?.show_fields ?? false}
+                field_suggestions={
+                  currentParameterData?.field_suggestions ?? []
+                }
+                fields={currentParameterData?.fields ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, field_ids: ids }))
+                }
+                label="Fields"
+                required={currentParameterData?.fields_required ?? false}
+                group_id={currentParameterData?.group_id ?? null}
+                agent_id={currentParameterData?.fields_agent_id ?? null}
+                createFieldsAction={createFieldsAction}
+                searchTerm={fieldSearchTerm}
+                showSelectedFilter={fieldShowSelected}
               />
             </StepCard>
           );
@@ -1473,284 +1563,25 @@ function ParameterComponent({
       }
     },
     [
-      parameterData,
-      departmentMapping,
-      fieldsArray,
-      validFieldIds,
-      isReadonly,
+      stableParameterDataFields,
+      formState,
+      disabled,
       isEditMode,
+      stepResources,
+      canRegenerate,
+      isGenerating,
+      handleGenerateName,
+      handleGenerateDescription,
+      handleGenerateDepartments,
+      handleGenerateFlags,
+      handleOpenStepCardModal,
+      createNamesAction,
+      createDescriptionsAction,
+      createDepartmentsAction,
+      createFlagsAction,
+      createFieldsAction,
     ]
   );
-
-  // Content sections for nested field management
-  const contentSections = useMemo(() => {
-    const fieldIds = draftState.fieldIds || [];
-    if (fieldIds.length === 0) {
-      return [];
-    }
-
-    return [
-      {
-        id: "active-fields",
-        insertAfter: "fields",
-        render: ({
-          formData: contentFormData,
-          setFormData: setContentFormData,
-        }: {
-          formData: Record<string, unknown>;
-          setFormData: (updates: Partial<Record<string, unknown>>) => void;
-        }) => {
-          const activeStates =
-            (contentFormData["fieldActiveStates"] as
-              | Record<string, boolean>
-              | null
-              | undefined) || {};
-          const fieldIdsFromState =
-            (contentFormData["fieldIds"] as string[] | null | undefined) || [];
-
-          return (
-            <StepCard
-              stepStatus="completed"
-              stepNumber={3}
-              stepTitle="Active Fields"
-              stepDescription="Enable or disable fields in this parameter."
-              isReadonly={isReadonly}
-              isEditMode={isEditMode}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {fieldIdsFromState.map((fieldId) => {
-                  const field = fieldMapping[fieldId];
-                  const active = activeStates[fieldId] ?? true;
-
-                  return (
-                    <Card key={fieldId} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm leading-tight truncate">
-                            {field?.["name"] || "Unnamed Field"}
-                          </h3>
-                          {field?.["description"] && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {field.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 ml-4 shrink-0">
-                          <Label
-                            htmlFor={`${fieldId}-active`}
-                            className="text-sm flex items-center gap-1.5"
-                          >
-                            <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Label>
-                          <Switch
-                            id={`${fieldId}-active`}
-                            checked={active}
-                            onCheckedChange={(checked) => {
-                              const newActiveStates = {
-                                ...activeStates,
-                                [fieldId]: checked,
-                              };
-                              setContentFormData({
-                                fieldActiveStates: newActiveStates,
-                              });
-                            }}
-                            disabled={isReadonly}
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </StepCard>
-          );
-        },
-      },
-      {
-        id: "field-positions",
-        insertAfter: "fields",
-        render: ({
-          formData: contentFormData,
-          setFormData: setContentFormData,
-        }: {
-          formData: Record<string, unknown>;
-          setFormData: (updates: Partial<Record<string, unknown>>) => void;
-        }) => {
-          const fieldIdsFromState =
-            (contentFormData["fieldIds"] as string[] | null | undefined) || [];
-
-          return (
-            <StepCard
-              stepStatus="completed"
-              stepNumber={4}
-              stepTitle="Field Positions"
-              stepDescription="Reorder fields to set their display order."
-              isReadonly={isReadonly}
-              isEditMode={isEditMode}
-            >
-              <div className="space-y-2">
-                {fieldIdsFromState.map((fieldId, index) => {
-                  const field = fieldMapping[fieldId];
-                  const canMoveUp = index > 0;
-                  const canMoveDown = index < fieldIdsFromState.length - 1;
-
-                  return (
-                    <Card key={fieldId} className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 shrink-0">
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground w-6">
-                            {index + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm leading-tight truncate">
-                            {field?.["name"] || "Unnamed Field"}
-                          </h3>
-                          {field?.["description"] && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {field.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              const reorderedIds = [...fieldIdsFromState];
-                              if (index > 0) {
-                                const prev = reorderedIds[index - 1];
-                                const curr = reorderedIds[index];
-                                if (prev !== undefined && curr !== undefined) {
-                                  reorderedIds[index - 1] = curr;
-                                  reorderedIds[index] = prev;
-                                  setContentFormData({
-                                    fieldIds: reorderedIds,
-                                  });
-                                }
-                              }
-                            }}
-                            disabled={!canMoveUp || isReadonly}
-                          >
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              const reorderedIds = [...fieldIdsFromState];
-                              if (index < fieldIdsFromState.length - 1) {
-                                const curr = reorderedIds[index];
-                                const next = reorderedIds[index + 1];
-                                if (curr !== undefined && next !== undefined) {
-                                  reorderedIds[index] = next;
-                                  reorderedIds[index + 1] = curr;
-                                  setContentFormData({
-                                    fieldIds: reorderedIds,
-                                  });
-                                }
-                              }
-                            }}
-                            disabled={!canMoveDown || isReadonly}
-                          >
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </StepCard>
-          );
-        },
-      },
-      {
-        id: "default-fields",
-        insertAfter: "fields",
-        render: ({
-          formData: contentFormData,
-          setFormData: setContentFormData,
-        }: {
-          formData: Record<string, unknown>;
-          setFormData: (updates: Partial<Record<string, unknown>>) => void;
-        }) => {
-          const defaultStates =
-            (contentFormData["fieldDefaultStates"] as
-              | Record<string, boolean>
-              | null
-              | undefined) || {};
-          const fieldIdsFromState =
-            (contentFormData["fieldIds"] as string[] | null | undefined) || [];
-
-          return (
-            <StepCard
-              stepStatus="completed"
-              stepNumber={5}
-              stepTitle="Default Field"
-              stepDescription="Select which field should be the default (only one can be default)."
-              isReadonly={isReadonly}
-              isEditMode={isEditMode}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {fieldIdsFromState.map((fieldId) => {
-                  const field = fieldMapping[fieldId];
-                  const isDefault = defaultStates[fieldId] ?? false;
-
-                  return (
-                    <Card key={fieldId} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm leading-tight truncate">
-                            {field?.["name"] || "Unnamed Field"}
-                          </h3>
-                          {field?.["description"] && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {field.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 ml-4 shrink-0">
-                          <Label
-                            htmlFor={`${fieldId}-default`}
-                            className="text-sm flex items-center gap-1.5"
-                          >
-                            Default
-                          </Label>
-                          <Switch
-                            id={`${fieldId}-default`}
-                            checked={isDefault}
-                            onCheckedChange={(checked) => {
-                              const newDefaultStates: Record<string, boolean> =
-                                {};
-                              // Unset all other defaults
-                              fieldIdsFromState.forEach((id) => {
-                                newDefaultStates[id] =
-                                  id === fieldId && checked;
-                              });
-                              setContentFormData({
-                                fieldDefaultStates: newDefaultStates,
-                              });
-                            }}
-                            disabled={isReadonly}
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </StepCard>
-          );
-        },
-      },
-    ];
-  }, [fieldMapping, isReadonly, isEditMode, draftState.fieldIds]);
 
   return (
     <TooltipProvider>
@@ -1770,96 +1601,75 @@ function ParameterComponent({
           }
           steps={steps}
           getStepStatus={getStepStatus}
-          formData={formData}
-          setFormData={setFormData}
           serverData={parameterData}
-          initializeForm={initializeForm}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
           submitButton={submitButton}
-          isReadonly={isReadonly}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
-          contentSections={contentSections}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
         />
+
+        {/* Generate/Regenerate Modal */}
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
 }
 
-// Helper function to generate stable ID from server prop
-function getStableServerPropId(
-  data: ParameterGetOut | undefined
-): string | null {
-  if (!data) return null;
-  if (typeof data === "object" && data !== null) {
-    if ("parameter_id" in data && data.parameter_id) {
-      return `parameter_id:${String(data.parameter_id)}`;
-    }
-    const keyFields: Record<string, unknown> = {};
-    // Handle valid IDs - may be arrays or may need to derive from resource arrays
-    const validDeptIds =
-      "valid_department_ids" in data &&
-      Array.isArray(data["valid_department_ids"]) &&
-      data["valid_department_ids"].length > 0
-        ? data["valid_department_ids"]
-        : "departments" in data && Array.isArray(data["departments"])
-          ? data["departments"]
-              .map((d: { department_id: string | null }) =>
-                String(d.department_id)
-              )
-              .filter(Boolean)
-          : [];
-    const validFieldIds =
-      "valid_field_ids" in data &&
-      Array.isArray(data["valid_field_ids"]) &&
-      data["valid_field_ids"].length > 0
-        ? data["valid_field_ids"]
-        : "fields" in data && Array.isArray(data["fields"])
-          ? data["fields"]
-              .map((f: { field_id: string | null }) => String(f.field_id))
-              .filter(Boolean)
-          : [];
-    if (validDeptIds.length > 0) {
-      keyFields["valid_department_ids"] = Array.isArray(validDeptIds)
-        ? validDeptIds.sort().join(",")
-        : String(validDeptIds);
-    }
-    if (validFieldIds.length > 0) {
-      keyFields["valid_field_ids"] = Array.isArray(validFieldIds)
-        ? validFieldIds.sort().join(",")
-        : String(validFieldIds);
-    }
-    const sortedKeys = Object.keys(keyFields).sort();
-    const hash = sortedKeys
-      .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-      .join("|");
-    return `new:${hash.length}:${hash.slice(0, 100)}`;
-  }
-  return String(data);
-}
-
-// Memoize component to prevent re-renders when only prop references change
+// Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(ParameterComponent, (prevProps, nextProps) => {
-  const prevDataId = getStableServerPropId(prevProps.parameterData);
-  const nextDataId = getStableServerPropId(nextProps.parameterData);
-
   // Compare primitive props
   if (
     prevProps.parameterId !== nextProps.parameterId ||
-    prevProps.mode !== nextProps.mode ||
     prevProps.saveParameterAction !== nextProps.saveParameterAction ||
     prevProps.patchParameterDraftAction !==
       nextProps.patchParameterDraftAction ||
-    prevProps.createPersonasAction !== nextProps.createPersonasAction ||
-    prevProps.createDocumentsAction !== nextProps.createDocumentsAction
+    prevProps.createNamesAction !== nextProps.createNamesAction ||
+    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
+    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
+    prevProps.createFieldsAction !== nextProps.createFieldsAction ||
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
   ) {
     return false; // Props changed, re-render
   }
 
-  // Compare server props by content ID, not reference
-  if (prevDataId !== nextDataId) {
+  // Compare server props by resource IDs, not object reference
+  const prevIds = {
+    name_id: prevProps.parameterData?.name_id,
+    description_id: prevProps.parameterData?.description_id,
+    active_flag_id: prevProps.parameterData?.active_flag_id,
+    department_ids: prevProps.parameterData?.department_ids,
+    field_ids: prevProps.parameterData?.field_ids,
+  };
+  const nextIds = {
+    name_id: nextProps.parameterData?.name_id,
+    description_id: nextProps.parameterData?.description_id,
+    active_flag_id: nextProps.parameterData?.active_flag_id,
+    department_ids: nextProps.parameterData?.department_ids,
+    field_ids: nextProps.parameterData?.field_ids,
+  };
+
+  if (JSON.stringify(prevIds) !== JSON.stringify(nextIds)) {
     return false; // Content changed, re-render
   }
 
