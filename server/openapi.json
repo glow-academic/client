@@ -37031,6 +37031,18 @@
               }
             ],
             "title": "Draft Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
           }
         },
         "type": "object",
@@ -37093,18 +37105,6 @@
               }
             ],
             "title": "Group Id"
-          },
-          "field_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Id"
           },
           "name_id": {
             "anyOf": [
@@ -37332,44 +37332,12 @@
             ],
             "title": "Active Flag Required"
           },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
           "department_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -37460,7 +37428,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -37533,34 +37502,6 @@
             ],
             "title": "Parameter Suggestions"
           },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "conditional_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Conditional Parameter Ids"
-          },
           "parameters": {
             "anyOf": [
               {
@@ -37574,31 +37515,6 @@
               }
             ],
             "title": "Parameters"
-          },
-          "valid_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Parameter Ids"
-          },
-          "draft_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Version"
           }
         },
         "type": "object",
@@ -66061,13 +65977,25 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
           "department_id",
           "name",
-          "description"
+          "description",
+          "generated"
         ],
         "title": "QGetFieldV4Department"
       },
@@ -66266,13 +66194,25 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
           "parameter_id",
           "name",
-          "description"
+          "description",
+          "generated"
         ],
         "title": "QGetFieldV4Parameter"
       },

@@ -12241,12 +12241,14 @@ class GetFieldSqlParams(BaseModel):
     profile_id: UUID
     field_id: UUID | None = None
     draft_id: UUID | None = None
+    mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.field_id,
             self.draft_id,
+            self.mcp,
         )
 
 class QGetFieldV4Department(BaseModel):
@@ -12254,6 +12256,7 @@ class QGetFieldV4Department(BaseModel):
     department_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
 
 
 
@@ -12292,6 +12295,7 @@ class QGetFieldV4Parameter(BaseModel):
     parameter_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
 
 class GetFieldSqlRow(BaseModel):
 
@@ -12300,7 +12304,6 @@ class GetFieldSqlRow(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     group_id: UUID | None = None
-    field_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetFieldV4NameResource | None = None
     show_name: bool | None = None
@@ -12320,32 +12323,26 @@ class GetFieldSqlRow(BaseModel):
     show_active_flag: bool | None = None
     active_flag_agent_id: UUID | None = None
     active_flag_required: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    department_ids: list[str] | None = None
+    department_ids: list[UUID] | None = None
     department_resources: list[QGetFieldV4Department] | None = None
     show_departments: bool | None = None
     departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetFieldV4Department] | None = None
-    parameter_ids: list[str] | None = None
+    parameter_ids: list[UUID] | None = None
     parameter_resources: list[QGetFieldV4Parameter] | None = None
     show_parameters: bool | None = None
     parameters_agent_id: UUID | None = None
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
-    valid_department_ids: list[str] | None = None
-    conditional_parameter_ids: list[str] | None = None
     parameters: list[QGetFieldV4Parameter] | None = None
-    valid_parameter_ids: list[str] | None = None
-    draft_version: int | None = None
 
 class GetFieldApiRequest(BaseModel):
 
     field_id: UUID | None = None
     draft_id: UUID | None = None
+    mcp: bool | None = False
 
 class GetFieldApiResponse(BaseModel):
 
@@ -12354,7 +12351,6 @@ class GetFieldApiResponse(BaseModel):
     can_edit: bool | None = None
     disabled_reason: str | None = None
     group_id: UUID | None = None
-    field_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetFieldV4NameResource | None = None
     show_name: bool | None = None
@@ -12374,27 +12370,20 @@ class GetFieldApiResponse(BaseModel):
     show_active_flag: bool | None = None
     active_flag_agent_id: UUID | None = None
     active_flag_required: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    department_ids: list[str] | None = None
+    department_ids: list[UUID] | None = None
     department_resources: list[QGetFieldV4Department] | None = None
     show_departments: bool | None = None
     departments_agent_id: UUID | None = None
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetFieldV4Department] | None = None
-    parameter_ids: list[str] | None = None
+    parameter_ids: list[UUID] | None = None
     parameter_resources: list[QGetFieldV4Parameter] | None = None
     show_parameters: bool | None = None
     parameters_agent_id: UUID | None = None
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
-    valid_department_ids: list[str] | None = None
-    conditional_parameter_ids: list[str] | None = None
     parameters: list[QGetFieldV4Parameter] | None = None
-    valid_parameter_ids: list[str] | None = None
-    draft_version: int | None = None
 
 
 

@@ -8912,6 +8912,11 @@ export interface components {
             field_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** GetFieldApiResponse */
         GetFieldApiResponse: {
@@ -8925,8 +8930,6 @@ export interface components {
             disabled_reason?: string | null;
             /** Group Id */
             group_id?: string | null;
-            /** Field Id */
-            field_id?: string | null;
             /** Name Id */
             name_id?: string | null;
             name_resource?: components["schemas"]["QGetFieldV4NameResource"] | null;
@@ -8962,12 +8965,6 @@ export interface components {
             active_flag_agent_id?: string | null;
             /** Active Flag Required */
             active_flag_required?: boolean | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */
@@ -8994,16 +8991,8 @@ export interface components {
             parameters_required?: boolean | null;
             /** Parameter Suggestions */
             parameter_suggestions?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
             /** Parameters */
             parameters?: components["schemas"]["QGetFieldV4Parameter"][] | null;
-            /** Valid Parameter Ids */
-            valid_parameter_ids?: string[] | null;
-            /** Draft Version */
-            draft_version?: number | null;
         };
         /** GetFieldsListApiRequest */
         GetFieldsListApiRequest: Record<string, never>;
@@ -14554,6 +14543,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetFieldV4DescriptionResource */
         QGetFieldV4DescriptionResource: {
@@ -14594,6 +14585,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetHealthBundleV4HealthKpi */
         QGetHealthBundleV4HealthKpi: {
