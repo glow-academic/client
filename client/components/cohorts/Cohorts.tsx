@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Edit, Eye, LogOut, Play, Trash2, Users, X } from "lucide-react";
+import { Copy, Edit, Eye, Play, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -57,15 +57,12 @@ export interface CohortsProps {
     input: DuplicateCohortIn
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
-  // TODO: Investigate - cohorts/leave endpoint doesn't exist on server
-  leaveCohortAction?: undefined;
 }
 
 export default function Cohorts({
   listData: serverListData,
   duplicateCohortAction,
   deleteCohortAction,
-  leaveCohortAction,
 }: CohortsProps) {
   const router = useRouter();
   // effectiveProfile not used in this component
@@ -77,12 +74,6 @@ export default function Cohorts({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [leaveItem, setLeaveItem] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [isLeaving, setIsLeaving] = useState(false);
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -359,30 +350,6 @@ export default function Cohorts({
     }
   };
 
-  const handleLeave = async () => {
-    if (!leaveItem) return;
-
-    // TODO: Investigate - cohorts/leave endpoint doesn't exist on server
-    if (!leaveCohortAction) {
-      toast.error("Leave cohort functionality is not available");
-      return;
-    }
-
-    setIsLeaving(true);
-    try {
-      await leaveCohortAction({
-        body: { cohort_id: leaveItem.id },
-      });
-      toast.success("Left cohort successfully");
-      router.refresh();
-    } catch {
-      toast.error("Failed to leave cohort");
-    } finally {
-      setIsLeaving(false);
-      setShowLeaveDialog(false);
-      setLeaveItem(null);
-    }
-  };
 
   const handleDuplicate = async (cohortId: string, cohortName: string) => {
     if (!duplicateCohortAction) return;
@@ -404,21 +371,12 @@ export default function Cohorts({
     setShowDeleteDialog(true);
   };
 
-  const handleLeaveClick = (id: string, name: string) => {
-    setLeaveItem({ id, name });
-    setShowLeaveDialog(true);
-  };
-
   const handleEdit = (id: string) => {
     router.push(`/create/cohorts/c/${id}`);
   };
 
   const handleView = (id: string) => {
     router.push(`/create/cohorts/c/${id}`);
-  };
-
-  const handleCreateNew = () => {
-    router.push("/create/cohorts/new");
   };
 
   const renderCohortCard = (cohort: (typeof cohorts)[number]) => (
@@ -515,23 +473,6 @@ export default function Cohorts({
                   : {})}
               >
                 <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-            {cohort.can_leave && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`leave-${cohort.cohort_id}`}
-                onClick={() =>
-                  cohort.cohort_id &&
-                  cohort.name &&
-                  handleLeaveClick(cohort.cohort_id, cohort.name)
-                }
-                {...(cohort.name
-                  ? { "aria-label": `Leave ${cohort.name}` }
-                  : {})}
-              >
-                <LogOut className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -694,42 +635,6 @@ export default function Cohorts({
               data-testid="btn-confirm-delete"
             >
               {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Leave Cohort Confirmation Dialog */}
-      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-        <AlertDialogContent
-          aria-labelledby="leave-cohort-title"
-          data-testid="dialog-leave-cohort"
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle id="leave-cohort-title">
-              Leave Cohort
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <p>
-                Are you sure you want to leave the cohort "{leaveItem?.name}"?
-                This action cannot be undone.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isLeaving}
-              data-testid="btn-cancel-leave"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLeave}
-              disabled={isLeaving}
-              className="bg-destructive hover:bg-destructive/90 text-white"
-              data-testid="btn-confirm-leave"
-            >
-              {isLeaving ? "Leaving..." : "Leave Cohort"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -42,8 +42,8 @@ async function patchPracticeDraft(
   input: PatchPracticeDraftIn
 ): Promise<PatchPracticeDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // TODO: Investigate - practice/draft endpoint doesn't exist on server
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts). We need to add a practice draft endpoint.
+  // No revalidateTag needed - Redis cache handles invalidation
   throw new Error("practice/draft endpoint doesn't exist on server");
   // return api.patch("/practice/draft", input);
 }

@@ -34,15 +34,6 @@ type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
 type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 
-type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
-type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
-type DecryptKeyIn = InputOf<"/api/v4/decrypt/key", "post">;
-type DecryptKeyOut = OutputOf<"/api/v4/decrypt/key", "post">;
-type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
-type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
-type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
-// SettingsDetailOut removed - use GetSettingOut from unified /settings/get endpoint instead
-
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -101,9 +92,8 @@ async function patchDepartmentDraft(
 ): Promise<PatchDepartmentDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // TODO: Investigate - departments/draft endpoint doesn't exist on server
-  throw new Error("departments/draft endpoint doesn't exist on server");
-  // return api.patch("/departments/draft", input);
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.patch("/departments/draft", input);
 }
 
 async function createDraftNames(
@@ -226,17 +216,10 @@ export type {
   CreateDraftNamesOut,
   CreateDraftSettingsIn,
   CreateDraftSettingsOut,
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
   GetDepartmentIn,
   GetDepartmentOut,
-  KeysListOut,
   PatchDepartmentDraftIn,
   PatchDepartmentDraftOut,
   SaveDepartmentIn,
   SaveDepartmentOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
 };

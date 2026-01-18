@@ -109,9 +109,8 @@ async function patchSimulationDraft(
 ): Promise<PatchSimulationDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // TODO: Investigate - simulations/draft endpoint doesn't exist on server
-  throw new Error("simulations/draft endpoint doesn't exist on server");
-  // return api.patch("/simulations/draft", input);
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.patch("/simulations/draft", input);
 }
 
 async function createDraftNames(
@@ -238,7 +237,7 @@ export default async function NewSimulationPage({
         error.message.includes("access denied") ||
         error.message.includes("Access denied"))
     ) {
-      return <UnifiedAccessDenied />;
+      return <UnifiedAccessDenied reason="department" resourceType="simulation" redirectPath="/create/simulations" />;
     }
     // Re-throw other errors
     throw error;

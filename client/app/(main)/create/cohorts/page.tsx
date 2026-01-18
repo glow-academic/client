@@ -6,9 +6,9 @@
  */
 import Cohorts from "@/components/cohorts/Cohorts";
 import { api } from "@/lib/api/client";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortsListOut = OutputOf<"/api/v4/cohorts/list", "post">;
@@ -16,9 +16,6 @@ type DuplicateCohortIn = InputOf<"/api/v4/cohorts/duplicate", "post">;
 type DuplicateCohortOut = OutputOf<"/api/v4/cohorts/duplicate", "post">;
 type DeleteCohortIn = InputOf<"/api/v4/cohorts/delete", "post">;
 type DeleteCohortOut = OutputOf<"/api/v4/cohorts/delete", "post">;
-// TODO: Investigate - cohorts/leave endpoint doesn't exist on server
-// type LeaveCohortIn = InputOf<"/api/v4/cohorts/leave", "post">;
-// type LeaveCohortOut = OutputOf<"/api/v4/cohorts/leave", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -55,13 +52,6 @@ async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   return api.post("/cohorts/delete", input);
 }
 
-// TODO: Investigate - cohorts/leave endpoint doesn't exist on server
-// async function leaveCohort(input: LeaveCohortIn): Promise<LeaveCohortOut> {
-//   "use server";
-//   // No revalidateTag needed - Redis cache handles invalidation
-//   return api.post("/cohorts/leave", input);
-// }
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Cohorts",
@@ -82,7 +72,6 @@ export default async function CohortsPage() {
         listData={listData}
         duplicateCohortAction={duplicateCohort}
         deleteCohortAction={deleteCohort}
-        leaveCohortAction={undefined}
       />
     </div>
   );
