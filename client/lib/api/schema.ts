@@ -8987,10 +8987,10 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListFieldsV4Option"][] | null;
         };
-        /** GetHealthBundleApiRequest */
-        GetHealthBundleApiRequest: Record<string, never>;
-        /** GetHealthBundleApiResponse */
-        GetHealthBundleApiResponse: {
+        /** GetHealthApiRequest */
+        GetHealthApiRequest: Record<string, never>;
+        /** GetHealthApiResponse */
+        GetHealthApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             health_kpis?: components["schemas"]["QGetHealthBundleV4HealthKpis"] | null;
@@ -9130,8 +9130,8 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** GetLeaderboardBundleApiRequest */
-        GetLeaderboardBundleApiRequest: {
+        /** GetLeaderboardApiRequest */
+        GetLeaderboardApiRequest: {
             /** Start Date */
             start_date: string;
             /** End Date */
@@ -9145,8 +9145,8 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /** GetLeaderboardBundleApiResponse */
-        GetLeaderboardBundleApiResponse: {
+        /** GetLeaderboardApiResponse */
+        GetLeaderboardApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
             /** Data */
@@ -27953,7 +27953,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetLeaderboardBundleApiRequest"];
+                "application/json": components["schemas"]["GetLeaderboardApiRequest"];
             };
         };
         responses: {
@@ -27963,7 +27963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetLeaderboardBundleApiResponse"];
+                    "application/json": components["schemas"]["GetLeaderboardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -28175,7 +28175,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetHealthBundleApiRequest"];
+                "application/json": components["schemas"]["GetHealthApiRequest"];
             };
         };
         responses: {
@@ -28185,7 +28185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetHealthBundleApiResponse"];
+                    "application/json": components["schemas"]["GetHealthApiResponse"];
                 };
             };
             /** @description Validation Error */

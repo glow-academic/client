@@ -6,15 +6,13 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetHealthBundleApiRequest,
-                           GetHealthBundleApiResponse,
-                           GetHealthBundleSqlParams, GetHealthBundleSqlRow,
-                           load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from app.sql.types import (GetHealthApiRequest, GetHealthApiResponse,
+                           GetHealthSqlParams, GetHealthSqlRow, load_sql_query)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/health/get_health_complete.sql"
@@ -24,15 +22,15 @@ router = APIRouter()
 
 @router.post(
     "/get",
-    response_model=GetHealthBundleApiResponse,
+    response_model=GetHealthApiResponse,
     dependencies=[audit_activity("health.get", "{{ actor.name }} viewed health")],
 )
 async def get_health(
-    request: GetHealthBundleApiRequest,
+    request: GetHealthApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetHealthBundleApiResponse:
+) -> GetHealthApiResponse:
     """Get health bundle with health KPIs and metrics."""
     tags = ["health"]  # From router tags
 
@@ -49,7 +47,7 @@ async def get_health(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return GetHealthBundleApiResponse.model_validate(cached["data"])
+            return GetHealthApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -63,14 +61,14 @@ async def get_health(
         import uuid
 
         profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
-        params = GetHealthBundleSqlParams(
+        params = GetHealthSqlParams(
             **request.model_dump(), profile_id=profile_id_uuid
         )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            GetHealthBundleSqlRow,
+            GetHealthSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -83,7 +81,7 @@ async def get_health(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Build response - SQL function returns structured data
-        api_response = GetHealthBundleApiResponse.model_validate(result.model_dump())
+        api_response = GetHealthApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs for JSON caching)
         await set_cached(
@@ -102,7 +100,7 @@ async def get_health(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_health_bundle",
+            operation="get_health",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

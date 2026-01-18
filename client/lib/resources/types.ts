@@ -23,4 +23,6 @@ export type ResourceType =
   | "reasoning_levels"
   | "temperature_levels"
   | "voices"
-  | "tools";
+  | "tools"
+  | "args"
+  | "args_outputs"

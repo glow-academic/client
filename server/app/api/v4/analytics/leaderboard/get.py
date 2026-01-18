@@ -3,21 +3,20 @@
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    GetLeaderboardBundleApiRequest,
-    GetLeaderboardBundleApiResponse,
-    GetLeaderboardBundleSqlParams,
-    GetLeaderboardBundleSqlRow,
+    GetLeaderboardApiRequest,
+    GetLeaderboardApiResponse,
+    GetLeaderboardSqlParams,
+    GetLeaderboardSqlRow,
 )
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/leaderboard/get_leaderboard_complete.sql"
@@ -27,17 +26,17 @@ router = APIRouter()
 
 @router.post(
     "/get",
-    response_model=GetLeaderboardBundleApiResponse,
+    response_model=GetLeaderboardApiResponse,
     dependencies=[
         audit_activity("leaderboard.get", "{{ actor.name }} viewed leaderboard")
     ],
 )
 async def get_leaderboard(
-    request: GetLeaderboardBundleApiRequest,
+    request: GetLeaderboardApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetLeaderboardBundleApiResponse:
+) -> GetLeaderboardApiResponse:
     """Get leaderboard bundle with top profiles, metrics, and entity mappings."""
     tags = ["leaderboard"]  # From router tags
 
@@ -50,7 +49,7 @@ async def get_leaderboard(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return GetLeaderboardBundleApiResponse.model_validate(cached["data"])
+        return GetLeaderboardApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -70,14 +69,14 @@ async def get_leaderboard(
         # Use mode='json' to keep dates as ISO strings (SQL params model expects strings, not datetime objects)
         # Use double-star pattern - SQL handles defaults via COALESCE in params CTE
         # Note: model_dump(mode='json') returns strings for dates at runtime, but type checker infers datetime
-        params = GetLeaderboardBundleSqlParams(
+        params = GetLeaderboardSqlParams(
             **request.model_dump(mode="json"), profile_id=profile_id
         )  # type: ignore[arg-type]
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            GetLeaderboardBundleSqlRow,
+            GetLeaderboardSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -90,7 +89,7 @@ async def get_leaderboard(
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert SQL result to API response
-        api_response = GetLeaderboardBundleApiResponse.model_validate(
+        api_response = GetLeaderboardApiResponse.model_validate(
             result.model_dump()
         )
 

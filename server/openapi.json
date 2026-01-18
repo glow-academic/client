@@ -18358,7 +18358,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetLeaderboardBundleApiRequest"
+                "$ref": "#/components/schemas/GetLeaderboardApiRequest"
               }
             }
           }
@@ -18369,7 +18369,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetLeaderboardBundleApiResponse"
+                  "$ref": "#/components/schemas/GetLeaderboardApiResponse"
                 }
               }
             }
@@ -18964,7 +18964,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetHealthBundleApiRequest"
+                "$ref": "#/components/schemas/GetHealthApiRequest"
               }
             }
           }
@@ -18975,7 +18975,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetHealthBundleApiResponse"
+                  "$ref": "#/components/schemas/GetHealthApiResponse"
                 }
               }
             }
@@ -37485,12 +37485,12 @@
         "type": "object",
         "title": "GetFieldsListApiResponse"
       },
-      "GetHealthBundleApiRequest": {
+      "GetHealthApiRequest": {
         "properties": {},
         "type": "object",
-        "title": "GetHealthBundleApiRequest"
+        "title": "GetHealthApiRequest"
       },
-      "GetHealthBundleApiResponse": {
+      "GetHealthApiResponse": {
         "properties": {
           "actor_name": {
             "anyOf": [
@@ -37529,7 +37529,7 @@
           }
         },
         "type": "object",
-        "title": "GetHealthBundleApiResponse"
+        "title": "GetHealthApiResponse"
       },
       "GetHealthListApiRequest": {
         "properties": {
@@ -38133,7 +38133,7 @@
         "type": "object",
         "title": "GetKeyForDecryptApiResponse"
       },
-      "GetLeaderboardBundleApiRequest": {
+      "GetLeaderboardApiRequest": {
         "properties": {
           "start_date": {
             "type": "string",
@@ -38207,9 +38207,9 @@
           "start_date",
           "end_date"
         ],
-        "title": "GetLeaderboardBundleApiRequest"
+        "title": "GetLeaderboardApiRequest"
       },
-      "GetLeaderboardBundleApiResponse": {
+      "GetLeaderboardApiResponse": {
         "properties": {
           "actor_name": {
             "anyOf": [
@@ -38288,7 +38288,7 @@
           }
         },
         "type": "object",
-        "title": "GetLeaderboardBundleApiResponse"
+        "title": "GetLeaderboardApiResponse"
       },
       "GetLeaderboardListApiRequest": {
         "properties": {
