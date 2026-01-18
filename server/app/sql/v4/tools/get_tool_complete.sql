@@ -956,16 +956,18 @@ schemas_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -997,7 +999,7 @@ schemas_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1027,16 +1029,18 @@ templates_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1066,7 +1070,7 @@ templates_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1096,16 +1100,18 @@ names_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1135,7 +1141,7 @@ names_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1165,16 +1171,18 @@ descriptions_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1204,7 +1212,7 @@ descriptions_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1234,16 +1242,18 @@ schema_fields_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1275,7 +1285,7 @@ schema_fields_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1305,16 +1315,18 @@ schema_field_items_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1346,7 +1358,7 @@ schema_field_items_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1376,16 +1388,18 @@ template_array_items_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1417,7 +1431,7 @@ template_array_items_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1447,16 +1461,18 @@ template_values_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1488,7 +1504,7 @@ template_values_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1518,16 +1534,18 @@ args_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1557,7 +1575,7 @@ args_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1587,16 +1605,18 @@ args_outputs_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT 1 
-            
-            WHERE NULL::uuid = a.id
-              AND NULL::artifacts = 'tool'::artifacts
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'tool'::artifacts
         )
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE NULL::uuid = a.id AND ad.active = true
+                WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1626,7 +1646,7 @@ args_outputs_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE NULL::uuid = ea.agent_id 
+                         WHERE ad.agent_id = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
