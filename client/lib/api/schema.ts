@@ -2578,26 +2578,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/groups_rubric_grade_agents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Groups Rubric Grade Agents
-         * @description Create groups_rubric_grade_agents resource (always INSERT).
-         */
-        post: operations["create_groups_rubric_grade_agents_api_v4_resources_groups_rubric_grade_agents_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/hints": {
         parameters: {
             query?: never;
@@ -3198,26 +3178,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/runs_rubric_grade_agents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Runs Rubric Grade Agents
-         * @description Create runs_rubric_grade_agents resource (always INSERT).
-         */
-        post: operations["create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/scenario_flags": {
         parameters: {
             query?: never;
@@ -3258,7 +3218,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_rubric_grade_agents": {
+    "/api/v4/resources/scenario_rubrics": {
         parameters: {
             query?: never;
             header?: never;
@@ -3268,10 +3228,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Scenario Rubric Grade Agents
-         * @description Create scenario_rubric_grade_agents resource (always INSERT).
+         * Create Scenario Rubrics
+         * @description Create scenario_rubrics resource (always INSERT).
          */
-        post: operations["create_scenario_rubric_grade_agents_api_v4_resources_scenario_rubric_grade_agents_post"];
+        post: operations["create_scenario_rubrics_api_v4_resources_scenario_rubrics_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7481,6 +7441,8 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
+            /** Email */
+            email: string;
             /**
              * Mcp
              * @default false
@@ -8296,6 +8258,14 @@ export interface components {
             simulation_suggestions?: string[] | null;
             /** Simulations */
             simulations?: components["schemas"]["QGetCohortV4Simulation"][] | null;
+            /** Simulation Positions */
+            simulation_positions?: components["schemas"]["QGetCohortV4SimulationPosition"][] | null;
+            /** Show Simulation Positions */
+            show_simulation_positions?: boolean | null;
+            /** Simulation Positions Agent Id */
+            simulation_positions_agent_id?: string | null;
+            /** Simulation Positions Required */
+            simulation_positions_required?: boolean | null;
             /** Basic Agent Id */
             basic_agent_id?: string | null;
             /** General Agent Id */
@@ -8914,6 +8884,12 @@ export interface components {
         GetFieldApiRequest: {
             /** Field Id */
             field_id?: string | null;
+            /** Description Search */
+            description_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Parameter Show Selected */
+            parameter_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
             /**
@@ -10056,6 +10032,10 @@ export interface components {
             group_id?: string | null;
             /** Profile Id */
             profile_id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Role Options */
+            role_options?: string[] | null;
             /** First Name Id */
             first_name_id?: string | null;
             first_name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
@@ -10535,6 +10515,10 @@ export interface components {
             rubric_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Description Search */
+            description_search?: string | null;
+            /** Standard Group Search */
+            standard_group_search?: string | null;
             /**
              * Mcp
              * @default false
@@ -10644,6 +10628,20 @@ export interface components {
             standard_group_suggestions?: string[] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["QGetRubricV4StandardGroupResource"][] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
+            /** Standard Resources */
+            standard_resources?: components["schemas"]["QGetRubricV4StandardResource"][] | null;
+            /** Show Standards */
+            show_standards?: boolean | null;
+            /** Standards Agent Id */
+            standards_agent_id?: string | null;
+            /** Standards Required */
+            standards_required?: boolean | null;
+            /** Standard Suggestions */
+            standard_suggestions?: string[] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetRubricV4StandardResource"][] | null;
         };
         /** GetRubricsListApiRequest */
         GetRubricsListApiRequest: Record<string, never>;
@@ -11585,29 +11583,6 @@ export interface components {
             /** Groups Id */
             groups_id?: string | null;
         };
-        /** GroupsRubricGradeAgentsApiRequest */
-        GroupsRubricGradeAgentsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** GroupsRubricGradeAgentsApiResponse */
-        GroupsRubricGradeAgentsApiResponse: {
-            /** Groups Rubric Grade Agents Id */
-            groups_rubric_grade_agents_id?: string | null;
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -11702,17 +11677,6 @@ export interface components {
             default: boolean | null;
             /** Active */
             active: boolean | null;
-        };
-        /** ISaveSimulationV4ScenarioRubricGradeAgent */
-        ISaveSimulationV4ScenarioRubricGradeAgent: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Grade Agent Id */
-            grade_agent_id: string | null;
-            /** Audio Agent Id */
-            audio_agent_id: string | null;
         };
         /** IUpsertStaffV4Profile */
         IUpsertStaffV4Profile: {
@@ -12157,6 +12121,10 @@ export interface components {
             active_flag_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Simulation Position Values */
+            simulation_position_values?: number[] | null;
             /**
              * Expected Version
              * @default 0
@@ -12325,12 +12293,20 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Simulation Parameter */
+            simulation_parameter?: boolean | null;
+            /** Document Parameter */
+            document_parameter?: boolean | null;
+            /** Persona Parameter */
+            persona_parameter?: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter?: boolean | null;
+            /** Video Parameter */
+            video_parameter?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -12424,6 +12400,8 @@ export interface components {
             point_ids?: string[] | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -12541,6 +12519,14 @@ export interface components {
             department_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -13314,6 +13300,17 @@ export interface components {
             time_limit: number | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetCohortV4SimulationPosition */
+        QGetCohortV4SimulationPosition: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Mcp */
+            mcp: boolean | null;
         };
         /** QGetDashboardBundleV4AttemptHistoryRow */
         QGetDashboardBundleV4AttemptHistoryRow: {
@@ -16081,6 +16078,21 @@ export interface components {
             active: boolean | null;
             /** Standard Ids */
             standard_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4StandardResource */
+        QGetRubricV4StandardResource: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -19430,6 +19442,8 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
+            /** Requests Per Day */
+            requests_per_day: number;
             /**
              * Mcp
              * @default false
@@ -19547,29 +19561,6 @@ export interface components {
         RunsApiResponse: {
             /** Runs Id */
             runs_id?: string | null;
-        };
-        /** RunsRubricGradeAgentsApiRequest */
-        RunsRubricGradeAgentsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** RunsRubricGradeAgentsApiResponse */
-        RunsRubricGradeAgentsApiResponse: {
-            /** Runs Rubric Grade Agents Id */
-            runs_rubric_grade_agents_id?: string | null;
         };
         /** SaveAgentApiRequest */
         SaveAgentApiRequest: {
@@ -20004,6 +19995,8 @@ export interface components {
             pass_points_id?: string | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
+            /** Standard Ids */
+            standard_ids?: string[] | null;
         };
         /** SaveRubricApiResponse */
         SaveRubricApiResponse: {
@@ -20124,8 +20117,6 @@ export interface components {
             scenario_audio_enabled: boolean[];
             /** Scenario Text Enabled */
             scenario_text_enabled: boolean[];
-            /** Scenario Rubric Grade Agents */
-            scenario_rubric_grade_agents: components["schemas"]["ISaveSimulationV4ScenarioRubricGradeAgent"][];
             /** Input Simulation Id */
             input_simulation_id?: string | null;
             /** Description Id */
@@ -20141,8 +20132,8 @@ export interface components {
             scenario_flag_ids?: string[] | null;
             /** Scenario Position Ids */
             scenario_position_ids?: string[] | null;
-            /** Scenario Rubric Grade Agent Ids */
-            scenario_rubric_grade_agent_ids?: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Video Active Flags */
@@ -20244,8 +20235,8 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** ScenarioRubricGradeAgentsApiRequest */
-        ScenarioRubricGradeAgentsApiRequest: {
+        /** ScenarioRubricsApiRequest */
+        ScenarioRubricsApiRequest: {
             /**
              * Agent Id
              * Format: uuid
@@ -20257,28 +20248,23 @@ export interface components {
              */
             group_id: string;
             /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /**
              * Rubric Id
              * Format: uuid
              */
             rubric_id: string;
-            /**
-             * Grade Agent Id
-             * Format: uuid
-             */
-            grade_agent_id: string;
-            /**
-             * Agent Id Param
-             * Format: uuid
-             */
-            agent_id_param: string;
             /**
              * Mcp
              * @default false
              */
             mcp: boolean | null;
         };
-        /** ScenarioRubricGradeAgentsApiResponse */
-        ScenarioRubricGradeAgentsApiResponse: {
+        /** ScenarioRubricsApiResponse */
+        ScenarioRubricsApiResponse: {
             /** Id */
             id?: string | null;
         };
@@ -25736,43 +25722,6 @@ export interface operations {
             };
         };
     };
-    create_groups_rubric_grade_agents_api_v4_resources_groups_rubric_grade_agents_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupsRubricGradeAgentsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupsRubricGradeAgentsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_hints_api_v4_resources_hints_post: {
         parameters: {
             query?: never;
@@ -26883,43 +26832,6 @@ export interface operations {
             };
         };
     };
-    create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RunsRubricGradeAgentsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RunsRubricGradeAgentsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_scenario_flags_api_v4_resources_scenario_flags_post: {
         parameters: {
             query?: never;
@@ -26994,7 +26906,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_rubric_grade_agents_api_v4_resources_scenario_rubric_grade_agents_post: {
+    create_scenario_rubrics_api_v4_resources_scenario_rubrics_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27007,7 +26919,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScenarioRubricGradeAgentsApiRequest"];
+                "application/json": components["schemas"]["ScenarioRubricsApiRequest"];
             };
         };
         responses: {
@@ -27017,7 +26929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScenarioRubricGradeAgentsApiResponse"];
+                    "application/json": components["schemas"]["ScenarioRubricsApiResponse"];
                 };
             };
             /** @description Validation Error */

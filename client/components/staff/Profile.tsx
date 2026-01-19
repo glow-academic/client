@@ -14,6 +14,7 @@ import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
@@ -26,13 +27,6 @@ import { Names } from "@/components/resources/Names";
 import { RequestLimits } from "@/components/resources/RequestLimits";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -353,6 +347,9 @@ function ProfileComponent({
   ]);
 
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [createdRequestLimits, setCreatedRequestLimits] = useState<
+    Record<string, number>
+  >({});
   const setUrlFormDataRef = React.useRef<
     null | ((updates: Record<string, unknown>) => void)
   >(null);
@@ -802,7 +799,15 @@ function ProfileComponent({
             first_name_id: formState.first_name_id,
             last_name_id: formState.last_name_id,
             active_flag_id: formState.active_flag_id || null,
-            request_limit_id: formState.request_limit_id || null,
+            requests_per_day:
+              formState.request_limit_id && formState.request_limit_id !== ""
+                ? createdRequestLimits[formState.request_limit_id] ??
+                  currentStaffData?.request_limits?.find(
+                    (limit) => limit.id === formState.request_limit_id
+                  )?.requests_per_day ??
+                  currentStaffData?.request_limit_resource?.requests_per_day ??
+                  null
+                : null,
             department_ids: formState.department_ids || [],
             cohort_ids: formState.cohort_ids || [],
             role: formState.role || "instructional",
@@ -833,6 +838,9 @@ function ProfileComponent({
       staffData?.departments_required,
       staffData?.emails_required,
       staffData?.email_resources,
+      currentStaffData?.request_limits,
+      currentStaffData?.request_limit_resource,
+      createdRequestLimits,
     ]
   );
 
@@ -1203,6 +1211,12 @@ function ProfileComponent({
                       request_limit_id: requestLimitId,
                     }))
                   }
+                  onRequestLimitResourceCreated={(resource) =>
+                    setCreatedRequestLimits((prev) => ({
+                      ...prev,
+                      [resource.id]: resource.requests_per_day,
+                    }))
+                  }
                   onGenerate={handleGenerateRequestLimits}
                   isGenerating={isGenerating("request_limits")}
                   required={currentStaffData?.request_limit_required ?? false}
@@ -1301,24 +1315,25 @@ function ProfileComponent({
                     Role
                     <span className="text-destructive ml-1">*</span>
                   </Label>
-                  <Select
-                    value={formState.role}
-                    onValueChange={(value) =>
-                      setFormState((prev) => ({ ...prev, role: value }))
+                  <GenericPicker<string>
+                    items={currentStaffData?.role_options ?? []}
+                    selectedIds={formState.role ? [formState.role] : []}
+                    onSelect={(ids) => {
+                      const nextRole =
+                        ids[0] ?? currentStaffData?.role_options?.[0] ?? "";
+                      setFormState((prev) => ({ ...prev, role: nextRole }));
+                    }}
+                    getId={(item) => item}
+                    getLabel={(item) =>
+                      item.charAt(0).toUpperCase() + item.slice(1)
                     }
+                    placeholder="Select role"
                     disabled={disabled}
-                  >
-                    <SelectTrigger id="role">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(currentStaffData?.role_options ?? []).map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role.charAt(0).toUpperCase() + role.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    multiSelect={false}
+                    showLabel={false}
+                    compact={true}
+                    buttonClassName="h-8"
+                  />
                 </div>
 
                 <Cohorts

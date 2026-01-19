@@ -21,7 +21,10 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Points } from "@/components/resources/Points";
+import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -64,6 +67,8 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "/api/v4/resources/standard_groups",
   "post"
 >;
+type CreateDraftStandardsIn = InputOf<"/api/v4/resources/standards", "post">;
+type CreateDraftStandardsOut = OutputOf<"/api/v4/resources/standards", "post">;
 
 type RubricData = OutputOf<"/api/v4/rubrics/get", "post">;
 
@@ -95,6 +100,9 @@ export interface RubricProps {
   createStandardGroupsAction?: (
     input: CreateDraftStandardGroupsIn
   ) => Promise<CreateDraftStandardGroupsOut>;
+  createStandardsAction?: (
+    input: CreateDraftStandardsIn
+  ) => Promise<CreateDraftStandardsOut>;
 }
 
 function RubricComponent({
@@ -108,6 +116,7 @@ function RubricComponent({
   createFlagsAction,
   createPointsAction,
   createStandardGroupsAction,
+  createStandardsAction,
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
@@ -138,6 +147,8 @@ function RubricComponent({
     () => ({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      standardGroupSearch: parseAsString,
     }),
     []
   );
@@ -201,6 +212,13 @@ function RubricComponent({
       standard_groups_required: rubricData.standard_groups_required,
       standard_group_suggestions: rubricData.standard_group_suggestions,
       standard_groups: rubricData.standard_groups,
+      standard_ids: rubricData.standard_ids,
+      standard_resources: rubricData.standard_resources,
+      show_standards: rubricData.show_standards,
+      standards_agent_id: rubricData.standards_agent_id,
+      standards_required: rubricData.standards_required,
+      standard_suggestions: rubricData.standard_suggestions,
+      standards: rubricData.standards,
     };
   }, [rubricData]);
 
@@ -215,6 +233,7 @@ function RubricComponent({
         total_points_id: null as string | null,
         pass_points_id: null as string | null,
         standard_group_ids: [] as string[],
+        standard_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
@@ -226,6 +245,7 @@ function RubricComponent({
       total_points_id: data.total_points_id ?? null,
       pass_points_id: data.pass_points_id ?? null,
       standard_group_ids: data.standard_group_ids ?? [],
+      standard_ids: data.standard_ids ?? [],
     };
   }, []);
 
@@ -244,6 +264,10 @@ function RubricComponent({
     () => JSON.stringify(rubricData?.standard_group_ids ?? []),
     [rubricData?.standard_group_ids]
   );
+  const standardIdsStr = React.useMemo(
+    () => JSON.stringify(rubricData?.standard_ids ?? []),
+    [rubricData?.standard_ids]
+  );
 
   // Update form state when server data changes
   useEffect(() => {
@@ -259,7 +283,9 @@ function RubricComponent({
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.standard_group_ids) !==
-          JSON.stringify(newState.standard_group_ids)
+          JSON.stringify(newState.standard_group_ids) ||
+        JSON.stringify(prev.standard_ids) !==
+          JSON.stringify(newState.standard_ids)
       ) {
         return newState;
       }
@@ -273,6 +299,7 @@ function RubricComponent({
     rubricData?.pass_points_id,
     departmentIdsStr,
     standardGroupIdsStr,
+    standardIdsStr,
   ]);
 
   // Draft version tracking
@@ -322,6 +349,7 @@ function RubricComponent({
       active_flag_id: formState.active_flag_id,
       point_ids: pointIds,
       standard_group_ids: formState.standard_group_ids,
+      standard_ids: formState.standard_ids,
     });
   }, [
     draftId,
@@ -332,6 +360,7 @@ function RubricComponent({
     formState.pass_points_id,
     departmentIdsStr,
     standardGroupIdsStr,
+    standardIdsStr,
   ]);
 
   const lastPatchedKeyRef = React.useRef<string | null>(null);
@@ -345,7 +374,8 @@ function RubricComponent({
       formState.total_points_id ||
       formState.pass_points_id ||
       formState.department_ids.length > 0 ||
-      formState.standard_group_ids.length > 0;
+      formState.standard_group_ids.length > 0 ||
+      formState.standard_ids.length > 0;
 
     if (!hasResourceIds || !patchRubricDraftActionRef.current) {
       return;
@@ -371,6 +401,7 @@ function RubricComponent({
             active_flag_id: formState.active_flag_id,
             point_ids: pointIds.length > 0 ? pointIds : null,
             standard_group_ids: formState.standard_group_ids,
+            standard_ids: formState.standard_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -411,6 +442,7 @@ function RubricComponent({
       pass_points_id?: string | null;
       department_ids?: string[];
       standard_group_ids?: string[];
+      standard_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -430,6 +462,7 @@ function RubricComponent({
         "flags",
         "points",
         "standard_groups",
+        "standards",
       ];
       if (
         data.resource_type &&
@@ -458,6 +491,12 @@ function RubricComponent({
               ...prev.standard_group_ids,
               ...newGroupIds,
             ];
+          }
+          if (data.standard_ids && data.standard_ids.length > 0) {
+            const newStandardIds = data.standard_ids.filter(
+              (id) => !prev.standard_ids.includes(id)
+            );
+            updates.standard_ids = [...prev.standard_ids, ...newStandardIds];
           }
 
           return { ...prev, ...updates };
@@ -519,6 +558,7 @@ function RubricComponent({
         "flags",
         "points",
         "standard_groups",
+        "standards",
       ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
@@ -556,6 +596,7 @@ function RubricComponent({
           flags: "flags",
           points: "points",
           standard_groups: "standard_groups",
+          standards: "standards",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
@@ -645,6 +686,12 @@ function RubricComponent({
     [handleGenerateResources, determineAgentType]
   );
 
+  const handleGenerateStandards = useCallback(
+    async () =>
+      handleGenerateResources(["standards"], determineAgentType(["standards"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
   // Disabled logic based on can_edit flag
   const disabled = useMemo(() => {
     if (!rubricData) return false;
@@ -719,6 +766,14 @@ function RubricComponent({
         throw new Error("Standard groups are required");
       }
 
+      if (
+        rubricData?.standards_required &&
+        (!formState.standard_ids || formState.standard_ids.length === 0)
+      ) {
+        toast.error("Standards are required");
+        throw new Error("Standards are required");
+      }
+
       if (!effectiveProfile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
@@ -745,6 +800,7 @@ function RubricComponent({
             total_points_id: formState.total_points_id || null,
             pass_points_id: formState.pass_points_id || null,
             standard_group_ids: formState.standard_group_ids || [],
+            standard_ids: formState.standard_ids || [],
           },
         });
         toast.success(
@@ -770,6 +826,7 @@ function RubricComponent({
       rubricData?.name_required,
       rubricData?.departments_required,
       rubricData?.standard_groups_required,
+      rubricData?.standards_required,
     ]
   );
 
@@ -780,6 +837,7 @@ function RubricComponent({
       const hasDescription = !!formState.description_id;
       const hasDepartments = formState.department_ids.length > 0;
       const hasStandardGroups = formState.standard_group_ids.length > 0;
+      const hasStandards = formState.standard_ids.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -788,12 +846,13 @@ function RubricComponent({
             : "active";
         case "points":
           if (!hasName) return "pending";
-          return formState.total_points_id && formState.pass_points_id
-            ? "completed"
-            : "active";
+          return formState.pass_points_id ? "completed" : "active";
         case "standard_groups":
           if (!hasName) return "pending";
           return hasStandardGroups ? "completed" : "active";
+        case "standards":
+          if (!hasStandardGroups) return "pending";
+          return hasStandards ? "completed" : "active";
         default:
           return "pending";
       }
@@ -814,14 +873,21 @@ function RubricComponent({
       {
         id: "points",
         title: "Points",
-        description: "Set total points and pass points for the rubric.",
-        resetFields: ["total_points", "pass_points"],
+        description:
+          "Review total points (calculated) and set pass points for the rubric.",
+        resetFields: ["pass_points"],
       },
       {
         id: "standard_groups",
         title: "Standard Groups",
         description: "Add standard groups to organize your rubric.",
         resetFields: ["standard_group_ids"],
+      },
+      {
+        id: "standards",
+        title: "Standards",
+        description: "Select standards to include in the rubric grid.",
+        resetFields: ["standard_ids"],
       },
     ],
     []
@@ -836,6 +902,7 @@ function RubricComponent({
       "total_points",
       "pass_points",
       "standard_group_ids",
+      "standard_ids",
     ],
     []
   );
@@ -848,6 +915,8 @@ function RubricComponent({
         return "Points reset";
       case "standard_groups":
         return "Standard groups reset";
+      case "standards":
+        return "Standards reset";
       default:
         return "Reset";
     }
@@ -904,6 +973,10 @@ function RubricComponent({
       onReset?: () => void;
     }) => {
       const currentRubricData = stableRubricDataFields;
+      const descriptionSearch =
+        (stepFormData["descriptionSearch"] as string | null) ?? "";
+      const standardGroupSearch =
+        (stepFormData["standardGroupSearch"] as string | null) ?? "";
       switch (stepId) {
         case "basic":
           return (
@@ -914,6 +987,13 @@ function RubricComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={descriptionSearch}
+              onSearchChange={(term) =>
+                setStepFormData({
+                  descriptionSearch: term || null,
+                })
+              }
+              searchPlaceholder="Search descriptions..."
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
@@ -1018,7 +1098,11 @@ function RubricComponent({
             </StepCard>
           );
 
-        case "points":
+        case "points": {
+          const totalPointsValue = (
+            currentRubricData?.standard_group_resources ?? []
+          ).reduce((sum, group) => sum + (group.points ?? 0), 0);
+
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1027,36 +1111,23 @@ function RubricComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["total_points", "pass_points"]}
+              resetFields={["pass_points"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                <Points
-                  points_id={formState.total_points_id ?? null}
-                  points_resource={
-                    currentRubricData?.total_points_resource ?? null
-                  }
-                  show_points={currentRubricData?.show_points ?? false}
-                  points_suggestions={
-                    currentRubricData?.points_suggestions ?? []
-                  }
-                  points={currentRubricData?.points ?? []}
-                  disabled={disabled}
-                  onPointsIdChange={(pointsId) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      total_points_id: pointsId,
-                    }))
-                  }
-                  onGenerate={handleGeneratePoints}
-                  isGenerating={isGenerating("points")}
-                  label="Total Points"
-                  required={currentRubricData?.points_required ?? false}
-                  group_id={currentRubricData?.group_id ?? null}
-                  agent_id={currentRubricData?.points_agent_id ?? null}
-                  createPointsAction={createPointsAction}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="rubric-total-points">Total Points</Label>
+                  <Input
+                    id="rubric-total-points"
+                    value={String(totalPointsValue)}
+                    readOnly
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Calculated from standard group points.
+                  </p>
+                </div>
 
                 <Points
                   points_id={formState.pass_points_id ?? null}
@@ -1086,6 +1157,7 @@ function RubricComponent({
               </div>
             </StepCard>
           );
+        }
 
         case "standard_groups":
           return (
@@ -1096,6 +1168,13 @@ function RubricComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={standardGroupSearch}
+              onSearchChange={(term) =>
+                setStepFormData({
+                  standardGroupSearch: term || null,
+                })
+              }
+              searchPlaceholder="Search standard groups..."
               resetFields={["standard_group_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1129,6 +1208,44 @@ function RubricComponent({
             </StepCard>
           );
 
+        case "standards":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["standard_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Standards
+                standard_ids={formState.standard_ids ?? []}
+                standard_resources={currentRubricData?.standard_resources ?? []}
+                show_standards={currentRubricData?.show_standards ?? false}
+                standard_suggestions={
+                  currentRubricData?.standard_suggestions ?? []
+                }
+                standards={currentRubricData?.standards ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    standard_ids: ids,
+                  }))
+                }
+                onGenerate={handleGenerateStandards}
+                isGenerating={isGenerating("standards")}
+                required={currentRubricData?.standards_required ?? false}
+                group_id={currentRubricData?.group_id ?? null}
+                agent_id={currentRubricData?.standards_agent_id ?? null}
+                createStandardsAction={createStandardsAction}
+              />
+            </StepCard>
+          );
+
         default:
           return null;
       }
@@ -1144,6 +1261,7 @@ function RubricComponent({
       handleGenerateFlags,
       handleGeneratePoints,
       handleGenerateStandardGroups,
+      handleGenerateStandards,
       isGenerating,
       createNamesAction,
       createDescriptionsAction,
@@ -1151,6 +1269,7 @@ function RubricComponent({
       createFlagsAction,
       createPointsAction,
       createStandardGroupsAction,
+      createStandardsAction,
     ]
   );
 
@@ -1221,6 +1340,7 @@ export default React.memo(RubricComponent, (prevProps, nextProps) => {
     total_points_id: prevProps.rubricData?.total_points_id,
     pass_points_id: prevProps.rubricData?.pass_points_id,
     standard_group_ids: prevProps.rubricData?.standard_group_ids,
+    standard_ids: prevProps.rubricData?.standard_ids,
   };
   const nextIds = {
     name_id: nextProps.rubricData?.name_id,
@@ -1230,6 +1350,7 @@ export default React.memo(RubricComponent, (prevProps, nextProps) => {
     total_points_id: nextProps.rubricData?.total_points_id,
     pass_points_id: nextProps.rubricData?.pass_points_id,
     standard_group_ids: nextProps.rubricData?.standard_group_ids,
+    standard_ids: nextProps.rubricData?.standard_ids,
   };
 
   if (

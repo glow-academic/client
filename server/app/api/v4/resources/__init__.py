@@ -87,10 +87,7 @@ router.include_router(group_positions_router)
 from app.api.v4.resources.groups.create import router as groups_router
 
 router.include_router(groups_router)
-from app.api.v4.resources.groups_rubric_grade_agents.create import \
-    router as groups_rubric_grade_agents_router
 
-router.include_router(groups_rubric_grade_agents_router)
 from app.api.v4.resources.hints.create import router as hints_router
 
 router.include_router(hints_router)
@@ -187,10 +184,7 @@ router.include_router(run_positions_router)
 from app.api.v4.resources.runs.create import router as runs_router
 
 router.include_router(runs_router)
-from app.api.v4.resources.runs_rubric_grade_agents.create import \
-    router as runs_rubric_grade_agents_router
 
-router.include_router(runs_rubric_grade_agents_router)
 from app.api.v4.resources.scenario_flags.create import \
     router as scenario_flags_router
 
@@ -199,10 +193,10 @@ from app.api.v4.resources.scenario_positions.create import \
     router as scenario_positions_router
 
 router.include_router(scenario_positions_router)
-from app.api.v4.resources.scenario_rubric_grade_agents.create import \
-    router as scenario_rubric_grade_agents_router
+from app.api.v4.resources.scenario_rubrics.create import \
+    router as scenario_rubrics_router
 
-router.include_router(scenario_rubric_grade_agents_router)
+router.include_router(scenario_rubrics_router)
 from app.api.v4.resources.scenarios.create import router as scenarios_router
 
 router.include_router(scenarios_router)

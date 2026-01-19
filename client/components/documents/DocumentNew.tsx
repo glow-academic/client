@@ -163,6 +163,7 @@ function DocumentComponent({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
       // Search params (URL-backed, updated via debounced callback in StepCard)
+      descriptionSearch: parseAsString,
       fieldSearch: parseAsString,
       uploadSearch: parseAsString,
       // Filter params (URL-backed)
@@ -1150,6 +1151,9 @@ function DocumentComponent({
       const currentDocumentData = stableDocumentDataFields;
       switch (stepId) {
         case "basic":
+          const descriptionSearchTerm =
+            (stepFormData["descriptionSearch"] as string | null | undefined) ||
+            "";
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1186,7 +1190,13 @@ function DocumentComponent({
                   }
                 />
               }
-              resetFields={["name", "description", "department_ids", "active"]}
+              resetFields={[
+                "name",
+                "description",
+                "descriptionSearch",
+                "department_ids",
+                "active",
+              ]}
               actions={
                 stepResources["basic"] &&
                 stepResources["basic"].length > 0 &&
@@ -1256,8 +1266,10 @@ function DocumentComponent({
                       description_id: descriptionId,
                     }))
                   }
-                  searchTerm=""
-                  onSearchChange={() => {}}
+                  searchTerm={descriptionSearchTerm}
+                  onSearchChange={(term) =>
+                    setStepFormData({ descriptionSearch: term || null })
+                  }
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
@@ -1422,6 +1434,8 @@ function DocumentComponent({
           );
 
         case "uploads":
+          const uploadSearchTerm =
+            (stepFormData["uploadSearch"] as string | null | undefined) || "";
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1430,7 +1444,13 @@ function DocumentComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["upload_ids"]}
+              searchTerm={uploadSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ uploadSearch: term || null })
+              }
+              searchPlaceholder="Search uploads..."
+              debounceMs={300}
+              resetFields={["upload_ids", "uploadSearch"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1498,6 +1518,7 @@ function DocumentComponent({
                 group_id={currentDocumentData?.group_id ?? null}
                 agent_id={currentDocumentData?.uploads_agent_id ?? null}
                 createUploadsAction={createUploadsAction}
+                searchTerm={uploadSearchTerm}
               />
             </StepCard>
           );

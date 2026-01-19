@@ -26,6 +26,7 @@ CREATE OR REPLACE FUNCTION api_patch_rubric_draft_v4(
     department_ids uuid[] DEFAULT NULL,
     point_ids uuid[] DEFAULT NULL,
     standard_group_ids uuid[] DEFAULT NULL,
+    standard_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -54,6 +55,15 @@ BEGIN
     
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+
+    IF standard_ids IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(standard_ids) AS std_id
+            WHERE NOT EXISTS (SELECT 1 FROM standards_resource WHERE id = std_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more standard_ids not found';
+        END IF;
     END IF;
     
     -- Try to update existing draft
@@ -87,6 +97,7 @@ BEGIN
             DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
             DELETE FROM draft_points WHERE draft_points.draft_id = v_draft_id;
             DELETE FROM draft_standard_groups WHERE draft_standard_groups.draft_id = v_draft_id;
+            DELETE FROM draft_standards WHERE draft_standards.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
@@ -140,6 +151,16 @@ BEGIN
                 SELECT v_draft_id, sg_id, v_new_version
                 FROM UNNEST(standard_group_ids) as sg_id
                 ON CONFLICT ON CONSTRAINT draft_standard_groups_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF standard_ids IS NOT NULL THEN
+                DELETE FROM draft_standards WHERE draft_standards.draft_id = v_draft_id;
+                INSERT INTO draft_standards (draft_id, standards_id, version)
+                SELECT v_draft_id, std_id, v_new_version
+                FROM UNNEST(standard_ids) as std_id
+                ON CONFLICT ON CONSTRAINT draft_standards_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -209,6 +230,15 @@ BEGIN
         SELECT v_draft_id, sg_id, v_new_version
         FROM UNNEST(standard_group_ids) as sg_id
         ON CONFLICT ON CONSTRAINT draft_standard_groups_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF standard_ids IS NOT NULL THEN
+        INSERT INTO draft_standards (draft_id, standards_id, version)
+        SELECT v_draft_id, std_id, v_new_version
+        FROM UNNEST(standard_ids) as std_id
+        ON CONFLICT ON CONSTRAINT draft_standards_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

@@ -86,11 +86,22 @@ CREATE TYPE types.q_get_rubric_v4_standard_group_resource AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_rubric_v4_standard_resource AS (
+    standard_id uuid,
+    standard_group_id uuid,
+    name text,
+    description text,
+    points int,
+    generated boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_rubric_v4(
     profile_id uuid,
     rubric_id uuid DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
+    description_search text DEFAULT NULL,
+    standard_group_search text DEFAULT NULL,
     mcp boolean DEFAULT false
 )
 RETURNS TABLE (
@@ -154,7 +165,15 @@ RETURNS TABLE (
     standard_groups_agent_id uuid,
     standard_groups_required boolean,
     standard_group_suggestions uuid[],
-    standard_groups types.q_get_rubric_v4_standard_group_resource[]
+    standard_groups types.q_get_rubric_v4_standard_group_resource[],
+    -- Multi-select resources: standards
+    standard_ids uuid[],
+    standard_resources types.q_get_rubric_v4_standard_resource[],
+    show_standards boolean,
+    standards_agent_id uuid,
+    standards_required boolean,
+    standard_suggestions uuid[],
+    standards types.q_get_rubric_v4_standard_resource[]
 )
 LANGUAGE sql
 STABLE
@@ -164,6 +183,8 @@ WITH params AS (
         rubric_id AS rubric_id,
         profile_id AS profile_id,
         draft_id AS draft_id,
+        COALESCE(NULLIF(description_search, ''), NULL) AS description_search,
+        COALESCE(NULLIF(standard_group_search, ''), NULL) AS standard_group_search,
         COALESCE(mcp, false) AS mcp
 ),
 -- Conditional: Only check rubric existence if rubric_id provided
@@ -391,18 +412,54 @@ pass_points_resource_data AS (
         ) as pass_points_resource
     FROM params
 ),
--- Standard groups resource data
+-- Standard groups resource data (draft-first)
+standard_group_links_data AS (
+    SELECT 
+        dsg.standard_groups_id as standard_group_id,
+        ROW_NUMBER() OVER (ORDER BY dsg.created_at) as position,
+        true as active,
+        COALESCE(dsg.generated, false) as generated
+    FROM params x
+    JOIN draft_standard_groups dsg ON dsg.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+    UNION ALL
+    SELECT 
+        rsg.standard_group_id,
+        rsg.position,
+        rsg.active,
+        COALESCE(rsg.generated, false) as generated
+    FROM params x
+    JOIN rubric_standard_groups rsg ON rsg.rubric_id = x.rubric_id AND rsg.active = true
+    WHERE x.rubric_id IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM draft_standard_groups dsg
+          WHERE dsg.draft_id = x.draft_id
+      )
+),
 standard_group_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT rubric_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.position)
-                 FROM rubric_standard_groups rsg
-                 WHERE rsg.rubric_id = (SELECT rubric_id FROM params) AND rsg.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as standard_group_ids
+        COALESCE(
+            ARRAY_AGG(sgld.standard_group_id ORDER BY sgld.position),
+            ARRAY[]::uuid[]
+        ) as standard_group_ids
+    FROM standard_group_links_data sgld
+    CROSS JOIN params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Standards resource data (draft-first)
+standard_ids_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(s.id ORDER BY s.created_at)
+             FROM draft_standard_groups dsg
+             JOIN standards_resource s ON s.standard_group_id = dsg.standard_groups_id
+             WHERE dsg.draft_id = (SELECT draft_id FROM params)),
+            (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at)
+             FROM rubric_standards rs
+             WHERE rs.rubric_id = (SELECT rubric_id FROM params) AND rs.active = true),
+            ARRAY[]::uuid[]
+        ) as standard_ids
     FROM params
     -- Always return at least one row
     LIMIT 1
@@ -461,6 +518,10 @@ description_suggestions_data AS (
                  WHERE rd.description_id IS NOT NULL
                    AND d.description IS NOT NULL
                    AND d.description != ''
+                   AND (
+                       (SELECT description_search FROM params LIMIT 1) IS NULL
+                       OR LOWER(d.description) LIKE '%' || LOWER((SELECT description_search FROM params LIMIT 1)) || '%'
+                   )
                    AND (
                        -- Option 1: Linked to rubrics (rubric_descriptions junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
@@ -580,6 +641,11 @@ standard_group_suggestions_data AS (
                  CROSS JOIN draft_group_data dgd
                  WHERE rsg.standard_group_id IS NOT NULL
                    AND (
+                       (SELECT standard_group_search FROM params LIMIT 1) IS NULL
+                       OR LOWER(sg.name) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
+                       OR LOWER(COALESCE(sg.description, '')) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
+                   )
+                   AND (
                        -- Option 1: Linked to rubrics with active=true
                        rsg.active = true
                        OR
@@ -603,6 +669,47 @@ standard_group_suggestions_data AS (
              ) rsg),
             ARRAY[]::uuid[]
         ) as standard_group_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Standard suggestions: linked to rubrics with active=true OR same group with generated=true
+standard_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at DESC)
+             FROM (
+                 SELECT DISTINCT rs.standard_id, MAX(rs.created_at) as created_at
+                 FROM rubric_standards rs
+                 JOIN standards_resource s ON s.id = rs.standard_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE rs.standard_id IS NOT NULL
+                   AND s.name IS NOT NULL
+                   AND s.name != ''
+                   AND (
+                       -- Option 1: Linked to rubrics with active=true
+                       rs.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           rs.generated = true
+                           AND s.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = s.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY rs.standard_id
+                 ORDER BY MAX(rs.created_at) DESC
+                 LIMIT 20
+             ) rs),
+            ARRAY[]::uuid[]
+        ) as standard_suggestions
     FROM params
     -- Always return at least one row
     LIMIT 1
@@ -1093,6 +1200,77 @@ standard_groups_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'standards' resource
+standards_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'rubric'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'standards'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- UI flags
 ui_flags AS (
     SELECT 
@@ -1107,7 +1285,11 @@ ui_flags AS (
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
         END as show_departments,
-        true as show_standard_groups  -- Always show standard groups picker
+        true as show_standard_groups,  -- Always show standard groups picker
+        CASE 
+            WHEN COALESCE(array_length((SELECT standard_group_ids FROM standard_group_ids_data), 1), 0) > 0 THEN true
+            ELSE false
+        END as show_standards
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -1151,7 +1333,13 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'standard_groups'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        ) as standard_groups_has_tools
+        ) as standard_groups_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'standards'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+        ) as standards_has_tools
     FROM params x
 ),
 missing_tools_check AS (
@@ -1163,7 +1351,8 @@ missing_tools_check AS (
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
             CASE WHEN NOT tec.flags_has_tools THEN 'flag' ELSE NULL END,
             CASE WHEN NOT tec.points_has_tools THEN 'points' ELSE NULL END,
-            CASE WHEN NOT tec.standard_groups_has_tools AND uf.show_standard_groups THEN 'standard_groups' ELSE NULL END
+            CASE WHEN NOT tec.standard_groups_has_tools AND uf.show_standard_groups THEN 'standard_groups' ELSE NULL END,
+            CASE WHEN NOT tec.standards_has_tools AND uf.show_standards THEN 'standards' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
@@ -1358,16 +1547,14 @@ standard_groups_selected_data AS (
         sg.description,
         sg.points,
         sg.pass_points,
-        rsg.position,
-        rsg.active,
-        ARRAY_AGG(s.id ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)) as standard_ids,
-        COALESCE(rsg.generated, false) as generated
-    FROM params x
-    JOIN rubric_standard_groups rsg ON rsg.rubric_id = x.rubric_id AND rsg.active = true
-    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
+        sgld.position,
+        sgld.active,
+        ARRAY_AGG(s.id ORDER BY s.name) FILTER (WHERE s.id IS NOT NULL) as standard_ids,
+        COALESCE(sgld.generated, false) as generated
+    FROM standard_group_links_data sgld
+    JOIN standard_groups_resource sg ON sg.id = sgld.standard_group_id
     LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
-    WHERE x.rubric_id IS NOT NULL
-    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active, rsg.generated
+    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sgld.generated
 ),
 -- Standard groups data (all available standard groups for options array)
 standard_groups_all_data AS (
@@ -1377,16 +1564,21 @@ standard_groups_all_data AS (
         sg.description,
         sg.points,
         sg.pass_points,
-        COALESCE(rsg.position, 0) as position,
-        COALESCE(rsg.active, true) as active,
-        ARRAY_AGG(s.id ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)) FILTER (WHERE s.id IS NOT NULL) as standard_ids,
+        COALESCE(sgld.position, 0) as position,
+        COALESCE(sgld.active, true) as active,
+        ARRAY_AGG(s.id ORDER BY s.name) FILTER (WHERE s.id IS NOT NULL) as standard_ids,
         COALESCE(sg.generated, false) as generated
     FROM params x
     CROSS JOIN standard_groups_resource sg
-    LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = x.rubric_id AND rsg.standard_group_id = sg.id AND rsg.active = true
+    LEFT JOIN standard_group_links_data sgld ON sgld.standard_group_id = sg.id
     LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     WHERE sg.active = true
-    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active, sg.generated
+      AND (
+          (SELECT standard_group_search FROM params LIMIT 1) IS NULL
+          OR LOWER(sg.name) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
+          OR LOWER(COALESCE(sg.description, '')) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
+      )
+    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sg.generated
 ),
 -- Standard groups aggregated (selected groups for standard_group_resources)
 standard_groups_selected_aggregated AS (
@@ -1413,6 +1605,64 @@ standard_groups_all_aggregated AS (
             '{}'::types.q_get_rubric_v4_standard_group_resource[]
         ) as standard_groups
     FROM standard_groups_all_data sg
+    CROSS JOIN params
+    LIMIT 1
+),
+-- Standards data (selected standards)
+standards_selected_data AS (
+    SELECT 
+        s.id as standard_id,
+        s.standard_group_id,
+        s.name,
+        s.description,
+        s.points,
+        COALESCE(dsg.generated, rs.generated, s.generated, false) as generated
+    FROM params x
+    JOIN standards_resource s ON s.id IN (
+        SELECT unnest(standard_ids) FROM standard_ids_data
+    )
+    LEFT JOIN draft_standard_groups dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
+    LEFT JOIN rubric_standards rs ON rs.rubric_id = x.rubric_id AND rs.standard_id = s.id AND rs.active = true
+),
+-- Standards data (all available standards for selected groups)
+standards_all_data AS (
+    SELECT 
+        s.id as standard_id,
+        s.standard_group_id,
+        s.name,
+        s.description,
+        s.points,
+        COALESCE(s.generated, false) as generated
+    FROM standards_resource s
+    CROSS JOIN standard_group_ids_data sgid
+    WHERE s.active = true
+      AND s.standard_group_id = ANY(sgid.standard_group_ids)
+),
+-- Standards aggregated (selected standards for standard_resources)
+standards_selected_aggregated AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (s.standard_id, s.standard_group_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
+                ORDER BY s.standard_group_id, s.name
+            ),
+            '{}'::types.q_get_rubric_v4_standard_resource[]
+        ) as standard_resources
+    FROM standards_selected_data s
+    CROSS JOIN params
+    LIMIT 1
+),
+-- Standards aggregated (all available standards for standards array)
+standards_all_aggregated AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (s.standard_id, s.standard_group_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
+                ORDER BY s.standard_group_id, s.name
+            ),
+            '{}'::types.q_get_rubric_v4_standard_resource[]
+        ) as standards
+    FROM standards_all_data s
     CROSS JOIN params
     LIMIT 1
 )
@@ -1539,7 +1789,21 @@ SELECT
     END as standard_groups_required,
     COALESCE((SELECT standard_group_suggestions FROM standard_group_suggestions_data), ARRAY[]::uuid[]) as standard_group_suggestions,
     -- Standard groups array (all available standard groups)
-    (SELECT standard_groups FROM standard_groups_all_aggregated) as standard_groups
+    (SELECT standard_groups FROM standard_groups_all_aggregated) as standard_groups,
+    -- Multi-select resources: standards
+    COALESCE((SELECT standard_ids FROM standard_ids_data), ARRAY[]::uuid[]) as standard_ids,
+    (SELECT standard_resources FROM standards_selected_aggregated) as standard_resources,
+    CASE 
+        WHEN NOT tec.standards_has_tools AND uf.show_standards THEN false
+        ELSE uf.show_standards
+    END as show_standards,
+    (SELECT agent_id FROM standards_agent_data) as standards_agent_id,
+    CASE 
+        WHEN uf.show_standards THEN true
+        ELSE false
+    END as standards_required,
+    COALESCE((SELECT standard_suggestions FROM standard_suggestions_data), ARRAY[]::uuid[]) as standard_suggestions,
+    (SELECT standards FROM standards_all_aggregated) as standards
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
@@ -1562,6 +1826,10 @@ CROSS JOIN standard_groups_all_aggregated sgaa
 CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN points_suggestions_data psd
 CROSS JOIN standard_group_suggestions_data sgsd
+CROSS JOIN standard_ids_data sid
+CROSS JOIN standard_suggestions_data ssd
+CROSS JOIN standards_selected_aggregated ssa
+CROSS JOIN standards_all_aggregated saa
 CROSS JOIN names_agg na
 CROSS JOIN descriptions_agg da
 CROSS JOIN departments_agg depta

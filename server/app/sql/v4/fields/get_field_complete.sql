@@ -71,6 +71,9 @@ CREATE TYPE types.q_get_field_v4_flag_resource AS (
 CREATE OR REPLACE FUNCTION api_get_field_v4(
     profile_id uuid,
     field_id uuid DEFAULT NULL,
+    description_search text DEFAULT NULL,
+    parameter_search text DEFAULT NULL,
+    parameter_show_selected boolean DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 )
@@ -127,6 +130,9 @@ WITH params AS (
     SELECT 
         field_id AS field_id,
         profile_id AS profile_id,
+        COALESCE(NULLIF(description_search, ''), NULL) AS description_search,
+        COALESCE(NULLIF(parameter_search, ''), NULL) AS parameter_search,
+        COALESCE(parameter_show_selected, false) AS parameter_show_selected,
         draft_id AS draft_id,
         COALESCE(mcp, false) AS mcp
 ),
@@ -405,7 +411,13 @@ descriptions_suggestions_objects AS (
                 FROM description_suggestions_data dsd
                 CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
                 JOIN descriptions_resource d ON d.id = suggestion_id
-                WHERE d.description IS NOT NULL AND d.description != ''
+                CROSS JOIN params p
+                WHERE d.description IS NOT NULL
+                  AND d.description != ''
+                  AND (
+                      p.description_search IS NULL
+                      OR LOWER(d.description) LIKE '%' || LOWER(p.description_search) || '%'
+                  )
             ),
             ARRAY[]::types.q_get_field_v4_description_resource[]
         ) as descriptions
@@ -1138,7 +1150,26 @@ SELECT
         (SELECT ARRAY_AGG(
             (pmd.parameter_id, pmd.name, pmd.description, pmd.generated)::types.q_get_field_v4_parameter
             ORDER BY pmd.name
-        ) FROM (SELECT DISTINCT parameter_id, name, description, generated FROM parameter_mapping_data) pmd),
+        ) FROM (
+            SELECT DISTINCT pmd.parameter_id, pmd.name, pmd.description, pmd.generated
+            FROM parameter_mapping_data pmd
+            CROSS JOIN params p
+            WHERE pmd.parameter_id IS NOT NULL
+              AND (
+                  p.parameter_search IS NULL
+                  OR LOWER(pmd.name) LIKE '%' || LOWER(p.parameter_search) || '%'
+                  OR LOWER(pmd.description) LIKE '%' || LOWER(p.parameter_search) || '%'
+              )
+              AND (
+                  NOT p.parameter_show_selected
+                  OR pmd.parameter_id = ANY(
+                      COALESCE(
+                          (SELECT parameter_ids FROM field_parameter_ids_data),
+                          ARRAY[]::uuid[]
+                      )
+                  )
+              )
+        ) pmd),
         '{}'::types.q_get_field_v4_parameter[]
     ) as parameters
 FROM user_profile up

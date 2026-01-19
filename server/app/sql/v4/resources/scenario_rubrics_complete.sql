@@ -1,7 +1,7 @@
--- Create problem_statements resource
+-- Create scenario_rubrics resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), name text, problem_statement text
--- Returns: problem_statement_id (uuid)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), scenario_id (uuid, required, third), rubric_id (uuid, required, fourth), mcp (boolean, optional, fifth)
+-- Returns: id (uuid) - unique resource id
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -11,26 +11,26 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'api_create_problem_statements_v4'
+        WHERE proname = 'api_create_scenario_rubrics_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_create_problem_statements_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_create_scenario_rubrics_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_problem_statements_v4(agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_scenario_rubrics_v4(agent_id uuid,
     group_id uuid,
-    name text,
-    problem_statement text,
+    scenario_id uuid,
+    rubric_id uuid,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
-    problem_statement_id uuid
+    id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_problem_statement_id uuid;
+    v_resource_id uuid;
     v_call_id uuid;
     v_tool_id uuid;
     v_template_id uuid;
@@ -43,28 +43,37 @@ DECLARE
     v_message_id uuid;
     v_run_id uuid;
 BEGIN
+    -- Validate scenario and rubric exist
+    IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE id = api_create_scenario_rubrics_v4.scenario_id) THEN
+        RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_rubrics_v4.scenario_id;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM rubric_artifact WHERE id = api_create_scenario_rubrics_v4.rubric_id) THEN
+        RAISE EXCEPTION 'Rubric % does not exist', api_create_scenario_rubrics_v4.rubric_id;
+    END IF;
+    
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools rt ON rt.tool_id = t.id
-    WHERE at.agent_id = api_create_problem_statements_v4.agent_id
-      AND rt.resource = 'problem_statements'::resources
+    WHERE at.agent_id = api_create_scenario_rubrics_v4.agent_id
+      AND rt.resource = 'scenario_rubrics'::resources
       AND at.active = true
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
-        RAISE EXCEPTION 'Agent % does not have tool for resource problem_statements', agent_id;
+        RAISE EXCEPTION 'Agent % does not have tool for resource scenario_rubrics', agent_id;
     END IF;
+    
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
             SELECT 1 FROM agent_flags 
-            WHERE agent_id = api_create_problem_statements_v4.agent_id 
-               
+            WHERE agent_id = api_create_scenario_rubrics_v4.agent_id
               AND value = true
         ) THEN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
@@ -82,7 +91,7 @@ BEGIN
     )
     VALUES (
         v_call_id,
-        'problem_statements_' || v_call_id::text,
+        'scenario_rubrics_' || v_call_id::text,
         v_tool_id,
         v_template_id,
         v_arguments_raw,
@@ -91,12 +100,36 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO problem_statements_resource table (always insert, never update)
-    INSERT INTO problem_statements_resource(name, problem_statement, active, call_id, mcp)
-    VALUES (name, problem_statement, true, v_call_id, mcp)
-    RETURNING id INTO v_problem_statement_id;
-
-        
+    -- INSERT INTO scenario_rubrics_resource table (always insert, never update)
+    INSERT INTO scenario_rubrics_resource (
+        scenario_id,
+        rubric_id,
+        active,
+        generated,
+        mcp,
+        call_id,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        api_create_scenario_rubrics_v4.scenario_id,
+        api_create_scenario_rubrics_v4.rubric_id,
+        true,
+        true,
+        mcp,
+        v_call_id,
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (scenario_id, rubric_id)
+    DO UPDATE SET
+        active = true,
+        generated = EXCLUDED.generated,
+        mcp = EXCLUDED.mcp,
+        call_id = EXCLUDED.call_id,
+        updated_at = NOW()
+    RETURNING id INTO v_resource_id;
+    
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
     INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
@@ -117,14 +150,15 @@ BEGIN
     
     -- Link run to group (calculate idx)
     INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    VALUES (
-        api_create_problem_statements_v4.group_id,
+    SELECT 
+        api_create_scenario_rubrics_v4.group_id,
         v_run_id,
-        COALESCE((SELECT MAX(gr.idx) FROM group_runs gr WHERE gr.group_id = api_create_problem_statements_v4.group_id), -1) + 1,
+        COALESCE(MAX(gr.idx), -1) + 1,
         NOW(),
         NOW()
-    );
+    FROM group_runs gr
+    WHERE gr.group_id = api_create_scenario_rubrics_v4.group_id;
     
-    RETURN QUERY SELECT v_problem_statement_id;
+    RETURN QUERY SELECT v_resource_id;
 END;
 $$;

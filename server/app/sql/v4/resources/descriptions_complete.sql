@@ -43,13 +43,11 @@ DECLARE
     v_run_id uuid;
 BEGIN
     -- Lookup tool_id from agent_tools + resource_tools
-    SELECT t.id, tt.template_id, st.schema_id
+    SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN tool_templates tt ON tt.tool_id = t.id
-    LEFT JOIN schema_templates st ON st.template_id = tt.template_id
     WHERE at.agent_id = api_create_descriptions_v4.agent_id
       AND rt.resource = 'descriptions'::resources
       AND at.active = true
@@ -72,37 +70,8 @@ BEGIN
         END IF;
     END IF;
     
-    -- Dynamically build arguments_raw FROM schema_fields_resource and Jinja templates
-    -- Build a JSONB object with all function parameters first (for lookup)
-    v_params_jsonb := jsonb_build_object('description', description);
-    
-    -- For each schema field, extract variable names from template or use field name directly
-    FOR v_arg_key, v_arg_value IN
-        SELECT 
-            CASE 
-                -- If template is empty, use field name as argument name
-                WHEN COALESCE(sf.template, '') = '' THEN sf.name
-                -- If template has variables, extract first variable name (before . or |)
-                -- Pattern: {{ variable }} or {{ variable.property }} or {{ variable|filter }}
-                ELSE COALESCE(
-                    (SELECT regexp_replace(
-                        regexp_replace(sf.template, '.*\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)', '\1'),
-                        '[\.\|].*', ''
-                    )),
-                    sf.name  -- Fallback to field name if extraction fails
-                )
-            END as arg_key,
-            -- Look up value from function parameters using schema field name
-            v_params_jsonb->>sf.name as arg_value
-        FROM schema_fields_resource sf
-        WHERE sf.schema_id = v_schema_id
-        ORDER BY sf.position
-    LOOP
-        IF v_arg_value IS NOT NULL THEN
-            v_args_jsonb := v_args_jsonb || jsonb_build_object(v_arg_key, v_arg_value);
-        END IF;
-    END LOOP;
-    
+    -- Build arguments_raw directly from params (templates removed)
+    v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;
     
     -- Create call record

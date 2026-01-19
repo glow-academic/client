@@ -143,6 +143,33 @@ copy_simulations AS (
     CROSS JOIN original_cohort oc
     JOIN cohort_simulations cs ON cs.cohort_id = oc.id
 ),
+copy_simulation_positions AS (
+    INSERT INTO simulation_positions_resource (
+        simulation_id,
+        cohort_id,
+        value,
+        created_at,
+        updated_at,
+        generated,
+        mcp,
+        call_id
+    )
+    SELECT
+        spr.simulation_id,
+        nc.id,
+        spr.value,
+        NOW(),
+        NOW(),
+        spr.generated,
+        spr.mcp,
+        spr.call_id
+    FROM new_cohort nc
+    CROSS JOIN original_cohort oc
+    JOIN simulation_positions_resource spr ON spr.cohort_id = oc.id
+    ON CONFLICT (simulation_id, cohort_id) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
 copy_departments AS (
     -- Copy department relationships
     INSERT INTO cohort_departments (cohort_id, department_id, active, created_at, updated_at)

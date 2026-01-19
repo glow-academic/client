@@ -24,7 +24,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
 import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
-import { ScenarioRubricGradeAgents } from "@/components/resources/ScenarioRubricGradeAgents";
+import { ScenarioRubrics } from "@/components/resources/ScenarioRubrics";
 import { Scenarios } from "@/components/resources/Scenarios";
 import { Times } from "@/components/resources/Times";
 import { Button } from "@/components/ui/button";
@@ -84,12 +84,12 @@ type CreateDraftScenarioPositionsOut = OutputOf<
   "/api/v4/resources/scenario_positions",
   "post"
 >;
-type CreateDraftScenarioRubricGradeAgentsIn = InputOf<
-  "/api/v4/resources/scenario_rubric_grade_agents",
+type CreateDraftScenarioRubricsIn = InputOf<
+  "/api/v4/resources/scenario_rubrics",
   "post"
 >;
-type CreateDraftScenarioRubricGradeAgentsOut = OutputOf<
-  "/api/v4/resources/scenario_rubric_grade_agents",
+type CreateDraftScenarioRubricsOut = OutputOf<
+  "/api/v4/resources/scenario_rubrics",
   "post"
 >;
 type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
@@ -131,9 +131,9 @@ export interface SimulationProps {
   createScenarioPositionsAction?: (
     input: CreateDraftScenarioPositionsIn
   ) => Promise<CreateDraftScenarioPositionsOut>;
-  createScenarioRubricGradeAgentsAction?: (
-    input: CreateDraftScenarioRubricGradeAgentsIn
-  ) => Promise<CreateDraftScenarioRubricGradeAgentsOut>;
+  createScenarioRubricsAction?: (
+    input: CreateDraftScenarioRubricsIn
+  ) => Promise<CreateDraftScenarioRubricsOut>;
 }
 
 function SimulationComponent({
@@ -148,7 +148,7 @@ function SimulationComponent({
   createScenariosAction,
   createScenarioFlagsAction,
   createScenarioPositionsAction,
-  createScenarioRubricGradeAgentsAction,
+  createScenarioRubricsAction,
 }: SimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
@@ -258,20 +258,20 @@ function SimulationComponent({
       scenario_position_suggestions:
         simulationData.scenario_position_suggestions,
       scenario_positions: simulationData.scenario_positions,
-      scenario_rubric_grade_agent_ids:
-        simulationData.scenario_rubric_grade_agent_ids,
-      scenario_rubric_grade_agent_resources:
-        simulationData.scenario_rubric_grade_agent_resources,
-      show_scenario_rubric_grade_agents:
-        simulationData.show_scenario_rubric_grade_agents,
-      scenario_rubric_grade_agents_agent_id:
-        simulationData.scenario_rubric_grade_agents_agent_id,
-      scenario_rubric_grade_agents_required:
-        simulationData.scenario_rubric_grade_agents_required,
-      scenario_rubric_grade_agent_suggestions:
-        simulationData.scenario_rubric_grade_agent_suggestions,
-      scenario_rubric_grade_agents:
-        simulationData.scenario_rubric_grade_agents,
+      scenario_rubric_ids:
+        simulationData.scenario_rubric_ids,
+      scenario_rubric_resources:
+        simulationData.scenario_rubric_resources,
+      show_scenario_rubrics:
+        simulationData.show_scenario_rubrics,
+      scenario_rubrics_agent_id:
+        simulationData.scenario_rubrics_agent_id,
+      scenario_rubrics_required:
+        simulationData.scenario_rubrics_required,
+      scenario_rubric_suggestions:
+        simulationData.scenario_rubric_suggestions,
+      scenario_rubrics:
+        simulationData.scenario_rubrics,
       scenario_time_limit_ids: simulationData.scenario_time_limit_ids,
       scenario_time_limit_resources:
         simulationData.scenario_time_limit_resources,
@@ -332,13 +332,13 @@ function SimulationComponent({
     simulationData?.scenario_positions_required,
     simulationData?.scenario_position_suggestions,
     simulationData?.scenario_positions,
-    simulationData?.scenario_rubric_grade_agent_ids,
-    simulationData?.scenario_rubric_grade_agent_resources,
-    simulationData?.show_scenario_rubric_grade_agents,
-    simulationData?.scenario_rubric_grade_agents_agent_id,
-    simulationData?.scenario_rubric_grade_agents_required,
-    simulationData?.scenario_rubric_grade_agent_suggestions,
-    simulationData?.scenario_rubric_grade_agents,
+    simulationData?.scenario_rubric_ids,
+    simulationData?.scenario_rubric_resources,
+    simulationData?.show_scenario_rubrics,
+    simulationData?.scenario_rubrics_agent_id,
+    simulationData?.scenario_rubrics_required,
+    simulationData?.scenario_rubric_suggestions,
+    simulationData?.scenario_rubrics,
     simulationData?.scenario_time_limit_ids,
     simulationData?.scenario_time_limit_resources,
     simulationData?.show_scenario_time_limits,
@@ -387,9 +387,9 @@ function SimulationComponent({
               (p) => p.generated
             ) ?? false
           );
-        case "scenario_rubric_grade_agents":
+        case "scenario_rubrics":
           return (
-            stableSimulationDataFields.scenario_rubric_grade_agent_resources?.some(
+            stableSimulationDataFields.scenario_rubric_resources?.some(
               (r) => r.generated
             ) ?? false
           );
@@ -417,7 +417,7 @@ function SimulationComponent({
         scenario_ids: [] as string[],
         scenario_flag_ids: [] as string[],
         scenario_position_ids: [] as string[],
-        scenario_rubric_grade_agent_ids: [] as string[],
+        scenario_rubric_ids: [] as string[],
         scenario_time_limit_ids: [] as string[],
       };
     }
@@ -431,8 +431,8 @@ function SimulationComponent({
       scenario_ids: data.scenario_ids ?? [],
       scenario_flag_ids: data.scenario_flag_ids ?? [],
       scenario_position_ids: data.scenario_position_ids ?? [],
-      scenario_rubric_grade_agent_ids:
-        data.scenario_rubric_grade_agent_ids ?? [],
+      scenario_rubric_ids:
+        data.scenario_rubric_ids ?? [],
       scenario_time_limit_ids: data.scenario_time_limit_ids ?? [],
     };
     // Remove simulationData from dependencies - use ref instead to prevent callback recreation
@@ -460,6 +460,22 @@ function SimulationComponent({
     () => JSON.stringify(formState.scenario_ids),
     [formState.scenario_ids]
   );
+  const formStateScenarioFlagIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_flag_ids),
+    [formState.scenario_flag_ids]
+  );
+  const formStateScenarioPositionIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_position_ids),
+    [formState.scenario_position_ids]
+  );
+  const formStateScenarioRubricIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_rubric_ids),
+    [formState.scenario_rubric_ids]
+  );
+  const formStateScenarioTimeLimitIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_time_limit_ids),
+    [formState.scenario_time_limit_ids]
+  );
 
   // Update form state when server data changes
   // Use simulationData directly in dependency array, not getInitialFormState
@@ -479,8 +495,8 @@ function SimulationComponent({
           JSON.stringify(newState.scenario_flag_ids) ||
         JSON.stringify(prev.scenario_position_ids) !==
           JSON.stringify(newState.scenario_position_ids) ||
-        JSON.stringify(prev.scenario_rubric_grade_agent_ids) !==
-          JSON.stringify(newState.scenario_rubric_grade_agent_ids) ||
+        JSON.stringify(prev.scenario_rubric_ids) !==
+          JSON.stringify(newState.scenario_rubric_ids) ||
         JSON.stringify(prev.scenario_time_limit_ids) !==
           JSON.stringify(newState.scenario_time_limit_ids)
       ) {
@@ -499,7 +515,7 @@ function SimulationComponent({
     JSON.stringify(simulationData?.scenario_ids ?? []),
     JSON.stringify(simulationData?.scenario_flag_ids ?? []),
     JSON.stringify(simulationData?.scenario_position_ids ?? []),
-    JSON.stringify(simulationData?.scenario_rubric_grade_agent_ids ?? []),
+    JSON.stringify(simulationData?.scenario_rubric_ids ?? []),
     JSON.stringify(simulationData?.scenario_time_limit_ids ?? []),
   ]);
 
@@ -552,6 +568,10 @@ function SimulationComponent({
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
       scenario_ids: formState.scenario_ids,
+      scenario_flag_ids: formState.scenario_flag_ids,
+      scenario_position_ids: formState.scenario_position_ids,
+      scenario_rubric_ids: formState.scenario_rubric_ids,
+      scenario_time_limit_ids: formState.scenario_time_limit_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -562,6 +582,10 @@ function SimulationComponent({
     formState.active_flag_id,
     formStateDepartmentIdsStr,
     formStateScenarioIdsStr,
+    formStateScenarioFlagIdsStr,
+    formStateScenarioPositionIdsStr,
+    formStateScenarioRubricIdsStr,
+    formStateScenarioTimeLimitIdsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -570,12 +594,16 @@ function SimulationComponent({
   // Draft change listener - watches resource IDs and patches draft
   // Only triggers when the payload actually changes, not when version changes
   useEffect(() => {
-    const hasResourceIds =
+  const hasResourceIds =
       formState.name_id ||
       formState.description_id ||
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
-      formState.scenario_ids.length > 0;
+      formState.scenario_ids.length > 0 ||
+      formState.scenario_flag_ids.length > 0 ||
+      formState.scenario_position_ids.length > 0 ||
+      formState.scenario_rubric_ids.length > 0 ||
+      formState.scenario_time_limit_ids.length > 0;
 
     if (!hasResourceIds || !patchSimulationDraftActionRef.current) {
       return;
@@ -597,6 +625,10 @@ function SimulationComponent({
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
             scenario_ids: formState.scenario_ids,
+            scenario_flag_ids: formState.scenario_flag_ids,
+            scenario_position_ids: formState.scenario_position_ids,
+            scenario_rubric_ids: formState.scenario_rubric_ids,
+            scenario_time_limit_ids: formState.scenario_time_limit_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -651,7 +683,7 @@ function SimulationComponent({
       scenario_ids?: string[];
       scenario_flag_ids?: string[];
       scenario_position_ids?: string[];
-      scenario_rubric_grade_agent_ids?: string[];
+      scenario_rubric_ids?: string[];
       scenario_time_limit_ids?: string[];
       message?: string;
       success?: boolean;
@@ -674,7 +706,7 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
         "scenario_time_limits",
       ];
       if (
@@ -726,18 +758,14 @@ function SimulationComponent({
               ...newScenarioPositionIds,
             ];
           }
-          if (
-            data.scenario_rubric_grade_agent_ids &&
-            data.scenario_rubric_grade_agent_ids.length > 0
-          ) {
+          if (data.scenario_rubric_ids && data.scenario_rubric_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
-            const newScenarioRubricGradeAgentIds =
-              data.scenario_rubric_grade_agent_ids.filter(
-                (id) => !prev.scenario_rubric_grade_agent_ids.includes(id)
-              );
-            updates.scenario_rubric_grade_agent_ids = [
-              ...prev.scenario_rubric_grade_agent_ids,
-              ...newScenarioRubricGradeAgentIds,
+            const newScenarioRubricIds = data.scenario_rubric_ids.filter(
+              (id) => !prev.scenario_rubric_ids.includes(id)
+            );
+            updates.scenario_rubric_ids = [
+              ...prev.scenario_rubric_ids,
+              ...newScenarioRubricIds,
             ];
           }
           if (
@@ -824,7 +852,7 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
         "scenario_time_limits",
       ];
       const resourceTypes =
@@ -864,7 +892,7 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
         "scenario_time_limits",
       ];
 
@@ -884,7 +912,7 @@ function SimulationComponent({
           scenarios: "scenarios",
           scenario_flags: "scenario_flags",
           scenario_positions: "scenario_positions",
-          scenario_rubric_grade_agents: "scenario_rubric_grade_agents",
+          scenario_rubrics: "scenario_rubrics",
           scenario_time_limits: "scenario_time_limits",
           // Not used for simulations but needed for type safety
           colors: "color",
@@ -1005,11 +1033,11 @@ function SimulationComponent({
     [handleGenerateResources, determineAgentType]
   );
 
-  const handleGenerateScenarioRubricGradeAgents = useCallback(
+  const handleGenerateScenarioRubrics = useCallback(
     async () =>
       handleGenerateResources(
-        ["scenario_rubric_grade_agents"],
-        determineAgentType(["scenario_rubric_grade_agents"])
+        ["scenario_rubrics"],
+        determineAgentType(["scenario_rubrics"])
       ),
     [handleGenerateResources, determineAgentType]
   );
@@ -1125,9 +1153,9 @@ function SimulationComponent({
       }
 
       if (
-        simulationData?.scenario_rubric_grade_agents_required &&
-        (!formState.scenario_rubric_grade_agent_ids ||
-          formState.scenario_rubric_grade_agent_ids.length === 0)
+        simulationData?.scenario_rubrics_required &&
+        (!formState.scenario_rubric_ids ||
+          formState.scenario_rubric_ids.length === 0)
       ) {
         toast.error("Scenario rubrics are required");
         throw new Error("Scenario rubrics are required");
@@ -1180,11 +1208,10 @@ function SimulationComponent({
             scenario_time_limit_seconds: [],
             scenario_audio_enabled: [],
             scenario_text_enabled: [],
-            scenario_rubric_grade_agents: [],
             scenario_flag_ids: formState.scenario_flag_ids || [],
             scenario_position_ids: formState.scenario_position_ids || [],
-            scenario_rubric_grade_agent_ids:
-              formState.scenario_rubric_grade_agent_ids || [],
+            scenario_rubric_ids:
+              formState.scenario_rubric_ids || [],
             scenario_time_limit_ids: formState.scenario_time_limit_ids || [],
           },
         });
@@ -1213,7 +1240,7 @@ function SimulationComponent({
       simulationData?.scenarios_required,
       simulationData?.scenario_flags_required,
       simulationData?.scenario_positions_required,
-      simulationData?.scenario_rubric_grade_agents_required,
+      simulationData?.scenario_rubrics_required,
       simulationData?.scenario_time_limits_required,
     ]
   );
@@ -1242,9 +1269,9 @@ function SimulationComponent({
       const hasScenarioPositions =
         !(simulationData?.scenario_positions_required ?? false) ||
         formState.scenario_position_ids.length > 0;
-      const hasScenarioRubricGradeAgents =
-        !(simulationData?.scenario_rubric_grade_agents_required ?? false) ||
-        formState.scenario_rubric_grade_agent_ids.length > 0;
+      const hasScenarioRubrics =
+        !(simulationData?.scenario_rubrics_required ?? false) ||
+        formState.scenario_rubric_ids.length > 0;
       const hasScenarioTimeLimits =
         !(simulationData?.scenario_time_limits_required ?? false) ||
         formState.scenario_time_limit_ids.length > 0;
@@ -1259,7 +1286,7 @@ function SimulationComponent({
             hasScenarios &&
             hasScenarioFlags &&
             hasScenarioPositions &&
-            hasScenarioRubricGradeAgents &&
+            hasScenarioRubrics &&
             hasScenarioTimeLimits
           )
             ? "completed"
@@ -1279,7 +1306,7 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
         "scenario_time_limits",
       ],
       all: [
@@ -1290,7 +1317,7 @@ function SimulationComponent({
         "scenarios",
         "scenario_flags",
         "scenario_positions",
-        "scenario_rubric_grade_agents",
+        "scenario_rubrics",
         "scenario_time_limits",
       ], // All resources for full-page generation
     }),
@@ -1307,7 +1334,7 @@ function SimulationComponent({
       scenarios: "Scenarios",
       scenario_flags: "Scenario Flags",
       scenario_positions: "Scenario Positions",
-      scenario_rubric_grade_agents: "Scenario Rubric Grade Agents",
+      scenario_rubrics: "Scenario Rubrics",
       scenario_time_limits: "Scenario Time Limits",
     }),
     []
@@ -1381,7 +1408,7 @@ function SimulationComponent({
           "scenario_ids",
           "scenario_flag_ids",
           "scenario_position_ids",
-          "scenario_rubric_grade_agent_ids",
+          "scenario_rubric_ids",
           "scenario_time_limit_ids",
           "scenarioSearch",
           "scenarioShowSelected",
@@ -1401,7 +1428,7 @@ function SimulationComponent({
       "scenario_ids",
       "scenario_flag_ids",
       "scenario_position_ids",
-      "scenario_rubric_grade_agent_ids",
+      "scenario_rubric_ids",
       "scenario_time_limit_ids",
     ],
     []
@@ -1649,7 +1676,7 @@ function SimulationComponent({
                 "scenario_ids",
                 "scenario_flag_ids",
                 "scenario_position_ids",
-                "scenario_rubric_grade_agent_ids",
+                "scenario_rubric_ids",
                 "scenario_time_limit_ids",
                 "scenarioSearch",
                 "scenarioShowSelected",
@@ -1811,44 +1838,44 @@ function SimulationComponent({
                     currentSimulationData.scenario_positions_required ?? false
                   }
                 />
-                <ScenarioRubricGradeAgents
-                  scenario_rubric_grade_agent_ids={
-                    formState.scenario_rubric_grade_agent_ids ?? []
+                <ScenarioRubrics
+                  scenario_rubric_ids={
+                    formState.scenario_rubric_ids ?? []
                   }
-                  scenario_rubric_grade_agent_resources={
-                    currentSimulationData.scenario_rubric_grade_agent_resources ??
+                  scenario_rubric_resources={
+                    currentSimulationData.scenario_rubric_resources ??
                     []
                   }
-                  show_scenario_rubric_grade_agents={
-                    currentSimulationData.show_scenario_rubric_grade_agents ??
+                  show_scenario_rubrics={
+                    currentSimulationData.show_scenario_rubrics ??
                     false
                   }
-                  scenario_rubric_grade_agent_suggestions={
-                    currentSimulationData.scenario_rubric_grade_agent_suggestions ??
+                  scenario_rubric_suggestions={
+                    currentSimulationData.scenario_rubric_suggestions ??
                     []
                   }
-                  scenario_rubric_grade_agents={
-                    currentSimulationData.scenario_rubric_grade_agents ?? []
+                  scenario_rubrics={
+                    currentSimulationData.scenario_rubrics ?? []
                   }
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
                       ...prev,
-                      scenario_rubric_grade_agent_ids: ids,
+                      scenario_rubric_ids: ids,
                     }))
                   }
-                  createScenarioRubricGradeAgentsAction={
-                    createScenarioRubricGradeAgentsAction
+                  createScenarioRubricsAction={
+                    createScenarioRubricsAction
                   }
-                  onGenerate={handleGenerateScenarioRubricGradeAgents}
-                  isGenerating={isGenerating("scenario_rubric_grade_agents")}
+                  onGenerate={handleGenerateScenarioRubrics}
+                  isGenerating={isGenerating("scenario_rubrics")}
                   group_id={currentSimulationData.group_id ?? null}
                   agent_id={
-                    currentSimulationData.scenario_rubric_grade_agents_agent_id ??
+                    currentSimulationData.scenario_rubrics_agent_id ??
                     null
                   }
                   required={
-                    currentSimulationData.scenario_rubric_grade_agents_required ??
+                    currentSimulationData.scenario_rubrics_required ??
                     false
                   }
                 />
@@ -1890,7 +1917,7 @@ function SimulationComponent({
       handleGenerateScenarios,
       handleGenerateScenarioFlags,
       handleGenerateScenarioPositions,
-      handleGenerateScenarioRubricGradeAgents,
+      handleGenerateScenarioRubrics,
       handleGenerateScenarioTimeLimits,
       isGenerating,
       stepResources,
@@ -1903,7 +1930,7 @@ function SimulationComponent({
       createScenariosAction,
       createScenarioFlagsAction,
       createScenarioPositionsAction,
-      createScenarioRubricGradeAgentsAction,
+      createScenarioRubricsAction,
     ]
   );
 
@@ -1978,8 +2005,8 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
       prevProps.simulationData?.scenario_position_resources?.map(
         (p) => `${p.simulation_id}-${p.scenario_id}`
       ),
-    scenario_rubric_grade_agent_ids:
-      prevProps.simulationData?.scenario_rubric_grade_agent_ids,
+    scenario_rubric_ids:
+      prevProps.simulationData?.scenario_rubric_ids,
   };
   const nextIds = {
     name_id: nextProps.simulationData?.name_id,
@@ -1992,8 +2019,8 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
       nextProps.simulationData?.scenario_position_resources?.map(
         (p) => `${p.simulation_id}-${p.scenario_id}`
       ),
-    scenario_rubric_grade_agent_ids:
-      nextProps.simulationData?.scenario_rubric_grade_agent_ids,
+    scenario_rubric_ids:
+      nextProps.simulationData?.scenario_rubric_ids,
   };
 
   // Compare primitive props
@@ -2018,8 +2045,8 @@ export default React.memo(SimulationComponent, (prevProps, nextProps) => {
       nextProps.createScenarioFlagsAction ||
     prevProps.createScenarioPositionsAction !==
       nextProps.createScenarioPositionsAction ||
-    prevProps.createScenarioRubricGradeAgentsAction !==
-      nextProps.createScenarioRubricGradeAgentsAction
+    prevProps.createScenarioRubricsAction !==
+      nextProps.createScenarioRubricsAction
   ) {
     return false; // Function props changed, re-render
   }

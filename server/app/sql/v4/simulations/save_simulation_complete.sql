@@ -16,17 +16,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Drop and recreate composite type for scenario rubric_grade_agents
-DROP TYPE IF EXISTS types.i_save_simulation_v4_scenario_rubric_grade_agent CASCADE;
-
-CREATE TYPE types.i_save_simulation_v4_scenario_rubric_grade_agent AS (
-    scenario_id uuid,
-    rubric_id uuid,
-    grade_agent_id uuid,
-    audio_agent_id uuid
-);
-
--- 3) Recreate function
+-- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     name_id uuid,
     department_ids uuid[],
@@ -36,7 +26,6 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     scenario_time_limit_seconds int[],
     scenario_audio_enabled boolean[],
     scenario_text_enabled boolean[],
-    scenario_rubric_grade_agents types.i_save_simulation_v4_scenario_rubric_grade_agent[],
     profile_id uuid,
     input_simulation_id uuid DEFAULT NULL,  -- NULL = create, UUID = update
     description_id uuid DEFAULT NULL,
@@ -45,7 +34,7 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     -- New scenario resource parameters (optional, for future use)
     scenario_flag_ids uuid[] DEFAULT NULL,  -- Simulation scenario flag resource IDs
     scenario_position_ids uuid[] DEFAULT NULL,  -- Scenario position resource IDs (junction table entries)
-    scenario_rubric_grade_agent_ids uuid[] DEFAULT NULL,  -- Scenario rubric grade agent resource IDs
+    scenario_rubric_ids uuid[] DEFAULT NULL,  -- Scenario rubric resource IDs
     -- Update-only params (optional, only used in update mode)
     video_ids uuid[] DEFAULT NULL,
     video_active_flags boolean[] DEFAULT NULL,
@@ -130,7 +119,7 @@ BEGIN
             COALESCE(scenario_time_limit_seconds, ARRAY[]::int[]) AS scenario_time_limit_seconds,
             COALESCE(scenario_audio_enabled, ARRAY[]::boolean[]) AS scenario_audio_enabled,
             COALESCE(scenario_text_enabled, ARRAY[]::boolean[]) AS scenario_text_enabled,
-            COALESCE(scenario_rubric_grade_agents, ARRAY[]::types.i_save_simulation_v4_scenario_rubric_grade_agent[]) AS scenario_rubric_grade_agents,
+            COALESCE(scenario_rubric_ids, ARRAY[]::uuid[]) AS scenario_rubric_ids,
             profile_id,
             COALESCE(video_ids, ARRAY[]::uuid[]) AS video_ids,
             COALESCE(video_active_flags, ARRAY[]::boolean[]) AS video_active_flags,
@@ -491,102 +480,26 @@ BEGIN
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
-    remove_existing_rubric_grade_agents AS (
-        DELETE FROM simulation_scenarios_scenario_rubric_grade_agents
+    remove_existing_scenario_rubrics AS (
+        DELETE FROM simulation_scenario_rubrics
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
     ),
-    get_member_agent_for_rubrics AS (
-        SELECT DISTINCT
-            (srga).rubric_id,
-            COALESCE(
-                (SELECT id FROM agent_artifact a WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) ORDER BY a.created_at LIMIT 1),
-                (SELECT id FROM agent_artifact WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = agent_artifact.id AND f.name = 'active' AND af.value = true) ORDER BY created_at LIMIT 1)
-            ) as agent_id
-        FROM params x
-        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
-        WHERE (srga).rubric_id IS NOT NULL
-    ),
-    -- Create/find rubric_grade_agents entries (needed for scenario_rubric_grade_agents)
-    create_rubric_grade_agents AS (
-        INSERT INTO rubric_grade_agents (rubric_id, grade_agent_id, agent_id, created_at, updated_at)
-        SELECT DISTINCT
-            (srga).rubric_id,
-            (srga).grade_agent_id,
-            gmar.agent_id,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
-        JOIN get_member_agent_for_rubrics gmar ON gmar.rubric_id = (srga).rubric_id
-        WHERE (srga).rubric_id IS NOT NULL 
-          AND (srga).grade_agent_id IS NOT NULL
-        ON CONFLICT (rubric_id, grade_agent_id, agent_id) DO UPDATE SET
-            updated_at = NOW()
-        RETURNING id as rubric_grade_agent_id, rubric_id, grade_agent_id, agent_id
-    ),
-    -- Link audio agents if provided
-    link_audio_agents AS (
-        INSERT INTO rubric_grade_agents_audio (rubric_grade_agent_id, audio_agent_id, created_at, updated_at)
-        SELECT DISTINCT
-            crga.rubric_grade_agent_id,
-            (srga).audio_agent_id,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
-        JOIN create_rubric_grade_agents crga ON crga.rubric_id = (srga).rubric_id 
-            AND crga.grade_agent_id = (srga).grade_agent_id
-        WHERE (srga).audio_agent_id IS NOT NULL
-        ON CONFLICT (rubric_grade_agent_id, audio_agent_id) DO NOTHING
-    ),
-    -- Create/find scenario_rubric_grade_agents entries
-    create_scenario_rubric_grade_agents AS (
-        INSERT INTO scenario_rubric_grade_agents_resource (rubric_id, grade_agent_id, agent_id, active, generated, created_at, updated_at)
-        SELECT DISTINCT
-            crga.rubric_id,
-            crga.grade_agent_id,
-            crga.agent_id,
-            true,
-            false,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
-        JOIN create_rubric_grade_agents crga ON crga.rubric_id = (srga).rubric_id 
-            AND crga.grade_agent_id = (srga).grade_agent_id
-        WHERE EXISTS (
-            SELECT 1 FROM scenarios_with_order swo 
-            WHERE swo.scenario_id = (srga).scenario_id
-        )
-          AND (srga).rubric_id IS NOT NULL 
-          AND (srga).grade_agent_id IS NOT NULL
-        ON CONFLICT (rubric_id, grade_agent_id) DO UPDATE SET
-            updated_at = NOW()
-        RETURNING id as scenario_rubric_grade_agent_id, rubric_id, grade_agent_id
-    ),
-    link_scenario_rubric_grade_agents AS (
-        INSERT INTO simulation_scenarios_scenario_rubric_grade_agents (simulation_id, scenario_id, scenario_rubric_grade_agent_id, created_at, updated_at, generated, mcp)
+    link_scenario_rubrics AS (
+        INSERT INTO simulation_scenario_rubrics (simulation_id, scenario_rubric_id, created_at, updated_at, generated, mcp, active)
         SELECT DISTINCT
             x.simulation_id,
-            (srga).scenario_id,
-            csrga.scenario_rubric_grade_agent_id,
+            srid,
             NOW(),
             NOW(),
             false,
-            false
+            false,
+            true
         FROM params x
-        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
-        JOIN create_rubric_grade_agents crga ON crga.rubric_id = (srga).rubric_id 
-            AND crga.grade_agent_id = (srga).grade_agent_id
-        JOIN create_scenario_rubric_grade_agents csrga ON csrga.rubric_id = crga.rubric_id 
-            AND csrga.grade_agent_id = crga.grade_agent_id
-        WHERE EXISTS (
-            SELECT 1 FROM scenarios_with_order swo 
-            WHERE swo.scenario_id = (srga).scenario_id
-        )
-          AND (srga).rubric_id IS NOT NULL 
-          AND (srga).grade_agent_id IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_id, scenario_rubric_grade_agent_id) DO NOTHING
+        CROSS JOIN UNNEST(x.scenario_rubric_ids) AS srid
+        WHERE srid IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_rubric_id) DO UPDATE SET
+            updated_at = NOW(),
+            active = true
     )
     SELECT 
         x.simulation_id AS simulation_id,

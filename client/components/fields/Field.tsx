@@ -257,6 +257,7 @@ function FieldComponent({
   const fieldSearchParamsClient = useMemo(
     () => ({
       draftId: parseAsString,
+      descriptionSearch: parseAsString,
       parameterSearch: parseAsString,
       parameterShowSelected: parseAsBoolean,
     }),
@@ -979,6 +980,9 @@ function FieldComponent({
       const currentFieldData = stableFieldDataFields;
       switch (stepId) {
         case "basic":
+          const descriptionSearchTerm =
+            (stepFormData["descriptionSearch"] as string | null | undefined) ||
+            "";
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1018,6 +1022,7 @@ function FieldComponent({
               resetFields={[
                 "name_id",
                 "description_id",
+                "descriptionSearch",
                 "department_ids",
                 "active_flag_id",
               ]}
@@ -1100,6 +1105,10 @@ function FieldComponent({
                   group_id={currentFieldData?.group_id ?? null}
                   agent_id={currentFieldData?.description_agent_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
+                  searchTerm={descriptionSearchTerm}
+                  onSearchChange={(term: string) =>
+                    setStepFormData({ descriptionSearch: term || null })
+                  }
                 />
 
                 <Departments

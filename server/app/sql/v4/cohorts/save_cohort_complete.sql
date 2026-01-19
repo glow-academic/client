@@ -36,6 +36,7 @@ DECLARE
     v_cohort_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_default_call_id uuid;
 BEGIN
     -- Determine if create or update
     is_create := (input_cohort_id IS NULL);
@@ -66,6 +67,11 @@ BEGIN
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
+
+    SELECT id INTO v_default_call_id FROM calls LIMIT 1;
+    IF v_default_call_id IS NULL THEN
+        RAISE EXCEPTION 'No call_id found for simulation_positions_resource inserts';
+    END IF;
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
@@ -73,6 +79,7 @@ BEGIN
         DELETE FROM cohort_descriptions WHERE cohort_id = v_cohort_id;
         DELETE FROM cohort_departments WHERE cohort_id = v_cohort_id;
         DELETE FROM cohort_simulations WHERE cohort_id = v_cohort_id;
+        DELETE FROM simulation_positions_resource WHERE cohort_id = v_cohort_id;
         -- Update existing active flag if it exists
         UPDATE cohort_flags SET
             flag_id = COALESCE(api_save_cohort_v4.active_flag_id, cohort_flags.flag_id),
@@ -92,7 +99,8 @@ BEGIN
             active_flag_id,
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
-            profile_id
+            profile_id,
+            v_default_call_id AS default_call_id
     ),
     user_profile AS (
         SELECT 
@@ -198,27 +206,51 @@ BEGIN
             active = true,
             updated_at = NOW()
     ),
-    -- Simulations with position (old ones already deleted above if update)
+    -- Simulations with implicit ordering (positions stored separately)
     simulations_with_order AS (
         SELECT 
-            sim_id,
-            ROW_NUMBER() OVER () as position
+            sim_list.sim_id,
+            sim_list.ordinality as position
         FROM params x
-        CROSS JOIN UNNEST(x.simulation_ids) as sim_id
+        CROSS JOIN UNNEST(x.simulation_ids) WITH ORDINALITY AS sim_list(sim_id, ordinality)
         WHERE COALESCE(array_length(x.simulation_ids, 1), 0) > 0
     ),
     link_simulations AS (
-        INSERT INTO cohort_simulations (cohort_id, simulation_id, active, position)
+        INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
         SELECT 
             x.cohort_id,
             swo.sim_id,
-            true,
-            swo.position
+            true
         FROM params x
         CROSS JOIN simulations_with_order swo
         ON CONFLICT ON CONSTRAINT cohort_simulations_pkey DO UPDATE SET
-            active = true,
-            position = EXCLUDED.position
+            active = true
+    ),
+    link_simulation_positions AS (
+        INSERT INTO simulation_positions_resource (
+            simulation_id,
+            cohort_id,
+            value,
+            created_at,
+            updated_at,
+            generated,
+            mcp,
+            call_id
+        )
+        SELECT
+            swo.sim_id,
+            x.cohort_id,
+            swo.position,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            x.default_call_id
+        FROM params x
+        CROSS JOIN simulations_with_order swo
+        ON CONFLICT (simulation_id, cohort_id) DO UPDATE SET
+            value = EXCLUDED.value,
+            updated_at = NOW()
     )
     SELECT 
         x.cohort_id AS cohort_id,

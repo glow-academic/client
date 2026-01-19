@@ -57,12 +57,12 @@ type CreateDraftScenarioPositionsOut = OutputOf<
   "/api/v4/resources/scenario_positions",
   "post"
 >;
-type CreateDraftScenarioRubricGradeAgentsIn = InputOf<
-  "/api/v4/resources/scenario_rubric_grade_agents",
+type CreateDraftScenarioRubricsIn = InputOf<
+  "/api/v4/resources/scenario_rubrics",
   "post"
 >;
-type CreateDraftScenarioRubricGradeAgentsOut = OutputOf<
-  "/api/v4/resources/scenario_rubric_grade_agents",
+type CreateDraftScenarioRubricsOut = OutputOf<
+  "/api/v4/resources/scenario_rubrics",
   "post"
 >;
 
@@ -169,12 +169,12 @@ async function createDraftScenarioPositions(
   return api.post("/resources/scenario_positions", input);
 }
 
-async function createDraftScenarioRubricGradeAgents(
-  input: CreateDraftScenarioRubricGradeAgentsIn
-): Promise<CreateDraftScenarioRubricGradeAgentsOut> {
+async function createDraftScenarioRubrics(
+  input: CreateDraftScenarioRubricsIn
+): Promise<CreateDraftScenarioRubricsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/scenario_rubric_grade_agents", input);
+  return api.post("/resources/scenario_rubrics", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -261,8 +261,8 @@ export default async function NewSimulationPage({
         createScenariosAction={createDraftScenarios}
         createScenarioFlagsAction={createDraftScenarioFlags}
         createScenarioPositionsAction={createDraftScenarioPositions}
-        createScenarioRubricGradeAgentsAction={
-          createDraftScenarioRubricGradeAgents
+        createScenarioRubricsAction={
+          createDraftScenarioRubrics
         }
       />
     </div>

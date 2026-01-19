@@ -19,17 +19,31 @@ type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
 type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v4/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
+type CreateDraftStandardsIn = InputOf<"/api/v4/resources/standards", "post">;
+type CreateDraftStandardsOut = OutputOf<
+  "/api/v4/resources/standards",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getRubric = async (
   rubricId: string | null,
-  draftId: string | null
+  draftId: string | null,
+  descriptionSearch: string | null,
+  standardGroupSearch: string | null
 ): Promise<GetRubricOut> => {
   return api.post(
     "/rubrics/get",
-    { body: { rubric_id: rubricId, draft_id: draftId || null } },
+    {
+      body: {
+        rubric_id: rubricId,
+        draft_id: draftId || null,
+        description_search: descriptionSearch || null,
+        standard_group_search: standardGroupSearch || null,
+      },
+    },
     {
       cache: "no-store",
       headers: {
@@ -47,7 +61,7 @@ export async function generateMetadata(
   const { rubricId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const rubric = await getRubric(rubricId, null);
+    const rubric = await getRubric(rubricId, null, null, null);
     return {
       title: `${rubric?.name_resource?.name || "Rubric"}`,
       description: `${rubric?.name_resource?.name ? `${rubric.name_resource.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description_resource?.description ? ` ${rubric.description_resource.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
@@ -90,13 +104,20 @@ export default async function EditRubricPage({
   // Inline server-side parsers for rubric search params
   const rubricSearchParams = {
     draftId: parseAsString,
+    descriptionSearch: parseAsString,
+    standardGroupSearch: parseAsString,
   };
   const loadRubricSearchParams = createLoader(rubricSearchParams);
   const q = loadRubricSearchParams(searchParamsObj);
 
   // Fetch data using unified get endpoint
   try {
-    const rubricData = await getRubric(rubricId, q.draftId ?? null);
+    const rubricData = await getRubric(
+      rubricId,
+      q.draftId ?? null,
+      q.descriptionSearch ?? null,
+      q.standardGroupSearch ?? null
+    );
 
     return (
       <div
@@ -109,6 +130,7 @@ export default async function EditRubricPage({
           rubricData={rubricData}
           saveRubricAction={saveRubric}
           patchRubricDraftAction={patchRubricDraft}
+          createStandardsAction={createStandards}
         />
       </div>
     );
@@ -148,6 +170,13 @@ async function patchRubricDraft(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/rubrics/draft", input);
+}
+
+async function createStandards(
+  input: CreateDraftStandardsIn
+): Promise<CreateDraftStandardsOut> {
+  "use server";
+  return api.post("/resources/standards", input);
 }
 
 // Types are now defined inline in components using InputOf/OutputOf

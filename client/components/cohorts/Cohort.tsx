@@ -25,6 +25,10 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Simulations } from "@/components/resources/Simulations";
+import {
+  SimulationPositions,
+  type SimulationPositionItem,
+} from "@/components/resources/SimulationPositions";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -192,6 +196,10 @@ function CohortComponent({
       simulations_required: cohortData.simulations_required,
       simulations_agent_id: cohortData.simulations_agent_id,
       simulations: cohortData.simulations,
+      simulation_positions: cohortData.simulation_positions,
+      show_simulation_positions: cohortData.show_simulation_positions,
+      simulation_positions_required: cohortData.simulation_positions_required,
+      simulation_positions_agent_id: cohortData.simulation_positions_agent_id,
       basic_agent_id: cohortData.basic_agent_id,
     };
     // Intentionally depend on individual fields, not whole cohortData object
@@ -227,6 +235,10 @@ function CohortComponent({
     cohortData?.simulations_required,
     cohortData?.simulations_agent_id,
     cohortData?.simulations,
+    cohortData?.simulation_positions,
+    cohortData?.show_simulation_positions,
+    cohortData?.simulation_positions_required,
+    cohortData?.simulation_positions_agent_id,
     cohortData?.basic_agent_id,
   ]);
 
@@ -272,6 +284,7 @@ function CohortComponent({
         active_flag_id: null as string | null,
         department_ids: [] as string[],
         simulation_ids: [] as string[],
+        simulation_positions: [] as SimulationPositionItem[],
       };
     }
     // Extract resource IDs from server data
@@ -282,6 +295,7 @@ function CohortComponent({
       active_flag_id: data.active_flag_id ?? null,
       department_ids: data.department_ids ?? [],
       simulation_ids: data.simulation_ids ?? [],
+      simulation_positions: data.simulation_positions ?? [],
     };
     // Remove cohortData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -302,6 +316,10 @@ function CohortComponent({
     () => JSON.stringify(cohortData?.simulation_ids ?? []),
     [cohortData?.simulation_ids]
   );
+  const simulationPositionsStr = React.useMemo(
+    () => JSON.stringify(cohortData?.simulation_positions ?? []),
+    [cohortData?.simulation_positions]
+  );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
@@ -311,6 +329,10 @@ function CohortComponent({
   const formStateSimulationIdsStr = React.useMemo(
     () => JSON.stringify(formState.simulation_ids),
     [formState.simulation_ids]
+  );
+  const formStateSimulationPositionsStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_positions),
+    [formState.simulation_positions]
   );
 
   // Update form state when server data changes
@@ -326,7 +348,9 @@ function CohortComponent({
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.simulation_ids) !==
-          JSON.stringify(newState.simulation_ids)
+          JSON.stringify(newState.simulation_ids) ||
+        JSON.stringify(prev.simulation_positions) !==
+          JSON.stringify(newState.simulation_positions)
       ) {
         return newState;
       }
@@ -341,6 +365,7 @@ function CohortComponent({
     cohortData?.active_flag_id,
     departmentIdsStr,
     simulationIdsStr,
+    simulationPositionsStr,
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -390,6 +415,7 @@ function CohortComponent({
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
       simulation_ids: formState.simulation_ids,
+      simulation_positions: formState.simulation_positions,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -400,6 +426,7 @@ function CohortComponent({
     formState.active_flag_id,
     formStateDepartmentIdsStr,
     formStateSimulationIdsStr,
+    formStateSimulationPositionsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -435,6 +462,15 @@ function CohortComponent({
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
             simulation_ids: formState.simulation_ids,
+            simulation_position_values:
+              formState.simulation_positions.length > 0
+                ? formState.simulation_ids.map(
+                    (simulationId) =>
+                      formState.simulation_positions.find(
+                        (position) => position.simulation_id === simulationId
+                      )?.value ?? null
+                  )
+                : null,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -841,6 +877,12 @@ function CohortComponent({
       }
 
       try {
+        const orderedSimulationIds =
+          formState.simulation_positions.length > 0
+            ? [...formState.simulation_positions]
+                .sort((a, b) => a.value - b.value)
+                .map((position) => position.simulation_id)
+            : formState.simulation_ids;
         await saveCohortAction({
           body: {
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
@@ -848,7 +890,7 @@ function CohortComponent({
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
             department_ids: formState.department_ids || [],
-            simulation_ids: formState.simulation_ids || [],
+            simulation_ids: orderedSimulationIds || [],
           },
         });
         toast.success(
@@ -991,7 +1033,7 @@ function CohortComponent({
         id: "simulations",
         title: "Simulations",
         description: "Select simulations for this cohort.",
-        resetFields: ["simulation_ids"],
+        resetFields: ["simulation_ids", "simulation_positions"],
       },
     ],
     []
@@ -1005,6 +1047,7 @@ function CohortComponent({
       "active",
       "department_ids",
       "simulation_ids",
+      "simulation_positions",
     ],
     []
   );
@@ -1357,6 +1400,40 @@ function CohortComponent({
                 agent_id={currentCohortData?.simulations_agent_id ?? null}
                 searchTerm={simulationSearchTerm}
                 showSelectedFilter={simulationShowSelected}
+              />
+              <SimulationPositions
+                simulation_ids={formState.simulation_ids ?? []}
+                simulation_resources={
+                  currentCohortData?.simulation_resources ?? []
+                }
+                show_simulation_positions={
+                  currentCohortData?.show_simulation_positions ?? false
+                }
+                simulation_positions={
+                  currentCohortData?.simulation_positions ?? []
+                }
+                disabled={disabled}
+                onChange={(positions) => {
+                  const orderedSimulationIds = [...positions]
+                    .sort((a, b) => a.value - b.value)
+                    .map((position) => position.simulation_id);
+                  setFormState((prev) => ({
+                    ...prev,
+                    simulation_positions: positions,
+                    simulation_ids:
+                      orderedSimulationIds.length > 0
+                        ? orderedSimulationIds
+                        : prev.simulation_ids,
+                  }));
+                }}
+                label="Simulation Positions"
+                required={
+                  currentCohortData?.simulation_positions_required ?? false
+                }
+                group_id={currentCohortData?.group_id ?? null}
+                agent_id={
+                  currentCohortData?.simulation_positions_agent_id ?? null
+                }
               />
             </StepCard>
           );

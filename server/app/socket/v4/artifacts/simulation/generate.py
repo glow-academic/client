@@ -34,7 +34,7 @@ SIMULATION_RESOURCE_TYPES = [
     "scenarios",
     "scenario_flags",
     "scenario_positions",
-    "scenario_rubric_grade_agents",
+    "scenario_rubrics",
 ]
 
 
@@ -177,10 +177,10 @@ async def _simulation_generate_impl(
                         if sp.simulation_id and sp.scenario_id
                     ]
                 })
-            if result.scenario_rubric_grade_agents:
+            if result.scenario_rubrics:
                 resources.append({
-                    "resource_type": "scenario_rubric_grade_agents",
-                    "resource_ids": [str(srga.id) for srga in result.scenario_rubric_grade_agents if srga.id]
+                    "resource_type": "scenario_rubrics",
+                    "resource_ids": [str(sr.id) for sr in result.scenario_rubrics if sr.id]
                 })
 
             # Get group_id from response if available

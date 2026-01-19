@@ -12133,103 +12133,6 @@
         ]
       }
     },
-    "/api/v4/resources/groups_rubric_grade_agents": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Groups Rubric Grade Agents",
-        "description": "Create groups_rubric_grade_agents resource (always INSERT).",
-        "operationId": "create_groups_rubric_grade_agents_api_v4_resources_groups_rubric_grade_agents_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GroupsRubricGradeAgentsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GroupsRubricGradeAgentsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
     "/api/v4/resources/hints": {
       "post": {
         "tags": [
@@ -15140,103 +15043,6 @@
         ]
       }
     },
-    "/api/v4/resources/runs_rubric_grade_agents": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Runs Rubric Grade Agents",
-        "description": "Create runs_rubric_grade_agents resource (always INSERT).",
-        "operationId": "create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RunsRubricGradeAgentsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RunsRubricGradeAgentsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
     "/api/v4/resources/scenario_flags": {
       "post": {
         "tags": [
@@ -15431,15 +15237,15 @@
         ]
       }
     },
-    "/api/v4/resources/scenario_rubric_grade_agents": {
+    "/api/v4/resources/scenario_rubrics": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Scenario Rubric Grade Agents",
-        "description": "Create scenario_rubric_grade_agents resource (always INSERT).",
-        "operationId": "create_scenario_rubric_grade_agents_api_v4_resources_scenario_rubric_grade_agents_post",
+        "summary": "Create Scenario Rubrics",
+        "description": "Create scenario_rubrics resource (always INSERT).",
+        "operationId": "create_scenario_rubrics_api_v4_resources_scenario_rubrics_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15495,7 +15301,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ScenarioRubricGradeAgentsApiRequest"
+                "$ref": "#/components/schemas/ScenarioRubricsApiRequest"
               }
             }
           }
@@ -15506,7 +15312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScenarioRubricGradeAgentsApiResponse"
+                  "$ref": "#/components/schemas/ScenarioRubricsApiResponse"
                 }
               }
             }
@@ -29803,6 +29609,10 @@
             "format": "uuid",
             "title": "Group Id"
           },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
           "mcp": {
             "anyOf": [
               {
@@ -29819,7 +29629,8 @@
         "type": "object",
         "required": [
           "agent_id",
-          "group_id"
+          "group_id",
+          "email"
         ],
         "title": "EmailsApiRequest"
       },
@@ -33476,6 +33287,54 @@
             ],
             "title": "Simulations"
           },
+          "simulation_positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetCohortV4SimulationPosition"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Positions"
+          },
+          "show_simulation_positions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Simulation Positions"
+          },
+          "simulation_positions_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Positions Agent Id"
+          },
+          "simulation_positions_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Positions Required"
+          },
           "basic_agent_id": {
             "anyOf": [
               {
@@ -37047,6 +36906,39 @@
               }
             ],
             "title": "Field Id"
+          },
+          "description_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Search"
+          },
+          "parameter_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Search"
+          },
+          "parameter_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Show Selected"
           },
           "draft_id": {
             "anyOf": [
@@ -43363,6 +43255,31 @@
             ],
             "title": "Profile Id"
           },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "role_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Options"
+          },
           "first_name_id": {
             "anyOf": [
               {
@@ -46092,6 +46009,28 @@
             ],
             "title": "Draft Id"
           },
+          "description_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Search"
+          },
+          "standard_group_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Search"
+          },
           "mcp": {
             "anyOf": [
               {
@@ -46759,6 +46698,98 @@
               }
             ],
             "title": "Standard Groups"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          },
+          "standard_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricV4StandardResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Resources"
+          },
+          "show_standards": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Standards"
+          },
+          "standards_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Agent Id"
+          },
+          "standards_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Required"
+          },
+          "standard_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Suggestions"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricV4StandardResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
           }
         },
         "type": "object",
@@ -52215,56 +52246,6 @@
         "type": "object",
         "title": "GroupsApiResponse"
       },
-      "GroupsRubricGradeAgentsApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id"
-        ],
-        "title": "GroupsRubricGradeAgentsApiRequest"
-      },
-      "GroupsRubricGradeAgentsApiResponse": {
-        "properties": {
-          "groups_rubric_grade_agents_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups Rubric Grade Agents Id"
-          }
-        },
-        "type": "object",
-        "title": "GroupsRubricGradeAgentsApiResponse"
-      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -52582,66 +52563,6 @@
           "active"
         ],
         "title": "ISaveParameterV4FieldConnection"
-      },
-      "ISaveSimulationV4ScenarioRubricGradeAgent": {
-        "properties": {
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "grade_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Agent Id"
-          },
-          "audio_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Agent Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenario_id",
-          "rubric_id",
-          "grade_agent_id",
-          "audio_agent_id"
-        ],
-        "title": "ISaveSimulationV4ScenarioRubricGradeAgent"
       },
       "IUpsertStaffV4Profile": {
         "properties": {
@@ -53852,6 +53773,35 @@
             ],
             "title": "Department Ids"
           },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "simulation_position_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Position Values"
+          },
           "expected_version": {
             "anyOf": [
               {
@@ -54620,6 +54570,61 @@
             ],
             "title": "Active Flag Id"
           },
+          "simulation_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Parameter"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Parameter"
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -54635,7 +54640,7 @@
             ],
             "title": "Department Ids"
           },
-          "persona_ids": {
+          "field_ids": {
             "anyOf": [
               {
                 "items": {
@@ -54648,22 +54653,7 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
+            "title": "Field Ids"
           },
           "expected_version": {
             "anyOf": [
@@ -55108,6 +55098,21 @@
               }
             ],
             "title": "Standard Group Ids"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
           },
           "expected_version": {
             "anyOf": [
@@ -55723,6 +55728,66 @@
               }
             ],
             "title": "Scenario Ids"
+          },
+          "scenario_flag_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Flag Ids"
+          },
+          "scenario_position_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Position Ids"
+          },
+          "scenario_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Rubric Ids"
+          },
+          "scenario_time_limit_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Time Limit Ids"
           },
           "expected_version": {
             "anyOf": [
@@ -59137,6 +59202,63 @@
           "generated"
         ],
         "title": "QGetCohortV4Simulation"
+      },
+      "QGetCohortV4SimulationPosition": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "value",
+          "generated",
+          "mcp"
+        ],
+        "title": "QGetCohortV4SimulationPosition"
       },
       "QGetDashboardBundleV4AttemptHistoryRow": {
         "properties": {
@@ -74316,6 +74438,88 @@
           "generated"
         ],
         "title": "QGetRubricV4StandardGroupResource"
+      },
+      "QGetRubricV4StandardResource": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "generated"
+        ],
+        "title": "QGetRubricV4StandardResource"
       },
       "QGetRubricsListV4Department": {
         "properties": {
@@ -92658,6 +92862,10 @@
             "format": "uuid",
             "title": "Group Id"
           },
+          "requests_per_day": {
+            "type": "integer",
+            "title": "Requests Per Day"
+          },
           "mcp": {
             "anyOf": [
               {
@@ -92674,7 +92882,8 @@
         "type": "object",
         "required": [
           "agent_id",
-          "group_id"
+          "group_id",
+          "requests_per_day"
         ],
         "title": "RequestLimitsApiRequest"
       },
@@ -92913,56 +93122,6 @@
         },
         "type": "object",
         "title": "RunsApiResponse"
-      },
-      "RunsRubricGradeAgentsApiRequest": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "mcp": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mcp",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "group_id"
-        ],
-        "title": "RunsRubricGradeAgentsApiRequest"
-      },
-      "RunsRubricGradeAgentsApiResponse": {
-        "properties": {
-          "runs_rubric_grade_agents_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Runs Rubric Grade Agents Id"
-          }
-        },
-        "type": "object",
-        "title": "RunsRubricGradeAgentsApiResponse"
       },
       "SaveAgentApiRequest": {
         "properties": {
@@ -94798,6 +94957,21 @@
               }
             ],
             "title": "Standard Group Ids"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
           }
         },
         "type": "object",
@@ -95303,13 +95477,6 @@
             "type": "array",
             "title": "Scenario Text Enabled"
           },
-          "scenario_rubric_grade_agents": {
-            "items": {
-              "$ref": "#/components/schemas/ISaveSimulationV4ScenarioRubricGradeAgent"
-            },
-            "type": "array",
-            "title": "Scenario Rubric Grade Agents"
-          },
           "input_simulation_id": {
             "anyOf": [
               {
@@ -95388,7 +95555,7 @@
             ],
             "title": "Scenario Position Ids"
           },
-          "scenario_rubric_grade_agent_ids": {
+          "scenario_rubric_ids": {
             "anyOf": [
               {
                 "items": {
@@ -95401,7 +95568,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Rubric Grade Agent Ids"
+            "title": "Scenario Rubric Ids"
           },
           "video_ids": {
             "anyOf": [
@@ -95484,8 +95651,7 @@
           "scenario_hints_enabled",
           "scenario_time_limit_seconds",
           "scenario_audio_enabled",
-          "scenario_text_enabled",
-          "scenario_rubric_grade_agents"
+          "scenario_text_enabled"
         ],
         "title": "SaveSimulationApiRequest"
       },
@@ -95736,7 +95902,7 @@
         "type": "object",
         "title": "ScenarioPositionsApiResponse"
       },
-      "ScenarioRubricGradeAgentsApiRequest": {
+      "ScenarioRubricsApiRequest": {
         "properties": {
           "agent_id": {
             "type": "string",
@@ -95748,20 +95914,15 @@
             "format": "uuid",
             "title": "Group Id"
           },
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
           "rubric_id": {
             "type": "string",
             "format": "uuid",
             "title": "Rubric Id"
-          },
-          "grade_agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Grade Agent Id"
-          },
-          "agent_id_param": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Agent Id Param"
           },
           "mcp": {
             "anyOf": [
@@ -95780,13 +95941,12 @@
         "required": [
           "agent_id",
           "group_id",
-          "rubric_id",
-          "grade_agent_id",
-          "agent_id_param"
+          "scenario_id",
+          "rubric_id"
         ],
-        "title": "ScenarioRubricGradeAgentsApiRequest"
+        "title": "ScenarioRubricsApiRequest"
       },
-      "ScenarioRubricGradeAgentsApiResponse": {
+      "ScenarioRubricsApiResponse": {
         "properties": {
           "id": {
             "anyOf": [
@@ -95802,7 +95962,7 @@
           }
         },
         "type": "object",
-        "title": "ScenarioRubricGradeAgentsApiResponse"
+        "title": "ScenarioRubricsApiResponse"
       },
       "ScenariosApiRequest": {
         "properties": {

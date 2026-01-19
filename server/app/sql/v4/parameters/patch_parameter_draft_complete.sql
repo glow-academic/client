@@ -23,9 +23,13 @@ CREATE OR REPLACE FUNCTION api_patch_parameter_draft_v4(
     name_id uuid DEFAULT NULL,
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
+    simulation_parameter boolean DEFAULT NULL,
+    document_parameter boolean DEFAULT NULL,
+    persona_parameter boolean DEFAULT NULL,
+    scenario_parameter boolean DEFAULT NULL,
+    video_parameter boolean DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
-    persona_ids uuid[] DEFAULT NULL,
-    document_ids uuid[] DEFAULT NULL,
+    field_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -85,8 +89,7 @@ BEGIN
             DELETE FROM draft_descriptions WHERE draft_descriptions.draft_id = v_draft_id;
             DELETE FROM draft_flags WHERE draft_flags.draft_id = v_draft_id;
             DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
-            DELETE FROM draft_personas WHERE draft_personas.draft_id = v_draft_id;
-            DELETE FROM draft_documents WHERE draft_documents.draft_id = v_draft_id;
+            DELETE FROM draft_fields WHERE draft_fields.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
@@ -112,6 +115,56 @@ BEGIN
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
+
+            IF simulation_parameter IS TRUE THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                SELECT v_draft_id, f.id, v_new_version
+                FROM flags_resource f
+                WHERE f.name = 'simulation_parameter'
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF document_parameter IS TRUE THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                SELECT v_draft_id, f.id, v_new_version
+                FROM flags_resource f
+                WHERE f.name = 'document_parameter'
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF persona_parameter IS TRUE THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                SELECT v_draft_id, f.id, v_new_version
+                FROM flags_resource f
+                WHERE f.name = 'persona_parameter'
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF scenario_parameter IS TRUE THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                SELECT v_draft_id, f.id, v_new_version
+                FROM flags_resource f
+                WHERE f.name = 'scenario_parameter'
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF video_parameter IS TRUE THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                SELECT v_draft_id, f.id, v_new_version
+                FROM flags_resource f
+                WHERE f.name = 'video_parameter'
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
             
             -- Handle array resources
             IF department_ids IS NOT NULL THEN
@@ -123,23 +176,13 @@ BEGIN
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
-            
-            IF persona_ids IS NOT NULL THEN
-                DELETE FROM draft_personas WHERE draft_personas.draft_id = v_draft_id;
-                INSERT INTO draft_personas (draft_id, personas_id, version)
-                SELECT v_draft_id, persona_id, v_new_version
-                FROM UNNEST(persona_ids) as persona_id
-                ON CONFLICT ON CONSTRAINT draft_personas_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
-            END IF;
-            
-            IF document_ids IS NOT NULL THEN
-                DELETE FROM draft_documents WHERE draft_documents.draft_id = v_draft_id;
-                INSERT INTO draft_documents (draft_id, documents_id, version)
-                SELECT v_draft_id, doc_id, v_new_version
-                FROM UNNEST(document_ids) as doc_id
-                ON CONFLICT ON CONSTRAINT draft_documents_pkey DO UPDATE
+
+            IF field_ids IS NOT NULL THEN
+                DELETE FROM draft_fields WHERE draft_fields.draft_id = v_draft_id;
+                INSERT INTO draft_fields (draft_id, fields_id, version)
+                SELECT v_draft_id, field_id, v_new_version
+                FROM UNNEST(field_ids) as field_id
+                ON CONFLICT ON CONSTRAINT draft_fields_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -184,6 +227,56 @@ BEGIN
         SET version = v_new_version,
             updated_at = now();
     END IF;
+
+    IF simulation_parameter IS TRUE THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        SELECT v_draft_id, f.id, v_new_version
+        FROM flags_resource f
+        WHERE f.name = 'simulation_parameter'
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF document_parameter IS TRUE THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        SELECT v_draft_id, f.id, v_new_version
+        FROM flags_resource f
+        WHERE f.name = 'document_parameter'
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF persona_parameter IS TRUE THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        SELECT v_draft_id, f.id, v_new_version
+        FROM flags_resource f
+        WHERE f.name = 'persona_parameter'
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF scenario_parameter IS TRUE THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        SELECT v_draft_id, f.id, v_new_version
+        FROM flags_resource f
+        WHERE f.name = 'scenario_parameter'
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF video_parameter IS TRUE THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        SELECT v_draft_id, f.id, v_new_version
+        FROM flags_resource f
+        WHERE f.name = 'video_parameter'
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
     
     -- Handle array resources
     IF department_ids IS NOT NULL THEN
@@ -194,21 +287,12 @@ BEGIN
         SET version = v_new_version,
             updated_at = now();
     END IF;
-    
-    IF persona_ids IS NOT NULL THEN
-        INSERT INTO draft_personas (draft_id, personas_id, version)
-        SELECT v_draft_id, persona_id, v_new_version
-        FROM UNNEST(persona_ids) as persona_id
-        ON CONFLICT ON CONSTRAINT draft_personas_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
-    END IF;
-    
-    IF document_ids IS NOT NULL THEN
-        INSERT INTO draft_documents (draft_id, documents_id, version)
-        SELECT v_draft_id, doc_id, v_new_version
-        FROM UNNEST(document_ids) as doc_id
-        ON CONFLICT ON CONSTRAINT draft_documents_pkey DO UPDATE
+
+    IF field_ids IS NOT NULL THEN
+        INSERT INTO draft_fields (draft_id, fields_id, version)
+        SELECT v_draft_id, field_id, v_new_version
+        FROM UNNEST(field_ids) as field_id
+        ON CONFLICT ON CONSTRAINT draft_fields_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

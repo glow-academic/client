@@ -79,6 +79,8 @@ async def get_rubric(
         # Extract params from API request
         draft_id = request.draft_id
         rubric_id = request.rubric_id  # Can be NULL for new mode
+        description_search = request.description_search
+        standard_group_search = request.standard_group_search
 
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
@@ -88,6 +90,8 @@ async def get_rubric(
             rubric_id=rubric_id,
             profile_id=profile_id,
             draft_id=draft_id,
+            description_search=description_search,
+            standard_group_search=standard_group_search,
             mcp=mcp,
         )
         sql_params = params.to_tuple()

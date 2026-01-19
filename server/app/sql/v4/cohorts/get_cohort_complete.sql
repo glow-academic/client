@@ -68,6 +68,13 @@ CREATE TYPE types.q_get_cohort_v4_simulation AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_cohort_v4_simulation_position AS (
+    simulation_id uuid,
+    value integer,
+    generated boolean,
+    mcp boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_cohort_v4(
     profile_id uuid,
@@ -124,6 +131,11 @@ RETURNS TABLE (
     simulations_required boolean,
     simulation_suggestions uuid[],
     simulations types.q_get_cohort_v4_simulation[],
+    -- Simulation positions (per selected simulation)
+    simulation_positions types.q_get_cohort_v4_simulation_position[],
+    show_simulation_positions boolean,
+    simulation_positions_agent_id uuid,
+    simulation_positions_required boolean,
     -- Multi-resource combination agent IDs (after all individual resources)
     basic_agent_id uuid,
     general_agent_id uuid
@@ -531,6 +543,13 @@ simulation_mapping_data AS (
     )
 ),
 -- Cohort simulation IDs (always return at least one row)
+draft_simulation_ids_data AS (
+    SELECT 
+        COALESCE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), ARRAY[]::uuid[]) as simulation_ids
+    FROM params x
+    LEFT JOIN draft_simulations ds ON ds.draft_id = x.draft_id
+    LIMIT 1
+),
 cohort_simulation_ids_data AS (
     SELECT 
         CASE 
@@ -545,6 +564,58 @@ cohort_simulation_ids_data AS (
         END as simulation_ids
     FROM params
     -- Always return at least one row
+    LIMIT 1
+),
+simulation_ids_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT simulation_ids FROM draft_simulation_ids_data), 1), 0) > 0
+                THEN (SELECT simulation_ids FROM draft_simulation_ids_data)
+            ELSE (SELECT simulation_ids FROM cohort_simulation_ids_data)
+        END as simulation_ids
+    FROM params
+    LIMIT 1
+),
+draft_simulation_positions_data AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (dsp.simulation_id, dsp.value, dsp.generated, dsp.mcp)::types.q_get_cohort_v4_simulation_position
+                ORDER BY dsp.value, dsp.simulation_id
+            ),
+            '{}'::types.q_get_cohort_v4_simulation_position[]
+        ) as simulation_positions
+    FROM params x
+    LEFT JOIN draft_simulation_positions dsp ON dsp.draft_id = x.draft_id
+    LIMIT 1
+),
+cohort_simulation_positions_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN '{}'::types.q_get_cohort_v4_simulation_position[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(
+                    (spr.simulation_id, spr.value, spr.generated, spr.mcp)::types.q_get_cohort_v4_simulation_position
+                    ORDER BY spr.value, spr.simulation_id
+                 )
+                 FROM simulation_positions_resource spr
+                 WHERE spr.cohort_id = (SELECT cohort_id FROM params)),
+                '{}'::types.q_get_cohort_v4_simulation_position[]
+            )
+        END as simulation_positions
+    FROM params
+    LIMIT 1
+),
+simulation_positions_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT simulation_positions FROM draft_simulation_positions_data), 1), 0) > 0
+                THEN (SELECT simulation_positions FROM draft_simulation_positions_data)
+            ELSE (SELECT simulation_positions FROM cohort_simulation_positions_data)
+        END as simulation_positions
+    FROM params
     LIMIT 1
 ),
 -- Simulation suggestions: linked to cohorts with active=true OR same group with generated=true
@@ -1343,7 +1414,7 @@ SELECT
         '{}'::types.q_get_cohort_v4_department[]
     ) as departments,
     -- Multi-select resources: simulations
-    csid.simulation_ids,
+    sid.simulation_ids,
     -- Simulation resources (selected simulations filtered by simulation_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -1351,7 +1422,7 @@ SELECT
             ORDER BY smd.name
         )
         FROM simulation_mapping_data smd
-        WHERE smd.simulation_id = ANY(COALESCE(csid.simulation_ids, ARRAY[]::uuid[]))),
+        WHERE smd.simulation_id = ANY(COALESCE(sid.simulation_ids, ARRAY[]::uuid[]))),
         '{}'::types.q_get_cohort_v4_simulation[]
     ) as simulation_resources,
     CASE 
@@ -1369,6 +1440,13 @@ SELECT
         ) FROM (SELECT DISTINCT simulation_id, name, description, time_limit, generated FROM simulation_mapping_data) smd),
         '{}'::types.q_get_cohort_v4_simulation[]
     ) as simulations,
+    COALESCE((SELECT simulation_positions FROM simulation_positions_data), '{}'::types.q_get_cohort_v4_simulation_position[]) as simulation_positions,
+    CASE
+        WHEN COALESCE(array_length((SELECT simulation_positions FROM simulation_positions_data), 1), 0) > 0 THEN true
+        ELSE false
+    END as show_simulation_positions,
+    NULL::uuid as simulation_positions_agent_id,
+    false as simulation_positions_required,
     -- Multi-resource combination agent IDs (after all individual resources)
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
     (SELECT agent_id FROM general_agent_data) as general_agent_id
@@ -1377,7 +1455,8 @@ CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN cohort_departments_data cdd
-CROSS JOIN cohort_simulation_ids_data csid
+CROSS JOIN simulation_ids_data sid
+CROSS JOIN simulation_positions_data spd
 CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd

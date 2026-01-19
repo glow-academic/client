@@ -81,35 +81,8 @@ BEGIN
         END IF;
     END IF;
     
-    -- Dynamically build arguments_raw FROM tool_args → args_resource
-    -- Build a JSONB object with all function parameters first (for lookup)
-    v_params_jsonb := jsonb_build_object(
-        'args_id', args_id,
-        'name', name,
-        'template', template
-    );
-    
-    -- For each args_resource entry linked to the tool, extract variable names from template or use field name directly
-    -- Only if tool_id exists
-    IF v_tool_id IS NOT NULL THEN
-        FOR v_arg_key, v_arg_value IN
-            SELECT 
-                -- Note: args_resource doesn't have template field, so always use name
-                ar.name as arg_key,
-                -- Look up value from function parameters using args_resource name
-                v_params_jsonb->>ar.name as arg_value
-            FROM tool_args ta
-            JOIN args_resource ar ON ar.id = ta.args_id
-            WHERE ta.tool_id = v_tool_id
-              AND ar.active = true
-            ORDER BY ar.position NULLS LAST, ar.created_at
-        LOOP
-            IF v_arg_value IS NOT NULL THEN
-                v_args_jsonb := v_args_jsonb || jsonb_build_object(v_arg_key, v_arg_value);
-            END IF;
-        END LOOP;
-    END IF;
-    
+    -- Build arguments_raw directly from params (templates removed)
+    v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;
     
     -- Create call record

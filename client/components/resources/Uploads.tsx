@@ -68,6 +68,7 @@ export interface UploadsProps {
     upload_id?: string;
     message?: string;
   }>;
+  searchTerm?: string;
 }
 
 export function Uploads({
@@ -89,6 +90,7 @@ export function Uploads({
   onGenerate,
   isGenerating = false,
   finalizeUploadAction,
+  searchTerm = "",
 }: UploadsProps) {
   const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
   const show = show_uploads ?? true;
@@ -121,14 +123,28 @@ export function Uploads({
 
   // Convert uploads array to items format for GenericPicker
   const uploadItems = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
     return allUploads
-      .filter((u) => u.uploads_id && u.file_path) // Filter out nulls
+      .filter((u) => u.uploads_id && u.file_path)
+      .filter((u) => {
+        if (!term) return true;
+        const filePath = u.file_path ?? "";
+        const fileName = filePath.split("/").pop() || "";
+        const mimeType = u.mime_type ?? "";
+        const uploadId = u.upload_id ?? "";
+        return (
+          fileName.toLowerCase().includes(term) ||
+          filePath.toLowerCase().includes(term) ||
+          mimeType.toLowerCase().includes(term) ||
+          uploadId.toLowerCase().includes(term)
+        );
+      })
       .map((u) => ({
         id: u.uploads_id!,
         name: u.file_path!.split("/").pop() || "Unknown file",
         description: u.mime_type || undefined,
       }));
-  }, [allUploads]);
+  }, [allUploads, searchTerm]);
 
   // Check if an upload is suggested
   const isSuggested = useCallback(

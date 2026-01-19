@@ -9,7 +9,7 @@ import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
@@ -111,6 +111,9 @@ export default async function NewFieldPage({
   // Inline server-side parsers for field search params
   const fieldSearchParams = {
     draftId: parseAsString,
+    descriptionSearch: parseAsString,
+    parameterSearch: parseAsString,
+    parameterShowSelected: parseAsBoolean,
   };
   const loadFieldSearchParams = createLoader(fieldSearchParams);
   const q = loadFieldSearchParams(searchParamsObj);
@@ -120,6 +123,9 @@ export default async function NewFieldPage({
     body: {
       field_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
+      description_search: q.descriptionSearch ?? null,
+      parameter_search: q.parameterSearch ?? null,
+      parameter_show_selected: q.parameterShowSelected ?? null,
     } as GetFieldIn["body"],
   };
   const fieldData = await getFieldDefault(input);

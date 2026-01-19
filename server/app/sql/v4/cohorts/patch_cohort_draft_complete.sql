@@ -24,6 +24,8 @@ CREATE OR REPLACE FUNCTION api_patch_cohort_draft_v4(
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
+    simulation_ids uuid[] DEFAULT NULL,
+    simulation_position_values integer[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -52,6 +54,14 @@ BEGIN
     
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+
+    IF simulation_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM unnest(simulation_ids) AS simulation_id
+        WHERE NOT EXISTS (SELECT 1 FROM simulation_artifact WHERE id = simulation_id)
+    ) THEN
+        RAISE EXCEPTION 'Simulation artifact not found';
     END IF;
     
     -- Try to update existing draft
@@ -83,6 +93,8 @@ BEGIN
             DELETE FROM draft_descriptions WHERE draft_descriptions.draft_id = v_draft_id;
             DELETE FROM draft_flags WHERE draft_flags.draft_id = v_draft_id;
             DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
+            DELETE FROM draft_simulations WHERE draft_simulations.draft_id = v_draft_id;
+            DELETE FROM draft_simulation_positions WHERE draft_simulation_positions.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
@@ -117,6 +129,36 @@ BEGIN
                 FROM UNNEST(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
                 SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF simulation_ids IS NOT NULL THEN
+                DELETE FROM draft_simulations WHERE draft_simulations.draft_id = v_draft_id;
+                INSERT INTO draft_simulations (draft_id, simulations_id, version)
+                SELECT v_draft_id, simulation_id, v_new_version
+                FROM UNNEST(simulation_ids) as simulation_id
+                ON CONFLICT ON CONSTRAINT draft_simulations_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+
+                DELETE FROM draft_simulation_positions WHERE draft_simulation_positions.draft_id = v_draft_id;
+                INSERT INTO draft_simulation_positions (
+                    draft_id,
+                    simulation_id,
+                    value,
+                    version
+                )
+                SELECT
+                    v_draft_id,
+                    sim_list.simulation_id,
+                    COALESCE(pos_list.position_value, sim_list.ordinality),
+                    v_new_version
+                FROM UNNEST(simulation_ids) WITH ORDINALITY AS sim_list(simulation_id, ordinality)
+                LEFT JOIN UNNEST(simulation_position_values) WITH ORDINALITY AS pos_list(position_value, ordinality)
+                    ON pos_list.ordinality = sim_list.ordinality
+                ON CONFLICT ON CONSTRAINT draft_simulation_positions_pkey DO UPDATE
+                SET value = EXCLUDED.value,
+                    version = v_new_version,
                     updated_at = now();
             END IF;
             
@@ -168,6 +210,34 @@ BEGIN
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
         SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF simulation_ids IS NOT NULL THEN
+        INSERT INTO draft_simulations (draft_id, simulations_id, version)
+        SELECT v_draft_id, simulation_id, v_new_version
+        FROM UNNEST(simulation_ids) as simulation_id
+        ON CONFLICT ON CONSTRAINT draft_simulations_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+
+        INSERT INTO draft_simulation_positions (
+            draft_id,
+            simulation_id,
+            value,
+            version
+        )
+        SELECT
+            v_draft_id,
+            sim_list.simulation_id,
+            COALESCE(pos_list.position_value, sim_list.ordinality),
+            v_new_version
+        FROM UNNEST(simulation_ids) WITH ORDINALITY AS sim_list(simulation_id, ordinality)
+        LEFT JOIN UNNEST(simulation_position_values) WITH ORDINALITY AS pos_list(position_value, ordinality)
+            ON pos_list.ordinality = sim_list.ordinality
+        ON CONFLICT ON CONSTRAINT draft_simulation_positions_pkey DO UPDATE
+        SET value = EXCLUDED.value,
+            version = v_new_version,
             updated_at = now();
     END IF;
     

@@ -90,6 +90,10 @@ RETURNS TABLE (
     group_id uuid,
     -- Profile ID (for audit logging)
     profile_id uuid,
+    -- Role (selected)
+    role text,
+    -- Role options
+    role_options text[],
     -- Single-select resources: first_name
     first_name_id uuid,
     first_name_resource types.q_get_profile_v4_name_resource,
@@ -184,6 +188,53 @@ user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
+),
+target_profile_role_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT resolved_target_profile_id FROM resolve_target_profile_id) IS NULL THEN NULL::text
+            ELSE (
+                SELECT r.role::text
+                FROM profile_roles pr
+                JOIN roles_resource r ON pr.role_id = r.id
+                WHERE pr.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+                  AND pr.active = true
+                LIMIT 1
+            )
+        END as role
+    FROM params
+    LIMIT 1
+),
+role_options_data AS (
+    SELECT 
+        CASE 
+            WHEN up.role = 'superadmin'::profile_role THEN
+                ARRAY(
+                    SELECT r.role::text
+                    FROM roles_resource r
+                    WHERE r.active = true
+                      AND r.role IN ('superadmin'::profile_role, 'admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                    ORDER BY array_position(ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[], r.role::text)
+                )
+            WHEN up.role = 'admin'::profile_role THEN
+                ARRAY(
+                    SELECT r.role::text
+                    FROM roles_resource r
+                    WHERE r.active = true
+                      AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                    ORDER BY array_position(ARRAY['admin', 'instructional', 'member', 'guest']::text[], r.role::text)
+                )
+            ELSE
+                ARRAY(
+                    SELECT r.role::text
+                    FROM roles_resource r
+                    WHERE r.active = true
+                      AND r.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                    ORDER BY array_position(ARRAY['instructional', 'member', 'guest']::text[], r.role::text)
+                )
+        END as role_options
+    FROM user_profile up
+    LIMIT 1
 ),
 -- Get group_id from target profile or current profile
 group_id_data AS (
@@ -1300,6 +1351,9 @@ SELECT
     (SELECT group_id FROM group_id_data) as group_id,
     -- Profile ID (for audit logging)
     (SELECT resolved_target_profile_id FROM resolve_target_profile_id) as profile_id,
+    -- Role
+    (SELECT role FROM target_profile_role_data) as role,
+    COALESCE((SELECT role_options FROM role_options_data), ARRAY[]::text[]) as role_options,
     -- Single-select resources: first_name
     (SELECT first_name_id FROM first_name_resource_data) as first_name_id,
     (SELECT first_name_resource FROM first_name_resource_data) as first_name_resource,
@@ -1374,6 +1428,8 @@ SELECT
     COALESCE((SELECT cohorts FROM cohorts_data), ARRAY[]::types.q_get_profile_v4_cohort[]) as cohorts
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
+CROSS JOIN target_profile_role_data tprd
+CROSS JOIN role_options_data rod
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN group_id_data gid

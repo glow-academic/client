@@ -339,6 +339,10 @@ function ParameterComponent({
     () => JSON.stringify(formState.department_ids),
     [formState.department_ids]
   );
+  const formStateFieldIdsStr = React.useMemo(
+    () => JSON.stringify(formState.field_ids),
+    [formState.field_ids]
+  );
 
   // Update form state when server data changes
   // Use parameterData directly in dependency array, not getInitialFormState
@@ -426,7 +430,13 @@ function ParameterComponent({
       name_id: formState.name_id,
       description_id: formState.description_id,
       active_flag_id: formState.active_flag_id,
+      simulation_parameter: formState.simulation_parameter,
+      document_parameter: formState.document_parameter,
+      persona_parameter: formState.persona_parameter,
+      scenario_parameter: formState.scenario_parameter,
+      video_parameter: formState.video_parameter,
       department_ids: formState.department_ids,
+      field_ids: formState.field_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -436,6 +446,12 @@ function ParameterComponent({
     formState.description_id,
     formState.active_flag_id,
     formStateDepartmentIdsStr,
+    formStateFieldIdsStr,
+    formState.simulation_parameter,
+    formState.document_parameter,
+    formState.persona_parameter,
+    formState.scenario_parameter,
+    formState.video_parameter,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -448,7 +464,13 @@ function ParameterComponent({
       formState.name_id ||
       formState.description_id ||
       formState.active_flag_id ||
-      formState.department_ids.length > 0;
+      formState.department_ids.length > 0 ||
+      formState.field_ids.length > 0 ||
+      formState.simulation_parameter ||
+      formState.document_parameter ||
+      formState.persona_parameter ||
+      formState.scenario_parameter ||
+      formState.video_parameter;
 
     if (!hasResourceIds || !patchParameterDraftActionRef.current) {
       return;
@@ -468,7 +490,13 @@ function ParameterComponent({
             name_id: formState.name_id,
             description_id: formState.description_id,
             active_flag_id: formState.active_flag_id,
+            simulation_parameter: formState.simulation_parameter,
+            document_parameter: formState.document_parameter,
+            persona_parameter: formState.persona_parameter,
+            scenario_parameter: formState.scenario_parameter,
+            video_parameter: formState.video_parameter,
             department_ids: formState.department_ids,
+            field_ids: formState.field_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });

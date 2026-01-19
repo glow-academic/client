@@ -1,0 +1,241 @@
+/**
+ * Standards.tsx
+ * Resource component for standards selection
+ * Uses GenericPicker to select existing standards resources
+ * Manages standard_ids array and reports to parent
+ */
+
+"use client";
+
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { useCallback, useMemo } from "react";
+
+type CreateDraftStandardsIn = InputOf<"/api/v4/resources/standards", "post">;
+type CreateDraftStandardsOut = OutputOf<"/api/v4/resources/standards", "post">;
+
+export interface StandardItem {
+  id: string;
+  standard_group_id?: string;
+  name: string;
+  description?: string;
+  points?: number;
+  generated?: boolean;
+}
+
+export interface StandardsProps {
+  standard_ids?: string[]; // Current standard resource IDs (standardized prop name)
+  standard_resources?: Array<{
+    standard_id: string | null;
+    standard_group_id: string | null;
+    name: string | null;
+    description?: string | null;
+    points?: number | null;
+    generated?: boolean | null;
+  }>; // Selected standards resources (each includes generated field)
+  show_standards?: boolean; // Whether to show this resource picker
+  standard_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  standards?: Array<{
+    standard_id: string | null;
+    standard_group_id: string | null;
+    name: string | null;
+    description?: string | null;
+    points?: number | null;
+    generated?: boolean | null;
+  }>; // All available standards from API (each includes generated field)
+  disabled?: boolean; // Based on can_edit flag
+  onChange: (ids: string[]) => void; // Update standard_ids in form state
+  label?: string;
+  id?: string;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
+  createStandardsAction?:
+    | ((
+        input: CreateDraftStandardsIn
+      ) => Promise<CreateDraftStandardsOut>)
+    | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
+}
+
+export function Standards({
+  standard_ids,
+  standard_resources,
+  show_standards = false,
+  standard_suggestions,
+  standards,
+  disabled = false,
+  onChange,
+  label = "Standards",
+  id = "standards",
+  required = false,
+  placeholder = "Select standards...",
+  description,
+  group_id: _group_id,
+  agent_id: _agent_id,
+  createStandardsAction: _createStandardsAction,
+  onGenerate,
+  isGenerating = false,
+}: StandardsProps) {
+  const ids = useMemo(() => standard_ids ?? [], [standard_ids]);
+  const show = show_standards ?? false;
+  const allStandards = useMemo(() => standards ?? [], [standards]);
+  const suggestionsList = useMemo(
+    () => standard_suggestions ?? [],
+    [standard_suggestions]
+  );
+
+  const standardItems = useMemo(() => {
+    return allStandards
+      .filter((std) => std.standard_id && std.name)
+      .map((std) => ({
+        id: std.standard_id!,
+        standard_group_id: std.standard_group_id ?? undefined,
+        name: std.name ?? "",
+        ...(std.description ? { description: std.description } : {}),
+        ...(std.points !== null && std.points !== undefined
+          ? { points: std.points }
+          : {}),
+        ...(std.generated !== null && std.generated !== undefined
+          ? { generated: std.generated }
+          : {}),
+      }));
+  }, [allStandards]);
+
+  const isSuggested = useCallback(
+    (standardId: string) => suggestionsList.includes(standardId),
+    [suggestionsList]
+  );
+
+  const handleSelect = useCallback(
+    (selectedIds: string[]) => {
+      onChange(selectedIds);
+    },
+    [onChange]
+  );
+
+  const hasGenerated = useMemo(() => {
+    return standard_resources?.some((std) => std.generated) ?? false;
+  }, [standard_resources]);
+
+  if (!show) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        {label && (
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
+        )}
+        {onGenerate && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasGenerated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+
+      {description && (
+        <p className="text-xs text-muted-foreground">{description}</p>
+      )}
+
+      <GenericPicker<StandardItem>
+        items={standardItems}
+        selectedIds={ids}
+        onSelect={handleSelect}
+        multiSelect
+        getId={(item) => item.id}
+        getLabel={(item) => item.name}
+        getSearchText={(item) =>
+          [item.name, item.description ?? ""].filter(Boolean).join(" ")
+        }
+        renderItem={(item, isSelected) => (
+          <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{item.name}</span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {item.points !== undefined && (
+                  <span>{item.points} pts</span>
+                )}
+                {item.description && (
+                  <span className="line-clamp-1">{item.description}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isSuggested(item.id) && (
+                <span className="text-xs text-muted-foreground">Suggested</span>
+              )}
+              {isSelected && (
+                <Check className="h-4 w-4 text-primary shrink-0" />
+              )}
+            </div>
+          </div>
+        )}
+        renderPreview={(item) => (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{item.name}</p>
+            {item.description && (
+              <p className="text-xs text-muted-foreground">
+                {item.description}
+              </p>
+            )}
+            {item.points !== undefined && (
+              <p className="text-xs text-muted-foreground">
+                Points: {item.points}
+              </p>
+            )}
+            {item.standard_group_id && (
+              <p className="text-xs text-muted-foreground">
+                Group: {item.standard_group_id}
+              </p>
+            )}
+          </div>
+        )}
+        placeholder={placeholder}
+        disabled={disabled}
+        showClearAll
+        showLabel={false}
+        groupHeading="Standards"
+        emptyMessage="No standards found."
+        buttonClassName={cn(disabled && "opacity-60")}
+      />
+    </div>
+  );
+}

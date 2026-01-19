@@ -3359,6 +3359,16 @@ class QGetCohortV4Simulation(BaseModel):
     time_limit: int | None
     generated: bool | None
 
+
+
+
+class QGetCohortV4SimulationPosition(BaseModel):
+
+    simulation_id: UUID | None
+    value: int | None
+    generated: bool | None
+    mcp: bool | None
+
 class GetCohortSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -3399,6 +3409,10 @@ class GetCohortSqlRow(BaseModel):
     simulations_required: bool | None = None
     simulation_suggestions: list[UUID] | None = None
     simulations: list[QGetCohortV4Simulation] | None = None
+    simulation_positions: list[QGetCohortV4SimulationPosition] | None = None
+    show_simulation_positions: bool | None = None
+    simulation_positions_agent_id: UUID | None = None
+    simulation_positions_required: bool | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
 
@@ -3452,6 +3466,10 @@ class GetCohortApiResponse(BaseModel):
     simulations_required: bool | None = None
     simulation_suggestions: list[UUID] | None = None
     simulations: list[QGetCohortV4Simulation] | None = None
+    simulation_positions: list[QGetCohortV4SimulationPosition] | None = None
+    show_simulation_positions: bool | None = None
+    simulation_positions_agent_id: UUID | None = None
+    simulation_positions_required: bool | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
 
@@ -3607,6 +3625,8 @@ class PatchCohortDraftSqlParams(BaseModel):
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -3617,6 +3637,8 @@ class PatchCohortDraftSqlParams(BaseModel):
             self.description_id,
             self.active_flag_id,
             self.department_ids,
+            self.simulation_ids,
+            self.simulation_position_values,
             self.expected_version,
         )
 
@@ -3633,6 +3655,8 @@ class PatchCohortDraftApiRequest(BaseModel):
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
 class PatchCohortDraftApiResponse(BaseModel):
@@ -6328,6 +6352,9 @@ class GetFieldSqlParams(BaseModel):
 
     profile_id: UUID
     field_id: UUID | None = None
+    description_search: str | None = None
+    parameter_search: str | None = None
+    parameter_show_selected: bool | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 
@@ -6335,6 +6362,9 @@ class GetFieldSqlParams(BaseModel):
         return (
             self.profile_id,
             self.field_id,
+            self.description_search,
+            self.parameter_search,
+            self.parameter_show_selected,
             self.draft_id,
             self.mcp,
         )
@@ -6429,6 +6459,9 @@ class GetFieldSqlRow(BaseModel):
 class GetFieldApiRequest(BaseModel):
 
     field_id: UUID | None = None
+    description_search: str | None = None
+    parameter_search: str | None = None
+    parameter_show_selected: bool | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 
@@ -10008,9 +10041,13 @@ class PatchParameterDraftSqlParams(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
     department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -10020,9 +10057,13 @@ class PatchParameterDraftSqlParams(BaseModel):
             self.name_id,
             self.description_id,
             self.active_flag_id,
+            self.simulation_parameter,
+            self.document_parameter,
+            self.persona_parameter,
+            self.scenario_parameter,
+            self.video_parameter,
             self.department_ids,
-            self.persona_ids,
-            self.document_ids,
+            self.field_ids,
             self.expected_version,
         )
 
@@ -10038,9 +10079,13 @@ class PatchParameterDraftApiRequest(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
     department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchParameterDraftApiResponse(BaseModel):
@@ -11873,6 +11918,8 @@ class GetProfileSqlRow(BaseModel):
     disabled_reason: str | None = None
     group_id: UUID | None = None
     profile_id: UUID | None = None
+    role: str | None = None
+    role_options: list[str] | None = None
     first_name_id: UUID | None = None
     first_name_resource: QGetProfileV4NameResource | None = None
     show_first_name: bool | None = None
@@ -11934,6 +11981,8 @@ class GetProfileApiResponse(BaseModel):
     disabled_reason: str | None = None
     group_id: UUID | None = None
     profile_id: UUID | None = None
+    role: str | None = None
+    role_options: list[str] | None = None
     first_name_id: UUID | None = None
     first_name_resource: QGetProfileV4NameResource | None = None
     show_first_name: bool | None = None
@@ -14302,12 +14351,14 @@ class EmailsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    email: str
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.email,
             self.mcp,
         )
 
@@ -14319,6 +14370,7 @@ class EmailsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    email: str
     mcp: bool | None = False
 
 class EmailsApiResponse(BaseModel):
@@ -14602,37 +14654,6 @@ class GroupsApiRequest(BaseModel):
 class GroupsApiResponse(BaseModel):
 
     groups_id: UUID | None = None
-
-
-
-# Generated from: groups_rubric_grade_agents
-
-class GroupsRubricGradeAgentsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.mcp,
-        )
-
-class GroupsRubricGradeAgentsSqlRow(BaseModel):
-
-    groups_rubric_grade_agents_id: UUID | None = None
-
-class GroupsRubricGradeAgentsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-class GroupsRubricGradeAgentsApiResponse(BaseModel):
-
-    groups_rubric_grade_agents_id: UUID | None = None
 
 
 
@@ -15506,12 +15527,14 @@ class RequestLimitsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    requests_per_day: int
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.requests_per_day,
             self.mcp,
         )
 
@@ -15523,6 +15546,7 @@ class RequestLimitsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    requests_per_day: int
     mcp: bool | None = False
 
 class RequestLimitsApiResponse(BaseModel):
@@ -15664,37 +15688,6 @@ class RunsApiResponse(BaseModel):
 
 
 
-# Generated from: runs_rubric_grade_agents
-
-class RunsRubricGradeAgentsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.mcp,
-        )
-
-class RunsRubricGradeAgentsSqlRow(BaseModel):
-
-    runs_rubric_grade_agents_id: UUID | None = None
-
-class RunsRubricGradeAgentsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-class RunsRubricGradeAgentsApiResponse(BaseModel):
-
-    runs_rubric_grade_agents_id: UUID | None = None
-
-
-
 # Generated from: scenario_flags
 
 class ScenarioFlagsSqlParams(BaseModel):
@@ -15766,41 +15759,38 @@ class ScenarioPositionsApiResponse(BaseModel):
 
 
 
-# Generated from: scenario_rubric_grade_agents
+# Generated from: scenario_rubrics
 
-class ScenarioRubricGradeAgentsSqlParams(BaseModel):
+class ScenarioRubricsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    scenario_id: UUID
     rubric_id: UUID
-    grade_agent_id: UUID
-    agent_id_param: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.scenario_id,
             self.rubric_id,
-            self.grade_agent_id,
-            self.agent_id_param,
             self.mcp,
         )
 
-class ScenarioRubricGradeAgentsSqlRow(BaseModel):
+class ScenarioRubricsSqlRow(BaseModel):
 
     id: UUID | None = None
 
-class ScenarioRubricGradeAgentsApiRequest(BaseModel):
+class ScenarioRubricsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    scenario_id: UUID
     rubric_id: UUID
-    grade_agent_id: UUID
-    agent_id_param: UUID
     mcp: bool | None = False
 
-class ScenarioRubricGradeAgentsApiResponse(BaseModel):
+class ScenarioRubricsApiResponse(BaseModel):
 
     id: UUID | None = None
 
@@ -16633,6 +16623,8 @@ class GetRubricSqlParams(BaseModel):
     profile_id: UUID
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
+    description_search: str | None = None
+    standard_group_search: str | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16640,6 +16632,8 @@ class GetRubricSqlParams(BaseModel):
             self.profile_id,
             self.rubric_id,
             self.draft_id,
+            self.description_search,
+            self.standard_group_search,
             self.mcp,
         )
 
@@ -16712,6 +16706,18 @@ class QGetRubricV4StandardGroupResource(BaseModel):
     standard_ids: list[UUID] | None
     generated: bool | None
 
+
+
+
+class QGetRubricV4StandardResource(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    generated: bool | None
+
 class GetRubricSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -16767,11 +16773,20 @@ class GetRubricSqlRow(BaseModel):
     standard_groups_required: bool | None = None
     standard_group_suggestions: list[UUID] | None = None
     standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
+    standard_ids: list[UUID] | None = None
+    standard_resources: list[QGetRubricV4StandardResource] | None = None
+    show_standards: bool | None = None
+    standards_agent_id: UUID | None = None
+    standards_required: bool | None = None
+    standard_suggestions: list[UUID] | None = None
+    standards: list[QGetRubricV4StandardResource] | None = None
 
 class GetRubricApiRequest(BaseModel):
 
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
+    description_search: str | None = None
+    standard_group_search: str | None = None
     mcp: bool | None = False
 
 class GetRubricApiResponse(BaseModel):
@@ -16829,6 +16844,13 @@ class GetRubricApiResponse(BaseModel):
     standard_groups_required: bool | None = None
     standard_group_suggestions: list[UUID] | None = None
     standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
+    standard_ids: list[UUID] | None = None
+    standard_resources: list[QGetRubricV4StandardResource] | None = None
+    show_standards: bool | None = None
+    standards_agent_id: UUID | None = None
+    standards_required: bool | None = None
+    standard_suggestions: list[UUID] | None = None
+    standards: list[QGetRubricV4StandardResource] | None = None
 
 
 
@@ -16844,6 +16866,7 @@ class PatchRubricDraftSqlParams(BaseModel):
     department_ids: list[UUID] | None = None
     point_ids: list[UUID] | None = None
     standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -16856,6 +16879,7 @@ class PatchRubricDraftSqlParams(BaseModel):
             self.department_ids,
             self.point_ids,
             self.standard_group_ids,
+            self.standard_ids,
             self.expected_version,
         )
 
@@ -16874,6 +16898,7 @@ class PatchRubricDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
     point_ids: list[UUID] | None = None
     standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchRubricDraftApiResponse(BaseModel):
@@ -16897,6 +16922,7 @@ class SaveRubricSqlParams(BaseModel):
     total_points_id: UUID | None = None
     pass_points_id: UUID | None = None
     standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -16909,6 +16935,7 @@ class SaveRubricSqlParams(BaseModel):
             self.total_points_id,
             self.pass_points_id,
             self.standard_group_ids,
+            self.standard_ids,
         )
 
 class SaveRubricSqlRow(BaseModel):
@@ -16926,6 +16953,7 @@ class SaveRubricApiRequest(BaseModel):
     total_points_id: UUID | None = None
     pass_points_id: UUID | None = None
     standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SaveRubricApiResponse(BaseModel):
 
@@ -19140,7 +19168,7 @@ class GetSimulationResourceIdsByGroupIdSqlRow(BaseModel):
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
     scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
 
 class GetSimulationResourceIdsByGroupIdApiRequest(BaseModel):
 
@@ -19158,7 +19186,7 @@ class GetSimulationResourceIdsByGroupIdApiResponse(BaseModel):
     scenario_ids: list[UUID] | None = None
     scenario_flag_ids: list[UUID] | None = None
     scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
 
 
 
@@ -19415,6 +19443,10 @@ class PatchSimulationDraftSqlParams(BaseModel):
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -19426,6 +19458,10 @@ class PatchSimulationDraftSqlParams(BaseModel):
             self.active_flag_id,
             self.department_ids,
             self.scenario_ids,
+            self.scenario_flag_ids,
+            self.scenario_position_ids,
+            self.scenario_rubric_ids,
+            self.scenario_time_limit_ids,
             self.expected_version,
         )
 
@@ -19443,6 +19479,10 @@ class PatchSimulationDraftApiRequest(BaseModel):
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchSimulationDraftApiResponse(BaseModel):
@@ -19455,13 +19495,6 @@ class PatchSimulationDraftApiResponse(BaseModel):
 
 # Generated from: save_simulation
 
-class ISaveSimulationV4ScenarioRubricGradeAgent(BaseModel):
-
-    scenario_id: UUID | None
-    rubric_id: UUID | None
-    grade_agent_id: UUID | None
-    audio_agent_id: UUID | None
-
 class SaveSimulationSqlParams(BaseModel):
 
     name_id: UUID
@@ -19472,7 +19505,6 @@ class SaveSimulationSqlParams(BaseModel):
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    scenario_rubric_grade_agents: list[ISaveSimulationV4ScenarioRubricGradeAgent]
     profile_id: UUID
     input_simulation_id: UUID | None = None
     description_id: UUID | None = None
@@ -19480,7 +19512,7 @@ class SaveSimulationSqlParams(BaseModel):
     practice_simulation: bool | None = False
     scenario_flag_ids: list[UUID] | None = None
     scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     video_active_flags: list[bool] | None = None
     video_show_problem_statement: list[bool] | None = None
@@ -19488,11 +19520,6 @@ class SaveSimulationSqlParams(BaseModel):
     video_show_image: list[bool] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
-        # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
-        scenario_rubric_grade_agents_tuples = [
-            (conn.scenario_id, conn.rubric_id, conn.grade_agent_id, conn.audio_agent_id)
-            for conn in (self.scenario_rubric_grade_agents or [])
-        ]
         return (
             self.name_id,
             self.department_ids,
@@ -19502,7 +19529,6 @@ class SaveSimulationSqlParams(BaseModel):
             self.scenario_time_limit_seconds,
             self.scenario_audio_enabled,
             self.scenario_text_enabled,
-            scenario_rubric_grade_agents_tuples,
             self.profile_id,
             self.input_simulation_id,
             self.description_id,
@@ -19510,7 +19536,7 @@ class SaveSimulationSqlParams(BaseModel):
             self.practice_simulation,
             self.scenario_flag_ids,
             self.scenario_position_ids,
-            self.scenario_rubric_grade_agent_ids,
+            self.scenario_rubric_ids,
             self.video_ids,
             self.video_active_flags,
             self.video_show_problem_statement,
@@ -19533,14 +19559,13 @@ class SaveSimulationApiRequest(BaseModel):
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    scenario_rubric_grade_agents: list[ISaveSimulationV4ScenarioRubricGradeAgent]
     input_simulation_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     practice_simulation: bool | None = False
     scenario_flag_ids: list[UUID] | None = None
     scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     video_active_flags: list[bool] | None = None
     video_show_problem_statement: list[bool] | None = None
@@ -22314,12 +22339,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GroupsApiRequest",
         "GroupsApiResponse",
     ),
-    "app/sql/v4/resources/groups_rubric_grade_agents_complete.sql": (
-        "GroupsRubricGradeAgentsSqlParams",
-        "GroupsRubricGradeAgentsSqlRow",
-        "GroupsRubricGradeAgentsApiRequest",
-        "GroupsRubricGradeAgentsApiResponse",
-    ),
     "app/sql/v4/resources/hints_complete.sql": (
         "HintsSqlParams",
         "HintsSqlRow",
@@ -22500,12 +22519,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RunsApiRequest",
         "RunsApiResponse",
     ),
-    "app/sql/v4/resources/runs_rubric_grade_agents_complete.sql": (
-        "RunsRubricGradeAgentsSqlParams",
-        "RunsRubricGradeAgentsSqlRow",
-        "RunsRubricGradeAgentsApiRequest",
-        "RunsRubricGradeAgentsApiResponse",
-    ),
     "app/sql/v4/resources/scenario_flags_complete.sql": (
         "ScenarioFlagsSqlParams",
         "ScenarioFlagsSqlRow",
@@ -22518,11 +22531,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ScenarioPositionsApiRequest",
         "ScenarioPositionsApiResponse",
     ),
-    "app/sql/v4/resources/scenario_rubric_grade_agents_complete.sql": (
-        "ScenarioRubricGradeAgentsSqlParams",
-        "ScenarioRubricGradeAgentsSqlRow",
-        "ScenarioRubricGradeAgentsApiRequest",
-        "ScenarioRubricGradeAgentsApiResponse",
+    "app/sql/v4/resources/scenario_rubrics_complete.sql": (
+        "ScenarioRubricsSqlParams",
+        "ScenarioRubricsSqlRow",
+        "ScenarioRubricsApiRequest",
+        "ScenarioRubricsApiResponse",
     ),
     "app/sql/v4/resources/scenarios_complete.sql": (
         "ScenariosSqlParams",
@@ -24205,11 +24218,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/groups_rubric_grade_agents_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/hints_complete.sql"]
     ) -> SqlString: ...
 
@@ -24360,11 +24368,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/runs_rubric_grade_agents_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/scenario_flags_complete.sql"]
     ) -> SqlString: ...
 
@@ -24375,7 +24378,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/scenario_rubric_grade_agents_complete.sql"]
+        file_path: Literal["app/sql/v4/resources/scenario_rubrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -9,6 +9,7 @@
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -18,7 +19,15 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Mail, Sparkles, Trash2 } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Mail,
+  Plus,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
@@ -88,8 +97,18 @@ export function Emails({
     [email_suggestions]
   );
   const [primaryIndex, setPrimaryIndex] = useState(primary_email_index ?? 0);
+  const [editingEmailId, setEditingEmailId] = useState<string | null>(null);
+  const [editingEmailValue, setEditingEmailValue] = useState("");
+  const [isAddingEmail, setIsAddingEmail] = useState(false);
+  const [newEmailValue, setNewEmailValue] = useState("");
+  const [createdEmailValues, setCreatedEmailValues] = useState<
+    Record<string, string>
+  >({});
   const emailLookup = useMemo(() => {
     const map = new Map<string, string>();
+    Object.entries(createdEmailValues).forEach(([id, email]) => {
+      map.set(id, email);
+    });
     allEmails.forEach((email) => {
       if (email.id && email.email) {
         map.set(email.id, email.email);
@@ -101,7 +120,7 @@ export function Emails({
       }
     });
     return map;
-  }, [allEmails, email_resources]);
+  }, [allEmails, email_resources, createdEmailValues]);
 
   // Track which email IDs have already had resources created
   const createdEmailIdsRef = useRef<Set<string>>(new Set());
@@ -209,6 +228,90 @@ export function Emails({
     },
     [ids, onChange]
   );
+  const createEmailResource = useCallback(
+    async (value: string) => {
+      if (!createEmailsAction || !agent_id || !group_id) {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+
+      try {
+        const result = await createEmailsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            email: trimmed,
+            mcp: false,
+          },
+        });
+        return result.emails_id ?? null;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to create email resource:", error);
+        return null;
+      }
+    },
+    [agent_id, group_id, createEmailsAction]
+  );
+  const handleSaveEdit = useCallback(async () => {
+    if (!editingEmailId) return;
+    const trimmed = editingEmailValue.trim();
+    if (!trimmed) {
+      setEditingEmailId(null);
+      setEditingEmailValue("");
+      return;
+    }
+    const newId = await createEmailResource(trimmed);
+    if (!newId) return;
+
+    const index = ids.indexOf(editingEmailId);
+    if (index < 0) return;
+
+    const nextIds = [...ids];
+    nextIds[index] = newId;
+    createdEmailIdsRef.current.add(newId);
+    setCreatedEmailValues((prev) => ({ ...prev, [newId]: trimmed }));
+
+    const nextPrimaryIndex = index === primaryIndex ? index : primaryIndex;
+    setPrimaryIndex(nextPrimaryIndex);
+    onChange(nextIds, nextPrimaryIndex);
+    setEditingEmailId(null);
+    setEditingEmailValue("");
+  }, [
+    editingEmailId,
+    editingEmailValue,
+    createEmailResource,
+    ids,
+    onChange,
+    primaryIndex,
+  ]);
+  const handleAddEmail = useCallback(async () => {
+    const trimmed = newEmailValue.trim();
+    if (!trimmed) {
+      setIsAddingEmail(false);
+      setNewEmailValue("");
+      return;
+    }
+    const newId = await createEmailResource(trimmed);
+    if (!newId) return;
+
+    const nextIds = [...ids, newId];
+    const nextPrimaryIndex =
+      nextIds.length === 1 ? 0 : Math.min(primaryIndex, nextIds.length - 1);
+    createdEmailIdsRef.current.add(newId);
+    setCreatedEmailValues((prev) => ({ ...prev, [newId]: trimmed }));
+    setPrimaryIndex(nextPrimaryIndex);
+    onChange(nextIds, nextPrimaryIndex);
+    setIsAddingEmail(false);
+    setNewEmailValue("");
+  }, [
+    newEmailValue,
+    createEmailResource,
+    ids,
+    onChange,
+    primaryIndex,
+  ]);
   const handleRemove = useCallback(
     (emailId: string) => {
       const removeIndex = ids.indexOf(emailId);
@@ -290,7 +393,7 @@ export function Emails({
             getId={(item) => item.id}
             getLabel={(item) => item.email}
             getSearchText={(item) => `${item.email} ${item.id}`}
-            placeholder="Previous emails"
+            placeholder={placeholder}
             disabled={disabled}
             compact={true}
             buttonClassName="h-8"
@@ -311,6 +414,7 @@ export function Emails({
             const isSuggestedItem = isSuggested(item.id);
             const emailLabel =
               item.email || `Email ${item.id.slice(0, 8)}...`;
+            const isEditing = editingEmailId === item.id;
 
             return (
               <div
@@ -322,13 +426,45 @@ export function Emails({
                 )}
                 onClick={() => {
                   if (disabled) return;
-                  handlePrimaryChange(index);
+                  if (!isEditing) {
+                    handlePrimaryChange(index);
+                  }
                 }}
               >
                 <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium">{emailLabel}</p>
+                    {isEditing ? (
+                      <Input
+                        type="email"
+                        value={editingEmailValue}
+                        onChange={(e) => setEditingEmailValue(e.target.value)}
+                        placeholder="email@example.com"
+                        className="h-8 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSaveEdit();
+                          } else if (e.key === "Escape") {
+                            setEditingEmailId(null);
+                            setEditingEmailValue("");
+                          }
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (disabled) return;
+                          setEditingEmailId(item.id);
+                          setEditingEmailValue(item.email || "");
+                        }}
+                        className="truncate text-left text-sm font-medium text-foreground hover:underline"
+                      >
+                        {emailLabel}
+                      </button>
+                    )}
                     {isSuggestedItem && (
                       <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                         Suggested
@@ -340,23 +476,55 @@ export function Emails({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePrimaryChange(index);
-                    }}
-                    disabled={disabled}
-                    className={cn(
-                      "text-xs px-2 py-1 rounded",
-                      isPrimary
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80",
-                      disabled && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {isPrimary ? "Primary" : "Set Primary"}
-                  </button>
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSaveEdit();
+                        }}
+                        disabled={disabled}
+                        className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingEmailId(null);
+                          setEditingEmailValue("");
+                        }}
+                        disabled={disabled}
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrimaryChange(index);
+                      }}
+                      disabled={disabled}
+                      className={cn(
+                        "text-xs px-2 py-1 rounded",
+                        isPrimary
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80",
+                        disabled && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isPrimary ? "Primary" : "Set Primary"}
+                    </button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -380,6 +548,60 @@ export function Emails({
               </div>
             );
           })}
+        </div>
+      )}
+      {!disabled && (
+        <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">
+          {isAddingEmail ? (
+            <div className="flex items-center gap-2">
+              <Input
+                type="email"
+                value={newEmailValue}
+                onChange={(e) => setNewEmailValue(e.target.value)}
+                placeholder="email@example.com"
+                className="h-8"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleAddEmail();
+                  } else if (e.key === "Escape") {
+                    setIsAddingEmail(false);
+                    setNewEmailValue("");
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={handleAddEmail}
+                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => {
+                  setIsAddingEmail(false);
+                  setNewEmailValue("");
+                }}
+                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAddingEmail(true)}
+              className="flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add custom email
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -200,20 +200,44 @@ parameter_departments_data AS (
 -- Name ID data
 name_id_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
-            ELSE (SELECT pn.name_id FROM parameter_names pn WHERE pn.parameter_id = (SELECT parameter_id FROM params) AND pn.active = true LIMIT 1)
-        END as name_id
+        COALESCE(
+            (SELECT dn.names_id
+             FROM draft_names dn
+             WHERE dn.draft_id = (SELECT draft_id FROM params)
+             LIMIT 1),
+            CASE 
+                WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
+                ELSE (
+                    SELECT pn.name_id
+                    FROM parameter_names pn
+                    WHERE pn.parameter_id = (SELECT parameter_id FROM params)
+                      AND pn.active = true
+                    LIMIT 1
+                )
+            END
+        ) as name_id
     FROM params
     LIMIT 1
 ),
 -- Description ID data
 description_id_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
-            ELSE (SELECT pd.description_id FROM parameter_descriptions pd WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true LIMIT 1)
-        END as description_id
+        COALESCE(
+            (SELECT dd.descriptions_id
+             FROM draft_descriptions dd
+             WHERE dd.draft_id = (SELECT draft_id FROM params)
+             LIMIT 1),
+            CASE 
+                WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
+                ELSE (
+                    SELECT pd.description_id
+                    FROM parameter_descriptions pd
+                    WHERE pd.parameter_id = (SELECT parameter_id FROM params)
+                      AND pd.active = true
+                    LIMIT 1
+                )
+            END
+        ) as description_id
     FROM params
     LIMIT 1
 ),
@@ -331,6 +355,15 @@ descriptions_suggestions_objects AS (
 active_flag_id_data AS (
     SELECT 
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN (
+                SELECT df.flags_id
+                FROM draft_flags df
+                JOIN flags_resource f ON f.id = df.flags_id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND f.name = 'active'
+                  AND df.active = true
+                LIMIT 1
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::uuid
             ELSE (
                 SELECT pf.flag_id
@@ -362,34 +395,94 @@ active_flag_resource_data AS (
 parameter_data AS (
     SELECT 
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN (
+                SELECT n.name
+                FROM names_resource n
+                WHERE n.id = (SELECT name_id FROM name_id_data)
+                LIMIT 1
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::text
             ELSE (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT parameter_id FROM params) AND pn.active = true LIMIT 1)
         END as name,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN (
+                SELECT d.description
+                FROM descriptions_resource d
+                WHERE d.id = (SELECT description_id FROM description_id_data)
+                LIMIT 1
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::text
             ELSE (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true LIMIT 1)
         END as description,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM draft_flags df
+                JOIN flags_resource fl ON df.flags_id = fl.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND fl.name = 'active'
+                  AND df.active = true
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
             ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'active' AND paf.value = TRUE AND paf.active = true)
         END as active,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM draft_flags df
+                JOIN flags_resource fl ON df.flags_id = fl.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND fl.name = 'simulation_parameter'
+                  AND df.active = true
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
             ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'simulation_parameter' AND paf.value = TRUE AND paf.active = true)
         END as simulation_parameter,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM draft_flags df
+                JOIN flags_resource fl ON df.flags_id = fl.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND fl.name = 'document_parameter'
+                  AND df.active = true
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
             ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'document_parameter' AND paf.value = TRUE AND paf.active = true)
         END as document_parameter,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM draft_flags df
+                JOIN flags_resource fl ON df.flags_id = fl.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND fl.name = 'persona_parameter'
+                  AND df.active = true
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
             ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'persona_parameter' AND paf.value = TRUE AND paf.active = true)
         END as persona_parameter,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM draft_flags df
+                JOIN flags_resource fl ON df.flags_id = fl.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND fl.name = 'scenario_parameter'
+                  AND df.active = true
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
             ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'scenario_parameter' AND paf.value = TRUE AND paf.active = true)
         END as scenario_parameter,
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
+                SELECT 1
+                FROM draft_flags df
+                JOIN flags_resource fl ON df.flags_id = fl.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                  AND fl.name = 'video_parameter'
+                  AND df.active = true
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
             ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'video_parameter' AND paf.value = TRUE AND paf.active = true)
         END as video_parameter
@@ -622,7 +715,14 @@ field_suggestions_data AS (
 -- Resource IDs data (selected IDs for parameter)
 department_ids_data AS (
     SELECT 
-        CASE 
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
+                 FROM draft_departments dd
+                 WHERE dd.draft_id = (SELECT draft_id FROM params)
+                   AND dd.active = true),
+                ARRAY[]::uuid[]
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
@@ -638,6 +738,21 @@ department_ids_data AS (
 field_ids_data AS (
     SELECT 
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(df.fields_id ORDER BY df.created_at)
+                 FROM draft_fields df
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                   AND df.active = true
+                   AND EXISTS (
+                       SELECT 1
+                       FROM field_flags ff
+                       JOIN flags_resource fl ON ff.flag_id = fl.id
+                       WHERE ff.field_id = df.fields_id
+                         AND fl.name = 'active'
+                         AND ff.value = true
+                   )),
+                ARRAY[]::uuid[]
+            )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)

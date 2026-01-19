@@ -27,7 +27,6 @@ DROP TYPE IF EXISTS types.q_get_simulation_v4_parameter_item_detail;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_persona;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_field;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_rubric;
-DROP TYPE IF EXISTS types.q_get_simulation_v4_rubric_grade_agent;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_parameter;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_agent;
@@ -42,7 +41,6 @@ DROP TYPE IF EXISTS types.q_get_simulation_v4_flag_option;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_resource;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_flag_resource;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_position_resource;
-DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_rubric_grade_agent_resource;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_rubric_resource;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_time_limit_resource;
 
@@ -150,17 +148,6 @@ CREATE TYPE types.q_get_simulation_v4_department AS (
     cohort_ids uuid[]
 );
 
--- Create rubric_grade_agent type (used by scenario type)
-CREATE TYPE types.q_get_simulation_v4_rubric_grade_agent AS (
-    rubric_grade_agent_id uuid,
-    rubric_id uuid,
-    rubric_name text,
-    grade_agent_id uuid,
-    grade_agent_name text,
-    audio_agent_id uuid,
-    audio_agent_name text
-);
-
 CREATE TYPE types.q_get_simulation_v4_scenario AS (
     scenario_id uuid,
     title text,
@@ -177,8 +164,7 @@ CREATE TYPE types.q_get_simulation_v4_scenario AS (
     success_rate int,
     last_used timestamptz,
     can_remove boolean,
-    has_active_video boolean,
-    rubric_grade_agents types.q_get_simulation_v4_rubric_grade_agent[]
+    has_active_video boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_parameter_item AS (
@@ -635,23 +621,6 @@ scenario_statistics AS (
     WHERE x.simulation_id IS NOT NULL
     GROUP BY ss.scenario_id
 ),
-scenario_rubric_grade_agents_data AS (
-    SELECT 
-        ssb.scenario_id,
-        ARRAY_AGG(
-            (srr.id, srr.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), 
-             NULL::uuid, NULL::text,
-             NULL::uuid, NULL::text)::types.q_get_simulation_v4_rubric_grade_agent
-            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
-        ) as rubric_grade_agents
-    FROM params x
-    JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
-    JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ssb.simulation_id
-    JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ssb.scenario_id
-    JOIN rubrics_resource r ON r.id = srr.rubric_id
-    WHERE x.simulation_id IS NOT NULL
-    GROUP BY ssb.scenario_id
-),
 scenarios_data AS (
     SELECT 
         ARRAY_AGG(
@@ -667,8 +636,7 @@ scenarios_data AS (
                      AND sv.active = true
                  ) THEN true 
                  ELSE false 
-             END,
-             COALESCE(srgad.rubric_grade_agents, '{}'::types.q_get_simulation_v4_rubric_grade_agent[])
+             END
             )::types.q_get_simulation_v4_scenario
             ORDER BY sb.position
         ) as scenarios,
@@ -676,7 +644,6 @@ scenarios_data AS (
     FROM params x
     LEFT JOIN simulation_scenarios_base sb ON sb.simulation_id = x.simulation_id
     LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
-    LEFT JOIN scenario_rubric_grade_agents_data srgad ON srgad.scenario_id = sb.scenario_id
     WHERE x.simulation_id IS NOT NULL
 ),
 valid_scenarios_list AS (
@@ -1811,9 +1778,38 @@ scenario_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+draft_scenario_flag_ids_data AS (
+    SELECT 
+        ARRAY_AGG(dsf.scenario_flags_id) as scenario_flag_ids
+    FROM params x
+    JOIN draft_scenario_flags dsf ON dsf.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+),
+draft_scenario_position_ids_data AS (
+    SELECT 
+        ARRAY_AGG(dsp.scenario_position_id) as scenario_position_ids
+    FROM params x
+    JOIN draft_scenario_positions dsp ON dsp.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+),
+draft_scenario_rubric_ids_data AS (
+    SELECT 
+        ARRAY_AGG(dsr.scenario_rubric_id) as scenario_rubric_ids
+    FROM params x
+    JOIN draft_scenario_rubrics dsr ON dsr.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+),
+draft_scenario_time_limit_ids_data AS (
+    SELECT 
+        ARRAY_AGG(dstl.scenario_time_limit_id) as scenario_time_limit_ids
+    FROM params x
+    JOIN draft_scenario_time_limits dstl ON dstl.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+),
 scenario_flag_ids_data AS (
     SELECT 
         COALESCE(
+            (SELECT scenario_flag_ids FROM draft_scenario_flag_ids_data),
             (SELECT ARRAY_AGG(DISTINCT ssf.scenario_flag_id ORDER BY ssf.scenario_flag_id)
              FROM simulation_scenario_flags ssf
              WHERE ssf.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
@@ -1867,9 +1863,9 @@ scenario_flags_data AS (
 scenario_position_ids_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(spr.scenario_id ORDER BY spr.value)
+            (SELECT scenario_position_ids FROM draft_scenario_position_ids_data),
+            (SELECT ARRAY_AGG(ssp.scenario_position_id ORDER BY ssp.created_at)
              FROM simulation_scenario_positions ssp
-             JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
              WHERE ssp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
                AND ssp.active = true),
             ARRAY[]::uuid[]
@@ -1881,15 +1877,14 @@ scenario_position_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (ssp.simulation_id, spr.scenario_id, spr.value, COALESCE(ssp.generated, false),
+                (COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base)), spr.scenario_id, spr.value, COALESCE(spr.generated, false),
                  (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = spr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_position_resource
                 ORDER BY spr.value
             )
-            FROM simulation_scenario_positions ssp
-            JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
-            WHERE ssp.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
-              AND ssp.active = true),
+            FROM scenario_positions_resource spr
+            CROSS JOIN scenario_position_ids_data spid
+            WHERE spr.id = ANY(spid.scenario_position_ids)),
             '{}'::types.q_get_simulation_v4_scenario_position_resource[]
         ) as scenario_position_resources
     FROM params
@@ -1911,6 +1906,7 @@ scenario_positions_data AS (
 scenario_rubric_ids_data AS (
     SELECT 
         COALESCE(
+            (SELECT scenario_rubric_ids FROM draft_scenario_rubric_ids_data),
             (SELECT ARRAY_AGG(DISTINCT ssr.scenario_rubric_id ORDER BY ssr.scenario_rubric_id)
              FROM simulation_scenario_rubrics ssr
              WHERE ssr.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
@@ -1929,12 +1925,9 @@ scenario_rubric_resources_data AS (
                 )::types.q_get_simulation_v4_scenario_rubric_resource
                 ORDER BY srr.scenario_id, srr.rubric_id
             )
-            FROM simulation_scenario_rubrics ssr
-            JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id
+            FROM scenario_rubrics_resource srr
             CROSS JOIN scenario_rubric_ids_data srid
-            WHERE ssr.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
-              AND ssr.active = true
-              AND srr.id = ANY(srid.scenario_rubric_ids)),
+            WHERE srr.id = ANY(srid.scenario_rubric_ids)),
             '{}'::types.q_get_simulation_v4_scenario_rubric_resource[]
         ) as scenario_rubric_resources
     FROM params
@@ -1966,6 +1959,7 @@ scenario_rubrics_data AS (
 scenario_time_limit_ids_data AS (
     SELECT 
         COALESCE(
+            (SELECT scenario_time_limit_ids FROM draft_scenario_time_limit_ids_data),
             (SELECT ARRAY_AGG(DISTINCT sstl.scenario_time_limit_id ORDER BY sstl.scenario_time_limit_id)
              FROM simulation_scenario_time_limits sstl
              WHERE sstl.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
@@ -1984,12 +1978,9 @@ scenario_time_limit_resources_data AS (
                 )::types.q_get_simulation_v4_scenario_time_limit_resource
                 ORDER BY stlr.scenario_id, stlr.time_limit_seconds
             )
-            FROM simulation_scenario_time_limits sstl
-            JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
+            FROM scenario_time_limits_resource stlr
             CROSS JOIN scenario_time_limit_ids_data stlid
-            WHERE sstl.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
-              AND sstl.active = true
-              AND stlr.active = true
+            WHERE stlr.active = true
               AND stlr.id = ANY(stlid.scenario_time_limit_ids)),
             '{}'::types.q_get_simulation_v4_scenario_time_limit_resource[]
         ) as scenario_time_limit_resources

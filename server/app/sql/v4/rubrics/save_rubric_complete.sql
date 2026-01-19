@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION api_save_rubric_v4(
     active_flag_id uuid DEFAULT NULL,
     total_points_id uuid DEFAULT NULL,
     pass_points_id uuid DEFAULT NULL,
-    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    standard_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -87,6 +88,15 @@ BEGIN
             RAISE EXCEPTION 'One or more standard_group_ids not found';
         END IF;
     END IF;
+
+    IF array_length(standard_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(standard_ids) AS std_id
+            WHERE NOT EXISTS (SELECT 1 FROM standards_resource WHERE id = std_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more standard_ids not found';
+        END IF;
+    END IF;
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
@@ -96,6 +106,9 @@ BEGIN
         DELETE FROM rubric_departments WHERE rubric_id = v_rubric_id;
         -- Deactivate (don't delete) standard_group links
         UPDATE rubric_standard_groups SET active = false, updated_at = NOW()
+        WHERE rubric_id = v_rubric_id AND active = true;
+        -- Deactivate (don't delete) standard links
+        UPDATE rubric_standards SET active = false, updated_at = NOW()
         WHERE rubric_id = v_rubric_id AND active = true;
         -- Update existing active flag if it exists
         UPDATE rubric_flags SET
@@ -118,6 +131,7 @@ BEGIN
             pass_points_id,
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
+            COALESCE(standard_ids, ARRAY[]::uuid[]) AS standard_ids,
             profile_id
     ),
     user_profile AS (
@@ -276,6 +290,22 @@ BEGIN
         CROSS JOIN standard_groups_with_position sgwp
         ON CONFLICT ON CONSTRAINT rubric_standard_groups_pkey DO UPDATE SET
             position = EXCLUDED.position,
+            active = true,
+            updated_at = NOW()
+    ),
+    -- Link standards (old ones already deactivated above if update)
+    link_standards AS (
+        INSERT INTO rubric_standards (rubric_id, standard_id, active, created_at, updated_at)
+        SELECT 
+            x.rubric_id,
+            std_id,
+            true,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.standard_ids) as std_id
+        WHERE COALESCE(array_length(x.standard_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT rubric_standards_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     )
