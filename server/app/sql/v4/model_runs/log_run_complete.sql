@@ -596,18 +596,18 @@ update_existing_assistant_message AS (
     WHERE id = (SELECT assistant_message_id FROM existing_assistant_message)
     RETURNING id as assistant_message_id, created_at, updated_at
 ),
+new_assistant_message AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'assistant'::message_role, true, false, NOW(), NOW()
+    FROM params x
+    WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
+      AND NOT EXISTS (SELECT 1 FROM existing_assistant_message)
+    RETURNING id as assistant_message_id, created_at, updated_at
+),
 assistant_message AS (
     SELECT assistant_message_id, created_at, updated_at FROM update_existing_assistant_message
     UNION ALL
-    SELECT nam.assistant_message_id, nam.created_at, nam.updated_at
-    FROM (
-        INSERT INTO messages (role, completed, audio, created_at, updated_at)
-        SELECT 'assistant'::message_role, true, false, NOW(), NOW()
-        FROM params x
-        WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
-          AND NOT EXISTS (SELECT 1 FROM existing_assistant_message)
-        RETURNING id as assistant_message_id, created_at, updated_at
-    ) nam
+    SELECT assistant_message_id, created_at, updated_at FROM new_assistant_message
 ),
 assistant_tool_call AS (
     INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)

@@ -10668,6 +10668,16 @@ export interface components {
             document_search?: string | null;
             /** Parameter Search */
             parameter_search?: string | null;
+            /** Description Search */
+            description_search?: string | null;
+            /** Problem Statement Search */
+            problem_statement_search?: string | null;
+            /** Template Search */
+            template_search?: string | null;
+            /** Image Search */
+            image_search?: string | null;
+            /** Video Search */
+            video_search?: string | null;
             /** Persona Show Selected */
             persona_show_selected?: boolean | null;
             /** Document Show Selected */
@@ -12417,6 +12427,18 @@ export interface components {
             description_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Objectives Enabled Flag Id */
+            objectives_enabled_flag_id?: string | null;
+            /** Images Enabled Flag Id */
+            images_enabled_flag_id?: string | null;
+            /** Video Enabled Flag Id */
+            video_enabled_flag_id?: string | null;
+            /** Questions Enabled Flag Id */
+            questions_enabled_flag_id?: string | null;
+            /** Problem Statement Enabled Flag Id */
+            problem_statement_enabled_flag_id?: string | null;
+            /** Use Templates Flag Id */
+            use_templates_flag_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Persona Ids */
