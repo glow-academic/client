@@ -7737,11 +7737,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
+            /** Icon Id */
+            icon_id?: string | null;
             /** Type */
             type?: string | null;
             /**
@@ -16248,6 +16245,8 @@ export interface components {
             description: string | null;
             /** Icon Id */
             icon_id: string | null;
+            /** Icon Name */
+            icon_name: string | null;
             /** Generated */
             generated: boolean | null;
         };

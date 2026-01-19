@@ -89,6 +89,19 @@ export function Simulations({
     () => simulation_ids ?? simulationIds ?? [],
     [simulation_ids, simulationIds]
   );
+
+  const normalizeDescription = useCallback((description?: string | null) => {
+    const trimmed = description?.trim() || "";
+    if (!trimmed) return null;
+    if (trimmed === "0") return null;
+    if (/^\d+$/.test(trimmed)) return null;
+    const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
+    if (trailingZeroMatch && !/\d/.test(trailingZeroMatch[1])) {
+      const withoutTrailingZero = trailingZeroMatch[1].trim();
+      return withoutTrailingZero || null;
+    }
+    return trimmed;
+  }, []);
   const show = show_simulations ?? false;
   const allSimulations = useMemo(() => simulations ?? [], [simulations]);
   const suggestionsList = useMemo(
@@ -100,14 +113,19 @@ export function Simulations({
   const simulationItems = useMemo(() => {
     return allSimulations
       .filter((s) => s.simulation_id && s.name) // Filter out nulls
-      .map((s) => ({
-        id: s.simulation_id!,
-        name: s.name!,
-        ...(s.description ? { description: s.description } : {}), // Only include if not null/undefined
-        ...(s.time_limit !== null && s.time_limit !== undefined
-          ? { time_limit: s.time_limit }
-          : {}),
-      }));
+      .map((s) => {
+        const normalizedDescription = normalizeDescription(s.description);
+        return {
+          id: s.simulation_id!,
+          name: s.name!,
+          ...(normalizedDescription
+            ? { description: normalizedDescription }
+            : {}),
+          ...(s.time_limit !== null && s.time_limit !== undefined
+            ? { time_limit: s.time_limit }
+            : {}),
+        };
+      });
   }, [allSimulations]);
 
   // Filter simulations based on search term and show selected filter
@@ -153,17 +171,6 @@ export function Simulations({
   const hasGenerated = useMemo(() => {
     return simulation_resources?.some((s) => s.generated) ?? false;
   }, [simulation_resources]);
-
-  // Format time limit for display
-  const formatTimeLimit = useCallback((seconds: number | null | undefined) => {
-    if (!seconds) return null;
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  }, []);
 
   // Don't render if show_simulations is false (AFTER all hooks)
   if (!show) {
@@ -245,11 +252,6 @@ export function Simulations({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                   {item.description && (
                     <p className="truncate">{item.description}</p>
-                  )}
-                  {item.time_limit && (
-                    <span className="shrink-0">
-                      {formatTimeLimit(item.time_limit)}
-                    </span>
                   )}
                 </div>
               )}

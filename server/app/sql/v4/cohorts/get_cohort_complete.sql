@@ -524,7 +524,17 @@ simulation_mapping_data AS (
     SELECT 
         s.id as simulation_id,
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description,
+        COALESCE(
+            NULLIF(
+                REGEXP_REPLACE(
+                    TRIM((SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1)),
+                    '^0$|\\s0$',
+                    ''
+                ),
+                ''
+            ),
+            'No description'
+        ) as description,
         COALESCE(
             (SELECT SUM(stlr.time_limit_seconds)
              FROM simulation_scenario_time_limits sstl

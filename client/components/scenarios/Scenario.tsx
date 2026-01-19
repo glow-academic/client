@@ -769,6 +769,41 @@ function ScenarioComponent({
     };
   }, [scenarioData]);
 
+  const flagsEnabled = useMemo(
+    () => ({
+      problemStatement: !!formState.problem_statement_enabled_flag_id,
+      objectives: !!formState.objectives_enabled_flag_id,
+      images: !!formState.images_enabled_flag_id,
+      videos: !!formState.video_enabled_flag_id,
+      questions: !!formState.questions_enabled_flag_id,
+      templates: !!formState.use_templates_flag_id,
+    }),
+    [
+      formState.problem_statement_enabled_flag_id,
+      formState.objectives_enabled_flag_id,
+      formState.images_enabled_flag_id,
+      formState.video_enabled_flag_id,
+      formState.questions_enabled_flag_id,
+      formState.use_templates_flag_id,
+    ]
+  );
+
+  const showProblemStatementSection =
+    (stableScenarioDataFields?.show_problem_statement ?? false) &&
+    flagsEnabled.problemStatement;
+  const showObjectivesSection =
+    (stableScenarioDataFields?.show_objectives ?? false) &&
+    flagsEnabled.objectives;
+  const showImagesSection =
+    (stableScenarioDataFields?.show_images ?? false) && flagsEnabled.images;
+  const showVideosSection =
+    (stableScenarioDataFields?.show_videos ?? false) && flagsEnabled.videos;
+  const showQuestionsSection =
+    (stableScenarioDataFields?.show_questions ?? false) && flagsEnabled.questions;
+  const showTemplatesSection =
+    (stableScenarioDataFields?.show_templates ?? false) &&
+    flagsEnabled.templates;
+
   const canRegenerate = useCallback(
     (resourceType: ScenarioResourceType): boolean => {
       if (!stableScenarioDataFields) return false;
@@ -1549,7 +1584,7 @@ function ScenarioComponent({
       },
     ];
 
-    if (stableScenarioDataFields?.show_problem_statement) {
+    if (showProblemStatementSection) {
       items.push({
         id: "problem_statement",
         title: "Problem Statement",
@@ -1558,7 +1593,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.show_objectives) {
+    if (showObjectivesSection) {
       items.push({
         id: "objectives",
         title: "Objectives",
@@ -1585,7 +1620,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.show_templates) {
+    if (showTemplatesSection) {
       items.push({
         id: "templates",
         title: "Templates",
@@ -1612,7 +1647,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.show_images) {
+    if (showImagesSection) {
       items.push({
         id: "images",
         title: "Images",
@@ -1621,7 +1656,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.show_videos) {
+    if (showVideosSection) {
       items.push({
         id: "videos",
         title: "Videos",
@@ -1630,7 +1665,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.show_questions) {
+    if (showQuestionsSection) {
       items.push({
         id: "questions",
         title: "Questions",
@@ -1641,16 +1676,16 @@ function ScenarioComponent({
 
     return items;
   }, [
-    stableScenarioDataFields?.show_problem_statement,
-    stableScenarioDataFields?.show_objectives,
+    showProblemStatementSection,
+    showObjectivesSection,
     stableScenarioDataFields?.show_personas,
     stableScenarioDataFields?.show_documents,
-    stableScenarioDataFields?.show_templates,
+    showTemplatesSection,
     stableScenarioDataFields?.show_parameters,
     stableScenarioDataFields?.show_fields,
-    stableScenarioDataFields?.show_images,
-    stableScenarioDataFields?.show_videos,
-    stableScenarioDataFields?.show_questions,
+    showImagesSection,
+    showVideosSection,
+    showQuestionsSection,
   ]);
 
   const formFieldKeys = useMemo(
@@ -2066,7 +2101,12 @@ function ScenarioComponent({
                   setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                 }
                 label="Active"
-                helpText={currentScenarioData?.active_flag_resource?.description ?? undefined}
+                flagName="active"
+                flagDescription="Inactive scenarios will not be available for selection."
+                helpText={
+                  currentScenarioData?.active_flag_resource?.description ||
+                  "Inactive scenarios will not be available for selection."
+                }
                 iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.active_flag_agent_id ?? null}
@@ -2160,9 +2200,11 @@ function ScenarioComponent({
                   }))
                 }
                 label="Problem Statement Enabled"
+                flagName="problem_statement_enabled"
+                flagDescription="Show the problem statement section."
                 helpText={
                   currentScenarioData?.problem_statement_enabled_flag_resource
-                    ?.description ?? undefined
+                    ?.description || "Show the problem statement section."
                 }
                 iconId={
                   currentScenarioData?.problem_statement_enabled_flag_resource
@@ -2198,9 +2240,11 @@ function ScenarioComponent({
                   }))
                 }
                 label="Objectives Enabled"
+                flagName="objectives_enabled"
+                flagDescription="Show the objectives section."
                 helpText={
                   currentScenarioData?.objectives_enabled_flag_resource
-                    ?.description ?? undefined
+                    ?.description || "Show the objectives section."
                 }
                 iconId={
                   currentScenarioData?.objectives_enabled_flag_resource
@@ -2232,9 +2276,11 @@ function ScenarioComponent({
                   }))
                 }
                 label="Images Enabled"
+                flagName="images_enabled"
+                flagDescription="Show the images section."
                 helpText={
-                  currentScenarioData?.images_enabled_flag_resource?.description ??
-                  undefined
+                  currentScenarioData?.images_enabled_flag_resource?.description ||
+                  "Show the images section."
                 }
                 iconId={
                   currentScenarioData?.images_enabled_flag_resource?.icon_id ??
@@ -2262,9 +2308,11 @@ function ScenarioComponent({
                   }))
                 }
                 label="Video Enabled"
+                flagName="video_enabled"
+                flagDescription="Show the videos section."
                 helpText={
-                  currentScenarioData?.video_enabled_flag_resource?.description ??
-                  undefined
+                  currentScenarioData?.video_enabled_flag_resource?.description ||
+                  "Show the videos section."
                 }
                 iconId={
                   currentScenarioData?.video_enabled_flag_resource?.icon_id ??
@@ -2294,9 +2342,11 @@ function ScenarioComponent({
                   }))
                 }
                 label="Questions Enabled"
+                flagName="questions_enabled"
+                flagDescription="Show the questions section."
                 helpText={
                   currentScenarioData?.questions_enabled_flag_resource
-                    ?.description ?? undefined
+                    ?.description || "Show the questions section."
                 }
                 iconId={
                   currentScenarioData?.questions_enabled_flag_resource?.icon_id ??
@@ -2324,9 +2374,11 @@ function ScenarioComponent({
                   }))
                 }
                 label="Templates Enabled"
+                flagName="use_templates"
+                flagDescription="Show the templates section."
                 helpText={
-                  currentScenarioData?.use_templates_flag_resource?.description ??
-                  undefined
+                  currentScenarioData?.use_templates_flag_resource?.description ||
+                  "Show the templates section."
                 }
                 iconId={
                   currentScenarioData?.use_templates_flag_resource?.icon_id ??
@@ -2391,9 +2443,7 @@ function ScenarioComponent({
                 problem_statement_resource={
                   currentScenarioData?.problem_statement_resource ?? null
                 }
-                show_problem_statement={
-                  currentScenarioData?.show_problem_statement ?? true
-                }
+                show_problem_statement={showProblemStatementSection}
                 problem_statement_suggestions={
                   currentScenarioData?.problem_statement_suggestions ?? []
                 }
@@ -2460,7 +2510,7 @@ function ScenarioComponent({
               <Objectives
                 objective_ids={formState.objective_ids}
                 objective_resources={currentScenarioData?.objective_resources ?? []}
-                show_objectives={currentScenarioData?.show_objectives ?? false}
+                show_objectives={showObjectivesSection}
                 objectives_agent_id={currentScenarioData?.objectives_agent_id ?? null}
                 objectives_required={currentScenarioData?.objectives_required ?? false}
                 objective_suggestions={currentScenarioData?.objective_suggestions ?? []}
@@ -2676,7 +2726,7 @@ function ScenarioComponent({
               <Templates
                 template_ids={formState.template_ids}
                 template_resources={currentScenarioData?.template_resources ?? []}
-                show_templates={currentScenarioData?.show_templates ?? false}
+                show_templates={showTemplatesSection}
                 template_suggestions={currentScenarioData?.template_suggestions ?? []}
                 templates={currentScenarioData?.templates ?? []}
                 searchTerm={templateSearch}
@@ -2866,7 +2916,7 @@ function ScenarioComponent({
               <Images
                 image_ids={formState.image_ids}
                 image_resources={currentScenarioData?.image_resources ?? []}
-                show_images={currentScenarioData?.show_images ?? false}
+                show_images={showImagesSection}
                 images_agent_id={currentScenarioData?.images_agent_id ?? null}
                 images_required={currentScenarioData?.images_required ?? false}
                 image_suggestions={currentScenarioData?.image_suggestions ?? []}
@@ -2934,7 +2984,7 @@ function ScenarioComponent({
               <Videos
                 video_ids={formState.video_ids}
                 video_resources={currentScenarioData?.video_resources ?? []}
-                show_videos={currentScenarioData?.show_videos ?? false}
+                show_videos={showVideosSection}
                 videos_agent_id={currentScenarioData?.videos_agent_id ?? null}
                 videos_required={currentScenarioData?.videos_required ?? false}
                 video_suggestions={currentScenarioData?.video_suggestions ?? []}
@@ -2994,7 +3044,7 @@ function ScenarioComponent({
               <Questions
                 question_ids={formState.question_ids}
                 question_resources={currentScenarioData?.question_resources ?? []}
-                show_questions={currentScenarioData?.show_questions ?? false}
+                show_questions={showQuestionsSection}
                 questions_agent_id={currentScenarioData?.questions_agent_id ?? null}
                 questions_required={currentScenarioData?.questions_required ?? false}
                 question_suggestions={currentScenarioData?.question_suggestions ?? []}

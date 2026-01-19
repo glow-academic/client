@@ -263,6 +263,16 @@ export function Descriptions({
     return Object.values(suggestionsMapping);
   }, [descriptions, suggestionsMapping]);
 
+  const descriptionsById = useMemo(() => {
+    const mapping: Record<string, string> = {};
+    (descriptions ?? []).forEach((desc) => {
+      if (desc.id && desc.description) {
+        mapping[desc.id] = desc.description;
+      }
+    });
+    return mapping;
+  }, [descriptions]);
+
   // Don't render if show_description is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -307,7 +317,23 @@ export function Descriptions({
           items={pickerItems}
           selectedIds={resourceId ? [resourceId] : []}
           onSelect={(ids) => {
-            onDescriptionIdChange(ids[0] || null);
+            const selectedId = ids[0] || null;
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
+            }
+            saveSeqRef.current += 1;
+            if (selectedId) {
+              const nextValue = descriptionsById[selectedId] ?? "";
+              setInternalValue(nextValue);
+              lastSavedValueRef.current = nextValue;
+              lastServerTextRef.current = nextValue;
+            } else {
+              setInternalValue("");
+              lastSavedValueRef.current = "";
+              lastServerTextRef.current = "";
+            }
+            isDirtyRef.current = false;
+            onDescriptionIdChange(selectedId);
           }}
           getId={(item) => {
             if (typeof item === "string") {

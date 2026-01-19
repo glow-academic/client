@@ -76,12 +76,26 @@ export function SimulationPositions({
     [simulation_positions]
   );
   const simulationLabels = useMemo(() => {
+    const normalizeDescription = (description?: string | null) => {
+      const trimmed = description?.trim() || "";
+      if (!trimmed) return null;
+      if (trimmed === "0") return null;
+      if (/^\d+$/.test(trimmed)) return null;
+      const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
+      if (trailingZeroMatch && !/\d/.test(trailingZeroMatch[1])) {
+        const withoutTrailingZero = trailingZeroMatch[1].trim();
+        return withoutTrailingZero || null;
+      }
+      return trimmed;
+    };
     const map = new Map<string, string>();
     (simulation_resources ?? []).forEach((sim) => {
       if (sim.simulation_id) {
+        const name = sim.name?.trim() || null;
+        const description = normalizeDescription(sim.description);
         map.set(
           sim.simulation_id,
-          sim.name?.trim() || sim.description?.trim() || "Untitled simulation"
+          name || description || "Untitled simulation"
         );
       }
     });
@@ -118,12 +132,8 @@ export function SimulationPositions({
     setLocalPositions(newMap);
   }, [selectedSimulationIds, positionMap]);
 
-  const handlePositionChange = useCallback(
-    (simulationId: string, newValue: number) => {
-      const updated = new Map(localPositions);
-      updated.set(simulationId, newValue);
-      setLocalPositions(updated);
-
+  const emitPositions = useCallback(
+    (updated: Map<string, number>) => {
       const positionsArray: SimulationPositionItem[] = Array.from(
         updated.entries()
       ).map(([sid, value]) => ({
@@ -131,43 +141,71 @@ export function SimulationPositions({
         value,
         generated: false,
       }));
-
       onChange(positionsArray);
     },
-    [localPositions, onChange]
+    [onChange]
+  );
+
+  const updatePositions = useCallback(
+    (updater: (prev: Map<string, number>) => Map<string, number>) => {
+      setLocalPositions((prev) => {
+        const updated = updater(new Map(prev));
+        emitPositions(updated);
+        return updated;
+      });
+    },
+    [emitPositions]
+  );
+
+  const handlePositionChange = useCallback(
+    (simulationId: string, newValue: number) => {
+      updatePositions((prev) => {
+        prev.set(simulationId, newValue);
+        return prev;
+      });
+    },
+    [updatePositions]
   );
 
   const handleMoveUp = useCallback(
     (simulationId: string) => {
-      const currentPos = localPositions.get(simulationId) || 1;
-      if (currentPos > 1) {
-        handlePositionChange(simulationId, currentPos - 1);
-        const swapSimulation = Array.from(localPositions.entries()).find(
-          ([_, pos]) => pos === currentPos - 1
-        );
-        if (swapSimulation) {
-          handlePositionChange(swapSimulation[0], currentPos);
+      updatePositions((prev) => {
+        const currentPos = prev.get(simulationId) || 1;
+        if (currentPos <= 1) return prev;
+        const targetPos = currentPos - 1;
+        let swapId: string | null = null;
+        prev.forEach((pos, sid) => {
+          if (pos === targetPos) swapId = sid;
+        });
+        prev.set(simulationId, targetPos);
+        if (swapId) {
+          prev.set(swapId, currentPos);
         }
-      }
+        return prev;
+      });
     },
-    [localPositions, handlePositionChange]
+    [updatePositions]
   );
 
   const handleMoveDown = useCallback(
     (simulationId: string) => {
-      const currentPos = localPositions.get(simulationId) || 1;
-      const maxPos = Math.max(...Array.from(localPositions.values()));
-      if (currentPos < maxPos) {
-        handlePositionChange(simulationId, currentPos + 1);
-        const swapSimulation = Array.from(localPositions.entries()).find(
-          ([_, pos]) => pos === currentPos + 1
-        );
-        if (swapSimulation) {
-          handlePositionChange(swapSimulation[0], currentPos);
+      updatePositions((prev) => {
+        const currentPos = prev.get(simulationId) || 1;
+        const maxPos = Math.max(...Array.from(prev.values()));
+        if (currentPos >= maxPos) return prev;
+        const targetPos = currentPos + 1;
+        let swapId: string | null = null;
+        prev.forEach((pos, sid) => {
+          if (pos === targetPos) swapId = sid;
+        });
+        prev.set(simulationId, targetPos);
+        if (swapId) {
+          prev.set(swapId, currentPos);
         }
-      }
+        return prev;
+      });
     },
-    [localPositions, handlePositionChange]
+    [updatePositions]
   );
 
   const sortedSimulations = useMemo(() => {

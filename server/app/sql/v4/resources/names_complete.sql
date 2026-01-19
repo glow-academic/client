@@ -1,5 +1,5 @@
 -- Create names resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), name (text)
 -- Returns: name_id (uuid)
 
@@ -71,6 +71,17 @@ BEGIN
         END IF;
     END IF;
     
+    -- Check if name already exists
+    SELECT nr.id INTO v_name_id
+    FROM names_resource nr
+    WHERE nr.name = api_create_names_v4.name
+    LIMIT 1;
+    
+    IF v_name_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_name_id;
+        RETURN;
+    END IF;
+    
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;
@@ -93,7 +104,7 @@ BEGIN
     
     -- INSERT INTO names_resource table (always insert, never update)
     INSERT INTO names_resource(name, active, call_id, mcp)
-    VALUES (name, true, v_call_id, mcp)
+    VALUES (api_create_names_v4.name, true, v_call_id, mcp)
     RETURNING id INTO v_name_id;
     
     -- Create message record (assistant role, not completed)

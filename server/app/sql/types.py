@@ -14560,7 +14560,7 @@ class FlagsSqlParams(BaseModel):
     group_id: UUID
     name: str
     description: str
-    icon_id: UUID
+    icon_id: UUID | None = None
     type: str | None = None
     mcp: bool | None = False
 
@@ -14585,7 +14585,7 @@ class FlagsApiRequest(BaseModel):
     group_id: UUID
     name: str
     description: str
-    icon_id: UUID
+    icon_id: UUID | None = None
     type: str | None = None
     mcp: bool | None = False
 
@@ -17482,6 +17482,7 @@ class QGetScenarioV4FlagResource(BaseModel):
     name: str | None
     description: str | None
     icon_id: UUID | None
+    icon_name: str | None
     generated: bool | None
 
 

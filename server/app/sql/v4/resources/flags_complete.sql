@@ -1,6 +1,6 @@
 -- Create flags resource
--- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), group_id (uuid), name (text), description (text), icon_id (uuid), type (flag_type, default 'active'), mcp (boolean, default false)
+-- Get or create operation (returns existing ID if name already exists)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid), name (text), description (text), icon_id (uuid, optional), type (flag_type, default 'active'), mcp (boolean, default false)
 -- Returns: flag_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION api_create_flags_v4(agent_id uuid,
     group_id uuid,
     name text,
     description text,
-    icon_id uuid,
+    icon_id uuid DEFAULT NULL,
     type flag_type DEFAULT 'active'::flag_type,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
@@ -44,6 +44,7 @@ DECLARE
     v_params_jsonb jsonb;
     v_message_id uuid;
     v_run_id uuid;
+    v_icon_id uuid;
 BEGIN
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
@@ -74,6 +75,31 @@ BEGIN
         END IF;
     END IF;
     
+    -- Check if flag already exists
+    SELECT id INTO v_flag_id
+    FROM flags_resource
+    WHERE flags_resource.name = api_create_flags_v4.name
+    LIMIT 1;
+    
+    IF v_flag_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_flag_id;
+        RETURN;
+    END IF;
+
+    -- Resolve icon_id (fallback to Flag icon when null)
+    IF api_create_flags_v4.icon_id IS NULL THEN
+        SELECT id INTO v_icon_id
+        FROM icons_resource
+        WHERE icons_resource.name = 'Flag'
+        LIMIT 1;
+
+        IF v_icon_id IS NULL THEN
+            RAISE EXCEPTION 'Default icon "Flag" not found';
+        END IF;
+    ELSE
+        v_icon_id := api_create_flags_v4.icon_id;
+    END IF;
+    
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;
@@ -96,7 +122,15 @@ BEGIN
     
     -- INSERT INTO flags_resource table (always insert, never update)
     INSERT INTO flags_resource(name, description, icon_id, active, call_id, mcp, type)
-    VALUES (name, description, icon_id, true, v_call_id, mcp, api_create_flags_v4.type)
+    VALUES (
+        api_create_flags_v4.name,
+        api_create_flags_v4.description,
+        v_icon_id,
+        true,
+        v_call_id,
+        mcp,
+        api_create_flags_v4.type
+    )
     RETURNING id INTO v_flag_id;
     
         

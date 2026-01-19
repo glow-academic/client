@@ -30405,8 +30405,15 @@
             "title": "Description"
           },
           "icon_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Icon Id"
           },
           "type": {
@@ -30438,8 +30445,7 @@
           "agent_id",
           "group_id",
           "name",
-          "description",
-          "icon_id"
+          "description"
         ],
         "title": "FlagsApiRequest"
       },
@@ -75357,6 +75363,17 @@
             ],
             "title": "Icon Id"
           },
+          "icon_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Name"
+          },
           "generated": {
             "anyOf": [
               {
@@ -75375,6 +75392,7 @@
           "name",
           "description",
           "icon_id",
+          "icon_name",
           "generated"
         ],
         "title": "QGetScenarioV4FlagResource"

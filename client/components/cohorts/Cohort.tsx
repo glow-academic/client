@@ -1410,7 +1410,7 @@ function CohortComponent({
                   currentCohortData?.show_simulation_positions ?? false
                 }
                 simulation_positions={
-                  currentCohortData?.simulation_positions ?? []
+                  formState.simulation_positions ?? []
                 }
                 disabled={disabled}
                 onChange={(positions) => {

@@ -195,7 +195,17 @@ simulation_data AS (
     SELECT 
         s.id as simulation_id,
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
-        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
+        COALESCE(
+            NULLIF(
+                REGEXP_REPLACE(
+                    TRIM((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1)),
+                    '^0$|\\s0$',
+                    ''
+                ),
+                ''
+            ),
+            'No description'
+        ) as description,
         COALESCE(
             (SELECT SUM(stlr.time_limit_seconds)
              FROM simulation_scenario_time_limits sstl

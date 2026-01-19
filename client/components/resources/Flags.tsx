@@ -17,8 +17,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Loader2, Power, Sparkles } from "lucide-react";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
@@ -30,8 +31,11 @@ export interface FlagsProps {
     name: string | null;
     description: string | null;
     icon_id: string | null;
+    icon_name?: string | null;
     generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
+  flagName?: string;
+  flagDescription?: string;
   show_flag?: boolean; // Whether to show this resource picker
   disabled?: boolean; // Based on can_edit flag
   onFlagIdChange: (flagId: string | null) => void; // Update flag_id in parent form state
@@ -40,7 +44,7 @@ export interface FlagsProps {
   required?: boolean;
   helpText?: string;
   icon?: React.ReactNode;
-  iconId?: string; // Icon ID to use when creating flag resource (required when value=true)
+  iconId?: string; // Icon ID to use when creating flag resource
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createFlagsAction?:
@@ -54,6 +58,7 @@ export interface FlagsProps {
     name: string;
     description: string;
     icon_id: string | null;
+    icon_name?: string | null;
     generated?: boolean | null;
   } | null;
   flagId?: string | null;
@@ -61,6 +66,8 @@ export interface FlagsProps {
 
 export function Flags({
   flag_id,
+  flagName,
+  flagDescription,
   flag_resource,
   show_flag = false,
   disabled = false,
@@ -84,13 +91,23 @@ export function Flags({
   const resource = flag_resource ?? flagResource ?? null;
   const resourceId = flag_id ?? flagId ?? null;
   const show = show_flag ?? false;
+  const resolvedFlagName = flagName ?? resource?.name ?? "active";
+  const resolvedFlagDescription =
+    flagDescription ?? resource?.description ?? "Active flag";
+  const resolvedIconId = iconId ?? resource?.icon_id ?? null;
+  const resolvedIcon = useMemo(() => {
+    if (icon) return icon;
+    if (!resource?.icon_name) return null;
+    const IconComponent = getPersonaIconComponent(resource.icon_name);
+    if (!IconComponent) return null;
+    return <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />;
+  }, [icon, resource?.icon_name]);
 
-  // If flag_resource exists, the flag is active (true), otherwise false
   const [internalValue, setInternalValue] = React.useState(
-    resource !== null && resource !== undefined
+    resourceId !== null && resourceId !== undefined
   );
   const lastSavedValueRef = useRef<boolean>(
-    resource !== null && resource !== undefined
+    resourceId !== null && resourceId !== undefined
   );
   const isInitialMountRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -103,12 +120,12 @@ export function Flags({
     }
   }, [resourceId, resource]);
 
-  // Update internal value when flag_resource changes
+  // Update internal value when flag_id changes
   React.useEffect(() => {
-    const newValue = resource !== null && resource !== undefined;
+    const newValue = resourceId !== null && resourceId !== undefined;
     setInternalValue(newValue);
     lastSavedValueRef.current = newValue;
-  }, [resource]);
+  }, [resourceId]);
 
   // Debounced flag resource creation
   useEffect(() => {
@@ -132,26 +149,31 @@ export function Flags({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (
-          internalValue &&
-          createFlagsAction &&
-          iconId &&
-          agent_id &&
-          group_id
-        ) {
-          // Create flag resource when active=true
-          const result = await createFlagsAction({
-            body: {
-              agent_id: agent_id,
-              group_id: group_id,
-              name: "active",
-              description: "Active flag",
-              icon_id: iconId,
-              mcp: false,
-            },
-          });
-          if (result.flag_id) {
-            onFlagIdChange(result.flag_id);
+        if (internalValue) {
+          if (resourceId) {
+            lastSavedValueRef.current = internalValue;
+            return;
+          }
+          if (resource?.id) {
+            onFlagIdChange(resource.id);
+            lastSavedValueRef.current = internalValue;
+            return;
+          }
+          if (createFlagsAction && agent_id && group_id) {
+            // Create flag resource when active=true
+            const result = await createFlagsAction({
+              body: {
+                agent_id: agent_id,
+                group_id: group_id,
+                name: resolvedFlagName,
+                description: resolvedFlagDescription,
+                icon_id: resolvedIconId,
+                mcp: false,
+              },
+            });
+            if (result.flag_id) {
+              onFlagIdChange(result.flag_id);
+            }
           }
         } else if (!internalValue) {
           // Clear resource ID when active=false
@@ -172,8 +194,12 @@ export function Flags({
   }, [
     internalValue,
     createFlagsAction,
-    iconId,
+    resolvedFlagName,
+    resolvedFlagDescription,
+    resolvedIconId,
     onFlagIdChange,
+    resourceId,
+    resource?.id,
     agent_id,
     group_id,
   ]);
@@ -192,7 +218,9 @@ export function Flags({
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Label htmlFor={id} className="text-sm flex items-center gap-1">
-            {icon || <Power className="h-3.5 w-3.5 text-muted-foreground" />}
+            {resolvedIcon || (
+              <Power className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>

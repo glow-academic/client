@@ -1,5 +1,5 @@
 -- Create emails resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if email already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), email (text, required, third), mcp (boolean, optional, fourth), and resource-specific fields
 -- Returns: emails_id (uuid)
 
@@ -71,6 +71,17 @@ BEGIN
         END IF;
     END IF;
     
+    -- Check if email already exists
+    SELECT er.id INTO v_emails_id
+    FROM emails_resource er
+    WHERE er.email = api_create_emails_v4.email
+    LIMIT 1;
+    
+    IF v_emails_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_emails_id;
+        RETURN;
+    END IF;
+    
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;
@@ -94,7 +105,7 @@ BEGIN
     -- INSERT INTO emails_resource table (always insert, never update)
     -- Note: Column names and values need to be adjusted based on actual table schema
     INSERT INTO emails_resource(email, active, call_id, mcp)
-    VALUES (email, true, v_call_id, mcp)
+    VALUES (api_create_emails_v4.email, true, v_call_id, mcp)
     RETURNING id INTO v_emails_id;
     
     -- Create message record (assistant role, not completed)

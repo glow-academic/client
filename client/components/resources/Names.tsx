@@ -101,8 +101,6 @@ export function Names({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const [inputWidth, setInputWidth] = useState<number>(300); // Default min width
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -146,18 +144,6 @@ export function Names({
       })
       .slice(0, 5); // Show top 5 matches
   }, [suggestionNames, internalValue]);
-
-  // Measure text width and update input width dynamically
-  useEffect(() => {
-    if (measureRef.current) {
-      // Use scrollWidth for more accurate measurement
-      const textWidth = measureRef.current.scrollWidth;
-      // Add padding (px-2 = 8px on each side = 16px total)
-      const padding = 16;
-      const minWidth = 50; // Much smaller minimum to allow text-width matching
-      setInputWidth(Math.max(textWidth + padding, minWidth));
-    }
-  }, [internalValue, placeholder, defaultName]);
 
   // Update internal value when name_resource changes
   useEffect(() => {
@@ -284,29 +270,20 @@ export function Names({
     return null;
   }
 
-  // Get the display value for measurement
+  // Get the display value for sizing
   // When input has value, measure that; otherwise measure placeholder
-  const displayValue =
-    internalValue || placeholder || defaultName || "Enter name";
+  const displayValue = internalValue || defaultName || "";
 
   return (
     <div className="flex-1 items-end">
       <div className="flex items-end gap-1">
-        {/* Hidden span to measure text width - positioned off-screen but in normal flow */}
-        <span
-          ref={measureRef}
-          className="absolute text-2xl font-semibold whitespace-pre"
-          style={{
-            visibility: "hidden",
-            position: "absolute",
-            top: "-9999px",
-            left: "-9999px",
-          }}
-          aria-hidden="true"
-        >
-          {displayValue || "\u00A0"}
-        </span>
-        <div className="relative">
+        <div className="relative inline-grid grid-cols-[max-content] items-center">
+          <span
+            aria-hidden="true"
+            className="col-start-1 row-start-1 invisible whitespace-pre text-2xl font-semibold px-2 py-0.5"
+          >
+            {displayValue || "\u00A0"}
+          </span>
           <input
             ref={inputRef}
             type="text"
@@ -319,11 +296,11 @@ export function Names({
             placeholder={placeholder || defaultName || "Enter name"}
             required={required}
             disabled={disabled}
-            style={{ width: `${inputWidth}px` }}
-            className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+            size={1}
+            className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
           />
           {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
+            <div className="absolute left-0 top-full z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
               <div className="p-1">
                 {filteredSuggestions.map((suggestion, idx) => (
                   <div

@@ -1,5 +1,5 @@
 -- Create args resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), name (text), description (text), field_type (text), required (boolean), default_value (text), position_value (integer)
 -- Returns: id (uuid) - unique resource id
 
@@ -74,6 +74,17 @@ BEGIN
         ) THEN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
+    END IF;
+    
+    -- Check if arg already exists
+    SELECT ar.id INTO v_resource_id
+    FROM args_resource ar
+    WHERE ar.name = api_create_args_v4.name
+    LIMIT 1;
+    
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
     END IF;
     
     -- Build arguments_raw directly from params (templates removed)

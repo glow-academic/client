@@ -7,7 +7,9 @@
 
 "use client";
 
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
@@ -93,76 +95,26 @@ export function ProblemStatements({
   );
 
   // Handle nullable resource properties
-  const resourceProblemStatement = resource?.problem_statement ?? null;
+  const resourceProblemStatement = resource?.problem_statement ?? "";
   const initialValue =
     resourceProblemStatement || defaultProblemStatement || "";
   const [internalValue, setInternalValue] = useState(initialValue);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const [inputWidth, setInputWidth] = useState<number>(300); // Default min width
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Convert problem_statement_suggestions UUIDs to problem statement strings for autocomplete
-  const suggestionProblemStatements = useMemo(() => {
-    if (problemStatementsArray.length > 0) {
-      // Use problem_statements array to map UUIDs to problem statement strings
-      return suggestionsList
-        .map((id) => {
-          const psObj = problemStatementsArray.find((ps) => ps.id === id);
-          return psObj?.problem_statement ?? null;
-        })
-        .filter((ps): ps is string => ps !== null && ps.trim() !== "");
-    }
-    // Fallback: if we have problem_statement_resource and it matches a suggestion, use it
-    if (
-      resource?.problem_statement &&
-      suggestionsList.includes(resource.id ?? "")
-    ) {
-      return [resource.problem_statement];
-    }
-    return [];
-  }, [suggestionsList, problemStatementsArray, resource]);
-
-  // Simple prefix/substring matching for autocomplete filtering
-  const filteredSuggestions = useMemo(() => {
-    if (!internalValue.trim()) return suggestionProblemStatements;
-    const valueLower = internalValue.toLowerCase().trim();
-    return suggestionProblemStatements
-      .filter((s) => {
-        const sLower = s.toLowerCase().trim();
-        // Skip exact matches
-        if (sLower === valueLower) return false;
-        // Include if starts with or contains the typed text
-        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
-      })
-      .slice(0, 5); // Show top 5 matches
-  }, [suggestionProblemStatements, internalValue]);
-
-  // Measure text width and update input width dynamically
-  useEffect(() => {
-    if (measureRef.current) {
-      // Use scrollWidth for more accurate measurement
-      const textWidth = measureRef.current.scrollWidth;
-      // Add padding (px-2 = 8px on each side = 16px total)
-      const padding = 16;
-      const minWidth = 50; // Much smaller minimum to allow text-width matching
-      setInputWidth(Math.max(textWidth + padding, minWidth));
-    }
-  }, [internalValue, placeholder, defaultProblemStatement]);
+  const saveSeqRef = useRef(0);
+  const isDirtyRef = useRef(false);
+  const lastServerTextRef = useRef<string>(initialValue);
 
   // Update internal value when problem_statement_resource changes
   useEffect(() => {
-    if (resourceProblemStatement) {
-      setInternalValue(resourceProblemStatement);
-      lastSavedValueRef.current = resourceProblemStatement;
-    } else if (defaultProblemStatement && !resourceProblemStatement) {
-      // If no resource problem statement but defaultProblemStatement exists, use defaultProblemStatement
-      setInternalValue(defaultProblemStatement);
-      lastSavedValueRef.current = defaultProblemStatement;
+    const serverValue = resourceProblemStatement || defaultProblemStatement || "";
+    if (serverValue === lastServerTextRef.current) return;
+    if (!isDirtyRef.current) {
+      setInternalValue(serverValue);
+      lastSavedValueRef.current = serverValue;
     }
+    lastServerTextRef.current = serverValue;
   }, [resourceProblemStatement, defaultProblemStatement]);
 
   // Debounced resource creation
@@ -191,6 +143,7 @@ export function ProblemStatements({
 
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
+      const seq = ++saveSeqRef.current;
       try {
         if (internalValue.trim() && agent_id && group_id) {
           const result = await createProblemStatementsAction({
@@ -201,14 +154,17 @@ export function ProblemStatements({
               mcp: false,
             },
           });
+          if (seq !== saveSeqRef.current) return;
           if (result.problem_statement_id) {
             onProblemStatementIdChange(result.problem_statement_id);
           }
         } else {
+          if (seq !== saveSeqRef.current) return;
           // Clear resource ID if value is empty
           onProblemStatementIdChange(null);
         }
         lastSavedValueRef.current = internalValue;
+        isDirtyRef.current = false;
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("Failed to create problem statement resource:", error);
@@ -230,27 +186,57 @@ export function ProblemStatements({
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
-    setShowSuggestions(true);
+    isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
-  const handleSelectSuggestion = useCallback((suggestion: string) => {
-    setInternalValue(suggestion);
-    setShowSuggestions(false);
-    inputRef.current?.focus();
-  }, []);
+  // Use problem_statements array if available, otherwise create placeholder mapping
+  const suggestionsMapping = useMemo(() => {
+    if (problemStatementsArray.length > 0) {
+      const mapping: Record<string, { id: string; problem_statement: string }> =
+        {};
+      problemStatementsArray.forEach((ps) => {
+        if (ps.id) {
+          mapping[ps.id] = {
+            id: ps.id,
+            problem_statement:
+              ps.problem_statement ||
+              `Problem statement ${ps.id.slice(0, 8)}...`,
+          };
+        }
+      });
+      return mapping;
+    }
+    const mapping: Record<string, { id: string; problem_statement: string }> =
+      {};
+    suggestionsList.forEach((suggestionId) => {
+      mapping[suggestionId] = {
+        id: suggestionId,
+        problem_statement: `Problem statement ${suggestionId.slice(0, 8)}...`,
+      };
+    });
+    return mapping;
+  }, [problemStatementsArray, suggestionsList]);
 
-  const handleFocus = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      // If value equals defaultProblemStatement, select all text on focus
-      if (
-        defaultProblemStatement &&
-        e.target.value === defaultProblemStatement
-      ) {
-        e.target.select();
+  const pickerItems: Array<{
+    id: string | null;
+    problem_statement: string | null;
+    generated?: boolean | null;
+  }> = useMemo(() => {
+    if (problemStatementsArray.length > 0) {
+      return problemStatementsArray;
+    }
+    return Object.values(suggestionsMapping);
+  }, [problemStatementsArray, suggestionsMapping]);
+
+  const problemStatementsById = useMemo(() => {
+    const mapping: Record<string, string> = {};
+    problemStatementsArray.forEach((ps) => {
+      if (ps.id && ps.problem_statement) {
+        mapping[ps.id] = ps.problem_statement;
       }
-    },
-    [defaultProblemStatement]
-  );
+    });
+    return mapping;
+  }, [problemStatementsArray]);
 
   const handleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
@@ -266,92 +252,84 @@ export function ProblemStatements({
     [defaultProblemStatement]
   );
 
-  const handleInputFocus = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      handleFocus(e);
-      if (internalValue && filteredSuggestions.length > 0) {
-        setShowSuggestions(true);
-      }
-    },
-    [internalValue, filteredSuggestions, handleFocus]
-  );
-
-  const handleInputBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      handleBlur(e);
-      // Delay hiding suggestions to allow clicks
-      setTimeout(() => setShowSuggestions(false), 200);
-    },
-    [handleBlur]
-  );
-
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {
     return null;
   }
 
-  // Get the display value for measurement
-  // When input has value, measure that; otherwise measure placeholder
-  const displayValue =
-    internalValue ||
-    placeholder ||
-    defaultProblemStatement ||
-    "Enter problem statement";
-
   return (
-    <div className="flex-1 items-end">
-      <div className="flex items-end gap-1">
-        {/* Hidden span to measure text width - positioned off-screen but in normal flow */}
-        <span
-          ref={measureRef}
-          className="absolute text-2xl font-semibold whitespace-pre"
-          style={{
-            visibility: "hidden",
-            position: "absolute",
-            top: "-9999px",
-            left: "-9999px",
-          }}
-          aria-hidden="true"
-        >
-          {displayValue || "\u00A0"}
-        </span>
-        <div className="relative">
-          <input
-            ref={inputRef}
-            type="text"
-            id={id}
-            data-testid={dataTestId}
-            value={internalValue || ""}
-            onChange={(e) => handleChange(e.target.value)}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            placeholder={
-              placeholder ||
-              defaultProblemStatement ||
-              "Enter problem statement"
+    <div className="space-y-2">
+      <div className="flex items-end justify-between gap-2">
+        <Input
+          id={id}
+          data-testid={dataTestId}
+          value={internalValue || ""}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
+          placeholder={placeholder || defaultProblemStatement || ""}
+          required={required}
+          disabled={disabled}
+        />
+        <GenericPicker
+          items={pickerItems}
+          selectedIds={resourceId ? [resourceId] : []}
+          onSelect={(ids) => {
+            const selectedId = ids[0] || null;
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
             }
-            required={required}
-            disabled={disabled}
-            style={{ width: `${inputWidth}px` }}
-            className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
-          />
-          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
-              <div className="p-1">
-                {filteredSuggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelectSuggestion(suggestion)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
-                  >
-                    {suggestion}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+            saveSeqRef.current += 1;
+            if (selectedId) {
+              const nextValue = problemStatementsById[selectedId] ?? "";
+              setInternalValue(nextValue);
+              lastSavedValueRef.current = nextValue;
+              lastServerTextRef.current = nextValue;
+            } else {
+              setInternalValue("");
+              lastSavedValueRef.current = "";
+              lastServerTextRef.current = "";
+            }
+            isDirtyRef.current = false;
+            onProblemStatementIdChange(selectedId);
+          }}
+          getId={(item) => {
+            if (typeof item === "string") {
+              return item;
+            }
+            return item.id || "";
+          }}
+          getLabel={(
+            item: { id: string | null; problem_statement: string | null } | string
+          ) => {
+            if (typeof item === "string") {
+              return `Problem statement ${item.slice(0, 8)}...`;
+            }
+            const ps = item.problem_statement;
+            const id = item.id;
+            if (ps && typeof ps === "string") return ps;
+            if (id && typeof id === "string")
+              return `Problem statement ${id.slice(0, 8)}...`;
+            return "Problem statement";
+          }}
+          getSearchText={(
+            item: { id: string | null; problem_statement: string | null } | string
+          ) => {
+            if (typeof item === "string") {
+              return `Problem statement ${item.slice(0, 8)}... ${item}`;
+            }
+            const ps = item.problem_statement;
+            const id = item.id;
+            const psStr = ps && typeof ps === "string" ? ps : "";
+            const idStr = id && typeof id === "string" ? id : "";
+            return `${psStr} ${idStr}`;
+          }}
+          placeholder="Problem statements"
+          disabled={disabled}
+          multiSelect={false}
+          compact={true}
+          buttonClassName="h-8"
+          showLabel={false}
+        />
         {onGenerate && agent_id && (
           <TooltipProvider>
             <Tooltip>
