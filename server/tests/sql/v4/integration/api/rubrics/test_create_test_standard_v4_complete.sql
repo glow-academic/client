@@ -22,12 +22,35 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO standards(standard_group_id, name, description, points)
-    VALUES (
+    WITH call_record AS (
+        INSERT INTO calls(id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+        VALUES (
+            uuidv7(),
+            'test_create_standard_' || uuidv7()::text,
+            NULL,
+            NULL,
+            jsonb_build_object(
+                'standard_group_id', input_standard_group_id::text,
+                'name', standard_name,
+                'description', standard_description,
+                'points', standard_points
+            )::text,
+            true,
+            NOW(),
+            NOW()
+        )
+        RETURNING id as call_id
+    )
+    INSERT INTO standards_resource(standard_group_id, name, description, points, call_id, active, generated, mcp)
+    SELECT
         input_standard_group_id,
         standard_name,
         standard_description,
-        standard_points
-    )
-    RETURNING id AS standard_id, standard_group_id, name, description, points, created_at, created_at AS updated_at;
+        standard_points,
+        cr.call_id,
+        true,
+        false,
+        false
+    FROM call_record cr
+    RETURNING id AS standard_id, standard_group_id, name, description, points, created_at, updated_at;
 $$;

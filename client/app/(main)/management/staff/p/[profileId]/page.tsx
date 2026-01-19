@@ -62,7 +62,7 @@ export async function generateMetadata(
   try {
     const input: GetStaffIn = {
       body: {
-        staff_id: profileId,
+        target_profile_id: profileId,
         draft_id: null,
       } as GetStaffIn["body"],
     };
@@ -169,7 +169,7 @@ export default async function StaffEditPage({
   try {
     const input: GetStaffIn = {
       body: {
-        staff_id: profileId,
+        target_profile_id: profileId,
         draft_id: q.draftId ?? null,
       } as GetStaffIn["body"],
     };

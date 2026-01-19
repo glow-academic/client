@@ -67,13 +67,10 @@ async def get_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Extract target_profile_id from API request (can be NULL for new mode)
-        target_profile_id = request.target_profile_id
-
         # Convert API request to SQL params (add profile_id from header)
         params = GetProfileSqlParams(
             profile_id=profile_id,
-            target_profile_id=target_profile_id,
+            **request.model_dump(),
         )
         sql_params = params.to_tuple()
 
@@ -88,11 +85,11 @@ async def get_profile(
         )
 
         # Validation: For detail mode, check if profile exists and user has access
-        if target_profile_id is not None:
+        if request.target_profile_id is not None:
             if not result.profile_exists:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Profile not found: {target_profile_id}",
+                    detail=f"Profile not found: {request.target_profile_id}",
                 )
             if not result.can_edit and result.disabled_reason:
                 # User can view but not edit - this is handled by frontend via can_edit flag
@@ -102,7 +99,7 @@ async def get_profile(
         if result.actor_name:
             audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add profile to audit context if target_profile_id was provided (detail mode)
-            if target_profile_id:
+            if request.target_profile_id:
                 # Construct name from first_name and last_name resources
                 profile_name = ""
                 if result.first_name_resource and result.last_name_resource:

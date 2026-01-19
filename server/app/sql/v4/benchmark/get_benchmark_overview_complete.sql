@@ -397,7 +397,7 @@ standards_array AS (
         ),
         '{}'::types.q_get_benchmark_overview_v4_standard[]
     ) as standards
-    FROM standards st
+    FROM standards_resource st
     WHERE st.standard_group_id IN (
         SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
         WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
@@ -415,7 +415,7 @@ standard_group_standards AS (
         ) as standard_ids
     FROM rubric_standard_groups rsg
     JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
-    LEFT JOIN standards st ON st.standard_group_id = sg.id
+    LEFT JOIN standards_resource st ON st.standard_group_id = sg.id
     WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
       AND rsg.active = true
     GROUP BY rsg.standard_group_id, rsg.rubric_id

@@ -25,7 +25,7 @@ type BulkUpdateStaffIn = InputOf<"/api/v4/bulk/staff/save", "post">;
 type BulkUpdateStaffOut = OutputOf<"/api/v4/bulk/staff/save", "post">;
 type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
-// Use profiles/get with null profile_id to get create staff data
+// Use profiles/get with null target_profile_id to get create staff data
 type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;
@@ -70,14 +70,14 @@ async function bulkDeleteStaff(
   return api.post("/bulk/staff/delete", input);
 }
 
-// Use profiles/get with null profile_id to get create staff data (replaces staff/data/create)
+// Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
 async function getCreateStaffData(
   _input: GetProfileIn
 ): Promise<GetProfileOut> {
   "use server";
   return api.post("/profiles/get", {
     body: {
-      staff_id: null, // NULL for new mode - returns default data
+      target_profile_id: null, // NULL for new mode - returns default data
       draft_id: null,
     },
   });

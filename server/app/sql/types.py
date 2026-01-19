@@ -11801,11 +11801,13 @@ class GetProfileSqlParams(BaseModel):
 
     profile_id: UUID
     target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.target_profile_id,
+            self.draft_id,
         )
 
 class QGetProfileV4Cohort(BaseModel):
@@ -11922,6 +11924,7 @@ class GetProfileSqlRow(BaseModel):
 class GetProfileApiRequest(BaseModel):
 
     target_profile_id: UUID | None = None
+    draft_id: UUID | None = None
 
 class GetProfileApiResponse(BaseModel):
 
@@ -16019,6 +16022,49 @@ class StandardGroupsApiRequest(BaseModel):
 class StandardGroupsApiResponse(BaseModel):
 
     standard_group_id: UUID | None = None
+
+
+
+# Generated from: standards
+
+class StandardsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    standard_group_id: UUID
+    name: str
+    description: str
+    points: int
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.standard_group_id,
+            self.name,
+            self.description,
+            self.points,
+            self.mcp,
+        )
+
+class StandardsSqlRow(BaseModel):
+
+    standard_id: UUID | None = None
+
+class StandardsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    standard_group_id: UUID
+    name: str
+    description: str
+    points: int
+    mcp: bool | None = False
+
+class StandardsApiResponse(BaseModel):
+
+    standard_id: UUID | None = None
 
 
 
@@ -22514,6 +22560,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StandardGroupsApiRequest",
         "StandardGroupsApiResponse",
     ),
+    "app/sql/v4/resources/standards_complete.sql": (
+        "StandardsSqlParams",
+        "StandardsSqlRow",
+        "StandardsApiRequest",
+        "StandardsApiResponse",
+    ),
     "app/sql/v4/resources/strengths_complete.sql": (
         "StrengthsSqlParams",
         "StrengthsSqlRow",
@@ -24354,6 +24406,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/standard_groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/standards_complete.sql"]
     ) -> SqlString: ...
 
     @overload

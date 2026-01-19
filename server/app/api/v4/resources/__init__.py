@@ -224,6 +224,9 @@ from app.api.v4.resources.standard_groups.create import \
     router as standard_groups_router
 
 router.include_router(standard_groups_router)
+from app.api.v4.resources.standards.create import router as standards_router
+
+router.include_router(standards_router)
 from app.api.v4.resources.strengths.create import router as strengths_router
 
 router.include_router(strengths_router)

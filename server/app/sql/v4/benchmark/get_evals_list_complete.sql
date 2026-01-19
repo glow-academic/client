@@ -292,7 +292,7 @@ all_standard_group_ids AS (
 ),
 all_standard_ids AS (
     SELECT DISTINCT st.id as standard_id
-    FROM standards st
+    FROM standards_resource st
     WHERE st.standard_group_id IN (
         SELECT standard_group_id FROM all_standard_group_ids
     )
@@ -335,7 +335,7 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG((st.id, st.name, st.description, st.points)::types.q_list_evals_v4_standard)
          FROM all_standard_ids asi
-         JOIN standards st ON st.id = asi.standard_id),
+         JOIN standards_resource st ON st.id = asi.standard_id),
         '{}'::types.q_list_evals_v4_standard[]
     ) as standards,
     -- Rubric standard groups array (mapping structure)
@@ -344,7 +344,7 @@ SELECT
             (rsg.rubric_id, rsg.standard_group_id,
              COALESCE(
                  (SELECT ARRAY_AGG(st.id)
-                  FROM standards st
+                  FROM standards_resource st
                   WHERE st.standard_group_id = rsg.standard_group_id),
                  ARRAY[]::uuid[]
              )

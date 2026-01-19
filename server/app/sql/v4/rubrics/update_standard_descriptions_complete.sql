@@ -98,7 +98,7 @@ descriptions_data AS (
     FROM (SELECT descriptions FROM params) as d
 ),
 updated_standards AS (
-    UPDATE standards s
+    UPDATE standards_resource s
     SET description = dd.description
     FROM descriptions_data dd
     WHERE s.id = dd.standard_id

@@ -27,7 +27,7 @@ AS $$
         points,
         created_at,
         created_at AS updated_at
-    FROM standards
+    FROM standards_resource
     WHERE standard_group_id = input_standard_group_id
     ORDER BY name;
 $$;

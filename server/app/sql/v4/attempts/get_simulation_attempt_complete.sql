@@ -1407,7 +1407,7 @@ rubric_standards_grouped AS (
         ARRAY_AGG(
             (s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), s.points, s.standard_group_id)::types.q_get_simulation_attempt_v4_standard
         ) as standards_list
-    FROM standards s
+    FROM standards_resource s
     WHERE s.standard_group_id IN (SELECT id FROM rubric_standard_groups)
     GROUP BY s.standard_group_id
 ),
@@ -1416,7 +1416,7 @@ standards_mapping_merged AS (
         ARRAY_AGG(
             (s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), ''), s.points)::types.q_get_simulation_attempt_v4_standard_mapping
         ) as standards_mapping
-    FROM standards s
+    FROM standards_resource s
     WHERE s.standard_group_id IN (SELECT id FROM rubric_standard_groups)
 ),
 rubric_structure_complete AS (
@@ -1548,7 +1548,7 @@ max_scores_per_group_chat AS (
     FROM grades_data gd
     LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade).id
     CROSS JOIN LATERAL unnest(COALESCE(fg.feedbacks, '{}'::types.q_get_simulation_attempt_v4_feedback[])) fb
-    JOIN standards s ON s.id = fb.standard_id
+    JOIN standards_resource s ON s.id = fb.standard_id
     JOIN rubric_standard_groups rsg ON rsg.id = s.standard_group_id
     GROUP BY gd.chat_id, s.standard_group_id, rsg.pass_points
 ),
@@ -1572,7 +1572,7 @@ grading_state_per_chat AS (
                     )
                     FROM feedbacks_grouped fg3
                     CROSS JOIN LATERAL unnest(COALESCE(fg3.feedbacks, '{}'::types.q_get_simulation_attempt_v4_feedback[])) fb
-                    JOIN standards s ON s.id = fb.standard_id
+                    JOIN standards_resource s ON s.id = fb.standard_id
                     LEFT JOIN max_scores_per_group_chat mspgc 
                         ON mspgc.chat_id = gd.chat_id 
                         AND mspgc.standard_group_id = s.standard_group_id

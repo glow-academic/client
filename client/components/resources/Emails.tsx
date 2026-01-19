@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Mail, Sparkles } from "lucide-react";
+import { Check, Loader2, Mail, Sparkles, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
@@ -88,6 +88,20 @@ export function Emails({
     [email_suggestions]
   );
   const [primaryIndex, setPrimaryIndex] = useState(primary_email_index ?? 0);
+  const emailLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    allEmails.forEach((email) => {
+      if (email.id && email.email) {
+        map.set(email.id, email.email);
+      }
+    });
+    email_resources?.forEach((email) => {
+      if (email.id && email.email) {
+        map.set(email.id, email.email);
+      }
+    });
+    return map;
+  }, [allEmails, email_resources]);
 
   // Track which email IDs have already had resources created
   const createdEmailIdsRef = useRef<Set<string>>(new Set());
@@ -113,6 +127,12 @@ export function Emails({
         email: e.email!,
       }));
   }, [allEmails]);
+  const selectedEmails = useMemo(() => {
+    return ids.map((emailId) => ({
+      id: emailId,
+      email: emailLookup.get(emailId) ?? "",
+    }));
+  }, [ids, emailLookup]);
 
   // Check if an email is suggested
   const isSuggested = useCallback(
@@ -189,6 +209,27 @@ export function Emails({
     },
     [ids, onChange]
   );
+  const handleRemove = useCallback(
+    (emailId: string) => {
+      const removeIndex = ids.indexOf(emailId);
+      if (removeIndex < 0) return;
+
+      const nextIds = ids.filter((id) => id !== emailId);
+      let nextPrimaryIndex = primaryIndex;
+
+      if (nextIds.length === 0) {
+        nextPrimaryIndex = 0;
+      } else if (removeIndex === primaryIndex) {
+        nextPrimaryIndex = 0;
+      } else if (removeIndex < primaryIndex) {
+        nextPrimaryIndex = Math.max(0, primaryIndex - 1);
+      }
+
+      setPrimaryIndex(nextPrimaryIndex);
+      onChange(nextIds, Math.min(nextPrimaryIndex, nextIds.length - 1));
+    },
+    [ids, onChange, primaryIndex]
+  );
 
   // Check if any email resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
@@ -203,83 +244,109 @@ export function Emails({
   return (
     <div className="space-y-2">
       {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-            {description && (
-              <span className="text-xs text-muted-foreground ml-2">
-                {description}
-              </span>
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor={id} className="flex items-center gap-1">
+              {label}
+              {required && <span className="text-destructive">*</span>}
+              {description && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  {description}
+                </span>
+              )}
+            </Label>
+            {onGenerate && agent_id && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={onGenerate}
+                      disabled={disabled || isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {hasGenerated ? "Regenerate" : "Generate"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
-          </Label>
-          {onGenerate && agent_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          </div>
+          <GenericPicker<EmailItem>
+            items={emailItems}
+            itemIds={emailItems.map((item) => item.id)}
+            selectedIds={ids}
+            onSelect={handleSelect}
+            multiSelect={true}
+            getId={(item) => item.id}
+            getLabel={(item) => item.email}
+            getSearchText={(item) => `${item.email} ${item.id}`}
+            placeholder="Previous emails"
+            disabled={disabled}
+            compact={true}
+            buttonClassName="h-8"
+            showLabel={false}
+            hideSelectedChips={true}
+            showClearAll={false}
+          />
         </div>
       )}
-      <GenericPicker<EmailItem>
-        items={emailItems}
-        itemIds={allEmails
-          .map((e) => e.id)
-          .filter((id): id is string => id !== null)} // All email IDs from array, filter nulls
-        selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.email}
-        renderItem={(item, isSelected) => {
-          const isPrimary =
-            isSelected && ids.indexOf(item.id) === primaryIndex;
-          return (
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isSuggested(item.id) && !isSelected && (
-                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                    Suggested
-                  </span>
+      {selectedEmails.length === 0 ? (
+        <div className="rounded-lg border border-dashed bg-muted/20 py-6 text-center text-sm text-muted-foreground">
+          No emails selected. Use the picker to add previous emails.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {selectedEmails.map((item, index) => {
+            const isPrimary = index === primaryIndex;
+            const isSuggestedItem = isSuggested(item.id);
+            const emailLabel =
+              item.email || `Email ${item.id.slice(0, 8)}...`;
+
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
+                  "hover:shadow-md hover:bg-accent/50",
+                  isPrimary && "ring-2 ring-primary bg-accent"
                 )}
-                {isPrimary && (
-                  <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
-                )}
+                onClick={() => {
+                  if (disabled) return;
+                  handlePrimaryChange(index);
+                }}
+              >
+                <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.email}</div>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium">{emailLabel}</p>
+                    {isSuggestedItem && (
+                      <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                        Suggested
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isPrimary ? "Primary email" : "Click to set primary"}
+                  </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 ml-auto">
-                {isSelected && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const index = ids.indexOf(item.id);
-                      if (index >= 0) {
-                        handlePrimaryChange(index);
-                      }
+                      handlePrimaryChange(index);
                     }}
-                    disabled={disabled || !isSelected}
+                    disabled={disabled}
                     className={cn(
                       "text-xs px-2 py-1 rounded",
                       isPrimary
@@ -290,23 +357,31 @@ export function Emails({
                   >
                     {isPrimary ? "Primary" : "Set Primary"}
                   </button>
-                )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(item.id);
+                    }}
+                    disabled={disabled}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
                 <Check
                   className={cn(
-                    "flex-shrink-0 h-4 w-4",
-                    isSelected ? "opacity-100" : "opacity-0"
+                    "absolute right-3 top-3 h-4 w-4",
+                    isPrimary ? "opacity-100" : "opacity-0"
                   )}
                 />
               </div>
-            </div>
-          );
-        }}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
-      />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

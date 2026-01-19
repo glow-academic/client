@@ -408,7 +408,7 @@ CREATE INDEX IF NOT EXISTS grades_run_created_idx
 
 -- Standards mapping
 CREATE INDEX IF NOT EXISTS standards_group_idx
-  ON standards (standard_group_id);
+  ON standards_resource (standard_group_id);
 
 -- Group ↔ rubric (via junction table)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_idx

@@ -3398,6 +3398,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/standards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Standards
+         * @description Create standards resource (always INSERT).
+         */
+        post: operations["create_standards_api_v4_resources_standards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/strengths": {
         parameters: {
             query?: never;
@@ -10019,6 +10039,8 @@ export interface components {
         GetProfileApiRequest: {
             /** Target Profile Id */
             target_profile_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** GetProfileApiResponse */
         GetProfileApiResponse: {
@@ -20652,6 +20674,40 @@ export interface components {
             /** Standard Group Id */
             standard_group_id?: string | null;
         };
+        /** StandardsApiRequest */
+        StandardsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Standard Group Id
+             * Format: uuid
+             */
+            standard_group_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** StandardsApiResponse */
+        StandardsApiResponse: {
+            /** Standard Id */
+            standard_id?: string | null;
+        };
         /**
          * StartSimulationErrorPayload
          * @description Response indicating an error occurred while starting simulation.
@@ -27184,6 +27240,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StandardGroupsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_standards_api_v4_resources_standards_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandardsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardsApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -345,7 +345,7 @@ standard_groups_array AS (
 standards_array AS (
     SELECT 
         (st.id, st.name, st.description, st.points)::types.q_get_practice_overview_v4_standard AS standard
-    FROM standards st
+    FROM standards_resource st
     WHERE st.standard_group_id IN (
         SELECT rsg.standard_group_id FROM rubric_standard_groups rsg
         WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true

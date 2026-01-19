@@ -1412,7 +1412,7 @@ filt AS (
                 FROM latest_grade_per_chat lg
                 JOIN grade_feedbacks gf ON gf.grade_id = lg.id
                 JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
-                JOIN standards s ON s.id = scf.standard_id
+                JOIN standards_resource s ON s.id = scf.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
                 JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
                 GROUP BY lg.chat_id, rsg.rubric_id, sg.id, sg.name, sg.points
@@ -2499,7 +2499,7 @@ filt AS (
                 JOIN filt_for_skills f ON f.chat_id = lg.chat_id
                 JOIN grade_feedbacks gf ON gf.grade_id = lg.grade_id
                 JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
-                JOIN standards s ON s.id = scf.standard_id
+                JOIN standards_resource s ON s.id = scf.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
                 JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
                 GROUP BY lg.rubric_id, sg.id, sg.name, f.simulation_id, lg.grade_id, sg.points

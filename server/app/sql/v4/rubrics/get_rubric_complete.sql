@@ -1365,7 +1365,7 @@ standard_groups_selected_data AS (
     FROM params x
     JOIN rubric_standard_groups rsg ON rsg.rubric_id = x.rubric_id AND rsg.active = true
     JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
-    LEFT JOIN standards s ON s.standard_group_id = sg.id
+    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     WHERE x.rubric_id IS NOT NULL
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active, rsg.generated
 ),
@@ -1384,7 +1384,7 @@ standard_groups_all_data AS (
     FROM params x
     CROSS JOIN standard_groups_resource sg
     LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = x.rubric_id AND rsg.standard_group_id = sg.id AND rsg.active = true
-    LEFT JOIN standards s ON s.standard_group_id = sg.id
+    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     WHERE sg.active = true
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active, sg.generated
 ),

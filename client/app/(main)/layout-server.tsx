@@ -27,7 +27,7 @@ type SearchSimulatableProfilesOut = OutputOf<
 >;
 type SearchStaffIn = InputOf<"/api/v4/bulk/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v4/bulk/staff/search", "post">;
-// Use profiles/get with null profile_id to get create staff data (replaces staff/data/create)
+// Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
 type GetProfileIn = InputOf<"/api/v4/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v4/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/api/v4/bulk/staff/process", "post">;

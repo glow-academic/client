@@ -140,7 +140,7 @@ export default async function NewStaffPage({
   // Fetch default staff detail server-side with draft_id
   const input: GetStaffIn = {
     body: {
-      staff_id: null, // NULL for new mode
+      target_profile_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
     } as GetStaffIn["body"],
   };

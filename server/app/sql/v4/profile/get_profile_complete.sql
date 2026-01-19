@@ -78,7 +78,8 @@ CREATE TYPE types.q_get_profile_v4_flag_resource AS (
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_profile_v4(
     profile_id uuid,
-    target_profile_id uuid DEFAULT NULL
+    target_profile_id uuid DEFAULT NULL,
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     -- Required fields (first 5)
@@ -149,7 +150,8 @@ STABLE
 AS $$
 WITH params AS (
     SELECT profile_id AS profile_id,
-           target_profile_id AS target_profile_id
+           target_profile_id AS target_profile_id,
+           draft_id AS draft_id
 ),
 -- Conditional: Only check profile existence if target_profile_id provided
 profile_exists_check AS (
@@ -187,6 +189,7 @@ user_departments AS (
 group_id_data AS (
     SELECT 
         COALESCE(
+            (SELECT d.group_id FROM drafts d WHERE d.id = (SELECT draft_id FROM params)),
             (SELECT p.group_id FROM profile_artifact p WHERE p.id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)),
             (SELECT p.group_id FROM profile_artifact p WHERE p.id = (SELECT resolved_profile_id FROM resolve_current_profile_id))
         ) as group_id
@@ -197,28 +200,52 @@ group_id_data AS (
 first_name_resource_data AS (
     SELECT 
         COALESCE(
+            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pn.name_id FROM profile_names pn WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'first' LIMIT 1),
             NULL::uuid
         ) as first_name_id,
-        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
-         FROM profile_names pn
-         JOIN names_resource n ON n.id = pn.name_id
-         WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'first'
-         LIMIT 1) as first_name_resource
+        (
+            SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
+            FROM (
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
+                FROM draft_names dn
+                JOIN names_resource n ON n.id = dn.names_id
+                WHERE dn.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
+                FROM profile_names pn
+                JOIN names_resource n ON n.id = pn.name_id
+                WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'first'
+            ) n
+            ORDER BY priority
+            LIMIT 1
+        ) as first_name_resource
     FROM params
 ),
 -- Last name resource data
 last_name_resource_data AS (
     SELECT 
         COALESCE(
+            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pn.name_id FROM profile_names pn WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'last' LIMIT 1),
             NULL::uuid
         ) as last_name_id,
-        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
-         FROM profile_names pn
-         JOIN names_resource n ON n.id = pn.name_id
-         WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'last'
-         LIMIT 1) as last_name_resource
+        (
+            SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
+            FROM (
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
+                FROM draft_names dn
+                JOIN names_resource n ON n.id = dn.names_id
+                WHERE dn.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
+                FROM profile_names pn
+                JOIN names_resource n ON n.id = pn.name_id
+                WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'last'
+            ) n
+            ORDER BY priority
+            LIMIT 1
+        ) as last_name_resource
     FROM params
 ),
 -- First name suggestions: linked to profiles with active=true OR same group with generated=true
@@ -342,16 +369,17 @@ last_names_suggestions_objects AS (
 -- Email IDs (selected email IDs for profile)
 email_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT target_profile_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(pe.email_id ORDER BY pe.is_primary DESC, pe.created_at)
-                 FROM profile_emails pe
-                 WHERE pe.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-                   AND pe.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as email_ids
+        COALESCE(
+            (SELECT ARRAY_AGG(de.emails_id ORDER BY de.created_at)
+             FROM draft_emails de
+             WHERE de.draft_id = (SELECT draft_id FROM params)
+               AND de.active = true),
+            (SELECT ARRAY_AGG(pe.email_id ORDER BY pe.is_primary DESC, pe.created_at)
+             FROM profile_emails pe
+             WHERE pe.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+               AND pe.active = true),
+            ARRAY[]::uuid[]
+        ) as email_ids
     FROM params
     LIMIT 1
 ),
@@ -430,7 +458,11 @@ emails_data AS (
 request_limit_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT prl.request_limit_id 
+            (SELECT drl.request_limits_id
+             FROM draft_request_limits drl
+             WHERE drl.draft_id = (SELECT draft_id FROM params)
+             LIMIT 1),
+            (SELECT prl.request_limit_id
              FROM profile_request_limits prl
              WHERE prl.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                AND prl.active = true
@@ -438,13 +470,23 @@ request_limit_resource_data AS (
              LIMIT 1),
             NULL::uuid
         ) as request_limit_id,
-        (SELECT ROW(rl.id, rl.requests_per_day, COALESCE(rl.generated, false))::types.q_get_profile_v4_request_limit_resource
-         FROM profile_request_limits prl
-         JOIN request_limits_resource rl ON rl.id = prl.request_limit_id
-         WHERE prl.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-           AND prl.active = true
-         ORDER BY prl.created_at DESC
-         LIMIT 1) as request_limit_resource
+        (
+            SELECT ROW(rl.id, rl.requests_per_day, COALESCE(rl.generated, false))::types.q_get_profile_v4_request_limit_resource
+            FROM (
+                SELECT rl.id, rl.requests_per_day, COALESCE(rl.generated, false) as generated, 1 as priority
+                FROM draft_request_limits drl
+                JOIN request_limits_resource rl ON rl.id = drl.request_limits_id
+                WHERE drl.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT rl.id, rl.requests_per_day, COALESCE(rl.generated, false) as generated, 2 as priority
+                FROM profile_request_limits prl
+                JOIN request_limits_resource rl ON rl.id = prl.request_limit_id
+                WHERE prl.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+                  AND prl.active = true
+            ) rl
+            ORDER BY priority
+            LIMIT 1
+        ) as request_limit_resource
     FROM params
 ),
 -- Request limit suggestions: linked to profiles with active=true OR same group with generated=true
@@ -500,6 +542,10 @@ request_limits_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
+            (SELECT df.flags_id
+             FROM draft_flags df
+             WHERE df.draft_id = (SELECT draft_id FROM params)
+             LIMIT 1),
             (SELECT pf.flag_id
              FROM profile_flags pf
              JOIN flags_resource f ON pf.flag_id = f.id
@@ -509,13 +555,24 @@ flag_resource_data AS (
              LIMIT 1),
             NULL::uuid
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_profile_v4_flag_resource
-         FROM profile_flags pf
-         JOIN flags_resource f ON pf.flag_id = f.id
-         WHERE pf.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-           AND f.name = 'active'
-           AND pf.value = true
-         LIMIT 1) as flag_resource
+        (
+            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_profile_v4_flag_resource
+            FROM (
+                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
+                FROM draft_flags df
+                JOIN flags_resource f ON df.flags_id = f.id
+                WHERE df.draft_id = (SELECT draft_id FROM params)
+                UNION ALL
+                SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
+                FROM profile_flags pf
+                JOIN flags_resource f ON pf.flag_id = f.id
+                WHERE pf.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+                  AND f.name = 'active'
+                  AND pf.value = true
+            ) f
+            ORDER BY priority
+            LIMIT 1
+        ) as flag_resource
     FROM params
 ),
 -- Department mapping data (only active departments user is linked to)
@@ -538,16 +595,17 @@ department_mapping_data AS (
 -- Department IDs (selected department IDs for profile)
 department_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT target_profile_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
-                 FROM profile_departments pd
-                 WHERE pd.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-                   AND pd.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as department_ids
+        COALESCE(
+            (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
+             FROM draft_departments dd
+             WHERE dd.draft_id = (SELECT draft_id FROM params)
+               AND dd.active = true),
+            (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
+             FROM profile_departments pd
+             WHERE pd.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+               AND pd.active = true),
+            ARRAY[]::uuid[]
+        ) as department_ids
     FROM params
     LIMIT 1
 ),
@@ -617,16 +675,17 @@ cohort_mapping_data AS (
 -- Cohort IDs (selected cohort IDs for profile)
 cohort_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT target_profile_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(pc.cohort_id ORDER BY pc.created_at)
-                 FROM profile_cohorts pc
-                 WHERE pc.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-                   AND pc.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as cohort_ids
+        COALESCE(
+            (SELECT ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at)
+             FROM draft_cohorts dc
+             WHERE dc.draft_id = (SELECT draft_id FROM params)
+               AND dc.active = true),
+            (SELECT ARRAY_AGG(pc.cohort_id ORDER BY pc.created_at)
+             FROM profile_cohorts pc
+             WHERE pc.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+               AND pc.active = true),
+            ARRAY[]::uuid[]
+        ) as cohort_ids
     FROM params
     LIMIT 1
 ),

@@ -231,7 +231,7 @@ all_standard_group_ids AS (
 ),
 all_standard_ids AS (
     SELECT DISTINCT s.id as standard_id
-    FROM standards s
+    FROM standards_resource s
     WHERE s.standard_group_id IN (SELECT standard_group_id FROM all_standard_group_ids)
 ),
 all_department_ids AS (
@@ -277,7 +277,7 @@ standard_groups_aggregated AS (
 standards_distinct AS (
     SELECT DISTINCT ON (s.id)
         s.id, s.standard_group_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
-    FROM standards s
+    FROM standards_resource s
     WHERE s.standard_group_id IN (SELECT standard_group_id FROM all_standard_group_ids)
     ORDER BY s.id, s.standard_group_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),

@@ -76,7 +76,7 @@ original_standards AS (
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
         s.points,
         og.group_order
-    FROM standards s
+    FROM standards_resource s
     JOIN original_groups og ON s.standard_group_id = og.id
     ORDER BY og.group_order, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
@@ -265,20 +265,92 @@ groups_mapping AS (
         AND ngwo.group_order = og.group_order
     ORDER BY og.id, ngwo.id
 ),
+standard_call_context AS (
+    SELECT c.tool_id, c.template_id, 1 as priority
+    FROM calls c
+    JOIN tool_names tn ON tn.tool_id = c.tool_id
+    JOIN names_resource n ON tn.name_id = n.id
+    WHERE n.name = 'create_standard_group'
+    UNION ALL
+    SELECT c.tool_id, c.template_id, 2 as priority
+    FROM calls c
+    JOIN tool_names tn ON tn.tool_id = c.tool_id
+    JOIN names_resource n ON tn.name_id = n.id
+    WHERE n.name = 'create_rubrics'
+    UNION ALL
+    SELECT c.tool_id, c.template_id, 3 as priority
+    FROM calls c
+),
+standard_call_params AS (
+    SELECT tool_id, template_id
+    FROM standard_call_context
+    ORDER BY priority
+    LIMIT 1
+),
+standard_calls AS (
+    SELECT
+        os.id as standard_id,
+        uuidv7() as call_id,
+        scp.tool_id,
+        scp.template_id
+    FROM original_standards os
+    CROSS JOIN standard_call_params scp
+),
+insert_standard_calls AS (
+    INSERT INTO calls (
+        id,
+        external_call_id,
+        tool_id,
+        template_id,
+        arguments_raw,
+        completed,
+        created_at,
+        updated_at
+    )
+    SELECT
+        sc.call_id,
+        'standard_resource_' || sc.standard_id::text || '_' || sc.call_id::text,
+        sc.tool_id,
+        sc.template_id,
+        jsonb_build_object(
+            'standard_id', sc.standard_id::text,
+            'standard_group_id', os.standard_group_id::text
+        )::text,
+        true,
+        NOW(),
+        NOW()
+    FROM standard_calls sc
+    JOIN original_standards os ON os.id = sc.standard_id
+    RETURNING id
+),
 new_standards AS (
-    INSERT INTO standards (
+    INSERT INTO standards_resource (
         standard_group_id,
         name,
         description,
-        points
+        points,
+        created_at,
+        updated_at,
+        active,
+        generated,
+        call_id,
+        mcp
     )
     SELECT 
         gm.new_group_id,
         os.name,
         os.description,
-        os.points
+        os.points,
+        NOW(),
+        NOW(),
+        true,
+        false,
+        sc.call_id,
+        false
     FROM original_standards os
     JOIN groups_mapping gm ON os.standard_group_id = gm.old_group_id
+    JOIN standard_calls sc ON sc.standard_id = os.id
+    JOIN insert_standard_calls isc ON isc.id = sc.call_id
     RETURNING id
 )
 SELECT 
