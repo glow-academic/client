@@ -46853,6 +46853,39 @@
             ],
             "title": "Use Video"
           },
+          "use_questions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Questions"
+          },
+          "use_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Problem Statement"
+          },
+          "use_templates": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Templates"
+          },
           "filter_department_ids": {
             "anyOf": [
               {

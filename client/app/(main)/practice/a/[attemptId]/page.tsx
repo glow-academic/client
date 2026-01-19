@@ -9,7 +9,7 @@ import type {
   AttemptFullIn,
   AttemptFullOut, 
 } from "@/app/(main)/home/a/[attemptId]/page";
-import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+import { AttemptChatSetup } from "@/components/common/chat/setups/AttemptChatSetup";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -74,9 +74,9 @@ export default async function PracticeAttemptPage({
 
     return (
       <div className="space-y-6">
-        <AttemptChat
-          attemptId={attemptId}
-          attemptData={attemptData}
+        <AttemptChatSetup
+          attempt_id={attemptId}
+          attempt_data={attemptData}
         />
       </div>
     );

@@ -10658,6 +10658,12 @@ export interface components {
             template_document_ids?: string[] | null;
             /** Use Video */
             use_video?: boolean | null;
+            /** Use Questions */
+            use_questions?: boolean | null;
+            /** Use Problem Statement */
+            use_problem_statement?: boolean | null;
+            /** Use Templates */
+            use_templates?: boolean | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
             /** Filter Persona Ids */

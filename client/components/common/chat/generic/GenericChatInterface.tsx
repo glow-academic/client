@@ -50,6 +50,7 @@ export interface GenericChatInterfaceProps {
   input_area: React.ComponentType<
     TextInputProps | VoiceInputProps | QuestionResponsesInputProps
   >;
+  input_area_ref?: React.Ref<unknown>;
 
   // View mode for chat area
   chat_area_view_mode: ChatAreaViewMode;
@@ -105,6 +106,7 @@ export function GenericChatInterface({
   chat_area_props,
   document_area_props,
   input_area_props,
+  input_area_ref,
 }: GenericChatInterfaceProps) {
   return (
     <div className="h-[calc(100vh-4rem)]" data-testid="generic-chat-interface">
@@ -134,7 +136,14 @@ export function GenericChatInterface({
                   maxHeight: "160px",
                 }}
               >
-                <InputArea {...(input_area_props as any)} />
+                {input_area_ref ? (
+                  <InputArea
+                    ref={input_area_ref as any}
+                    {...(input_area_props as any)}
+                  />
+                ) : (
+                  <InputArea {...(input_area_props as any)} />
+                )}
               </div>
             </div>
           </Card>

@@ -99,12 +99,16 @@ async def get_scenario(
         )
 
         # Set audit context
+        scenario_name = (
+            result.name_resource.name if result.name_resource else None
+        )
+
         if result.actor_name:
             audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add scenario to audit context if scenario_id was provided (detail mode)
-            if scenario_id and result.name:
+            if scenario_id and scenario_name:
                 audit_ctx["scenario"] = {
-                    "name": result.name,
+                    "name": scenario_name,
                     "id": str(scenario_id),
                 }
             audit_set(http_request, **audit_ctx)
@@ -127,7 +131,7 @@ async def get_scenario(
                     status_code=404, detail=f"Scenario {scenario_id} not found"
                 )
 
-            if not result.name:
+            if not scenario_name:
                 # Scenario exists but user doesn't have access
                 raise HTTPException(
                     status_code=403,

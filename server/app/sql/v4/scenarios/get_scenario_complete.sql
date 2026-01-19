@@ -176,6 +176,9 @@ CREATE OR REPLACE FUNCTION api_get_scenario_v4(
     problem_statement_ids uuid[] DEFAULT NULL,
     template_document_ids uuid[] DEFAULT NULL,
     use_video boolean DEFAULT NULL,
+    use_questions boolean DEFAULT NULL,
+    use_problem_statement boolean DEFAULT NULL,
+    use_templates boolean DEFAULT NULL,
     -- Filter parameters
     filter_department_ids uuid[] DEFAULT NULL,
     filter_persona_ids uuid[] DEFAULT NULL,
@@ -360,6 +363,9 @@ WITH params AS (
         COALESCE(problem_statement_ids, ARRAY[]::uuid[]) AS problem_statement_ids,
         COALESCE(template_document_ids, ARRAY[]::uuid[]) AS template_document_ids,
         COALESCE(use_video, false) AS use_video,
+        COALESCE(use_questions, false) AS use_questions,
+        COALESCE(use_problem_statement, false) AS use_problem_statement,
+        COALESCE(use_templates, false) AS use_templates,
         -- Filter parameters
         COALESCE(filter_department_ids, ARRAY[]::uuid[]) AS filter_department_ids,
         COALESCE(filter_persona_ids, ARRAY[]::uuid[]) AS filter_persona_ids,
@@ -546,12 +552,30 @@ scenario_core AS (
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE) as active,
         st.parent_id as parent_scenario_id,
         COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) END as objectives_enabled,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) END as images_enabled,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'video_enabled' AND sf.value = TRUE) END as video_enabled,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'questions_enabled' AND sf.value = TRUE) END as questions_enabled,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'problem_statement_enabled' AND sf.value = TRUE) END as problem_statement_enabled,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'use_templates' AND sf.value = TRUE) END as use_templates
+        CASE 
+            WHEN s.id IS NULL THEN (SELECT use_objectives FROM params LIMIT 1)
+            ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE)
+        END as objectives_enabled,
+        CASE 
+            WHEN s.id IS NULL THEN (SELECT use_image FROM params LIMIT 1)
+            ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE)
+        END as images_enabled,
+        CASE 
+            WHEN s.id IS NULL THEN (SELECT use_video FROM params LIMIT 1)
+            ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'video_enabled' AND sf.value = TRUE)
+        END as video_enabled,
+        CASE 
+            WHEN s.id IS NULL THEN (SELECT use_questions FROM params LIMIT 1)
+            ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'questions_enabled' AND sf.value = TRUE)
+        END as questions_enabled,
+        CASE 
+            WHEN s.id IS NULL THEN (SELECT use_problem_statement FROM params LIMIT 1)
+            ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'problem_statement_enabled' AND sf.value = TRUE)
+        END as problem_statement_enabled,
+        CASE 
+            WHEN s.id IS NULL THEN (SELECT use_templates FROM params LIMIT 1)
+            ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'use_templates' AND sf.value = TRUE)
+        END as use_templates
     FROM params x
     LEFT JOIN scenario_artifact s ON s.id = x.scenario_id
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
@@ -3259,28 +3283,28 @@ SELECT
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_description_resource[]) as descriptions,
-    -- Single-select resources: problem_statement (filtered by flag)
+    -- Single-select resources: problem_statement (filtered by request flag)
     CASE 
-        WHEN sc.problem_statement_enabled THEN (SELECT problem_statement_id FROM problem_statement_resource_data)
+        WHEN (SELECT use_problem_statement FROM params) THEN (SELECT problem_statement_id FROM problem_statement_resource_data)
         ELSE NULL::uuid
     END as problem_statement_id,
     CASE 
-        WHEN sc.problem_statement_enabled THEN psrd.problem_statement_resource
+        WHEN (SELECT use_problem_statement FROM params) THEN psrd.problem_statement_resource
         ELSE NULL::types.q_get_scenario_v4_problem_statement_resource
     END as problem_statement_resource,
     CASE 
         WHEN NOT tec.problem_statements_has_tools THEN false
-        WHEN sc.problem_statement_enabled THEN uf.show_problem_statement
+        WHEN (SELECT use_problem_statement FROM params) THEN uf.show_problem_statement
         ELSE false
     END as show_problem_statement,
     (SELECT agent_id FROM problem_statement_agent_data) as problem_statement_agent_id,
     false as problem_statement_required,
     CASE 
-        WHEN sc.problem_statement_enabled THEN COALESCE((SELECT problem_statement_suggestions FROM problem_statement_suggestions_data), ARRAY[]::uuid[])
+        WHEN (SELECT use_problem_statement FROM params) THEN COALESCE((SELECT problem_statement_suggestions FROM problem_statement_suggestions_data), ARRAY[]::uuid[])
         ELSE ARRAY[]::uuid[]
     END as problem_statement_suggestions,
     CASE 
-        WHEN sc.problem_statement_enabled THEN COALESCE((SELECT problem_statements FROM problem_statements_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[])
+        WHEN (SELECT use_problem_statement FROM params) THEN COALESCE((SELECT problem_statements FROM problem_statements_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[])
         ELSE ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[]
     END as problem_statements,
     -- Single-select resources: flags (one per flag type)
@@ -3445,9 +3469,9 @@ SELECT
         ) FROM (SELECT DISTINCT field_id, name, description, parameter_id, parameter_name, conditional_parameter_ids, generated FROM field_mapping_data) fmd),
         '{}'::types.q_get_scenario_v4_field[]
     ) as fields,
-    -- Multi-select resources: objectives (populated from CTEs, filtered by flag)
+    -- Multi-select resources: objectives (populated from CTEs, filtered by request flag)
     CASE 
-        WHEN sc.objectives_enabled THEN COALESCE((
+        WHEN (SELECT use_objectives FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(so.objective_id ORDER BY so.idx, so.objective_id)
             FROM scenario_objectives so
             WHERE so.scenario_id = (SELECT scenario_id FROM params LIMIT 1)
@@ -3455,7 +3479,7 @@ SELECT
         ELSE ARRAY[]::uuid[]
     END as objective_ids,
     CASE 
-        WHEN sc.objectives_enabled THEN COALESCE((
+        WHEN (SELECT use_objectives FROM params) THEN COALESCE((
             SELECT ARRAY_AGG((so.objective_id, o.objective, false)::types.q_get_scenario_v4_objective_resource ORDER BY so.idx, so.objective_id)
             FROM scenario_objectives so
             JOIN objectives_resource o ON o.id = so.objective_id
@@ -3465,17 +3489,17 @@ SELECT
     END as objective_resources,
     CASE 
         WHEN NOT tec.objectives_has_tools AND uf.show_objectives THEN false
-        WHEN sc.objectives_enabled THEN uf.show_objectives
+        WHEN (SELECT use_objectives FROM params) THEN uf.show_objectives
         ELSE false
     END as show_objectives,
     (SELECT agent_id FROM objectives_agent_data) as objectives_agent_id,
     CASE 
-        WHEN uf.show_objectives AND sc.objectives_enabled THEN true
+        WHEN uf.show_objectives AND (SELECT use_objectives FROM params) THEN true
         ELSE false
     END as objectives_required,
     COALESCE((SELECT objective_suggestions FROM objective_suggestions_data), ARRAY[]::uuid[]) as objective_suggestions,
     CASE 
-        WHEN sc.objectives_enabled THEN COALESCE((
+        WHEN (SELECT use_objectives FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(
                 (omd.id, omd.objective, omd.generated)::types.q_get_scenario_v4_objective_resource
                 ORDER BY CASE WHEN so2.scenario_id IS NOT NULL THEN 0 ELSE 1 END, COALESCE(so2.idx, 999999), omd.id
@@ -3491,9 +3515,9 @@ SELECT
         ), '{}'::types.q_get_scenario_v4_objective_resource[])
         ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
     END as objectives,
-    -- Multi-select resources: images (populated from CTEs, filtered by flag)
+    -- Multi-select resources: images (populated from CTEs, filtered by request flag)
     CASE 
-        WHEN sc.images_enabled THEN COALESCE((
+        WHEN (SELECT use_image FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(si.image_id ORDER BY si.created_at)
             FROM scenario_images si
             WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
@@ -3501,7 +3525,7 @@ SELECT
         ELSE ARRAY[]::uuid[]
     END as image_ids,
     CASE 
-        WHEN sc.images_enabled THEN COALESCE((
+        WHEN (SELECT use_image FROM params) THEN COALESCE((
             SELECT ARRAY_AGG((si.image_id, i.name, u.file_path, u.mime_type, COALESCE(iu.upload_id, si.image_id), false)::types.q_get_scenario_v4_image_resource ORDER BY si.created_at)
             FROM scenario_images si
             JOIN images_resource i ON i.id = si.image_id
@@ -3513,17 +3537,17 @@ SELECT
     END as image_resources,
     CASE 
         WHEN NOT tec.images_has_tools AND uf.show_images THEN false
-        WHEN sc.images_enabled THEN uf.show_images
+        WHEN (SELECT use_image FROM params) THEN uf.show_images
         ELSE false
     END as show_images,
     (SELECT agent_id FROM images_agent_data) as images_agent_id,
     CASE 
-        WHEN uf.show_images AND sc.images_enabled THEN true
+        WHEN uf.show_images AND (SELECT use_image FROM params) THEN true
         ELSE false
     END as images_required,
     ARRAY[]::uuid[] as image_suggestions,
     CASE 
-        WHEN sc.images_enabled THEN COALESCE((
+        WHEN (SELECT use_image FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(
                 (imd.id, imd.name, imd.file_path, imd.mime_type, imd.upload_id, imd.generated)::types.q_get_scenario_v4_image_resource
                 ORDER BY CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END, imd.id
@@ -3539,9 +3563,9 @@ SELECT
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
     END as images,
-    -- Multi-select resources: videos (populated from CTEs, filtered by flag)
+    -- Multi-select resources: videos (populated from CTEs, filtered by request flag)
     CASE 
-        WHEN sc.video_enabled THEN COALESCE((
+        WHEN (SELECT use_video FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(sv.video_id ORDER BY sv.created_at)
             FROM scenario_videos sv
             WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
@@ -3549,7 +3573,7 @@ SELECT
         ELSE ARRAY[]::uuid[]
     END as video_ids,
     CASE 
-        WHEN sc.video_enabled THEN COALESCE((
+        WHEN (SELECT use_video FROM params) THEN COALESCE((
             SELECT ARRAY_AGG((sv.video_id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(vu.upload_id, sv.video_id), false)::types.q_get_scenario_v4_video_resource ORDER BY sv.created_at)
             FROM scenario_videos sv
             JOIN videos_resource v ON v.id = sv.video_id
@@ -3561,17 +3585,17 @@ SELECT
     END as video_resources,
     CASE 
         WHEN NOT tec.videos_has_tools AND uf.show_videos THEN false
-        WHEN sc.video_enabled THEN uf.show_videos
+        WHEN (SELECT use_video FROM params) THEN uf.show_videos
         ELSE false
     END as show_videos,
     (SELECT agent_id FROM videos_agent_data) as videos_agent_id,
     CASE 
-        WHEN uf.show_videos AND sc.video_enabled THEN true
+        WHEN uf.show_videos AND (SELECT use_video FROM params) THEN true
         ELSE false
     END as videos_required,
     ARRAY[]::uuid[] as video_suggestions,
     CASE 
-        WHEN sc.video_enabled THEN COALESCE((
+        WHEN (SELECT use_video FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(
                 (vmd.id, vmd.name, vmd.length_seconds, vmd.completed, vmd.file_path, vmd.mime_type, vmd.upload_id, vmd.generated)::types.q_get_scenario_v4_video_resource
                 ORDER BY CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END, vmd.id
@@ -3587,9 +3611,9 @@ SELECT
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]
     END as videos,
-    -- Multi-select resources: questions (populated from CTEs, filtered by flag)
+    -- Multi-select resources: questions (populated from CTEs, filtered by request flag)
     CASE 
-        WHEN sc.questions_enabled THEN COALESCE((
+        WHEN (SELECT use_questions FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(sq.question_id ORDER BY sq.created_at)
             FROM scenario_questions sq
             WHERE sq.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sq.active = true
@@ -3597,7 +3621,7 @@ SELECT
         ELSE ARRAY[]::uuid[]
     END as question_ids,
     CASE 
-        WHEN sc.questions_enabled THEN COALESCE((
+        WHEN (SELECT use_questions FROM params) THEN COALESCE((
             SELECT ARRAY_AGG((sq.question_id, q.question_text, COALESCE(q.allow_multiple, false), false)::types.q_get_scenario_v4_question_resource ORDER BY sq.created_at)
             FROM scenario_questions sq
             JOIN questions_resource q ON q.id = sq.question_id
@@ -3607,17 +3631,17 @@ SELECT
     END as question_resources,
     CASE 
         WHEN NOT tec.questions_has_tools AND uf.show_questions THEN false
-        WHEN sc.questions_enabled THEN uf.show_questions
+        WHEN (SELECT use_questions FROM params) THEN uf.show_questions
         ELSE false
     END as show_questions,
     (SELECT agent_id FROM questions_agent_data) as questions_agent_id,
     CASE 
-        WHEN uf.show_questions AND sc.questions_enabled THEN true
+        WHEN uf.show_questions AND (SELECT use_questions FROM params) THEN true
         ELSE false
     END as questions_required,
     ARRAY[]::uuid[] as question_suggestions,
     CASE 
-        WHEN sc.questions_enabled THEN COALESCE((
+        WHEN (SELECT use_questions FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(
                 (qmd.id, qmd.question_text, qmd.allow_multiple, qmd.generated)::types.q_get_scenario_v4_question_resource
                 ORDER BY CASE WHEN sq.scenario_id IS NOT NULL THEN 0 ELSE 1 END, qmd.id
@@ -3635,7 +3659,7 @@ SELECT
     END as questions,
     -- Multi-select resources: templates
     CASE 
-        WHEN sc.use_templates THEN COALESCE((
+        WHEN (SELECT use_templates FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
             FROM scenario_templates st
             WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
@@ -3643,7 +3667,7 @@ SELECT
         ELSE ARRAY[]::uuid[]
     END as template_ids,
     CASE 
-        WHEN sc.use_templates THEN COALESCE((
+        WHEN (SELECT use_templates FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(
                 (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
                 ORDER BY tmd.name
@@ -3661,17 +3685,17 @@ SELECT
     END as template_resources,
     CASE 
         WHEN NOT tec.templates_has_tools AND uf.show_templates THEN false
-        WHEN sc.use_templates THEN uf.show_templates
+        WHEN (SELECT use_templates FROM params) THEN uf.show_templates
         ELSE false
     END as show_templates,
     (SELECT agent_id FROM templates_agent_data) as templates_agent_id,
     CASE 
-        WHEN uf.show_templates AND sc.use_templates THEN true
+        WHEN uf.show_templates AND (SELECT use_templates FROM params) THEN true
         ELSE false
     END as templates_required,
     ARRAY[]::uuid[] as template_suggestions,
     CASE 
-        WHEN sc.use_templates THEN COALESCE((
+        WHEN (SELECT use_templates FROM params) THEN COALESCE((
             SELECT ARRAY_AGG(
                 (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
                 ORDER BY tmd.name

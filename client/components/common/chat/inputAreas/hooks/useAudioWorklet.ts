@@ -22,13 +22,13 @@ export interface UseAudioWorkletReturn {
   start_voice_mode: () => Promise<void>;
   stop_voice_mode: () => Promise<void>;
   set_mic_muted: (muted: boolean) => void;
+  enqueue_audio_delta: (audio: ArrayBuffer | string) => void;
   cleanup: () => Promise<void>;
 }
 
 export function useAudioWorklet(
   config: AudioWorkletConfig,
-  on_pcm16_data?: (data: ArrayBuffer) => void,
-  on_audio_delta?: (audio: ArrayBuffer | string) => void
+  on_pcm16_data?: (data: ArrayBuffer) => void
 ): UseAudioWorkletReturn {
   const [isVoiceModeEnabled, setIsVoiceModeEnabled] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
@@ -39,7 +39,12 @@ export function useAudioWorklet(
   const audioPlaybackContextRef = useRef<AudioContext | null>(null);
   const audioPlaybackSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferQueueRef = useRef<Float32Array[]>([]);
-  const runIdRef = useRef<string | null>(null);
+  const isMicMutedRef = useRef(false);
+  const onPcm16DataRef = useRef(on_pcm16_data);
+
+  useEffect(() => {
+    onPcm16DataRef.current = on_pcm16_data;
+  }, [on_pcm16_data]);
 
   const cleanup = useCallback(async () => {
     try {
@@ -69,7 +74,7 @@ export function useAudioWorklet(
       }
 
       audioBufferQueueRef.current = [];
-      runIdRef.current = null;
+      isMicMutedRef.current = false;
     } catch (err) {
       console.warn("[Voice] Error cleaning up audio:", err);
     }
@@ -131,9 +136,9 @@ export function useAudioWorklet(
 
       // Handle PCM16 data from worklet
       workletNode.port.onmessage = (event) => {
-        if (!isMicMuted && on_pcm16_data) {
+        if (!isMicMutedRef.current && onPcm16DataRef.current) {
           const pcm16Buffer = event.data.pcm16;
-          on_pcm16_data(pcm16Buffer);
+          onPcm16DataRef.current(pcm16Buffer);
         }
       };
 
@@ -157,51 +162,79 @@ export function useAudioWorklet(
   }, [cleanup]);
 
   const setMicMuted = useCallback((muted: boolean) => {
+    isMicMutedRef.current = muted;
     setIsMicMuted(muted);
   }, []);
 
-  // Handle audio playback
-  useEffect(() => {
-    if (!on_audio_delta || !audioPlaybackContextRef.current) return;
+  const playQueuedAudio = useCallback(() => {
+    if (audioBufferQueueRef.current.length === 0) {
+      audioPlaybackSourceRef.current = null;
+      return;
+    }
 
-    const playQueuedAudio = async () => {
-      if (audioBufferQueueRef.current.length === 0) {
-        audioPlaybackSourceRef.current = null;
-        return;
-      }
+    const float32 = audioBufferQueueRef.current.shift();
+    if (!float32 || !audioPlaybackContextRef.current) return;
 
-      const float32 = audioBufferQueueRef.current.shift();
-      if (!float32 || !audioPlaybackContextRef.current) return;
+    try {
+      const audioBuffer = audioPlaybackContextRef.current.createBuffer(
+        1,
+        float32.length,
+        config.sample_rate
+      );
+      audioBuffer.copyToChannel(float32, 0);
 
-      try {
-        const audioBuffer = audioPlaybackContextRef.current.createBuffer(
-          1,
-          float32.length,
-          config.sample_rate
-        );
-        audioBuffer.copyToChannel(float32, 0);
+      const source = audioPlaybackContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioPlaybackContextRef.current.destination);
+      audioPlaybackSourceRef.current = source;
 
-        const source = audioPlaybackContextRef.current.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioPlaybackContextRef.current.destination);
-        audioPlaybackSourceRef.current = source;
-
-        source.onended = () => {
-          audioPlaybackSourceRef.current = null;
-          playQueuedAudio();
-        };
-
-        source.start(0);
-      } catch (err) {
-        console.error("[Voice] Error playing audio:", err);
+      source.onended = () => {
         audioPlaybackSourceRef.current = null;
         playQueuedAudio();
-      }
-    };
+      };
 
-    // This would be called when audio delta arrives
-    // Implementation depends on how audio deltas are received
-  }, [on_audio_delta, config.sample_rate]);
+      source.start(0);
+    } catch (err) {
+      console.error("[Voice] Error playing audio:", err);
+      audioPlaybackSourceRef.current = null;
+      playQueuedAudio();
+    }
+  }, [config.sample_rate]);
+
+  const enqueueAudioDelta = useCallback(
+    (audio: ArrayBuffer | string) => {
+      if (!audioPlaybackContextRef.current) return;
+
+      try {
+        let audioBuffer: ArrayBuffer;
+        if (typeof audio === "string") {
+          const binaryString = atob(audio);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          audioBuffer = bytes.buffer;
+        } else {
+          audioBuffer = audio;
+        }
+
+        const pcm16 = new Int16Array(audioBuffer);
+        const float32 = new Float32Array(pcm16.length);
+        for (let i = 0; i < pcm16.length; i++) {
+          float32[i] = pcm16[i] / (pcm16[i] < 0 ? 0x8000 : 0x7fff);
+        }
+
+        audioBufferQueueRef.current.push(float32);
+
+        if (!audioPlaybackSourceRef.current) {
+          playQueuedAudio();
+        }
+      } catch (err) {
+        console.error("[Voice] Error handling audio delta:", err);
+      }
+    },
+    [playQueuedAudio]
+  );
 
   return {
     audio_context: audioContextRef.current,
@@ -213,6 +246,7 @@ export function useAudioWorklet(
     start_voice_mode: startVoiceMode,
     stop_voice_mode: stopVoiceMode,
     set_mic_muted: setMicMuted,
+    enqueue_audio_delta: enqueueAudioDelta,
     cleanup,
   };
 }

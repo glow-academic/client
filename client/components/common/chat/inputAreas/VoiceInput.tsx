@@ -15,7 +15,13 @@ import {
 } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import { Loader2, Mic, MicOff, Volume2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { VoiceWaveform } from "./VoiceWaveform";
 import { useAudioWorklet } from "./hooks/useAudioWorklet";
@@ -31,6 +37,7 @@ export interface VoiceInputProps {
   is_connected: boolean;
   disabled?: boolean;
   is_attempt_owner?: boolean;
+  on_mic_mute?: (muted: boolean) => void;
   // AudioWorklet config passed via props
   audio_worklet_config?: {
     sample_rate: number;
@@ -38,11 +45,15 @@ export interface VoiceInputProps {
   };
   // Callbacks for audio data
   on_pcm16_data?: (data: ArrayBuffer) => void;
-  on_audio_delta?: (audio: ArrayBuffer | string) => void;
-  run_id?: string | null;
 }
 
-export function VoiceInput({
+export interface VoiceInputHandle {
+  enqueue_audio_delta: (audio: ArrayBuffer | string) => void;
+}
+
+export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(
+  function VoiceInput(
+    {
   enabled,
   on_voice_start,
   on_voice_stop,
@@ -50,22 +61,18 @@ export function VoiceInput({
   is_connected,
   disabled = false,
   is_attempt_owner = true,
+  on_mic_mute,
   audio_worklet_config = {
     sample_rate: 24000,
     channel_count: 1,
   },
   on_pcm16_data,
-  on_audio_delta,
-  run_id,
-}: VoiceInputProps) {
+}: VoiceInputProps,
+    ref
+  ) {
   const [isStartingVoice, setIsStartingVoice] = useState(false);
   const [isStoppingVoice, setIsStoppingVoice] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
-  const runIdRef = useRef<string | null>(run_id || null);
-
-  useEffect(() => {
-    runIdRef.current = run_id || null;
-  }, [run_id]);
 
   const {
     user_media_stream,
@@ -74,8 +81,17 @@ export function VoiceInput({
     start_voice_mode,
     stop_voice_mode,
     set_mic_muted,
+    enqueue_audio_delta,
     cleanup,
-  } = useAudioWorklet(audio_worklet_config, on_pcm16_data, on_audio_delta);
+  } = useAudioWorklet(audio_worklet_config, on_pcm16_data);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      enqueue_audio_delta,
+    }),
+    [enqueue_audio_delta]
+  );
 
   const handleVoiceStart = useCallback(async () => {
     if (!current_chat?.id || !is_connected) {
@@ -130,7 +146,14 @@ export function VoiceInput({
     const nextMuted = !isMicMuted;
     setIsMicMuted(nextMuted);
     set_mic_muted(nextMuted);
-  }, [is_voice_mode_enabled, isMicMuted, handleVoiceStart, set_mic_muted]);
+    on_mic_mute?.(nextMuted);
+  }, [
+    is_voice_mode_enabled,
+    isMicMuted,
+    handleVoiceStart,
+    set_mic_muted,
+    on_mic_mute,
+  ]);
 
   // Cleanup on unmount or chat change
   useEffect(() => {
@@ -274,4 +297,6 @@ export function VoiceInput({
       </CardFooter>
     </TooltipProvider>
   );
-}
+});
+
+VoiceInput.displayName = "VoiceInput";

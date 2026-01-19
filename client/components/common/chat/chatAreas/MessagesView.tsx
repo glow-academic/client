@@ -95,6 +95,7 @@ export interface MessagesViewProps {
       created_at: string;
     }>;
   }>;
+  new_hint_message_ids?: Array<string>;
 
   // Callbacks
   send_message: (message: string, isRetry?: boolean) => void;
@@ -142,6 +143,7 @@ export function MessagesView({
   scenario,
   current_chat,
   current_chat_hints = [],
+  new_hint_message_ids,
   send_message,
   is_sending_message,
   is_active,
@@ -170,6 +172,11 @@ export function MessagesView({
   const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
     new Set()
   );
+
+  useEffect(() => {
+    if (!new_hint_message_ids) return;
+    setMessagesWithNewHints(new Set(new_hint_message_ids));
+  }, [new_hint_message_ids]);
 
   // Merge messages from props with optimistic messages and streaming content
   const messages = useMemo(() => {

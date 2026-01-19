@@ -17281,6 +17281,9 @@ class GetScenarioSqlParams(BaseModel):
     problem_statement_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     use_video: bool | None = None
+    use_questions: bool | None = None
+    use_problem_statement: bool | None = None
+    use_templates: bool | None = None
     filter_department_ids: list[UUID] | None = None
     filter_persona_ids: list[UUID] | None = None
     filter_document_ids: list[UUID] | None = None
@@ -17311,6 +17314,9 @@ class GetScenarioSqlParams(BaseModel):
             self.problem_statement_ids,
             self.template_document_ids,
             self.use_video,
+            self.use_questions,
+            self.use_problem_statement,
+            self.use_templates,
             self.filter_department_ids,
             self.filter_persona_ids,
             self.filter_document_ids,
@@ -17629,6 +17635,9 @@ class GetScenarioApiRequest(BaseModel):
     problem_statement_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     use_video: bool | None = None
+    use_questions: bool | None = None
+    use_problem_statement: bool | None = None
+    use_templates: bool | None = None
     filter_department_ids: list[UUID] | None = None
     filter_persona_ids: list[UUID] | None = None
     filter_document_ids: list[UUID] | None = None

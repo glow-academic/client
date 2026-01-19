@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+import { AttemptChatSetup } from "@/components/common/chat/setups/AttemptChatSetup";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -77,9 +77,9 @@ export default async function AttemptPage({
 
     return (
       <div className="space-y-6">
-        <AttemptChat
-          attemptId={attemptId}
-          attemptData={attemptData}
+        <AttemptChatSetup
+          attempt_id={attemptId}
+          attempt_data={attemptData}
         />
       </div>
     );
