@@ -12,7 +12,6 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetRubricIn = InputOf<"/api/v4/rubrics/get", "post">;
 type GetRubricOut = OutputOf<"/api/v4/rubrics/get", "post">;
 type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
 type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
@@ -25,7 +24,7 @@ type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
 const getRubric = async (draftId: string | null): Promise<GetRubricOut> => {
   return api.post(
     "/rubrics/get",
-    { body: { rubric_id: null, draft_id: draftId || null } },
+    { body: { rubric_id: null, draft_id: draftId || null, mcp: null } },
     {
       cache: "no-store",
       headers: {
