@@ -12207,6 +12207,10 @@ export interface components {
             department_ids?: string[] | null;
             /** Agent Ids */
             agent_ids?: string[] | null;
+            /** Model Run Ids */
+            model_run_ids?: string[] | null;
+            /** Group Ids */
+            group_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0

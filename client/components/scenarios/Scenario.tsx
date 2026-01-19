@@ -43,137 +43,137 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-+type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
-+type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
-+type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
-+type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
-+type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
-+
-+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-+type CreateDraftDescriptionsIn = InputOf<
-+  "/api/v4/resources/descriptions",
-+  "post"
-+>;
-+type CreateDraftDescriptionsOut = OutputOf<
-+  "/api/v4/resources/descriptions",
-+  "post"
-+>;
-+type CreateDraftProblemStatementsIn = InputOf<
-+  "/api/v4/resources/problem_statements",
-+  "post"
-+>;
-+type CreateDraftProblemStatementsOut = OutputOf<
-+  "/api/v4/resources/problem_statements",
-+  "post"
-+>;
-+type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
-+type CreateDraftObjectivesOut = OutputOf<
-+  "/api/v4/resources/objectives",
-+  "post"
-+>;
-+type CreateDraftScenarioFlagsIn = InputOf<
-+  "/api/v4/resources/scenario_flags",
-+  "post"
-+>;
-+type CreateDraftScenarioFlagsOut = OutputOf<
-+  "/api/v4/resources/scenario_flags",
-+  "post"
-+>;
-+type CreateDraftDepartmentsIn = InputOf<
-+  "/api/v4/resources/departments",
-+  "post"
-+>;
-+type CreateDraftDepartmentsOut = OutputOf<
-+  "/api/v4/resources/departments",
-+  "post"
-+>;
-+type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
-+type CreateDraftPersonasOut = OutputOf<
-+  "/api/v4/resources/personas",
-+  "post"
-+>;
-+type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
-+type CreateDraftDocumentsOut = OutputOf<
-+  "/api/v4/resources/documents",
-+  "post"
-+>;
-+type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
-+type CreateDraftTemplatesOut = OutputOf<
-+  "/api/v4/resources/templates",
-+  "post"
-+>;
-+type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
-+type CreateDraftParametersOut = OutputOf<
-+  "/api/v4/resources/parameters",
-+  "post"
-+>;
-+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
-+type CreateDraftFieldsOut = OutputOf<
-+  "/api/v4/resources/fields",
-+  "post"
-+>;
-+type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
-+type CreateDraftImagesOut = OutputOf<
-+  "/api/v4/resources/images",
-+  "post"
-+>;
-+type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
-+type CreateDraftVideosOut = OutputOf<
-+  "/api/v4/resources/videos",
-+  "post"
-+>;
-+type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
-+type CreateDraftQuestionsOut = OutputOf<
-+  "/api/v4/resources/questions",
-+  "post"
-+>;
-+
-+type ScenarioResourceType =
-+  | "names"
-+  | "descriptions"
-+  | "problem_statements"
-+  | "objectives"
-+  | "scenario_flags"
-+  | "departments"
-+  | "personas"
-+  | "documents"
-+  | "templates"
-+  | "parameters"
-+  | "fields"
-+  | "images"
-+  | "videos"
-+  | "questions"
-+  | "ranges";
-+
-+type ScenarioFormState = {
-+  name_id: string | null;
-+  description_id: string | null;
-+  problem_statement_id: string | null;
-+  active_flag_id: string | null;
-+  objectives_enabled_flag_id: string | null;
-+  images_enabled_flag_id: string | null;
-+  video_enabled_flag_id: string | null;
-+  questions_enabled_flag_id: string | null;
-+  problem_statement_enabled_flag_id: string | null;
-+  department_ids: string[];
-+  persona_ids: string[];
-+  document_ids: string[];
-+  template_ids: string[];
-+  parameter_ids: string[];
-+  field_ids: string[];
-+  image_ids: string[];
-+  objective_ids: string[];
-+  video_ids: string[];
-+  question_ids: string[];
-+};
-+
-+type CreateFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-+type CreateFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type GetScenarioOut = OutputOf<"/api/v4/scenarios/get", "post">;
+type SaveScenarioIn = InputOf<"/api/v4/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v4/scenarios/save", "post">;
+type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
+
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftProblemStatementsIn = InputOf<
+  "/api/v4/resources/problem_statements",
+  "post"
+>;
+type CreateDraftProblemStatementsOut = OutputOf<
+  "/api/v4/resources/problem_statements",
+  "post"
+>;
+type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
+type CreateDraftObjectivesOut = OutputOf<
+  "/api/v4/resources/objectives",
+  "post"
+>;
+type CreateDraftScenarioFlagsIn = InputOf<
+  "/api/v4/resources/scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioFlagsOut = OutputOf<
+  "/api/v4/resources/scenario_flags",
+  "post"
+>;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftPersonasIn = InputOf<"/api/v4/resources/personas", "post">;
+type CreateDraftPersonasOut = OutputOf<
+  "/api/v4/resources/personas",
+  "post"
+>;
+type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
+type CreateDraftDocumentsOut = OutputOf<
+  "/api/v4/resources/documents",
+  "post"
+>;
+type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftTemplatesOut = OutputOf<
+  "/api/v4/resources/templates",
+  "post"
+>;
+type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
+type CreateDraftParametersOut = OutputOf<
+  "/api/v4/resources/parameters",
+  "post"
+>;
+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftFieldsOut = OutputOf<
+  "/api/v4/resources/fields",
+  "post"
+>;
+type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<
+  "/api/v4/resources/images",
+  "post"
+>;
+type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
+type CreateDraftVideosOut = OutputOf<
+  "/api/v4/resources/videos",
+  "post"
+>;
+type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
+type CreateDraftQuestionsOut = OutputOf<
+  "/api/v4/resources/questions",
+  "post"
+>;
+
+type ScenarioResourceType =
+  | "names"
+  | "descriptions"
+  | "problem_statements"
+  | "objectives"
+  | "scenario_flags"
+  | "departments"
+  | "personas"
+  | "documents"
+  | "templates"
+  | "parameters"
+  | "fields"
+  | "images"
+  | "videos"
+  | "questions"
+  | "ranges";
+
+type ScenarioFormState = {
+  name_id: string | null;
+  description_id: string | null;
+  problem_statement_id: string | null;
+  active_flag_id: string | null;
+  objectives_enabled_flag_id: string | null;
+  images_enabled_flag_id: string | null;
+  video_enabled_flag_id: string | null;
+  questions_enabled_flag_id: string | null;
+  problem_statement_enabled_flag_id: string | null;
+  department_ids: string[];
+  persona_ids: string[];
+  document_ids: string[];
+  template_ids: string[];
+  parameter_ids: string[];
+  field_ids: string[];
+  image_ids: string[];
+  objective_ids: string[];
+  video_ids: string[];
+  question_ids: string[];
+};
+
+type CreateFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -2465,6 +2465,8 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateParameters}
                 isGenerating={isGenerating("parameters")}
+                searchTerm={parameterSearch}
+                showSelectedFilter={parameterShowSelected}
               />
 
               <Fields

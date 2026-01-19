@@ -6,7 +6,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -21,9 +27,10 @@ import { Agents } from "@/components/resources/Agents";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
+import { GroupRubrics } from "@/components/resources/GroupRubrics";
 import { Groups } from "@/components/resources/Groups";
 import { Names } from "@/components/resources/Names";
-import { Rubrics } from "@/components/resources/Rubrics";
+import { RunRubrics } from "@/components/resources/RunRubrics";
 import { Runs } from "@/components/resources/Runs";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,8 +78,6 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftAgentsIn = InputOf<"/api/v4/resources/agents", "post">;
 type CreateDraftAgentsOut = OutputOf<"/api/v4/resources/agents", "post">;
-type CreateDraftRubricsIn = InputOf<"/api/v4/resources/rubrics", "post">;
-type CreateDraftRubricsOut = OutputOf<"/api/v4/resources/rubrics", "post">;
 type CreateDraftRunsIn = InputOf<"/api/v4/resources/runs", "post">;
 type CreateDraftRunsOut = OutputOf<"/api/v4/resources/runs", "post">;
 type CreateDraftGroupsIn = InputOf<"/api/v4/resources/groups", "post">;
@@ -105,12 +110,7 @@ export interface EvalProps {
   createAgentsAction?: (
     input: CreateDraftAgentsIn
   ) => Promise<CreateDraftAgentsOut>;
-  createRubricsAction?: (
-    input: CreateDraftRubricsIn
-  ) => Promise<CreateDraftRubricsOut>;
-  createRunsAction?: (
-    input: CreateDraftRunsIn
-  ) => Promise<CreateDraftRunsOut>;
+  createRunsAction?: (input: CreateDraftRunsIn) => Promise<CreateDraftRunsOut>;
   createGroupsAction?: (
     input: CreateDraftGroupsIn
   ) => Promise<CreateDraftGroupsOut>;
@@ -126,9 +126,55 @@ interface EvalFormState {
   groups_flag_id: string | null;
   department_ids: string[];
   agent_ids: string[];
-  rubric_ids: string[];
+  run_rubric_links: Record<string, string[]>;
+  group_rubric_links: Record<string, string[]>;
   model_run_ids: string[];
   group_ids: string[];
+}
+
+function normalizeRubricLinks(
+  entries?: EvalData["run_rubrics"] | EvalData["group_rubrics"]
+): Record<string, string[]> {
+  const map: Record<string, string[]> = {};
+  entries?.forEach((entry) => {
+    if (!entry) return;
+    const id =
+      "run_id" in entry
+        ? entry.run_id
+        : "group_id" in entry
+          ? entry.group_id
+          : null;
+    if (!id) return;
+    map[id] = entry.rubric_ids ?? [];
+  });
+  return map;
+}
+
+function serializeRubricLinks(links: Record<string, string[]>) {
+  return JSON.stringify(
+    Object.entries(links)
+      .map(([key, ids]) => [key, [...ids].sort()])
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function buildRunRubricPayload(
+  links: Record<string, string[]>
+): Array<{ run_id: string; rubric_ids: string[] }> {
+  return Object.entries(links)
+    .filter(([, rubricIds]) => rubricIds.length > 0)
+    .map(([runId, rubricIds]) => ({ run_id: runId, rubric_ids: rubricIds }));
+}
+
+function buildGroupRubricPayload(
+  links: Record<string, string[]>
+): Array<{ group_id: string; rubric_ids: string[] }> {
+  return Object.entries(links)
+    .filter(([, rubricIds]) => rubricIds.length > 0)
+    .map(([groupId, rubricIds]) => ({
+      group_id: groupId,
+      rubric_ids: rubricIds,
+    }));
 }
 
 function EvalComponent({
@@ -143,7 +189,6 @@ function EvalComponent({
   createFlagsAction,
   createDepartmentsAction,
   createAgentsAction,
-  createRubricsAction,
   createRunsAction,
   createGroupsAction,
 }: EvalProps) {
@@ -212,15 +257,15 @@ function EvalComponent({
       groups_flag_id: data?.groups_flag_id ?? null,
       department_ids: data?.department_ids ?? [],
       agent_ids: data?.agent_ids ?? [],
-      rubric_ids: data?.rubric_ids ?? [],
+      run_rubric_links: normalizeRubricLinks(data?.run_rubrics),
+      group_rubric_links: normalizeRubricLinks(data?.group_rubrics),
       model_run_ids: data?.model_run_ids ?? [],
       group_ids: data?.group_ids ?? [],
     };
   }, []);
 
-  const [formState, setFormState] = useState<EvalFormState>(
-    getInitialFormState
-  );
+  const [formState, setFormState] =
+    useState<EvalFormState>(getInitialFormState);
 
   const departmentIdsStr = useMemo(
     () => JSON.stringify(evalData?.department_ids ?? []),
@@ -230,15 +275,18 @@ function EvalComponent({
     () => JSON.stringify(evalData?.agent_ids ?? []),
     [evalData?.agent_ids]
   );
-  const rubricIdsStr = useMemo(
-    () => JSON.stringify(evalData?.rubric_ids ?? []),
-    [evalData?.rubric_ids]
-  );
 
   // Sync form state when server data changes
   useEffect(() => {
     const nextState = getInitialFormState();
     setFormState((prev) => {
+      const prevRunLinksStr = serializeRubricLinks(prev.run_rubric_links);
+      const nextRunLinksStr = serializeRubricLinks(nextState.run_rubric_links);
+      const prevGroupLinksStr = serializeRubricLinks(prev.group_rubric_links);
+      const nextGroupLinksStr = serializeRubricLinks(
+        nextState.group_rubric_links
+      );
+
       if (
         prev.name_id !== nextState.name_id ||
         prev.description_id !== nextState.description_id ||
@@ -249,12 +297,11 @@ function EvalComponent({
           JSON.stringify(nextState.department_ids) ||
         JSON.stringify(prev.agent_ids) !==
           JSON.stringify(nextState.agent_ids) ||
-        JSON.stringify(prev.rubric_ids) !==
-          JSON.stringify(nextState.rubric_ids) ||
+        prevRunLinksStr !== nextRunLinksStr ||
+        prevGroupLinksStr !== nextGroupLinksStr ||
         JSON.stringify(prev.model_run_ids) !==
           JSON.stringify(nextState.model_run_ids) ||
-        JSON.stringify(prev.group_ids) !==
-          JSON.stringify(nextState.group_ids)
+        JSON.stringify(prev.group_ids) !== JSON.stringify(nextState.group_ids)
       ) {
         return nextState;
       }
@@ -268,7 +315,8 @@ function EvalComponent({
     evalData?.groups_flag_id,
     departmentIdsStr,
     agentIdsStr,
-    rubricIdsStr,
+    evalData?.run_rubrics,
+    evalData?.group_rubrics,
     evalData?.model_run_ids,
     evalData?.group_ids,
     getInitialFormState,
@@ -316,7 +364,6 @@ function EvalComponent({
       groups_flag_id: formState.groups_flag_id,
       department_ids: formState.department_ids,
       agent_ids: formState.agent_ids,
-      rubric_ids: formState.rubric_ids,
       model_run_ids: formState.model_run_ids,
       group_ids: formState.group_ids,
     });
@@ -333,7 +380,6 @@ function EvalComponent({
       formState.groups_flag_id ||
       formState.department_ids.length > 0 ||
       formState.agent_ids.length > 0 ||
-      formState.rubric_ids.length > 0 ||
       formState.model_run_ids.length > 0 ||
       formState.group_ids.length > 0;
 
@@ -358,7 +404,6 @@ function EvalComponent({
             groups_flag_id: formState.groups_flag_id,
             department_ids: formState.department_ids,
             agent_ids: formState.agent_ids,
-            rubric_ids: formState.rubric_ids,
             model_run_ids: formState.model_run_ids,
             group_ids: formState.group_ids,
             expected_version: lastSavedVersionRef.current,
@@ -388,8 +433,8 @@ function EvalComponent({
     const evalName =
       evalData?.name_resource?.name ??
       (evalData?.name_id
-        ? evalData?.names?.find((name) => name.id === evalData.name_id)?.name ??
-          null
+        ? (evalData?.names?.find((name) => name.id === evalData.name_id)
+            ?.name ?? null)
         : null);
     if (evalName && evalId && isEditMode) {
       setEntityMetadata({
@@ -428,11 +473,7 @@ function EvalComponent({
       });
     }
     return () => clearGenerationCapability();
-  }, [
-    generationAgentId,
-    setGenerationCapability,
-    clearGenerationCapability,
-  ]);
+  }, [generationAgentId, setGenerationCapability, clearGenerationCapability]);
 
   // Readonly logic using server-provided can_edit flag
   const disabled = useMemo(() => {
@@ -461,6 +502,92 @@ function EvalComponent({
     }));
   }, [evalData?.available_groups]);
 
+  const runLookup = useMemo(() => {
+    const lookup: Record<string, { name?: string; description?: string }> = {};
+    availableRuns.forEach((run) => {
+      if (run.run_id) {
+        lookup[run.run_id] = {
+          name: run.name ?? undefined,
+          description: run.description ?? undefined,
+        };
+      }
+    });
+    return lookup;
+  }, [availableRuns]);
+
+  const groupLookup = useMemo(() => {
+    const lookup: Record<string, { name?: string; description?: string }> = {};
+    availableGroups.forEach((group) => {
+      if (group.group_id) {
+        lookup[group.group_id] = {
+          name: group.name ?? undefined,
+          description: group.description ?? undefined,
+        };
+      }
+    });
+    return lookup;
+  }, [availableGroups]);
+
+  const handleModelRunIdsChange = useCallback(
+    (ids: string[]) => {
+      setFormState((prev) => {
+        const nextLinks = { ...prev.run_rubric_links };
+        Object.keys(nextLinks).forEach((runId) => {
+          if (!ids.includes(runId)) {
+            delete nextLinks[runId];
+          }
+        });
+        return { ...prev, model_run_ids: ids, run_rubric_links: nextLinks };
+      });
+    },
+    [setFormState]
+  );
+
+  const handleGroupIdsChange = useCallback(
+    (ids: string[]) => {
+      setFormState((prev) => {
+        const nextLinks = { ...prev.group_rubric_links };
+        Object.keys(nextLinks).forEach((groupId) => {
+          if (!ids.includes(groupId)) {
+            delete nextLinks[groupId];
+          }
+        });
+        return { ...prev, group_ids: ids, group_rubric_links: nextLinks };
+      });
+    },
+    [setFormState]
+  );
+
+  const handleRunRubricsChange = useCallback(
+    (runId: string, rubricIds: string[]) => {
+      setFormState((prev) => {
+        const nextLinks = { ...prev.run_rubric_links };
+        if (rubricIds.length === 0) {
+          delete nextLinks[runId];
+        } else {
+          nextLinks[runId] = rubricIds;
+        }
+        return { ...prev, run_rubric_links: nextLinks };
+      });
+    },
+    [setFormState]
+  );
+
+  const handleGroupRubricsChange = useCallback(
+    (groupId: string, rubricIds: string[]) => {
+      setFormState((prev) => {
+        const nextLinks = { ...prev.group_rubric_links };
+        if (rubricIds.length === 0) {
+          delete nextLinks[groupId];
+        } else {
+          nextLinks[groupId] = rubricIds;
+        }
+        return { ...prev, group_rubric_links: nextLinks };
+      });
+    },
+    [setFormState]
+  );
+
   // Resource regeneration check
   const canRegenerate = useCallback(
     (resourceType: EvalResourceType): boolean => {
@@ -478,7 +605,9 @@ function EvalComponent({
             false
           );
         case "departments":
-          return evalData.department_resources?.some((d) => d.generated) ?? false;
+          return (
+            evalData.department_resources?.some((d) => d.generated) ?? false
+          );
         case "agents":
           return evalData.agent_resources?.some((a) => a.generated) ?? false;
         case "rubrics":
@@ -508,7 +637,6 @@ function EvalComponent({
       groups_flag_id?: string | null;
       department_ids?: string[];
       agent_ids?: string[];
-      rubric_ids?: string[];
       success?: boolean;
       message?: string;
     }) => {
@@ -525,7 +653,8 @@ function EvalComponent({
         if (data.name_id) updates.name_id = data.name_id;
         if (data.description_id) updates.description_id = data.description_id;
         if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
-        if (data.dynamic_flag_id) updates.dynamic_flag_id = data.dynamic_flag_id;
+        if (data.dynamic_flag_id)
+          updates.dynamic_flag_id = data.dynamic_flag_id;
         if (data.groups_flag_id) updates.groups_flag_id = data.groups_flag_id;
         if (data.department_ids && data.department_ids.length > 0) {
           const newIds = data.department_ids.filter(
@@ -538,12 +667,6 @@ function EvalComponent({
             (id) => !prev.agent_ids.includes(id)
           );
           updates.agent_ids = [...prev.agent_ids, ...newIds];
-        }
-        if (data.rubric_ids && data.rubric_ids.length > 0) {
-          const newIds = data.rubric_ids.filter(
-            (id) => !prev.rubric_ids.includes(id)
-          );
-          updates.rubric_ids = [...prev.rubric_ids, ...newIds];
         }
         return { ...prev, ...updates } as EvalFormState;
       });
@@ -619,7 +742,8 @@ function EvalComponent({
     () => ({
       basic: ["names", "descriptions", "flags", "departments"],
       agents: ["agents"],
-      rubrics: ["rubrics"],
+      runs: ["rubrics"],
+      groups: ["rubrics"],
       all: [
         "names",
         "descriptions",
@@ -739,7 +863,8 @@ function EvalComponent({
 
   // Individual generation handlers
   const handleGenerateNames = useCallback(
-    async () => handleGenerateResources(["names"], determineAgentType(["names"])),
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -753,7 +878,8 @@ function EvalComponent({
   );
 
   const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -767,13 +893,8 @@ function EvalComponent({
   );
 
   const handleGenerateAgents = useCallback(
-    async () => handleGenerateResources(["agents"], determineAgentType(["agents"])),
-    [handleGenerateResources, determineAgentType]
-  );
-
-  const handleGenerateRubrics = useCallback(
     async () =>
-      handleGenerateResources(["rubrics"], determineAgentType(["rubrics"])),
+      handleGenerateResources(["agents"], determineAgentType(["agents"])),
     [handleGenerateResources, determineAgentType]
   );
 
@@ -852,12 +973,28 @@ function EvalComponent({
         throw new Error("Agents are required");
       }
 
-      if (
-        evalData?.rubrics_required &&
-        (!formState.rubric_ids || formState.rubric_ids.length === 0)
-      ) {
-        toast.error("Rubrics are required");
-        throw new Error("Rubrics are required");
+      const useGroups = !!formState.groups_flag_id;
+      const hasRubricsForRuns =
+        formState.model_run_ids.length > 0 &&
+        formState.model_run_ids.every(
+          (runId) => (formState.run_rubric_links[runId]?.length ?? 0) > 0
+        );
+      const hasRubricsForGroups =
+        formState.group_ids.length > 0 &&
+        formState.group_ids.every(
+          (groupId) => (formState.group_rubric_links[groupId]?.length ?? 0) > 0
+        );
+
+      if (evalData?.rubrics_required) {
+        if (useGroups) {
+          if (!hasRubricsForGroups) {
+            toast.error("Assign at least one rubric to each group");
+            throw new Error("Group rubrics are required");
+          }
+        } else if (!hasRubricsForRuns) {
+          toast.error("Assign at least one rubric to each run");
+          throw new Error("Run rubrics are required");
+        }
       }
 
       if (!effectiveProfile?.id) {
@@ -882,7 +1019,10 @@ function EvalComponent({
             groups_flag_id: formState.groups_flag_id,
             department_ids: formState.department_ids,
             agent_ids: formState.agent_ids,
-            rubric_ids: formState.rubric_ids,
+            run_rubric_links: buildRunRubricPayload(formState.run_rubric_links),
+            group_rubric_links: buildGroupRubricPayload(
+              formState.group_rubric_links
+            ),
             model_run_ids: formState.model_run_ids,
             group_ids: formState.group_ids,
             use_groups: !!formState.groups_flag_id,
@@ -922,10 +1062,20 @@ function EvalComponent({
       const hasDescription = !!formState.description_id;
       const hasDepartments = formState.department_ids.length > 0;
       const hasAgents = formState.agent_ids.length > 0;
-      const hasRubrics = formState.rubric_ids.length > 0;
       const hasRuns = formState.model_run_ids.length > 0;
       const hasGroups = formState.group_ids.length > 0;
       const useGroups = !!formState.groups_flag_id;
+      const hasRunRubrics =
+        formState.model_run_ids.length > 0 &&
+        formState.model_run_ids.every(
+          (runId) => (formState.run_rubric_links[runId]?.length ?? 0) > 0
+        );
+      const hasGroupRubrics =
+        formState.group_ids.length > 0 &&
+        formState.group_ids.every(
+          (groupId) => (formState.group_rubric_links[groupId]?.length ?? 0) > 0
+        );
+      const requiresRubrics = evalData?.rubrics_required ?? false;
 
       switch (stepId) {
         case "basic":
@@ -933,20 +1083,21 @@ function EvalComponent({
         case "agents":
           if (!hasName || !hasDescription) return "pending";
           return hasAgents ? "completed" : "active";
-        case "rubrics":
-          if (!hasName || !hasDescription) return "pending";
-          return hasRubrics ? "completed" : "active";
         case "runs":
           if (!hasName || !hasDescription || useGroups) return "pending";
-          return hasRuns ? "completed" : "active";
+          return hasRuns && (!requiresRubrics || hasRunRubrics)
+            ? "completed"
+            : "active";
         case "groups":
           if (!hasName || !hasDescription || !useGroups) return "pending";
-          return hasGroups ? "completed" : "active";
+          return hasGroups && (!requiresRubrics || hasGroupRubrics)
+            ? "completed"
+            : "active";
         default:
           return hasDepartments ? "completed" : "pending";
       }
     },
-    [formState]
+    [formState, evalData?.rubrics_required]
   );
 
   const steps = useMemo(
@@ -962,11 +1113,6 @@ function EvalComponent({
         title: "Agents",
         description: "Select agents to evaluate.",
         resetFields: ["agentSearch", "agentShowSelected"],
-      },
-      {
-        id: "rubrics",
-        title: "Rubrics",
-        description: "Select evaluation rubrics.",
       },
       {
         id: "runs",
@@ -993,7 +1139,6 @@ function EvalComponent({
       "groups_flag_id",
       "department_ids",
       "agent_ids",
-      "rubric_ids",
       "model_run_ids",
       "group_ids",
     ],
@@ -1006,8 +1151,6 @@ function EvalComponent({
         return "Basics reset";
       case "agents":
         return "Agents reset";
-      case "rubrics":
-        return "Rubrics reset";
       case "runs":
         return "Model runs reset";
       case "groups":
@@ -1112,9 +1255,7 @@ function EvalComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["basic"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
+                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
                           ? "Regenerate"
                           : "Generate"}
                       </TooltipContent>
@@ -1124,8 +1265,7 @@ function EvalComponent({
               }
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
-            >
-              <div className="space-y-4">
+              customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
                   name_resource={evalData?.name_resource ?? null}
@@ -1143,7 +1283,9 @@ function EvalComponent({
                   createNamesAction={createNamesAction}
                   required={evalData?.name_required ?? false}
                 />
-
+              }
+            >
+              <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={evalData?.description_resource ?? null}
@@ -1340,86 +1482,6 @@ function EvalComponent({
           );
         }
 
-        case "rubrics": {
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              actions={
-                stepResources["rubrics"] &&
-                stepResources["rubrics"].length > 0 &&
-                evalData?.rubrics_agent_id ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const hasRegeneratable = stepResources[
-                              "rubrics"
-                            ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
-                              "rubrics",
-                              hasRegeneratable ? "regenerate" : "generate"
-                            );
-                          }}
-                          disabled={
-                            disabled ||
-                            stepResources["rubrics"]!.some((rt) =>
-                              isGenerating(rt)
-                            )
-                          }
-                        >
-                          {stepResources["rubrics"]!.some((rt) =>
-                            isGenerating(rt)
-                          ) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {stepResources["rubrics"]!.some((rt) =>
-                          canRegenerate(rt)
-                        )
-                          ? "Regenerate"
-                          : "Generate"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : undefined
-              }
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-            >
-              <Rubrics
-                rubric_ids={formState.rubric_ids ?? []}
-                rubric_resources={evalData?.rubric_resources ?? []}
-                show_rubrics={evalData?.show_rubrics ?? false}
-                rubric_suggestions={evalData?.rubric_suggestions ?? []}
-                rubrics={evalData?.rubrics ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, rubric_ids: ids }))
-                }
-                onGenerate={handleGenerateRubrics}
-                isGenerating={isGenerating("rubrics")}
-                required={evalData?.rubrics_required ?? false}
-                group_id={evalData?.group_id ?? null}
-                agent_id={evalData?.rubrics_agent_id ?? null}
-                createRubricsAction={createRubricsAction}
-              />
-            </StepCard>
-          );
-        }
-
         case "runs": {
           if (useGroups) {
             return null;
@@ -1441,19 +1503,84 @@ function EvalComponent({
               debounceMs={300}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["runs"] &&
+                stepResources["runs"].length > 0 &&
+                evalData?.rubrics_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "runs"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "runs",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["runs"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["runs"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["runs"]!.some((rt) => canRegenerate(rt))
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
-              <Runs
-                run_ids={formState.model_run_ids ?? []}
-                run_resources={[]}
-                show_runs={availableRuns.length > 0}
-                runs={availableRuns}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, model_run_ids: ids }))
-                }
-                group_id={evalData?.group_id ?? null}
-                createRunsAction={createRunsAction}
-              />
+              <div className="space-y-4">
+                <Runs
+                  run_ids={formState.model_run_ids ?? []}
+                  run_resources={[]}
+                  show_runs={availableRuns.length > 0}
+                  runs={availableRuns}
+                  disabled={disabled}
+                  onChange={handleModelRunIdsChange}
+                  group_id={evalData?.group_id ?? null}
+                  createRunsAction={createRunsAction}
+                />
+                {formState.model_run_ids.length > 0 && (
+                  <div className="space-y-4">
+                    {formState.model_run_ids.map((runId) => (
+                      <RunRubrics
+                        key={runId}
+                        run_id={runId}
+                        run_name={runLookup[runId]?.name ?? null}
+                        run_description={runLookup[runId]?.description ?? null}
+                        show_rubrics={evalData?.show_rubrics ?? false}
+                        rubrics={evalData?.rubrics ?? []}
+                        disabled={disabled}
+                        required={evalData?.rubrics_required ?? false}
+                        selected_rubric_ids={
+                          formState.run_rubric_links[runId] ?? []
+                        }
+                        onChange={handleRunRubricsChange}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </StepCard>
           );
         }
@@ -1479,19 +1606,88 @@ function EvalComponent({
               debounceMs={300}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["groups"] &&
+                stepResources["groups"].length > 0 &&
+                evalData?.rubrics_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "groups"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "groups",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["groups"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["groups"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["groups"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
-              <Groups
-                group_ids={formState.group_ids ?? []}
-                group_resources={[]}
-                show_groups={availableGroups.length > 0}
-                groups={availableGroups}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, group_ids: ids }))
-                }
-                group_id={evalData?.group_id ?? null}
-                createGroupsAction={createGroupsAction}
-              />
+              <div className="space-y-4">
+                <Groups
+                  group_ids={formState.group_ids ?? []}
+                  group_resources={[]}
+                  show_groups={availableGroups.length > 0}
+                  groups={availableGroups}
+                  disabled={disabled}
+                  onChange={handleGroupIdsChange}
+                  group_id={evalData?.group_id ?? null}
+                  createGroupsAction={createGroupsAction}
+                />
+                {formState.group_ids.length > 0 && (
+                  <div className="space-y-4">
+                    {formState.group_ids.map((groupId) => (
+                      <GroupRubrics
+                        key={groupId}
+                        group_id={groupId}
+                        group_name={groupLookup[groupId]?.name ?? null}
+                        group_description={
+                          groupLookup[groupId]?.description ?? null
+                        }
+                        show_rubrics={evalData?.show_rubrics ?? false}
+                        rubrics={evalData?.rubrics ?? []}
+                        disabled={disabled}
+                        required={evalData?.rubrics_required ?? false}
+                        selected_rubric_ids={
+                          formState.group_rubric_links[groupId] ?? []
+                        }
+                        onChange={handleGroupRubricsChange}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </StepCard>
           );
         }
@@ -1514,17 +1710,24 @@ function EvalComponent({
       handleGenerateFlags,
       handleGenerateDepartments,
       handleGenerateAgents,
-      handleGenerateRubrics,
       createNamesAction,
       createDescriptionsAction,
       createFlagsAction,
       createDepartmentsAction,
       createAgentsAction,
-      createRubricsAction,
       createRunsAction,
       createGroupsAction,
       availableRuns,
       availableGroups,
+      handleModelRunIdsChange,
+      handleGroupIdsChange,
+      handleRunRubricsChange,
+      handleGroupRubricsChange,
+      runLookup,
+      groupLookup,
+      evalData?.rubrics,
+      evalData?.show_rubrics,
+      evalData?.rubrics_agent_id,
     ]
   );
 
@@ -1593,7 +1796,10 @@ export default React.memo(EvalComponent, (prevProps, nextProps) => {
     groups_flag_id: prevProps.evalDetail?.groups_flag_id,
     department_ids: prevProps.evalDetail?.department_ids,
     agent_ids: prevProps.evalDetail?.agent_ids,
-    rubric_ids: prevProps.evalDetail?.rubric_ids,
+    model_run_ids: prevProps.evalDetail?.model_run_ids,
+    group_ids: prevProps.evalDetail?.group_ids,
+    run_rubrics: JSON.stringify(prevProps.evalDetail?.run_rubrics ?? []),
+    group_rubrics: JSON.stringify(prevProps.evalDetail?.group_rubrics ?? []),
   };
   const nextIds = {
     name_id: nextProps.evalDetail?.name_id,
@@ -1603,7 +1809,10 @@ export default React.memo(EvalComponent, (prevProps, nextProps) => {
     groups_flag_id: nextProps.evalDetail?.groups_flag_id,
     department_ids: nextProps.evalDetail?.department_ids,
     agent_ids: nextProps.evalDetail?.agent_ids,
-    rubric_ids: nextProps.evalDetail?.rubric_ids,
+    model_run_ids: nextProps.evalDetail?.model_run_ids,
+    group_ids: nextProps.evalDetail?.group_ids,
+    run_rubrics: JSON.stringify(nextProps.evalDetail?.run_rubrics ?? []),
+    group_rubrics: JSON.stringify(nextProps.evalDetail?.group_rubrics ?? []),
   };
 
   if (JSON.stringify(prevIds) !== JSON.stringify(nextIds)) {

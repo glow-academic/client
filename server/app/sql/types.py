@@ -6129,6 +6129,8 @@ class PatchEvalDraftSqlParams(BaseModel):
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -6140,6 +6142,8 @@ class PatchEvalDraftSqlParams(BaseModel):
             self.active_flag_id,
             self.department_ids,
             self.agent_ids,
+            self.model_run_ids,
+            self.group_ids,
             self.expected_version,
         )
 
@@ -6157,6 +6161,8 @@ class PatchEvalDraftApiRequest(BaseModel):
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
+    model_run_ids: list[UUID] | None = None
+    group_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchEvalDraftApiResponse(BaseModel):

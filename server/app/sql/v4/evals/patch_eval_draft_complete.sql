@@ -25,6 +25,8 @@ CREATE OR REPLACE FUNCTION api_patch_eval_draft_v4(
     active_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     agent_ids uuid[] DEFAULT NULL,
+    model_run_ids uuid[] DEFAULT NULL,
+    group_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -85,6 +87,28 @@ BEGIN
             DELETE FROM draft_flags WHERE draft_flags.draft_id = v_draft_id;
             DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
             DELETE FROM draft_agents WHERE draft_agents.draft_id = v_draft_id;
+            IF model_run_ids IS NOT NULL THEN
+                DELETE FROM draft_runs WHERE draft_runs.draft_id = v_draft_id;
+                IF COALESCE(array_length(model_run_ids, 1), 0) > 0 THEN
+                    INSERT INTO draft_runs (draft_id, runs_id, version)
+                    SELECT v_draft_id, run_id, v_new_version
+                    FROM UNNEST(model_run_ids) as run_id
+                    ON CONFLICT ON CONSTRAINT draft_runs_pkey DO UPDATE
+                    SET version = v_new_version,
+                        updated_at = now();
+                END IF;
+            END IF;
+            IF group_ids IS NOT NULL THEN
+                DELETE FROM draft_groups WHERE draft_groups.draft_id = v_draft_id;
+                IF COALESCE(array_length(group_ids, 1), 0) > 0 THEN
+                    INSERT INTO draft_groups (draft_id, groups_id, version)
+                    SELECT v_draft_id, group_id, v_new_version
+                    FROM UNNEST(group_ids) as group_id
+                    ON CONFLICT ON CONSTRAINT draft_groups_pkey DO UPDATE
+                    SET version = v_new_version,
+                        updated_at = now();
+                END IF;
+            END IF;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
@@ -191,7 +215,25 @@ BEGIN
         SET version = v_new_version,
             updated_at = now();
     END IF;
-    
+
+    IF model_run_ids IS NOT NULL THEN
+        INSERT INTO draft_runs (draft_id, runs_id, version)
+        SELECT v_draft_id, run_id, v_new_version
+        FROM UNNEST(model_run_ids) as run_id
+        ON CONFLICT ON CONSTRAINT draft_runs_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF group_ids IS NOT NULL THEN
+        INSERT INTO draft_groups (draft_id, groups_id, version)
+        SELECT v_draft_id, group_id, v_new_version
+        FROM UNNEST(group_ids) as group_id
+        ON CONFLICT ON CONSTRAINT draft_groups_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
     RETURN QUERY SELECT v_draft_id, v_new_version, false;
 END;
 $$;
