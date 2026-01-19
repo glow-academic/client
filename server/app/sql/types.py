@@ -17541,6 +17541,11 @@ class GetScenarioSqlRow(BaseModel):
     show_problem_statement_enabled_flag: bool | None = None
     problem_statement_enabled_flag_agent_id: UUID | None = None
     problem_statement_enabled_flag_required: bool | None = None
+    use_templates_flag_id: UUID | None = None
+    use_templates_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_use_templates_flag: bool | None = None
+    use_templates_flag_agent_id: UUID | None = None
+    use_templates_flag_required: bool | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[QGetScenarioV4Department] | None = None
     show_departments: bool | None = None
@@ -17697,6 +17702,11 @@ class GetScenarioApiResponse(BaseModel):
     show_problem_statement_enabled_flag: bool | None = None
     problem_statement_enabled_flag_agent_id: UUID | None = None
     problem_statement_enabled_flag_required: bool | None = None
+    use_templates_flag_id: UUID | None = None
+    use_templates_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_use_templates_flag: bool | None = None
+    use_templates_flag_agent_id: UUID | None = None
+    use_templates_flag_required: bool | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[QGetScenarioV4Department] | None = None
     show_departments: bool | None = None

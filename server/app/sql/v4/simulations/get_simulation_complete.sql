@@ -1026,20 +1026,22 @@ department_cohort_ids AS (
     GROUP BY ud.id
 ),
 -- Department mapping data (filtered: active flag AND user linked) - following ARTIFACT.md
+-- Uses department_artifact as base (consistent with user_departments_for_mapping)
 department_mapping_data AS (
     SELECT 
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        COALESCE(d.generated, false) as generated,
+        COALESCE(dr.generated, false) as generated,
         -- Get group_id from resource.call_id → calls → message_calls → message_runs → group_runs
         (
             SELECT gr.group_id
-            FROM calls c
+            FROM departments_resource dr2
+            JOIN calls c ON c.id = dr2.call_id
             JOIN message_calls mc ON mc.call_id = c.id
             JOIN message_runs mr ON mr.message_id = mc.message_id
             JOIN group_runs gr ON gr.run_id = mr.run_id
-            WHERE c.id = d.call_id
+            WHERE dr2.id = d.id
             LIMIT 1
         ) as group_id,
         -- Include scenario_ids, rubric_ids, cohort_ids from existing CTEs
@@ -1048,12 +1050,13 @@ department_mapping_data AS (
         COALESCE(dci.cohort_ids, ARRAY[]::uuid[]) as cohort_ids
     FROM params x
     LEFT JOIN user_context uc ON true
-    JOIN departments_resource d ON (
+    JOIN department_artifact d ON (
         -- Only include departments with active flag AND user is linked to them
         EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
+    LEFT JOIN departments_resource dr ON dr.id = d.id
     LEFT JOIN department_scenario_ids dsci ON dsci.department_id = d.id
     LEFT JOIN department_rubric_ids dri ON dri.department_id = d.id
     LEFT JOIN department_cohort_ids dci ON dci.department_id = d.id

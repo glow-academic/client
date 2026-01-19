@@ -24,6 +24,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
 import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
+import { ScenarioRubricGradeAgents } from "@/components/resources/ScenarioRubricGradeAgents";
 import { Scenarios } from "@/components/resources/Scenarios";
 import { Times } from "@/components/resources/Times";
 import { Button } from "@/components/ui/button";
@@ -1477,6 +1478,30 @@ function SimulationComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              customHeader={
+                <Names
+                  name_id={formState.name_id ?? null}
+                  name_resource={currentSimulationData.name_resource ?? null}
+                  show_name={currentSimulationData.show_name ?? true}
+                  name_suggestions={
+                    currentSimulationData.name_suggestions ?? []
+                  }
+                  names={currentSimulationData.names ?? []}
+                  disabled={disabled}
+                  onNameIdChange={(id) =>
+                    setFormState((prev) => ({ ...prev, name_id: id }))
+                  }
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGenerating("names")}
+                  createNamesAction={createNamesAction}
+                  group_id={currentSimulationData.group_id ?? null}
+                  agent_id={currentSimulationData.name_agent_id ?? null}
+                  required={currentSimulationData.name_required ?? false}
+                  placeholder="Simulation name"
+                  defaultName="New Simulation"
+                  hideDescription={true}
+                />
+              }
               resetFields={["name", "description", "department_ids", "active"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1527,25 +1552,6 @@ function SimulationComponent({
               }
             >
               <div className="space-y-6">
-                <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={currentSimulationData.name_resource ?? null}
-                  show_name={currentSimulationData.show_name ?? true}
-                  name_suggestions={
-                    currentSimulationData.name_suggestions ?? []
-                  }
-                  names={currentSimulationData.names ?? []}
-                  disabled={disabled}
-                  onNameIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, name_id: id }))
-                  }
-                  onGenerate={handleGenerateName}
-                  isGenerating={isGenerating("names")}
-                  createNamesAction={createNamesAction}
-                  group_id={currentSimulationData.group_id ?? null}
-                  agent_id={currentSimulationData.name_agent_id ?? null}
-                  required={currentSimulationData.name_required ?? false}
-                />
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={
@@ -1617,7 +1623,6 @@ function SimulationComponent({
               </div>
             </StepCard>
           );
-        }
         case "scenarios": {
           const scenarioSearch =
             (stepFormData["scenarioSearch"] as string | undefined) ?? null;
@@ -1736,6 +1741,8 @@ function SimulationComponent({
                   group_id={currentSimulationData.group_id ?? null}
                   agent_id={currentSimulationData.scenarios_agent_id ?? null}
                   required={currentSimulationData.scenarios_required ?? false}
+                  searchTerm={scenarioSearch ?? ""}
+                  showSelectedOnly={scenarioShowSelected}
                 />
                 <ScenarioFlags
                   scenario_flag_ids={formState.scenario_flag_ids ?? []}

@@ -56,35 +56,40 @@ type CreateDraftScenarioFlagsOut = OutputOf<
   "post"
 >;
 
-const createDraftNames = async (
+async function createDraftNames(
   input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> => {
+): Promise<CreateDraftNamesOut> {
+  "use server";
   return api.post("/resources/names", input);
-};
+}
 
-const createDraftDescriptions = async (
+async function createDraftDescriptions(
   input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> => {
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
   return api.post("/resources/descriptions", input);
-};
+}
 
-const createDraftProblemStatements = async (
+async function createDraftProblemStatements(
   input: CreateDraftProblemStatementsIn
-): Promise<CreateDraftProblemStatementsOut> => {
+): Promise<CreateDraftProblemStatementsOut> {
+  "use server";
   return api.post("/resources/problem_statements", input);
-};
+}
 
-const createDraftObjectives = async (
+async function createDraftObjectives(
   input: CreateDraftObjectivesIn
-): Promise<CreateDraftObjectivesOut> => {
+): Promise<CreateDraftObjectivesOut> {
+  "use server";
   return api.post("/resources/objectives", input);
-};
+}
 
-const createDraftScenarioFlags = async (
+async function createDraftScenarioFlags(
   input: CreateDraftScenarioFlagsIn
-): Promise<CreateDraftScenarioFlagsOut> => {
+): Promise<CreateDraftScenarioFlagsOut> {
+  "use server";
   return api.post("/resources/scenario_flags", input);
-};
+}
 
 async function getScenario(input: GetScenarioIn): Promise<GetScenarioOut> {
   "use server";

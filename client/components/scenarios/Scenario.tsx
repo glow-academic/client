@@ -160,6 +160,7 @@ type ScenarioFormState = {
   video_enabled_flag_id: string | null;
   questions_enabled_flag_id: string | null;
   problem_statement_enabled_flag_id: string | null;
+  use_templates_flag_id: string | null;
   department_ids: string[];
   persona_ids: string[];
   document_ids: string[];
@@ -354,6 +355,7 @@ function ScenarioComponent({
         video_enabled_flag_id: null,
         questions_enabled_flag_id: null,
         problem_statement_enabled_flag_id: null,
+        use_templates_flag_id: null,
         department_ids: [],
         persona_ids: [],
         document_ids: [],
@@ -378,6 +380,7 @@ function ScenarioComponent({
       questions_enabled_flag_id: scenarioData.questions_enabled_flag_id ?? null,
       problem_statement_enabled_flag_id:
         scenarioData.problem_statement_enabled_flag_id ?? null,
+      use_templates_flag_id: scenarioData.use_templates_flag_id ?? null,
       department_ids: (scenarioData.department_ids ?? []).map(String),
       persona_ids: (scenarioData.persona_ids ?? []).map(String),
       document_ids: (scenarioData.document_ids ?? []).map(String),
@@ -450,6 +453,7 @@ function ScenarioComponent({
         prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
         prev.problem_statement_enabled_flag_id !==
           newState.problem_statement_enabled_flag_id ||
+        prev.use_templates_flag_id !== newState.use_templates_flag_id ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.persona_ids) !==
@@ -483,6 +487,7 @@ function ScenarioComponent({
     scenarioData?.video_enabled_flag_id,
     scenarioData?.questions_enabled_flag_id,
     scenarioData?.problem_statement_enabled_flag_id,
+    scenarioData?.use_templates_flag_id,
     JSON.stringify(scenarioData?.department_ids),
     JSON.stringify(scenarioData?.persona_ids),
     JSON.stringify(scenarioData?.document_ids),
@@ -521,6 +526,7 @@ function ScenarioComponent({
         questions_enabled_flag_id: formState.questions_enabled_flag_id,
         problem_statement_enabled_flag_id:
           formState.problem_statement_enabled_flag_id,
+        use_templates_flag_id: formState.use_templates_flag_id,
         department_ids: formState.department_ids,
         persona_ids: formState.persona_ids,
         document_ids: formState.document_ids,
@@ -543,6 +549,7 @@ function ScenarioComponent({
       formState.video_enabled_flag_id,
       formState.questions_enabled_flag_id,
       formState.problem_statement_enabled_flag_id,
+      formState.use_templates_flag_id,
       departmentIdsStr,
       personaIdsStr,
       documentIdsStr,
@@ -569,6 +576,7 @@ function ScenarioComponent({
       formState.video_enabled_flag_id ||
       formState.questions_enabled_flag_id ||
       formState.problem_statement_enabled_flag_id ||
+      formState.use_templates_flag_id ||
       formState.department_ids.length > 0 ||
       formState.persona_ids.length > 0 ||
       formState.document_ids.length > 0 ||
@@ -604,6 +612,7 @@ function ScenarioComponent({
             questions_enabled_flag_id: formState.questions_enabled_flag_id,
             problem_statement_enabled_flag_id:
               formState.problem_statement_enabled_flag_id,
+            use_templates_flag_id: formState.use_templates_flag_id,
             department_ids: formState.department_ids,
             persona_ids: formState.persona_ids,
             document_ids: formState.document_ids,
@@ -698,6 +707,10 @@ function ScenarioComponent({
         scenarioData.problem_statement_enabled_flag_agent_id,
       problem_statement_enabled_flag_required:
         scenarioData.problem_statement_enabled_flag_required,
+      use_templates_flag_resource: scenarioData.use_templates_flag_resource,
+      show_use_templates_flag: scenarioData.show_use_templates_flag,
+      use_templates_flag_agent_id: scenarioData.use_templates_flag_agent_id,
+      use_templates_flag_required: scenarioData.use_templates_flag_required,
       department_resources: scenarioData.department_resources,
       show_departments: scenarioData.show_departments,
       departments_agent_id: scenarioData.departments_agent_id,
@@ -783,17 +796,23 @@ function ScenarioComponent({
           );
         case "scenario_flags":
           return (
-            stableScenarioDataFields.active_flag_resource?.generated ??
-            false ||
-            stableScenarioDataFields.objectives_enabled_flag_resource
-              ?.generated ||
-            stableScenarioDataFields.images_enabled_flag_resource?.generated ||
-            stableScenarioDataFields.video_enabled_flag_resource?.generated ||
-            stableScenarioDataFields.questions_enabled_flag_resource
-              ?.generated ||
-            stableScenarioDataFields.problem_statement_enabled_flag_resource
-              ?.generated ||
-            false
+            (stableScenarioDataFields.active_flag_resource?.generated ??
+              false) ||
+            (stableScenarioDataFields.objectives_enabled_flag_resource
+              ?.generated ??
+              false) ||
+            (stableScenarioDataFields.images_enabled_flag_resource?.generated ??
+              false) ||
+            (stableScenarioDataFields.video_enabled_flag_resource?.generated ??
+              false) ||
+            (stableScenarioDataFields.questions_enabled_flag_resource
+              ?.generated ??
+              false) ||
+            (stableScenarioDataFields.problem_statement_enabled_flag_resource
+              ?.generated ??
+              false) ||
+            (stableScenarioDataFields.use_templates_flag_resource?.generated ??
+              false)
           );
         case "departments":
           return (
@@ -1173,6 +1192,7 @@ function ScenarioComponent({
         "images",
         "videos",
         "questions",
+        "templates",
       ];
 
       const isBasicCombo =
@@ -1193,6 +1213,12 @@ function ScenarioComponent({
         const agentTypeMap: Partial<Record<ScenarioResourceType, string>> = {
           names: "name",
           descriptions: "description",
+          problem_statements: "content",
+          objectives: "content",
+          images: "content",
+          videos: "content",
+          questions: "content",
+          templates: "content",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
@@ -1414,15 +1440,16 @@ function ScenarioComponent({
     () => ({
       basic: ["names", "descriptions", "scenario_flags", "departments"],
       configuration: ["scenario_flags"],
-      content: ["problem_statements", "objectives"],
-      resources: [
-        "personas",
-        "documents",
-        "templates",
-        "parameters",
-        "fields",
-      ],
-      media: ["images", "videos", "questions"],
+      problem_statement: ["problem_statements"],
+      objectives: ["objectives"],
+      personas: ["personas"],
+      documents: ["documents"],
+      templates: ["templates"],
+      parameters: ["parameters"],
+      fields: ["fields"],
+      images: ["images"],
+      videos: ["videos"],
+      questions: ["questions"],
       all: [
         "names",
         "descriptions",
@@ -1509,8 +1536,8 @@ function ScenarioComponent({
       window.removeEventListener("full-page-generate", handleFullPageGenerate);
   }, [scenarioData?.general_agent_id, handleOpenStepCardModal]);
 
-  const steps = useMemo(
-    () => [
+  const steps = useMemo(() => {
+    const items = [
       {
         id: "basic",
         title: "Basic Information",
@@ -1524,27 +1551,111 @@ function ScenarioComponent({
         description: "Enable or disable scenario features.",
         resetFields: ["configuration"],
       },
-      {
-        id: "content",
-        title: "Content",
-        description: "Define the problem statement and learning objectives.",
-        resetFields: ["problem_statement", "objectives"],
-      },
-      {
-        id: "resources",
-        title: "Resources",
-        description: "Select personas, documents, templates, parameters, fields.",
-        resetFields: ["resources"],
-      },
-      {
-        id: "media",
-        title: "Media & Questions",
-        description: "Select images, videos, and questions.",
-        resetFields: ["media"],
-      },
-    ],
-    []
-  );
+    ];
+
+    if (stableScenarioDataFields?.show_problem_statement) {
+      items.push({
+        id: "problem_statement",
+        title: "Problem Statement",
+        description: "Define the core problem statement for the scenario.",
+        resetFields: ["problem_statement"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_objectives) {
+      items.push({
+        id: "objectives",
+        title: "Objectives",
+        description: "Define learning objectives for the scenario.",
+        resetFields: ["objectives"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_personas) {
+      items.push({
+        id: "personas",
+        title: "Personas",
+        description: "Select personas for the scenario.",
+        resetFields: ["personas"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_documents) {
+      items.push({
+        id: "documents",
+        title: "Documents",
+        description: "Select documents for the scenario.",
+        resetFields: ["documents"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_templates) {
+      items.push({
+        id: "templates",
+        title: "Templates",
+        description: "Select templates for the scenario.",
+        resetFields: ["templates"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_parameters) {
+      items.push({
+        id: "parameters",
+        title: "Parameters",
+        description: "Select parameters for the scenario.",
+        resetFields: ["parameters"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_fields) {
+      items.push({
+        id: "fields",
+        title: "Fields",
+        description: "Select fields for the scenario.",
+        resetFields: ["fields"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_images) {
+      items.push({
+        id: "images",
+        title: "Images",
+        description: "Select images for the scenario.",
+        resetFields: ["images"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_videos) {
+      items.push({
+        id: "videos",
+        title: "Videos",
+        description: "Select videos for the scenario.",
+        resetFields: ["videos"],
+      });
+    }
+
+    if (stableScenarioDataFields?.show_questions) {
+      items.push({
+        id: "questions",
+        title: "Questions",
+        description: "Select questions for the scenario.",
+        resetFields: ["questions"],
+      });
+    }
+
+    return items;
+  }, [
+    stableScenarioDataFields?.show_problem_statement,
+    stableScenarioDataFields?.show_objectives,
+    stableScenarioDataFields?.show_personas,
+    stableScenarioDataFields?.show_documents,
+    stableScenarioDataFields?.show_templates,
+    stableScenarioDataFields?.show_parameters,
+    stableScenarioDataFields?.show_fields,
+    stableScenarioDataFields?.show_images,
+    stableScenarioDataFields?.show_videos,
+    stableScenarioDataFields?.show_questions,
+  ]);
 
   const formFieldKeys = useMemo(
     () => [
@@ -1698,6 +1809,7 @@ function ScenarioComponent({
             questions_enabled_flag_id: formState.questions_enabled_flag_id,
             problem_statement_enabled_flag_id:
               formState.problem_statement_enabled_flag_id,
+            use_templates_flag_id: formState.use_templates_flag_id,
             department_ids: formState.department_ids,
             persona_ids: formState.persona_ids,
             document_ids: formState.document_ids,
@@ -1752,17 +1864,6 @@ function ScenarioComponent({
       const hasDepartments = formState.department_ids.length > 0;
       const hasProblemStatement = !!formState.problem_statement_id;
       const hasObjectives = formState.objective_ids.length > 0;
-      const hasResources =
-        formState.persona_ids.length > 0 ||
-        formState.document_ids.length > 0 ||
-        formState.template_ids.length > 0 ||
-        formState.parameter_ids.length > 0 ||
-        formState.field_ids.length > 0;
-      const hasMedia =
-        formState.image_ids.length > 0 ||
-        formState.video_ids.length > 0 ||
-        formState.question_ids.length > 0;
-
       switch (stepId) {
         case "basic":
           return hasName && hasDescription && hasDepartments
@@ -1771,15 +1872,36 @@ function ScenarioComponent({
         case "configuration":
           if (!hasName || !hasDescription) return "pending";
           return "active";
-        case "content":
+        case "problem_statement":
           if (!hasName || !hasDescription) return "pending";
-          return hasProblemStatement || hasObjectives ? "completed" : "active";
-        case "resources":
+          return hasProblemStatement ? "completed" : "active";
+        case "objectives":
           if (!hasName || !hasDescription) return "pending";
-          return hasResources ? "completed" : "active";
-        case "media":
+          return hasObjectives ? "completed" : "active";
+        case "personas":
           if (!hasName || !hasDescription) return "pending";
-          return hasMedia ? "completed" : "active";
+          return formState.persona_ids.length > 0 ? "completed" : "active";
+        case "documents":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.document_ids.length > 0 ? "completed" : "active";
+        case "templates":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.template_ids.length > 0 ? "completed" : "active";
+        case "parameters":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.parameter_ids.length > 0 ? "completed" : "active";
+        case "fields":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.field_ids.length > 0 ? "completed" : "active";
+        case "images":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.image_ids.length > 0 ? "completed" : "active";
+        case "videos":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.video_ids.length > 0 ? "completed" : "active";
+        case "questions":
+          if (!hasName || !hasDescription) return "pending";
+          return formState.question_ids.length > 0 ? "completed" : "active";
         default:
           return "pending";
       }
@@ -2220,9 +2342,43 @@ function ScenarioComponent({
                 isGenerating={isGenerating("scenario_flags")}
                 required={currentScenarioData?.questions_enabled_flag_required ?? false}
               />
+
+              <Flags
+                flag_id={formState.use_templates_flag_id ?? null}
+                flag_resource={
+                  currentScenarioData?.use_templates_flag_resource ?? null
+                }
+                show_flag={currentScenarioData?.show_use_templates_flag ?? false}
+                disabled={disabled}
+                onFlagIdChange={(flagId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    use_templates_flag_id: flagId,
+                  }))
+                }
+                label="Templates Enabled"
+                helpText={
+                  currentScenarioData?.use_templates_flag_resource?.description ??
+                  undefined
+                }
+                iconId={
+                  currentScenarioData?.use_templates_flag_resource?.icon_id ??
+                  undefined
+                }
+                group_id={currentScenarioData?.group_id ?? null}
+                agent_id={currentScenarioData?.use_templates_flag_agent_id ?? null}
+                createFlagsAction={
+                  createScenarioFlagsAction
+                    ? createScenarioFlagsWrapper
+                    : undefined
+                }
+                onGenerate={handleGenerateFlags}
+                isGenerating={isGenerating("scenario_flags")}
+                required={currentScenarioData?.use_templates_flag_required ?? false}
+              />
             </StepCard>
           );
-        case "content":
+        case "problem_statement":
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2231,10 +2387,10 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["problem_statement", "objectives"]}
+              resetFields={["problem_statement"]}
               actions={
                 shouldShowGenerateAction(
-                  "content",
+                  "problem_statement",
                   currentScenarioData?.content_agent_id
                 ) ? (
                   <TooltipProvider>
@@ -2244,7 +2400,12 @@ function ScenarioComponent({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleOpenStepCardModal("content", "generate")}
+                          onClick={() =>
+                            handleOpenStepCardModal(
+                              "problem_statement",
+                              "generate"
+                            )
+                          }
                           disabled={disabled}
                         >
                           <Sparkles className="h-4 w-4" />
@@ -2289,7 +2450,44 @@ function ScenarioComponent({
                     | undefined
                 }
               />
-
+            </StepCard>
+          );
+        case "objectives":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["objectives"]}
+              actions={
+                shouldShowGenerateAction(
+                  "objectives",
+                  currentScenarioData?.content_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("objectives", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Objectives
                 objective_ids={formState.objective_ids}
                 objective_resources={currentScenarioData?.objective_resources ?? []}
@@ -2316,7 +2514,7 @@ function ScenarioComponent({
               />
             </StepCard>
           );
-        case "resources":
+        case "personas":
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2327,7 +2525,7 @@ function ScenarioComponent({
               isEditMode={isEditMode}
               searchTerm={personaSearch}
               onSearchChange={(value) => setFormData({ personaSearch: value })}
-              resetFields={["resources"]}
+              resetFields={["personas"]}
               filters={
                 filters ?? [
                   {
@@ -2341,7 +2539,7 @@ function ScenarioComponent({
               }
               actions={
                 shouldShowGenerateAction(
-                  "resources",
+                  "personas",
                   currentScenarioData?.general_agent_id
                 ) ? (
                   <TooltipProvider>
@@ -2352,7 +2550,7 @@ function ScenarioComponent({
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            handleOpenStepCardModal("resources", "generate")
+                            handleOpenStepCardModal("personas", "generate")
                           }
                           disabled={disabled}
                         >
@@ -2388,7 +2586,57 @@ function ScenarioComponent({
                 onGenerate={handleGeneratePersonas}
                 isGenerating={isGenerating("personas")}
               />
-
+            </StepCard>
+          );
+        case "documents":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={documentSearch}
+              onSearchChange={(value) => setFormData({ documentSearch: value })}
+              resetFields={["documents"]}
+              filters={
+                filters ?? [
+                  {
+                    key: "documentShowSelected",
+                    label: "Show selected only",
+                    value: documentShowSelected,
+                    onChange: (value) =>
+                      setFormData({ documentShowSelected: value }),
+                  },
+                ]
+              }
+              actions={
+                shouldShowGenerateAction(
+                  "documents",
+                  currentScenarioData?.general_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("documents", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Documents
                 document_ids={formState.document_ids}
                 document_resources={currentScenarioData?.document_resources ?? []}
@@ -2412,7 +2660,44 @@ function ScenarioComponent({
                 onGenerate={handleGenerateDocuments}
                 isGenerating={isGenerating("documents")}
               />
-
+            </StepCard>
+          );
+        case "templates":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["templates"]}
+              actions={
+                shouldShowGenerateAction(
+                  "templates",
+                  currentScenarioData?.content_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("templates", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Templates
                 template_ids={formState.template_ids}
                 template_resources={currentScenarioData?.template_resources ?? []}
@@ -2435,10 +2720,45 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateTemplates}
                 isGenerating={isGenerating("templates")}
-                searchTerm={documentSearch}
-                showSelectedFilter={documentShowSelected}
               />
-
+            </StepCard>
+          );
+        case "parameters":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["parameters"]}
+              actions={
+                shouldShowGenerateAction(
+                  "parameters",
+                  currentScenarioData?.general_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("parameters", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Parameters
                 parameter_ids={formState.parameter_ids}
                 parameter_resources={
@@ -2465,10 +2785,45 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateParameters}
                 isGenerating={isGenerating("parameters")}
-                searchTerm={parameterSearch}
-                showSelectedFilter={parameterShowSelected}
               />
-
+            </StepCard>
+          );
+        case "fields":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["fields"]}
+              actions={
+                shouldShowGenerateAction(
+                  "fields",
+                  currentScenarioData?.general_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("fields", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Fields
                 field_ids={formState.field_ids}
                 field_resources={currentScenarioData?.field_resources ?? []}
@@ -2487,12 +2842,10 @@ function ScenarioComponent({
                     | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
                     | undefined
                 }
-                searchTerm={parameterSearch}
-                showSelectedFilter={parameterShowSelected}
               />
             </StepCard>
           );
-        case "media":
+        case "images":
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2501,10 +2854,10 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["media"]}
+              resetFields={["images"]}
               actions={
                 shouldShowGenerateAction(
-                  "media",
+                  "images",
                   currentScenarioData?.content_agent_id
                 ) ? (
                   <TooltipProvider>
@@ -2514,7 +2867,9 @@ function ScenarioComponent({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleOpenStepCardModal("media", "generate")}
+                          onClick={() =>
+                            handleOpenStepCardModal("images", "generate")
+                          }
                           disabled={disabled}
                         >
                           <Sparkles className="h-4 w-4" />
@@ -2550,7 +2905,44 @@ function ScenarioComponent({
                 multiSelect={true}
                 maxImages={3}
               />
-
+            </StepCard>
+          );
+        case "videos":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["videos"]}
+              actions={
+                shouldShowGenerateAction(
+                  "videos",
+                  currentScenarioData?.content_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("videos", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Videos
                 video_ids={formState.video_ids}
                 video_resources={currentScenarioData?.video_resources ?? []}
@@ -2573,7 +2965,44 @@ function ScenarioComponent({
                 onGenerate={handleGenerateVideos}
                 isGenerating={isGenerating("videos")}
               />
-
+            </StepCard>
+          );
+        case "questions":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["questions"]}
+              actions={
+                shouldShowGenerateAction(
+                  "questions",
+                  currentScenarioData?.content_agent_id
+                ) ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleOpenStepCardModal("questions", "generate")
+                          }
+                          disabled={disabled}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null
+              }
+            >
               <Questions
                 question_ids={formState.question_ids}
                 question_resources={currentScenarioData?.question_resources ?? []}
@@ -2710,6 +3139,7 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     questions_enabled_flag_id: prevScenarioData?.questions_enabled_flag_id,
     problem_statement_enabled_flag_id:
       prevScenarioData?.problem_statement_enabled_flag_id,
+    use_templates_flag_id: prevScenarioData?.use_templates_flag_id,
     department_ids: prevScenarioData?.department_ids,
     persona_ids: prevScenarioData?.persona_ids,
     document_ids: prevScenarioData?.document_ids,
@@ -2732,6 +3162,7 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     questions_enabled_flag_id: nextScenarioData?.questions_enabled_flag_id,
     problem_statement_enabled_flag_id:
       nextScenarioData?.problem_statement_enabled_flag_id,
+    use_templates_flag_id: nextScenarioData?.use_templates_flag_id,
     department_ids: nextScenarioData?.department_ids,
     persona_ids: nextScenarioData?.persona_ids,
     document_ids: nextScenarioData?.document_ids,

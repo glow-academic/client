@@ -7,7 +7,7 @@
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -55,6 +55,7 @@ export interface ScenariosProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createScenariosAction?:
@@ -62,6 +63,7 @@ export interface ScenariosProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  showSelectedOnly?: boolean;
 }
 
 export function Scenarios({
@@ -82,6 +84,8 @@ export function Scenarios({
   createScenariosAction,
   onGenerate,
   isGenerating = false,
+  searchTerm,
+  showSelectedOnly = false,
 }: ScenariosProps) {
   const ids = useMemo(() => scenario_ids ?? [], [scenario_ids]);
   const show = show_scenarios ?? false;
@@ -164,6 +168,42 @@ export function Scenarios({
     [ids, onChange, createScenariosAction, agent_id, group_id, allScenarios]
   );
 
+  const handleGridSelect = useCallback(
+    (scenarioId: string) => {
+      const alreadySelected = ids.includes(scenarioId);
+      const nextSelectedIds = alreadySelected
+        ? ids.filter((id) => id !== scenarioId)
+        : [...ids, scenarioId];
+      void handleSelect(nextSelectedIds);
+    },
+    [ids, handleSelect]
+  );
+
+  const normalizedSearch = useMemo(
+    () => (searchTerm ?? "").trim().toLowerCase(),
+    [searchTerm]
+  );
+
+  const filteredScenarioItems = useMemo(() => {
+    let items = scenarioItems;
+    if (showSelectedOnly) {
+      items = items.filter((item) => ids.includes(item.id));
+    }
+
+    if (!normalizedSearch) {
+      return items;
+    }
+
+    return items.filter((item) => {
+      const name = item.name.toLowerCase();
+      const description = item.description?.toLowerCase() ?? "";
+      return (
+        name.includes(normalizedSearch) ||
+        description.includes(normalizedSearch)
+      );
+    });
+  }, [ids, normalizedSearch, scenarioItems, showSelectedOnly]);
+
   // Check if any scenario resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
     return scenario_resources?.some((s) => s.generated) ?? false;
@@ -214,46 +254,55 @@ export function Scenarios({
           )}
         </div>
       )}
-      <GenericPicker<ScenarioItem>
-        items={scenarioItems}
-        itemIds={allScenarios
-          .map((s) => s.id)
-          .filter((id): id is string => id !== null)} // All scenario IDs from array, filter nulls
+      <SelectableGrid<ScenarioItem>
+        items={filteredScenarioItems}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
+        onSelect={handleGridSelect}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                )}
+          <div
+            className={cn(
+              "relative min-h-[110px] rounded-xl border bg-card p-4 text-left text-card-foreground shadow-sm transition-all",
+              "hover:border-primary hover:shadow-md focus-visible:outline-none",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected
+                ? "border-transparent ring-2 ring-primary bg-primary/5"
+                : "border-input"
+            )}
+          >
+            {isSuggested(item.id) && !isSelected && (
+              <span className="absolute left-4 top-4 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                Suggested
+              </span>
+            )}
+            {isSelected && (
+              <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Check className="h-3.5 w-3.5" />
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+            )}
+            <div className="space-y-1">
+              <div className="text-sm font-semibold uppercase tracking-wide text-primary">
+                {item.name}
+              </div>
+              {item.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {item.description}
+                </p>
               )}
-            />
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage={
+          normalizedSearch
+            ? `No scenarios match "${searchTerm?.trim()}".`
+            : showSelectedOnly && ids.length === 0
+            ? "No scenarios selected."
+            : placeholder ?? "No scenarios available."
+        }
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
+        className="pt-2"
+        maxHeight="max-h-[520px]"
       />
     </div>
   );

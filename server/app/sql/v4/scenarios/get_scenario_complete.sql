@@ -256,6 +256,11 @@ RETURNS TABLE (
     show_problem_statement_enabled_flag boolean,
     problem_statement_enabled_flag_agent_id uuid,
     problem_statement_enabled_flag_required boolean,
+    use_templates_flag_id uuid,
+    use_templates_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_use_templates_flag boolean,
+    use_templates_flag_agent_id uuid,
+    use_templates_flag_required boolean,
     -- Multi-select resources: departments
     department_ids uuid[],
     department_resources types.q_get_scenario_v4_department[],
@@ -545,7 +550,8 @@ scenario_core AS (
         CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) END as images_enabled,
         CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'video_enabled' AND sf.value = TRUE) END as video_enabled,
         CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'questions_enabled' AND sf.value = TRUE) END as questions_enabled,
-        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'problem_statement_enabled' AND sf.value = TRUE) END as problem_statement_enabled
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'problem_statement_enabled' AND sf.value = TRUE) END as problem_statement_enabled,
+        CASE WHEN s.id IS NULL THEN false ELSE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'use_templates' AND sf.value = TRUE) END as use_templates
     FROM params x
     LEFT JOIN scenario_artifact s ON s.id = x.scenario_id
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
@@ -723,6 +729,23 @@ problem_statement_enabled_flag_resource_data AS (
          AND f.name = 'problem_statement_enabled' 
          AND sf.active = true 
          LIMIT 1) as problem_statement_enabled_flag_resource
+    FROM params
+),
+use_templates_flag_resource_data AS (
+    SELECT 
+        (SELECT sf.flag_id FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'use_templates' 
+         AND sf.active = true 
+         LIMIT 1) as use_templates_flag_id,
+        (SELECT ROW(sf.flag_id, f.name, COALESCE(f.description, ''), f.icon_id, COALESCE(sf.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_flags sf 
+         JOIN flags_resource f ON sf.flag_id = f.id 
+         WHERE sf.scenario_id = (SELECT scenario_id FROM params) 
+         AND f.name = 'use_templates' 
+         AND sf.active = true 
+         LIMIT 1) as use_templates_flag_resource
     FROM params
 ),
 -- Suggestions CTEs (UUID arrays, two-part filtering: linked to scenarios OR same group with generated=true)
@@ -2923,6 +2946,22 @@ problem_statement_enabled_flag_agent_data AS (
     )
     SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
 ),
+use_templates_flag_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools rt ON rt.tool_id = at.tool_id JOIN artifact_resources ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) JOIN resource_tools rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
+    ),
+    agent_department_preference AS (
+        SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
+        FROM eligible_agents ea CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id FROM agent_department_preference adp ORDER BY adp.dept_preference ASC, adp.updated_at DESC, adp.agent_id ASC LIMIT 1
+),
 -- Multi-resource combination agent IDs
 -- Agent selection for 'basic' multi-resource combination (names + descriptions + flags + departments)
 basic_agent_data AS (
@@ -3292,6 +3331,14 @@ SELECT
     END as show_problem_statement_enabled_flag,
     (SELECT agent_id FROM problem_statement_enabled_flag_agent_data) as problem_statement_enabled_flag_agent_id,
     false as problem_statement_enabled_flag_required,
+    (SELECT use_templates_flag_id FROM use_templates_flag_resource_data) as use_templates_flag_id,
+    (SELECT use_templates_flag_resource FROM use_templates_flag_resource_data) as use_templates_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_use_templates_flag,
+    (SELECT agent_id FROM use_templates_flag_agent_data) as use_templates_flag_agent_id,
+    false as use_templates_flag_required,
     -- Multi-select resources: departments
     COALESCE(
         (SELECT 
@@ -3586,42 +3633,52 @@ SELECT
         ELSE '{}'::types.q_get_scenario_v4_question_resource[]
     END as questions,
     -- Multi-select resources: templates
-    COALESCE((
-        SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
-        FROM scenario_templates st
-        WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
-    ), ARRAY[]::uuid[]) as template_ids,
-    COALESCE((
-        SELECT ARRAY_AGG(
-            (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
-            ORDER BY tmd.name
-        )
-        FROM template_mapping_data tmd
-        WHERE tmd.id = ANY(
-            COALESCE((
-                SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
-                FROM scenario_templates st
-                WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
-            ), ARRAY[]::uuid[])
-        )
-    ), '{}'::types.q_get_scenario_v4_template_resource[]) as template_resources,
+    CASE 
+        WHEN sc.use_templates THEN COALESCE((
+            SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
+            FROM scenario_templates st
+            WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
+        ), ARRAY[]::uuid[])
+        ELSE ARRAY[]::uuid[]
+    END as template_ids,
+    CASE 
+        WHEN sc.use_templates THEN COALESCE((
+            SELECT ARRAY_AGG(
+                (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
+                ORDER BY tmd.name
+            )
+            FROM template_mapping_data tmd
+            WHERE tmd.id = ANY(
+                COALESCE((
+                    SELECT ARRAY_AGG(st.template_id ORDER BY st.template_id)
+                    FROM scenario_templates st
+                    WHERE st.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND st.active = true
+                ), ARRAY[]::uuid[])
+            )
+        ), '{}'::types.q_get_scenario_v4_template_resource[])
+        ELSE '{}'::types.q_get_scenario_v4_template_resource[]
+    END as template_resources,
     CASE 
         WHEN NOT tec.templates_has_tools AND uf.show_templates THEN false
-        ELSE uf.show_templates
+        WHEN sc.use_templates THEN uf.show_templates
+        ELSE false
     END as show_templates,
     (SELECT agent_id FROM templates_agent_data) as templates_agent_id,
     CASE 
-        WHEN uf.show_templates THEN true
+        WHEN uf.show_templates AND sc.use_templates THEN true
         ELSE false
     END as templates_required,
     ARRAY[]::uuid[] as template_suggestions,
-    COALESCE((
-        SELECT ARRAY_AGG(
-            (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
-            ORDER BY tmd.name
-        ) FROM (SELECT DISTINCT id, name, description, generated FROM template_mapping_data) tmd),
-        '{}'::types.q_get_scenario_v4_template_resource[]
-    ) as templates,
+    CASE 
+        WHEN sc.use_templates THEN COALESCE((
+            SELECT ARRAY_AGG(
+                (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
+                ORDER BY tmd.name
+            ) FROM (SELECT DISTINCT id, name, description, generated FROM template_mapping_data) tmd),
+            '{}'::types.q_get_scenario_v4_template_resource[]
+        )
+        ELSE '{}'::types.q_get_scenario_v4_template_resource[]
+    END as templates,
     -- Multi-select resources: personas
     COALESCE((
         SELECT ARRAY_AGG(sp.persona_id ORDER BY sp.persona_id)
@@ -3755,5 +3812,6 @@ CROSS JOIN images_enabled_flag_resource_data iefrd
 CROSS JOIN video_enabled_flag_resource_data vefrd
 CROSS JOIN questions_enabled_flag_resource_data qefrd
 CROSS JOIN problem_statement_enabled_flag_resource_data psefrd
+CROSS JOIN use_templates_flag_resource_data utefrd
 LEFT JOIN scenario_simulations_agg ssa ON true
 $$;

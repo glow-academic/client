@@ -76,59 +76,17 @@ async def get_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Extract search and filter params from API request
-        persona_search = request.persona_search
-        document_search = request.document_search
-        parameter_search = request.parameter_search
-        persona_show_selected = request.persona_show_selected
-        document_show_selected = request.document_show_selected
-        parameter_show_selected = request.parameter_show_selected
-        field_show_selected_by_param = request.field_show_selected_by_param
-        use_image = request.use_image
-        use_objectives = request.use_objectives
-        document_ids = request.document_ids
-        problem_statement_ids = request.problem_statement_ids
-        template_document_ids = request.template_document_ids
-        objective_ids = request.objective_ids
-        image_ids = request.image_ids
-        use_video = request.use_video
-        filter_department_ids = request.filter_department_ids
-        filter_persona_ids = request.filter_persona_ids
-        filter_document_ids = request.filter_document_ids
-        filter_parameter_ids = request.filter_parameter_ids
-        filter_field_ids = request.filter_field_ids
-        draft_id = request.draft_id
-        scenario_id = request.scenario_id  # Can be NULL for new mode
-
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
 
-        # Convert API request to SQL params (add profile_id and mcp from header)
-        params = GetScenarioSqlParams(
-            profile_id=profile_id,
-            scenario_id=scenario_id,
-            use_image=use_image,
-            use_objectives=use_objectives,
-            document_ids=document_ids,
-            problem_statement_ids=problem_statement_ids,
-            template_document_ids=template_document_ids,
-            use_video=use_video,
-            filter_department_ids=filter_department_ids,
-            filter_persona_ids=filter_persona_ids,
-            filter_document_ids=filter_document_ids,
-            filter_parameter_ids=filter_parameter_ids,
-            filter_field_ids=filter_field_ids,
-            persona_search=persona_search,
-            document_search=document_search,
-            parameter_search=parameter_search,
-            persona_show_selected=persona_show_selected,
-            document_show_selected=document_show_selected,
-            parameter_show_selected=parameter_show_selected,
-            field_show_selected_by_param=field_show_selected_by_param,
-            draft_id=draft_id,
-            mcp=mcp,
-        )
+        # Convert API request to SQL params (double star pattern)
+        # Add profile_id and mcp from header; SQL signature is the source of truth
+        request_dict = request.model_dump()
+        request_dict["profile_id"] = profile_id
+        request_dict["mcp"] = mcp
+        params = GetScenarioSqlParams(**request_dict)
         sql_params = params.to_tuple()
+        scenario_id = request.scenario_id  # Used for audit/context decisions
 
         # Execute SQL with typed helper
         result = cast(

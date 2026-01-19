@@ -10795,6 +10795,15 @@ export interface components {
             problem_statement_enabled_flag_agent_id?: string | null;
             /** Problem Statement Enabled Flag Required */
             problem_statement_enabled_flag_required?: boolean | null;
+            /** Use Templates Flag Id */
+            use_templates_flag_id?: string | null;
+            use_templates_flag_resource?: components["schemas"]["QGetScenarioV4FlagResource"] | null;
+            /** Show Use Templates Flag */
+            show_use_templates_flag?: boolean | null;
+            /** Use Templates Flag Agent Id */
+            use_templates_flag_agent_id?: string | null;
+            /** Use Templates Flag Required */
+            use_templates_flag_required?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */

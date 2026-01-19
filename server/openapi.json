@@ -47685,6 +47685,62 @@
             ],
             "title": "Problem Statement Enabled Flag Required"
           },
+          "use_templates_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Templates Flag Id"
+          },
+          "use_templates_flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetScenarioV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_use_templates_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Use Templates Flag"
+          },
+          "use_templates_flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Templates Flag Agent Id"
+          },
+          "use_templates_flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Templates Flag Required"
+          },
           "department_ids": {
             "anyOf": [
               {
