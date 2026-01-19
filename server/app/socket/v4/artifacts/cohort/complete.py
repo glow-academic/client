@@ -112,6 +112,17 @@ async def handle_cohort_artifact_complete(data: dict[str, Any]) -> None:
             "active_flag_id": str(result.active_flag_id) if result.active_flag_id else None,
             "department_ids": [str(did) for did in (result.department_ids or [])],
             "simulation_ids": [str(sid) for sid in (result.simulation_ids or [])],
+            "simulation_positions": [
+                {
+                    "simulation_id": str(pos.simulation_id)
+                    if pos.simulation_id
+                    else None,
+                    "value": pos.value,
+                    "generated": pos.generated,
+                    "mcp": pos.mcp,
+                }
+                for pos in (result.simulation_positions or [])
+            ],
             "success": True,
             "message": f"{resource_type} generation completed successfully",
             "run_id": data.get("run_id"),

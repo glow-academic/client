@@ -1275,6 +1275,76 @@ function ModelComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            value_id: null,
+            active_flag_id: null,
+            modalities_enabled_flag_id: null,
+            temperature_enabled_flag_id: null,
+            pricing_enabled_flag_id: null,
+            voices_enabled_flag_id: null,
+            reasoning_levels_enabled_flag_id: null,
+            qualities_enabled_flag_id: null,
+            endpoint_id: null,
+            departmentIds: [],
+          };
+        case "customUrl":
+          return {
+            ...prev,
+            endpoint_id: null,
+          };
+        case "provider":
+          return {
+            ...prev,
+            provider_id: null,
+          };
+        case "inputModalities":
+          return {
+            ...prev,
+            input_modality_ids: [],
+          };
+        case "outputModalities":
+          return {
+            ...prev,
+            output_modality_ids: [],
+          };
+        case "temperature":
+          return {
+            ...prev,
+            temperature_level_ids: [],
+          };
+        case "pricing":
+          return {
+            ...prev,
+            pricing_ids: [],
+          };
+        case "reasoning":
+          return {
+            ...prev,
+            reasoning_level_ids: [],
+          };
+        case "voices":
+          return {
+            ...prev,
+            voice_ids: [],
+          };
+        case "qualities":
+          return {
+            ...prev,
+            quality_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Submit button config (for GenericForm)
   const submitButton = useMemo(
     () => ({
@@ -2095,6 +2165,7 @@ function ModelComponent({
         getStepStatus={getStepStatus}
         serverData={modelData}
         formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
         resetSuccessMessage={resetSuccessMessage}
         onSubmit={handleSubmit}
         submitButton={submitButton}

@@ -1174,6 +1174,42 @@ function EvalComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            dynamic_flag_id: null,
+            groups_flag_id: null,
+            department_ids: [],
+          };
+        case "agents":
+          return {
+            ...prev,
+            agent_ids: [],
+          };
+        case "runs":
+          return {
+            ...prev,
+            model_run_ids: [],
+            run_rubric_links: {},
+          };
+        case "groups":
+          return {
+            ...prev,
+            group_ids: [],
+            group_rubric_links: {},
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   const submitButton = useMemo(
     () => ({
       backUrl: "/system/evals",
@@ -1761,15 +1797,16 @@ function EvalComponent({
           nuqsParsers={
             evalSearchParamsClient as Record<string, Parser<unknown>>
           }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={evalData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
-          isEditMode={isEditMode}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={evalData}
+        formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
+        resetSuccessMessage={resetSuccessMessage}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
+        isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}
           registerSetFormData={(setter) => {

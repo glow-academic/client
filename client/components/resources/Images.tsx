@@ -307,74 +307,72 @@ export function Images({
         ) : (
           <span />
         )}
-        {Object.keys(imageMapping).length > 0 && (
-          <GenericPicker
-            items={imageMapping}
-            itemIds={Object.keys(imageMapping)}
-            selectedIds={ids}
-            onSelect={handleImageSelect}
-            getId={(item) => {
-              const imgItem = item as ImageItem;
-              return imgItem.id;
-            }}
-            getLabel={(item) => {
-              const imgItem = item as ImageItem;
-              const date = imgItem.updated_at
-                ? new Date(imgItem.updated_at)
-                : new Date();
-              return `${imgItem.name} - ${date.toLocaleDateString()}`;
-            }}
-            getSearchText={(item) => {
-              const imgItem = item as ImageItem;
-              const date = imgItem.updated_at
-                ? new Date(imgItem.updated_at)
-                : new Date();
-              return `${imgItem.name} ${date.toLocaleDateString()}`;
-            }}
-            renderButton={(selectedItems) => {
-              if (selectedItems.length === 0) {
-                return placeholder;
-              }
-              if (multiSelect && selectedItems.length > 1) {
-                return `${selectedItems.length} images selected`;
-              }
-              const selectedImage = selectedItems[0] as ImageItem;
-              return selectedImage?.name || placeholder;
-            }}
-            renderItem={(item, isSelected) => {
-              const imgItem = item as ImageItem;
-              const date = imgItem.updated_at
-                ? new Date(imgItem.updated_at)
-                : new Date();
-              return (
-                <div className="flex flex-col items-start py-3 w-full">
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <Check
-                        className={cn(
-                          "h-4 w-4",
-                          isSelected ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <span className="font-medium">{imgItem.name}</span>
-                    </div>
+        <GenericPicker
+          items={imageMapping}
+          itemIds={Object.keys(imageMapping)}
+          selectedIds={ids}
+          onSelect={handleImageSelect}
+          getId={(item) => {
+            const imgItem = item as ImageItem;
+            return imgItem.id;
+          }}
+          getLabel={(item) => {
+            const imgItem = item as ImageItem;
+            const date = imgItem.updated_at
+              ? new Date(imgItem.updated_at)
+              : new Date();
+            return `${imgItem.name} - ${date.toLocaleDateString()}`;
+          }}
+          getSearchText={(item) => {
+            const imgItem = item as ImageItem;
+            const date = imgItem.updated_at
+              ? new Date(imgItem.updated_at)
+              : new Date();
+            return `${imgItem.name} ${date.toLocaleDateString()}`;
+          }}
+          renderButton={(selectedItems) => {
+            if (selectedItems.length === 0) {
+              return placeholder;
+            }
+            if (multiSelect && selectedItems.length > 1) {
+              return `${selectedItems.length} images selected`;
+            }
+            const selectedImage = selectedItems[0] as ImageItem;
+            return selectedImage?.name || placeholder;
+          }}
+          renderItem={(item, isSelected) => {
+            const imgItem = item as ImageItem;
+            const date = imgItem.updated_at
+              ? new Date(imgItem.updated_at)
+              : new Date();
+            return (
+              <div className="flex flex-col items-start py-3 w-full">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span className="font-medium">{imgItem.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {date.toLocaleDateString()} {date.toLocaleTimeString()}
-                  </span>
                 </div>
-              );
-            }}
-            disabled={disabled}
-            multiSelect={multiSelect}
-            hideSelectedChips={true}
-            buttonClassName="h-8 justify-between"
-            compact={true}
-            groupHeading="Images"
-            placeholder={placeholder}
-            clearActionLabel="New Image"
-          />
-        )}
+                <span className="text-xs text-muted-foreground mt-1">
+                  {date.toLocaleDateString()} {date.toLocaleTimeString()}
+                </span>
+              </div>
+            );
+          }}
+          disabled={disabled}
+          multiSelect={multiSelect}
+          hideSelectedChips={true}
+          buttonClassName="h-8 justify-between"
+          compact={true}
+          groupHeading="Images"
+          placeholder={placeholder}
+          clearActionLabel="New Image"
+        />
       </div>
 
       {/* Image Picker and Preview Section (matching ContentSection pattern) */}

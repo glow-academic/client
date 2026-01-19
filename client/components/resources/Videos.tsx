@@ -276,68 +276,66 @@ export function Videos({
         ) : (
           <span />
         )}
-        {Object.keys(videoMapping).length > 0 ? (
-          <GenericPicker
-            items={videoMapping}
-            itemIds={Object.keys(videoMapping)}
-            selectedIds={selectedVideo ? [selectedVideo.id] : []}
-            onSelect={handleVideoSelect}
-            getId={(item) => {
-              const vidItem = item as VideoItem;
-              return vidItem.id;
-            }}
-            getLabel={(item) => {
-              const vidItem = item as VideoItem;
-              if (vidItem.length_seconds !== undefined) {
-                return `${vidItem.name} (${Math.floor(vidItem.length_seconds / 60)}:${String(vidItem.length_seconds % 60).padStart(2, "0")})`;
-              }
-              return vidItem.name;
-            }}
-            getSearchText={(item) => {
-              const vidItem = item as VideoItem;
-              return vidItem.name;
-            }}
-            renderButton={(selectedItems) => {
-              if (selectedItems.length === 0) {
-                return placeholder;
-              }
-              const selectedVideoItem = selectedItems[0] as VideoItem;
-              return selectedVideoItem?.name || placeholder;
-            }}
-            renderItem={(item, isSelected) => {
-              const vidItem = item as VideoItem;
-              return (
-                <div className="flex flex-col items-start py-3 w-full">
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <Check
-                        className={cn(
-                          "h-4 w-4",
-                          isSelected ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <span className="font-medium">{vidItem.name}</span>
-                    </div>
-                    {vidItem.length_seconds !== undefined && (
-                      <span className="text-xs text-muted-foreground">
-                        {Math.floor(vidItem.length_seconds / 60)}:
-                        {String(vidItem.length_seconds % 60).padStart(2, "0")}
-                      </span>
-                    )}
+        <GenericPicker
+          items={videoMapping}
+          itemIds={Object.keys(videoMapping)}
+          selectedIds={selectedVideo ? [selectedVideo.id] : []}
+          onSelect={handleVideoSelect}
+          getId={(item) => {
+            const vidItem = item as VideoItem;
+            return vidItem.id;
+          }}
+          getLabel={(item) => {
+            const vidItem = item as VideoItem;
+            if (vidItem.length_seconds !== undefined) {
+              return `${vidItem.name} (${Math.floor(vidItem.length_seconds / 60)}:${String(vidItem.length_seconds % 60).padStart(2, "0")})`;
+            }
+            return vidItem.name;
+          }}
+          getSearchText={(item) => {
+            const vidItem = item as VideoItem;
+            return vidItem.name;
+          }}
+          renderButton={(selectedItems) => {
+            if (selectedItems.length === 0) {
+              return placeholder;
+            }
+            const selectedVideoItem = selectedItems[0] as VideoItem;
+            return selectedVideoItem?.name || placeholder;
+          }}
+          renderItem={(item, isSelected) => {
+            const vidItem = item as VideoItem;
+            return (
+              <div className="flex flex-col items-start py-3 w-full">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span className="font-medium">{vidItem.name}</span>
                   </div>
+                  {vidItem.length_seconds !== undefined && (
+                    <span className="text-xs text-muted-foreground">
+                      {Math.floor(vidItem.length_seconds / 60)}:
+                      {String(vidItem.length_seconds % 60).padStart(2, "0")}
+                    </span>
+                  )}
                 </div>
-              );
-            }}
-            disabled={disabled}
-            multiSelect={false}
-            hideSelectedChips={true}
-            buttonClassName="h-8 justify-between"
-            compact={true}
-            groupHeading="Videos"
-            placeholder={placeholder}
-            clearActionLabel="No Video"
-          />
-        ) : null}
+              </div>
+            );
+          }}
+          disabled={disabled}
+          multiSelect={false}
+          hideSelectedChips={true}
+          buttonClassName="h-8 justify-between"
+          compact={true}
+          groupHeading="Videos"
+          placeholder={placeholder}
+          clearActionLabel="No Video"
+        />
       </div>
 
       {/* Video Preview Container (matching ContentSection pattern) */}

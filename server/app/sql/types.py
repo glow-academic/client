@@ -3505,6 +3505,7 @@ class GetCohortResourceIdsByGroupIdSqlRow(BaseModel):
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
+    simulation_positions: list[QGetCohortV4SimulationPosition] | None = None
 
 class GetCohortResourceIdsByGroupIdApiRequest(BaseModel):
 
@@ -3520,6 +3521,7 @@ class GetCohortResourceIdsByGroupIdApiResponse(BaseModel):
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
+    simulation_positions: list[QGetCohortV4SimulationPosition] | None = None
 
 
 
@@ -15814,6 +15816,43 @@ class ScenarioRubricsApiResponse(BaseModel):
 
 
 
+# Generated from: scenario_time_limits
+
+class ScenarioTimeLimitsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    scenario_id: UUID
+    time_limit_seconds: int
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.scenario_id,
+            self.time_limit_seconds,
+            self.mcp,
+        )
+
+class ScenarioTimeLimitsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ScenarioTimeLimitsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    scenario_id: UUID
+    time_limit_seconds: int
+    mcp: bool | None = False
+
+class ScenarioTimeLimitsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: scenarios
 
 class ScenariosSqlParams(BaseModel):
@@ -15888,7 +15927,6 @@ class SimulationPositionsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
-    cohort_id: UUID
     simulation_id: UUID
     value: int
     mcp: bool | None = False
@@ -15897,7 +15935,6 @@ class SimulationPositionsSqlParams(BaseModel):
         return (
             self.agent_id,
             self.group_id,
-            self.cohort_id,
             self.simulation_id,
             self.value,
             self.mcp,
@@ -15911,7 +15948,6 @@ class SimulationPositionsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
-    cohort_id: UUID
     simulation_id: UUID
     value: int
     mcp: bool | None = False
@@ -22637,6 +22673,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ScenarioRubricsApiRequest",
         "ScenarioRubricsApiResponse",
     ),
+    "app/sql/v4/resources/scenario_time_limits_complete.sql": (
+        "ScenarioTimeLimitsSqlParams",
+        "ScenarioTimeLimitsSqlRow",
+        "ScenarioTimeLimitsApiRequest",
+        "ScenarioTimeLimitsApiResponse",
+    ),
     "app/sql/v4/resources/scenarios_complete.sql": (
         "ScenariosSqlParams",
         "ScenariosSqlRow",
@@ -24491,6 +24533,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/scenario_rubrics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/scenario_time_limits_complete.sql"]
     ) -> SqlString: ...
 
     @overload

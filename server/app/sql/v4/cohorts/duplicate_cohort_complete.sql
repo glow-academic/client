@@ -133,7 +133,7 @@ copy_profiles AS (
     JOIN profile_cohorts cp ON cp.cohort_id = oc.id
 ),
 copy_simulations AS (
-    -- Copy simulation relationships (position removed - now in simulation_positions_resource)
+    -- Copy simulation relationships (positions linked via cohort_simulation_positions)
     INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
     SELECT 
         nc.id,
@@ -144,30 +144,28 @@ copy_simulations AS (
     JOIN cohort_simulations cs ON cs.cohort_id = oc.id
 ),
 copy_simulation_positions AS (
-    INSERT INTO simulation_positions_resource (
-        simulation_id,
+    INSERT INTO cohort_simulation_positions (
         cohort_id,
-        value,
+        simulation_position_id,
+        active,
         created_at,
         updated_at,
         generated,
-        mcp,
-        call_id
+        mcp
     )
     SELECT
-        spr.simulation_id,
         nc.id,
-        spr.value,
+        csp.simulation_position_id,
+        csp.active,
         NOW(),
         NOW(),
-        spr.generated,
-        spr.mcp,
-        spr.call_id
+        csp.generated,
+        csp.mcp
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
-    JOIN simulation_positions_resource spr ON spr.cohort_id = oc.id
-    ON CONFLICT (simulation_id, cohort_id) DO UPDATE SET
-        value = EXCLUDED.value,
+    JOIN cohort_simulation_positions csp ON csp.cohort_id = oc.id
+    ON CONFLICT (cohort_id, simulation_position_id) DO UPDATE SET
+        active = EXCLUDED.active,
         updated_at = NOW()
 ),
 copy_departments AS (

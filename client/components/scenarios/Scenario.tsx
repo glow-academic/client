@@ -1604,7 +1604,7 @@ function ScenarioComponent({
         title: "Basic Information",
         description:
           "Set the scenario name, description, departments, and active status.",
-        resetFields: ["name", "description", "departments"],
+        resetFields: ["name", "description", "departments", "descriptionSearch"],
       },
       {
         id: "configuration",
@@ -1614,14 +1614,14 @@ function ScenarioComponent({
       },
     ];
 
-    if (showProblemStatementSection) {
-      items.push({
-        id: "problem_statement",
-        title: "Problem Statement",
-        description: "Define the core problem statement for the scenario.",
-        resetFields: ["problem_statement"],
-      });
-    }
+      if (showProblemStatementSection) {
+        items.push({
+          id: "problem_statement",
+          title: "Problem Statement",
+          description: "Define the core problem statement for the scenario.",
+          resetFields: ["problem_statement", "problemStatementSearch"],
+        });
+      }
 
     if (showObjectivesSection) {
       items.push({
@@ -1632,41 +1632,41 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.show_personas) {
-      items.push({
-        id: "personas",
-        title: "Personas",
-        description: "Select personas for the scenario.",
-        resetFields: ["personas"],
-      });
-    }
+      if (stableScenarioDataFields?.show_personas) {
+        items.push({
+          id: "personas",
+          title: "Personas",
+          description: "Select personas for the scenario.",
+          resetFields: ["personas", "personaSearch", "personaShowSelected"],
+        });
+      }
 
-    if (stableScenarioDataFields?.show_documents) {
-      items.push({
-        id: "documents",
-        title: "Documents",
-        description: "Select documents for the scenario.",
-        resetFields: ["documents"],
-      });
-    }
+      if (stableScenarioDataFields?.show_documents) {
+        items.push({
+          id: "documents",
+          title: "Documents",
+          description: "Select documents for the scenario.",
+          resetFields: ["documents", "documentSearch", "documentShowSelected"],
+        });
+      }
 
-    if (showTemplatesSection) {
-      items.push({
-        id: "templates",
-        title: "Templates",
-        description: "Select templates for the scenario.",
-        resetFields: ["templates"],
-      });
-    }
+      if (showTemplatesSection) {
+        items.push({
+          id: "templates",
+          title: "Templates",
+          description: "Select templates for the scenario.",
+          resetFields: ["templates", "templateSearch"],
+        });
+      }
 
-    if (stableScenarioDataFields?.show_parameters) {
-      items.push({
-        id: "parameters",
-        title: "Parameters",
-        description: "Select parameters for the scenario.",
-        resetFields: ["parameters"],
-      });
-    }
+      if (stableScenarioDataFields?.show_parameters) {
+        items.push({
+          id: "parameters",
+          title: "Parameters",
+          description: "Select parameters for the scenario.",
+          resetFields: ["parameters", "parameterSearch", "parameterShowSelected"],
+        });
+      }
 
     if (stableScenarioDataFields?.show_fields) {
       items.push({
@@ -1740,6 +1740,114 @@ function ScenarioComponent({
     }),
     []
   );
+
+  const resetSuccessMessage = useCallback((stepId: string) => {
+    switch (stepId) {
+      case "basic":
+        return "Basic information reset";
+      case "configuration":
+        return "Configuration reset";
+      case "problem_statement":
+        return "Problem statement reset";
+      case "objectives":
+        return "Objectives reset";
+      case "personas":
+        return "Personas reset";
+      case "documents":
+        return "Documents reset";
+      case "templates":
+        return "Templates reset";
+      case "parameters":
+        return "Parameters reset";
+      case "fields":
+        return "Fields reset";
+      case "images":
+        return "Images reset";
+      case "videos":
+        return "Videos reset";
+      case "questions":
+        return "Questions reset";
+      default:
+        return "Reset";
+    }
+  }, []);
+
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            department_ids: [],
+          };
+        case "configuration":
+          return {
+            ...prev,
+            objectives_enabled_flag_id: null,
+            images_enabled_flag_id: null,
+            video_enabled_flag_id: null,
+            questions_enabled_flag_id: null,
+            problem_statement_enabled_flag_id: null,
+            use_templates_flag_id: null,
+          };
+        case "problem_statement":
+          return {
+            ...prev,
+            problem_statement_id: null,
+          };
+        case "objectives":
+          return {
+            ...prev,
+            objective_ids: [],
+          };
+        case "personas":
+          return {
+            ...prev,
+            persona_ids: [],
+          };
+        case "documents":
+          return {
+            ...prev,
+            document_ids: [],
+          };
+        case "templates":
+          return {
+            ...prev,
+            template_ids: [],
+          };
+        case "parameters":
+          return {
+            ...prev,
+            parameter_ids: [],
+          };
+        case "fields":
+          return {
+            ...prev,
+            field_ids: [],
+          };
+        case "images":
+          return {
+            ...prev,
+            image_ids: [],
+          };
+        case "videos":
+          return {
+            ...prev,
+            video_ids: [],
+          };
+        case "questions":
+          return {
+            ...prev,
+            question_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -2017,8 +2125,12 @@ function ScenarioComponent({
       const parameterShowSelected =
         (formData["parameterShowSelected"] as boolean | undefined) ?? false;
 
-      const shouldShowGenerateAction = (stepKey: string, agentId?: string | null) =>
+      const shouldShowGenerateAction = (
+        stepKey: string,
+        agentId?: string | null
+      ) =>
         stepResources[stepKey] && stepResources[stepKey].length > 0 && agentId;
+      const resetProps = onReset ? { onReset, resetLabel: "Reset" } : {};
 
       switch (stepId) {
         case "basic":
@@ -2082,6 +2194,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Descriptions
                 description_id={formState.description_id ?? null}
@@ -2209,6 +2322,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Flags
                 flag_id={formState.problem_statement_enabled_flag_id ?? null}
@@ -2459,6 +2573,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <ProblemStatements
                 problem_statement_id={formState.problem_statement_id ?? null}
@@ -2533,6 +2648,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Objectives
                 objective_ids={formState.objective_ids}
@@ -2608,6 +2724,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Personas
                 persona_ids={formState.persona_ids}
@@ -2682,6 +2799,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Documents
                 document_ids={formState.document_ids}
@@ -2749,6 +2867,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Templates
                 template_ids={formState.template_ids}
@@ -2792,7 +2911,23 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={parameterSearch}
+              onSearchChange={(value) =>
+                setFormData({ parameterSearch: value || null })
+              }
+              searchPlaceholder="Search parameters..."
               resetFields={["parameters"]}
+              filters={
+                filters ?? [
+                  {
+                    key: "parameterShowSelected",
+                    label: "Show selected only",
+                    value: parameterShowSelected,
+                    onChange: (value) =>
+                      setFormData({ parameterShowSelected: value }),
+                  },
+                ]
+              }
               actions={
                 shouldShowGenerateAction(
                   "parameters",
@@ -2818,6 +2953,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Parameters
                 parameter_ids={formState.parameter_ids}
@@ -2829,6 +2965,8 @@ function ScenarioComponent({
                   currentScenarioData?.parameter_suggestions ?? []
                 }
                 parameters={currentScenarioData?.parameters ?? []}
+                searchTerm={parameterSearch}
+                showSelectedFilter={parameterShowSelected}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, parameter_ids: ids }))
@@ -2883,6 +3021,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Fields
                 field_ids={formState.field_ids}
@@ -2940,6 +3079,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Images
                 image_ids={formState.image_ids}
@@ -3002,6 +3142,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Videos
                 video_ids={formState.video_ids}
@@ -3062,6 +3203,7 @@ function ScenarioComponent({
                   </TooltipProvider>
                 ) : null
               }
+              {...resetProps}
             >
               <Questions
                 question_ids={formState.question_ids}
@@ -3154,6 +3296,8 @@ function ScenarioComponent({
           isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
+          onReset={(stepId) => handleReset(stepId)}
+          resetSuccessMessage={resetSuccessMessage}
           onFormDataChange={onFormDataChange}
           registerSetFormData={(setter) => {
             setUrlFormDataRef.current = setter;

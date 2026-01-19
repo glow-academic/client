@@ -543,6 +543,12 @@ function CohortComponent({
       active_flag_id?: string | null;
       department_ids?: string[];
       simulation_ids?: string[];
+      simulation_positions?: Array<{
+        simulation_id?: string | null;
+        value?: number | null;
+        generated?: boolean | null;
+        mcp?: boolean | null;
+      }>;
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -569,6 +575,30 @@ function CohortComponent({
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
         if (data.resource_type === "simulation_positions") {
+          if (data.simulation_positions && data.simulation_positions.length > 0) {
+            setFormState((prev) => {
+              const nextPositions = new Map<string, SimulationPositionItem>();
+              prev.simulation_positions.forEach((pos) => {
+                if (pos.simulation_id) {
+                  nextPositions.set(pos.simulation_id, pos);
+                }
+              });
+              data.simulation_positions?.forEach((pos) => {
+                if (pos.simulation_id && pos.value !== null && pos.value !== undefined) {
+                  nextPositions.set(pos.simulation_id, {
+                    simulation_id: pos.simulation_id,
+                    value: pos.value,
+                    generated: pos.generated ?? false,
+                  });
+                }
+              });
+              const merged = Array.from(nextPositions.values()).sort((a, b) => {
+                if (a.value !== b.value) return a.value - b.value;
+                return a.simulation_id.localeCompare(b.simulation_id);
+              });
+              return { ...prev, simulation_positions: merged };
+            });
+          }
           setGeneratingResources((prev) => {
             const next = new Set(prev);
             next.delete("simulation_positions");
@@ -583,7 +613,6 @@ function CohortComponent({
               data.message || "Failed to generate simulation positions"
             );
           }
-          router.refresh();
           return;
         }
 
@@ -1117,6 +1146,29 @@ function CohortComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            department_ids: [],
+          };
+        case "simulations":
+          return {
+            ...prev,
+            simulation_ids: [],
+            simulation_positions: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
@@ -1487,7 +1539,9 @@ function CohortComponent({
                 agent_id={
                   currentCohortData?.simulation_positions_agent_id ?? null
                 }
-                onGenerate={handleGenerateSimulationPositions}
+                onGenerate={
+                  isEditMode ? handleGenerateSimulationPositions : undefined
+                }
                 isGenerating={isGenerating("simulation_positions")}
               />
             </StepCard>
@@ -1551,6 +1605,7 @@ function CohortComponent({
           serverData={cohortData}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
+          onReset={(stepId) => handleReset(stepId)}
           onSubmit={handleSubmit}
           submitButton={submitButton}
           isReadonly={disabled}

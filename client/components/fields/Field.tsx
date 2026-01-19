@@ -938,6 +938,28 @@ function FieldComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            department_ids: [],
+          };
+        case "parameters":
+          return {
+            ...prev,
+            parameter_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton
   const submitButton = useMemo(
     () => ({
@@ -1312,17 +1334,18 @@ function FieldComponent({
         />
 
         <GenericForm
-          nuqsParsers={
-            fieldSearchParamsClient as Record<string, Parser<unknown>>
-          }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={fieldData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
+        nuqsParsers={
+          fieldSearchParamsClient as Record<string, Parser<unknown>>
+        }
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={fieldData}
+        formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
+        resetSuccessMessage={resetSuccessMessage}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}

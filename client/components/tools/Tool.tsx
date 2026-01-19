@@ -698,6 +698,31 @@ function ToolComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+          };
+        case "args":
+          return {
+            ...prev,
+            args_ids: [],
+          };
+        case "args_outputs":
+          return {
+            ...prev,
+            args_outputs_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   const submitButton = useMemo(
     () => ({
       backUrl: "/engine/tools",
@@ -1028,14 +1053,15 @@ function ToolComponent({
           nuqsParsers={
             toolSearchParamsClient as Record<string, Parser<unknown>>
           }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={toolData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={toolData}
+        formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
+        resetSuccessMessage={resetSuccessMessage}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}

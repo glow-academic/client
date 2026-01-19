@@ -65,6 +65,14 @@ type CreateDraftScenarioRubricsOut = OutputOf<
   "/api/v4/resources/scenario_rubrics",
   "post"
 >;
+type CreateDraftScenarioTimeLimitsIn = InputOf<
+  "/api/v4/resources/scenario_time_limits",
+  "post"
+>;
+type CreateDraftScenarioTimeLimitsOut = OutputOf<
+  "/api/v4/resources/scenario_time_limits",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for new pages.
@@ -177,6 +185,14 @@ async function createDraftScenarioRubrics(
   return api.post("/resources/scenario_rubrics", input);
 }
 
+async function createDraftScenarioTimeLimits(
+  input: CreateDraftScenarioTimeLimitsIn
+): Promise<CreateDraftScenarioTimeLimitsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/scenario_time_limits", input);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Simulation",
@@ -263,6 +279,9 @@ export default async function NewSimulationPage({
         createScenarioPositionsAction={createDraftScenarioPositions}
         createScenarioRubricsAction={
           createDraftScenarioRubrics
+        }
+        createScenarioTimeLimitsAction={
+          createDraftScenarioTimeLimits
         }
       />
     </div>

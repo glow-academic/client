@@ -79,7 +79,7 @@ BEGIN
         DELETE FROM cohort_descriptions WHERE cohort_id = v_cohort_id;
         DELETE FROM cohort_departments WHERE cohort_id = v_cohort_id;
         DELETE FROM cohort_simulations WHERE cohort_id = v_cohort_id;
-        DELETE FROM simulation_positions_resource WHERE cohort_id = v_cohort_id;
+        DELETE FROM cohort_simulation_positions WHERE cohort_id = v_cohort_id;
         -- Update existing active flag if it exists
         UPDATE cohort_flags SET
             flag_id = COALESCE(api_save_cohort_v4.active_flag_id, cohort_flags.flag_id),
@@ -226,10 +226,9 @@ BEGIN
         ON CONFLICT ON CONSTRAINT cohort_simulations_pkey DO UPDATE SET
             active = true
     ),
-    link_simulation_positions AS (
+    upsert_simulation_positions AS (
         INSERT INTO simulation_positions_resource (
             simulation_id,
-            cohort_id,
             value,
             created_at,
             updated_at,
@@ -239,7 +238,6 @@ BEGIN
         )
         SELECT
             swo.sim_id,
-            x.cohort_id,
             swo.position,
             NOW(),
             NOW(),
@@ -248,8 +246,32 @@ BEGIN
             x.default_call_id
         FROM params x
         CROSS JOIN simulations_with_order swo
-        ON CONFLICT (simulation_id, cohort_id) DO UPDATE SET
-            value = EXCLUDED.value,
+        ON CONFLICT (simulation_id, value) DO UPDATE SET
+            updated_at = NOW()
+        RETURNING id, simulation_id, value
+    ),
+    link_simulation_positions AS (
+        INSERT INTO cohort_simulation_positions (
+            cohort_id,
+            simulation_position_id,
+            active,
+            created_at,
+            updated_at,
+            generated,
+            mcp
+        )
+        SELECT
+            x.cohort_id,
+            usp.id,
+            true,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN upsert_simulation_positions usp
+        ON CONFLICT (cohort_id, simulation_position_id) DO UPDATE SET
+            active = true,
             updated_at = NOW()
     )
     SELECT 

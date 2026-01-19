@@ -646,6 +646,37 @@ function AuthComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+          };
+        case "protocols":
+          return {
+            ...prev,
+            protocol_ids: [],
+          };
+        case "slugs":
+          return {
+            ...prev,
+            slug_ids: [],
+          };
+        case "items":
+          return {
+            ...prev,
+            auth_items: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
@@ -949,6 +980,7 @@ function AuthComponent({
         serverData={authData}
         formFieldKeys={formFieldKeys}
         resetSuccessMessage={resetSuccessMessage}
+        onReset={(stepId) => handleReset(stepId)}
         onSubmit={handleSubmit}
         submitButton={submitButton}
         isReadonly={disabled}

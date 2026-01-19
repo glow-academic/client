@@ -660,6 +660,22 @@ function ProviderComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton
   const submitButton = useMemo(
     () => ({
@@ -874,14 +890,15 @@ function ProviderComponent({
           nuqsParsers={
             providerSearchParamsClient as Record<string, Parser<unknown>>
           }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={providerData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={providerData}
+        formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
+        resetSuccessMessage={resetSuccessMessage}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}

@@ -740,6 +740,23 @@ function DepartmentComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            settings_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
@@ -951,15 +968,16 @@ function DepartmentComponent({
           nuqsParsers={
             departmentSearchParamsClient as Record<string, Parser<unknown>>
           }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={departmentData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
-          isEditMode={isEditMode}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={departmentData}
+        formFieldKeys={formFieldKeys}
+        resetSuccessMessage={resetSuccessMessage}
+        onReset={(stepId) => handleReset(stepId)}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
+        isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}
           registerSetFormData={(setter) => {

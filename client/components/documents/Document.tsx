@@ -952,6 +952,33 @@ function DocumentComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            department_ids: [],
+          };
+        case "fields":
+          return {
+            ...prev,
+            field_ids: [],
+          };
+        case "uploads":
+          return {
+            ...prev,
+            upload_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
@@ -1405,6 +1432,7 @@ function DocumentComponent({
           serverData={documentDetail}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
+          onReset={(stepId) => handleReset(stepId)}
           onSubmit={handleSubmit}
           submitButton={submitButton}
           isReadonly={disabled}

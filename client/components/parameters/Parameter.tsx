@@ -1128,6 +1128,37 @@ function ParameterComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            department_ids: [],
+          };
+        case "parameter-config":
+          return {
+            ...prev,
+            simulation_parameter: false,
+            document_parameter: false,
+            persona_parameter: false,
+            scenario_parameter: false,
+            video_parameter: false,
+          };
+        case "fields":
+          return {
+            ...prev,
+            field_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
@@ -1687,14 +1718,15 @@ function ParameterComponent({
           nuqsParsers={
             parameterSearchParamsClient as Record<string, Parser<unknown>>
           }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={parameterData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={parameterData}
+        formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
+        resetSuccessMessage={resetSuccessMessage}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}

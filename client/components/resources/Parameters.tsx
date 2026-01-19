@@ -61,7 +61,9 @@ export interface ParametersProps {
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering parameters
+  onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to show only selected parameters
+  onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
 }
 
 export function Parameters({
@@ -83,7 +85,9 @@ export function Parameters({
   onGenerate,
   isGenerating = false,
   searchTerm = "",
+  onSearchChange,
   showSelectedFilter = false,
+  onShowSelectedChange,
 }: ParametersProps) {
   const ids = useMemo(() => parameter_ids ?? [], [parameter_ids]);
   const show = show_parameters ?? false;
@@ -92,6 +96,20 @@ export function Parameters({
     () => parameter_suggestions ?? [],
     [parameter_suggestions]
   );
+
+  // Handle search term changes
+  useEffect(() => {
+    if (onSearchChange && searchTerm !== undefined) {
+      onSearchChange(searchTerm);
+    }
+  }, [searchTerm, onSearchChange]);
+
+  // Handle showSelected filter changes
+  useEffect(() => {
+    if (onShowSelectedChange && showSelectedFilter !== undefined) {
+      onShowSelectedChange(showSelectedFilter);
+    }
+  }, [showSelectedFilter, onShowSelectedChange]);
 
   // Track which parameters IDs have already had resources created
   const createdParametersIdsRef = useRef<Set<string>>(new Set());

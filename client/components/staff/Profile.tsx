@@ -933,6 +933,36 @@ function ProfileComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            first_name_id: null,
+            last_name_id: null,
+            active_flag_id: null,
+          };
+        case "contact":
+          return {
+            ...prev,
+            email_ids: [],
+            primary_email_index: 0,
+            request_limit_id: null,
+          };
+        case "organization":
+          return {
+            ...prev,
+            department_ids: [],
+            cohort_ids: [],
+            role: "",
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   const submitButton = useMemo(
     () => ({
       backUrl: "/management/staff",
@@ -1416,14 +1446,15 @@ function ProfileComponent({
           nuqsParsers={
             staffSearchParamsClient as Record<string, Parser<unknown>>
           }
-          steps={steps}
-          getStepStatus={getStepStatus}
-          serverData={staffData}
-          formFieldKeys={formFieldKeys}
-          resetSuccessMessage={resetSuccessMessage}
-          onSubmit={handleSubmit}
-          submitButton={submitButton}
-          isReadonly={disabled}
+        steps={steps}
+        getStepStatus={getStepStatus}
+        serverData={staffData}
+        formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
+        resetSuccessMessage={resetSuccessMessage}
+        onSubmit={handleSubmit}
+        submitButton={submitButton}
+        isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}

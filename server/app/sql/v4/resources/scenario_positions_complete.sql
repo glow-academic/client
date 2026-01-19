@@ -43,7 +43,7 @@ DECLARE
     v_params_jsonb jsonb;
     v_message_id uuid;
     v_run_id uuid;
-    v_composite_id uuid;
+    v_resource_id uuid;
 BEGIN
     -- Validate that simulation exists
     IF NOT EXISTS (SELECT 1 FROM simulation_artifact WHERE id = api_create_scenario_positions_v4.simulation_id) THEN
@@ -115,10 +115,9 @@ BEGIN
         NOW()
     );
     
-    -- INSERT or UPDATE INTO scenario_positions_resource junction table
-    -- Use ON CONFLICT to update if position already exists for this simulation/scenario pair
+    -- INSERT or UPDATE INTO scenario_positions_resource
+    -- Use ON CONFLICT to update if position already exists for this scenario/value pair
     INSERT INTO scenario_positions_resource (
-        simulation_id, 
         scenario_id, 
         value, 
         generated, 
@@ -128,7 +127,6 @@ BEGIN
         updated_at
     )
     VALUES (
-        api_create_scenario_positions_v4.simulation_id,
         api_create_scenario_positions_v4.scenario_id,
         api_create_scenario_positions_v4.value,
         true,
@@ -137,17 +135,14 @@ BEGIN
         NOW(),
         NOW()
     )
-    ON CONFLICT (simulation_id, scenario_id) 
+    ON CONFLICT (scenario_id, value) 
     DO UPDATE SET 
         value = EXCLUDED.value,
         generated = EXCLUDED.generated,
         mcp = EXCLUDED.mcp,
         call_id = EXCLUDED.call_id,
-        updated_at = NOW();
-    
-    -- Generate a composite ID for API response (using simulation_id and scenario_id)
-    -- This is a workaround since junction tables use composite keys
-    v_composite_id := uuidv7();
+        updated_at = NOW()
+    RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
@@ -179,6 +174,6 @@ BEGIN
     WHERE gr.group_id = api_create_scenario_positions_v4.group_id;
     
     -- Return composite ID (for API compatibility)
-    RETURN QUERY SELECT v_composite_id;
+    RETURN QUERY SELECT v_resource_id;
 END;
 $$;

@@ -1740,6 +1740,270 @@ scenarios_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'scenario_flags' resource
+scenario_flags_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'scenario_flags'::resources
+        )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+                  AND f.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'scenario_rubrics' resource
+scenario_rubrics_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'scenario_rubrics'::resources
+        )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+                  AND f.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'scenario_time_limits' resource
+scenario_time_limits_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'scenario_time_limits'::resources
+        )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+                  AND f.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'scenario_positions' resource
+scenario_positions_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT false WHERE false
+            -- Placeholder condition removed - always false
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'scenario_positions'::resources
+        )
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+                  AND f.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE NULL::uuid = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Scenario suggestions data
 scenario_suggestions_data AS (
     SELECT 
@@ -1805,6 +2069,28 @@ draft_scenario_time_limit_ids_data AS (
     FROM params x
     JOIN draft_scenario_time_limits dstl ON dstl.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
+),
+scenario_ids_data AS (
+    SELECT
+        COALESCE(
+            (SELECT ARRAY_AGG(s.id)
+             FROM scenarios_resource s
+             JOIN simulation_scenarios ss ON ss.scenario_id = s.scenario_id
+             WHERE ss.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
+               AND s.active = true),
+            (SELECT
+                CASE
+                    WHEN payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(payload->'scenarioIds') = 'array' THEN
+                        ARRAY(SELECT jsonb_array_elements_text(payload->'scenarioIds'))::uuid[]
+                    WHEN payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(payload->'scenario_ids') = 'array' THEN
+                        ARRAY(SELECT jsonb_array_elements_text(payload->'scenario_ids'))::uuid[]
+                    ELSE NULL
+                END
+             FROM draft_payload_data),
+            ARRAY[]::uuid[]
+        ) as scenario_ids
+    FROM params
+    LIMIT 1
 ),
 scenario_flag_ids_data AS (
     SELECT 
@@ -1880,7 +2166,7 @@ scenario_position_resources_data AS (
                 (COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base)), spr.scenario_id, spr.value, COALESCE(spr.generated, false),
                  (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = spr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_position_resource
-                ORDER BY spr.value
+                ORDER BY array_position(spid.scenario_position_ids, spr.id)
             )
             FROM scenario_positions_resource spr
             CROSS JOIN scenario_position_ids_data spid
@@ -2324,23 +2610,7 @@ SELECT
     ) as flags,
     -- Multi-select resources: scenarios
     -- Get scenario resource IDs FROM scenarios_resource resource table that match simulation's scenario artifact IDs
-    COALESCE(
-        (SELECT ARRAY_AGG(s.id)
-         FROM scenarios_resource s
-         JOIN simulation_scenarios ss ON ss.scenario_id = s.scenario_id
-         WHERE ss.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
-           AND s.active = true),
-        (SELECT 
-            CASE 
-                WHEN payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(payload->'scenarioIds') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'scenarioIds'))::uuid[]
-                WHEN payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(payload->'scenario_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'scenario_ids'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        ARRAY[]::uuid[]
-    ) as scenario_ids,
+    COALESCE((SELECT scenario_ids FROM scenario_ids_data), ARRAY[]::uuid[]) as scenario_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
             (s.id, s.scenario_id, 
@@ -2402,10 +2672,11 @@ SELECT
     COALESCE((SELECT scenario_flag_ids FROM scenario_flag_ids_data), ARRAY[]::uuid[]) as scenario_flag_ids,
     COALESCE((SELECT scenario_flag_resources FROM scenario_flag_resources_data), '{}'::types.q_get_simulation_v4_scenario_flag_resource[]) as scenario_flag_resources,
     CASE 
+        WHEN COALESCE(array_length((SELECT scenario_ids FROM scenario_ids_data), 1), 0) > 0 THEN true
         WHEN COALESCE(array_length((SELECT scenario_flag_ids FROM scenario_flag_ids_data), 1), 0) > 0 THEN true
         ELSE false
     END as show_scenario_flags,
-    NULL::uuid as scenario_flags_agent_id,
+    (SELECT agent_id FROM scenario_flags_agent_data) as scenario_flags_agent_id,
     false as scenario_flags_required,
     COALESCE((SELECT scenario_flag_suggestions FROM scenario_flag_suggestions_data), ARRAY[]::uuid[]) as scenario_flag_suggestions,
     COALESCE((SELECT scenario_flags FROM scenario_flags_data), '{}'::types.q_get_simulation_v4_scenario_flag_resource[]) as scenario_flags,
@@ -2413,10 +2684,11 @@ SELECT
     COALESCE((SELECT scenario_position_ids FROM scenario_position_ids_data), ARRAY[]::uuid[]) as scenario_position_ids,
     COALESCE((SELECT scenario_position_resources FROM scenario_position_resources_data), '{}'::types.q_get_simulation_v4_scenario_position_resource[]) as scenario_position_resources,
     CASE 
+        WHEN COALESCE(array_length((SELECT scenario_ids FROM scenario_ids_data), 1), 0) > 0 THEN true
         WHEN COALESCE(array_length((SELECT scenario_position_ids FROM scenario_position_ids_data), 1), 0) > 0 THEN true
         ELSE false
     END as show_scenario_positions,
-    NULL::uuid as scenario_positions_agent_id,
+    (SELECT agent_id FROM scenario_positions_agent_data) as scenario_positions_agent_id,
     false as scenario_positions_required,
     COALESCE((SELECT scenario_position_suggestions FROM scenario_position_suggestions_data), ARRAY[]::uuid[]) as scenario_position_suggestions,
     COALESCE((SELECT scenario_positions FROM scenario_positions_data), '{}'::types.q_get_simulation_v4_scenario_position_resource[]) as scenario_positions,
@@ -2424,10 +2696,11 @@ SELECT
     COALESCE((SELECT scenario_rubric_ids FROM scenario_rubric_ids_data), ARRAY[]::uuid[]) as scenario_rubric_ids,
     COALESCE((SELECT scenario_rubric_resources FROM scenario_rubric_resources_data), '{}'::types.q_get_simulation_v4_scenario_rubric_resource[]) as scenario_rubric_resources,
     CASE 
+        WHEN COALESCE(array_length((SELECT scenario_ids FROM scenario_ids_data), 1), 0) > 0 THEN true
         WHEN COALESCE(array_length((SELECT scenario_rubric_ids FROM scenario_rubric_ids_data), 1), 0) > 0 THEN true
         ELSE false
     END as show_scenario_rubrics,
-    NULL::uuid as scenario_rubrics_agent_id,
+    (SELECT agent_id FROM scenario_rubrics_agent_data) as scenario_rubrics_agent_id,
     false as scenario_rubrics_required,
     COALESCE((SELECT scenario_rubric_suggestions FROM scenario_rubric_suggestions_data), ARRAY[]::uuid[]) as scenario_rubric_suggestions,
     COALESCE((SELECT scenario_rubrics FROM scenario_rubrics_data), '{}'::types.q_get_simulation_v4_scenario_rubric_resource[]) as scenario_rubrics,
@@ -2435,10 +2708,11 @@ SELECT
     COALESCE((SELECT scenario_time_limit_ids FROM scenario_time_limit_ids_data), ARRAY[]::uuid[]) as scenario_time_limit_ids,
     COALESCE((SELECT scenario_time_limit_resources FROM scenario_time_limit_resources_data), '{}'::types.q_get_simulation_v4_scenario_time_limit_resource[]) as scenario_time_limit_resources,
     CASE 
+        WHEN COALESCE(array_length((SELECT scenario_ids FROM scenario_ids_data), 1), 0) > 0 THEN true
         WHEN COALESCE(array_length((SELECT scenario_time_limit_ids FROM scenario_time_limit_ids_data), 1), 0) > 0 THEN true
         ELSE false
     END as show_scenario_time_limits,
-    NULL::uuid as scenario_time_limits_agent_id,
+    (SELECT agent_id FROM scenario_time_limits_agent_data) as scenario_time_limits_agent_id,
     false as scenario_time_limits_required,
     COALESCE((SELECT scenario_time_limit_suggestions FROM scenario_time_limit_suggestions_data), ARRAY[]::uuid[]) as scenario_time_limit_suggestions,
     COALESCE((SELECT scenario_time_limits FROM scenario_time_limits_data), '{}'::types.q_get_simulation_v4_scenario_time_limit_resource[]) as scenario_time_limits,

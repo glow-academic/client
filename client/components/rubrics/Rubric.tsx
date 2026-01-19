@@ -936,6 +936,38 @@ function RubricComponent({
     }
   }, []);
 
+  const handleReset = useCallback((stepId: string) => {
+    setFormState((prev) => {
+      switch (stepId) {
+        case "basic":
+          return {
+            ...prev,
+            name_id: null,
+            description_id: null,
+            active_flag_id: null,
+            department_ids: [],
+          };
+        case "points":
+          return {
+            ...prev,
+            pass_points_id: null,
+          };
+        case "standard_groups":
+          return {
+            ...prev,
+            standard_group_ids: [],
+          };
+        case "standards":
+          return {
+            ...prev,
+            standard_ids: [],
+          };
+        default:
+          return prev;
+      }
+    });
+  }, []);
+
   const submitButton = useMemo(
     () => ({
       backUrl: "/engine/rubrics",
@@ -1333,6 +1365,7 @@ function RubricComponent({
         serverData={rubricData}
         initializeForm={initializeForm}
         formFieldKeys={formFieldKeys}
+        onReset={(stepId) => handleReset(stepId)}
         resetSuccessMessage={resetSuccessMessage}
         onSubmit={handleSubmit}
         submitButton={submitButton}

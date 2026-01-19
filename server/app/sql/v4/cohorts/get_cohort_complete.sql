@@ -28,7 +28,7 @@ BEGIN
         WHERE typname LIKE 'q_get_cohort_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXECUTE format('DROP TYPE IF EXISTS types.%I CASCADE', r.typname);
     END LOOP;
 END $$;
 
@@ -590,7 +590,9 @@ simulation_ids_data AS (
             WHEN (SELECT draft_id FROM params) IS NOT NULL
                 AND COALESCE(array_length((SELECT simulation_ids FROM draft_simulation_ids_data), 1), 0) > 0
                 THEN (SELECT simulation_ids FROM draft_simulation_ids_data)
-            ELSE (SELECT simulation_ids FROM cohort_simulation_ids_data)
+            WHEN COALESCE(array_length((SELECT simulation_ids FROM cohort_simulation_ids_data), 1), 0) > 0
+                THEN (SELECT simulation_ids FROM cohort_simulation_ids_data)
+            ELSE ARRAY[]::uuid[]
         END as simulation_ids
     FROM params
     LIMIT 1
@@ -617,8 +619,10 @@ cohort_simulation_positions_data AS (
                     (spr.simulation_id, spr.value, spr.generated, spr.mcp)::types.q_get_cohort_v4_simulation_position
                     ORDER BY spr.value, spr.simulation_id
                  )
-                 FROM simulation_positions_resource spr
-                 WHERE spr.cohort_id = (SELECT cohort_id FROM params)),
+                 FROM cohort_simulation_positions csp
+                 JOIN simulation_positions_resource spr ON spr.id = csp.simulation_position_id
+                 WHERE csp.cohort_id = (SELECT cohort_id FROM params)
+                   AND csp.active = true),
                 '{}'::types.q_get_cohort_v4_simulation_position[]
             )
         END as simulation_positions
@@ -631,7 +635,9 @@ simulation_positions_data AS (
             WHEN (SELECT draft_id FROM params) IS NOT NULL
                 AND COALESCE(array_length((SELECT simulation_positions FROM draft_simulation_positions_data), 1), 0) > 0
                 THEN (SELECT simulation_positions FROM draft_simulation_positions_data)
-            ELSE (SELECT simulation_positions FROM cohort_simulation_positions_data)
+            WHEN COALESCE(array_length((SELECT simulation_positions FROM cohort_simulation_positions_data), 1), 0) > 0
+                THEN (SELECT simulation_positions FROM cohort_simulation_positions_data)
+            ELSE '{}'::types.q_get_cohort_v4_simulation_position[]
         END as simulation_positions
     FROM params
     LIMIT 1

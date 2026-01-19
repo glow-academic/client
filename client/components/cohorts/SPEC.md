@@ -28,7 +28,8 @@
 - `departments_resource`(created_at, updated_at, department_id, active, generated, mcp, call_id, <u>id</u>, group_id)
 - `flags_resource`(<u>id</u>, name, description, icon_id, created_at, updated_at, active, generated, call_id, mcp, type)
 - `simulations_resource`(created_at, updated_at, simulation_id, active, generated, mcp, call_id, id)
-- `simulation_positions_resource`(<u>simulation_id</u>, <u>cohort_id</u>, value, created_at, updated_at, generated, mcp, call_id)
+- `simulation_positions_resource`(id, <u>simulation_id</u>, value, created_at, updated_at, generated, mcp, call_id)
+- `cohort_simulation_positions`(<u>cohort_id</u>, <u>simulation_position_id</u>, active, created_at, updated_at)
 
 ### Draft persistence
 - `draft_cohorts`(<u>draft_id</u>, <u>cohorts_id</u>, version, created_at, updated_at, generated, mcp, active)

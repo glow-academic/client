@@ -67,6 +67,7 @@ export interface ScenarioPositionsProps {
         input: CreateDraftScenarioPositionsIn
       ) => Promise<CreateDraftScenarioPositionsOut>)
     | undefined;
+  onPositionIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
 }
@@ -88,6 +89,7 @@ export function ScenarioPositions({
   group_id,
   agent_id,
   createScenarioPositionsAction,
+  onPositionIdsChange,
   onGenerate,
   isGenerating = false,
 }: ScenarioPositionsProps) {
@@ -97,6 +99,95 @@ export function ScenarioPositions({
     () => scenario_position_resources ?? [],
     [scenario_position_resources]
   );
+  const scenarioPositionIds = useMemo(
+    () => scenario_position_ids ?? [],
+    [scenario_position_ids]
+  );
+  const [positionIdsByScenario, setPositionIdsByScenario] = useState<
+    Map<string, string>
+  >(new Map());
+  const createdPositionKeysRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const next = new Map<string, string>();
+    currentPositions.forEach((pos, index) => {
+      const scenarioId = pos.scenario_id;
+      const positionId = scenarioPositionIds[index];
+      if (scenarioId && positionId) {
+        next.set(scenarioId, positionId);
+      }
+    });
+    setPositionIdsByScenario(next);
+  }, [currentPositions, scenarioPositionIds]);
+
+  useEffect(() => {
+    const shouldCreateResource =
+      createScenarioPositionsAction &&
+      agent_id &&
+      group_id &&
+      simulation_id;
+    if (!shouldCreateResource) {
+      return;
+    }
+
+    scenario_ids.forEach((scenarioId, index) => {
+      const value = localPositions.get(scenarioId) ?? index + 1;
+      const existingId = positionIdsByScenario.get(scenarioId);
+      const existingValue = positionMap.get(scenarioId);
+      if (existingId && existingValue === value) {
+        return;
+      }
+
+      const key = `${scenarioId}:${value}`;
+      if (createdPositionKeysRef.current.has(key)) {
+        return;
+      }
+      createdPositionKeysRef.current.add(key);
+
+      void (async () => {
+        try {
+          const result = await createScenarioPositionsAction({
+            body: {
+              agent_id: agent_id,
+              group_id: group_id,
+              simulation_id: simulation_id,
+              scenario_id: scenarioId,
+              value: value,
+              mcp: false,
+            },
+          });
+
+          if (!result?.id) {
+            return;
+          }
+
+          setPositionIdsByScenario((prev) => {
+            const next = new Map(prev);
+            next.set(scenarioId, result.id as string);
+            if (onPositionIdsChange) {
+              const nextIds = scenario_ids
+                .map((id) => next.get(id))
+                .filter((id): id is string => Boolean(id));
+              onPositionIdsChange(nextIds);
+            }
+            return next;
+          });
+        } catch {
+          // Resource creation errors are handled by API; keep UI state intact.
+        }
+      })();
+    });
+  }, [
+    scenario_ids,
+    localPositions,
+    positionIdsByScenario,
+    positionMap,
+    createScenarioPositionsAction,
+    agent_id,
+    group_id,
+    simulation_id,
+    onPositionIdsChange,
+  ]);
 
   // Build position map from current positions
   const positionMap = useMemo(() => {
@@ -148,8 +239,59 @@ export function ScenarioPositions({
       }));
 
       onChange(positionsArray);
+
+      const shouldCreateResource =
+        createScenarioPositionsAction &&
+        agent_id &&
+        group_id &&
+        simulation_id;
+      if (!shouldCreateResource) {
+        return;
+      }
+
+      void (async () => {
+        try {
+          const result = await createScenarioPositionsAction({
+            body: {
+              agent_id: agent_id,
+              group_id: group_id,
+              simulation_id: simulation_id,
+              scenario_id: scenarioId,
+              value: newValue,
+              mcp: false,
+            },
+          });
+
+          if (!result?.id) {
+            return;
+          }
+
+          setPositionIdsByScenario((prev) => {
+            const next = new Map(prev);
+            next.set(scenarioId, result.id as string);
+            if (onPositionIdsChange) {
+              const nextIds = scenario_ids
+                .map((id) => next.get(id))
+                .filter((id): id is string => Boolean(id));
+              onPositionIdsChange(nextIds);
+            }
+            return next;
+          });
+        } catch {
+          // Resource creation errors are handled by API; keep UI state intact.
+        }
+      })();
     },
-    [localPositions, simulation_id, onChange]
+    [
+      localPositions,
+      simulation_id,
+      onChange,
+      createScenarioPositionsAction,
+      agent_id,
+      group_id,
+      onPositionIdsChange,
+      scenario_ids,
+    ]
   );
 
   const handleMoveUp = useCallback(

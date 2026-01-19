@@ -197,6 +197,10 @@ from app.api.v4.resources.scenario_rubrics.create import \
     router as scenario_rubrics_router
 
 router.include_router(scenario_rubrics_router)
+from app.api.v4.resources.scenario_time_limits.create import \
+    router as scenario_time_limits_router
+
+router.include_router(scenario_time_limits_router)
 from app.api.v4.resources.scenarios.create import router as scenarios_router
 
 router.include_router(scenarios_router)

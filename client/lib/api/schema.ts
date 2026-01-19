@@ -3238,6 +3238,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_time_limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Scenario Time Limits
+         * @description Create scenario_time_limits resource (always INSERT).
+         */
+        post: operations["create_scenario_time_limits_api_v4_resources_scenario_time_limits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenarios": {
         parameters: {
             query?: never;
@@ -20333,6 +20353,36 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** ScenarioTimeLimitsApiRequest */
+        ScenarioTimeLimitsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Time Limit Seconds */
+            time_limit_seconds: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ScenarioTimeLimitsApiResponse */
+        ScenarioTimeLimitsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** ScenariosApiRequest */
         ScenariosApiRequest: {
             /**
@@ -20597,11 +20647,6 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
-            /**
-             * Cohort Id
-             * Format: uuid
-             */
-            cohort_id: string;
             /**
              * Simulation Id
              * Format: uuid
@@ -27049,6 +27094,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScenarioRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_scenario_time_limits_api_v4_resources_scenario_time_limits_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioTimeLimitsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioTimeLimitsApiResponse"];
                 };
             };
             /** @description Validation Error */

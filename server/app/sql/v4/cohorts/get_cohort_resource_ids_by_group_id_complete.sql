@@ -44,7 +44,8 @@ RETURNS TABLE (
     description_id uuid,
     active_flag_id uuid,
     department_ids uuid[],
-    simulation_ids uuid[]
+    simulation_ids uuid[],
+    simulation_positions types.q_get_cohort_v4_simulation_position[]
 )
 LANGUAGE plpgsql
 STABLE
@@ -69,6 +70,17 @@ BEGIN
         CASE WHEN resource_type = 'descriptions' THEN resource_id ELSE NULL::uuid END as description_id,
         CASE WHEN resource_type = 'flags' THEN resource_id ELSE NULL::uuid END as active_flag_id,
         CASE WHEN resource_type = 'departments' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as department_ids,
-        CASE WHEN resource_type = 'simulations' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as simulation_ids;
+        CASE WHEN resource_type = 'simulations' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as simulation_ids,
+        CASE
+            WHEN resource_type = 'simulation_positions' THEN COALESCE(
+                (SELECT ARRAY_AGG(
+                    (spr.simulation_id, spr.value, spr.generated, spr.mcp)::types.q_get_cohort_v4_simulation_position
+                )
+                 FROM simulation_positions_resource spr
+                 WHERE spr.id = resource_id),
+                '{}'::types.q_get_cohort_v4_simulation_position[]
+            )
+            ELSE '{}'::types.q_get_cohort_v4_simulation_position[]
+        END as simulation_positions;
 END;
 $$;
