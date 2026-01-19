@@ -8,6 +8,8 @@
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
+import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
+import { doRequest } from "@/lib/api/request-core";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 import {
@@ -50,6 +52,17 @@ type CreateDraftObjectivesOut = OutputOf<
 >;
 type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type UpdateTemplatesIn = {
+  body: {
+    template_id: string;
+    html: string;
+    name?: string | null;
+    description?: string | null;
+  };
+};
+type UpdateTemplatesOut = {
+  template_id: string | null;
+};
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -220,6 +233,18 @@ async function patchScenarioDraft(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/scenarios/draft", input);
+}
+
+async function updateTemplates(
+  input: UpdateTemplatesIn
+): Promise<UpdateTemplatesOut> {
+  "use server";
+  return doRequest<UpdateTemplatesOut>(
+    INTERNAL_HTTP_BASE,
+    "POST",
+    "/api/v4/resources/templates/update",
+    input
+  );
 }
 
 async function createDraftNames(
@@ -421,6 +446,7 @@ export default async function EditScenarioPage({
           createProblemStatementsAction={createDraftProblemStatements}
           createObjectivesAction={createDraftObjectives}
           createScenarioFlagsAction={createDraftScenarioFlags}
+          updateTemplatesAction={updateTemplates}
         />
       </div>
     );

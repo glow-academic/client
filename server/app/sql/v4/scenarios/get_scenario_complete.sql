@@ -120,6 +120,7 @@ CREATE TYPE types.q_get_scenario_v4_template_resource AS (
     id uuid,
     name text,
     description text,
+    html text,
     generated boolean
 );
 
@@ -2833,6 +2834,7 @@ template_mapping_data AS (
         t.id,
         t.name,
         COALESCE(t.description, '') as description,
+        t.html,
         COALESCE(t.generated, false) as generated
     FROM templates_resource t
     WHERE t.active = true
@@ -4017,7 +4019,7 @@ SELECT
     CASE 
         WHEN sc.use_templates THEN COALESCE((
             SELECT ARRAY_AGG(
-                (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
+                (tmd.id, tmd.name, tmd.description, tmd.html, tmd.generated)::types.q_get_scenario_v4_template_resource
                 ORDER BY tmd.name
             )
             FROM template_mapping_data tmd
@@ -4045,10 +4047,10 @@ SELECT
     CASE 
         WHEN sc.use_templates THEN COALESCE((
             SELECT ARRAY_AGG(
-                (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
+                (tmd.id, tmd.name, tmd.description, tmd.html, tmd.generated)::types.q_get_scenario_v4_template_resource
                 ORDER BY tmd.name
             )
-            FROM (SELECT DISTINCT id, name, description, generated FROM template_mapping_data) tmd
+            FROM (SELECT DISTINCT id, name, description, html, generated FROM template_mapping_data) tmd
             WHERE (
                 (SELECT template_search FROM params LIMIT 1) IS NULL
                 OR LOWER(tmd.name) LIKE '%' || LOWER((SELECT template_search FROM params LIMIT 1)) || '%'

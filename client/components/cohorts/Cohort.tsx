@@ -268,6 +268,12 @@ function CohortComponent({
               (s) => s.generated
             ) ?? false
           );
+        case "simulation_positions":
+          return (
+            stableCohortDataFields.simulation_positions?.some(
+              (p) => p.generated
+            ) ?? false
+          );
         default:
           return false;
       }
@@ -375,6 +381,19 @@ function CohortComponent({
   React.useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  React.useEffect(() => {
+    const draftVersion =
+      cohortData && "draft_version" in cohortData
+        ? (cohortData as { draft_version?: number | null }).draft_version
+        : null;
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [cohortData?.draft_version]);
 
   // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -478,8 +497,8 @@ function CohortComponent({
         // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
 
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+        if (result.draft_id && result.draft_id !== draftId) {
+          // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
@@ -543,11 +562,31 @@ function CohortComponent({
         "flags",
         "departments",
         "simulations",
+        "simulation_positions",
       ];
       if (
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
+        if (data.resource_type === "simulation_positions") {
+          setGeneratingResources((prev) => {
+            const next = new Set(prev);
+            next.delete("simulation_positions");
+            return next;
+          });
+          if (data.success) {
+            toast.success(
+              data.message || "Simulation positions generated successfully"
+            );
+          } else {
+            toast.error(
+              data.message || "Failed to generate simulation positions"
+            );
+          }
+          router.refresh();
+          return;
+        }
+
         // Update formState with the resource ID that was generated
         // Only update the field that matches resource_type (others will be null)
         setFormState((prev) => {
@@ -630,6 +669,7 @@ function CohortComponent({
         "flags",
         "departments",
         "simulations",
+        "simulation_positions",
       ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
@@ -656,7 +696,7 @@ function CohortComponent({
       socket.off("cohort_generation_complete", handleGenerationComplete);
       socket.off("cohort_generation_error", handleGenerationError);
     };
-  }, [socket, isConnected, cohortData?.group_id]);
+  }, [socket, isConnected, cohortData?.group_id, router]);
 
   // Multi-generation handler - accepts list of resource types and optional user instructions
   // Helper function to determine agent_type from resource types
@@ -674,6 +714,7 @@ function CohortComponent({
         "flags",
         "departments",
         "simulations",
+        "simulation_positions",
       ];
 
       const isBasicCombo =
@@ -695,6 +736,7 @@ function CohortComponent({
           flags: "flags",
           departments: "departments",
           simulations: "simulations",
+          simulation_positions: "simulation_positions",
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
@@ -788,6 +830,15 @@ function CohortComponent({
       handleGenerateResources(
         ["simulations"],
         determineAgentType(["simulations"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateSimulationPositions = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["simulation_positions"],
+        determineAgentType(["simulation_positions"])
       ),
     [handleGenerateResources, determineAgentType]
   );
@@ -948,6 +999,7 @@ function CohortComponent({
         "flags",
         "departments",
         "simulations",
+        "simulation_positions",
       ], // All resources for full-page generation
     }),
     []
@@ -961,6 +1013,7 @@ function CohortComponent({
       flags: "Flags",
       departments: "Departments",
       simulations: "Simulations",
+      simulation_positions: "Simulation Positions",
       colors: "Colors", // Not used but required by type
       icons: "Icons", // Not used but required by type
       instructions: "Instructions", // Not used but required by type
@@ -1434,6 +1487,8 @@ function CohortComponent({
                 agent_id={
                   currentCohortData?.simulation_positions_agent_id ?? null
                 }
+                onGenerate={handleGenerateSimulationPositions}
+                isGenerating={isGenerating("simulation_positions")}
               />
             </StepCard>
           );
@@ -1454,6 +1509,7 @@ function CohortComponent({
       handleGenerateDepartments,
       handleGenerateFlags,
       handleGenerateSimulations,
+      handleGenerateSimulationPositions,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation

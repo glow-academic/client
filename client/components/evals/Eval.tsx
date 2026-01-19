@@ -328,6 +328,20 @@ function EvalComponent({
   useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    evalData && "draft_version" in evalData
+      ? (evalData as { draft_version?: number | null }).draft_version
+      : null;
+  useEffect(() => {
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [draftVersion]);
 
   // URL-backed form data bridge
   const [draftId, setDraftId] = useState<string | null>(null);

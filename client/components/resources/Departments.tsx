@@ -241,7 +241,7 @@ export function Departments({
               <div className="flex-1 min-w-0">
                 <div className="truncate">{item.name}</div>
                 {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
+                  <div className="text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground">
                     {item.description}
                   </div>
                 )}

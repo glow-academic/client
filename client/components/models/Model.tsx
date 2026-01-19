@@ -320,6 +320,20 @@ function ModelComponent({
   React.useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    modelData && "draft_version" in modelData
+      ? (modelData as { draft_version?: number | null }).draft_version
+      : null;
+  React.useEffect(() => {
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [draftVersion]);
 
   // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
   const [draftId, setDraftId] = useState<string | null>(null);

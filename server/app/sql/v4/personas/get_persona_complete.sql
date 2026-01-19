@@ -136,6 +136,7 @@ RETURNS TABLE (
     persona_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     -- Group ID for linking resources
     group_id uuid,
     -- Single-select resources: name
@@ -258,6 +259,14 @@ draft_group_data AS (
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
+    WHERE TRUE
+    LIMIT 1
+),
+draft_version_data AS (
+    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
+    SELECT d.version as draft_version
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -2248,6 +2257,7 @@ SELECT
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
+    (SELECT draft_version FROM draft_version_data) as draft_version,
     -- Group ID for linking resources
     dgd.group_id,
     -- Single-select resources: name
@@ -2511,6 +2521,7 @@ CROSS JOIN tools_existence_check tec
 LEFT JOIN persona_departments_data pdd ON true
 CROSS JOIN active_departments_data add
 CROSS JOIN draft_group_data dgd
+CROSS JOIN draft_version_data dvd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN color_resource_data crd

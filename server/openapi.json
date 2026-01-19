@@ -15625,6 +15625,103 @@
         ]
       }
     },
+    "/api/v4/resources/simulation_positions": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Simulation Positions",
+        "description": "Create simulation_positions resource (always INSERT).",
+        "operationId": "create_simulation_positions_api_v4_resources_simulation_positions_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationPositionsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationPositionsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/simulations": {
       "post": {
         "tags": [
@@ -16283,6 +16380,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TemplatesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/templates/update": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Update Templates",
+        "description": "Update templates resource (HTML, name, description).",
+        "operationId": "update_templates_api_v4_resources_templates_update_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplatesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTemplatesApiResponse"
                 }
               }
             }
@@ -30751,6 +30945,17 @@
             ],
             "title": "Disabled Reason"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -32870,6 +33075,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -35053,6 +35269,17 @@
             ],
             "title": "Disabled Reason"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -35890,6 +36117,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -37019,6 +37257,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -40448,6 +40697,17 @@
             ],
             "title": "Disabled Reason"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -41243,6 +41503,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -43237,6 +43508,17 @@
             ],
             "title": "Disabled Reason"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -45074,6 +45356,17 @@
             ],
             "title": "Disabled Reason"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -46098,6 +46391,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -49130,6 +49434,17 @@
             ],
             "title": "Disabled Reason"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "group_id": {
             "anyOf": [
               {
@@ -51644,6 +51959,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -75937,6 +76263,17 @@
             ],
             "title": "Description"
           },
+          "html": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html"
+          },
           "generated": {
             "anyOf": [
               {
@@ -75954,6 +76291,7 @@
           "id",
           "name",
           "description",
+          "html",
           "generated"
         ],
         "title": "QGetScenarioV4TemplateResource"
@@ -96536,6 +96874,73 @@
         "title": "SimulationNextPayload",
         "description": "Request to create next scenario for attempt."
       },
+      "SimulationPositionsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "cohort_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Cohort Id"
+          },
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id",
+          "cohort_id",
+          "simulation_id",
+          "value"
+        ],
+        "title": "SimulationPositionsApiRequest"
+      },
+      "SimulationPositionsApiResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "title": "SimulationPositionsApiResponse"
+      },
       "SimulationScenarioFlagsApiRequest": {
         "properties": {
           "agent_id": {
@@ -97455,6 +97860,65 @@
         },
         "type": "object",
         "title": "ToolsApiResponse"
+      },
+      "UpdateTemplatesApiRequest": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          },
+          "html": {
+            "type": "string",
+            "title": "Html"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "html"
+        ],
+        "title": "UpdateTemplatesApiRequest"
+      },
+      "UpdateTemplatesApiResponse": {
+        "properties": {
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          }
+        },
+        "type": "object",
+        "title": "UpdateTemplatesApiResponse"
       },
       "UploadsApiRequest": {
         "properties": {

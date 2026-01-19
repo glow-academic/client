@@ -150,6 +150,7 @@ RETURNS TABLE (
     agent_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     group_id uuid,
     -- Single-select resources: name
     name_id uuid,
@@ -274,6 +275,14 @@ draft_group_data AS (
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
+    WHERE TRUE
+    LIMIT 1
+),
+draft_version_data AS (
+    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
+    SELECT d.version as draft_version
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -2328,6 +2337,7 @@ SELECT
     aec.agent_exists::boolean as agent_exists,
     perm_final.can_edit::boolean as can_edit,
     perm_final.disabled_reason::text as disabled_reason,
+    (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id::uuid as group_id,
     -- Single-select resources: name
     COALESCE(nrd.name_id, NULL)::uuid as name_id,
@@ -2514,6 +2524,7 @@ CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN draft_group_data dgd
+CROSS JOIN draft_version_data dvd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN instructions_resource_data instrd

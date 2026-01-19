@@ -107,7 +107,7 @@ async def tus_creation(request: Request) -> Response:
 
     # Generate location path
     if app_prefix:
-        location = f"/{app_prefix}/api/v4/uploads/upload/{upload_id}"
+        location = f"/{app_prefix}/api/v4/uploads/save/{upload_id}"
     else:
         location = f"/api/v4/uploads/save/{upload_id}"
 

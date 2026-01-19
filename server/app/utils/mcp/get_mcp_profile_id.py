@@ -3,6 +3,8 @@
 from fastapi import HTTPException
 from fastmcp.server.dependencies import get_http_request
 
+from app.utils.logging.db_logger import profile_id_context
+
 
 def get_mcp_profile_id() -> str:
     """Get profile_id from MCP request context.
@@ -17,8 +19,15 @@ def get_mcp_profile_id() -> str:
     Raises:
         HTTPException: If profile_id not available
     """
-    request = get_http_request()
+    try:
+        request = get_http_request()
+    except Exception:
+        request = None
+    
     if not request:
+        profile_id = profile_id_context.get(None)
+        if profile_id:
+            return profile_id
         raise HTTPException(
             status_code=500,
             detail="MCP request context not available",

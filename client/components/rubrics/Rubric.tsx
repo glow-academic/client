@@ -308,6 +308,20 @@ function RubricComponent({
   React.useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    rubricData && "draft_version" in rubricData
+      ? (rubricData as { draft_version?: number | null }).draft_version
+      : null;
+  React.useEffect(() => {
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [draftVersion]);
 
   // Get draftId from GenericForm's URL state
   const [draftId, setDraftId] = useState<string | null>(null);

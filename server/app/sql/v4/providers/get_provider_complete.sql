@@ -66,6 +66,7 @@ RETURNS TABLE (
     provider_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     group_id uuid,
     -- Single-select resources: name
     name_id uuid,
@@ -129,6 +130,14 @@ draft_group_data AS (
     LEFT JOIN drafts d ON d.id = x.draft_id
     LEFT JOIN provider_artifact p ON p.id = x.provider_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id/provider_id case)
+    WHERE TRUE
+    LIMIT 1
+),
+draft_version_data AS (
+    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
+    SELECT d.version as draft_version
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -529,6 +538,7 @@ SELECT
             'No tool configured for ' || array_to_string(mtc.missing_resources, ', ') || '. Therefore we cannot proceed ahead.'
         ELSE NULL
     END as disabled_reason,
+    (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id,
     -- Single-select resources: name
     nrd.name_id,
@@ -571,6 +581,7 @@ SELECT
 FROM params x
 CROSS JOIN provider_exists_check pec
 CROSS JOIN draft_group_data dgd
+CROSS JOIN draft_version_data dvd
 CROSS JOIN user_profile up
 CROSS JOIN tools_existence_check tec
 CROSS JOIN missing_tools_check mtc

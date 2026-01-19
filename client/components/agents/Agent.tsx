@@ -391,6 +391,11 @@ export default function Agent({
   ]);
 
   const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    agentData && "draft_version" in agentData
+      ? (agentData as { draft_version?: number | null }).draft_version
+      : null;
 
   // Track previous initialDraftState content to avoid unnecessary updates
   const prevInitialDraftStateRef = useRef<string>(
@@ -419,6 +424,7 @@ export default function Agent({
   } = useDraftAutosave({
     draftId,
     draftState,
+    initialVersion: typeof draftVersion === "number" ? draftVersion : 0,
     patchDraftAction: patchAgentDraftAction
       ? async (input) => {
           // Transform hook API → backend API

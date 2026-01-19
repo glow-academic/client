@@ -3298,6 +3298,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/simulation_positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Simulation Positions
+         * @description Create simulation_positions resource (always INSERT).
+         */
+        post: operations["create_simulation_positions_api_v4_resources_simulation_positions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/simulations": {
         parameters: {
             query?: never;
@@ -3432,6 +3452,26 @@ export interface paths {
          * @description Create templates resource (always INSERT).
          */
         post: operations["create_templates_api_v4_resources_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/templates/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Templates
+         * @description Update templates resource (HTML, name, description).
+         */
+        post: operations["update_templates_api_v4_resources_templates_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7821,6 +7861,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -8190,6 +8232,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -8565,6 +8609,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -8712,6 +8758,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -8905,6 +8953,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -9520,6 +9570,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -9659,6 +9711,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -10025,6 +10079,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Profile Id */
@@ -10345,6 +10401,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -10532,6 +10590,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -11023,6 +11083,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -11452,6 +11514,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name */
@@ -16351,6 +16415,8 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Html */
+            html: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -20519,6 +20585,41 @@ export interface components {
             /** Simulation Id */
             simulation_id?: string | null;
         };
+        /** SimulationPositionsApiRequest */
+        SimulationPositionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Cohort Id
+             * Format: uuid
+             */
+            cohort_id: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Value */
+            value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** SimulationPositionsApiResponse */
+        SimulationPositionsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** SimulationScenarioFlagsApiRequest */
         SimulationScenarioFlagsApiRequest: {
             /**
@@ -20953,6 +21054,25 @@ export interface components {
         ToolsApiResponse: {
             /** Tools Id */
             tools_id?: string | null;
+        };
+        /** UpdateTemplatesApiRequest */
+        UpdateTemplatesApiRequest: {
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /** Html */
+            html: string;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** UpdateTemplatesApiResponse */
+        UpdateTemplatesApiResponse: {
+            /** Template Id */
+            template_id?: string | null;
         };
         /** UploadsApiRequest */
         UploadsApiRequest: {
@@ -27053,6 +27173,43 @@ export interface operations {
             };
         };
     };
+    create_simulation_positions_api_v4_resources_simulation_positions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_simulations_api_v4_resources_simulations_post: {
         parameters: {
             query?: never;
@@ -27299,6 +27456,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemplatesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_templates_api_v4_resources_templates_update_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTemplatesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateTemplatesApiResponse"];
                 };
             };
             /** @description Validation Error */

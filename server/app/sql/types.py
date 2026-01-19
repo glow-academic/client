@@ -345,6 +345,7 @@ class GetAgentSqlRow(BaseModel):
     agent_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetAgentV4NameResource | None = None
@@ -434,6 +435,7 @@ class GetAgentApiResponse(BaseModel):
     agent_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetAgentV4NameResource | None = None
@@ -3375,6 +3377,7 @@ class GetCohortSqlRow(BaseModel):
     cohort_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetCohortV4NameResource | None = None
@@ -3432,6 +3435,7 @@ class GetCohortApiResponse(BaseModel):
     cohort_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetCohortV4NameResource | None = None
@@ -5293,6 +5297,7 @@ class GetDocumentSqlRow(BaseModel):
     document_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetDocumentV4NameResource | None = None
@@ -5348,6 +5353,7 @@ class GetDocumentApiResponse(BaseModel):
     document_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetDocumentV4NameResource | None = None
@@ -5998,6 +6004,7 @@ class GetEvalSqlRow(BaseModel):
     eval_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetEvalV4NameResource | None = None
@@ -6078,6 +6085,7 @@ class GetEvalApiResponse(BaseModel):
     eval_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetEvalV4NameResource | None = None
@@ -6421,6 +6429,7 @@ class GetFieldSqlRow(BaseModel):
     field_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetFieldV4NameResource | None = None
@@ -6471,6 +6480,7 @@ class GetFieldApiResponse(BaseModel):
     field_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetFieldV4NameResource | None = None
@@ -9827,6 +9837,7 @@ class GetParameterSqlRow(BaseModel):
     parameter_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetParameterV4NameResource | None = None
@@ -9884,6 +9895,7 @@ class GetParameterApiResponse(BaseModel):
     parameter_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetParameterV4NameResource | None = None
@@ -10441,6 +10453,7 @@ class GetPersonaSqlRow(BaseModel):
     persona_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetPersonaV4NameResource | None = None
@@ -10528,6 +10541,7 @@ class GetPersonaApiResponse(BaseModel):
     persona_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetPersonaV4NameResource | None = None
@@ -11916,6 +11930,7 @@ class GetProfileSqlRow(BaseModel):
     profile_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     profile_id: UUID | None = None
     role: str | None = None
@@ -11979,6 +11994,7 @@ class GetProfileApiResponse(BaseModel):
     profile_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     profile_id: UUID | None = None
     role: str | None = None
@@ -12608,6 +12624,7 @@ class GetProviderSqlRow(BaseModel):
     provider_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetProviderV4NameResource | None = None
@@ -12642,6 +12659,7 @@ class GetProviderApiResponse(BaseModel):
     provider_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetProviderV4NameResource | None = None
@@ -15864,6 +15882,46 @@ class SettingsApiResponse(BaseModel):
 
 
 
+# Generated from: simulation_positions
+
+class SimulationPositionsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    cohort_id: UUID
+    simulation_id: UUID
+    value: int
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.cohort_id,
+            self.simulation_id,
+            self.value,
+            self.mcp,
+        )
+
+class SimulationPositionsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class SimulationPositionsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    cohort_id: UUID
+    simulation_id: UUID
+    value: int
+    mcp: bool | None = False
+
+class SimulationPositionsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: simulation_scenario_flags
 
 class SimulationScenarioFlagsSqlParams(BaseModel):
@@ -16290,6 +16348,40 @@ class ToolsApiRequest(BaseModel):
 class ToolsApiResponse(BaseModel):
 
     tools_id: UUID | None = None
+
+
+
+# Generated from: update_templates
+
+class UpdateTemplatesSqlParams(BaseModel):
+
+    template_id: UUID
+    html: str
+    name: str | None = None
+    description: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+            self.html,
+            self.name,
+            self.description,
+        )
+
+class UpdateTemplatesSqlRow(BaseModel):
+
+    template_id: UUID | None = None
+
+class UpdateTemplatesApiRequest(BaseModel):
+
+    template_id: UUID
+    html: str
+    name: str | None = None
+    description: str | None = None
+
+class UpdateTemplatesApiResponse(BaseModel):
+
+    template_id: UUID | None = None
 
 
 
@@ -16724,6 +16816,7 @@ class GetRubricSqlRow(BaseModel):
     rubric_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetRubricV4NameResource | None = None
@@ -16795,6 +16888,7 @@ class GetRubricApiResponse(BaseModel):
     rubric_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetRubricV4NameResource | None = None
@@ -17571,6 +17665,7 @@ class QGetScenarioV4TemplateResource(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
+    html: str | None
     generated: bool | None
 
 
@@ -18400,6 +18495,7 @@ class GetSettingSqlRow(BaseModel):
     setting_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetSettingV4NameResource | None = None
@@ -18470,6 +18566,7 @@ class GetSettingApiResponse(BaseModel):
     setting_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetSettingV4NameResource | None = None
@@ -20269,6 +20366,7 @@ class GetToolSqlRow(BaseModel):
     tool_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name: str | None = None
     description: str | None = None
@@ -20319,6 +20417,7 @@ class GetToolApiResponse(BaseModel):
     tool_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name: str | None = None
     description: str | None = None
@@ -22550,6 +22649,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SettingsApiRequest",
         "SettingsApiResponse",
     ),
+    "app/sql/v4/resources/simulation_positions_complete.sql": (
+        "SimulationPositionsSqlParams",
+        "SimulationPositionsSqlRow",
+        "SimulationPositionsApiRequest",
+        "SimulationPositionsApiResponse",
+    ),
     "app/sql/v4/resources/simulation_scenario_flags_complete.sql": (
         "SimulationScenarioFlagsSqlParams",
         "SimulationScenarioFlagsSqlRow",
@@ -22621,6 +22726,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ToolsSqlRow",
         "ToolsApiRequest",
         "ToolsApiResponse",
+    ),
+    "app/sql/v4/resources/update_templates_complete.sql": (
+        "UpdateTemplatesSqlParams",
+        "UpdateTemplatesSqlRow",
+        "UpdateTemplatesApiRequest",
+        "UpdateTemplatesApiResponse",
     ),
     "app/sql/v4/resources/uploads_complete.sql": (
         "UploadsSqlParams",
@@ -24394,6 +24505,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/simulation_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/simulation_scenario_flags_complete.sql"]
     ) -> SqlString: ...
 
@@ -24450,6 +24566,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/tools_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/update_templates_complete.sql"]
     ) -> SqlString: ...
 
     @overload

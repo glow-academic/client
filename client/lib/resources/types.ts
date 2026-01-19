@@ -19,6 +19,8 @@ export type ResourceType =
   | "scenario_flags"
   | "scenario_positions"
   | "scenario_rubrics"
+  | "simulation_positions"
+  | "simulations"
   | "templates"
   | "uploads"
   | "models"

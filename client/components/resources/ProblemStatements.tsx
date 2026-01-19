@@ -9,7 +9,8 @@
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -47,12 +48,14 @@ export interface ProblemStatementsProps {
   onProblemStatementIdChange: (problemStatementId: string | null) => void; // Update problem_statement_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
+  label?: string;
   placeholder?: string;
   required?: boolean;
+  rows?: number;
   id?: string;
   "data-testid"?: string;
   defaultProblemStatement?: string; // Default problem statement value (for header style - reverts to this on blur if empty)
-  hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
+  hideDescription?: boolean; // Legacy prop (no-op)
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createProblemStatementsAction?:
@@ -60,6 +63,8 @@ export interface ProblemStatementsProps {
         input: CreateDraftProblemStatementsIn
       ) => Promise<CreateDraftProblemStatementsOut>)
     | undefined;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
 }
 
 export function ProblemStatements({
@@ -72,15 +77,18 @@ export function ProblemStatements({
   onProblemStatementIdChange,
   onGenerate,
   isGenerating = false,
+  label = "Problem Statement",
   placeholder = "Enter problem statement",
   required = false,
+  rows = 4,
   id = "problem_statement",
   "data-testid": dataTestId,
   defaultProblemStatement,
-  hideDescription = false,
   group_id,
   agent_id,
   createProblemStatementsAction,
+  searchTerm,
+  onSearchChange,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;
@@ -238,20 +246,6 @@ export function ProblemStatements({
     return mapping;
   }, [problemStatementsArray]);
 
-  const handleBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      // If empty on blur and defaultProblemStatement exists, revert to defaultProblemStatement
-      if (
-        defaultProblemStatement &&
-        (!e.target.value || e.target.value.trim() === "")
-      ) {
-        setInternalValue(defaultProblemStatement);
-        lastSavedValueRef.current = defaultProblemStatement;
-      }
-    },
-    [defaultProblemStatement]
-  );
-
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -259,17 +253,38 @@ export function ProblemStatements({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-end justify-between gap-2">
-        <Input
-          id={id}
-          data-testid={dataTestId}
-          value={internalValue || ""}
-          onChange={(e) => handleChange(e.target.value)}
-          onBlur={handleBlur}
-          placeholder={placeholder || defaultProblemStatement || ""}
-          required={required}
-          disabled={disabled}
-        />
+      <div className="flex items-end justify-between">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id} className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-destructive">*</span>}
+          </Label>
+          {onGenerate && agent_id && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {resource?.generated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         <GenericPicker
           items={pickerItems}
           selectedIds={resourceId ? [resourceId] : []}
@@ -329,40 +344,20 @@ export function ProblemStatements({
           compact={true}
           buttonClassName="h-8"
           showLabel={false}
+          {...(searchTerm ? { initialSearchTerm: searchTerm } : {})}
+          {...(onSearchChange ? { onSearchChange } : {})}
         />
-        {onGenerate && agent_id && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={onGenerate}
-                  disabled={disabled || isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {resource?.generated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
       </div>
-      {!hideDescription && (
-        <p className="text-xs text-muted-foreground mt-1 px-2">
-          {internalValue === defaultProblemStatement || !internalValue
-            ? "Click to edit"
-            : "Click to edit"}
-        </p>
-      )}
+      <Textarea
+        id={id}
+        data-testid={dataTestId}
+        value={internalValue || ""}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder={placeholder || defaultProblemStatement || ""}
+        required={required}
+        disabled={disabled}
+        rows={rows}
+      />
     </div>
   );
 }

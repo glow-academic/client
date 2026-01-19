@@ -101,6 +101,17 @@ type CreateDraftTemplatesOut = OutputOf<
   "/api/v4/resources/templates",
   "post"
 >;
+type UpdateTemplatesIn = {
+  body: {
+    template_id: string;
+    html: string;
+    name?: string | null;
+    description?: string | null;
+  };
+};
+type UpdateTemplatesOut = {
+  template_id: string | null;
+};
 type CreateDraftParametersIn = InputOf<"/api/v4/resources/parameters", "post">;
 type CreateDraftParametersOut = OutputOf<
   "/api/v4/resources/parameters",
@@ -205,6 +216,9 @@ export interface ScenarioProps {
   createTemplatesAction?: (
     input: CreateDraftTemplatesIn
   ) => Promise<CreateDraftTemplatesOut>;
+  updateTemplatesAction?: (
+    input: UpdateTemplatesIn
+  ) => Promise<UpdateTemplatesOut>;
   createParametersAction?: (
     input: CreateDraftParametersIn
   ) => Promise<CreateDraftParametersOut>;
@@ -237,6 +251,7 @@ function ScenarioComponent({
   createPersonasAction,
   createDocumentsAction,
   createTemplatesAction,
+  updateTemplatesAction,
   createParametersAction,
   createFieldsAction,
   createImagesAction,
@@ -502,6 +517,20 @@ function ScenarioComponent({
   useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    scenarioData && "draft_version" in scenarioData
+      ? (scenarioData as { draft_version?: number | null }).draft_version
+      : null;
+  useEffect(() => {
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [draftVersion]);
 
   const patchScenarioDraftActionRef = useRef(patchScenarioDraftAction);
   useEffect(() => {
@@ -625,7 +654,8 @@ function ScenarioComponent({
 
         lastPatchedKeyRef.current = draftPatchKey;
 
-        if (!draftId && result.draft_id) {
+        if (result.draft_id && result.draft_id !== draftId) {
+          // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
@@ -1980,8 +2010,6 @@ function ScenarioComponent({
         (formData["problemStatementSearch"] as string | undefined) ?? "";
       const templateSearch =
         (formData["templateSearch"] as string | undefined) ?? "";
-      const imageSearch = (formData["imageSearch"] as string | undefined) ?? "";
-      const videoSearch = (formData["videoSearch"] as string | undefined) ?? "";
       const personaShowSelected =
         (formData["personaShowSelected"] as boolean | undefined) ?? false;
       const documentShowSelected =
@@ -2402,12 +2430,6 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={problemStatementSearch}
-              onSearchChange={(term: string) =>
-                setFormData({ problemStatementSearch: term || null })
-              }
-              searchPlaceholder="Search problem statements..."
-              debounceMs={300}
               resetFields={["problem_statement"]}
               actions={
                 shouldShowGenerateAction(
@@ -2457,10 +2479,15 @@ function ScenarioComponent({
                 }
                 onGenerate={handleGenerateProblemStatements}
                 isGenerating={isGenerating("problem_statements")}
+                label="Problem Statement"
                 placeholder="Define the core problem"
                 required={currentScenarioData?.problem_statement_required ?? false}
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.problem_statement_agent_id ?? null}
+                searchTerm={problemStatementSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ problemStatementSearch: term || null })
+                }
                 createProblemStatementsAction={
                   createProblemStatementsAction as
                     | ((
@@ -2744,6 +2771,13 @@ function ScenarioComponent({
                       ) => Promise<CreateDraftTemplatesOut>)
                     | undefined
                 }
+                updateTemplatesAction={
+                  updateTemplatesAction as
+                    | ((
+                        input: UpdateTemplatesIn
+                      ) => Promise<UpdateTemplatesOut>)
+                    | undefined
+                }
                 onGenerate={handleGenerateTemplates}
                 isGenerating={isGenerating("templates")}
               />
@@ -2880,12 +2914,6 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={imageSearch}
-              onSearchChange={(term: string) =>
-                setFormData({ imageSearch: term || null })
-              }
-              searchPlaceholder="Search images..."
-              debounceMs={300}
               resetFields={["images"]}
               actions={
                 shouldShowGenerateAction(
@@ -2948,12 +2976,6 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={videoSearch}
-              onSearchChange={(term: string) =>
-                setFormData({ videoSearch: term || null })
-              }
-              searchPlaceholder="Search videos..."
-              debounceMs={300}
               resetFields={["videos"]}
               actions={
                 shouldShowGenerateAction(
@@ -3098,6 +3120,7 @@ function ScenarioComponent({
       createPersonasAction,
       createDocumentsAction,
       createTemplatesAction,
+      updateTemplatesAction,
       createParametersAction,
       createFieldsAction,
       createImagesAction,

@@ -440,6 +440,9 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
                     profile_id = await get_profile_id_from_claims(claims, conn)
                     if profile_id:
                         request.state.profile_id = profile_id
+                        from app.utils.logging.db_logger import set_profile_id
+
+                        set_profile_id(profile_id)
                         logger.debug(
                             f"MCP profile_id extracted from OAuth claims: {profile_id}"
                         )

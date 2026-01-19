@@ -486,6 +486,20 @@ function PersonaComponent({
   React.useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    personaData && "draft_version" in personaData
+      ? (personaData as { draft_version?: number | null }).draft_version
+      : null;
+  React.useEffect(() => {
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [draftVersion]);
 
   // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -594,8 +608,8 @@ function PersonaComponent({
         // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
 
-        if (!draftId && result.draft_id) {
-          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+        if (result.draft_id && result.draft_id !== draftId) {
+          // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 

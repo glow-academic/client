@@ -31,6 +31,7 @@ COHORT_RESOURCE_TYPES = [
     "flags",
     "departments",
     "simulations",
+    "simulation_positions",
 ]
 
 
@@ -111,6 +112,7 @@ async def _cohort_generate_impl(
                     "flags": result.flag_agent_id,
                     "departments": result.departments_agent_id,
                     "simulations": result.simulations_agent_id,
+                    "simulation_positions": result.simulation_positions_agent_id,
                 }
                 agent_id = agent_type_map.get(data.agent_type)
 

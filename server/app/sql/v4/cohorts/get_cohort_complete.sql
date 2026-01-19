@@ -92,6 +92,7 @@ RETURNS TABLE (
     cohort_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     group_id uuid,
     -- Single-select resources: name
     name_id uuid,
@@ -183,6 +184,13 @@ draft_group_data AS (
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
+    WHERE TRUE
+    LIMIT 1
+),
+draft_version_data AS (
+    SELECT d.version as draft_version
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -1106,6 +1114,77 @@ simulations_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'simulation_positions' resource
+simulation_positions_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'cohort'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'simulation_positions'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
+                  AND f_mcp.name = 'mcp'
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Agent selection for 'basic' multi-resource combination (names + descriptions + flags + departments)
 basic_agent_data AS (
     WITH eligible_agents AS (
@@ -1357,6 +1436,7 @@ SELECT
     (SELECT cohort_exists FROM cohort_exists_check) as cohort_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
+    (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
@@ -1455,7 +1535,7 @@ SELECT
         WHEN COALESCE(array_length((SELECT simulation_positions FROM simulation_positions_data), 1), 0) > 0 THEN true
         ELSE false
     END as show_simulation_positions,
-    NULL::uuid as simulation_positions_agent_id,
+    (SELECT agent_id FROM simulation_positions_agent_data) as simulation_positions_agent_id,
     false as simulation_positions_required,
     -- Multi-resource combination agent IDs (after all individual resources)
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
@@ -1468,6 +1548,7 @@ CROSS JOIN cohort_departments_data cdd
 CROSS JOIN simulation_ids_data sid
 CROSS JOIN simulation_positions_data spd
 CROSS JOIN draft_group_data dgd
+CROSS JOIN draft_version_data dvd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN flag_resource_data frd

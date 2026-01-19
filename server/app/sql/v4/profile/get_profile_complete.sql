@@ -87,6 +87,7 @@ RETURNS TABLE (
     profile_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     group_id uuid,
     -- Profile ID (for audit logging)
     profile_id uuid,
@@ -156,6 +157,14 @@ WITH params AS (
     SELECT profile_id AS profile_id,
            target_profile_id AS target_profile_id,
            draft_id AS draft_id
+),
+draft_version_data AS (
+    -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
+    SELECT d.version as draft_version
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
+    WHERE TRUE
+    LIMIT 1
 ),
 -- Conditional: Only check profile existence if target_profile_id provided
 profile_exists_check AS (
@@ -1348,6 +1357,7 @@ SELECT
     (SELECT profile_exists FROM profile_exists_check) as profile_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
+    (SELECT draft_version FROM draft_version_data) as draft_version,
     (SELECT group_id FROM group_id_data) as group_id,
     -- Profile ID (for audit logging)
     (SELECT resolved_target_profile_id FROM resolve_target_profile_id) as profile_id,
@@ -1454,4 +1464,5 @@ CROSS JOIN cohort_ids_data cid
 CROSS JOIN cohort_resources_data crd
 CROSS JOIN cohort_suggestions_data csd
 CROSS JOIN cohorts_data cd
+CROSS JOIN draft_version_data dvd
 $$;

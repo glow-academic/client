@@ -46,7 +46,7 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
-    valid_cohort_resource_types text[] := ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations'];
+    valid_cohort_resource_types text[] := ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions'];
     is_cohort_resource boolean := FALSE;
 BEGIN
     -- Validate artifact_type (all validation in SQL)

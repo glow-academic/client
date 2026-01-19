@@ -7,6 +7,8 @@
 
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
+import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
+import { doRequest } from "@/lib/api/request-core";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import {
@@ -49,6 +51,17 @@ type CreateDraftObjectivesOut = OutputOf<
 >;
 type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type UpdateTemplatesIn = {
+  body: {
+    template_id: string;
+    html: string;
+    name?: string | null;
+    description?: string | null;
+  };
+};
+type UpdateTemplatesOut = {
+  template_id: string | null;
+};
 
 async function createDraftNames(
   input: CreateDraftNamesIn
@@ -100,6 +113,18 @@ async function patchScenarioDraft(
 ): Promise<PatchScenarioDraftOut> {
   "use server";
   return api.patch("/scenarios/draft", input);
+}
+
+async function updateTemplates(
+  input: UpdateTemplatesIn
+): Promise<UpdateTemplatesOut> {
+  "use server";
+  return doRequest<UpdateTemplatesOut>(
+    INTERNAL_HTTP_BASE,
+    "POST",
+    "/api/v4/resources/templates/update",
+    input
+  );
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -186,6 +211,7 @@ export default async function NewScenarioPage({
         createProblemStatementsAction={createDraftProblemStatements}
         createObjectivesAction={createDraftObjectives}
         createScenarioFlagsAction={createDraftScenarioFlags}
+        updateTemplatesAction={updateTemplates}
       />
     </div>
   );

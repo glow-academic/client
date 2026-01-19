@@ -207,6 +207,10 @@ from app.api.v4.resources.simulation_scenario_flags.create import \
     router as simulation_scenario_flags_router
 
 router.include_router(simulation_scenario_flags_router)
+from app.api.v4.resources.simulation_positions.create import \
+    router as simulation_positions_router
+
+router.include_router(simulation_positions_router)
 from app.api.v4.resources.simulations.create import \
     router as simulations_router
 
@@ -229,8 +233,10 @@ from app.api.v4.resources.temperature_levels.create import \
 
 router.include_router(temperature_levels_router)
 from app.api.v4.resources.templates.create import router as templates_router
+from app.api.v4.resources.templates.update import router as templates_update_router
 
 router.include_router(templates_router)
+router.include_router(templates_update_router)
 from app.api.v4.resources.texts.create import router as texts_router
 
 router.include_router(texts_router)

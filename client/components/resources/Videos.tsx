@@ -236,47 +236,47 @@ export function Videos({
 
   return (
     <div className="space-y-2">
-      {/* Label and Generate Button */}
-      {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1.5">
-            <Video className="h-3.5 w-3.5 text-muted-foreground" />
-            {label}
-            {(required || videos_required) && (
-              <span className="text-destructive">*</span>
+      {/* Label, Generate Button, Picker */}
+      <div className="flex items-end justify-between gap-2">
+        {label ? (
+          <div className="flex items-center gap-2">
+            <Label htmlFor={id} className="flex items-center gap-1.5">
+              <Video className="h-3.5 w-3.5 text-muted-foreground" />
+              {label}
+              {(required || videos_required) && (
+                <span className="text-destructive">*</span>
+              )}
+            </Label>
+            {onGenerate && (videos_agent_id || agent_id) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={onGenerate}
+                      disabled={disabled || isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {hasGenerated ? "Regenerate" : "Generate"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
-          </Label>
-          {onGenerate && (videos_agent_id || agent_id) && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      )}
-
-      {/* Video Picker (matching ContentSection pattern) */}
-      {Object.keys(videoMapping).length > 0 ? (
-        <div className="flex items-center justify-between">
+          </div>
+        ) : (
+          <span />
+        )}
+        {Object.keys(videoMapping).length > 0 ? (
           <GenericPicker
             items={videoMapping}
             itemIds={Object.keys(videoMapping)}
@@ -337,10 +337,8 @@ export function Videos({
             placeholder={placeholder}
             clearActionLabel="No Video"
           />
-        </div>
-      ) : (
-        <Label>{label}</Label>
-      )}
+        ) : null}
+      </div>
 
       {/* Video Preview Container (matching ContentSection pattern) */}
       <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">
