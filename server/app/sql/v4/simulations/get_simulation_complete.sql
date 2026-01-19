@@ -524,10 +524,11 @@ user_departments AS (
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 user_department_ids AS (
-    SELECT ARRAY_AGG(d.id) as ids
-    FROM department_artifact d
+    SELECT ARRAY_AGG(dr.id) as ids
+    FROM departments_resource dr
+    JOIN department_artifact d ON d.id = dr.department_id
     JOIN params x ON true
-    JOIN profile_departments pd ON d.id = pd.department_id
+    JOIN profile_departments pd ON dr.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 primary_department_id AS (
@@ -988,10 +989,11 @@ scenarios_full_data AS (
         )
 ),
 user_departments_for_mapping AS (
-    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
-    FROM department_artifact d
+    SELECT DISTINCT dr.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    FROM departments_resource dr
+    JOIN department_artifact d ON d.id = dr.department_id
     JOIN params x ON true
-    JOIN profile_departments pd ON d.id = pd.department_id
+    JOIN profile_departments pd ON dr.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 department_scenario_ids AS (
@@ -1050,13 +1052,13 @@ department_mapping_data AS (
         COALESCE(dci.cohort_ids, ARRAY[]::uuid[]) as cohort_ids
     FROM params x
     LEFT JOIN user_context uc ON true
-    JOIN department_artifact d ON (
+    JOIN departments_resource dr ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+        EXISTS (SELECT 1 FROM department_artifact d JOIN department_flags df ON df.department_id = d.id JOIN flags_resource f ON df.flag_id = f.id WHERE d.id = dr.department_id AND f.name = 'active' AND df.value = true)
         AND
-        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = dr.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
-    LEFT JOIN departments_resource dr ON dr.id = d.id
+    LEFT JOIN department_artifact d ON d.id = dr.department_id
     LEFT JOIN department_scenario_ids dsci ON dsci.department_id = d.id
     LEFT JOIN department_rubric_ids dri ON dri.department_id = d.id
     LEFT JOIN department_cohort_ids dci ON dci.department_id = d.id
@@ -1345,7 +1347,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = sd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE sd.department_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
                    AND (
                        -- Option 1: Linked to simulations with active=true
                        sd.active = true

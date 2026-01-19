@@ -434,14 +434,14 @@ user_departments AS (
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
     JOIN departments_resource d ON d.id = pd.department_id
-    WHERE pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
 ),
 user_departments_rows AS (
     SELECT DISTINCT pd.department_id as id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
     JOIN departments_resource d ON d.id = pd.department_id
-    WHERE pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
 ),
 scenario_departments_data AS (
     SELECT 
@@ -2128,22 +2128,23 @@ all_fields_array AS (
 ),
 department_persona_ids AS (
     SELECT 
-        d.id as department_id,
+        dr.id as department_id,
         COALESCE(ARRAY_AGG(p.id ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::uuid[]) as persona_ids
-    FROM department_artifact d
+    FROM departments_resource dr
+    JOIN department_artifact d ON d.id = dr.department_id
     CROSS JOIN user_departments ud
     LEFT JOIN personas_resource p ON EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-    WHERE d.id = ANY(ud.dept_ids)
+    WHERE dr.id = ANY(ud.dept_ids)
     AND (
-        pd.department_id = d.id 
+        pd.department_id = dr.id 
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
     )
     AND (
         pd.department_id = ANY(ud.dept_ids)
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd3 WHERE pd3.persona_id = p.id AND pd3.active = true)
     )
-    GROUP BY d.id
+    GROUP BY dr.id
 ),
 department_document_ids AS (
     SELECT 
@@ -2204,7 +2205,7 @@ scenario_departments_array AS (
         ARRAY[]::uuid[] as field_ids
     FROM scenario_departments sd
     JOIN departments_resource d ON d.id = sd.department_id
-    WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
 ),
 all_departments_array AS (
     SELECT 
@@ -2533,7 +2534,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = sd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE sd.department_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
                    AND (
                        -- Option 1: Linked to scenarios with active=true
                        sd.active = true

@@ -193,7 +193,7 @@ profile_dept AS (
     -- Get first department FROM profile_artifact's accessible departments
     SELECT d.id as department_id
     FROM params p
-    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id
     WHERE pd.profile_id = p.profile_id 
       AND pd.active = true

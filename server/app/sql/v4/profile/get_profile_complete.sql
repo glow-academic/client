@@ -522,14 +522,14 @@ flag_resource_data AS (
 department_mapping_data AS (
     SELECT 
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(pd.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -574,7 +574,7 @@ department_suggestions_data AS (
             (SELECT ARRAY_AGG(d.id ORDER BY d.created_at DESC)
              FROM departments_resource d
              CROSS JOIN group_id_data gid
-             WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+             WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
                AND (
                    -- Option 1: Linked to profiles (profile_departments junction table means it's validated/used)
                    EXISTS (

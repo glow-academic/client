@@ -462,12 +462,13 @@ user_departments AS (
 ),
 user_departments_data AS (
     SELECT DISTINCT 
-        d.id, 
+        dr.id, 
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, 
         (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description
-    FROM department_artifact d
+    FROM departments_resource dr
+    JOIN department_artifact d ON d.id = dr.department_id
     JOIN resolve_profile_id rpi ON true
-    JOIN profile_departments pd ON d.id = pd.department_id
+    JOIN profile_departments pd ON dr.id = pd.department_id
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
     AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true

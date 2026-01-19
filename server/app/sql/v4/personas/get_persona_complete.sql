@@ -1159,7 +1159,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = pd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.department_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
                    AND (
                        -- Option 1: Linked to personas with active=true
                        pd.active = true

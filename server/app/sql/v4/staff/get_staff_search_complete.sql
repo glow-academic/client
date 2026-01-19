@@ -120,7 +120,7 @@ profile_cohorts AS (
 profile_departments_agg AS (
     SELECT
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as department_ids
+        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1)) as department_ids
     FROM profile_departments pd
     JOIN departments_resource d ON d.id = pd.department_id
     WHERE pd.active = true

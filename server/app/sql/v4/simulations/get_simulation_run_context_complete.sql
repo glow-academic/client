@@ -82,9 +82,10 @@ WITH scenario_dept AS (
 ),
 profile_dept AS (
     -- Get first department FROM profile_artifact's accessible departments
-    SELECT d.id as department_id
-    FROM department_artifact d
-    JOIN profile_departments pd ON pd.department_id = d.id
+    SELECT dr.id as department_id
+    FROM departments_resource dr
+    JOIN department_artifact d ON d.id = dr.department_id
+    JOIN profile_departments pd ON pd.department_id = dr.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
     WHERE ac.chat_id = chat_id 
@@ -289,7 +290,7 @@ SELECT
 FROM chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
+INNER JOIN scenarios_resource s ON s.scenario_id = sc.scenario_id
 LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id

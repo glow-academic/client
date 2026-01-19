@@ -1068,10 +1068,11 @@ scenarios_data AS (
         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
             AND sfr.scenario_id = ss.scenario_id 
             AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed
-    FROM scenario_artifact s
+    FROM scenarios_resource sr
+    JOIN scenario_artifact s ON s.id = sr.scenario_id
     CROSS JOIN scenario_ids_list sil
     CROSS JOIN attempt_base ab
-    LEFT JOIN simulation_scenarios ss ON ss.scenario_id = s.id AND ss.simulation_id = ab.simulation_id
+    LEFT JOIN simulation_scenarios ss ON ss.scenario_id = sr.id AND ss.simulation_id = ab.simulation_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
@@ -1478,10 +1479,11 @@ scenario_documents_data AS (
         '{}'::types.q_get_simulation_attempt_v4_scenario_document[]
     ) as scenario_documents
     FROM document_artifact d
+    JOIN documents_resource dr ON dr.document_id = d.id
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
     LEFT JOIN uploads u ON u.id = ur.upload_id
-    JOIN scenario_documents sd ON sd.document_id = d.id
+    JOIN scenario_documents sd ON sd.document_id = dr.id
     CROSS JOIN scenario_ids_list sil
     WHERE sd.scenario_id = ANY(sil.scenario_ids) AND EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
 ),
