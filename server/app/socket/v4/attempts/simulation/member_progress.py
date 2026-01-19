@@ -171,6 +171,18 @@ async def _member_progress_impl(
                 ).model_dump(),
                 room=f"simulation_{chat_id_uuid}",
             )
+            await sio.emit(
+                "simulations_text_new_message",
+                {
+                    "message_id": message_id,
+                    "chat_id": str(chat_id_uuid),
+                    "role": "user",
+                    "content": message_str,
+                    "completed": True,
+                    "created_at": created_at.isoformat() if created_at else "",
+                },
+                room=f"simulation_{chat_id_uuid}",
+            )
 
             # Log activity
             try:

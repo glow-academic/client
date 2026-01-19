@@ -46775,28 +46775,6 @@
             ],
             "title": "Scenario Id"
           },
-          "use_image": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Image"
-          },
-          "use_objectives": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Objectives"
-          },
           "document_ids": {
             "anyOf": [
               {
@@ -46841,50 +46819,6 @@
               }
             ],
             "title": "Template Document Ids"
-          },
-          "use_video": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Video"
-          },
-          "use_questions": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Questions"
-          },
-          "use_problem_statement": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Problem Statement"
-          },
-          "use_templates": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Use Templates"
           },
           "filter_department_ids": {
             "anyOf": [

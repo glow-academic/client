@@ -47,14 +47,8 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
-type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
+type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 async function createDraftNames(
   input: CreateDraftNamesIn
@@ -88,7 +82,7 @@ async function createDraftScenarioFlags(
   input: CreateDraftScenarioFlagsIn
 ): Promise<CreateDraftScenarioFlagsOut> {
   "use server";
-  return api.post("/resources/scenario_flags", input);
+  return api.post("/resources/flags", input);
 }
 
 async function getScenario(input: GetScenarioIn): Promise<GetScenarioOut> {
@@ -167,8 +161,6 @@ export default async function NewScenarioPage({
             })
           )
         : null,
-      use_image: q.useImage ?? null,
-      use_video: q.useVideo ?? null,
       problem_statement_ids: csvToArray(q.problemStatementIds) ?? null,
       mcp: false,
     },

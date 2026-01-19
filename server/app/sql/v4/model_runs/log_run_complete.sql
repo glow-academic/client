@@ -578,12 +578,36 @@ link_system_to_developer AS (
     )
 ),
 -- Create assistant message if output provided
-assistant_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'assistant'::message_role, true, false, NOW(), NOW()
+existing_assistant_message AS (
+    SELECT m.id as assistant_message_id, m.created_at, m.updated_at
     FROM params x
-    WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
+    JOIN message_runs mr ON mr.run_id = x.run_id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.role = 'assistant'::message_role
+      AND x.assistant_output IS NOT NULL
+      AND trim(x.assistant_output) != ''
+    ORDER BY m.created_at DESC
+    LIMIT 1
+),
+update_existing_assistant_message AS (
+    UPDATE messages
+    SET completed = true,
+        updated_at = NOW()
+    WHERE id = (SELECT assistant_message_id FROM existing_assistant_message)
     RETURNING id as assistant_message_id, created_at, updated_at
+),
+assistant_message AS (
+    SELECT assistant_message_id, created_at, updated_at FROM update_existing_assistant_message
+    UNION ALL
+    SELECT nam.assistant_message_id, nam.created_at, nam.updated_at
+    FROM (
+        INSERT INTO messages (role, completed, audio, created_at, updated_at)
+        SELECT 'assistant'::message_role, true, false, NOW(), NOW()
+        FROM params x
+        WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
+          AND NOT EXISTS (SELECT 1 FROM existing_assistant_message)
+        RETURNING id as assistant_message_id, created_at, updated_at
+    ) nam
 ),
 assistant_tool_call AS (
     INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
@@ -611,6 +635,20 @@ link_assistant_tool_call AS (
     CROSS JOIN assistant_tool_call atc
     ON CONFLICT (message_id, call_id) DO NOTHING
 ),
+existing_assistant_content AS (
+    SELECT mc.content_id
+    FROM assistant_message am
+    JOIN message_contents mc ON mc.message_id = am.assistant_message_id AND mc.idx = 0
+    LIMIT 1
+),
+update_existing_assistant_content AS (
+    UPDATE contents
+    SET content = trim(x.assistant_output),
+        updated_at = NOW()
+    FROM params x
+    WHERE id = (SELECT content_id FROM existing_assistant_content)
+    RETURNING id as content_id
+),
 insert_assistant_content_step1 AS (
     INSERT INTO contents (content, created_at, updated_at)
     SELECT trim(x.assistant_output), am.created_at, am.updated_at
@@ -618,6 +656,7 @@ insert_assistant_content_step1 AS (
     CROSS JOIN assistant_message am
     CROSS JOIN assistant_tool_call atc
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
+      AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_assistant_content AS (
@@ -628,6 +667,7 @@ insert_assistant_content AS (
     CROSS JOIN assistant_tool_call atc
     CROSS JOIN insert_assistant_content_step1 ic
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
+      AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
 ),
 link_assistant AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)

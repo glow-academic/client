@@ -8618,6 +8618,31 @@ class MemberProgressUpsertApiResponse(BaseModel):
 
 
 
+# Generated from: create_assistant_message_for_run
+
+class CreateAssistantMessageForRunSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class CreateAssistantMessageForRunSqlRow(BaseModel):
+
+    assistant_message_id: UUID | None = None
+
+class CreateAssistantMessageForRunApiRequest(BaseModel):
+
+    run_id: UUID
+
+class CreateAssistantMessageForRunApiResponse(BaseModel):
+
+    assistant_message_id: UUID | None = None
+
+
+
 # Generated from: get_message_created_at
 
 class GetMessageCreatedAtSqlParams(BaseModel):
@@ -8742,61 +8767,6 @@ class CreateModelRunApiRequest(BaseModel):
 class CreateModelRunApiResponse(BaseModel):
 
     run_id: str | None = None
-
-
-
-# Generated from: log_run
-
-class LogRunSqlParams(BaseModel):
-
-    run_id: UUID
-    input_text_tokens: int
-    input_audio_tokens: int
-    input_image_tokens: int
-    output_text_tokens: int
-    output_audio_tokens: int
-    cached_text_tokens: int
-    cached_audio_tokens: int
-    department_id: UUID | None = None
-    developer_contents: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    assistant_output: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.input_text_tokens,
-            self.input_audio_tokens,
-            self.input_image_tokens,
-            self.output_text_tokens,
-            self.output_audio_tokens,
-            self.cached_text_tokens,
-            self.cached_audio_tokens,
-            self.department_id,
-            self.developer_contents,
-            self.assistant_output,
-        )
-
-class LogRunSqlRow(BaseModel):
-
-    success: int | None = None
-
-class LogRunApiRequest(BaseModel):
-
-    run_id: UUID
-    input_text_tokens: int
-    input_audio_tokens: int
-    input_image_tokens: int
-    output_text_tokens: int
-    output_audio_tokens: int
-    cached_text_tokens: int
-    cached_audio_tokens: int
-    department_id: UUID | None = None
-    developer_contents: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    assistant_output: str | None = None
-
-class LogRunApiResponse(BaseModel):
-
-    success: int | None = None
 
 
 
@@ -17275,15 +17245,9 @@ class GetScenarioSqlParams(BaseModel):
 
     profile_id: UUID
     scenario_id: UUID | None = None
-    use_image: bool | None = None
-    use_objectives: bool | None = None
     document_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
-    use_video: bool | None = None
-    use_questions: bool | None = None
-    use_problem_statement: bool | None = None
-    use_templates: bool | None = None
     filter_department_ids: list[UUID] | None = None
     filter_persona_ids: list[UUID] | None = None
     filter_document_ids: list[UUID] | None = None
@@ -17308,15 +17272,9 @@ class GetScenarioSqlParams(BaseModel):
         return (
             self.profile_id,
             self.scenario_id,
-            self.use_image,
-            self.use_objectives,
             self.document_ids,
             self.problem_statement_ids,
             self.template_document_ids,
-            self.use_video,
-            self.use_questions,
-            self.use_problem_statement,
-            self.use_templates,
             self.filter_department_ids,
             self.filter_persona_ids,
             self.filter_document_ids,
@@ -17629,15 +17587,9 @@ class GetScenarioSqlRow(BaseModel):
 class GetScenarioApiRequest(BaseModel):
 
     scenario_id: UUID | None = None
-    use_image: bool | None = None
-    use_objectives: bool | None = None
     document_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
-    use_video: bool | None = None
-    use_questions: bool | None = None
-    use_problem_statement: bool | None = None
-    use_templates: bool | None = None
     filter_department_ids: list[UUID] | None = None
     filter_persona_ids: list[UUID] | None = None
     filter_document_ids: list[UUID] | None = None
@@ -17801,6 +17753,12 @@ class PatchScenarioDraftSqlParams(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
@@ -17818,6 +17776,12 @@ class PatchScenarioDraftSqlParams(BaseModel):
             self.name_id,
             self.description_id,
             self.active_flag_id,
+            self.objectives_enabled_flag_id,
+            self.images_enabled_flag_id,
+            self.video_enabled_flag_id,
+            self.questions_enabled_flag_id,
+            self.problem_statement_enabled_flag_id,
+            self.use_templates_flag_id,
             self.department_ids,
             self.persona_ids,
             self.document_ids,
@@ -17841,6 +17805,12 @@ class PatchScenarioDraftApiRequest(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
@@ -21748,6 +21718,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MemberProgressUpsertApiRequest",
         "MemberProgressUpsertApiResponse",
     ),
+    "app/sql/v4/messages/create_assistant_message_for_run_complete.sql": (
+        "CreateAssistantMessageForRunSqlParams",
+        "CreateAssistantMessageForRunSqlRow",
+        "CreateAssistantMessageForRunApiRequest",
+        "CreateAssistantMessageForRunApiResponse",
+    ),
     "app/sql/v4/messages/get_message_created_at_complete.sql": (
         "GetMessageCreatedAtSqlParams",
         "GetMessageCreatedAtSqlRow",
@@ -21771,12 +21747,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateModelRunSqlRow",
         "CreateModelRunApiRequest",
         "CreateModelRunApiResponse",
-    ),
-    "app/sql/v4/model_runs/log_run_complete.sql": (
-        "LogRunSqlParams",
-        "LogRunSqlRow",
-        "LogRunApiRequest",
-        "LogRunApiResponse",
     ),
     "app/sql/v4/models/delete_model_complete.sql": (
         "DeleteModelSqlParams",
@@ -23707,6 +23677,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/messages/create_assistant_message_for_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/messages/get_message_created_at_complete.sql"]
     ) -> SqlString: ...
 
@@ -23723,11 +23698,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/model_runs/create_model_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/model_runs/log_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

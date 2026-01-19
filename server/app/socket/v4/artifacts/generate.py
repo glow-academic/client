@@ -57,6 +57,9 @@ SQL_PATH_TEXT = (
 )
 SQL_PATH_MESSAGES_BY_IDS = "app/sql/v4/messages/get_messages_by_ids_complete.sql"
 SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/messages/get_messages_by_run_id_complete.sql"
+SQL_PATH_CREATE_ASSISTANT_MESSAGE = (
+    "app/sql/v4/messages/create_assistant_message_for_run_complete.sql"
+)
 SQL_PATH_IMAGE = (
     "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
 )
@@ -456,6 +459,16 @@ async def _generate_artifact_impl(
                 # Extract artifact_type from data to pass through handlers
                 artifact_type = data.get("artifact_type")
                 
+                assistant_message_id: uuid.UUID | None = None
+                if modality in ("text", "call", "document"):
+                    try:
+                        sql = load_sql(SQL_PATH_CREATE_ASSISTANT_MESSAGE)
+                        row = await conn.fetchrow(sql, uuid.UUID(run_id))
+                        if row and row.get("assistant_message_id"):
+                            assistant_message_id = row["assistant_message_id"]
+                    except Exception:
+                        assistant_message_id = None
+
                 # Route to appropriate modality handler
                 if modality == "text" or modality == "call" or modality == "document":
                     await _handle_text_generation(
@@ -472,6 +485,7 @@ async def _generate_artifact_impl(
                         else None,
                         group_id=uuid.UUID(group_id) if group_id else None,
                         trace_id=trace_id,
+                        assistant_message_id=assistant_message_id,
                         tool_choice="required" if modality == "call" else "auto",
                         eval_mode=eval_mode,
                     )
@@ -549,6 +563,7 @@ async def _handle_text_generation(
     message_ids: list[uuid.UUID] | None,
     group_id: uuid.UUID | None,
     trace_id: str | None,
+    assistant_message_id: uuid.UUID | None,
     tool_choice: str = "auto",
     eval_mode: bool = False,
 ) -> None:
@@ -558,6 +573,10 @@ async def _handle_text_generation(
 
     if not agent_id:
         raise ValueError("agent_id is required for text generation")
+
+    assistant_message_id_str = (
+        str(assistant_message_id) if assistant_message_id else None
+    )
 
     # Get text context from SQL
     resources = data.get("resources")  # Extract resources array from data
@@ -740,6 +759,7 @@ async def _handle_text_generation(
             "resource_type": resource_type,
             "run_id": str(run_id),
             "group_id": str(group_id) if group_id else None,
+            "message_id": assistant_message_id_str,
             "type": "start",
             "message": f"Starting {result.agent_name or 'text'} generation",
             "eval_mode": eval_mode,
@@ -804,6 +824,7 @@ async def _handle_text_generation(
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
+                        "message_id": assistant_message_id_str,
                         "type": "text_start",
                         "eval_mode": eval_mode,
                     },
@@ -823,8 +844,10 @@ async def _handle_text_generation(
                             "resource_type": resource_type,
                             "run_id": str(run_id),
                             "group_id": str(group_id) if group_id else None,
+                            "message_id": assistant_message_id_str,
                             "type": "text_delta",
                             "delta": delta,
+                            "accumulated_content": assistant_output,
                             "eval_mode": eval_mode,
                         },
                         )
@@ -841,6 +864,7 @@ async def _handle_text_generation(
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
+                        "message_id": assistant_message_id_str,
                         "type": "text_complete",
                         "text": assistant_output,
                         "eval_mode": eval_mode,
@@ -871,6 +895,7 @@ async def _handle_text_generation(
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
+                        "message_id": assistant_message_id_str,
                         "type": "tool_call_start",
                         "tool_call_id": tool_call_id,
                         "eval_mode": eval_mode,
@@ -904,6 +929,7 @@ async def _handle_text_generation(
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
+                        "message_id": assistant_message_id_str,
                         "type": "tool_call_delta",
                         "tool_call_id": tool_call_id,
                         "delta": delta,
@@ -952,6 +978,7 @@ async def _handle_text_generation(
                             "resource_type": resource_type,
                             "run_id": str(run_id),
                             "group_id": str(group_id) if group_id else None,
+                            "message_id": assistant_message_id_str,
                             "type": "tool_call_complete",
                             "tool_call_id": tool_call_id,
                             "tool_name": tool_name,
@@ -974,6 +1001,7 @@ async def _handle_text_generation(
                             "resource_type": resource_type,
                             "run_id": str(run_id),
                             "group_id": str(group_id) if group_id else None,
+                            "message_id": assistant_message_id_str,
                             "tool_call_id": tool_call_id,
                             "call_id": tool_call_id,  # external_call_id for lookup
                             "tool_name": tool_name,
@@ -1036,6 +1064,7 @@ async def _handle_text_generation(
             "resource_type": resource_type,
             "run_id": str(run_id),
             "group_id": str(group_id) if group_id else None,
+            "message_id": assistant_message_id_str,
             "input_text_tokens": input_tokens,
             "output_text_tokens": output_tokens,
             "system_prompt": result.system_prompt or "",

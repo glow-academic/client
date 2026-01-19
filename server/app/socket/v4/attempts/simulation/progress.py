@@ -1,6 +1,7 @@
 """Simulation progress handler - listens to generate_progress events and emits simulation-specific events."""
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -12,13 +13,13 @@ internal_sio = get_internal_sio()
 @internal_sio.on("generate_progress")  # type: ignore
 async def handle_simulations_progress(data: dict[str, Any]) -> None:
     """Handle generate_progress internal event - filter by simulation artifact_type and voice resource_type."""
-    # Filter by artifact_type and resource_type
+    # Filter by artifact_type
     artifact_type = data.get("artifact_type")
+    if artifact_type != "simulation":
+        return  # Not for us
+
     resource_type = data.get("resource_type")
     modality = data.get("modality")
-    
-    if artifact_type != "simulation" or resource_type != "voice" or modality != "audio":
-        return  # Not for us
     
     sid = data.get("sid", "")
     if not sid:
@@ -32,8 +33,50 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
     # Extract event type and map to simulation events
     event_type = data.get("type")
     chat_id = data.get("group_id")  # group_id contains chat_id for simulations
-    
+    message_id = data.get("message_id")
+
+    if modality in ("text", "call", "document") and resource_type == "simulation":
+        if event_type == "text_start" and message_id:
+            await sio.emit(
+                "simulations_text_new_message",
+                {
+                    "message_id": message_id,
+                    "chat_id": chat_id,
+                    "role": "assistant",
+                    "content": "",
+                    "completed": False,
+                    "created_at": datetime.now(UTC).isoformat(),
+                },
+                room=sid,
+            )
+        elif event_type == "text_delta" and message_id:
+            await sio.emit(
+                "simulations_text_message_token",
+                {
+                    "message_id": message_id,
+                    "chat_id": chat_id,
+                    "token": data.get("delta", ""),
+                    "accumulated_content": data.get("accumulated_content", ""),
+                },
+                room=sid,
+            )
+        elif event_type == "text_complete" and message_id:
+            await sio.emit(
+                "simulations_text_message_complete",
+                {
+                    "message_id": message_id,
+                    "chat_id": chat_id,
+                    "final_content": data.get("text", ""),
+                    "completed": True,
+                },
+                room=sid,
+            )
+        return
+
     # Map artifact event types to simulation events
+    if modality != "audio" or resource_type != "voice":
+        return  # Not for us
+
     if event_type == "user_speech_started":
         await sio.emit(
             "simulation_voice_user_start",

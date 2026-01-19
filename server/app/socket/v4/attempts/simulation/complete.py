@@ -12,13 +12,13 @@ internal_sio = get_internal_sio()
 @internal_sio.on("generate_complete")  # type: ignore
 async def handle_simulations_complete(data: dict[str, Any]) -> None:
     """Handle generate_complete internal event - filter by simulation artifact_type and voice resource_type."""
-    # Filter by artifact_type and resource_type
+    # Filter by artifact_type
     artifact_type = data.get("artifact_type")
+    if artifact_type != "simulation":
+        return  # Not for us
+
     resource_type = data.get("resource_type")
     modality = data.get("modality")
-    
-    if artifact_type != "simulation" or resource_type != "voice" or modality != "audio":
-        return  # Not for us
     
     sid = data.get("sid", "")
     if not sid:
@@ -33,7 +33,25 @@ async def handle_simulations_complete(data: dict[str, Any]) -> None:
     chat_id = data.get("group_id")  # group_id contains chat_id for simulations
     run_id = data.get("run_id")
     completion_type = data.get("type")
-    
+    message_id = data.get("message_id")
+
+    if modality in ("text", "call", "document") and resource_type == "simulation":
+        await sio.emit(
+            "simulations_text_run_complete",
+            {
+                "chat_id": chat_id,
+                "run_id": run_id,
+                "message_id": message_id,
+                "type": completion_type,
+                "success": True,
+            },
+            room=sid,
+        )
+        return
+
+    if modality != "audio" or resource_type != "voice":
+        return  # Not for us
+
     # Emit completion event to client
     await sio.emit(
         "simulation_voice_complete",

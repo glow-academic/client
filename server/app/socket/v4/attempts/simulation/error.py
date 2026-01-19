@@ -24,6 +24,7 @@ class SimulationErrorPayload(BaseModel):
     simulation_id: str | None = None
     operation: str | None = None
     error_type: str | None = None
+    group_id: str | None = None
 
 
 async def _simulation_error_impl(
@@ -38,6 +39,15 @@ async def _simulation_error_impl(
         data,
         room=sid,
     )
+    if data.group_id:
+        await emit_to_client(
+            "simulations_text_message_error",
+            {
+                "chat_id": data.group_id,
+                "error": data.message,
+            },
+            room=sid,
+        )
 
 
 @internal_sio.on("simulation_error")  # type: ignore

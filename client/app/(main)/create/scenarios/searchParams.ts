@@ -48,13 +48,6 @@ export const scenarioSearchParams = {
   parameterSelectionMin: parseAsInteger,
   parameterSelectionMax: parseAsInteger,
 
-  // Feature flags
-  useImage: parseAsBoolean,
-  useVideo: parseAsBoolean,
-  useObjectives: parseAsBoolean,
-  useQuestions: parseAsBoolean,
-  useProblemStatement: parseAsBoolean,
-
   // Text fields
   name: parseAsString,
   problemStatement: parseAsString,

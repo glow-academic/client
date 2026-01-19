@@ -48,14 +48,8 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
-type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
+type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -111,8 +105,6 @@ const getScenario = async (
     parameterSelectionMin?: number;
     parameterSelectionMax?: number;
     parameterItemRanges?: Record<string, { min: number; max: number }>;
-    useImage?: boolean;
-    useVideo?: boolean;
     imageIds?: string[];
     objectiveIds?: string[];
     problemStatementIds?: string[];
@@ -162,10 +154,6 @@ const getScenario = async (
         show_selected,
       }));
     }
-    if (filterParams.useImage !== undefined)
-      body.use_image = filterParams.useImage;
-    if (filterParams.useVideo !== undefined)
-      body.use_video = filterParams.useVideo;
     if (filterParams.imageIds) body.image_ids = filterParams.imageIds;
     if (filterParams.objectiveIds)
       body.objective_ids = filterParams.objectiveIds;
@@ -263,7 +251,7 @@ async function createDraftScenarioFlags(
 ): Promise<CreateDraftScenarioFlagsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/scenario_flags", input);
+  return api.post("/resources/flags", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -323,8 +311,6 @@ export default async function EditScenarioPage({
       parameterSelectionMin?: number;
       parameterSelectionMax?: number;
       parameterItemRanges?: Record<string, { min: number; max: number }>;
-      useImage?: boolean;
-      useVideo?: boolean;
       imageIds?: string[];
       objectiveIds?: string[];
       problemStatementIds?: string[];
@@ -385,10 +371,6 @@ export default async function EditScenarioPage({
       filterParams.parameterSelectionMax = q.parameterSelectionMax;
     if (parameterItemRanges)
       filterParams.parameterItemRanges = parameterItemRanges;
-    if (q.useImage !== undefined && q.useImage !== null)
-      filterParams.useImage = q.useImage;
-    if (q.useVideo !== undefined && q.useVideo !== null)
-      filterParams.useVideo = q.useVideo;
     const imageIds = csvToArray(q.imageIds);
     const objectiveIds = csvToArray(q.objectiveIds);
     const problemStatementIds = csvToArray(q.problemStatementIds);

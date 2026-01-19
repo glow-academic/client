@@ -76,14 +76,8 @@ type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
   "post"
 >;
-type CreateDraftScenarioFlagsIn = InputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
-type CreateDraftScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/scenario_flags",
-  "post"
->;
+type CreateDraftScenarioFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftScenarioFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftDepartmentsIn = InputOf<
   "/api/v4/resources/departments",
   "post"
@@ -172,9 +166,6 @@ type ScenarioFormState = {
   video_ids: string[];
   question_ids: string[];
 };
-
-type CreateFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -1909,23 +1900,6 @@ function ScenarioComponent({
     [formState]
   );
 
-  const createScenarioFlagsWrapper = useCallback(
-    async (input: CreateFlagsIn): Promise<CreateFlagsOut> => {
-      if (!createScenarioFlagsAction) {
-        return { flag_id: null };
-      }
-      const result = await createScenarioFlagsAction({
-        body: {
-          agent_id: input.body.agent_id,
-          group_id: input.body.group_id,
-          mcp: input.body.mcp,
-        },
-      });
-      return { flag_id: result.scenario_flags_id ?? null };
-    },
-    [createScenarioFlagsAction]
-  );
-
   const renderStep = useCallback(
     ({
       stepId,
@@ -2079,11 +2053,7 @@ function ScenarioComponent({
                 iconId={currentScenarioData?.active_flag_resource?.icon_id ?? undefined}
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.active_flag_agent_id ?? null}
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={currentScenarioData?.active_flag_required ?? false}
@@ -2186,11 +2156,7 @@ function ScenarioComponent({
                   currentScenarioData?.problem_statement_enabled_flag_agent_id ??
                   null
                 }
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={
@@ -2227,11 +2193,7 @@ function ScenarioComponent({
                 agent_id={
                   currentScenarioData?.objectives_enabled_flag_agent_id ?? null
                 }
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={
@@ -2263,11 +2225,7 @@ function ScenarioComponent({
                 }
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.images_enabled_flag_agent_id ?? null}
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={currentScenarioData?.images_enabled_flag_required ?? false}
@@ -2297,11 +2255,7 @@ function ScenarioComponent({
                 }
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.video_enabled_flag_agent_id ?? null}
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={currentScenarioData?.video_enabled_flag_required ?? false}
@@ -2333,11 +2287,7 @@ function ScenarioComponent({
                 }
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.questions_enabled_flag_agent_id ?? null}
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={currentScenarioData?.questions_enabled_flag_required ?? false}
@@ -2367,11 +2317,7 @@ function ScenarioComponent({
                 }
                 group_id={currentScenarioData?.group_id ?? null}
                 agent_id={currentScenarioData?.use_templates_flag_agent_id ?? null}
-                createFlagsAction={
-                  createScenarioFlagsAction
-                    ? createScenarioFlagsWrapper
-                    : undefined
-                }
+                createFlagsAction={createScenarioFlagsAction}
                 onGenerate={handleGenerateFlags}
                 isGenerating={isGenerating("scenario_flags")}
                 required={currentScenarioData?.use_templates_flag_required ?? false}
@@ -3055,7 +3001,7 @@ function ScenarioComponent({
       createDescriptionsAction,
       createProblemStatementsAction,
       createObjectivesAction,
-      createScenarioFlagsWrapper,
+      createScenarioFlagsAction,
       createDepartmentsAction,
       createPersonasAction,
       createDocumentsAction,

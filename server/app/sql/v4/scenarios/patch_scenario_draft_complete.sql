@@ -23,6 +23,12 @@ CREATE OR REPLACE FUNCTION api_patch_scenario_draft_v4(
     name_id uuid DEFAULT NULL,
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
+    objectives_enabled_flag_id uuid DEFAULT NULL,
+    images_enabled_flag_id uuid DEFAULT NULL,
+    video_enabled_flag_id uuid DEFAULT NULL,
+    questions_enabled_flag_id uuid DEFAULT NULL,
+    problem_statement_enabled_flag_id uuid DEFAULT NULL,
+    use_templates_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     persona_ids uuid[] DEFAULT NULL,
     document_ids uuid[] DEFAULT NULL,
@@ -59,6 +65,30 @@ BEGIN
     
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+
+    IF objectives_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = objectives_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', objectives_enabled_flag_id;
+    END IF;
+
+    IF images_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = images_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', images_enabled_flag_id;
+    END IF;
+
+    IF video_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = video_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', video_enabled_flag_id;
+    END IF;
+
+    IF questions_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = questions_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', questions_enabled_flag_id;
+    END IF;
+
+    IF problem_statement_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = problem_statement_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', problem_statement_enabled_flag_id;
+    END IF;
+
+    IF use_templates_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = use_templates_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', use_templates_flag_id;
     END IF;
     
     -- Try to update existing draft
@@ -118,6 +148,54 @@ BEGIN
             IF active_flag_id IS NOT NULL THEN
                 INSERT INTO draft_flags (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF objectives_enabled_flag_id IS NOT NULL THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                VALUES (v_draft_id, objectives_enabled_flag_id, v_new_version)
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF images_enabled_flag_id IS NOT NULL THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                VALUES (v_draft_id, images_enabled_flag_id, v_new_version)
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF video_enabled_flag_id IS NOT NULL THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                VALUES (v_draft_id, video_enabled_flag_id, v_new_version)
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF questions_enabled_flag_id IS NOT NULL THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                VALUES (v_draft_id, questions_enabled_flag_id, v_new_version)
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF problem_statement_enabled_flag_id IS NOT NULL THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                VALUES (v_draft_id, problem_statement_enabled_flag_id, v_new_version)
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF use_templates_flag_id IS NOT NULL THEN
+                INSERT INTO draft_flags (draft_id, flags_id, version)
+                VALUES (v_draft_id, use_templates_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
@@ -240,6 +318,54 @@ BEGIN
     IF active_flag_id IS NOT NULL THEN
         INSERT INTO draft_flags (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF objectives_enabled_flag_id IS NOT NULL THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        VALUES (v_draft_id, objectives_enabled_flag_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF images_enabled_flag_id IS NOT NULL THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        VALUES (v_draft_id, images_enabled_flag_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF video_enabled_flag_id IS NOT NULL THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        VALUES (v_draft_id, video_enabled_flag_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF questions_enabled_flag_id IS NOT NULL THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        VALUES (v_draft_id, questions_enabled_flag_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF problem_statement_enabled_flag_id IS NOT NULL THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        VALUES (v_draft_id, problem_statement_enabled_flag_id, v_new_version)
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF use_templates_flag_id IS NOT NULL THEN
+        INSERT INTO draft_flags (draft_id, flags_id, version)
+        VALUES (v_draft_id, use_templates_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();

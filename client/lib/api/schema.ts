@@ -10646,24 +10646,12 @@ export interface components {
         GetScenarioApiRequest: {
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Use Image */
-            use_image?: boolean | null;
-            /** Use Objectives */
-            use_objectives?: boolean | null;
             /** Document Ids */
             document_ids?: string[] | null;
             /** Problem Statement Ids */
             problem_statement_ids?: string[] | null;
             /** Template Document Ids */
             template_document_ids?: string[] | null;
-            /** Use Video */
-            use_video?: boolean | null;
-            /** Use Questions */
-            use_questions?: boolean | null;
-            /** Use Problem Statement */
-            use_problem_statement?: boolean | null;
-            /** Use Templates */
-            use_templates?: boolean | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
             /** Filter Persona Ids */
