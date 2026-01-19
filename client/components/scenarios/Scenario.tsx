@@ -308,6 +308,11 @@ function ScenarioComponent({
       personaSearch: parseAsString,
       documentSearch: parseAsString,
       parameterSearch: parseAsString,
+      descriptionSearch: parseAsString,
+      problemStatementSearch: parseAsString,
+      templateSearch: parseAsString,
+      imageSearch: parseAsString,
+      videoSearch: parseAsString,
       personaShowSelected: parseAsBoolean,
       documentShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
@@ -1934,6 +1939,14 @@ function ScenarioComponent({
       const documentSearch = (formData["documentSearch"] as string | undefined) ?? "";
       const parameterSearch =
         (formData["parameterSearch"] as string | undefined) ?? "";
+      const descriptionSearch =
+        (formData["descriptionSearch"] as string | undefined) ?? "";
+      const problemStatementSearch =
+        (formData["problemStatementSearch"] as string | undefined) ?? "";
+      const templateSearch =
+        (formData["templateSearch"] as string | undefined) ?? "";
+      const imageSearch = (formData["imageSearch"] as string | undefined) ?? "";
+      const videoSearch = (formData["videoSearch"] as string | undefined) ?? "";
       const personaShowSelected =
         (formData["personaShowSelected"] as boolean | undefined) ?? false;
       const documentShowSelected =
@@ -2017,6 +2030,10 @@ function ScenarioComponent({
                   currentScenarioData?.description_suggestions ?? []
                 }
                 descriptions={currentScenarioData?.descriptions ?? []}
+                searchTerm={descriptionSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ descriptionSearch: term || null })
+                }
                 disabled={disabled}
                 onDescriptionIdChange={(descriptionId) =>
                   setFormState((prev) => ({
@@ -2333,6 +2350,12 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={problemStatementSearch}
+              onSearchChange={(term: string) =>
+                setFormData({ problemStatementSearch: term || null })
+              }
+              searchPlaceholder="Search problem statements..."
+              debounceMs={300}
               resetFields={["problem_statement"]}
               actions={
                 shouldShowGenerateAction(
@@ -2617,6 +2640,12 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={templateSearch}
+              onSearchChange={(term: string) =>
+                setFormData({ templateSearch: term || null })
+              }
+              searchPlaceholder="Search templates..."
+              debounceMs={300}
               resetFields={["templates"]}
               actions={
                 shouldShowGenerateAction(
@@ -2650,6 +2679,7 @@ function ScenarioComponent({
                 show_templates={currentScenarioData?.show_templates ?? false}
                 template_suggestions={currentScenarioData?.template_suggestions ?? []}
                 templates={currentScenarioData?.templates ?? []}
+                searchTerm={templateSearch}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, template_ids: ids }))
@@ -2800,6 +2830,12 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={imageSearch}
+              onSearchChange={(term: string) =>
+                setFormData({ imageSearch: term || null })
+              }
+              searchPlaceholder="Search images..."
+              debounceMs={300}
               resetFields={["images"]}
               actions={
                 shouldShowGenerateAction(
@@ -2862,6 +2898,12 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={videoSearch}
+              onSearchChange={(term: string) =>
+                setFormData({ videoSearch: term || null })
+              }
+              searchPlaceholder="Search videos..."
+              debounceMs={300}
               resetFields={["videos"]}
               actions={
                 shouldShowGenerateAction(

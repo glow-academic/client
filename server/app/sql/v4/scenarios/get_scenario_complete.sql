@@ -183,6 +183,11 @@ CREATE OR REPLACE FUNCTION api_get_scenario_v4(
     persona_search text DEFAULT NULL,
     document_search text DEFAULT NULL,
     parameter_search text DEFAULT NULL,
+    description_search text DEFAULT NULL,
+    problem_statement_search text DEFAULT NULL,
+    template_search text DEFAULT NULL,
+    image_search text DEFAULT NULL,
+    video_search text DEFAULT NULL,
     -- Show selected filters
     persona_show_selected boolean DEFAULT NULL,
     document_show_selected boolean DEFAULT NULL,
@@ -364,6 +369,11 @@ WITH params AS (
         COALESCE(NULLIF(persona_search, ''), NULL) AS persona_search,
         COALESCE(NULLIF(document_search, ''), NULL) AS document_search,
         COALESCE(NULLIF(parameter_search, ''), NULL) AS parameter_search,
+        COALESCE(NULLIF(description_search, ''), NULL) AS description_search,
+        COALESCE(NULLIF(problem_statement_search, ''), NULL) AS problem_statement_search,
+        COALESCE(NULLIF(template_search, ''), NULL) AS template_search,
+        COALESCE(NULLIF(image_search, ''), NULL) AS image_search,
+        COALESCE(NULLIF(video_search, ''), NULL) AS video_search,
         -- Show selected filters
         COALESCE(persona_show_selected, false) AS persona_show_selected,
         COALESCE(document_show_selected, false) AS document_show_selected,
@@ -1098,6 +1108,10 @@ description_suggestions_data AS (
                    AND d.description IS NOT NULL
                    AND d.description != ''
                    AND (
+                       (SELECT description_search FROM params LIMIT 1) IS NULL
+                       OR LOWER(d.description) LIKE '%' || LOWER((SELECT description_search FROM params LIMIT 1)) || '%'
+                   )
+                   AND (
                        -- Option 1: Linked to scenarios
                        -- Option 2: OR linked to same group with generated=true
                        sd.generated = false
@@ -1137,6 +1151,11 @@ problem_statement_suggestions_data AS (
                  WHERE sps.problem_statement_id IS NOT NULL
                    AND ps.problem_statement IS NOT NULL
                    AND ps.problem_statement != ''
+                   AND (
+                       (SELECT problem_statement_search FROM params LIMIT 1) IS NULL
+                       OR LOWER(ps.problem_statement) LIKE '%' || LOWER((SELECT problem_statement_search FROM params LIMIT 1)) || '%'
+                       OR LOWER(COALESCE(ps.name, '')) LIKE '%' || LOWER((SELECT problem_statement_search FROM params LIMIT 1)) || '%'
+                   )
                    AND (
                        -- Option 1: Linked to scenarios
                        -- Option 2: OR linked to same group with generated=true
@@ -3830,6 +3849,10 @@ SELECT
                 id_dept.department_id IN (SELECT id FROM user_departments_rows)
                 OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = imd.id AND id2.active = true)
             )
+            AND (
+                (SELECT image_search FROM params LIMIT 1) IS NULL
+                OR LOWER(imd.name) LIKE '%' || LOWER((SELECT image_search FROM params LIMIT 1)) || '%'
+            )
             LIMIT 100
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
@@ -3877,6 +3900,10 @@ SELECT
             WHERE (
                 vd_dept.department_id IN (SELECT id FROM user_departments_rows)
                 OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vmd.id AND vd2.active = true)
+            )
+            AND (
+                (SELECT video_search FROM params LIMIT 1) IS NULL
+                OR LOWER(vmd.name) LIKE '%' || LOWER((SELECT video_search FROM params LIMIT 1)) || '%'
             )
             LIMIT 100
         ), '{}'::types.q_get_scenario_v4_video_resource[])
@@ -3970,7 +3997,13 @@ SELECT
             SELECT ARRAY_AGG(
                 (tmd.id, tmd.name, tmd.description, tmd.generated)::types.q_get_scenario_v4_template_resource
                 ORDER BY tmd.name
-            ) FROM (SELECT DISTINCT id, name, description, generated FROM template_mapping_data) tmd),
+            )
+            FROM (SELECT DISTINCT id, name, description, generated FROM template_mapping_data) tmd
+            WHERE (
+                (SELECT template_search FROM params LIMIT 1) IS NULL
+                OR LOWER(tmd.name) LIKE '%' || LOWER((SELECT template_search FROM params LIMIT 1)) || '%'
+                OR LOWER(COALESCE(tmd.description, '')) LIKE '%' || LOWER((SELECT template_search FROM params LIMIT 1)) || '%'
+            )),
             '{}'::types.q_get_scenario_v4_template_resource[]
         )
         ELSE '{}'::types.q_get_scenario_v4_template_resource[]

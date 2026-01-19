@@ -17256,6 +17256,11 @@ class GetScenarioSqlParams(BaseModel):
     persona_search: str | None = None
     document_search: str | None = None
     parameter_search: str | None = None
+    description_search: str | None = None
+    problem_statement_search: str | None = None
+    template_search: str | None = None
+    image_search: str | None = None
+    video_search: str | None = None
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
@@ -17283,6 +17288,11 @@ class GetScenarioSqlParams(BaseModel):
             self.persona_search,
             self.document_search,
             self.parameter_search,
+            self.description_search,
+            self.problem_statement_search,
+            self.template_search,
+            self.image_search,
+            self.video_search,
             self.persona_show_selected,
             self.document_show_selected,
             self.parameter_show_selected,
@@ -17598,6 +17608,11 @@ class GetScenarioApiRequest(BaseModel):
     persona_search: str | None = None
     document_search: str | None = None
     parameter_search: str | None = None
+    description_search: str | None = None
+    problem_statement_search: str | None = None
+    template_search: str | None = None
+    image_search: str | None = None
+    video_search: str | None = None
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None

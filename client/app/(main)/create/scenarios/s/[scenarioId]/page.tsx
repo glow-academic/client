@@ -137,6 +137,14 @@ const getScenario = async (
       body.document_search = filterParams.documentSearch;
     if (filterParams.parameterSearch)
       body.parameter_search = filterParams.parameterSearch;
+    if (filterParams.descriptionSearch)
+      body.description_search = filterParams.descriptionSearch;
+    if (filterParams.problemStatementSearch)
+      body.problem_statement_search = filterParams.problemStatementSearch;
+    if (filterParams.templateSearch)
+      body.template_search = filterParams.templateSearch;
+    if (filterParams.imageSearch) body.image_search = filterParams.imageSearch;
+    if (filterParams.videoSearch) body.video_search = filterParams.videoSearch;
     if (filterParams.documentShowSelected !== undefined)
       body.document_show_selected = filterParams.documentShowSelected;
     // Note: document_show_template, persona_min, persona_max, document_min, document_max,
@@ -299,6 +307,11 @@ export default async function EditScenarioPage({
       personaSearch?: string;
       documentSearch?: string;
       parameterSearch?: string;
+      descriptionSearch?: string;
+      problemStatementSearch?: string;
+      templateSearch?: string;
+      imageSearch?: string;
+      videoSearch?: string;
       documentShowSelected?: boolean;
       documentShowTemplate?: boolean;
       personaShowSelected?: boolean;
@@ -335,6 +348,12 @@ export default async function EditScenarioPage({
     if (q.personaSearch) filterParams.personaSearch = q.personaSearch;
     if (q.documentSearch) filterParams.documentSearch = q.documentSearch;
     if (q.parameterSearch) filterParams.parameterSearch = q.parameterSearch;
+    if (q.descriptionSearch) filterParams.descriptionSearch = q.descriptionSearch;
+    if (q.problemStatementSearch)
+      filterParams.problemStatementSearch = q.problemStatementSearch;
+    if (q.templateSearch) filterParams.templateSearch = q.templateSearch;
+    if (q.imageSearch) filterParams.imageSearch = q.imageSearch;
+    if (q.videoSearch) filterParams.videoSearch = q.videoSearch;
     if (q.documentShowSelected !== undefined && q.documentShowSelected !== null)
       filterParams.documentShowSelected = q.documentShowSelected;
     if (q.documentShowTemplate !== undefined && q.documentShowTemplate !== null)

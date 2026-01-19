@@ -33,6 +33,11 @@ export const scenarioSearchParams = {
   personaSearch: parseAsString,
   documentSearch: parseAsString,
   parameterSearch: parseAsString,
+  descriptionSearch: parseAsString,
+  problemStatementSearch: parseAsString,
+  templateSearch: parseAsString,
+  imageSearch: parseAsString,
+  videoSearch: parseAsString,
 
   // Filter toggles
   documentShowSelected: parseAsBoolean,
