@@ -1,13 +1,13 @@
 /**
  * StandardGroups.tsx
  * Resource component for standard group selection
- * Uses GenericPicker to select existing standard group resources
+ * Uses SelectableGrid to select existing standard group resources
  * Manages standard_group_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -73,8 +73,9 @@ export interface StandardGroupsProps {
   label?: string;
   id?: string;
   required?: boolean;
-  placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  showSelectedFilter?: boolean;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createStandardGroupsAction?:
@@ -99,8 +100,9 @@ export function StandardGroups({
   label = "Standard Groups",
   id = "standard_groups",
   required = false,
-  placeholder = "Select standard groups...",
   description,
+  searchTerm = "",
+  showSelectedFilter = false,
   group_id,
   agent_id,
   createStandardGroupsAction,
@@ -132,14 +134,14 @@ export function StandardGroups({
     ids.forEach((id) => createdStandardGroupIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert standard_groups array to StandardGroupItem format for GenericPicker
+  // Convert standard_groups array to StandardGroupItem format for SelectableGrid
   const standardGroupItems = useMemo(() => {
     return allStandardGroups
       .filter((sg) => sg.standard_group_id && sg.name) // Filter out nulls
       .map((sg) => ({
         id: sg.standard_group_id!,
         name: sg.name!,
-        ...(sg.description ? { description: sg.description } : {}), // Only include if not null/undefined
+        ...(sg.description ? { description: sg.description } : {}),
         ...(sg.points !== null && sg.points !== undefined
           ? { points: sg.points }
           : {}),
@@ -221,6 +223,42 @@ export function StandardGroups({
     ]
   );
 
+  const handleToggleSelect = useCallback(
+    (standardGroupId: string) => {
+      const isSelected = ids.includes(standardGroupId);
+      const nextIds = isSelected
+        ? ids.filter((id) => id !== standardGroupId)
+        : [...ids, standardGroupId];
+      handleSelect(nextIds);
+    },
+    [ids, handleSelect]
+  );
+
+  const filteredStandardGroups = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return standardGroupItems;
+    }
+    const term = searchTerm.toLowerCase();
+    return standardGroupItems.filter((group) => {
+      const points = group.points !== undefined ? String(group.points) : "";
+      const passPoints =
+        group.pass_points !== undefined ? String(group.pass_points) : "";
+      return (
+        group.name.toLowerCase().includes(term) ||
+        group.description?.toLowerCase().includes(term) ||
+        points.toLowerCase().includes(term) ||
+        passPoints.toLowerCase().includes(term)
+      );
+    });
+  }, [standardGroupItems, searchTerm]);
+
+  const displayStandardGroups = useMemo(() => {
+    if (!showSelectedFilter) {
+      return filteredStandardGroups;
+    }
+    return filteredStandardGroups.filter((group) => ids.includes(group.id));
+  }, [filteredStandardGroups, showSelectedFilter, ids]);
+
   // Check if any standard group resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
     return standard_group_resources?.some((sg) => sg.generated) ?? false;
@@ -271,54 +309,52 @@ export function StandardGroups({
           )}
         </div>
       )}
-      <GenericPicker<StandardGroupItem>
-        items={standardGroupItems}
-        itemIds={allStandardGroups
-          .map((sg) => sg.standard_group_id)
-          .filter((id): id is string => id !== null)} // All standard group IDs from array, filter nulls
+      <SelectableGrid<StandardGroupItem>
+        items={displayStandardGroups}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
+        onSelect={handleToggleSelect}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                )}
-                {(item.points !== undefined ||
-                  item.pass_points !== undefined) && (
-                  <div className="text-xs text-muted-foreground">
-                    {item.points !== undefined && `Points: ${item.points}`}
-                    {item.pass_points !== undefined &&
-                      ` | Pass: ${item.pass_points}`}
-                  </div>
-                )}
+          <div
+            className={cn(
+              "relative flex flex-col gap-2 rounded-xl border bg-card p-4 text-left shadow-sm transition-all",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+            )}
+            {!isSelected && isSuggested(item.id) && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">{item.name}</div>
+              {item.description && (
+                <div className="text-xs text-muted-foreground truncate">
+                  {item.description}
+                </div>
               )}
-            />
+              {(item.points !== undefined ||
+                item.pass_points !== undefined) && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  {item.points !== undefined && `Points: ${item.points}`}
+                  {item.pass_points !== undefined &&
+                    ` | Pass: ${item.pass_points}`}
+                </div>
+              )}
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No standard groups found. Try adjusting your search."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
+        className={displayStandardGroups.length === 0 ? "py-6" : undefined}
       />
     </div>
   );

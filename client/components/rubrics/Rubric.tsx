@@ -24,13 +24,12 @@ import { Points } from "@/components/resources/Points";
 import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
-import { parseAsString, type Parser } from "nuqs";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
@@ -149,6 +148,9 @@ function RubricComponent({
       draftId: parseAsString,
       descriptionSearch: parseAsString,
       standardGroupSearch: parseAsString,
+      pointsSearch: parseAsString,
+      pointsShowSelected: parseAsBoolean,
+      standardGroupShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -1023,6 +1025,12 @@ function RubricComponent({
         (stepFormData["descriptionSearch"] as string | null) ?? "";
       const standardGroupSearch =
         (stepFormData["standardGroupSearch"] as string | null) ?? "";
+      const pointsSearch =
+        (stepFormData["pointsSearch"] as string | null) ?? "";
+      const pointsShowSelected =
+        (stepFormData["pointsShowSelected"] as boolean | null) ?? false;
+      const standardGroupShowSelected =
+        (stepFormData["standardGroupShowSelected"] as boolean | null) ?? false;
       switch (stepId) {
         case "basic":
           return (
@@ -1033,13 +1041,6 @@ function RubricComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={descriptionSearch}
-              onSearchChange={(term) =>
-                setStepFormData({
-                  descriptionSearch: term || null,
-                })
-              }
-              searchPlaceholder="Search descriptions..."
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
@@ -1094,6 +1095,12 @@ function RubricComponent({
                   group_id={currentRubricData?.group_id ?? null}
                   agent_id={currentRubricData?.description_agent_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
+                  searchTerm={descriptionSearch}
+                  onSearchChange={(term) =>
+                    setStepFormData({
+                      descriptionSearch: term || null,
+                    })
+                  }
                 />
 
                 <Departments
@@ -1157,24 +1164,40 @@ function RubricComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={pointsSearch}
+              onSearchChange={(term) =>
+                setStepFormData({
+                  pointsSearch: term || null,
+                })
+              }
+              searchPlaceholder="Search points..."
+              filters={[
+                {
+                  key: "pointsShowSelected",
+                  label: "Show selected only",
+                  value: pointsShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({ pointsShowSelected: value || null }),
+                },
+              ]}
+              actions={
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Total Points
+                  </span>
+                  <Input
+                    value={String(totalPointsValue)}
+                    readOnly
+                    disabled
+                    className="h-8 w-20 text-right"
+                  />
+                </div>
+              }
               resetFields={["pass_points"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rubric-total-points">Total Points</Label>
-                  <Input
-                    id="rubric-total-points"
-                    value={String(totalPointsValue)}
-                    readOnly
-                    disabled
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Calculated from standard group points.
-                  </p>
-                </div>
-
                 <Points
                   points_id={formState.pass_points_id ?? null}
                   points_resource={
@@ -1199,6 +1222,8 @@ function RubricComponent({
                   group_id={currentRubricData?.group_id ?? null}
                   agent_id={currentRubricData?.pass_points_agent_id ?? null}
                   createPointsAction={createPointsAction}
+                  searchTerm={pointsSearch}
+                  showSelectedFilter={pointsShowSelected}
                 />
               </div>
             </StepCard>
@@ -1221,6 +1246,17 @@ function RubricComponent({
                 })
               }
               searchPlaceholder="Search standard groups..."
+              filters={[
+                {
+                  key: "standardGroupShowSelected",
+                  label: "Show selected only",
+                  value: standardGroupShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      standardGroupShowSelected: value || null,
+                    }),
+                },
+              ]}
               resetFields={["standard_group_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1250,6 +1286,8 @@ function RubricComponent({
                 group_id={currentRubricData?.group_id ?? null}
                 agent_id={currentRubricData?.standard_groups_agent_id ?? null}
                 createStandardGroupsAction={createStandardGroupsAction}
+                searchTerm={standardGroupSearch}
+                showSelectedFilter={standardGroupShowSelected}
               />
             </StepCard>
           );
