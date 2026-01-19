@@ -460,7 +460,7 @@ async def _generate_artifact_impl(
                 artifact_type = data.get("artifact_type")
                 
                 assistant_message_id: uuid.UUID | None = None
-                if modality in ("text", "call", "document"):
+                if modality in ("text", "call", "document", "audio"):
                     try:
                         sql = load_sql(SQL_PATH_CREATE_ASSISTANT_MESSAGE)
                         row = await conn.fetchrow(sql, uuid.UUID(run_id))
@@ -522,6 +522,7 @@ async def _generate_artifact_impl(
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
                         resource_type=resource_type,
                         artifact_type=artifact_type,
+                        assistant_message_id=assistant_message_id,
                         eval_mode=eval_mode,
                     )
                 else:
@@ -1650,6 +1651,7 @@ async def _handle_audio_generation(
     agent_id: uuid.UUID | None,
     resource_type: str,
     artifact_type: str | None,
+    assistant_message_id: uuid.UUID | None = None,
     eval_mode: bool = False,
 ) -> None:
     """Handle audio generation using queue-based architecture with OpenAI Realtime WebSocket."""
@@ -1701,6 +1703,9 @@ async def _handle_audio_generation(
         await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params_audio),
     )
     group_id_from_run = str(group_result_audio.group_id) if group_result_audio and group_result_audio.group_id else None
+    assistant_message_id_str = (
+        str(assistant_message_id) if assistant_message_id else None
+    )
     
     # Get chat_id from resource_id if available (for voice mode)
     chat_id: str | None = None
@@ -1716,6 +1721,7 @@ async def _handle_audio_generation(
     session.oa_ws_connection = None  # Will be set when WS connects
     session.chat_id = chat_id
     session.group_id = str(group_id_from_run) if group_id_from_run else None
+    session.assistant_message_id = assistant_message_id_str
 
     url = f"wss://api.openai.com/v1/realtime?model={quote(model_name)}"
     headers = {
@@ -1739,6 +1745,7 @@ async def _handle_audio_generation(
                     "group_id": str(group_id_from_run) if group_id_from_run else None,
                     "type": "session_started",
                     "model": model_name,
+                    "message_id": assistant_message_id_str,
                     "eval_mode": eval_mode,
                 },
             )
@@ -1828,6 +1835,7 @@ async def _handle_audio_generation(
                                         "resource_type": resource_type,
                                         "run_id": str(run_id),
                                         "type": "session_created",
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1848,6 +1856,7 @@ async def _handle_audio_generation(
                                         "type": "user_speech_started",
                                         "item_id": event.get("item_id"),
                                         "audio_start_ms": event.get("audio_start_ms", 0),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1872,6 +1881,7 @@ async def _handle_audio_generation(
                                         "run_id": str(run_id),
                                         "type": "user_speech_stopped",
                                         "item_id": item_id,
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1931,6 +1941,7 @@ async def _handle_audio_generation(
                                         "type": "user_transcription_complete",
                                         "item_id": item_id,
                                         "transcript": transcript,
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1947,6 +1958,7 @@ async def _handle_audio_generation(
                                         "run_id": str(run_id),
                                         "type": "response_started",
                                         "response_id": event.get("response_id"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1964,6 +1976,7 @@ async def _handle_audio_generation(
                                         "type": "output_item_added",
                                         "item_id": event.get("item_id"),
                                         "output_type": event.get("output_type"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1980,6 +1993,7 @@ async def _handle_audio_generation(
                                         "run_id": str(run_id),
                                         "type": "output_item_done",
                                         "item_id": event.get("item_id"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -1996,6 +2010,7 @@ async def _handle_audio_generation(
                                         "run_id": str(run_id),
                                         "type": "audio_transcript_delta",
                                         "delta": event.get("delta"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -2012,6 +2027,7 @@ async def _handle_audio_generation(
                                         "run_id": str(run_id),
                                         "type": "audio_transcript_done",
                                         "transcript": event.get("transcript"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -2042,6 +2058,7 @@ async def _handle_audio_generation(
                                             "run_id": str(run_id),
                                             "type": "audio_delta",
                                             "audio": audio_delta,  # Base64 encoded audio
+                                            "message_id": assistant_message_id_str,
                                             "eval_mode": eval_mode,
                                         },
                                     )
@@ -2059,6 +2076,7 @@ async def _handle_audio_generation(
                                         "type": "tool_call_progress",
                                         "call_id": event.get("call_id"),
                                         "arguments_delta": event.get("delta"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -2076,6 +2094,7 @@ async def _handle_audio_generation(
                                         "type": "tool_call_complete",
                                         "call_id": event.get("call_id"),
                                         "function_call": event.get("function_call"),
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )
@@ -2099,6 +2118,7 @@ async def _handle_audio_generation(
                                         "resource_type": resource_type,
                                         "run_id": str(run_id),
                                         "type": "run_complete",
+                                        "message_id": assistant_message_id_str,
                                         "eval_mode": eval_mode,
                                     },
                                 )

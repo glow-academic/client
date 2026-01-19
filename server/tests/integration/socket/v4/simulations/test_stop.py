@@ -33,7 +33,7 @@ async def test_simulation_text_stop_success(
 
     # Assert - verify stop event was emitted or handler completed
     # The handler cancels active runs, which may or may not exist
-    stopped_events = mock_sio.get_events("simulations_text_stopped")
+    stopped_events = mock_sio.get_events("simulation_text_stopped")
     # May emit stopped event or error if no active run
     assert len(stopped_events) >= 0
 
@@ -50,6 +50,6 @@ async def test_simulation_text_stop_missing_chat_id(
     await simulation_text_stop(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_text_stop_error")
+    error_events = mock_sio.get_events("simulation_text_stop_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False

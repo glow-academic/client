@@ -84,5 +84,5 @@ async def test_simulation_leave_missing_chat_id(
     await simulation_leave(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_leave_error")
+    error_events = mock_sio.get_events("simulation_leave_error")
     assert len(error_events) >= 1

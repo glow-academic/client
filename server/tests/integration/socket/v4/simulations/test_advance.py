@@ -46,7 +46,7 @@ async def test_simulation_advance_success(
     await simulation_advance(sid, data)
 
     # Assert - verify event was emitted
-    advanced_events = mock_sio.get_events("simulations_advanced")
+    advanced_events = mock_sio.get_events("simulation_advanced")
     # May or may not emit depending on implementation
     assert len(advanced_events) >= 0
 
@@ -80,5 +80,5 @@ async def test_simulation_advance_missing_scenario_id(
     await simulation_advance(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_advance_error")
+    error_events = mock_sio.get_events("simulation_advance_error")
     assert len(error_events) >= 1

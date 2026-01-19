@@ -46,7 +46,7 @@ async def test_simulation_next_success(
     await simulation_next(sid, data)
 
     # Assert - verify handler completes (may emit error if scenario generation fails)
-    error_events = mock_sio.get_events("simulations_next_error")
+    error_events = mock_sio.get_events("simulation_next_error")
     # Handler may emit error if scenario generation fails
     assert len(error_events) >= 0
 
@@ -72,5 +72,5 @@ async def test_simulation_next_missing_attempt_id(
     await simulation_next(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_next_error")
+    error_events = mock_sio.get_events("simulation_next_error")
     assert len(error_events) >= 1

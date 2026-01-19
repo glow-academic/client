@@ -71,7 +71,7 @@ async def test_simulation_text_end_success(
     assert chat_result["completed"] is True
 
     # Verify event was emitted
-    events = mock_sio.get_events("simulations_text_ended")
+    events = mock_sio.get_events("simulation_text_ended")
     assert len(events) >= 0  # May or may not emit depending on implementation
 
 
@@ -91,6 +91,6 @@ async def test_simulation_text_end_missing_chat_id(
     await simulation_text_end(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_text_end_error")
+    error_events = mock_sio.get_events("simulation_text_end_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False

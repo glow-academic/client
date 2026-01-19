@@ -15,14 +15,14 @@ type ClientToServerPath = Extract<SocketPath, `/socket/v4/client/${string}`>;
 // Extract server-to-client paths
 type ServerToClientPath = Extract<SocketPath, `/socket/v4/server/${string}`>;
 
-// Helper to collapse slashes to underscores: "simulations/text/start" → "simulations_text_start"
+// Helper to collapse slashes to underscores: "simulation/text/start" → "simulation_text_start"
 type CollapseSlashes<S extends string> = S extends `${infer A}/${infer B}`
   ? `${A}_${CollapseSlashes<B>}`
   : S;
 
 // Extract event name from path by removing prefix and collapsing slashes
-// "/socket/v4/client/simulations/text/start" → "simulations_text_start"
-// "/socket/v4/server/simulations/text/started" → "simulations_text_started"
+// "/socket/v4/client/simulation/text/start" → "simulation_text_start"
+// "/socket/v4/server/simulation/text/started" → "simulation_text_started"
 type EventName<P extends SocketPath> = P extends `/socket/v4/client/${infer E}`
   ? CollapseSlashes<E>
   : P extends `/socket/v4/server/${infer E}`

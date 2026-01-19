@@ -84,25 +84,25 @@ class EndSimulationPayload(BaseModel):
 async def simulation_text_end_error(
     payload: EndSimulationErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulations_text_end_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_text_end_error", payload.model_dump(), room=room)
 
 
 async def end_all_started(payload: EndAllStartedPayload, room: str) -> None:
-    await sio.emit("simulations_text_end_all_started", payload.model_dump(), room=room)
+    await sio.emit("simulation_text_end_all_started", payload.model_dump(), room=room)
 
 
 async def end_chat_started(payload: EndChatStartedPayload, room: str) -> None:
-    await sio.emit("simulations_text_end_chat_started", payload.model_dump(), room=room)
+    await sio.emit("simulation_text_end_chat_started", payload.model_dump(), room=room)
 
 
 async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
     await sio.emit(
-        "simulations_text_end_all_completed", payload.model_dump(), room=room
+        "simulation_text_end_all_completed", payload.model_dump(), room=room
     )
 
 
 async def simulation_ended(payload: SimulationEndedPayload, room: str) -> None:
-    await sio.emit("simulations_text_ended", payload.model_dump(), room=room)
+    await sio.emit("simulation_text_ended", payload.model_dump(), room=room)
 
 
 async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:

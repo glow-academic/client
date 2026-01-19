@@ -46,7 +46,7 @@ async def test_simulation_enter_success(
     assert chat_row["created_at"] is not None
 
     # Verify event was emitted
-    events = mock_sio.get_events("simulations_enter_response")
+    events = mock_sio.get_events("simulation_enter_response")
     assert len(events) == 1
     assert events[0]["success"] is True
     assert events[0]["chat_id"] == str(chat_id)
@@ -66,7 +66,7 @@ async def test_simulation_enter_missing_chat_id(
     await simulation_enter(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_enter_error")
+    error_events = mock_sio.get_events("simulation_enter_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
 
@@ -93,6 +93,6 @@ async def test_simulation_enter_invalid_created_at(
     await simulation_enter(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_enter_error")
+    error_events = mock_sio.get_events("simulation_enter_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False

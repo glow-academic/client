@@ -63,11 +63,11 @@ class StartSimulationPayload(BaseModel):
 async def simulation_start_error(
     payload: StartSimulationErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulations_start_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_start_error", payload.model_dump(), room=room)
 
 
 async def simulation_started(payload: SimulationStartedPayload, room: str) -> None:
-    await sio.emit("simulations_started", payload.model_dump(), room=room)
+    await sio.emit("simulation_started", payload.model_dump(), room=room)
 
 
 # Chat creation helpers (moved from simulation_text/start.py)

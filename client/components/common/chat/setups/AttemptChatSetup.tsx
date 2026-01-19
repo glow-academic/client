@@ -656,7 +656,7 @@ export function AttemptChatSetup({
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
         socket.off("simulation_voice_start_response", handleStartResponse);
-        socket.off("simulations_voice_start_error", handleStartError);
+        socket.off("simulation_voice_start_error", handleStartError);
       };
 
       const timeout = setTimeout(() => {
@@ -681,7 +681,7 @@ export function AttemptChatSetup({
       };
 
       socket.once("simulation_voice_start_response", handleStartResponse);
-      socket.once("simulations_voice_start_error", handleStartError);
+      socket.once("simulation_voice_start_error", handleStartError);
     });
   }, [currentChat?.id, isConnected, socket]);
 
@@ -694,8 +694,8 @@ export function AttemptChatSetup({
 
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
-        socket.off("simulations_voice_stop_response", handleStopResponse);
-        socket.off("simulations_voice_stop_error", handleStopError);
+        socket.off("simulation_voice_stop_response", handleStopResponse);
+        socket.off("simulation_voice_stop_error", handleStopError);
       };
 
       const timeout = setTimeout(() => {
@@ -719,8 +719,8 @@ export function AttemptChatSetup({
         reject(new Error(data.message || "Failed to stop voice session"));
       };
 
-      socket.once("simulations_voice_stop_response", handleStopResponse);
-      socket.once("simulations_voice_stop_error", handleStopError);
+      socket.once("simulation_voice_stop_response", handleStopResponse);
+      socket.once("simulation_voice_stop_error", handleStopError);
     });
   }, [currentChat?.id, isConnected, socket]);
 
@@ -968,6 +968,7 @@ export function AttemptChatSetup({
 
     const handleAssistantAudioDelta = (data: {
       chat_id: string;
+      message_id?: string | null;
       audio: ArrayBuffer | string;
     }) => {
       if (data.chat_id !== currentChatIdRef.current) return;
@@ -1490,34 +1491,34 @@ export function AttemptChatSetup({
       toast.error(data.message || "Failed to submit quiz response");
     };
 
-    socket.on("simulations_text_message_token", handleSimulationMessageToken);
+    socket.on("simulation_text_message_token", handleSimulationMessageToken);
     socket.on(
-      "simulations_text_message_complete",
+      "simulation_text_message_complete",
       handleSimulationMessageComplete
     );
-    socket.on("simulations_text_new_message", handleSimulationNewMessage);
+    socket.on("simulation_text_new_message", handleSimulationNewMessage);
     socket.on("simulation_voice_user_start", handleVoiceSpeechStarted);
     socket.on("simulation_voice_user_complete", handleVoiceTranscriptComplete);
     socket.on("simulation_voice_assistant_delta", handleAssistantAudioDelta);
-    socket.on("simulations_text_message_sent", handleMessageSent);
-    socket.on("simulations_text_run_complete", handleSimulationRunComplete);
+    socket.on("simulation_text_message_sent", handleMessageSent);
+    socket.on("simulation_text_run_complete", handleSimulationRunComplete);
     socket.on(
-      "simulations_text_message_cancelled",
+      "simulation_text_message_cancelled",
       handleSimulationMessageCancelled
     );
-    socket.on("simulations_text_message_error", handleSimulationMessageError);
-    socket.on("simulations_text_stopped", handleSimulationStopped);
-    socket.on("simulations_text_ended", handleSimulationContinued);
-    socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
+    socket.on("simulation_text_message_error", handleSimulationMessageError);
+    socket.on("simulation_text_stopped", handleSimulationStopped);
+    socket.on("simulation_text_ended", handleSimulationContinued);
+    socket.on("simulation_text_end_all_completed", handleEndAllCompleted);
     socket.on("member_progress_error", handleMemberProgressError);
-    socket.on("simulations_text_stop_error", handleStopSimulationError);
-    socket.on("simulations_text_end_error", handleContinueSimulationError);
+    socket.on("simulation_text_stop_error", handleStopSimulationError);
+    socket.on("simulation_text_end_error", handleContinueSimulationError);
     socket.on(
-      "simulations_text_grading_progress",
+      "simulation_text_grading_progress",
       handleSimulationGradingProgress
     );
     socket.on(
-      "simulations_text_hint_generation_progress",
+      "simulation_text_hint_generation_progress",
       handleHintGenerationProgress
     );
     socket.on("quiz_complete_response", handleQuizCompleteResponse);
@@ -1527,41 +1528,41 @@ export function AttemptChatSetup({
       handleQuizSubmitResponseResponse
     );
     socket.on("quiz_submit_response_error", handleQuizSubmitResponseError);
-    socket.on("simulations_error", (data: { success: boolean; message: string }) => {
+    socket.on("simulation_error", (data: { success: boolean; message: string }) => {
       toast.error(data.message);
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
     });
 
     return () => {
-      socket.off("simulations_text_message_token", handleSimulationMessageToken);
+      socket.off("simulation_text_message_token", handleSimulationMessageToken);
       socket.off(
-        "simulations_text_message_complete",
+        "simulation_text_message_complete",
         handleSimulationMessageComplete
       );
-      socket.off("simulations_text_new_message", handleSimulationNewMessage);
+      socket.off("simulation_text_new_message", handleSimulationNewMessage);
       socket.off("simulation_voice_user_start", handleVoiceSpeechStarted);
       socket.off("simulation_voice_user_complete", handleVoiceTranscriptComplete);
       socket.off("simulation_voice_assistant_delta", handleAssistantAudioDelta);
-      socket.off("simulations_text_message_sent", handleMessageSent);
-      socket.off("simulations_text_run_complete", handleSimulationRunComplete);
+      socket.off("simulation_text_message_sent", handleMessageSent);
+      socket.off("simulation_text_run_complete", handleSimulationRunComplete);
       socket.off(
-        "simulations_text_message_cancelled",
+        "simulation_text_message_cancelled",
         handleSimulationMessageCancelled
       );
-      socket.off("simulations_text_message_error", handleSimulationMessageError);
-      socket.off("simulations_text_stopped", handleSimulationStopped);
-      socket.off("simulations_text_ended", handleSimulationContinued);
-      socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
+      socket.off("simulation_text_message_error", handleSimulationMessageError);
+      socket.off("simulation_text_stopped", handleSimulationStopped);
+      socket.off("simulation_text_ended", handleSimulationContinued);
+      socket.off("simulation_text_end_all_completed", handleEndAllCompleted);
       socket.off("member_progress_error", handleMemberProgressError);
-      socket.off("simulations_text_stop_error", handleStopSimulationError);
-      socket.off("simulations_text_end_error", handleContinueSimulationError);
+      socket.off("simulation_text_stop_error", handleStopSimulationError);
+      socket.off("simulation_text_end_error", handleContinueSimulationError);
       socket.off(
-        "simulations_text_grading_progress",
+        "simulation_text_grading_progress",
         handleSimulationGradingProgress
       );
       socket.off(
-        "simulations_text_hint_generation_progress",
+        "simulation_text_hint_generation_progress",
         handleHintGenerationProgress
       );
       socket.off("quiz_complete_response", handleQuizCompleteResponse);

@@ -38,7 +38,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
     if modality in ("text", "call", "document") and resource_type == "simulation":
         if event_type == "text_start" and message_id:
             await sio.emit(
-                "simulations_text_new_message",
+                "simulation_text_new_message",
                 {
                     "message_id": message_id,
                     "chat_id": chat_id,
@@ -51,7 +51,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
             )
         elif event_type == "text_delta" and message_id:
             await sio.emit(
-                "simulations_text_message_token",
+                "simulation_text_message_token",
                 {
                     "message_id": message_id,
                     "chat_id": chat_id,
@@ -62,7 +62,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
             )
         elif event_type == "text_complete" and message_id:
             await sio.emit(
-                "simulations_text_message_complete",
+                "simulation_text_message_complete",
                 {
                     "message_id": message_id,
                     "chat_id": chat_id,
@@ -104,6 +104,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
             "simulation_voice_assistant_delta",
             {
                 "chat_id": chat_id,
+                "message_id": message_id,
                 "audio": data.get("audio"),  # Base64 encoded audio
             },
             room=sid,
@@ -114,6 +115,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
             {
                 "chat_id": chat_id,
                 "response_id": data.get("response_id"),
+                "message_id": message_id,
             },
             room=sid,
         )
@@ -123,6 +125,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
             {
                 "chat_id": chat_id,
                 "response_id": data.get("response_id"),
+                "message_id": message_id,
             },
             room=sid,
         )
@@ -133,6 +136,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
                 "chat_id": chat_id,
                 "call_id": data.get("call_id"),
                 "arguments_delta": data.get("arguments_delta"),
+                "message_id": message_id,
             },
             room=sid,
         )
@@ -143,6 +147,7 @@ async def handle_simulations_progress(data: dict[str, Any]) -> None:
                 "chat_id": chat_id,
                 "call_id": data.get("call_id"),
                 "function_call": data.get("function_call"),
+                "message_id": message_id,
             },
             room=sid,
         )

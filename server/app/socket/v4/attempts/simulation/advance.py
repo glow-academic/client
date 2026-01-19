@@ -47,13 +47,13 @@ class SimulationAdvancePayload(BaseModel):
 
 # Emit helper functions
 async def simulation_advanced(payload: SimulationAdvancedPayload, room: str) -> None:
-    await sio.emit("simulations_advanced", payload.model_dump(), room=room)
+    await sio.emit("simulation_advanced", payload.model_dump(), room=room)
 
 
 async def simulation_advance_error(
     payload: SimulationAdvanceErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulations_advance_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_advance_error", payload.model_dump(), room=room)
 
 
 async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> None:

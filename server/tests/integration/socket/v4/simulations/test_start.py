@@ -35,7 +35,7 @@ async def test_start_simulation_success(
     await simulation_start(sid, data)
 
     # Verify events were emitted
-    started_events = mock_sio.get_events("simulations_started")
+    started_events = mock_sio.get_events("simulation_started")
     assert len(started_events) == 1
     assert started_events[0]["success"] is True
     assert "attempt_id" in started_events[0]
@@ -69,11 +69,11 @@ async def test_start_simulation_missing_simulation_id(
     await simulation_start(sid, data)
 
     # Verify error was emitted
-    error_events = mock_sio.get_events("simulations_start_error")
+    error_events = mock_sio.get_events("simulation_start_error")
     assert len(error_events) >= 1
 
     # Verify no attempt was created
-    started_events = mock_sio.get_events("simulations_started")
+    started_events = mock_sio.get_events("simulation_started")
     assert len(started_events) == 0
 
 
@@ -97,5 +97,5 @@ async def test_start_simulation_missing_profile(
     await simulation_start(sid, data)
 
     # Verify error was emitted
-    error_events = mock_sio.get_events("simulations_start_error")
+    error_events = mock_sio.get_events("simulation_start_error")
     assert len(error_events) >= 1

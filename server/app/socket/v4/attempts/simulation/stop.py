@@ -75,31 +75,31 @@ class StopVoiceResponsePayload(BaseModel):
 async def simulation_text_stop_error(
     payload: StopSimulationErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulations_text_stop_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_text_stop_error", payload.model_dump(), room=room)
 
 
 async def simulation_message_cancelled(
     payload: SimulationMessageCancelledPayload, room: str
 ) -> None:
     await sio.emit(
-        "simulations_text_message_cancelled", payload.model_dump(), room=room
+        "simulation_text_message_cancelled", payload.model_dump(), room=room
     )
 
 
 async def simulation_stopped(payload: SimulationStoppedPayload, room: str) -> None:
-    await sio.emit("simulations_text_stopped", payload.model_dump(), room=room)
+    await sio.emit("simulation_text_stopped", payload.model_dump(), room=room)
 
 
 async def simulation_voice_stop_error(
     payload: StopVoiceErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulations_voice_stop_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_voice_stop_error", payload.model_dump(), room=room)
 
 
 async def simulation_voice_stop_response(
     payload: StopVoiceResponsePayload, room: str
 ) -> None:
-    await sio.emit("simulations_voice_stop_response", payload.model_dump(), room=room)
+    await sio.emit("simulation_voice_stop_response", payload.model_dump(), room=room)
 
 
 async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> None:

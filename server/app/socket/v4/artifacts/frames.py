@@ -87,6 +87,7 @@ async def _client_ws_sender_task(sid: str, run_id: str) -> None:
                             "simulation_voice_assistant_delta",
                             {
                                 "chat_id": session.chat_id,
+                                "message_id": session.assistant_message_id,
                                 "audio": pcm16_data,  # Binary PCM16 data
                             },
                             room=sid,

@@ -21,6 +21,7 @@ class AudioSession:
         self.response_id_to_upload_id: dict[str, str] = {}  # response_id -> upload_id mapping
         self.chat_id: str | None = None
         self.group_id: str | None = None
+        self.assistant_message_id: str | None = None
 
 
 def get_session(session_key: str) -> AudioSession | None:

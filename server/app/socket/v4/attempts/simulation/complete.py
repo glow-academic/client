@@ -37,7 +37,7 @@ async def handle_simulations_complete(data: dict[str, Any]) -> None:
 
     if modality in ("text", "call", "document") and resource_type == "simulation":
         await sio.emit(
-            "simulations_text_run_complete",
+            "simulation_text_run_complete",
             {
                 "chat_id": chat_id,
                 "run_id": run_id,
@@ -60,6 +60,7 @@ async def handle_simulations_complete(data: dict[str, Any]) -> None:
             "run_id": run_id,
             "type": completion_type,
             "success": True,
+            "message_id": message_id,
         },
         room=sid,
     )

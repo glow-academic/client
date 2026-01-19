@@ -162,7 +162,7 @@ async def _member_progress_impl(
 
             # Emit message_sent event for tour progression and cross-component communication
             await sio.emit(
-                "simulations_text_message_sent",
+                "simulation_text_message_sent",
                 MessageSentPayload(
                     message_id=message_id,
                     chat_id=str(chat_id_uuid),
@@ -172,7 +172,7 @@ async def _member_progress_impl(
                 room=f"simulation_{chat_id_uuid}",
             )
             await sio.emit(
-                "simulations_text_new_message",
+                "simulation_text_new_message",
                 {
                     "message_id": message_id,
                     "chat_id": str(chat_id_uuid),

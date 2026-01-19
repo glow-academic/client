@@ -43,13 +43,13 @@ class SimulationEnterPayload(BaseModel):
 async def simulation_enter_response(
     payload: SimulationEnterResponsePayload, room: str
 ) -> None:
-    await sio.emit("simulations_enter_response", payload.model_dump(), room=room)
+    await sio.emit("simulation_enter_response", payload.model_dump(), room=room)
 
 
 async def simulation_enter_error(
     payload: SimulationEnterErrorPayload, room: str
 ) -> None:
-    await sio.emit("simulations_enter_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_enter_error", payload.model_dump(), room=room)
 
 
 async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None:

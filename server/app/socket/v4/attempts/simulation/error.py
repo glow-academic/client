@@ -35,13 +35,13 @@ async def _simulation_error_impl(
 ) -> None:
     """Internal implementation - emits to client."""
     await emit_to_client(
-        "simulations_error",
+        "simulation_error",
         data,
         room=sid,
     )
     if data.group_id:
         await emit_to_client(
-            "simulations_text_message_error",
+            "simulation_text_message_error",
             {
                 "chat_id": data.group_id,
                 "error": data.message,
@@ -59,14 +59,14 @@ async def simulation_error_internal(
         data=data,
         request_type=SimulationErrorPayload,
         handler=_simulation_error_impl,  # type: ignore[arg-type]
-        error_event_name="simulations_error",
+        error_event_name="simulation_error",
         error_response_type=SimulationErrorPayload,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/simulation_error",
+    "/error",
     SimulationErrorPayload,
     "Error occurred in simulation operation",
 )

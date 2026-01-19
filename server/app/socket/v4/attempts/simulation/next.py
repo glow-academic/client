@@ -37,7 +37,7 @@ class SimulationNextPayload(BaseModel):
 
 # Emit helper functions
 async def simulation_next_error(payload: SimulationNextErrorPayload, room: str) -> None:
-    await sio.emit("simulations_next_error", payload.model_dump(), room=room)
+    await sio.emit("simulation_next_error", payload.model_dump(), room=room)
 
 
 async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:

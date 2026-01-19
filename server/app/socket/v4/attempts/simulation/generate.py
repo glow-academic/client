@@ -125,7 +125,7 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await sio.emit(
-                "simulations_voice_start_error",
+                "simulation_voice_start_error",
                 SimulationErrorPayload(
                     success=False,
                     message="Profile not found. Please reconnect.",
@@ -137,7 +137,7 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
         await _simulation_voice_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await sio.emit(
-            "simulations_voice_start_error",
+            "simulation_voice_start_error",
             SimulationErrorPayload(
                 success=False,
                 message=f"Invalid request: {str(e)}",

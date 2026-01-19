@@ -52,7 +52,7 @@ async def test_simulation_join_success(
     assert sid in mock_sio.rooms[room_name]
 
     # Verify event was emitted
-    events = mock_sio.get_events("simulations_joined")
+    events = mock_sio.get_events("simulation_joined")
     assert len(events) == 1
     assert events[0]["chat_id"] == str(chat_id)
     assert events[0]["chat_type"] == "assistant"
@@ -99,7 +99,7 @@ async def test_simulation_join_custom_chat_type(
     assert sid in mock_sio.rooms[room_name]
 
     # Verify event was emitted
-    events = mock_sio.get_events("simulations_joined")
+    events = mock_sio.get_events("simulation_joined")
     assert len(events) == 1
     assert events[0]["chat_type"] == "simulation"
 
@@ -118,5 +118,5 @@ async def test_simulation_join_missing_chat_id(
     await simulation_join(sid, data)
 
     # Assert - verify error was emitted
-    error_events = mock_sio.get_events("simulations_join_error")
+    error_events = mock_sio.get_events("simulation_join_error")
     assert len(error_events) >= 1

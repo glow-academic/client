@@ -271,10 +271,10 @@ export function ProfileProviderClient({
 
       // Set up event handlers for simulation tracking
       // Note: Socket.IO server-to-client events use requestBody as payload
-      // Listen for simulations_started event (used by start.py)
+      // Listen for simulation_started event (used by start.py)
       socket.on(
-        "simulations_started",
-        (data: Parameters<ServerToClientEvents["simulations_started"]>[0]) => {
+        "simulation_started",
+        (data: Parameters<ServerToClientEvents["simulation_started"]>[0]) => {
           setStartingSimulationId(null);
           if (data.success) {
             toast.success(data.message);
@@ -291,9 +291,9 @@ export function ProfileProviderClient({
 
       // Listen for simulation start errors (used by start.py, replaces practice errors)
       socket.on(
-        "simulations_start_error",
+        "simulation_start_error",
         (
-          data: Parameters<ServerToClientEvents["simulations_start_error"]>[0]
+          data: Parameters<ServerToClientEvents["simulation_start_error"]>[0]
         ) => {
           setStartingSimulationId(null);
           toast.error(data.message);
@@ -303,9 +303,9 @@ export function ProfileProviderClient({
 
       // Listen for centralized simulation errors (from child operations)
       socket.on(
-        "simulations_error",
+        "simulation_error",
         (
-          data: Parameters<ServerToClientEvents["simulations_error"]>[0]
+          data: Parameters<ServerToClientEvents["simulation_error"]>[0]
         ) => {
           toast.error(data.message);
           window.dispatchEvent(new CustomEvent("simulationError"));
