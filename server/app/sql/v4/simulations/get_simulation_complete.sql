@@ -736,12 +736,6 @@ valid_rubrics_data AS (
           AND f.name = 'active'
           AND rf.value = true
       )
-      AND EXISTS (
-        SELECT 1
-        FROM rubric_artifacts ra
-        WHERE ra.rubric_id = r.id
-          AND ra.artifact = CAST('rubric' AS artifacts)
-      )
       AND (
         rd.department_id = ANY(udi.ids)
         OR NOT EXISTS (
@@ -989,7 +983,7 @@ department_rubric_ids AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT r.id ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::uuid[]) as rubric_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN rubrics_resource r ON EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r.id AND f.name = 'active' AND rf.value = true) AND EXISTS (SELECT 1 FROM rubric_artifacts ra WHERE ra.rubric_id = r.id AND ra.artifact = CAST('agent' AS artifacts))
+    LEFT JOIN rubrics_resource r ON EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r.id AND f.name = 'active' AND rf.value = true)
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
     GROUP BY ud.id

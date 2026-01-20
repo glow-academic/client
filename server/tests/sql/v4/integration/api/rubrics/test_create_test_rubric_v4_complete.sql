@@ -29,12 +29,6 @@ AS $$
         VALUES (NOW(), NOW())
         RETURNING id, created_at, updated_at
     ),
-    rubric_artifact_link AS (
-        INSERT INTO rubric_artifacts(rubric_id, artifact, created_at, updated_at)
-        SELECT nr.id, 'rubric'::artifacts, NOW(), NOW()
-        FROM new_rubric nr
-        RETURNING rubric_id
-    ),
     name_resource AS (
         INSERT INTO names_resource(name)
         VALUES (rubric_name)
