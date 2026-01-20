@@ -52,9 +52,7 @@ RETURNS TABLE (
     auth_ids text[],
     auths types.q_get_settings_detail_v4_auth[],
     provider_ids text[],
-    providers types.q_get_settings_detail_v4_provider[],
-    default_guest_profile_id uuid,
-    default_account_profile_id uuid
+    providers types.q_get_settings_detail_v4_provider[]
 )
 LANGUAGE sql
 STABLE
@@ -195,42 +193,6 @@ settings_providers_data AS (
     JOIN provider_artifact pr ON pr.id = p.provider_id
     JOIN provider_names pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
-),
-settings_default_guest_data AS (
-    -- Get default guest account: try selected settings first, fall back to default settings
-    SELECT 
-        COALESCE(
-            (SELECT dar.profile_id
-             FROM selected_settings ss
-             JOIN setting_default_accounts sda ON sda.setting_id = ss.settings_id AND sda.active = true
-             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-             WHERE dar.type = 'guest'::default_account_type AND dar.active = true
-             LIMIT 1),
-            (SELECT dar.profile_id
-             FROM default_settings ds
-             JOIN setting_default_accounts sda ON sda.setting_id = ds.settings_id AND sda.active = true
-             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-             WHERE dar.type = 'guest'::default_account_type AND dar.active = true
-             LIMIT 1)
-        ) as default_guest_profile_id
-),
-settings_default_account_data AS (
-    -- Get default account: try selected settings first, fall back to default settings
-    SELECT 
-        COALESCE(
-            (SELECT dar.profile_id
-             FROM selected_settings ss
-             JOIN setting_default_accounts sda ON sda.setting_id = ss.settings_id AND sda.active = true
-             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-             WHERE dar.type = 'admin'::default_account_type AND dar.active = true
-             LIMIT 1),
-            (SELECT dar.profile_id
-             FROM default_settings ds
-             JOIN setting_default_accounts sda ON sda.setting_id = ds.settings_id AND sda.active = true
-             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-             WHERE dar.type = 'admin'::default_account_type AND dar.active = true
-             LIMIT 1)
-        ) as default_account_profile_id
 )
 SELECT 
     s.id as settings_id,
@@ -259,13 +221,9 @@ SELECT
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
     COALESCE(sad.auths, '{}'::types.q_get_settings_detail_v4_auth[]) as auths,
     COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
-    COALESCE(spd.providers, '{}'::types.q_get_settings_detail_v4_provider[]) as providers,
-    sdgd.default_guest_profile_id,
-    sdad.default_account_profile_id
+    COALESCE(spd.providers, '{}'::types.q_get_settings_detail_v4_provider[]) as providers
 FROM selected_settings ss
 JOIN setting_artifact s ON s.id = ss.settings_id
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
-LEFT JOIN settings_default_guest_data sdgd ON true
-LEFT JOIN settings_default_account_data sdad ON true
 $$;

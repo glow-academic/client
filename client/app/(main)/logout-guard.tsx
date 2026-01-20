@@ -58,7 +58,6 @@ export function LogoutGuard({ children }: { children: React.ReactNode }) {
             (status === "authenticated" || status === "loading");
           const hasCookies =
             document.cookie.includes("department-id") ||
-            document.cookie.includes("auth-mode") ||
             document.cookie.includes("next-auth.session-token");
 
           // If we still have session/cookies, show loading

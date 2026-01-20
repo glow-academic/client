@@ -49,20 +49,4 @@ class TestResolveFromDepartmentCookies:
         )
 
         # Assert
-        # May return None if no default guest profile is configured
-        assert resolved is None or isinstance(resolved, str)
-
-    async def test_resolve_from_department_cookies_default_account(self, db) -> None:
-        """Test resolving profile for default-account auth mode."""
-        # Arrange
-        pool = get_pool()
-        assert pool is not None
-
-        # Act
-        resolved = await resolve_profile_from_department_cookies(
-            department_id=None, auth_mode="default-account", db_pool=pool
-        )
-
-        # Assert
-        # May return None if no default account profile is configured
-        assert resolved is None or isinstance(resolved, str)
+        assert resolved is None

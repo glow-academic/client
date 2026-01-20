@@ -360,7 +360,7 @@ export const {
 
     // 🌐 Expose to client session
     async session({ session, token }) {
-      // Ensure user object exists (for guest/default account users resolved from cookies)
+      // Ensure user object exists (for unauthenticated sessions resolved server-side)
       if (!session.user && token["profileId"]) {
         session.user = {
           id: token["profileId"] as string,
@@ -404,14 +404,13 @@ export const {
  *
  * Auth flow:
  * 1. Check for test headers (for E2E testing)
- * 2. Get NextAuth session (handles both authenticated users and guest/default account via JWT callback)
+ * 2. Get NextAuth session (handles authenticated users via JWT callback)
  *
  * Returns:
- * - Session: NextAuth session (with id_token for authenticated users, without for guest/default account)
+ * - Session: NextAuth session (with id_token for authenticated users)
  * - null: No session available
  *
- * Note: Guest/default account users are handled by the JWT callback which resolves
- * profile from department cookies. NextAuth creates a real session (just without id_token).
+ * Note: Profile resolution happens in the JWT callback.
  *
  * Wrapped with React cache() to deduplicate calls within the same request.
  */
@@ -427,6 +426,6 @@ export const getSession = cache(async () => {
     // Ignore header access errors and fall back to real auth.
   }
 
-  // Step 2: Get NextAuth session (JWT callback handles guest/default account cookies)
+  // Step 2: Get NextAuth session (JWT callback handles profile resolution)
   return await auth();
 });

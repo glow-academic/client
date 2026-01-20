@@ -18,16 +18,9 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_save_rubric_v4(
-    name_id uuid,
-    department_ids uuid[],
+    draft_id uuid,
     profile_id uuid,
-    input_rubric_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    total_points_id uuid DEFAULT NULL,
-    pass_points_id uuid DEFAULT NULL,
-    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    standard_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    input_rubric_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -40,7 +33,66 @@ DECLARE
     v_rubric_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_total_points_id uuid;
+    v_pass_points_id uuid;
+    v_department_ids uuid[];
+    v_standard_group_ids uuid[];
+    v_standard_ids uuid[];
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'draft_id is required';
+    END IF;
+
+    SELECT dn.names_id
+    INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id
+    INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_active_flag_id
+    FROM draft_flags df
+    WHERE df.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dp.points_id
+    INTO v_total_points_id
+    FROM draft_points dp
+    WHERE dp.draft_id = draft_id
+    ORDER BY dp.created_at
+    LIMIT 1;
+
+    SELECT dp.points_id
+    INTO v_pass_points_id
+    FROM draft_points dp
+    WHERE dp.draft_id = draft_id
+    ORDER BY dp.created_at
+    LIMIT 1;
+
+    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
+    INTO v_department_ids
+    FROM draft_departments dd
+    WHERE dd.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dsg.standard_groups_id ORDER BY dsg.created_at), ARRAY[]::uuid[])
+    INTO v_standard_group_ids
+    FROM draft_standard_groups dsg
+    WHERE dsg.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(ds.standards_id ORDER BY ds.created_at), ARRAY[]::uuid[])
+    INTO v_standard_ids
+    FROM draft_standards ds
+    WHERE ds.draft_id = draft_id;
+
     -- Determine if create or update
     is_create := (input_rubric_id IS NULL);
     
@@ -59,39 +111,39 @@ BEGIN
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
     
-    IF total_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = total_points_id) THEN
-        RAISE EXCEPTION 'Total points resource not found: %', total_points_id;
+    IF v_total_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = v_total_points_id) THEN
+        RAISE EXCEPTION 'Total points resource not found: %', v_total_points_id;
     END IF;
     
-    IF pass_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = pass_points_id) THEN
-        RAISE EXCEPTION 'Pass points resource not found: %', pass_points_id;
+    IF v_pass_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = v_pass_points_id) THEN
+        RAISE EXCEPTION 'Pass points resource not found: %', v_pass_points_id;
     END IF;
     
     -- Validate standard_group_ids exist
-    IF array_length(standard_group_ids, 1) > 0 THEN
+    IF array_length(v_standard_group_ids, 1) > 0 THEN
         IF EXISTS (
-            SELECT 1 FROM UNNEST(standard_group_ids) AS sg_id
+            SELECT 1 FROM UNNEST(v_standard_group_ids) AS sg_id
             WHERE NOT EXISTS (SELECT 1 FROM standard_groups_resource WHERE id = sg_id)
         ) THEN
             RAISE EXCEPTION 'One or more standard_group_ids not found';
         END IF;
     END IF;
 
-    IF array_length(standard_ids, 1) > 0 THEN
+    IF array_length(v_standard_ids, 1) > 0 THEN
         IF EXISTS (
-            SELECT 1 FROM UNNEST(standard_ids) AS std_id
+            SELECT 1 FROM UNNEST(v_standard_ids) AS std_id
             WHERE NOT EXISTS (SELECT 1 FROM standards_resource WHERE id = std_id)
         ) THEN
             RAISE EXCEPTION 'One or more standard_ids not found';
@@ -112,8 +164,8 @@ BEGIN
         WHERE rubric_id = v_rubric_id AND active = true;
         -- Update existing active flag if it exists
         UPDATE rubric_flags SET
-            flag_id = COALESCE(api_save_rubric_v4.active_flag_id, rubric_flags.flag_id),
-            value = CASE WHEN api_save_rubric_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            flag_id = COALESCE(v_active_flag_id, rubric_flags.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE rubric_id = v_rubric_id
           ;
@@ -124,14 +176,14 @@ BEGIN
     WITH params AS (
         SELECT
             v_rubric_id AS rubric_id,
-            name_id,
-            description_id,
-            active_flag_id,
-            total_points_id,
-            pass_points_id,
-            COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-            COALESCE(standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
-            COALESCE(standard_ids, ARRAY[]::uuid[]) AS standard_ids,
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
+            v_total_points_id AS total_points_id,
+            v_pass_points_id AS pass_points_id,
+            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
+            COALESCE(v_standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
+            COALESCE(v_standard_ids, ARRAY[]::uuid[]) AS standard_ids,
             profile_id
     ),
     user_profile AS (

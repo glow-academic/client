@@ -361,12 +361,19 @@ simulation_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM simulation_artifact WHERE id = (SELECT simulation_id FROM params))::boolean
         END as simulation_exists
 ),
+draft_scenario_ids_data AS (
+    SELECT 
+        COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[]) as scenario_ids
+    FROM params x
+    LEFT JOIN draft_scenarios ds ON ds.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+),
 -- Draft data is now stored in draft_* junction tables, not in payload
 draft_payload_data AS (
     SELECT 
         NULL::jsonb as payload,
         d.version as draft_version,
-        ARRAY[]::uuid[] as draft_scenario_ids
+        (SELECT scenario_ids FROM draft_scenario_ids_data) as draft_scenario_ids
     FROM params x
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL

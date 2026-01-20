@@ -20,7 +20,6 @@
 - `setting_auth_values`(value, created_at, updated_at, <u>auth_id</u>, <u>auth_item_id</u>, <u>settings_id</u>, generated, mcp, active)
 - `setting_auths`(active, created_at, updated_at, <u>auth_id</u>, <u>settings_id</u>, generated, mcp)
 - `setting_colors`(<u>setting_id</u>, <u>color_id</u>, <u>type</u>, created_at, updated_at, generated, mcp, active)
-- `setting_default_accounts`(<u>setting_id</u>, <u>default_account_id</u>, active, created_at, updated_at, generated, mcp, call_id)
 - `setting_departments`(<u>setting_id</u>, <u>department_id</u>, active, created_at, updated_at, generated, mcp)
 - `setting_descriptions`(<u>setting_id</u>, <u>description_id</u>, created_at, updated_at, generated, mcp, active)
 - `setting_flags`(<u>setting_id</u>, <u>flag_id</u>, value, created_at, updated_at, generated, mcp, active)

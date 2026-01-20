@@ -5,7 +5,7 @@ import { signOut, useSession } from "next-auth/react";
  *
  * This hook performs a two-step logout:
  * 1. Clears the local NextAuth session cookie
- * 2. Clears guest/default account cookies (if any)
+ * 2. Clears session cookies (if any)
  * 3. Redirects to Keycloak logout endpoint to clear the server-side session
  *
  * @returns An async function that performs federated logout
@@ -27,12 +27,12 @@ export function useFederatedLogout() {
       // redirect: false prevents NextAuth from reloading the page immediately
       await signOut({ redirect: false });
 
-      // 2. Clear guest/default account cookies
+      // 2. Clear session cookies
       try {
-        const { clearGuestSessionCookies } = await import(
+        const { clearSessionCookies } = await import(
           "@/app/(main)/layout-server"
         );
-        await clearGuestSessionCookies();
+        await clearSessionCookies();
       } catch {
         // Ignore errors - cookies might not exist
       }

@@ -18,29 +18,9 @@ END $$;
 
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
-    name_id uuid,
-    department_ids uuid[],
-    scenario_ids uuid[],  -- Scenario resource IDs (FROM scenarios_resource resource table)
-    scenario_active_flags boolean[],
-    scenario_hints_enabled boolean[],
-    scenario_time_limit_seconds int[],
-    scenario_audio_enabled boolean[],
-    scenario_text_enabled boolean[],
+    draft_id uuid,
     profile_id uuid,
-    input_simulation_id uuid DEFAULT NULL,  -- NULL = create, UUID = update
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    practice_simulation boolean DEFAULT false,
-    -- New scenario resource parameters (optional, for future use)
-    scenario_flag_ids uuid[] DEFAULT NULL,  -- Simulation scenario flag resource IDs
-    scenario_position_ids uuid[] DEFAULT NULL,  -- Scenario position resource IDs (junction table entries)
-    scenario_rubric_ids uuid[] DEFAULT NULL,  -- Scenario rubric resource IDs
-    -- Update-only params (optional, only used in update mode)
-    video_ids uuid[] DEFAULT NULL,
-    video_active_flags boolean[] DEFAULT NULL,
-    video_show_problem_statement boolean[] DEFAULT NULL,
-    video_show_objectives boolean[] DEFAULT NULL,
-    video_show_image boolean[] DEFAULT NULL
+    input_simulation_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_id uuid,
@@ -53,10 +33,82 @@ DECLARE
     v_simulation_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_practice_flag_id uuid;
+    v_department_ids uuid[];
+    v_scenario_ids uuid[];
+    v_scenario_flag_ids uuid[];
+    v_scenario_position_ids uuid[];
+    v_scenario_rubric_ids uuid[];
+    v_scenario_time_limit_ids uuid[];
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'draft_id is required';
+    END IF;
+
+    SELECT dn.names_id
+    INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id
+    INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_active_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id
+      AND f.name = 'active'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_practice_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id
+      AND f.name = 'practice'
+    LIMIT 1;
+
+    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
+    INTO v_department_ids
+    FROM draft_departments dd
+    WHERE dd.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[])
+    INTO v_scenario_ids
+    FROM draft_scenarios ds
+    WHERE ds.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dsf.scenario_flags_id ORDER BY dsf.created_at), ARRAY[]::uuid[])
+    INTO v_scenario_flag_ids
+    FROM draft_scenario_flags dsf
+    WHERE dsf.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dsp.scenario_position_id ORDER BY dsp.created_at), ARRAY[]::uuid[])
+    INTO v_scenario_position_ids
+    FROM draft_scenario_positions dsp
+    WHERE dsp.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dsr.scenario_rubric_id ORDER BY dsr.created_at), ARRAY[]::uuid[])
+    INTO v_scenario_rubric_ids
+    FROM draft_scenario_rubrics dsr
+    WHERE dsr.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dstl.scenario_time_limit_id ORDER BY dstl.created_at), ARRAY[]::uuid[])
+    INTO v_scenario_time_limit_ids
+    FROM draft_scenario_time_limits dstl
+    WHERE dstl.draft_id = draft_id;
+
     -- Determine if create or update
     is_create := (input_simulation_id IS NULL);
-    
+
     -- Create or UPDATE simulation_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
@@ -69,63 +121,104 @@ BEGIN
         UPDATE simulation_artifact
         SET updated_at = NOW()
         WHERE id = v_simulation_id;
-        
+
         -- Check if simulation exists
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Simulation not found: %', input_simulation_id;
         END IF;
     END IF;
-    
+
     -- Validate required resource IDs exist
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
-    
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
-    
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
-    
+
+    IF v_practice_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_practice_flag_id) THEN
+        RAISE EXCEPTION 'Practice flag resource not found: %', v_practice_flag_id;
+    END IF;
+
+    IF array_length(v_scenario_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_scenario_ids) AS scenario_id
+            WHERE NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = scenario_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more scenario_ids not found';
+        END IF;
+    END IF;
+
+    IF array_length(v_scenario_flag_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_scenario_flag_ids) AS scenario_flag_id
+            WHERE NOT EXISTS (SELECT 1 FROM scenario_flags_resource WHERE id = scenario_flag_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more scenario_flag_ids not found';
+        END IF;
+    END IF;
+
+    IF array_length(v_scenario_position_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_scenario_position_ids) AS scenario_position_id
+            WHERE NOT EXISTS (SELECT 1 FROM scenario_positions_resource WHERE id = scenario_position_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more scenario_position_ids not found';
+        END IF;
+    END IF;
+
+    IF array_length(v_scenario_rubric_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_scenario_rubric_ids) AS scenario_rubric_id
+            WHERE NOT EXISTS (SELECT 1 FROM scenario_rubrics_resource WHERE id = scenario_rubric_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more scenario_rubric_ids not found';
+        END IF;
+    END IF;
+
+    IF array_length(v_scenario_time_limit_ids, 1) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_scenario_time_limit_ids) AS scenario_time_limit_id
+            WHERE NOT EXISTS (SELECT 1 FROM scenario_time_limits_resource WHERE id = scenario_time_limit_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more scenario_time_limit_ids not found';
+        END IF;
+    END IF;
+
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
         DELETE FROM simulation_names WHERE simulation_id = v_simulation_id;
         DELETE FROM simulation_descriptions WHERE simulation_id = v_simulation_id;
         DELETE FROM simulation_departments WHERE simulation_id = v_simulation_id;
-        -- Update existing active flag if it exists
-        UPDATE simulation_flags SET
-            flag_id = COALESCE(api_save_simulation_v4.active_flag_id, simulation_flags.flag_id),
-            value = CASE WHEN api_save_simulation_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
-        WHERE simulation_id = v_simulation_id
-          ;
+        DELETE FROM simulation_flags WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenarios WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_flags WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_positions WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_rubrics WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_time_limits WHERE simulation_id = v_simulation_id;
     END IF;
-    
+
     -- Continue with simulation save using SQL (simulation already created/updated above)
     RETURN QUERY
     WITH params AS (
         SELECT
             v_simulation_id AS simulation_id,
-            name_id,
-            description_id,
-            active_flag_id,
-            practice_simulation,
-            COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-            COALESCE(scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
-            COALESCE(scenario_active_flags, ARRAY[]::boolean[]) AS scenario_active_flags,
-            COALESCE(scenario_hints_enabled, ARRAY[]::boolean[]) AS scenario_hints_enabled,
-            COALESCE(scenario_time_limit_seconds, ARRAY[]::int[]) AS scenario_time_limit_seconds,
-            COALESCE(scenario_audio_enabled, ARRAY[]::boolean[]) AS scenario_audio_enabled,
-            COALESCE(scenario_text_enabled, ARRAY[]::boolean[]) AS scenario_text_enabled,
-            COALESCE(scenario_rubric_ids, ARRAY[]::uuid[]) AS scenario_rubric_ids,
-            profile_id,
-            COALESCE(video_ids, ARRAY[]::uuid[]) AS video_ids,
-            COALESCE(video_active_flags, ARRAY[]::boolean[]) AS video_active_flags,
-            COALESCE(video_show_problem_statement, ARRAY[]::boolean[]) AS video_show_problem_statement,
-            COALESCE(video_show_objectives, ARRAY[]::boolean[]) AS video_show_objectives,
-            COALESCE(video_show_image, ARRAY[]::boolean[]) AS video_show_image
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
+            v_practice_flag_id AS practice_flag_id,
+            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
+            COALESCE(v_scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
+            COALESCE(v_scenario_flag_ids, ARRAY[]::uuid[]) AS scenario_flag_ids,
+            COALESCE(v_scenario_position_ids, ARRAY[]::uuid[]) AS scenario_position_ids,
+            COALESCE(v_scenario_rubric_ids, ARRAY[]::uuid[]) AS scenario_rubric_ids,
+            COALESCE(v_scenario_time_limit_ids, ARRAY[]::uuid[]) AS scenario_time_limit_ids,
+            profile_id
     ),
     user_profile AS (
         SELECT 
@@ -187,7 +280,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT (simulation_id, name_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT simulation_names_pkey DO UPDATE SET updated_at = NOW()
     ),
     -- Link simulation description (resource ID already validated)
     link_simulation_description AS (
@@ -199,52 +292,36 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT (simulation_id, description_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT simulation_descriptions_pkey DO UPDATE SET updated_at = NOW()
     ),
-    -- Link simulation active flag (resource ID already validated)
+    -- Link simulation flags (resource ID already validated)
     link_simulation_active_flag AS (
-        INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at) SELECT x.simulation_id,
+        INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.simulation_id,
             x.active_flag_id,
             true,
             NOW(),
-            NOW()
+            NOW(),
+            false,
+            false
         FROM params x
         WHERE x.active_flag_id IS NOT NULL
-        ON CONFLICT (simulation_id, flag_id, type) DO UPDATE SET 
-            flag_id = EXCLUDED.flag_id,
-            value = EXCLUDED.value,
-            updated_at = NOW()
-    ),
-    -- UPDATE simulation_artifact practice flag
-    update_simulation_practice_flag AS (
-        DELETE FROM simulation_flags 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-          
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
+        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
     ),
     link_simulation_practice_flag AS (
-        INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
         SELECT 
             x.simulation_id,
-            (SELECT id FROM flags_resource WHERE name = 'practice' LIMIT 1),
-            x.practice_simulation,
+            x.practice_flag_id,
+            true,
             NOW(),
-            NOW()
+            NOW(),
+            false,
+            false
         FROM params x
-        WHERE x.practice_simulation IS NOT NULL
-        ON CONFLICT (simulation_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value,
-            updated_at = NOW()
-    ),
-    replace_time_limits AS (
-        DELETE FROM scenario_time_limits 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-    ),
-    replace_departments AS (
-        UPDATE simulation_departments 
-        SET active = false, updated_at = NOW()
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1) AND active = true
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
+        WHERE x.practice_flag_id IS NOT NULL
+        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
     ),
     link_departments AS (
         INSERT INTO simulation_departments (simulation_id, department_id, active, created_at, updated_at)
@@ -256,231 +333,27 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
-        WHERE array_length(x.department_ids, 1) > 0
-        ON CONFLICT (simulation_id, department_id) DO UPDATE SET
+        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_departments_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),
-    replace_scenarios AS (
-        DELETE FROM simulation_scenarios 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
-    ),
-    -- Convert scenario resource IDs to artifact IDs
-    scenario_resource_to_artifact AS (
-        SELECT 
-            s.id as scenario_resource_id,
-            s.scenario_id as scenario_artifact_id
-        FROM scenarios_resource s
-        WHERE s.id = ANY((SELECT scenario_ids FROM params LIMIT 1))
-          AND s.active = true
-    ),
-    scenarios_data AS (
-        SELECT DISTINCT
-            srta.scenario_artifact_id as scenario_id,
-            active_flag,
-            hints_enabled,
-            audio_enabled,
-            text_enabled,
-            time_limit_seconds,
-            row_num
-        FROM (
-            SELECT 
-                scenario_resource_id,
-                active_flag,
-                COALESCE(hints_enabled, false) as hints_enabled,
-                COALESCE(audio_enabled, false) as audio_enabled,
-                COALESCE(text_enabled, true) as text_enabled,
-                time_limit_seconds,
-                ROW_NUMBER() OVER () as row_num
-            FROM params x
-            CROSS JOIN UNNEST(
-                x.scenario_ids, 
-                x.scenario_active_flags, 
-                x.scenario_hints_enabled,
-                x.scenario_audio_enabled,
-                x.scenario_text_enabled,
-                x.scenario_time_limit_seconds
-            ) AS t(scenario_resource_id, active_flag, hints_enabled, audio_enabled, text_enabled, time_limit_seconds)
-        ) sub
-        JOIN scenario_resource_to_artifact srta ON srta.scenario_resource_id = sub.scenario_resource_id
-    ),
-    scenarios_with_order AS (
-        SELECT 
-            scenario_id,
-            active_flag,
-            hints_enabled,
-            audio_enabled,
-            text_enabled,
-            time_limit_seconds,
-            ROW_NUMBER() OVER (
-                ORDER BY active_flag DESC, row_num
-            ) as position
-        FROM scenarios_data
-        WHERE EXISTS (SELECT 1 FROM params x WHERE array_length(x.scenario_ids, 1) > 0)
-    ),
-    link_time_limits AS (
-        INSERT INTO scenario_time_limits (simulation_id, scenario_id, time_limit_seconds, active, created_at, updated_at)
+    link_scenarios AS (
+        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, created_at, updated_at)
         SELECT 
             x.simulation_id,
-            swo.scenario_id,
-            swo.time_limit_seconds,
+            scenario_id,
             true,
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN scenarios_with_order swo
-        WHERE swo.time_limit_seconds IS NOT NULL 
-          AND swo.time_limit_seconds > 0
-          AND swo.active_flag = true
-        ON CONFLICT (simulation_id, scenario_id) DO UPDATE SET
-            time_limit_seconds = EXCLUDED.time_limit_seconds,
-            active = EXCLUDED.active,
+        CROSS JOIN UNNEST(x.scenario_ids) as scenario_id
+        WHERE COALESCE(array_length(x.scenario_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_scenarios_pkey DO UPDATE SET
+            active = true,
             updated_at = NOW()
-    ),
-    scenario_count AS (
-        SELECT COALESCE(MAX(position), 0) as max_position
-        FROM scenarios_with_order
-    ),
-    videos_data AS (
-        SELECT 
-            video_id,
-            active_flag,
-            show_problem_statement,
-            show_objectives,
-            show_image,
-            row_num
-        FROM (
-            SELECT 
-                video_id,
-                active_flag,
-                COALESCE(show_problem_statement, true) as show_problem_statement,
-                COALESCE(show_objectives, true) as show_objectives,
-                COALESCE(show_image, true) as show_image,
-                ROW_NUMBER() OVER () as row_num
-            FROM params x
-            CROSS JOIN UNNEST(
-                x.video_ids, 
-                x.video_active_flags, 
-                x.video_show_problem_statement,
-                x.video_show_objectives,
-                x.video_show_image
-            ) AS t(video_id, active_flag, show_problem_statement, show_objectives, show_image)
-            WHERE array_length(x.video_ids, 1) > 0
-        ) sub
-    ),
-    videos_with_order AS (
-        SELECT 
-            vd.video_id,
-            vd.active_flag,
-            vd.show_problem_statement,
-            vd.show_objectives,
-            vd.show_image,
-            sc.max_position + ROW_NUMBER() OVER (
-                ORDER BY vd.active_flag DESC, vd.row_num
-            ) as position
-        FROM videos_data vd
-        CROSS JOIN scenario_count sc
-        WHERE EXISTS (SELECT 1 FROM params x WHERE array_length(x.video_ids, 1) > 0)
-    ),
-    link_scenarios AS (
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, position, created_at, updated_at)
-        SELECT 
-            x.simulation_id,
-            swo.scenario_id,
-            swo.position,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN scenarios_with_order swo
-        ON CONFLICT (simulation_id, scenario_id) DO UPDATE SET
-            position = EXCLUDED.position,
-            updated_at = NOW()
-    ),
-    get_flag_resource_ids AS (
-        SELECT 
-            (SELECT id FROM simulation_scenario_flags WHERE name = 'active' LIMIT 1) as active_flag_id,
-            (SELECT id FROM simulation_scenario_flags WHERE name = 'hints_enabled' LIMIT 1) as hints_enabled_flag_id,
-            (SELECT id FROM simulation_scenario_flags WHERE name = 'audio_enabled' LIMIT 1) as audio_enabled_flag_id,
-            (SELECT id FROM simulation_scenario_flags WHERE name = 'text_enabled' LIMIT 1) as text_enabled_flag_id
     ),
     link_scenario_flags AS (
-        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
-        SELECT 
-            x.simulation_id,
-            swo.scenario_id,
-            gfri.active_flag_id,
-            swo.active_flag,
-            NOW(),
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN scenarios_with_order swo
-        CROSS JOIN get_flag_resource_ids gfri
-        WHERE gfri.active_flag_id IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
-            value = EXCLUDED.value,
-            updated_at = NOW()
-    ),
-    link_scenario_flags_hints AS (
-        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
-        SELECT 
-            x.simulation_id,
-            swo.scenario_id,
-            gfri.hints_enabled_flag_id,
-            swo.hints_enabled,
-            NOW(),
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN scenarios_with_order swo
-        CROSS JOIN get_flag_resource_ids gfri
-        WHERE gfri.hints_enabled_flag_id IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
-            value = EXCLUDED.value,
-            updated_at = NOW()
-    ),
-    link_scenario_flags_audio AS (
-        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
-        SELECT 
-            x.simulation_id,
-            swo.scenario_id,
-            gfri.audio_enabled_flag_id,
-            swo.audio_enabled,
-            NOW(),
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN scenarios_with_order swo
-        CROSS JOIN get_flag_resource_ids gfri
-        WHERE gfri.audio_enabled_flag_id IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
-            value = EXCLUDED.value,
-            updated_at = NOW()
-    ),
-    link_scenario_flags_text AS (
-        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
-        SELECT 
-            x.simulation_id,
-            swo.scenario_id,
-            gfri.text_enabled_flag_id,
-            swo.text_enabled,
-            NOW(),
-            NOW(),
-            false,
-            false
-        FROM params x
-        CROSS JOIN scenarios_with_order swo
-        CROSS JOIN get_flag_resource_ids gfri
-        WHERE gfri.text_enabled_flag_id IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
-            value = EXCLUDED.value,
-            updated_at = NOW()
-    ),
-    link_scenario_flag_resources AS (
         INSERT INTO simulation_scenario_flags (
             simulation_id,
             scenario_flag_id,
@@ -491,9 +364,9 @@ BEGIN
             mcp,
             active
         )
-        SELECT DISTINCT
+        SELECT 
             x.simulation_id,
-            sfid,
+            scenario_flag_id,
             true,
             NOW(),
             NOW(),
@@ -501,33 +374,78 @@ BEGIN
             false,
             true
         FROM params x
-        CROSS JOIN UNNEST(x.scenario_flag_ids) AS sfid
-        WHERE sfid IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_flag_id) DO UPDATE SET
+        CROSS JOIN UNNEST(x.scenario_flag_ids) as scenario_flag_id
+        WHERE COALESCE(array_length(x.scenario_flag_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_scenario_flags_new_pkey DO UPDATE SET
             value = EXCLUDED.value,
-            updated_at = NOW(),
-            active = true
+            updated_at = NOW()
     ),
-    remove_existing_scenario_rubrics AS (
-        DELETE FROM simulation_scenario_rubrics
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-    ),
-    link_scenario_rubrics AS (
-        INSERT INTO simulation_scenario_rubrics (simulation_id, scenario_rubric_id, created_at, updated_at, generated, mcp, active)
-        SELECT DISTINCT
+    link_scenario_positions AS (
+        INSERT INTO simulation_scenario_positions (
+            simulation_id,
+            scenario_position_id,
+            created_at,
+            updated_at,
+            generated,
+            mcp,
+            active
+        )
+        SELECT
             x.simulation_id,
-            srid,
+            scenario_position_id,
             NOW(),
             NOW(),
             false,
             false,
             true
         FROM params x
-        CROSS JOIN UNNEST(x.scenario_rubric_ids) AS srid
-        WHERE srid IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_rubric_id) DO UPDATE SET
-            updated_at = NOW(),
-            active = true
+        CROSS JOIN UNNEST(x.scenario_position_ids) as scenario_position_id
+        WHERE COALESCE(array_length(x.scenario_position_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_scenario_positions_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+    ),
+    link_scenario_rubrics AS (
+        INSERT INTO simulation_scenario_rubrics (simulation_id, scenario_rubric_id, created_at, updated_at, generated, mcp, active)
+        SELECT 
+            x.simulation_id,
+            scenario_rubric_id,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN UNNEST(x.scenario_rubric_ids) as scenario_rubric_id
+        WHERE COALESCE(array_length(x.scenario_rubric_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_scenario_rubrics_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+    ),
+    link_scenario_time_limits AS (
+        INSERT INTO simulation_scenario_time_limits (
+            simulation_id,
+            scenario_time_limit_id,
+            created_at,
+            updated_at,
+            generated,
+            mcp,
+            active
+        )
+        SELECT
+            x.simulation_id,
+            scenario_time_limit_id,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN UNNEST(x.scenario_time_limit_ids) as scenario_time_limit_id
+        WHERE COALESCE(array_length(x.scenario_time_limit_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT simulation_scenario_time_limits_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
     )
     SELECT 
         x.simulation_id AS simulation_id,

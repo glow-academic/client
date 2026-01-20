@@ -2318,26 +2318,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/default_accounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Default Accounts
-         * @description Create default_accounts resource (always INSERT).
-         */
-        post: operations["create_default_accounts_api_v4_resources_default_accounts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/departments": {
         parameters: {
             query?: never;
@@ -6770,31 +6750,6 @@ export interface components {
             /** Debug Info Id */
             debug_info_id?: string | null;
         };
-        /** DefaultAccountsApiRequest */
-        DefaultAccountsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Type */
-            type: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** DefaultAccountsApiResponse */
-        DefaultAccountsApiResponse: {
-            /** Id */
-            id?: string | null;
-        };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
             /**
@@ -10266,25 +10221,11 @@ export interface components {
             effective_profile_id?: string | null;
             /** Department Id */
             department_id?: string | null;
-            /** Auth Mode */
-            auth_mode?: string | null;
         };
         /** GetProfileContextApiResponse */
         GetProfileContextApiResponse: {
             /** Is Authorized */
             is_authorized?: boolean | null;
-            /** Guest Login Enabled */
-            guest_login_enabled?: boolean | null;
-            /** Active Departments Count */
-            active_departments_count?: number | null;
-            /** Department Auth Providers Count */
-            department_auth_providers_count?: number | null;
-            /** Default Settings Auth Providers Count */
-            default_settings_auth_providers_count?: number | null;
-            /** Departments Without Auth Providers Count */
-            departments_without_auth_providers_count?: number | null;
-            /** Department Exists */
-            department_exists?: boolean | null;
             /** Actual Id */
             actual_id?: string | null;
             /** Actual First Name */
@@ -10401,10 +10342,6 @@ export interface components {
             settings_provider_ids?: string[] | null;
             /** Settings Providers */
             settings_providers?: components["schemas"]["QGetProfileContextV4Provider"][] | null;
-            /** Settings Default Guest Profile Id */
-            settings_default_guest_profile_id?: string | null;
-            /** Settings Default Account Profile Id */
-            settings_default_account_profile_id?: string | null;
             /** Available Sections */
             available_sections?: string[] | null;
             /** Available Routes */
@@ -20091,16 +20028,12 @@ export interface components {
         /** SaveProviderApiRequest */
         SaveProviderApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
+            draft_id: string;
             /** Input Provider Id */
             input_provider_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
         };
         /** SaveProviderApiResponse */
         SaveProviderApiResponse: {
@@ -20112,26 +20045,12 @@ export interface components {
         /** SaveRubricApiRequest */
         SaveRubricApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
-            /** Department Ids */
-            department_ids: string[];
+            draft_id: string;
             /** Input Rubric Id */
             input_rubric_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Total Points Id */
-            total_points_id?: string | null;
-            /** Pass Points Id */
-            pass_points_id?: string | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
         };
         /** SaveRubricApiResponse */
         SaveRubricApiResponse: {
@@ -20143,52 +20062,12 @@ export interface components {
         /** SaveScenarioApiRequest */
         SaveScenarioApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Objectives Enabled Flag Id */
-            objectives_enabled_flag_id?: string | null;
-            /** Images Enabled Flag Id */
-            images_enabled_flag_id?: string | null;
-            /** Video Enabled Flag Id */
-            video_enabled_flag_id?: string | null;
-            /** Questions Enabled Flag Id */
-            questions_enabled_flag_id?: string | null;
-            /** Problem Statement Enabled Flag Id */
-            problem_statement_enabled_flag_id?: string | null;
-            /** Use Templates Flag Id */
-            use_templates_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Template Document Ids */
-            template_document_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
+            draft_id: string;
             /** Input Scenario Id */
             input_scenario_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /** SaveScenarioApiResponse */
         SaveScenarioApiResponse: {
@@ -20233,51 +20112,12 @@ export interface components {
         /** SaveSimulationApiRequest */
         SaveSimulationApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Active Flags */
-            scenario_active_flags: boolean[];
-            /** Scenario Hints Enabled */
-            scenario_hints_enabled: boolean[];
-            /** Scenario Time Limit Seconds */
-            scenario_time_limit_seconds: number[];
-            /** Scenario Audio Enabled */
-            scenario_audio_enabled: boolean[];
-            /** Scenario Text Enabled */
-            scenario_text_enabled: boolean[];
+            draft_id: string;
             /** Input Simulation Id */
             input_simulation_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /**
-             * Practice Simulation
-             * @default false
-             */
-            practice_simulation: boolean | null;
-            /** Scenario Flag Ids */
-            scenario_flag_ids?: string[] | null;
-            /** Scenario Position Ids */
-            scenario_position_ids?: string[] | null;
-            /** Scenario Rubric Ids */
-            scenario_rubric_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Video Active Flags */
-            video_active_flags?: boolean[] | null;
-            /** Video Show Problem Statement */
-            video_show_problem_statement?: boolean[] | null;
-            /** Video Show Objectives */
-            video_show_objectives?: boolean[] | null;
-            /** Video Show Image */
-            video_show_image?: boolean[] | null;
         };
         /** SaveSimulationApiResponse */
         SaveSimulationApiResponse: {
@@ -25452,43 +25292,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DebugInfoApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_default_accounts_api_v4_resources_default_accounts_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DefaultAccountsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DefaultAccountsApiResponse"];
                 };
             };
             /** @description Validation Error */

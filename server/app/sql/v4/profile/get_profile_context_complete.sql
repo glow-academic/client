@@ -3,9 +3,7 @@
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Business Logic Overview:
--- 1. Profile Resolution: Resolves profile IDs from cookies (department-id, auth-mode) when profile IDs are null
---    - Supports guest/default-account login via cookies
---    - Falls back to default settings if no department-specific settings exist
+-- 1. Profile Resolution: Uses provided profile IDs (no default-account resolution)
 -- 2. Emulation Validation: Validates that actual profile can emulate effective profile based on role hierarchy
 --    - superadmin can emulate anyone
 --    - admin can emulate instructional/member/guest
@@ -145,18 +143,10 @@ CREATE TYPE types.q_get_profile_context_v4_theme_tokens AS (
 CREATE OR REPLACE FUNCTION api_get_profile_context_v4(
     actual_profile_id uuid DEFAULT NULL,
     effective_profile_id uuid DEFAULT NULL,
-    department_id text DEFAULT NULL,
-    auth_mode text DEFAULT NULL
+    department_id text DEFAULT NULL
 )
 RETURNS TABLE (
     is_authorized boolean,
-    -- Authorization check fields (for default-account and guest login validation)
-    guest_login_enabled boolean,
-    active_departments_count bigint,
-    department_auth_providers_count bigint,
-    default_settings_auth_providers_count bigint,
-    departments_without_auth_providers_count bigint,
-    department_exists boolean,
     -- Actual profile fields (prefixed with actual_)
     actual_id uuid,
     actual_first_name text,
@@ -219,8 +209,6 @@ RETURNS TABLE (
     settings_auths types.q_get_profile_context_v4_auth[],
     settings_provider_ids text[],
     settings_providers types.q_get_profile_context_v4_provider[],
-    settings_default_guest_profile_id text,
-    settings_default_account_profile_id text,
     -- Computed fields
     available_sections text[],
     available_routes text[],
@@ -239,194 +227,12 @@ WITH params AS (
     SELECT 
         actual_profile_id AS actual_profile_id,
         effective_profile_id AS effective_profile_id,
-        department_id AS department_id,
-        auth_mode AS auth_mode
-),
-params_normalized AS (
-    -- Normalize department_id: convert empty string to NULL
-    SELECT 
-        CASE 
-            WHEN department_id IS NULL OR department_id = '' THEN NULL::uuid
-            ELSE department_id::uuid
-        END as department_id_uuid
-    FROM params
-),
--- Authorization check CTEs (merged from check_login_authorization_complete.sql)
-default_settings_for_auth AS (
-    -- Get settings with no department links (cross-department/default)
-    SELECT 
-        s.id as settings_id,
-        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
-    FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-      AND NOT EXISTS (
-          SELECT 1 FROM department_settings sd 
-          WHERE sd.settings_id = s.id AND sd.active = true
-      )
-    LIMIT 1
-),
-dept_specific_settings_for_auth AS (
-    -- Get department-specific settings (if department_id provided)
-    SELECT 
-        s.id as settings_id,
-        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
-    FROM setting_artifact s
-    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-    CROSS JOIN params_normalized pn
-    WHERE pn.department_id_uuid IS NOT NULL
-      AND ds.department_id = pn.department_id_uuid
-      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-    LIMIT 1
-),
-selected_settings_for_auth AS (
-    -- Priority: department-specific settings, then default, then any active
-    SELECT 
-        COALESCE(
-            (SELECT settings_id FROM dept_specific_settings_for_auth),
-            (SELECT settings_id FROM default_settings_for_auth),
-            (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'active' AND sf.value = TRUE) LIMIT 1)
-        ) as settings_id,
-        COALESCE(
-            (SELECT guest_login_enabled FROM dept_specific_settings_for_auth),
-            (SELECT guest_login_enabled FROM default_settings_for_auth),
-            false
-        ) as guest_login_enabled
-),
-active_departments_count AS (
-    -- Count all active departments
-    SELECT COUNT(*) as count
-    FROM department_artifact
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = department_artifact.id AND f.name = 'active' AND df.value = true)
-),
-department_exists_check AS (
-    -- Check if the specified department exists and is active (if department_id provided)
-    SELECT 
-        CASE 
-            WHEN pn.department_id_uuid IS NOT NULL THEN
-                EXISTS(
-                    SELECT 1 FROM department_artifact d
-                    WHERE d.id = pn.department_id_uuid
-                    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
-                )
-            ELSE false
-        END as department_exists
-    FROM params_normalized pn
-),
-department_auth_providers_count AS (
-    -- Count auth providers for specific department (if department_id provided)
-    SELECT COUNT(DISTINCT a.id) as count
-    FROM department_artifact d
-    JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
-    JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
-    CROSS JOIN params_normalized pn
-    WHERE pn.department_id_uuid IS NOT NULL
-      AND d.id = pn.department_id_uuid
-      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
-),
-default_settings_auth_providers_count AS (
-    -- Count auth providers for default settings (no department links)
-    SELECT COUNT(DISTINCT a.id) as count
-    FROM default_settings_for_auth ds
-    JOIN setting_artifact s ON s.id = ds.settings_id
-    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
-),
-departments_without_auth_providers_count AS (
-    -- Count departments that have no auth providers configured
-    SELECT COUNT(DISTINCT d.id) as count
-    FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
-      AND NOT EXISTS (
-          SELECT 1
-          FROM department_settings ds
-          JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-          JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-          JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
-          WHERE ds.department_id = d.id
-            AND ds.active = true
-      )
-),
-resolve_profile_from_department AS (
-    -- Resolve profile ID FROM department_artifact settings when profile IDs are null
-    -- This happens when user is accessing via guest/default-account cookies
-    -- department-id can be NULL for default settings (no department-specific settings)
-    SELECT 
-        CASE 
-            -- If both profile IDs are null and we have auth_mode, resolve FROM setting_artifact
-            WHEN (SELECT actual_profile_id FROM params) IS NULL 
-                 AND (SELECT effective_profile_id FROM params) IS NULL 
-                 AND (SELECT auth_mode FROM params) IN ('default-guest', 'default-account') THEN
-                COALESCE(
-                    -- Try department-specific settings first (only if department_id is provided)
-                    CASE 
-                        WHEN (SELECT department_id FROM params) IS NOT NULL 
-                             AND (SELECT department_id FROM params) != '' THEN
-                            CASE 
-                                WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
-                                    (SELECT dar.profile_id
-                                     FROM setting_artifact s
-                                     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                                     JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
-                                     JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid 
-                                     AND dar.type = 'guest'::default_account_type
-                                     AND dar.active = true
-                                     AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-                                     LIMIT 1)
-                                WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
-                                    (SELECT dar.profile_id
-                                     FROM setting_artifact s
-                                     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                                     JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
-                                     JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid 
-                                     AND dar.type = 'admin'::default_account_type
-                                     AND dar.active = true
-                                     AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-                                     LIMIT 1)
-                            END
-                        ELSE NULL::uuid
-                    END,
-                    -- Fallback to default settings (no department links) - always try this
-                    CASE 
-                        WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
-                            (SELECT dar.profile_id
-                             FROM setting_artifact s
-                             JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
-                             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                             WHERE dar.type = 'guest'::default_account_type
-                             AND dar.active = true
-                             AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-                               AND NOT EXISTS (
-                                   SELECT 1 FROM department_settings ds 
-                                   WHERE ds.settings_id = s.id AND ds.active = true
-                               )
-                             LIMIT 1)
-                        WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
-                            (SELECT dar.profile_id
-                             FROM setting_artifact s
-                             JOIN setting_default_accounts sda ON sda.setting_id = s.id AND sda.active = true
-                             JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                             WHERE dar.type = 'admin'::default_account_type
-                             AND dar.active = true
-                             AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
-                               AND NOT EXISTS (
-                                   SELECT 1 FROM department_settings ds 
-                                   WHERE ds.settings_id = s.id AND ds.active = true
-                               )
-                             LIMIT 1)
-                    END
-                )
-            ELSE NULL::uuid
-        END as resolved_profile_id
+        department_id AS department_id
 ),
 resolved_profile_ids AS (
-    -- Use provided profile IDs if available, otherwise use resolved profile FROM department_artifact
     SELECT 
-        COALESCE((SELECT actual_profile_id FROM params), (SELECT resolved_profile_id FROM resolve_profile_from_department)) as actual_profile_id,
-        COALESCE((SELECT effective_profile_id FROM params), (SELECT resolved_profile_id FROM resolve_profile_from_department)) as effective_profile_id
+        (SELECT actual_profile_id FROM params) as actual_profile_id,
+        (SELECT effective_profile_id FROM params) as effective_profile_id
 ),
 emulation_validation AS (
     -- Validate emulation is authorized when profiles differ
@@ -803,46 +609,6 @@ settings_resolution AS (
         JOIN provider_artifact pr ON pr.id = p.provider_id
         JOIN provider_names pn ON pn.provider_id = pr.id
         JOIN names_resource n ON n.id = pn.name_id
-    ),
-    settings_default_guest_data AS (
-        -- Get default guest account from settings profiles: try selected settings first, fall back to default settings
-        SELECT 
-            COALESCE(
-                (SELECT sp.profile_id::text
-                 FROM selected_settings ss
-                 JOIN setting_profiles sp ON sp.setting_id = ss.settings_id AND sp.active = true
-                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                 JOIN roles_resource r ON r.id = pr.role_id
-                 WHERE r.role = 'guest'::profile_role
-                 LIMIT 1),
-                (SELECT sp.profile_id::text
-                 FROM default_settings ds
-                 JOIN setting_profiles sp ON sp.setting_id = ds.settings_id AND sp.active = true
-                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                 JOIN roles_resource r ON r.id = pr.role_id
-                 WHERE r.role = 'guest'::profile_role
-                 LIMIT 1)
-            ) as default_guest_profile_id
-    ),
-    settings_default_account_data AS (
-        -- Get default account from settings profiles: try selected settings first, fall back to default settings
-        SELECT 
-            COALESCE(
-                (SELECT sp.profile_id::text
-                 FROM selected_settings ss
-                 JOIN setting_profiles sp ON sp.setting_id = ss.settings_id AND sp.active = true
-                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                 JOIN roles_resource r ON r.id = pr.role_id
-                 WHERE r.role IN ('admin'::profile_role, 'superadmin'::profile_role)
-                 LIMIT 1),
-                (SELECT sp.profile_id::text
-                 FROM default_settings ds
-                 JOIN setting_profiles sp ON sp.setting_id = ds.settings_id AND sp.active = true
-                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                 JOIN roles_resource r ON r.id = pr.role_id
-                 WHERE r.role IN ('admin'::profile_role, 'superadmin'::profile_role)
-                 LIMIT 1)
-            ) as default_account_profile_id
     )
     SELECT 
         s.id::text as settings_id,
@@ -871,15 +637,11 @@ settings_resolution AS (
         COALESCE(sad.auth_ids, ARRAY[]::text[]) as settings_auth_ids,
         COALESCE(sad.auths, '{}'::types.q_get_profile_context_v4_auth[]) as settings_auths,
         COALESCE(spd.provider_ids, ARRAY[]::text[]) as settings_provider_ids,
-        COALESCE(spd.providers, '{}'::types.q_get_profile_context_v4_provider[]) as settings_providers,
-        sdgd.default_guest_profile_id,
-        sdad.default_account_profile_id
+        COALESCE(spd.providers, '{}'::types.q_get_profile_context_v4_provider[]) as settings_providers
     FROM selected_settings ss
     JOIN setting_artifact s ON s.id = ss.settings_id::uuid
     LEFT JOIN settings_auths_data sad ON true
     LEFT JOIN settings_providers_data spd ON true
-    LEFT JOIN settings_default_guest_data sdgd ON true
-    LEFT JOIN settings_default_account_data sdad ON true
     LIMIT 1
 ),
 actor_name_computed AS (
@@ -1003,13 +765,6 @@ drafts_aggregated AS (
 SELECT 
     -- Emulation authorization flag
     ev.is_authorized::boolean as is_authorized,
-    -- Authorization check fields (for default-account and guest login validation)
-    (SELECT guest_login_enabled FROM selected_settings_for_auth) as guest_login_enabled,
-    (SELECT count FROM active_departments_count) as active_departments_count,
-    COALESCE((SELECT count FROM department_auth_providers_count), 0) as department_auth_providers_count,
-    COALESCE((SELECT count FROM default_settings_auth_providers_count), 0) as default_settings_auth_providers_count,
-    COALESCE((SELECT count FROM departments_without_auth_providers_count), 0) as departments_without_auth_providers_count,
-    (SELECT department_exists FROM department_exists_check) as department_exists,
     -- Actual profile fields (prefixed with actual_)
     apd.id as actual_id,
     apd.first_name as actual_first_name,
@@ -1072,8 +827,6 @@ SELECT
     sr.settings_auths as settings_auths,
     sr.settings_provider_ids as settings_provider_ids,
     sr.settings_providers as settings_providers,
-    sr.default_guest_profile_id as settings_default_guest_profile_id,
-    sr.default_account_profile_id as settings_default_account_profile_id,
     -- Computed fields
     (SELECT available_sections FROM available_sections_computed) as available_sections,
     (SELECT available_routes FROM available_routes_data) as available_routes,

@@ -66,28 +66,8 @@ async def get_profile_context(
             f"Request: pathname={pathname}, actualProfileId={actual_profile_id}, effectiveProfileId={effective_profile_id}"
         )
 
-        # Read department-id and auth-mode cookies for profile resolution
+        # Read department-id cookie for settings resolution
         department_id_cookie = http_request.cookies.get("department-id")
-        auth_mode_cookie_raw = http_request.cookies.get("auth-mode")
-
-        # When fetching settings without a profile (e.g., login page), ignore auth-mode cookie
-        # This prevents old auth-mode cookies from triggering authorization checks when just fetching settings
-        # Authorization checks should only run when we're actually trying to authenticate (have profile IDs)
-        # If we have no profile IDs, we're just fetching settings, so ignore auth-mode cookie
-        if not actual_profile_id and not effective_profile_id:
-            auth_mode_cookie = None  # Ignore auth-mode when just fetching settings
-        else:
-            auth_mode_cookie = auth_mode_cookie_raw  # Use auth-mode when authenticating
-
-        # Validate auth_mode if provided
-        if auth_mode_cookie is not None and auth_mode_cookie not in (
-            "default-guest",
-            "default-account",
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid auth-mode: {auth_mode_cookie}. Must be 'default-guest' or 'default-account'",
-            )
 
         # Get all context data with emulation validation and authorization checks in single query
         sql_query = load_sql_query(SQL_PATH)
@@ -99,7 +79,6 @@ async def get_profile_context(
             actual_profile_id=cast(UUID | None, actual_profile_id),
             effective_profile_id=cast(UUID | None, effective_profile_id),
             department_id=department_id_cookie if department_id_cookie else None,
-            auth_mode=auth_mode_cookie if auth_mode_cookie else None,
         )
         sql_params = params.to_tuple()
 
@@ -114,14 +93,13 @@ async def get_profile_context(
         )
 
         # Handle case where we're fetching settings without a profile (e.g., login page)
-        # When auth_mode is NULL and no profile IDs, the SQL query may return a result but with is_authorized=NULL
+        # When no profile IDs, the SQL query may return a result but with is_authorized=NULL
         # because it requires a profile to determine authorization. However, if we have a department_id,
         # we should still be able to return settings for that department.
         # Only treat as settings-only request if we have a department_id (for login page theme)
         is_settings_only_request = (
             not actual_profile_id
             and not effective_profile_id
-            and auth_mode_cookie is None
             and department_id_cookie is not None
         )
 
@@ -153,7 +131,7 @@ async def get_profile_context(
                 detail="Profile context not found: Could not resolve profile. Please try logging in again.",
             )
 
-        # Only check authorization for non-settings-only requests (when we have profile IDs or auth_mode)
+        # Only check authorization for non-settings-only requests (when we have profile IDs)
         # Skip authorization check if we already handled settings-only or no-profile case above
         if (
             not is_settings_only_request
@@ -180,79 +158,6 @@ async def get_profile_context(
                     status_code=404,
                     detail=f"Profile context not found: {resolved_effective}",
                 )
-
-        # Authorization checks for default-account and guest login (only when profile IDs are null)
-        # Use authorization fields from merged query result
-        if (
-            not actual_profile_id
-            and not effective_profile_id
-            and auth_mode_cookie in ("default-account", "default-guest")
-        ):
-            guest_login_enabled = (
-                result.guest_login_enabled
-                if result.guest_login_enabled is not None
-                else False
-            )
-            active_dept_count = (
-                result.active_departments_count
-                if result.active_departments_count is not None
-                else 0
-            )
-            dept_auth_count = (
-                result.department_auth_providers_count
-                if result.department_auth_providers_count is not None
-                else 0
-            )
-            default_auth_count = (
-                result.default_settings_auth_providers_count
-                if result.default_settings_auth_providers_count is not None
-                else 0
-            )
-            depts_without_auth_count = (
-                result.departments_without_auth_providers_count
-                if result.departments_without_auth_providers_count is not None
-                else 0
-            )
-            department_exists = (
-                result.department_exists
-                if result.department_exists is not None
-                else False
-            )
-
-            # Check authorization based on auth_mode
-            if auth_mode_cookie == "default-account":
-                if active_dept_count == 0:
-                    pass  # Allow (initial setup)
-                elif active_dept_count > 0:
-                    if not department_id_cookie:
-                        if default_auth_count > 0:
-                            raise HTTPException(
-                                status_code=401,
-                                detail="Default account login not available. Please select a department or use an authentication provider.",
-                            )
-                        if depts_without_auth_count == 0:
-                            raise HTTPException(
-                                status_code=401,
-                                detail="Default account login not available. Please select a department or use an authentication provider.",
-                            )
-                    else:
-                        if not department_exists:
-                            raise HTTPException(
-                                status_code=400,
-                                detail="Invalid department specified.",
-                            )
-                        if dept_auth_count > 0:
-                            raise HTTPException(
-                                status_code=401,
-                                detail="Default account login not available for this department. Please use an authentication provider.",
-                            )
-
-            elif auth_mode_cookie == "default-guest":
-                if not guest_login_enabled:
-                    raise HTTPException(
-                        status_code=401,
-                        detail="Guest login is not enabled for this configuration.",
-                    )
 
         # Note: available_sections, redirect_path, department_ids, cohort_ids, simulation_ids
         # are now computed in SQL and returned in result

@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { Session } from "next-auth";
-import { cookies } from "next/headers";
 
 import { hasRouteAccess, type ProfileRole } from "@/utils/route-permissions";
 
@@ -106,76 +105,8 @@ export async function checkRouteAccess(
   const hasSessionProfileIds =
     session?.effectiveProfileId && session?.user?.profileId;
 
-  // If no session profile IDs, check for guest/default-account cookies
+  // If no session profile IDs, user is not logged in
   if (!hasSessionProfileIds) {
-    try {
-      const cookieStore = await cookies();
-      const authMode = cookieStore.get("auth-mode")?.value;
-
-      // If we have auth-mode cookie (guest/default-account), resolve profile to check role
-      if (
-        authMode &&
-        (authMode === "default-guest" || authMode === "default-account")
-      ) {
-        // Resolve profile from cookies to get role for permission check
-        // We need to do this here to properly deny access to unauthorized routes
-        try {
-          const { api } = await import("@/lib/api/client");
-          const cookieHeader = [
-            cookieStore.get("department-id")?.value &&
-              `department-id=${cookieStore.get("department-id")?.value}`,
-            cookieStore.get("auth-mode")?.value &&
-              `auth-mode=${cookieStore.get("auth-mode")?.value}`,
-          ]
-            .filter(Boolean)
-            .join("; ");
-
-          const profileContext = await api.post(
-            "/auth/context",
-            {
-              body: {},
-            },
-            cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined,
-          );
-
-          const role =
-            (profileContext.role as ProfileRole) || null;
-
-          if (!role) {
-            return {
-              allowed: false,
-              reason: "route-denied",
-            };
-          }
-
-          // Check route access using route permissions
-          const hasAccess = hasRouteAccess(pathname, role);
-
-          if (!hasAccess) {
-            return {
-              allowed: false,
-              reason: "route-denied",
-              role,
-            };
-          }
-
-          return {
-            allowed: true,
-            role,
-          };
-        } catch {
-          // If profile resolution fails, deny access
-          return {
-            allowed: false,
-            reason: "not-logged-in",
-          };
-        }
-      }
-    } catch {
-      // Ignore cookie access errors
-    }
-
-    // No session IDs and no cookies - user is not logged in
     return {
       allowed: false,
       reason: "not-logged-in",

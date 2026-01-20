@@ -26,7 +26,6 @@ async def test_get_login_data(
     assert "departments" in data
     assert isinstance(data["departments"], list)
     assert "guest_login_enabled" in data
-    assert "show_default_account" in data
     assert "realm_name" in data
 
 

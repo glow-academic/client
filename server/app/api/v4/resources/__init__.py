@@ -44,10 +44,6 @@ router.include_router(conversations_router)
 from app.api.v4.resources.debug_info.create import router as debug_info_router
 
 router.include_router(debug_info_router)
-from app.api.v4.resources.default_accounts.create import \
-    router as default_accounts_router
-
-router.include_router(default_accounts_router)
 from app.api.v4.resources.departments.create import \
     router as departments_router
 

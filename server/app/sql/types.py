@@ -12108,14 +12108,12 @@ class GetProfileContextSqlParams(BaseModel):
     actual_profile_id: UUID | None = None
     effective_profile_id: UUID | None = None
     department_id: str | None = None
-    auth_mode: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.actual_profile_id,
             self.effective_profile_id,
             self.department_id,
-            self.auth_mode,
         )
 
 class QGetProfileContextV4Auth(BaseModel):
@@ -12227,12 +12225,6 @@ class QGetProfileContextV4ThemeTokens(BaseModel):
 class GetProfileContextSqlRow(BaseModel):
 
     is_authorized: bool | None = None
-    guest_login_enabled: bool | None = None
-    active_departments_count: int | None = None
-    department_auth_providers_count: int | None = None
-    default_settings_auth_providers_count: int | None = None
-    departments_without_auth_providers_count: int | None = None
-    department_exists: bool | None = None
     actual_id: UUID | None = None
     actual_first_name: str | None = None
     actual_last_name: str | None = None
@@ -12291,8 +12283,6 @@ class GetProfileContextSqlRow(BaseModel):
     settings_auths: list[QGetProfileContextV4Auth] | None = None
     settings_provider_ids: list[str] | None = None
     settings_providers: list[QGetProfileContextV4Provider] | None = None
-    settings_default_guest_profile_id: str | None = None
-    settings_default_account_profile_id: str | None = None
     available_sections: list[str] | None = None
     available_routes: list[str] | None = None
     redirect_path: str | None = None
@@ -12308,17 +12298,10 @@ class GetProfileContextApiRequest(BaseModel):
     actual_profile_id: UUID | None = None
     effective_profile_id: UUID | None = None
     department_id: str | None = None
-    auth_mode: str | None = None
 
 class GetProfileContextApiResponse(BaseModel):
 
     is_authorized: bool | None = None
-    guest_login_enabled: bool | None = None
-    active_departments_count: int | None = None
-    department_auth_providers_count: int | None = None
-    default_settings_auth_providers_count: int | None = None
-    departments_without_auth_providers_count: int | None = None
-    department_exists: bool | None = None
     actual_id: UUID | None = None
     actual_first_name: str | None = None
     actual_last_name: str | None = None
@@ -12377,8 +12360,6 @@ class GetProfileContextApiResponse(BaseModel):
     settings_auths: list[QGetProfileContextV4Auth] | None = None
     settings_provider_ids: list[str] | None = None
     settings_providers: list[QGetProfileContextV4Provider] | None = None
-    settings_default_guest_profile_id: str | None = None
-    settings_default_account_profile_id: str | None = None
     available_sections: list[str] | None = None
     available_routes: list[str] | None = None
     redirect_path: str | None = None
@@ -12849,19 +12830,15 @@ class PatchProviderDraftApiResponse(BaseModel):
 
 class SaveProviderSqlParams(BaseModel):
 
-    name_id: UUID
+    draft_id: UUID
     profile_id: UUID
     input_provider_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
+            self.draft_id,
             self.profile_id,
             self.input_provider_id,
-            self.description_id,
-            self.active_flag_id,
         )
 
 class SaveProviderSqlRow(BaseModel):
@@ -12871,10 +12848,8 @@ class SaveProviderSqlRow(BaseModel):
 
 class SaveProviderApiRequest(BaseModel):
 
-    name_id: UUID
+    draft_id: UUID
     input_provider_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
 class SaveProviderApiResponse(BaseModel):
 
@@ -14279,42 +14254,6 @@ class DebugInfoApiRequest(BaseModel):
 class DebugInfoApiResponse(BaseModel):
 
     debug_info_id: UUID | None = None
-
-
-
-# Generated from: default_accounts
-
-class DefaultAccountsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    profile_id: UUID
-    type: str
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.profile_id,
-            self.type,
-            self.mcp,
-        )
-
-class DefaultAccountsSqlRow(BaseModel):
-
-    id: UUID | None = None
-
-class DefaultAccountsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    type: str
-    mcp: bool | None = False
-
-class DefaultAccountsApiResponse(BaseModel):
-
-    id: UUID | None = None
 
 
 
@@ -17101,29 +17040,15 @@ class PatchRubricDraftApiResponse(BaseModel):
 
 class SaveRubricSqlParams(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
+    draft_id: UUID
     profile_id: UUID
     input_rubric_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.department_ids,
+            self.draft_id,
             self.profile_id,
             self.input_rubric_id,
-            self.description_id,
-            self.active_flag_id,
-            self.total_points_id,
-            self.pass_points_id,
-            self.standard_group_ids,
-            self.standard_ids,
         )
 
 class SaveRubricSqlRow(BaseModel):
@@ -17133,15 +17058,8 @@ class SaveRubricSqlRow(BaseModel):
 
 class SaveRubricApiRequest(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
+    draft_id: UUID
     input_rubric_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SaveRubricApiResponse(BaseModel):
 
@@ -18179,55 +18097,15 @@ class PatchScenarioDraftApiResponse(BaseModel):
 
 class SaveScenarioSqlParams(BaseModel):
 
+    draft_id: UUID
     profile_id: UUID
-    name_id: UUID
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
     input_scenario_id: UUID | None = None
-    group_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.draft_id,
             self.profile_id,
-            self.name_id,
-            self.description_id,
-            self.problem_statement_id,
-            self.active_flag_id,
-            self.objectives_enabled_flag_id,
-            self.images_enabled_flag_id,
-            self.video_enabled_flag_id,
-            self.questions_enabled_flag_id,
-            self.problem_statement_enabled_flag_id,
-            self.use_templates_flag_id,
-            self.department_ids,
-            self.persona_ids,
-            self.document_ids,
-            self.template_document_ids,
-            self.parameter_ids,
-            self.field_ids,
-            self.image_ids,
-            self.objective_ids,
-            self.video_ids,
-            self.question_ids,
             self.input_scenario_id,
-            self.group_id,
         )
 
 class SaveScenarioSqlRow(BaseModel):
@@ -18237,28 +18115,8 @@ class SaveScenarioSqlRow(BaseModel):
 
 class SaveScenarioApiRequest(BaseModel):
 
-    name_id: UUID
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    use_templates_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
+    draft_id: UUID
     input_scenario_id: UUID | None = None
-    group_id: UUID | None = None
 
 class SaveScenarioApiResponse(BaseModel):
 
@@ -18402,8 +18260,6 @@ class GetActiveSettingsSqlRow(BaseModel):
     auths: list[QGetSettingsDetailV4Auth] | None = None
     provider_ids: list[str] | None = None
     providers: list[QGetSettingsDetailV4Provider] | None = None
-    default_guest_profile_id: UUID | None = None
-    default_account_profile_id: UUID | None = None
 
 class GetActiveSettingsApiRequest(BaseModel):
 
@@ -18438,8 +18294,6 @@ class GetActiveSettingsApiResponse(BaseModel):
     auths: list[QGetSettingsDetailV4Auth] | None = None
     provider_ids: list[str] | None = None
     providers: list[QGetSettingsDetailV4Provider] | None = None
-    default_guest_profile_id: UUID | None = None
-    default_account_profile_id: UUID | None = None
 
 
 
@@ -19711,51 +19565,15 @@ class PatchSimulationDraftApiResponse(BaseModel):
 
 class SaveSimulationSqlParams(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
-    scenario_ids: list[UUID]
-    scenario_active_flags: list[bool]
-    scenario_hints_enabled: list[bool]
-    scenario_time_limit_seconds: list[int]
-    scenario_audio_enabled: list[bool]
-    scenario_text_enabled: list[bool]
+    draft_id: UUID
     profile_id: UUID
     input_simulation_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    practice_simulation: bool | None = False
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    video_active_flags: list[bool] | None = None
-    video_show_problem_statement: list[bool] | None = None
-    video_show_objectives: list[bool] | None = None
-    video_show_image: list[bool] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.department_ids,
-            self.scenario_ids,
-            self.scenario_active_flags,
-            self.scenario_hints_enabled,
-            self.scenario_time_limit_seconds,
-            self.scenario_audio_enabled,
-            self.scenario_text_enabled,
+            self.draft_id,
             self.profile_id,
             self.input_simulation_id,
-            self.description_id,
-            self.active_flag_id,
-            self.practice_simulation,
-            self.scenario_flag_ids,
-            self.scenario_position_ids,
-            self.scenario_rubric_ids,
-            self.video_ids,
-            self.video_active_flags,
-            self.video_show_problem_statement,
-            self.video_show_objectives,
-            self.video_show_image,
         )
 
 class SaveSimulationSqlRow(BaseModel):
@@ -19765,26 +19583,8 @@ class SaveSimulationSqlRow(BaseModel):
 
 class SaveSimulationApiRequest(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
-    scenario_ids: list[UUID]
-    scenario_active_flags: list[bool]
-    scenario_hints_enabled: list[bool]
-    scenario_time_limit_seconds: list[int]
-    scenario_audio_enabled: list[bool]
-    scenario_text_enabled: list[bool]
+    draft_id: UUID
     input_simulation_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    practice_simulation: bool | None = False
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    video_active_flags: list[bool] | None = None
-    video_show_problem_statement: list[bool] | None = None
-    video_show_objectives: list[bool] | None = None
-    video_show_image: list[bool] | None = None
 
 class SaveSimulationApiResponse(BaseModel):
 
@@ -22480,12 +22280,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DebugInfoApiRequest",
         "DebugInfoApiResponse",
     ),
-    "app/sql/v4/resources/default_accounts_complete.sql": (
-        "DefaultAccountsSqlParams",
-        "DefaultAccountsSqlRow",
-        "DefaultAccountsApiRequest",
-        "DefaultAccountsApiResponse",
-    ),
     "app/sql/v4/resources/departments_complete.sql": (
         "DepartmentsSqlParams",
         "DepartmentsSqlRow",
@@ -24391,11 +24185,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/debug_info_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/default_accounts_complete.sql"]
     ) -> SqlString: ...
 
     @overload

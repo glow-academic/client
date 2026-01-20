@@ -138,7 +138,7 @@ async def connect(
         # Guest connection (no profile). Optionally join a guest room for targeted emits.
         if guest_id:
             await sio.enter_room(sid, f"guest_{guest_id}")
-            # Track guest connection and update default guest profile activity
+            # Track guest connection
             try:
                 await add_guest_socket(sid)
                 # Increment guest connection counter

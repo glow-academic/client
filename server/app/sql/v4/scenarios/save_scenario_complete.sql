@@ -35,29 +35,9 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_save_scenario_v4(
+    draft_id uuid,
     profile_id uuid,
-    name_id uuid,
-    description_id uuid DEFAULT NULL,
-    problem_statement_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    objectives_enabled_flag_id uuid DEFAULT NULL,
-    images_enabled_flag_id uuid DEFAULT NULL,
-    video_enabled_flag_id uuid DEFAULT NULL,
-    questions_enabled_flag_id uuid DEFAULT NULL,
-    problem_statement_enabled_flag_id uuid DEFAULT NULL,
-    use_templates_flag_id uuid DEFAULT NULL,
-    department_ids uuid[] DEFAULT NULL,
-    persona_ids uuid[] DEFAULT NULL,
-    document_ids uuid[] DEFAULT NULL,
-    template_document_ids uuid[] DEFAULT NULL,
-    parameter_ids uuid[] DEFAULT NULL,
-    field_ids uuid[] DEFAULT NULL,
-    image_ids uuid[] DEFAULT NULL,
-    objective_ids uuid[] DEFAULT NULL,
-    video_ids uuid[] DEFAULT NULL,
-    question_ids uuid[] DEFAULT NULL,
-    input_scenario_id uuid DEFAULT NULL,
-    group_id uuid DEFAULT NULL
+    input_scenario_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_id uuid,
@@ -70,6 +50,10 @@ DECLARE
     v_scenario_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_group_id uuid;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_problem_statement_id uuid;
     v_active_flag_id uuid;
     v_objectives_enabled_flag_id uuid;
     v_images_enabled_flag_id uuid;
@@ -77,33 +61,156 @@ DECLARE
     v_questions_enabled_flag_id uuid;
     v_problem_statement_enabled_flag_id uuid;
     v_use_templates_flag_id uuid;
-    v_group_id uuid;
+    v_department_ids uuid[];
+    v_persona_ids uuid[];
+    v_document_ids uuid[];
+    v_template_document_ids uuid[];
+    v_parameter_ids uuid[];
+    v_field_ids uuid[];
+    v_image_ids uuid[];
+    v_objective_ids uuid[];
+    v_video_ids uuid[];
+    v_question_ids uuid[];
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'draft_id is required';
+    END IF;
+
+    SELECT group_id INTO v_group_id FROM drafts WHERE id = draft_id;
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+    END IF;
+
+    SELECT dn.names_id
+    INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id
+    INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dps.problem_statements_id
+    INTO v_problem_statement_id
+    FROM draft_problem_statements dps
+    WHERE dps.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_active_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'active'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_objectives_enabled_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'objectives_enabled'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_images_enabled_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'images_enabled'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_video_enabled_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'video_enabled'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_questions_enabled_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'questions_enabled'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_problem_statement_enabled_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'problem_statement_enabled'
+    LIMIT 1;
+
+    SELECT df.flags_id
+    INTO v_use_templates_flag_id
+    FROM draft_flags df
+    JOIN flags_resource f ON f.id = df.flags_id
+    WHERE df.draft_id = draft_id AND f.name = 'use_templates'
+    LIMIT 1;
+
+    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
+    INTO v_department_ids
+    FROM draft_departments dd
+    WHERE dd.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dp.personas_id ORDER BY dp.created_at), ARRAY[]::uuid[])
+    INTO v_persona_ids
+    FROM draft_personas dp
+    WHERE dp.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dd.documents_id ORDER BY dd.created_at), ARRAY[]::uuid[])
+    INTO v_document_ids
+    FROM draft_documents dd
+    WHERE dd.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dt.templates_id ORDER BY dt.created_at), ARRAY[]::uuid[])
+    INTO v_template_document_ids
+    FROM draft_templates dt
+    WHERE dt.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), ARRAY[]::uuid[])
+    INTO v_parameter_ids
+    FROM draft_parameters dp
+    WHERE dp.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), ARRAY[]::uuid[])
+    INTO v_field_ids
+    FROM draft_fields df
+    WHERE df.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(di.images_id ORDER BY di.created_at), ARRAY[]::uuid[])
+    INTO v_image_ids
+    FROM draft_images di
+    WHERE di.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(doj.objectives_id ORDER BY doj.created_at), ARRAY[]::uuid[])
+    INTO v_objective_ids
+    FROM draft_objectives doj
+    WHERE doj.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dv.videos_id ORDER BY dv.created_at), ARRAY[]::uuid[])
+    INTO v_video_ids
+    FROM draft_videos dv
+    WHERE dv.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dq.questions_id ORDER BY dq.created_at), ARRAY[]::uuid[])
+    INTO v_question_ids
+    FROM draft_questions dq
+    WHERE dq.draft_id = draft_id;
+
     -- Determine if create or update
     is_create := (input_scenario_id IS NULL);
 
     -- Create or update scenario_artifact
     IF is_create THEN
-        IF group_id IS NULL THEN
-            INSERT INTO groups (created_at, updated_at)
-            VALUES (NOW(), NOW())
-            RETURNING id INTO v_group_id;
-        ELSE
-            v_group_id := group_id;
-
-            IF NOT EXISTS (SELECT 1 FROM groups WHERE id = v_group_id) THEN
-                INSERT INTO groups (id, created_at, updated_at)
-                VALUES (v_group_id, NOW(), NOW());
-            END IF;
-        END IF;
-
         INSERT INTO scenario_artifact (group_id, created_at, updated_at)
         VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_scenario_id;
     ELSE
         v_scenario_id := input_scenario_id;
         UPDATE scenario_artifact
-        SET updated_at = NOW()
+        SET updated_at = NOW(),
+            group_id = v_group_id
         WHERE id = v_scenario_id;
 
         IF NOT FOUND THEN
@@ -112,82 +219,44 @@ BEGIN
     END IF;
 
     -- Validate required resource IDs exist (single-select resources)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
 
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
 
-    IF problem_statement_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM problem_statements_resource WHERE id = problem_statement_id) THEN
-        RAISE EXCEPTION 'Problem statement resource not found: %', problem_statement_id;
+    IF v_problem_statement_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM problem_statements_resource WHERE id = v_problem_statement_id) THEN
+        RAISE EXCEPTION 'Problem statement resource not found: %', v_problem_statement_id;
     END IF;
 
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
 
-    IF objectives_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = objectives_enabled_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', objectives_enabled_flag_id;
+    IF v_objectives_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_objectives_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_objectives_enabled_flag_id;
     END IF;
 
-    IF images_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = images_enabled_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', images_enabled_flag_id;
+    IF v_images_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_images_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_images_enabled_flag_id;
     END IF;
 
-    IF video_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = video_enabled_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', video_enabled_flag_id;
+    IF v_video_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_video_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_video_enabled_flag_id;
     END IF;
 
-    IF questions_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = questions_enabled_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', questions_enabled_flag_id;
+    IF v_questions_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_questions_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_questions_enabled_flag_id;
     END IF;
 
-    IF problem_statement_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = problem_statement_enabled_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', problem_statement_enabled_flag_id;
+    IF v_problem_statement_enabled_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_problem_statement_enabled_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_problem_statement_enabled_flag_id;
     END IF;
 
-    IF use_templates_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = use_templates_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', use_templates_flag_id;
-    END IF;
-
-    -- Resolve canonical flag IDs by name
-    SELECT id INTO v_active_flag_id FROM flags_resource WHERE name = 'active' LIMIT 1;
-    SELECT id INTO v_objectives_enabled_flag_id FROM flags_resource WHERE name = 'objectives_enabled' LIMIT 1;
-    SELECT id INTO v_images_enabled_flag_id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1;
-    SELECT id INTO v_video_enabled_flag_id FROM flags_resource WHERE name = 'video_enabled' LIMIT 1;
-    SELECT id INTO v_questions_enabled_flag_id FROM flags_resource WHERE name = 'questions_enabled' LIMIT 1;
-    SELECT id INTO v_problem_statement_enabled_flag_id FROM flags_resource WHERE name = 'problem_statement_enabled' LIMIT 1;
-    SELECT id INTO v_use_templates_flag_id FROM flags_resource WHERE name = 'use_templates' LIMIT 1;
-
-    -- Ensure provided flag IDs match expected names (if provided)
-    IF active_flag_id IS NOT NULL AND v_active_flag_id IS NOT NULL AND active_flag_id != v_active_flag_id THEN
-        RAISE EXCEPTION 'Active flag ID does not match expected resource';
-    END IF;
-
-    IF objectives_enabled_flag_id IS NOT NULL AND v_objectives_enabled_flag_id IS NOT NULL AND objectives_enabled_flag_id != v_objectives_enabled_flag_id THEN
-        RAISE EXCEPTION 'Objectives enabled flag ID does not match expected resource';
-    END IF;
-
-    IF images_enabled_flag_id IS NOT NULL AND v_images_enabled_flag_id IS NOT NULL AND images_enabled_flag_id != v_images_enabled_flag_id THEN
-        RAISE EXCEPTION 'Images enabled flag ID does not match expected resource';
-    END IF;
-
-    IF video_enabled_flag_id IS NOT NULL AND v_video_enabled_flag_id IS NOT NULL AND video_enabled_flag_id != v_video_enabled_flag_id THEN
-        RAISE EXCEPTION 'Video enabled flag ID does not match expected resource';
-    END IF;
-
-    IF questions_enabled_flag_id IS NOT NULL AND v_questions_enabled_flag_id IS NOT NULL AND questions_enabled_flag_id != v_questions_enabled_flag_id THEN
-        RAISE EXCEPTION 'Questions enabled flag ID does not match expected resource';
-    END IF;
-
-    IF problem_statement_enabled_flag_id IS NOT NULL AND v_problem_statement_enabled_flag_id IS NOT NULL AND problem_statement_enabled_flag_id != v_problem_statement_enabled_flag_id THEN
-        RAISE EXCEPTION 'Problem statement enabled flag ID does not match expected resource';
-    END IF;
-
-    IF use_templates_flag_id IS NOT NULL AND v_use_templates_flag_id IS NOT NULL AND use_templates_flag_id != v_use_templates_flag_id THEN
-        RAISE EXCEPTION 'Use templates flag ID does not match expected resource';
+    IF v_use_templates_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_use_templates_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_use_templates_flag_id;
     END IF;
 
     -- For update: remove old links first
@@ -209,177 +278,145 @@ BEGIN
     END IF;
 
     -- Link resources
-    IF name_id IS NOT NULL THEN
+    IF v_name_id IS NOT NULL THEN
         INSERT INTO scenario_names (scenario_id, name_id, created_at, updated_at)
-        VALUES (v_scenario_id, name_id, NOW(), NOW())
+        VALUES (v_scenario_id, v_name_id, NOW(), NOW())
         ON CONFLICT (scenario_id, name_id) DO UPDATE SET updated_at = NOW();
     END IF;
 
-    IF description_id IS NOT NULL THEN
+    IF v_description_id IS NOT NULL THEN
         INSERT INTO scenario_descriptions (scenario_id, description_id, created_at, updated_at)
-        VALUES (v_scenario_id, description_id, NOW(), NOW())
+        VALUES (v_scenario_id, v_description_id, NOW(), NOW())
         ON CONFLICT (scenario_id, description_id) DO UPDATE SET updated_at = NOW();
     END IF;
 
-    -- Scenario flags (always insert known flags with true/false values)
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_active_flag_id, active_flag_id IS NOT NULL, active_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_active_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_objectives_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_objectives_enabled_flag_id, objectives_enabled_flag_id IS NOT NULL, objectives_enabled_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_objectives_enabled_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_images_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_images_enabled_flag_id, images_enabled_flag_id IS NOT NULL, images_enabled_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_images_enabled_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_video_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_video_enabled_flag_id, video_enabled_flag_id IS NOT NULL, video_enabled_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_video_enabled_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_questions_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_questions_enabled_flag_id, questions_enabled_flag_id IS NOT NULL, questions_enabled_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_questions_enabled_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_problem_statement_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_problem_statement_enabled_flag_id, problem_statement_enabled_flag_id IS NOT NULL, problem_statement_enabled_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_problem_statement_enabled_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_use_templates_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, active, generated, mcp, created_at, updated_at)
-        VALUES (v_scenario_id, v_use_templates_flag_id, use_templates_flag_id IS NOT NULL, use_templates_flag_id IS NOT NULL, false, false, NOW(), NOW())
-        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            active = EXCLUDED.active,
-            updated_at = NOW();
+        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        VALUES (v_scenario_id, v_use_templates_flag_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
-    -- Multi-select links
-    INSERT INTO scenario_departments (scenario_id, department_id, active, created_at, updated_at)
-    SELECT v_scenario_id, dept_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(department_ids, ARRAY[]::uuid[])) as dept_id
-    ON CONFLICT (scenario_id, department_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_department_ids IS NOT NULL THEN
+        INSERT INTO scenario_departments (scenario_id, department_id, active, created_at, updated_at)
+        SELECT v_scenario_id, dept_id, true, NOW(), NOW()
+        FROM UNNEST(v_department_ids) as dept_id
+        ON CONFLICT (scenario_id, department_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
-    SELECT v_scenario_id, persona_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(persona_ids, ARRAY[]::uuid[])) as persona_id
-    ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_persona_ids IS NOT NULL THEN
+        INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
+        SELECT v_scenario_id, persona_id, true, NOW(), NOW()
+        FROM UNNEST(v_persona_ids) as persona_id
+        ON CONFLICT (scenario_id, persona_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
-    SELECT v_scenario_id, doc_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(document_ids, ARRAY[]::uuid[])) as doc_id
-    ON CONFLICT (scenario_id, document_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_document_ids IS NOT NULL THEN
+        INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
+        SELECT v_scenario_id, doc_id, true, NOW(), NOW()
+        FROM UNNEST(v_document_ids) as doc_id
+        ON CONFLICT (scenario_id, document_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_templates (scenario_id, template_id, active, created_at, updated_at)
-    SELECT v_scenario_id, template_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(template_document_ids, ARRAY[]::uuid[])) as template_id
-    ON CONFLICT (scenario_id, template_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_template_document_ids IS NOT NULL THEN
+        INSERT INTO scenario_templates (scenario_id, template_id, active, created_at, updated_at)
+        SELECT v_scenario_id, template_id, true, NOW(), NOW()
+        FROM UNNEST(v_template_document_ids) as template_id
+        ON CONFLICT (scenario_id, template_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
-    SELECT v_scenario_id, param_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(parameter_ids, ARRAY[]::uuid[])) as param_id
-    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_parameter_ids IS NOT NULL THEN
+        INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
+        SELECT v_scenario_id, param_id, true, NOW(), NOW()
+        FROM UNNEST(v_parameter_ids) as param_id
+        ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
-    SELECT v_scenario_id, field_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(field_ids, ARRAY[]::uuid[])) as field_id
-    ON CONFLICT (scenario_id, field_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_field_ids IS NOT NULL THEN
+        INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
+        SELECT v_scenario_id, field_id, true, NOW(), NOW()
+        FROM UNNEST(v_field_ids) as field_id
+        ON CONFLICT (scenario_id, field_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
-    SELECT v_scenario_id, image_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(image_ids, ARRAY[]::uuid[])) as image_id
-    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_image_ids IS NOT NULL THEN
+        INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+        SELECT v_scenario_id, image_id, true, NOW(), NOW()
+        FROM UNNEST(v_image_ids) as image_id
+        ON CONFLICT (scenario_id, image_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_objectives (scenario_id, objective_id, idx, active, created_at, updated_at)
-    SELECT v_scenario_id, obj_id, (ord - 1), true, NOW(), NOW()
-    FROM UNNEST(COALESCE(objective_ids, ARRAY[]::uuid[])) WITH ORDINALITY as obj(obj_id, ord)
-    ON CONFLICT (scenario_id, objective_id) DO UPDATE SET
-        idx = EXCLUDED.idx,
-        active = true,
-        updated_at = NOW();
+    IF v_objective_ids IS NOT NULL THEN
+        INSERT INTO scenario_objectives (scenario_id, objective_id, active, created_at, updated_at)
+        SELECT v_scenario_id, objective_id, true, NOW(), NOW()
+        FROM UNNEST(v_objective_ids) as objective_id
+        ON CONFLICT (scenario_id, objective_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    IF problem_statement_id IS NOT NULL THEN
+    IF v_problem_statement_id IS NOT NULL THEN
         INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
-        VALUES (v_scenario_id, problem_statement_id, true, NOW(), NOW())
-        ON CONFLICT (scenario_id, problem_statement_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW();
+        VALUES (v_scenario_id, v_problem_statement_id, true, NOW(), NOW())
+        ON CONFLICT (scenario_id, problem_statement_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
-    INSERT INTO scenario_videos (scenario_id, video_id, active, created_at, updated_at)
-    SELECT v_scenario_id, video_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(video_ids, ARRAY[]::uuid[])) as video_id
-    ON CONFLICT (scenario_id, video_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_video_ids IS NOT NULL THEN
+        INSERT INTO scenario_videos (scenario_id, video_id, active, created_at, updated_at)
+        SELECT v_scenario_id, video_id, true, NOW(), NOW()
+        FROM UNNEST(v_video_ids) as video_id
+        ON CONFLICT (scenario_id, video_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    INSERT INTO scenario_questions (scenario_id, question_id, active, created_at, updated_at)
-    SELECT v_scenario_id, question_id, true, NOW(), NOW()
-    FROM UNNEST(COALESCE(question_ids, ARRAY[]::uuid[])) as question_id
-    ON CONFLICT (scenario_id, question_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW();
+    IF v_question_ids IS NOT NULL THEN
+        INSERT INTO scenario_questions (scenario_id, question_id, active, created_at, updated_at)
+        SELECT v_scenario_id, question_id, true, NOW(), NOW()
+        FROM UNNEST(v_question_ids) as question_id
+        ON CONFLICT (scenario_id, question_id) DO UPDATE SET active = true, updated_at = NOW();
+    END IF;
 
-    -- Insert self-referencing edge in scenario_tree (root)
-    INSERT INTO scenario_tree (parent_id, child_id, active)
-    VALUES (v_scenario_id, v_scenario_id, true)
-    ON CONFLICT (parent_id, child_id) DO NOTHING;
-
-    -- Actor name for audit/context
-    SELECT
+    -- Return saved scenario
+    RETURN QUERY
+    SELECT 
+        v_scenario_id,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1)
+             FROM profile_artifact p
+             WHERE p.id = profile_id),
             ''
-        )
-    INTO v_actor_name
-    FROM profile_artifact p
-    WHERE p.id = profile_id;
-
-    RETURN QUERY SELECT v_scenario_id, v_actor_name;
-END $$;
+        )::text;
+END;
+$$;

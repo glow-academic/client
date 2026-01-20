@@ -23,15 +23,16 @@ All SQL functions that return data should follow a consistent structure for thei
 - **Type Safety**: Consistent patterns make type generation and validation easier
 - **Clarity**: The structure itself documents the data model
 
-## Required Fields (First 5)
+## Required Fields (First 6)
 
-**All functions must start with these five required fields:**
+**All functions must start with these six required fields:**
 
 1. **`actor_name`** (text) - The name of the actor/user performing the operation (for audit logging)
 2. **`{artifact}_exists`** (boolean) - Whether the artifact exists (e.g., `persona_exists`, `agent_exists`)
 3. **`can_edit`** (boolean) - Whether the current user has edit permissions
 4. **`disabled_reason`** (text, nullable) - Human-readable explanation of why editing is disabled (NULL if `can_edit = true`)
-5. **`group_id`** (uuid, nullable) - The group ID for linking resources to messages/runs/groups (enables traceability and regeneration workflows)
+5. **`draft_version`** (integer) - The current version of the draft (for concurrency control)
+6. **`group_id`** (uuid, nullable) - The group ID for linking resources to messages/runs/groups (enables traceability and regeneration workflows)
 
 **Example:**
 ```sql
@@ -40,6 +41,7 @@ RETURNS TABLE (
     persona_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     group_id uuid,
     -- ... rest of fields
 )
@@ -55,7 +57,7 @@ After the required fields, resources follow consistent patterns based on whether
 
 **Order:**
 1. `{resource}_id` (uuid) - The selected resource ID
-2. `{resource}_resource` (composite type) - The selected resource object (includes `generated` boolean field and `group_id` uuid field)
+2. `{resource}_resource` (composite type) - The selected resource object (includes `generated` boolean field)
 3. `show_{resource}` (boolean) - Whether to show this resource picker (based on whether options exist AND tool existence for required resources)
 4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no agent available; tools may still exist allowing manual entry)
 5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tools exist)
@@ -64,7 +66,6 @@ After the required fields, resources follow consistent patterns based on whether
 
 **Note:** The `{resource}_resource` composite type includes:
 - `generated` boolean field - Indicates if the resource was AI-generated
-- `group_id` uuid field (nullable) - The group ID for regeneration support (obtained via `resource.call_id → calls.run_id → group_runs.group_id`)
 
 This enables regeneration workflows where users can regenerate resources with custom instructions. See the "Regeneration Support" section below for details.
 
@@ -84,16 +85,15 @@ This enables regeneration workflows where users can regenerate resources with cu
 
 **Order:**
 1. `{resource}_ids` (uuid[]) - Array of selected resource IDs
-2. `{resource}_resources` (composite_type[]) - Array of selected resource objects (each includes `generated` boolean and `group_id` uuid)
+2. `{resource}_resources` (composite_type[]) - Array of selected resource objects (each includes `generated` boolean)
 3. `show_{resource}` (boolean) - Whether to show this resource picker (based on business logic AND tool existence for required resources)
 4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no agent available; tools may still exist allowing manual entry)
 5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tool available)
 6. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs)
-7. `{resource}` (composite_type[]) - **All available options array (comes last; each includes `generated` boolean and `group_id` uuid)**
+7. `{resource}` (composite_type[]) - **All available options array (comes last; each includes `generated` boolean)**
 
 **Note:** Each resource object in the arrays includes:
 - `generated` boolean field - Indicates if that specific resource was AI-generated
-- `group_id` uuid field (nullable) - The group ID for regeneration support (obtained via `resource.call_id → calls.run_id → group_runs.group_id`)
 
 This provides a single standard pattern for both single-select and multi-select resources. See the "Regeneration Support" section below for details.
 
