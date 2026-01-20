@@ -218,10 +218,20 @@ def get_scenarios_docs() -> dict[str, Any]:
         "frontend": {
             "components": [],
             "pages": [],
-            "usage_patterns": "Scenarios are central to GLOW's simulation-based learning, representing interactive learning situations.",
+            "usage_patterns": (
+                "Scenarios are resource-id driven. Create resource records first "
+                "(names, descriptions, problem statements, flags, etc.), then "
+                "pass the *_id fields when saving scenarios."
+            ),
         },
         "glow_context": {
-            "description": "Scenarios represent interactive learning situations used in GLOW for simulation-based learning. They combine personas, documents, parameters, and other resources to create rich learning experiences.",
+            "description": (
+                "Scenarios represent interactive learning situations used in GLOW for "
+                "simulation-based learning. They combine personas, documents, parameters, "
+                "and other resources to create rich learning experiences. All scenario "
+                "writes are ID-only: resources must be created separately and referenced "
+                "by ID in save/draft payloads."
+            ),
             "use_cases": [
                 "Creating interactive learning situations",
                 "Combining personas, documents, and parameters",

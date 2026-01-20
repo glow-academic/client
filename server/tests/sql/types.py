@@ -3131,9 +3131,9 @@ class TestGetActivityByMessageV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: helpers/test_create_test_attempt_v4_complete
+# Generated from: test_create_test_attempt_v4_complete
 
-class Helpers/testCreateTestAttemptV4CompleteSqlParams(BaseModel):
+class TestCreateTestAttemptV4CompleteSqlParams(BaseModel):
 
     simulation_id: UUID
 
@@ -3142,23 +3142,23 @@ class Helpers/testCreateTestAttemptV4CompleteSqlParams(BaseModel):
             self.simulation_id,
         )
 
-class Helpers/testCreateTestAttemptV4CompleteSqlRow(BaseModel):
+class TestCreateTestAttemptV4CompleteSqlRow(BaseModel):
 
     attempt_id: UUID | None = None
 
-class Helpers/testCreateTestAttemptV4CompleteApiRequest(BaseModel):
+class TestCreateTestAttemptV4CompleteApiRequest(BaseModel):
 
     simulation_id: UUID
 
-class Helpers/testCreateTestAttemptV4CompleteApiResponse(BaseModel):
+class TestCreateTestAttemptV4CompleteApiResponse(BaseModel):
 
     attempt_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_benchmark_attempt_v4_complete
+# Generated from: test_create_test_benchmark_attempt_v4_complete
 
-class Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlParams(BaseModel):
+class TestCreateTestBenchmarkAttemptV4CompleteSqlParams(BaseModel):
 
     eval_id: UUID
 
@@ -3167,23 +3167,23 @@ class Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlParams(BaseModel):
             self.eval_id,
         )
 
-class Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlRow(BaseModel):
+class TestCreateTestBenchmarkAttemptV4CompleteSqlRow(BaseModel):
 
     attempt_id: UUID | None = None
 
-class Helpers/testCreateTestBenchmarkAttemptV4CompleteApiRequest(BaseModel):
+class TestCreateTestBenchmarkAttemptV4CompleteApiRequest(BaseModel):
 
     eval_id: UUID
 
-class Helpers/testCreateTestBenchmarkAttemptV4CompleteApiResponse(BaseModel):
+class TestCreateTestBenchmarkAttemptV4CompleteApiResponse(BaseModel):
 
     attempt_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_chat_v4_complete
+# Generated from: test_create_test_chat_v4_complete
 
-class Helpers/testCreateTestChatV4CompleteSqlParams(BaseModel):
+class TestCreateTestChatV4CompleteSqlParams(BaseModel):
 
     scenario_id: UUID
     trace_id: str | None = None
@@ -3194,24 +3194,24 @@ class Helpers/testCreateTestChatV4CompleteSqlParams(BaseModel):
             self.trace_id,
         )
 
-class Helpers/testCreateTestChatV4CompleteSqlRow(BaseModel):
+class TestCreateTestChatV4CompleteSqlRow(BaseModel):
 
     chat_id: UUID | None = None
 
-class Helpers/testCreateTestChatV4CompleteApiRequest(BaseModel):
+class TestCreateTestChatV4CompleteApiRequest(BaseModel):
 
     scenario_id: UUID
     trace_id: str | None = None
 
-class Helpers/testCreateTestChatV4CompleteApiResponse(BaseModel):
+class TestCreateTestChatV4CompleteApiResponse(BaseModel):
 
     chat_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_eval_group_v4_complete
+# Generated from: test_create_test_eval_group_v4_complete
 
-class Helpers/testCreateTestEvalGroupV4CompleteSqlParams(BaseModel):
+class TestCreateTestEvalGroupV4CompleteSqlParams(BaseModel):
 
     eval_id: UUID
 
@@ -3220,25 +3220,25 @@ class Helpers/testCreateTestEvalGroupV4CompleteSqlParams(BaseModel):
             self.eval_id,
         )
 
-class Helpers/testCreateTestEvalGroupV4CompleteSqlRow(BaseModel):
+class TestCreateTestEvalGroupV4CompleteSqlRow(BaseModel):
 
     group_id: UUID | None = None
     eval_id: UUID | None = None
 
-class Helpers/testCreateTestEvalGroupV4CompleteApiRequest(BaseModel):
+class TestCreateTestEvalGroupV4CompleteApiRequest(BaseModel):
 
     eval_id: UUID
 
-class Helpers/testCreateTestEvalGroupV4CompleteApiResponse(BaseModel):
+class TestCreateTestEvalGroupV4CompleteApiResponse(BaseModel):
 
     group_id: UUID | None = None
     eval_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_eval_run_v4_complete
+# Generated from: test_create_test_eval_run_v4_complete
 
-class Helpers/testCreateTestEvalRunV4CompleteSqlParams(BaseModel):
+class TestCreateTestEvalRunV4CompleteSqlParams(BaseModel):
 
     eval_id: UUID
     completed: bool | None = False
@@ -3249,18 +3249,18 @@ class Helpers/testCreateTestEvalRunV4CompleteSqlParams(BaseModel):
             self.completed,
         )
 
-class Helpers/testCreateTestEvalRunV4CompleteSqlRow(BaseModel):
+class TestCreateTestEvalRunV4CompleteSqlRow(BaseModel):
 
     run_id: UUID | None = None
     eval_id: UUID | None = None
     completed: bool | None = None
 
-class Helpers/testCreateTestEvalRunV4CompleteApiRequest(BaseModel):
+class TestCreateTestEvalRunV4CompleteApiRequest(BaseModel):
 
     eval_id: UUID
     completed: bool | None = False
 
-class Helpers/testCreateTestEvalRunV4CompleteApiResponse(BaseModel):
+class TestCreateTestEvalRunV4CompleteApiResponse(BaseModel):
 
     run_id: UUID | None = None
     eval_id: UUID | None = None
@@ -3268,9 +3268,9 @@ class Helpers/testCreateTestEvalRunV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: helpers/test_create_test_group_v4_complete
+# Generated from: test_create_test_group_v4_complete
 
-class Helpers/testCreateTestGroupV4CompleteSqlParams(BaseModel):
+class TestCreateTestGroupV4CompleteSqlParams(BaseModel):
 
     rubric_id: UUID
     trace_id: str | None = None
@@ -3281,24 +3281,24 @@ class Helpers/testCreateTestGroupV4CompleteSqlParams(BaseModel):
             self.trace_id,
         )
 
-class Helpers/testCreateTestGroupV4CompleteSqlRow(BaseModel):
+class TestCreateTestGroupV4CompleteSqlRow(BaseModel):
 
     group_id: UUID | None = None
 
-class Helpers/testCreateTestGroupV4CompleteApiRequest(BaseModel):
+class TestCreateTestGroupV4CompleteApiRequest(BaseModel):
 
     rubric_id: UUID
     trace_id: str | None = None
 
-class Helpers/testCreateTestGroupV4CompleteApiResponse(BaseModel):
+class TestCreateTestGroupV4CompleteApiResponse(BaseModel):
 
     group_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_guest_profile_v4_complete
+# Generated from: test_create_test_guest_profile_v4_complete
 
-class Helpers/testCreateTestGuestProfileV4CompleteSqlParams(BaseModel):
+class TestCreateTestGuestProfileV4CompleteSqlParams(BaseModel):
 
     email: str | None = None
 
@@ -3307,25 +3307,25 @@ class Helpers/testCreateTestGuestProfileV4CompleteSqlParams(BaseModel):
             self.email,
         )
 
-class Helpers/testCreateTestGuestProfileV4CompleteSqlRow(BaseModel):
+class TestCreateTestGuestProfileV4CompleteSqlRow(BaseModel):
 
     guest_id: UUID | None = None
     email: str | None = None
 
-class Helpers/testCreateTestGuestProfileV4CompleteApiRequest(BaseModel):
+class TestCreateTestGuestProfileV4CompleteApiRequest(BaseModel):
 
     email: str | None = None
 
-class Helpers/testCreateTestGuestProfileV4CompleteApiResponse(BaseModel):
+class TestCreateTestGuestProfileV4CompleteApiResponse(BaseModel):
 
     guest_id: UUID | None = None
     email: str | None = None
 
 
 
-# Generated from: helpers/test_create_test_rubric_v4_complete
+# Generated from: test_create_test_rubric_v4_complete
 
-class Helpers/testCreateTestRubricV4CompleteSqlParams(BaseModel):
+class TestCreateTestRubricV4CompleteSqlParams(BaseModel):
 
     name: str | None = None
     description: str | None = None
@@ -3340,26 +3340,26 @@ class Helpers/testCreateTestRubricV4CompleteSqlParams(BaseModel):
             self.pass_points,
         )
 
-class Helpers/testCreateTestRubricV4CompleteSqlRow(BaseModel):
+class TestCreateTestRubricV4CompleteSqlRow(BaseModel):
 
     rubric_id: UUID | None = None
 
-class Helpers/testCreateTestRubricV4CompleteApiRequest(BaseModel):
+class TestCreateTestRubricV4CompleteApiRequest(BaseModel):
 
     name: str | None = None
     description: str | None = None
     points: int | None = 100
     pass_points: int | None = 70
 
-class Helpers/testCreateTestRubricV4CompleteApiResponse(BaseModel):
+class TestCreateTestRubricV4CompleteApiResponse(BaseModel):
 
     rubric_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_run_v4_complete
+# Generated from: test_create_test_run_v4_complete
 
-class Helpers/testCreateTestRunV4CompleteSqlParams(BaseModel):
+class TestCreateTestRunV4CompleteSqlParams(BaseModel):
 
     department_id: UUID
     model_id: UUID
@@ -3378,14 +3378,14 @@ class Helpers/testCreateTestRunV4CompleteSqlParams(BaseModel):
             self.entity_id,
         )
 
-class Helpers/testCreateTestRunV4CompleteSqlRow(BaseModel):
+class TestCreateTestRunV4CompleteSqlRow(BaseModel):
 
     run_id: UUID | None = None
     department_id: UUID | None = None
     model_id: UUID | None = None
     agent_id: UUID | None = None
 
-class Helpers/testCreateTestRunV4CompleteApiRequest(BaseModel):
+class TestCreateTestRunV4CompleteApiRequest(BaseModel):
 
     department_id: UUID
     model_id: UUID
@@ -3393,7 +3393,7 @@ class Helpers/testCreateTestRunV4CompleteApiRequest(BaseModel):
     entity_type: str | None = None
     entity_id: UUID | None = None
 
-class Helpers/testCreateTestRunV4CompleteApiResponse(BaseModel):
+class TestCreateTestRunV4CompleteApiResponse(BaseModel):
 
     run_id: UUID | None = None
     department_id: UUID | None = None
@@ -3402,9 +3402,9 @@ class Helpers/testCreateTestRunV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: helpers/test_create_test_scenario_v4_complete
+# Generated from: test_create_test_scenario_v4_complete
 
-class Helpers/testCreateTestScenarioV4CompleteSqlParams(BaseModel):
+class TestCreateTestScenarioV4CompleteSqlParams(BaseModel):
 
     name: str | None = None
 
@@ -3413,23 +3413,23 @@ class Helpers/testCreateTestScenarioV4CompleteSqlParams(BaseModel):
             self.name,
         )
 
-class Helpers/testCreateTestScenarioV4CompleteSqlRow(BaseModel):
+class TestCreateTestScenarioV4CompleteSqlRow(BaseModel):
 
     scenario_id: UUID | None = None
 
-class Helpers/testCreateTestScenarioV4CompleteApiRequest(BaseModel):
+class TestCreateTestScenarioV4CompleteApiRequest(BaseModel):
 
     name: str | None = None
 
-class Helpers/testCreateTestScenarioV4CompleteApiResponse(BaseModel):
+class TestCreateTestScenarioV4CompleteApiResponse(BaseModel):
 
     scenario_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_create_test_test_v4_complete
+# Generated from: test_create_test_test_v4_complete
 
-class Helpers/testCreateTestTestV4CompleteSqlParams(BaseModel):
+class TestCreateTestTestV4CompleteSqlParams(BaseModel):
 
     title: str | None = None
     run_id: UUID | None = None
@@ -3440,24 +3440,24 @@ class Helpers/testCreateTestTestV4CompleteSqlParams(BaseModel):
             self.run_id,
         )
 
-class Helpers/testCreateTestTestV4CompleteSqlRow(BaseModel):
+class TestCreateTestTestV4CompleteSqlRow(BaseModel):
 
     test_id: UUID | None = None
 
-class Helpers/testCreateTestTestV4CompleteApiRequest(BaseModel):
+class TestCreateTestTestV4CompleteApiRequest(BaseModel):
 
     title: str | None = None
     run_id: UUID | None = None
 
-class Helpers/testCreateTestTestV4CompleteApiResponse(BaseModel):
+class TestCreateTestTestV4CompleteApiResponse(BaseModel):
 
     test_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_get_attempt_by_id_v4_complete
+# Generated from: test_get_attempt_by_id_v4_complete
 
-class Helpers/testGetAttemptByIdV4CompleteSqlParams(BaseModel):
+class TestGetAttemptByIdV4CompleteSqlParams(BaseModel):
 
     attempt_id: UUID
 
@@ -3466,25 +3466,25 @@ class Helpers/testGetAttemptByIdV4CompleteSqlParams(BaseModel):
             self.attempt_id,
         )
 
-class Helpers/testGetAttemptByIdV4CompleteSqlRow(BaseModel):
+class TestGetAttemptByIdV4CompleteSqlRow(BaseModel):
 
     id: UUID | None = None
     simulation_id: UUID | None = None
 
-class Helpers/testGetAttemptByIdV4CompleteApiRequest(BaseModel):
+class TestGetAttemptByIdV4CompleteApiRequest(BaseModel):
 
     attempt_id: UUID
 
-class Helpers/testGetAttemptByIdV4CompleteApiResponse(BaseModel):
+class TestGetAttemptByIdV4CompleteApiResponse(BaseModel):
 
     id: UUID | None = None
     simulation_id: UUID | None = None
 
 
 
-# Generated from: helpers/test_get_chat_by_id_v4_complete
+# Generated from: test_get_chat_by_id_v4_complete
 
-class Helpers/testGetChatByIdV4CompleteSqlParams(BaseModel):
+class TestGetChatByIdV4CompleteSqlParams(BaseModel):
 
     chat_id: UUID
 
@@ -3493,17 +3493,17 @@ class Helpers/testGetChatByIdV4CompleteSqlParams(BaseModel):
             self.chat_id,
         )
 
-class Helpers/testGetChatByIdV4CompleteSqlRow(BaseModel):
+class TestGetChatByIdV4CompleteSqlRow(BaseModel):
 
     id: UUID | None = None
     completed: bool | None = None
     created_at: str | None = None
 
-class Helpers/testGetChatByIdV4CompleteApiRequest(BaseModel):
+class TestGetChatByIdV4CompleteApiRequest(BaseModel):
 
     chat_id: UUID
 
-class Helpers/testGetChatByIdV4CompleteApiResponse(BaseModel):
+class TestGetChatByIdV4CompleteApiResponse(BaseModel):
 
     id: UUID | None = None
     completed: bool | None = None
@@ -3511,9 +3511,9 @@ class Helpers/testGetChatByIdV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: helpers/test_get_developer_messages_by_run_v4_complete
+# Generated from: test_get_developer_messages_by_run_v4_complete
 
-class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams(BaseModel):
+class TestGetDeveloperMessagesByRunV4CompleteSqlParams(BaseModel):
 
     run_id: UUID
 
@@ -3522,43 +3522,43 @@ class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams(BaseModel):
             self.run_id,
         )
 
-class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlRow(BaseModel):
+class TestGetDeveloperMessagesByRunV4CompleteSqlRow(BaseModel):
 
     message_count: int | None = None
 
-class Helpers/testGetDeveloperMessagesByRunV4CompleteApiRequest(BaseModel):
+class TestGetDeveloperMessagesByRunV4CompleteApiRequest(BaseModel):
 
     run_id: UUID
 
-class Helpers/testGetDeveloperMessagesByRunV4CompleteApiResponse(BaseModel):
+class TestGetDeveloperMessagesByRunV4CompleteApiResponse(BaseModel):
 
     message_count: int | None = None
 
 
 
-# Generated from: helpers/test_get_eval_by_active_v4_complete
+# Generated from: test_get_eval_by_active_v4_complete
 
-class Helpers/testGetEvalByActiveV4CompleteSqlParams(BaseModel):
-
-    pass
-
-class Helpers/testGetEvalByActiveV4CompleteSqlRow(BaseModel):
-
-    id: UUID | None = None
-
-class Helpers/testGetEvalByActiveV4CompleteApiRequest(BaseModel):
+class TestGetEvalByActiveV4CompleteSqlParams(BaseModel):
 
     pass
 
-class Helpers/testGetEvalByActiveV4CompleteApiResponse(BaseModel):
+class TestGetEvalByActiveV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class TestGetEvalByActiveV4CompleteApiRequest(BaseModel):
+
+    pass
+
+class TestGetEvalByActiveV4CompleteApiResponse(BaseModel):
 
     id: UUID | None = None
 
 
 
-# Generated from: helpers/test_get_or_create_test_agent_v4_complete
+# Generated from: test_get_or_create_test_agent_v4_complete
 
-class Helpers/testGetOrCreateTestAgentV4CompleteSqlParams(BaseModel):
+class TestGetOrCreateTestAgentV4CompleteSqlParams(BaseModel):
 
     name: str | None = None
     description: str | None = None
@@ -3571,20 +3571,20 @@ class Helpers/testGetOrCreateTestAgentV4CompleteSqlParams(BaseModel):
             self.model_id,
         )
 
-class Helpers/testGetOrCreateTestAgentV4CompleteSqlRow(BaseModel):
+class TestGetOrCreateTestAgentV4CompleteSqlRow(BaseModel):
 
     agent_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     model_id: UUID | None = None
 
-class Helpers/testGetOrCreateTestAgentV4CompleteApiRequest(BaseModel):
+class TestGetOrCreateTestAgentV4CompleteApiRequest(BaseModel):
 
     name: str | None = None
     description: str | None = None
     model_id: UUID | None = None
 
-class Helpers/testGetOrCreateTestAgentV4CompleteApiResponse(BaseModel):
+class TestGetOrCreateTestAgentV4CompleteApiResponse(BaseModel):
 
     agent_id: UUID | None = None
     name: str | None = None
@@ -3593,9 +3593,9 @@ class Helpers/testGetOrCreateTestAgentV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: helpers/test_get_profile_activity_v4_complete
+# Generated from: test_get_profile_activity_v4_complete
 
-class Helpers/testGetProfileActivityV4CompleteSqlParams(BaseModel):
+class TestGetProfileActivityV4CompleteSqlParams(BaseModel):
 
     profile_id: UUID
 
@@ -3604,23 +3604,23 @@ class Helpers/testGetProfileActivityV4CompleteSqlParams(BaseModel):
             self.profile_id,
         )
 
-class Helpers/testGetProfileActivityV4CompleteSqlRow(BaseModel):
+class TestGetProfileActivityV4CompleteSqlRow(BaseModel):
 
     last_active: str | None = None
 
-class Helpers/testGetProfileActivityV4CompleteApiRequest(BaseModel):
+class TestGetProfileActivityV4CompleteApiRequest(BaseModel):
 
     pass
 
-class Helpers/testGetProfileActivityV4CompleteApiResponse(BaseModel):
+class TestGetProfileActivityV4CompleteApiResponse(BaseModel):
 
     last_active: str | None = None
 
 
 
-# Generated from: helpers/test_get_profile_by_id_v4_complete
+# Generated from: test_get_profile_by_id_v4_complete
 
-class Helpers/testGetProfileByIdV4CompleteSqlParams(BaseModel):
+class TestGetProfileByIdV4CompleteSqlParams(BaseModel):
 
     profile_id: UUID
 
@@ -3629,23 +3629,23 @@ class Helpers/testGetProfileByIdV4CompleteSqlParams(BaseModel):
             self.profile_id,
         )
 
-class Helpers/testGetProfileByIdV4CompleteSqlRow(BaseModel):
+class TestGetProfileByIdV4CompleteSqlRow(BaseModel):
 
     active: bool | None = None
 
-class Helpers/testGetProfileByIdV4CompleteApiRequest(BaseModel):
+class TestGetProfileByIdV4CompleteApiRequest(BaseModel):
 
     pass
 
-class Helpers/testGetProfileByIdV4CompleteApiResponse(BaseModel):
+class TestGetProfileByIdV4CompleteApiResponse(BaseModel):
 
     active: bool | None = None
 
 
 
-# Generated from: helpers/test_get_run_by_id_v4_complete
+# Generated from: test_get_run_by_id_v4_complete
 
-class Helpers/testGetRunByIdV4CompleteSqlParams(BaseModel):
+class TestGetRunByIdV4CompleteSqlParams(BaseModel):
 
     run_id: UUID
 
@@ -3654,17 +3654,17 @@ class Helpers/testGetRunByIdV4CompleteSqlParams(BaseModel):
             self.run_id,
         )
 
-class Helpers/testGetRunByIdV4CompleteSqlRow(BaseModel):
+class TestGetRunByIdV4CompleteSqlRow(BaseModel):
 
     id: UUID | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
 
-class Helpers/testGetRunByIdV4CompleteApiRequest(BaseModel):
+class TestGetRunByIdV4CompleteApiRequest(BaseModel):
 
     run_id: UUID
 
-class Helpers/testGetRunByIdV4CompleteApiResponse(BaseModel):
+class TestGetRunByIdV4CompleteApiResponse(BaseModel):
 
     id: UUID | None = None
     input_tokens: int | None = None
@@ -3672,29 +3672,29 @@ class Helpers/testGetRunByIdV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: helpers/test_get_simulation_by_active_v4_complete
+# Generated from: test_get_simulation_by_active_v4_complete
 
-class Helpers/testGetSimulationByActiveV4CompleteSqlParams(BaseModel):
-
-    pass
-
-class Helpers/testGetSimulationByActiveV4CompleteSqlRow(BaseModel):
-
-    id: UUID | None = None
-
-class Helpers/testGetSimulationByActiveV4CompleteApiRequest(BaseModel):
+class TestGetSimulationByActiveV4CompleteSqlParams(BaseModel):
 
     pass
 
-class Helpers/testGetSimulationByActiveV4CompleteApiResponse(BaseModel):
+class TestGetSimulationByActiveV4CompleteSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class TestGetSimulationByActiveV4CompleteApiRequest(BaseModel):
+
+    pass
+
+class TestGetSimulationByActiveV4CompleteApiResponse(BaseModel):
 
     id: UUID | None = None
 
 
 
-# Generated from: helpers/test_update_eval_use_groups_v4_complete
+# Generated from: test_update_eval_use_groups_v4_complete
 
-class Helpers/testUpdateEvalUseGroupsV4CompleteSqlParams(BaseModel):
+class TestUpdateEvalUseGroupsV4CompleteSqlParams(BaseModel):
 
     eval_id: UUID
     use_groups: bool
@@ -3705,16 +3705,16 @@ class Helpers/testUpdateEvalUseGroupsV4CompleteSqlParams(BaseModel):
             self.use_groups,
         )
 
-class Helpers/testUpdateEvalUseGroupsV4CompleteSqlRow(BaseModel):
+class TestUpdateEvalUseGroupsV4CompleteSqlRow(BaseModel):
 
     eval_id: UUID | None = None
 
-class Helpers/testUpdateEvalUseGroupsV4CompleteApiRequest(BaseModel):
+class TestUpdateEvalUseGroupsV4CompleteApiRequest(BaseModel):
 
     eval_id: UUID
     use_groups: bool
 
-class Helpers/testUpdateEvalUseGroupsV4CompleteApiResponse(BaseModel):
+class TestUpdateEvalUseGroupsV4CompleteApiResponse(BaseModel):
 
     eval_id: UUID | None = None
 
@@ -4285,130 +4285,130 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TestGetActivityByMessageV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql": (
-        "Helpers/testCreateTestAttemptV4CompleteSqlParams",
-        "Helpers/testCreateTestAttemptV4CompleteSqlRow",
-        "Helpers/testCreateTestAttemptV4CompleteApiRequest",
-        "Helpers/testCreateTestAttemptV4CompleteApiResponse",
+        "TestCreateTestAttemptV4CompleteSqlParams",
+        "TestCreateTestAttemptV4CompleteSqlRow",
+        "TestCreateTestAttemptV4CompleteApiRequest",
+        "TestCreateTestAttemptV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql": (
-        "Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlParams",
-        "Helpers/testCreateTestBenchmarkAttemptV4CompleteSqlRow",
-        "Helpers/testCreateTestBenchmarkAttemptV4CompleteApiRequest",
-        "Helpers/testCreateTestBenchmarkAttemptV4CompleteApiResponse",
+        "TestCreateTestBenchmarkAttemptV4CompleteSqlParams",
+        "TestCreateTestBenchmarkAttemptV4CompleteSqlRow",
+        "TestCreateTestBenchmarkAttemptV4CompleteApiRequest",
+        "TestCreateTestBenchmarkAttemptV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql": (
-        "Helpers/testCreateTestChatV4CompleteSqlParams",
-        "Helpers/testCreateTestChatV4CompleteSqlRow",
-        "Helpers/testCreateTestChatV4CompleteApiRequest",
-        "Helpers/testCreateTestChatV4CompleteApiResponse",
+        "TestCreateTestChatV4CompleteSqlParams",
+        "TestCreateTestChatV4CompleteSqlRow",
+        "TestCreateTestChatV4CompleteApiRequest",
+        "TestCreateTestChatV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql": (
-        "Helpers/testCreateTestEvalGroupV4CompleteSqlParams",
-        "Helpers/testCreateTestEvalGroupV4CompleteSqlRow",
-        "Helpers/testCreateTestEvalGroupV4CompleteApiRequest",
-        "Helpers/testCreateTestEvalGroupV4CompleteApiResponse",
+        "TestCreateTestEvalGroupV4CompleteSqlParams",
+        "TestCreateTestEvalGroupV4CompleteSqlRow",
+        "TestCreateTestEvalGroupV4CompleteApiRequest",
+        "TestCreateTestEvalGroupV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql": (
-        "Helpers/testCreateTestEvalRunV4CompleteSqlParams",
-        "Helpers/testCreateTestEvalRunV4CompleteSqlRow",
-        "Helpers/testCreateTestEvalRunV4CompleteApiRequest",
-        "Helpers/testCreateTestEvalRunV4CompleteApiResponse",
+        "TestCreateTestEvalRunV4CompleteSqlParams",
+        "TestCreateTestEvalRunV4CompleteSqlRow",
+        "TestCreateTestEvalRunV4CompleteApiRequest",
+        "TestCreateTestEvalRunV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_group_v4_complete.sql": (
-        "Helpers/testCreateTestGroupV4CompleteSqlParams",
-        "Helpers/testCreateTestGroupV4CompleteSqlRow",
-        "Helpers/testCreateTestGroupV4CompleteApiRequest",
-        "Helpers/testCreateTestGroupV4CompleteApiResponse",
+        "TestCreateTestGroupV4CompleteSqlParams",
+        "TestCreateTestGroupV4CompleteSqlRow",
+        "TestCreateTestGroupV4CompleteApiRequest",
+        "TestCreateTestGroupV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_guest_profile_v4_complete.sql": (
-        "Helpers/testCreateTestGuestProfileV4CompleteSqlParams",
-        "Helpers/testCreateTestGuestProfileV4CompleteSqlRow",
-        "Helpers/testCreateTestGuestProfileV4CompleteApiRequest",
-        "Helpers/testCreateTestGuestProfileV4CompleteApiResponse",
+        "TestCreateTestGuestProfileV4CompleteSqlParams",
+        "TestCreateTestGuestProfileV4CompleteSqlRow",
+        "TestCreateTestGuestProfileV4CompleteApiRequest",
+        "TestCreateTestGuestProfileV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_rubric_v4_complete.sql": (
-        "Helpers/testCreateTestRubricV4CompleteSqlParams",
-        "Helpers/testCreateTestRubricV4CompleteSqlRow",
-        "Helpers/testCreateTestRubricV4CompleteApiRequest",
-        "Helpers/testCreateTestRubricV4CompleteApiResponse",
+        "TestCreateTestRubricV4CompleteSqlParams",
+        "TestCreateTestRubricV4CompleteSqlRow",
+        "TestCreateTestRubricV4CompleteApiRequest",
+        "TestCreateTestRubricV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql": (
-        "Helpers/testCreateTestRunV4CompleteSqlParams",
-        "Helpers/testCreateTestRunV4CompleteSqlRow",
-        "Helpers/testCreateTestRunV4CompleteApiRequest",
-        "Helpers/testCreateTestRunV4CompleteApiResponse",
+        "TestCreateTestRunV4CompleteSqlParams",
+        "TestCreateTestRunV4CompleteSqlRow",
+        "TestCreateTestRunV4CompleteApiRequest",
+        "TestCreateTestRunV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql": (
-        "Helpers/testCreateTestScenarioV4CompleteSqlParams",
-        "Helpers/testCreateTestScenarioV4CompleteSqlRow",
-        "Helpers/testCreateTestScenarioV4CompleteApiRequest",
-        "Helpers/testCreateTestScenarioV4CompleteApiResponse",
+        "TestCreateTestScenarioV4CompleteSqlParams",
+        "TestCreateTestScenarioV4CompleteSqlRow",
+        "TestCreateTestScenarioV4CompleteApiRequest",
+        "TestCreateTestScenarioV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_test_v4_complete.sql": (
-        "Helpers/testCreateTestTestV4CompleteSqlParams",
-        "Helpers/testCreateTestTestV4CompleteSqlRow",
-        "Helpers/testCreateTestTestV4CompleteApiRequest",
-        "Helpers/testCreateTestTestV4CompleteApiResponse",
+        "TestCreateTestTestV4CompleteSqlParams",
+        "TestCreateTestTestV4CompleteSqlRow",
+        "TestCreateTestTestV4CompleteApiRequest",
+        "TestCreateTestTestV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_attempt_by_id_v4_complete.sql": (
-        "Helpers/testGetAttemptByIdV4CompleteSqlParams",
-        "Helpers/testGetAttemptByIdV4CompleteSqlRow",
-        "Helpers/testGetAttemptByIdV4CompleteApiRequest",
-        "Helpers/testGetAttemptByIdV4CompleteApiResponse",
+        "TestGetAttemptByIdV4CompleteSqlParams",
+        "TestGetAttemptByIdV4CompleteSqlRow",
+        "TestGetAttemptByIdV4CompleteApiRequest",
+        "TestGetAttemptByIdV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql": (
-        "Helpers/testGetChatByIdV4CompleteSqlParams",
-        "Helpers/testGetChatByIdV4CompleteSqlRow",
-        "Helpers/testGetChatByIdV4CompleteApiRequest",
-        "Helpers/testGetChatByIdV4CompleteApiResponse",
+        "TestGetChatByIdV4CompleteSqlParams",
+        "TestGetChatByIdV4CompleteSqlRow",
+        "TestGetChatByIdV4CompleteApiRequest",
+        "TestGetChatByIdV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql": (
-        "Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams",
-        "Helpers/testGetDeveloperMessagesByRunV4CompleteSqlRow",
-        "Helpers/testGetDeveloperMessagesByRunV4CompleteApiRequest",
-        "Helpers/testGetDeveloperMessagesByRunV4CompleteApiResponse",
+        "TestGetDeveloperMessagesByRunV4CompleteSqlParams",
+        "TestGetDeveloperMessagesByRunV4CompleteSqlRow",
+        "TestGetDeveloperMessagesByRunV4CompleteApiRequest",
+        "TestGetDeveloperMessagesByRunV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql": (
-        "Helpers/testGetEvalByActiveV4CompleteSqlParams",
-        "Helpers/testGetEvalByActiveV4CompleteSqlRow",
-        "Helpers/testGetEvalByActiveV4CompleteApiRequest",
-        "Helpers/testGetEvalByActiveV4CompleteApiResponse",
+        "TestGetEvalByActiveV4CompleteSqlParams",
+        "TestGetEvalByActiveV4CompleteSqlRow",
+        "TestGetEvalByActiveV4CompleteApiRequest",
+        "TestGetEvalByActiveV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_or_create_test_agent_v4_complete.sql": (
-        "Helpers/testGetOrCreateTestAgentV4CompleteSqlParams",
-        "Helpers/testGetOrCreateTestAgentV4CompleteSqlRow",
-        "Helpers/testGetOrCreateTestAgentV4CompleteApiRequest",
-        "Helpers/testGetOrCreateTestAgentV4CompleteApiResponse",
+        "TestGetOrCreateTestAgentV4CompleteSqlParams",
+        "TestGetOrCreateTestAgentV4CompleteSqlRow",
+        "TestGetOrCreateTestAgentV4CompleteApiRequest",
+        "TestGetOrCreateTestAgentV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql": (
-        "Helpers/testGetProfileActivityV4CompleteSqlParams",
-        "Helpers/testGetProfileActivityV4CompleteSqlRow",
-        "Helpers/testGetProfileActivityV4CompleteApiRequest",
-        "Helpers/testGetProfileActivityV4CompleteApiResponse",
+        "TestGetProfileActivityV4CompleteSqlParams",
+        "TestGetProfileActivityV4CompleteSqlRow",
+        "TestGetProfileActivityV4CompleteApiRequest",
+        "TestGetProfileActivityV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql": (
-        "Helpers/testGetProfileByIdV4CompleteSqlParams",
-        "Helpers/testGetProfileByIdV4CompleteSqlRow",
-        "Helpers/testGetProfileByIdV4CompleteApiRequest",
-        "Helpers/testGetProfileByIdV4CompleteApiResponse",
+        "TestGetProfileByIdV4CompleteSqlParams",
+        "TestGetProfileByIdV4CompleteSqlRow",
+        "TestGetProfileByIdV4CompleteApiRequest",
+        "TestGetProfileByIdV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql": (
-        "Helpers/testGetRunByIdV4CompleteSqlParams",
-        "Helpers/testGetRunByIdV4CompleteSqlRow",
-        "Helpers/testGetRunByIdV4CompleteApiRequest",
-        "Helpers/testGetRunByIdV4CompleteApiResponse",
+        "TestGetRunByIdV4CompleteSqlParams",
+        "TestGetRunByIdV4CompleteSqlRow",
+        "TestGetRunByIdV4CompleteApiRequest",
+        "TestGetRunByIdV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql": (
-        "Helpers/testGetSimulationByActiveV4CompleteSqlParams",
-        "Helpers/testGetSimulationByActiveV4CompleteSqlRow",
-        "Helpers/testGetSimulationByActiveV4CompleteApiRequest",
-        "Helpers/testGetSimulationByActiveV4CompleteApiResponse",
+        "TestGetSimulationByActiveV4CompleteSqlParams",
+        "TestGetSimulationByActiveV4CompleteSqlRow",
+        "TestGetSimulationByActiveV4CompleteApiRequest",
+        "TestGetSimulationByActiveV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_update_eval_use_groups_v4_complete.sql": (
-        "Helpers/testUpdateEvalUseGroupsV4CompleteSqlParams",
-        "Helpers/testUpdateEvalUseGroupsV4CompleteSqlRow",
-        "Helpers/testUpdateEvalUseGroupsV4CompleteApiRequest",
-        "Helpers/testUpdateEvalUseGroupsV4CompleteApiResponse",
+        "TestUpdateEvalUseGroupsV4CompleteSqlParams",
+        "TestUpdateEvalUseGroupsV4CompleteSqlRow",
+        "TestUpdateEvalUseGroupsV4CompleteApiRequest",
+        "TestUpdateEvalUseGroupsV4CompleteApiResponse",
     ),
 }
 

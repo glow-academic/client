@@ -96,12 +96,12 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         operation = filename[: -len(".sql")]
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/{VERSION}/integration/socket/[operation].sql
+    # Pattern: tests/sql/{VERSION}/integration/socket/[operation].sql (allow nested folders)
     if sql_path.startswith(f"{tests_sql_prefix}socket/"):
         relative = sql_path[len(f"{tests_sql_prefix}socket/") :]
         if not relative.endswith(".sql"):
             return None
-        operation = relative[: -len(".sql")]
+        operation = Path(relative).stem
         return operation.replace("-", "_")
 
     # Pattern: tests/sql/{VERSION}/integration/api/[resource]/test_[operation]_v4_complete.sql

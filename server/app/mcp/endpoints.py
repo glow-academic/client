@@ -927,6 +927,24 @@ def get_available_operations(name: str) -> list[str]:
     return list(HANDLERS[name].keys())
 
 
+def _suggest_item_name(name: str) -> str | None:
+    """Suggest the correct artifact/resource name based on common pluralization mistakes."""
+    if name in ALL_ITEMS:
+        return None
+
+    plural_to_singular = {pluralize_artifact(a): a for a in ARTIFACTS}
+    if name in plural_to_singular:
+        return plural_to_singular[name]
+
+    if name.endswith("s") and name[:-1] in ARTIFACTS:
+        return name[:-1]
+
+    if f"{name}s" in RESOURCES:
+        return f"{name}s"
+
+    return None
+
+
 def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
     """Get payload schema for artifact/resource operations.
     
@@ -937,28 +955,35 @@ def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
     Note: The 'mcp' field is automatically filtered out as it's auto-injected.
     """
     if name not in ALL_ITEMS:
-        return {"error": f"'{name}' is not a valid artifact or resource."}
+        suggestion = _suggest_item_name(name)
+        response: dict[str, Any] = {
+            "error": f"'{name}' is not a valid artifact or resource."
+        }
+        if suggestion:
+            response["suggestion"] = suggestion
+        return response
 
     # Try to get schema from handler if available
-    if name in HANDLERS and operation in HANDLERS[name]:
+    handler: Any | None = None
+    if name in RESOURCES and operation == "create":
+        handler = RESOURCE_HANDLERS.get(name)
+    elif name in HANDLERS and operation in HANDLERS[name]:
+        handler = HANDLERS[name][operation]
+
+    if handler:
         try:
-            handler = HANDLERS[name][operation]
-            # Try to get request model from handler
-            if hasattr(handler, "__annotations__"):
-                annotations = handler.__annotations__
-                if "request" in annotations:
-                    request_type = annotations["request"]
-                    if hasattr(request_type, "model_json_schema"):
-                        schema: dict[str, Any] = request_type.model_json_schema()  # type: ignore[assignment]
-                        # Filter out 'mcp' field from schema so agents don't see it
-                        if "properties" in schema and "mcp" in schema["properties"]:
-                            schema = schema.copy()
-                            schema["properties"] = schema["properties"].copy()
-                            del schema["properties"]["mcp"]
-                            # Remove from required list if present
-                            if "required" in schema and "mcp" in schema["required"]:
-                                schema["required"] = [r for r in schema["required"] if r != "mcp"]
-                        return schema
+            request_type = get_request_model_from_handler(handler)
+            if request_type and hasattr(request_type, "model_json_schema"):
+                schema: dict[str, Any] = request_type.model_json_schema()  # type: ignore[assignment]
+                # Filter out 'mcp' field from schema so agents don't see it
+                if "properties" in schema and "mcp" in schema["properties"]:
+                    schema = schema.copy()
+                    schema["properties"] = schema["properties"].copy()
+                    del schema["properties"]["mcp"]
+                    # Remove from required list if present
+                    if "required" in schema and "mcp" in schema["required"]:
+                        schema["required"] = [r for r in schema["required"] if r != "mcp"]
+                return schema
         except Exception:
             pass
 
@@ -990,11 +1015,13 @@ async def call_handler(
     
     if name not in HANDLERS:
         available_artifacts = list(HANDLERS.keys())
+        suggestion = _suggest_item_name(name)
         return {
             "error": f"'{name}' does not have handlers implemented yet.",
             "status": "not_implemented",
             "available_artifacts": available_artifacts,
             "note": f"Available artifacts: {', '.join(available_artifacts)}",
+            **({"suggestion": suggestion} if suggestion else {}),
         }
 
     if operation not in HANDLERS[name]:
