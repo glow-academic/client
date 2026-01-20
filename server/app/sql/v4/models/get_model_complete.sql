@@ -411,14 +411,6 @@ model_exists_check AS (
             ELSE EXISTS(SELECT 1 FROM model_artifact WHERE id = (SELECT model_id FROM params))::boolean
         END as model_exists
 ),
--- Draft data is now stored in draft_* junction tables, not in payload
-draft_payload_data AS (
-    SELECT 
-        NULL::jsonb as payload
-    FROM params x
-    WHERE TRUE
-    LIMIT 1
-),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
 draft_group_data AS (
     SELECT 
@@ -497,70 +489,193 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT 
-        COALESCE(
-            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'active' AND mf.value = TRUE LIMIT 1)
-        ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'active' AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.name = 'active'
+                 LIMIT 1)
+        END as active_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+         FROM draft_flags df
+         JOIN flags_resource f ON df.flags_id = f.id
+         WHERE df.draft_id = (SELECT draft_id FROM params)
+         AND f.name = 'active'
+         LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'active' AND mf.value = TRUE LIMIT 1) as model_flag_resource
     FROM params
 ),
 modalities_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as modalities_enabled_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as modalities_enabled_flag_resource
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'modalities_enabled'::flag_type
+                 LIMIT 1)
+        END as modalities_enabled_flag_id,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                 FROM draft_flags df
+                 JOIN flags_resource f ON df.flags_id = f.id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'modalities_enabled'::flag_type
+                 LIMIT 1)
+        END as modalities_enabled_flag_resource
     FROM params
 ),
 temperature_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as temperature_enabled_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as temperature_enabled_flag_resource
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'temperature_enabled'::flag_type
+                 LIMIT 1)
+        END as temperature_enabled_flag_id,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                 FROM draft_flags df
+                 JOIN flags_resource f ON df.flags_id = f.id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'temperature_enabled'::flag_type
+                 LIMIT 1)
+        END as temperature_enabled_flag_resource
     FROM params
 ),
 pricing_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as pricing_enabled_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as pricing_enabled_flag_resource
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'pricing_enabled'::flag_type
+                 LIMIT 1)
+        END as pricing_enabled_flag_id,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                 FROM draft_flags df
+                 JOIN flags_resource f ON df.flags_id = f.id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'pricing_enabled'::flag_type
+                 LIMIT 1)
+        END as pricing_enabled_flag_resource
     FROM params
 ),
 voices_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as voices_enabled_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as voices_enabled_flag_resource
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'voices_enabled'::flag_type
+                 LIMIT 1)
+        END as voices_enabled_flag_id,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                 FROM draft_flags df
+                 JOIN flags_resource f ON df.flags_id = f.id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'voices_enabled'::flag_type
+                 LIMIT 1)
+        END as voices_enabled_flag_resource
     FROM params
 ),
 reasoning_levels_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_resource
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'reasoning_levels_enabled'::flag_type
+                 LIMIT 1)
+        END as reasoning_levels_enabled_flag_id,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                 FROM draft_flags df
+                 JOIN flags_resource f ON df.flags_id = f.id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'reasoning_levels_enabled'::flag_type
+                 LIMIT 1)
+        END as reasoning_levels_enabled_flag_resource
     FROM params
 ),
 qualities_enabled_flag_resource_data AS (
     SELECT 
-        (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as qualities_enabled_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as qualities_enabled_flag_resource
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT df.flags_id
+                 FROM draft_flags df
+                 JOIN flags_resource f ON f.id = df.flags_id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'qualities_enabled'::flag_type
+                 LIMIT 1)
+        END as qualities_enabled_flag_id,
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+            ELSE
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
+                 FROM draft_flags df
+                 JOIN flags_resource f ON df.flags_id = f.id
+                 WHERE df.draft_id = (SELECT draft_id FROM params)
+                 AND f.type = 'qualities_enabled'::flag_type
+                 LIMIT 1)
+        END as qualities_enabled_flag_resource
     FROM params
 ),
 value_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT 
-                CASE 
-                    WHEN payload->>'value_id' IS NOT NULL THEN (payload->>'value_id')::uuid
-                    ELSE NULL
-                END
-            FROM draft_payload_data),
+            (SELECT dv.values_id FROM draft_values dv WHERE dv.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT mv.value_id FROM model_values mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1)
         ) as value_id,
-        (SELECT 
-            CASE 
-                WHEN payload->>'value_id' IS NOT NULL THEN 
-                    (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource 
-                     FROM values_resource v 
-                     WHERE v.id = (payload->>'value_id')::uuid LIMIT 1)
-                ELSE NULL
-            END
-        FROM draft_payload_data) as draft_value_resource,
+        (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource
+         FROM draft_values dv
+         JOIN values_resource v ON dv.values_id = v.id
+         WHERE dv.draft_id = (SELECT draft_id FROM params)
+         LIMIT 1) as draft_value_resource,
         (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as model_value_resource
     FROM params
 ),
@@ -593,6 +708,15 @@ model_departments_data AS (
     AND (SELECT model_id FROM params) IS NOT NULL
     AND md.active = true
     GROUP BY md.model_id
+),
+draft_departments_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
+        END as department_ids
+    FROM draft_departments dd
+    WHERE dd.draft_id = (SELECT draft_id FROM params)
 ),
 model_departments_fallback AS (
     SELECT ARRAY[]::uuid[] as department_ids
@@ -653,6 +777,17 @@ output_modality_ids_data AS (
     AND mm.type = 'output'::type_model_modalities
     AND mm.active = true AND mr.active = true
 ),
+draft_modalities_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(dm.modalities_id ORDER BY mr.modality::text), ARRAY[]::uuid[])
+        END as modality_ids
+    FROM draft_modalities dm
+    JOIN modalities_resource mr ON mr.id = dm.modalities_id
+    WHERE dm.draft_id = (SELECT draft_id FROM params)
+    AND mr.active = true
+),
 temperature_level_ids_data AS (
     SELECT 
         CASE 
@@ -664,6 +799,17 @@ temperature_level_ids_data AS (
     WHERE mtl.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mtl.active = true AND tl.active = true
+),
+draft_temperature_levels_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(dt.temperature_levels_id ORDER BY tl.temperature, tl.is_upper), ARRAY[]::uuid[])
+        END as temperature_level_ids
+    FROM draft_temperature_levels dt
+    JOIN temperature_levels_resource tl ON tl.id = dt.temperature_levels_id
+    WHERE dt.draft_id = (SELECT draft_id FROM params)
+    AND tl.active = true
 ),
 reasoning_level_ids_data AS (
     SELECT 
@@ -685,6 +831,25 @@ reasoning_level_ids_data AS (
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mrl.active = true AND rl.active = true
 ),
+draft_reasoning_levels_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(rl.id ORDER BY 
+                CASE rl.reasoning_level
+                    WHEN 'none' THEN 1
+                    WHEN 'minimal' THEN 2
+                    WHEN 'low' THEN 3
+                    WHEN 'medium' THEN 4
+                    WHEN 'high' THEN 5
+                END
+            ), ARRAY[]::uuid[])
+        END as reasoning_level_ids
+    FROM draft_reasoning_levels drl
+    JOIN reasoning_levels_resource rl ON rl.id = drl.reasoning_levels_id
+    WHERE drl.draft_id = (SELECT draft_id FROM params)
+    AND rl.active = true
+),
 quality_ids_data AS (
     SELECT 
         CASE 
@@ -703,6 +868,23 @@ quality_ids_data AS (
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mq.active = true AND qr.active = true
 ),
+draft_quality_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(qr.id ORDER BY 
+                CASE qr.quality
+                    WHEN 'low' THEN 1
+                    WHEN 'medium' THEN 2
+                    WHEN 'high' THEN 3
+                END
+            ), ARRAY[]::uuid[])
+        END as quality_ids
+    FROM draft_qualities dq
+    JOIN qualities_resource qr ON qr.id = dq.qualities_id
+    WHERE dq.draft_id = (SELECT draft_id FROM params)
+    AND qr.active = true
+),
 pricing_ids_data AS (
     SELECT 
         CASE 
@@ -716,6 +898,18 @@ pricing_ids_data AS (
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mp.active = true AND pr.active = true AND u.active = true
 ),
+draft_pricing_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(pr.id ORDER BY pr.pricing_type, u.name), ARRAY[]::uuid[])
+        END as pricing_ids
+    FROM draft_pricing dp
+    JOIN pricing_resource pr ON pr.id = dp.pricing_id
+    JOIN units u ON u.id = pr.unit_id
+    WHERE dp.draft_id = (SELECT draft_id FROM params)
+    AND pr.active = true AND u.active = true
+),
 model_voices_data AS (
     SELECT 
         v.id as voice_id,
@@ -726,6 +920,17 @@ model_voices_data AS (
     AND (SELECT model_id FROM params) IS NOT NULL
     AND v.active = true
     ORDER BY v.voice::text
+),
+draft_voices_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::uuid[]
+            ELSE COALESCE(ARRAY_AGG(v.id ORDER BY v.voice::text), ARRAY[]::uuid[])
+        END as voice_ids
+    FROM draft_voices dv
+    JOIN voices_resource v ON v.id = dv.voices_id
+    WHERE dv.draft_id = (SELECT draft_id FROM params)
+    AND v.active = true
 ),
 -- Providers data (all available providers)
 providers_data AS (
@@ -743,36 +948,54 @@ providers_data AS (
 -- Provider resource (selected provider for model)
 provider_resource_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT model_id FROM params) IS NULL THEN NULL::uuid
-            ELSE (
-                SELECT p.id 
-                FROM model_providers mp 
-                JOIN providers_resource p ON p.id = mp.providers_id 
-                JOIN models_resource m_res ON m_res.id = mp.model_id 
-                WHERE m_res.model_id = (SELECT model_id FROM params) 
-                LIMIT 1
-            )
-        END as provider_id,
-        CASE 
-            WHEN (SELECT model_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_provider_resource
-            ELSE (
-                SELECT ROW(
-                    p.id,
-                    n.name,
-                    COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
-                    false
-                )::types.q_get_model_v4_provider_resource
-                FROM model_providers mp 
-                JOIN providers_resource p ON p.id = mp.providers_id 
-                JOIN provider_artifact pr ON pr.id = p.provider_id
-                JOIN provider_names pn ON pn.provider_id = pr.id
-                JOIN names_resource n ON n.id = pn.name_id
-                JOIN models_resource m_res ON m_res.id = mp.model_id 
-                WHERE m_res.model_id = (SELECT model_id FROM params) 
-                LIMIT 1
-            )
-        END as provider_resource
+        COALESCE(
+            (SELECT dp.providers_id FROM draft_providers dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            CASE 
+                WHEN (SELECT model_id FROM params) IS NULL THEN NULL::uuid
+                ELSE (
+                    SELECT p.id 
+                    FROM model_providers mp 
+                    JOIN providers_resource p ON p.id = mp.providers_id 
+                    JOIN models_resource m_res ON m_res.id = mp.model_id 
+                    WHERE m_res.model_id = (SELECT model_id FROM params) 
+                    LIMIT 1
+                )
+            END
+        ) as provider_id,
+        COALESCE(
+            (SELECT ROW(
+                p.id,
+                n.name,
+                COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
+                COALESCE(p.generated, false)
+            )::types.q_get_model_v4_provider_resource
+            FROM draft_providers dp
+            JOIN providers_resource p ON p.id = dp.providers_id
+            JOIN provider_artifact pr ON pr.id = p.provider_id
+            JOIN provider_names pn ON pn.provider_id = pr.id
+            JOIN names_resource n ON n.id = pn.name_id
+            WHERE dp.draft_id = (SELECT draft_id FROM params)
+            LIMIT 1),
+            CASE 
+                WHEN (SELECT model_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_provider_resource
+                ELSE (
+                    SELECT ROW(
+                        p.id,
+                        n.name,
+                        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
+                        false
+                    )::types.q_get_model_v4_provider_resource
+                    FROM model_providers mp 
+                    JOIN providers_resource p ON p.id = mp.providers_id 
+                    JOIN provider_artifact pr ON pr.id = p.provider_id
+                    JOIN provider_names pn ON pn.provider_id = pr.id
+                    JOIN names_resource n ON n.id = pn.name_id
+                    JOIN models_resource m_res ON m_res.id = mp.model_id 
+                    WHERE m_res.model_id = (SELECT model_id FROM params) 
+                    LIMIT 1
+                )
+            END
+        ) as provider_resource
     FROM params
 ),
 -- Provider suggestions (empty for now - models don't use AI generation)
@@ -892,26 +1115,45 @@ all_voices_data AS (
 -- Voice resources (selected voices for model)
 voice_resources_data AS (
     SELECT 
-        ARRAY_AGG(
-            ROW(
-                v.id,
-                v.voice::text,
-                false
-            )::types.q_get_model_v4_voice_resource
-            ORDER BY v.voice::text
-        ) as voice_resources
-    FROM model_voices mv
-    JOIN voices_resource v ON v.id = mv.voice_id
-    WHERE mv.model_id = (SELECT model_id FROM params)
-    AND (SELECT model_id FROM params) IS NOT NULL
-    AND v.active = true
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN
+                (SELECT ARRAY_AGG(
+                    ROW(
+                        v.id,
+                        v.voice::text,
+                        false
+                    )::types.q_get_model_v4_voice_resource
+                    ORDER BY v.voice::text
+                )
+                FROM model_voices mv
+                JOIN voices_resource v ON v.id = mv.voice_id
+                WHERE mv.model_id = (SELECT model_id FROM params)
+                AND (SELECT model_id FROM params) IS NOT NULL
+                AND v.active = true)
+            ELSE
+                (SELECT COALESCE(ARRAY_AGG(
+                    ROW(
+                        v.id,
+                        v.voice::text,
+                        COALESCE(v.generated, false)
+                    )::types.q_get_model_v4_voice_resource
+                    ORDER BY v.voice::text
+                ), '{}'::types.q_get_model_v4_voice_resource[])
+                FROM draft_voices dv
+                JOIN voices_resource v ON v.id = dv.voices_id
+                WHERE dv.draft_id = (SELECT draft_id FROM params)
+                AND v.active = true)
+        END as voice_resources
 ),
 voice_ids_data AS (
     SELECT 
-        CASE 
-            WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE ARRAY_AGG(v.id ORDER BY v.voice::text)::uuid[]
-        END as voice_ids
+        COALESCE(
+            (SELECT voice_ids FROM draft_voices_data),
+            CASE 
+                WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+                ELSE ARRAY_AGG(v.id ORDER BY v.voice::text)::uuid[]
+            END
+        ) as voice_ids
     FROM model_voices mv
     JOIN voices_resource v ON v.id = mv.voice_id
     WHERE mv.model_id = (SELECT model_id FROM params)
@@ -1864,23 +2106,8 @@ SELECT
     perm.disabled_reason,
     dgd.group_id,
     -- Single-select resources: name
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'name_id' FROM draft_payload_data) IS NOT NULL THEN (SELECT payload->>'name_id')::uuid
-            ELSE NULL
-        END,
-        (SELECT name_id FROM name_resource_data)
-    ) as name_id,
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'name_id' FROM draft_payload_data) IS NOT NULL THEN 
-                (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_model_v4_name_resource 
-                 FROM names_resource n 
-                 WHERE n.id = (SELECT payload->>'name_id')::uuid LIMIT 1)
-            ELSE NULL
-        END,
-        COALESCE((SELECT draft_name_resource FROM name_resource_data), (SELECT model_name_resource FROM name_resource_data))
-    ) as name_resource,
+    (SELECT name_id FROM name_resource_data) as name_id,
+    COALESCE((SELECT draft_name_resource FROM name_resource_data), (SELECT model_name_resource FROM name_resource_data)) as name_resource,
     CASE 
         WHEN NOT tec.names_has_tools THEN false
         ELSE uf.show_name
@@ -1890,23 +2117,8 @@ SELECT
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     COALESCE((SELECT names FROM names_suggestions_objects), '{}'::types.q_get_model_v4_name_option[]) as names,
     -- Single-select resources: description
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'description_id' FROM draft_payload_data) IS NOT NULL THEN (SELECT payload->>'description_id')::uuid
-            ELSE NULL
-        END,
-        (SELECT description_id FROM description_resource_data)
-    ) as description_id,
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'description_id' FROM draft_payload_data) IS NOT NULL THEN 
-                (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_model_v4_description_resource 
-                 FROM descriptions_resource d 
-                 WHERE d.id = (SELECT payload->>'description_id')::uuid LIMIT 1)
-            ELSE NULL
-        END,
-        COALESCE((SELECT draft_description_resource FROM description_resource_data), (SELECT model_description_resource FROM description_resource_data))
-    ) as description_resource,
+    (SELECT description_id FROM description_resource_data) as description_id,
+    COALESCE((SELECT draft_description_resource FROM description_resource_data), (SELECT model_description_resource FROM description_resource_data)) as description_resource,
     CASE 
         WHEN NOT tec.descriptions_has_tools THEN false
         ELSE uf.show_description
@@ -1916,23 +2128,11 @@ SELECT
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), '{}'::types.q_get_model_v4_description_option[]) as descriptions,
     -- Single-select resources: flag (active)
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'active_flag_id' FROM draft_payload_data) IS NOT NULL THEN (SELECT payload->>'active_flag_id')::uuid
-            ELSE NULL
-        END,
-        (SELECT active_flag_id FROM flag_resource_data)
-    ) as active_flag_id,
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'active_flag_id' FROM draft_payload_data) IS NOT NULL THEN 
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource 
-                 FROM flags_resource f 
-                 WHERE f.id = (SELECT payload->>'active_flag_id')::uuid LIMIT 1)
-            ELSE NULL
-        END,
-        COALESCE((SELECT draft_flag_resource FROM flag_resource_data), (SELECT model_flag_resource FROM flag_resource_data))
-    ) as flag_resource,
+    (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
+    CASE
+        WHEN (SELECT draft_id FROM params) IS NULL THEN (SELECT model_flag_resource FROM flag_resource_data)
+        ELSE (SELECT draft_flag_resource FROM flag_resource_data)
+    END as flag_resource,
     CASE 
         WHEN NOT tec.flags_has_tools THEN false
         ELSE uf.show_flag
@@ -1995,23 +2195,8 @@ SELECT
     NULL::uuid as qualities_enabled_flag_agent_id,
     false as qualities_enabled_flag_required,
     -- Single-select resources: value
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'value_id' FROM draft_payload_data) IS NOT NULL THEN (SELECT payload->>'value_id')::uuid
-            ELSE NULL
-        END,
-        (SELECT value_id FROM value_resource_data)
-    ) as value_id,
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'value_id' FROM draft_payload_data) IS NOT NULL THEN 
-                (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource 
-                 FROM values_resource v 
-                 WHERE v.id = (SELECT payload->>'value_id')::uuid LIMIT 1)
-            ELSE NULL
-        END,
-        COALESCE((SELECT draft_value_resource FROM value_resource_data), (SELECT model_value_resource FROM value_resource_data))
-    ) as value_resource,
+    (SELECT value_id FROM value_resource_data) as value_id,
+    COALESCE((SELECT draft_value_resource FROM value_resource_data), (SELECT model_value_resource FROM value_resource_data)) as value_resource,
     CASE 
         WHEN NOT tec.values_has_tools THEN false
         ELSE uf.show_value
@@ -2021,23 +2206,8 @@ SELECT
     COALESCE((SELECT value_suggestions FROM value_suggestions_data), ARRAY[]::uuid[]) as value_suggestions,
     COALESCE((SELECT values FROM values_aggregated), '{}'::types.q_get_model_v4_value_option[]) as values,
     -- Single-select resources: endpoint
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'endpoint_id' FROM draft_payload_data) IS NOT NULL THEN (SELECT payload->>'endpoint_id')::uuid
-            ELSE NULL
-        END,
-        (SELECT endpoint_id FROM endpoint_resource_data)
-    ) as endpoint_id,
-    COALESCE(
-        CASE 
-            WHEN (SELECT payload->>'endpoint_id' FROM draft_payload_data) IS NOT NULL THEN 
-                (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource 
-                 FROM endpoints_resource e 
-                 WHERE e.id = (SELECT payload->>'endpoint_id')::uuid LIMIT 1)
-            ELSE NULL
-        END,
-        COALESCE((SELECT draft_endpoint_resource FROM endpoint_resource_data), (SELECT model_endpoint_resource FROM endpoint_resource_data))
-    ) as endpoint_resource,
+    (SELECT endpoint_id FROM endpoint_resource_data) as endpoint_id,
+    COALESCE((SELECT draft_endpoint_resource FROM endpoint_resource_data), (SELECT model_endpoint_resource FROM endpoint_resource_data)) as endpoint_resource,
     CASE 
         WHEN NOT tec.endpoints_has_tools THEN false
         ELSE uf.show_endpoint
@@ -2070,11 +2240,7 @@ SELECT
     COALESCE(ka.keys, '{}'::types.q_get_model_v4_key_option[]) as keys,
     -- Multi-select resources: departments
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'department_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'department_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'department_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT department_ids FROM draft_departments_data),
         COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::uuid[])
     ) as department_ids,
     COALESCE(
@@ -2090,11 +2256,7 @@ SELECT
         FROM user_departments_data dmd
         WHERE dmd.id = ANY(
             COALESCE(
-                CASE 
-                    WHEN (SELECT payload->'department_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'department_ids' FROM draft_payload_data)) = 'array' THEN
-                        ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'department_ids' FROM draft_payload_data)))::uuid[]
-                    ELSE NULL
-                END,
+                (SELECT department_ids FROM draft_departments_data),
                 COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::uuid[])
             )
         )),
@@ -2113,14 +2275,21 @@ SELECT
     COALESCE(da.departments, '{}'::types.q_get_model_v4_department[]) as departments,
     -- Multi-select resources: input modalities
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'input_modality_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'input_modality_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'input_modality_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT modality_ids FROM draft_modalities_data),
         (SELECT input_modality_ids FROM input_modality_ids_data)
     ) as input_modality_ids,
     COALESCE(
+        (SELECT CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_modality_resource[]
+            ELSE COALESCE(ARRAY_AGG(
+                (mr.id, mr.modality::text, COALESCE(mr.generated, false))::types.q_get_model_v4_modality_resource
+                ORDER BY mr.modality::text
+            ), '{}'::types.q_get_model_v4_modality_resource[])
+        END
+        FROM draft_modalities dm
+        JOIN modalities_resource mr ON mr.id = dm.modalities_id
+        WHERE dm.draft_id = (SELECT draft_id FROM params)
+        AND mr.active = true),
         (SELECT ARRAY_AGG(
             (mr.id, mr.modality::text, COALESCE(mr.generated, false))::types.q_get_model_v4_modality_resource
             ORDER BY mr.modality::text
@@ -2143,14 +2312,21 @@ SELECT
     COALESCE((SELECT input_modalities FROM input_modalities_aggregated), '{}'::types.q_get_model_v4_modality_option[]) as input_modalities,
     -- Multi-select resources: output modalities
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'output_modality_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'output_modality_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'output_modality_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT modality_ids FROM draft_modalities_data),
         (SELECT output_modality_ids FROM output_modality_ids_data)
     ) as output_modality_ids,
     COALESCE(
+        (SELECT CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_modality_resource[]
+            ELSE COALESCE(ARRAY_AGG(
+                (mr.id, mr.modality::text, COALESCE(mr.generated, false))::types.q_get_model_v4_modality_resource
+                ORDER BY mr.modality::text
+            ), '{}'::types.q_get_model_v4_modality_resource[])
+        END
+        FROM draft_modalities dm
+        JOIN modalities_resource mr ON mr.id = dm.modalities_id
+        WHERE dm.draft_id = (SELECT draft_id FROM params)
+        AND mr.active = true),
         (SELECT ARRAY_AGG(
             (mr.id, mr.modality::text, COALESCE(mr.generated, false))::types.q_get_model_v4_modality_resource
             ORDER BY mr.modality::text
@@ -2173,14 +2349,21 @@ SELECT
     COALESCE((SELECT output_modalities FROM output_modalities_aggregated), '{}'::types.q_get_model_v4_modality_option[]) as output_modalities,
     -- Multi-select resources: temperature levels
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'temperature_level_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'temperature_level_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'temperature_level_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT temperature_level_ids FROM draft_temperature_levels_data),
         (SELECT temperature_level_ids FROM temperature_level_ids_data)
     ) as temperature_level_ids,
     COALESCE(
+        (SELECT CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_temperature_level_resource[]
+            ELSE COALESCE(ARRAY_AGG(
+                (tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
+                ORDER BY tl.temperature, tl.is_upper
+            ), '{}'::types.q_get_model_v4_temperature_level_resource[])
+        END
+        FROM draft_temperature_levels dt
+        JOIN temperature_levels_resource tl ON tl.id = dt.temperature_levels_id
+        WHERE dt.draft_id = (SELECT draft_id FROM params)
+        AND tl.active = true),
         (SELECT ARRAY_AGG(
             (tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
             ORDER BY tl.temperature, tl.is_upper
@@ -2202,14 +2385,28 @@ SELECT
     COALESCE((SELECT temperature_levels FROM temperature_levels_aggregated), '{}'::types.q_get_model_v4_temperature_level_option[]) as temperature_levels,
     -- Multi-select resources: reasoning levels
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'reasoning_level_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'reasoning_level_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'reasoning_level_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT reasoning_level_ids FROM draft_reasoning_levels_data),
         (SELECT reasoning_level_ids FROM reasoning_level_ids_data)
     ) as reasoning_level_ids,
     COALESCE(
+        (SELECT CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_reasoning_level_resource[]
+            ELSE COALESCE(ARRAY_AGG(
+                (rl.id, rl.reasoning_level::text, COALESCE(rl.generated, false))::types.q_get_model_v4_reasoning_level_resource
+                ORDER BY 
+                    CASE rl.reasoning_level
+                        WHEN 'none' THEN 1
+                        WHEN 'minimal' THEN 2
+                        WHEN 'low' THEN 3
+                        WHEN 'medium' THEN 4
+                        WHEN 'high' THEN 5
+                    END
+            ), '{}'::types.q_get_model_v4_reasoning_level_resource[])
+        END
+        FROM draft_reasoning_levels drl
+        JOIN reasoning_levels_resource rl ON rl.id = drl.reasoning_levels_id
+        WHERE drl.draft_id = (SELECT draft_id FROM params)
+        AND rl.active = true),
         (SELECT ARRAY_AGG(
             (rl.id, rl.reasoning_level::text, COALESCE(rl.generated, false))::types.q_get_model_v4_reasoning_level_resource
             ORDER BY 
@@ -2238,14 +2435,26 @@ SELECT
     COALESCE((SELECT reasoning_levels FROM reasoning_levels_aggregated), '{}'::types.q_get_model_v4_reasoning_level_option[]) as reasoning_levels,
     -- Multi-select resources: qualities
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'quality_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'quality_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'quality_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT quality_ids FROM draft_quality_ids_data),
         (SELECT quality_ids FROM quality_ids_data)
     ) as quality_ids,
     COALESCE(
+        (SELECT CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_quality_resource[]
+            ELSE COALESCE(ARRAY_AGG(
+                (qr.id, qr.quality::text, COALESCE(qr.generated, false))::types.q_get_model_v4_quality_resource
+                ORDER BY 
+                    CASE qr.quality
+                        WHEN 'low' THEN 1
+                        WHEN 'medium' THEN 2
+                        WHEN 'high' THEN 3
+                    END
+            ), '{}'::types.q_get_model_v4_quality_resource[])
+        END
+        FROM draft_qualities dq
+        JOIN qualities_resource qr ON qr.id = dq.qualities_id
+        WHERE dq.draft_id = (SELECT draft_id FROM params)
+        AND qr.active = true),
         (SELECT ARRAY_AGG(
             (qr.id, qr.quality::text, COALESCE(qr.generated, false))::types.q_get_model_v4_quality_resource
             ORDER BY 
@@ -2272,14 +2481,22 @@ SELECT
     COALESCE((SELECT qualities FROM qualities_aggregated), '{}'::types.q_get_model_v4_quality_option[]) as qualities,
     -- Multi-select resources: pricing
     COALESCE(
-        CASE 
-            WHEN (SELECT payload->'pricing_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'pricing_ids' FROM draft_payload_data)) = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text((SELECT payload->'pricing_ids' FROM draft_payload_data)))::uuid[]
-            ELSE NULL
-        END,
+        (SELECT pricing_ids FROM draft_pricing_ids_data),
         (SELECT pricing_ids FROM pricing_ids_data)
     ) as pricing_ids,
     COALESCE(
+        (SELECT CASE
+            WHEN (SELECT draft_id FROM params) IS NULL THEN NULL::types.q_get_model_v4_pricing_resource[]
+            ELSE COALESCE(ARRAY_AGG(
+                (pr.id, pr.pricing_type::text, u.id, u.name, u.unit_category::text, pr.price, COALESCE(pr.generated, false))::types.q_get_model_v4_pricing_resource
+                ORDER BY pr.pricing_type, u.name
+            ), '{}'::types.q_get_model_v4_pricing_resource[])
+        END
+        FROM draft_pricing dp
+        JOIN pricing_resource pr ON pr.id = dp.pricing_id
+        JOIN units u ON u.id = pr.unit_id
+        WHERE dp.draft_id = (SELECT draft_id FROM params)
+        AND pr.active = true AND u.active = true),
         (SELECT ARRAY_AGG(
             (pr.id, pr.pricing_type::text, u.id, u.name, u.unit_category::text, pr.price, COALESCE(pr.generated, false))::types.q_get_model_v4_pricing_resource
             ORDER BY pr.pricing_type, u.name
@@ -2316,7 +2533,6 @@ CROSS JOIN permissions_data perm
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN draft_group_data dgd
-CROSS JOIN draft_payload_data dpd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN flag_resource_data frd

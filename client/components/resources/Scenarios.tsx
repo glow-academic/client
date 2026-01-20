@@ -263,7 +263,7 @@ export function Scenarios({
         renderItem={(item, isSelected) => (
           <div
             className={cn(
-              "relative min-h-[110px] rounded-xl border bg-card p-4 text-left text-card-foreground shadow-sm transition-all",
+              "relative rounded-lg border bg-card p-3 text-left text-card-foreground shadow-sm transition-all",
               "hover:border-primary hover:shadow-md focus-visible:outline-none",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               isSelected
@@ -272,7 +272,7 @@ export function Scenarios({
             )}
           >
             {isSuggested(item.id) && !isSelected && (
-              <span className="absolute left-4 top-4 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+              <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
                 Suggested
               </span>
             )}
@@ -282,7 +282,7 @@ export function Scenarios({
               </div>
             )}
             <div className="space-y-1">
-              <div className="text-sm font-semibold uppercase tracking-wide text-primary">
+              <div className="text-sm font-semibold text-foreground">
                 {item.name}
               </div>
               {item.description && (
@@ -302,7 +302,7 @@ export function Scenarios({
         }
         disabled={disabled}
         className="pt-2"
-        maxHeight="max-h-[520px]"
+        maxHeight="max-h-[272px]"
       />
     </div>
   );

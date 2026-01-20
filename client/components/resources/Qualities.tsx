@@ -53,6 +53,8 @@ export interface QualitiesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createQualitiesAction?:
@@ -75,6 +77,8 @@ export function Qualities({
   required = false,
   placeholder = "Select qualities...",
   description,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createQualitiesAction,
@@ -88,6 +92,17 @@ export function Qualities({
     () => quality_suggestions ?? [],
     [quality_suggestions]
   );
+  const filteredQualities = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return allQualities;
+    }
+    const term = searchTerm.toLowerCase();
+    return allQualities.filter((quality) => {
+      const name = quality.name?.toLowerCase() ?? "";
+      const desc = quality.description?.toLowerCase() ?? "";
+      return name.includes(term) || desc.includes(term);
+    });
+  }, [allQualities, searchTerm]);
 
   // Track which qualities IDs have already had resources created
   const createdQualitiesIdsRef = useRef<Set<string>>(new Set());
@@ -99,14 +114,14 @@ export function Qualities({
 
   // Convert qualities array to QualitiesItem format for GenericPicker
   const qualitiesItems = useMemo(() => {
-    return allQualities
+    return filteredQualities
       .filter((m) => m.quality_id && m.name) // Filter out nulls
       .map((m) => ({
         id: m.quality_id!,
         name: m.name!,
         ...(m.description ? { description: m.description } : {}),
       }));
-  }, [allQualities]);
+  }, [filteredQualities]);
 
   // Check if a qualities is suggested
   const isSuggested = useCallback(
@@ -175,7 +190,7 @@ export function Qualities({
       )}
       <GenericPicker<QualitiesItem>
         items={qualitiesItems}
-        itemIds={allQualities
+        itemIds={filteredQualities
           .map((m) => m.quality_id)
           .filter((id): id is string => id !== null)} // All qualities IDs from array, filter nulls
         selectedIds={ids}
@@ -208,6 +223,8 @@ export function Qualities({
             />
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

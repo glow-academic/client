@@ -120,6 +120,39 @@ export function ScenarioPositions({
     setPositionIdsByScenario(next);
   }, [currentPositions, scenarioPositionIds]);
 
+  // Build position map from current positions
+  const positionMap = useMemo(() => {
+    const map = new Map<string, number>();
+    currentPositions.forEach((pos) => {
+      if (pos.scenario_id && pos.value !== null) {
+        map.set(pos.scenario_id, pos.value);
+      }
+    });
+    return map;
+  }, [currentPositions]);
+
+  // Initialize positions for scenarios that don't have positions yet
+  const [localPositions, setLocalPositions] = useState<Map<string, number>>(
+    () => {
+      const map = new Map<string, number>();
+      scenario_ids.forEach((scenarioId, index) => {
+        const existingPosition = positionMap.get(scenarioId);
+        map.set(scenarioId, existingPosition ?? index + 1);
+      });
+      return map;
+    }
+  );
+
+  // Update local positions when scenario_ids or currentPositions change
+  useEffect(() => {
+    const newMap = new Map<string, number>();
+    scenario_ids.forEach((scenarioId, index) => {
+      const existingPosition = positionMap.get(scenarioId);
+      newMap.set(scenarioId, existingPosition ?? index + 1);
+    });
+    setLocalPositions(newMap);
+  }, [scenario_ids, positionMap]);
+
   useEffect(() => {
     const shouldCreateResource =
       createScenarioPositionsAction &&
@@ -188,39 +221,6 @@ export function ScenarioPositions({
     simulation_id,
     onPositionIdsChange,
   ]);
-
-  // Build position map from current positions
-  const positionMap = useMemo(() => {
-    const map = new Map<string, number>();
-    currentPositions.forEach((pos) => {
-      if (pos.scenario_id && pos.value !== null) {
-        map.set(pos.scenario_id, pos.value);
-      }
-    });
-    return map;
-  }, [currentPositions]);
-
-  // Initialize positions for scenarios that don't have positions yet
-  const [localPositions, setLocalPositions] = useState<Map<string, number>>(
-    () => {
-      const map = new Map<string, number>();
-      scenario_ids.forEach((scenarioId, index) => {
-        const existingPosition = positionMap.get(scenarioId);
-        map.set(scenarioId, existingPosition ?? index + 1);
-      });
-      return map;
-    }
-  );
-
-  // Update local positions when scenario_ids or currentPositions change
-  useEffect(() => {
-    const newMap = new Map<string, number>();
-    scenario_ids.forEach((scenarioId, index) => {
-      const existingPosition = positionMap.get(scenarioId);
-      newMap.set(scenarioId, existingPosition ?? index + 1);
-    });
-    setLocalPositions(newMap);
-  }, [scenario_ids, positionMap]);
 
   const handlePositionChange = useCallback(
     (scenarioId: string, newValue: number) => {

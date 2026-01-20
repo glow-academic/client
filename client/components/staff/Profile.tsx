@@ -15,6 +15,7 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
@@ -25,6 +26,7 @@ import { Emails } from "@/components/resources/Emails";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { RequestLimits } from "@/components/resources/RequestLimits";
+import { Roles } from "@/components/resources/Roles";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,8 +40,9 @@ import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
-import { Loader2, Sparkles } from "lucide-react";
-import { parseAsString, type Parser } from "nuqs";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type SaveStaffIn = InputOf<"/api/v4/profiles/save", "post">;
@@ -140,6 +143,10 @@ function ProfileComponent({
   const staffSearchParamsClient = useMemo(
     () => ({
       draftId: parseAsString,
+      roleSearch: parseAsString,
+      roleShowSelected: parseAsBoolean,
+      cohortSearch: parseAsString,
+      cohortShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -232,6 +239,8 @@ function ProfileComponent({
     staffData?.role_options,
   ]);
 
+  const currentStaffData = stableStaffDataFields;
+
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
       if (!stableStaffDataFields) return false;
@@ -280,8 +289,13 @@ function ProfileComponent({
         primary_email_index: 0 as number,
         cohort_ids: [] as string[],
         role: "instructional" as string,
+        primary_department_id: null as string | null,
       };
     }
+    const primaryDepartmentId =
+      "primary_department_id" in data && data.primary_department_id
+        ? data.primary_department_id
+        : data.department_ids?.[0] ?? null;
     return {
       first_name_id: data.first_name_id ?? null,
       last_name_id: data.last_name_id ?? null,
@@ -292,6 +306,7 @@ function ProfileComponent({
       primary_email_index: data.primary_email_index ?? 0,
       cohort_ids: data.cohort_ids ?? [],
       role: data.role ?? "instructional",
+      primary_department_id: primaryDepartmentId,
     };
   }, []);
 
@@ -328,7 +343,8 @@ function ProfileComponent({
         prev.primary_email_index !== newState.primary_email_index ||
         JSON.stringify(prev.cohort_ids) !==
           JSON.stringify(newState.cohort_ids) ||
-        prev.role !== newState.role
+        prev.role !== newState.role ||
+        prev.primary_department_id !== newState.primary_department_id
       ) {
         return newState;
       }
@@ -345,6 +361,26 @@ function ProfileComponent({
     staffData?.primary_email_index,
     staffData?.role,
   ]);
+
+  useEffect(() => {
+    setFormState((prev) => {
+      const departmentIds = prev.department_ids ?? [];
+      const primaryId = prev.primary_department_id ?? null;
+
+      if (departmentIds.length === 0) {
+        if (primaryId !== null) {
+          return { ...prev, primary_department_id: null };
+        }
+        return prev;
+      }
+
+      if (!primaryId || !departmentIds.includes(primaryId)) {
+        return { ...prev, primary_department_id: departmentIds[0] };
+      }
+
+      return prev;
+    });
+  }, [formState.department_ids, formState.primary_department_id]);
 
   const [draftId, setDraftId] = useState<string | null>(null);
   const [createdRequestLimits, setCreatedRequestLimits] = useState<
@@ -656,9 +692,10 @@ function ProfileComponent({
 
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
-      basic: ["names", "flags"],
+      basic: ["names", "flags", "departments"],
       contact: ["emails", "request_limits"],
-      organization: ["departments", "cohorts"],
+      roles: [],
+      cohorts: ["cohorts"],
       all: [
         "names",
         "flags",
@@ -758,6 +795,15 @@ function ProfileComponent({
       }
 
       if (
+        staffData?.departments_required &&
+        formState.department_ids.length > 0 &&
+        !formState.primary_department_id
+      ) {
+        toast.error("Primary department is required");
+        throw new Error("Primary department is required");
+      }
+
+      if (
         staffData?.emails_required &&
         (!formState.email_ids || formState.email_ids.length === 0)
       ) {
@@ -792,6 +838,13 @@ function ProfileComponent({
                 })
                 .filter((e): e is string => e !== null)
             : [];
+        const primaryDepartmentIndex = formState.primary_department_id
+          ? (formState.department_ids ?? []).indexOf(
+              formState.primary_department_id
+            )
+          : -1;
+        const primaryDepartmentIndexValue =
+          primaryDepartmentIndex >= 0 ? primaryDepartmentIndex : null;
 
         await saveStaffAction({
           body: {
@@ -813,6 +866,9 @@ function ProfileComponent({
             role: formState.role || "instructional",
             emails: emailTexts,
             primary_email_index: formState.primary_email_index ?? 0,
+            ...(primaryDepartmentIndexValue !== null && {
+              primary_department_index: primaryDepartmentIndexValue,
+            }),
           },
         });
         toast.success(
@@ -838,8 +894,7 @@ function ProfileComponent({
       staffData?.departments_required,
       staffData?.emails_required,
       staffData?.email_resources,
-      currentStaffData?.request_limits,
-      currentStaffData?.request_limit_resource,
+      currentStaffData,
       createdRequestLimits,
     ]
   );
@@ -849,22 +904,35 @@ function ProfileComponent({
       const hasFirstName = !!formState.first_name_id;
       const hasLastName = !!formState.last_name_id;
       const hasDepartments = formState.department_ids.length > 0;
+      const hasRole = !!formState.role;
+      const hasCohorts = formState.cohort_ids.length > 0;
+      const hasPrimaryDepartment = !!formState.primary_department_id;
       const hasEmails = formState.email_ids.length > 0;
+      const needsDepartments = staffData?.departments_required ?? false;
 
       switch (stepId) {
         case "basic":
-          return hasFirstName && hasLastName ? "completed" : "active";
+          if (!hasFirstName || !hasLastName) return "active";
+          if (needsDepartments) {
+            return hasDepartments ? "completed" : "active";
+          }
+          return "completed";
         case "contact":
           if (!hasFirstName || !hasLastName) return "pending";
-          return hasEmails ? "completed" : "active";
-        case "organization":
+          if (!hasEmails) return "active";
+          if (needsDepartments && !hasPrimaryDepartment) return "active";
+          return "completed";
+        case "roles":
           if (!hasFirstName || !hasLastName) return "pending";
-          return hasDepartments ? "completed" : "active";
+          return hasRole ? "completed" : "active";
+        case "cohorts":
+          if (!hasFirstName || !hasLastName) return "pending";
+          return hasCohorts ? "completed" : "active";
         default:
           return "pending";
       }
     },
-    [formState]
+    [formState, staffData?.departments_required]
   );
 
   const handleModalGenerate = useCallback(
@@ -887,20 +955,28 @@ function ProfileComponent({
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set the staff member's name and active status.",
-        resetFields: ["first_name", "last_name", "active"],
+        description:
+          "Set the staff member's name, departments, and active status.",
+        resetFields: ["first_name", "last_name", "active", "department_ids"],
       },
       {
         id: "contact",
         title: "Contact Information",
-        description: "Set email addresses and request limits.",
-        resetFields: ["emails", "request_limit"],
+        description: "Set email addresses, request limits, and primary department.",
+        resetFields: ["emails", "request_limit", "primary_department_id"],
       },
       {
-        id: "organization",
-        title: "Organization",
-        description: "Assign departments and cohorts.",
-        resetFields: ["department_ids", "cohort_ids", "role"],
+        id: "roles",
+        title: "Roles",
+        description: "Select the staff member's role.",
+        resetFields: ["role", "roleSearch", "roleShowSelected"],
+      },
+      {
+        id: "cohorts",
+        title: "Cohorts",
+        description: "Assign cohorts to this staff member (optional).",
+        optional: true,
+        resetFields: ["cohort_ids", "cohortSearch", "cohortShowSelected"],
       },
     ],
     []
@@ -916,6 +992,7 @@ function ProfileComponent({
       "department_ids",
       "cohort_ids",
       "role",
+      "primary_department_id",
     ],
     []
   );
@@ -926,8 +1003,10 @@ function ProfileComponent({
         return "Basic information reset";
       case "contact":
         return "Contact information reset";
-      case "organization":
-        return "Organization reset";
+      case "roles":
+        return "Roles reset";
+      case "cohorts":
+        return "Cohorts reset";
       default:
         return "Reset";
     }
@@ -942,6 +1021,8 @@ function ProfileComponent({
             first_name_id: null,
             last_name_id: null,
             active_flag_id: null,
+            department_ids: [],
+            primary_department_id: null,
           };
         case "contact":
           return {
@@ -949,13 +1030,17 @@ function ProfileComponent({
             email_ids: [],
             primary_email_index: 0,
             request_limit_id: null,
+            primary_department_id: null,
           };
-        case "organization":
+        case "roles":
           return {
             ...prev,
-            department_ids: [],
-            cohort_ids: [],
             role: "",
+          };
+        case "cohorts":
+          return {
+            ...prev,
+            cohort_ids: [],
           };
         default:
           return prev;
@@ -1000,7 +1085,6 @@ function ProfileComponent({
       }>;
       onReset?: () => void;
     }) => {
-      const currentStaffData = stableStaffDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -1067,7 +1151,7 @@ function ProfileComponent({
                   />
                 </div>
               }
-              resetFields={["first_name", "last_name", "active"]}
+              resetFields={["first_name", "last_name", "active", "department_ids"]}
               actions={
                 stepResources["basic"] && stepResources["basic"].length > 0 ? (
                   <TooltipProvider>
@@ -1115,6 +1199,30 @@ function ProfileComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
+                <Departments
+                  department_ids={formState.department_ids ?? []}
+                  department_resources={
+                    currentStaffData?.department_resources ?? []
+                  }
+                  show_departments={currentStaffData?.show_departments ?? false}
+                  department_suggestions={
+                    currentStaffData?.department_suggestions ?? []
+                  }
+                  departments={currentStaffData?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      department_ids: ids,
+                    }))
+                  }
+                  onGenerate={handleGenerateDepartments}
+                  isGenerating={isGenerating("departments")}
+                  required={currentStaffData?.departments_required ?? false}
+                  group_id={currentStaffData?.group_id ?? null}
+                  agent_id={currentStaffData?.departments_agent_id ?? null}
+                  createDepartmentsAction={createDepartmentsAction}
+                />
                 <Flags
                   flag_id={formState.active_flag_id ?? null}
                   flag_resource={currentStaffData?.flag_resource ?? null}
@@ -1148,7 +1256,7 @@ function ProfileComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["emails", "request_limit"]}
+              resetFields={["emails", "request_limit", "primary_department_id"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1254,11 +1362,153 @@ function ProfileComponent({
                   agent_id={currentStaffData?.request_limit_agent_id ?? null}
                   createRequestLimitsAction={createRequestLimitsAction}
                 />
+
+                {currentStaffData?.departments &&
+                currentStaffData.departments.length > 0 ? (
+                  (() => {
+                    const allDepartments =
+                      currentStaffData.departments
+                        ?.filter((dept) => dept.department_id && dept.name)
+                        .map((dept) => ({
+                          id: dept.department_id!,
+                          name: dept.name!,
+                          description: dept.description ?? "",
+                        })) ?? [];
+                    const departmentMap = new Map(
+                      allDepartments.map((dept) => [dept.id, dept])
+                    );
+                    const availableDepartmentIds = formState.department_ids;
+                    const primaryDepartmentItems = availableDepartmentIds
+                      .map((id) => departmentMap.get(id))
+                      .filter(
+                        (
+                          dept
+                        ): dept is {
+                          id: string;
+                          name: string;
+                          description: string;
+                        } => !!dept
+                      )
+                      .sort((a, b) => a.name.localeCompare(b.name));
+                    const primaryDepartmentId =
+                      formState.primary_department_id ?? null;
+                    const displayedPrimaryDepartments = primaryDepartmentId
+                      ? primaryDepartmentItems.filter(
+                          (dept) => dept.id === primaryDepartmentId
+                        )
+                      : [];
+
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <Label
+                            htmlFor="primary-department"
+                            className="flex gap-1"
+                          >
+                            Primary Department
+                            <span className="text-destructive">*</span>
+                          </Label>
+                          <GenericPicker<{
+                            id: string;
+                            name: string;
+                            description: string;
+                          }>
+                            items={primaryDepartmentItems}
+                            selectedIds={
+                              primaryDepartmentId ? [primaryDepartmentId] : []
+                            }
+                            onSelect={(ids) => {
+                              const nextId = ids[0] ?? null;
+                              if (!nextId) return;
+                              setFormState((prev) => {
+                                const nextDepartmentIds =
+                                  prev.department_ids.includes(nextId)
+                                    ? prev.department_ids
+                                    : [...prev.department_ids, nextId];
+                                return {
+                                  ...prev,
+                                  department_ids: nextDepartmentIds,
+                                  primary_department_id: nextId,
+                                };
+                              });
+                            }}
+                            getId={(item) => item.id}
+                            getLabel={(item) => item.name}
+                            getSearchText={(item) =>
+                              `${item.name} ${item.description}`.trim()
+                            }
+                            placeholder="Select primary department"
+                            disabled={
+                              disabled || primaryDepartmentItems.length === 0
+                            }
+                            multiSelect={false}
+                            showLabel={false}
+                            compact={true}
+                            buttonClassName="h-8"
+                            showClearAction={false}
+                          />
+                        </div>
+                        <SelectableGrid
+                          items={displayedPrimaryDepartments}
+                          selectedId={primaryDepartmentId}
+                          onSelect={(departmentId) => {
+                            setFormState((prev) => {
+                              const nextDepartmentIds =
+                                prev.department_ids.includes(departmentId)
+                                  ? prev.department_ids
+                                  : [...prev.department_ids, departmentId];
+                              return {
+                                ...prev,
+                                department_ids: nextDepartmentIds,
+                                primary_department_id: departmentId,
+                              };
+                            });
+                          }}
+                          getId={(item) => item.id}
+                          renderItem={(item, isSelected) => (
+                            <div
+                              className={cn(
+                                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                                "hover:shadow-md hover:bg-accent/50",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                isSelected && "ring-2 ring-primary bg-accent"
+                              )}
+                            >
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-sm leading-tight">
+                                  {item.name}
+                                </h3>
+                                {item.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          emptyMessage="No departments available."
+                          disabled={disabled}
+                        />
+                      </div>
+                    );
+                  })()
+                ) : null}
               </div>
             </StepCard>
           );
 
-        case "organization":
+        case "roles": {
+          const roleShowSelected =
+            (stepFormData["roleShowSelected"] as boolean | null | undefined) ??
+            false;
+          const roleSearch =
+            (stepFormData["roleSearch"] as string | null | undefined) || "";
+
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1267,12 +1517,76 @@ function ProfileComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["department_ids", "cohort_ids", "role"]}
+              searchTerm={roleSearch}
+              onSearchChange={(term: string) =>
+                setStepFormData({ roleSearch: term || null })
+              }
+              searchPlaceholder="Search roles..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: roleShowSelected,
+                  onChange: (value) =>
+                    setStepFormData({ roleShowSelected: value }),
+                },
+              ]}
+              resetFields={["role", "roleSearch", "roleShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Roles
+                role={formState.role ?? ""}
+                role_options={currentStaffData?.role_options ?? []}
+                disabled={disabled}
+                onRoleChange={(roleId) =>
+                  setFormState((prev) => ({ ...prev, role: roleId }))
+                }
+                searchTerm={roleSearch}
+                showSelectedFilter={roleShowSelected}
+              />
+            </StepCard>
+          );
+        }
+
+        case "cohorts": {
+          const cohortShowSelected =
+            (stepFormData["cohortShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          const cohortSearch =
+            (stepFormData["cohortSearch"] as string | null | undefined) || "";
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={cohortSearch}
+              onSearchChange={(term: string) =>
+                setStepFormData({ cohortSearch: term || null })
+              }
+              searchPlaceholder="Search cohorts..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: cohortShowSelected,
+                  onChange: (value) =>
+                    setStepFormData({ cohortShowSelected: value }),
+                },
+              ]}
+              resetFields={["cohort_ids", "cohortSearch", "cohortShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
-                stepResources["organization"] &&
-                stepResources["organization"].length > 0 ? (
+                stepResources["cohorts"] && stepResources["cohorts"].length > 0 ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1282,21 +1596,21 @@ function ProfileComponent({
                           size="icon"
                           onClick={() => {
                             const hasRegeneratable = stepResources[
-                              "organization"
+                              "cohorts"
                             ]!.some((rt) => canRegenerate(rt));
                             handleOpenStepCardModal(
-                              "organization",
+                              "cohorts",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
                           }}
                           disabled={
                             disabled ||
-                            stepResources["organization"]!.some((rt) =>
+                            stepResources["cohorts"]!.some((rt) =>
                               isGenerating(rt)
                             )
                           }
                         >
-                          {stepResources["organization"]!.some((rt) =>
+                          {stepResources["cohorts"]!.some((rt) =>
                             isGenerating(rt)
                           ) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1306,7 +1620,7 @@ function ProfileComponent({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {stepResources["organization"]!.some((rt) =>
+                        {stepResources["cohorts"]!.some((rt) =>
                           canRegenerate(rt)
                         )
                           ? "Regenerate"
@@ -1317,88 +1631,41 @@ function ProfileComponent({
                 ) : undefined
               }
             >
-              <div className="space-y-4">
-                <Departments
-                  department_ids={formState.department_ids ?? []}
-                  department_resources={
-                    currentStaffData?.department_resources ?? []
-                  }
-                  show_departments={currentStaffData?.show_departments ?? false}
-                  department_suggestions={
-                    currentStaffData?.department_suggestions ?? []
-                  }
-                  departments={currentStaffData?.departments ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
-                  }
-                  onGenerate={handleGenerateDepartments}
-                  isGenerating={isGenerating("departments")}
-                  required={currentStaffData?.departments_required ?? false}
-                  group_id={currentStaffData?.group_id ?? null}
-                  agent_id={currentStaffData?.departments_agent_id ?? null}
-                  createDepartmentsAction={createDepartmentsAction}
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="role">
-                    Role
-                    <span className="text-destructive ml-1">*</span>
-                  </Label>
-                  <GenericPicker<string>
-                    items={currentStaffData?.role_options ?? []}
-                    selectedIds={formState.role ? [formState.role] : []}
-                    onSelect={(ids) => {
-                      const nextRole =
-                        ids[0] ?? currentStaffData?.role_options?.[0] ?? "";
-                      setFormState((prev) => ({ ...prev, role: nextRole }));
-                    }}
-                    getId={(item) => item}
-                    getLabel={(item) =>
-                      item.charAt(0).toUpperCase() + item.slice(1)
-                    }
-                    placeholder="Select role"
-                    disabled={disabled}
-                    multiSelect={false}
-                    showLabel={false}
-                    compact={true}
-                    buttonClassName="h-8"
-                  />
-                </div>
-
-                <Cohorts
-                  cohort_ids={formState.cohort_ids ?? []}
-                  cohort_resources={[]}
-                  show_cohorts={(currentStaffData?.cohorts?.length ?? 0) > 0}
-                  cohort_suggestions={[]}
-                  cohorts={
-                    currentStaffData?.cohorts?.map((c) => ({
-                      cohort_id: c.cohort_id,
-                      name: c.name,
-                      description: c.description,
-                      generated: false,
-                    })) ?? []
-                  }
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, cohort_ids: ids }))
-                  }
-                  onGenerate={handleGenerateCohorts}
-                  isGenerating={isGenerating("cohorts")}
-                  group_id={currentStaffData?.group_id ?? null}
-                  agent_id={null}
-                  createCohortsAction={createCohortsAction}
-                />
-              </div>
+              <Cohorts
+                cohort_ids={formState.cohort_ids ?? []}
+                cohort_resources={[]}
+                show_cohorts={(currentStaffData?.cohorts?.length ?? 0) > 0}
+                cohort_suggestions={[]}
+                cohorts={
+                  currentStaffData?.cohorts?.map((c) => ({
+                    cohort_id: c.cohort_id,
+                    name: c.name,
+                    description: c.description,
+                    generated: false,
+                  })) ?? []
+                }
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, cohort_ids: ids }))
+                }
+                onGenerate={handleGenerateCohorts}
+                isGenerating={isGenerating("cohorts")}
+                group_id={currentStaffData?.group_id ?? null}
+                agent_id={null}
+                createCohortsAction={createCohortsAction}
+                searchTerm={cohortSearch}
+                showSelectedFilter={cohortShowSelected}
+              />
             </StepCard>
           );
+        }
 
         default:
           return null;
       }
     },
     [
-      stableStaffDataFields,
+      currentStaffData,
       disabled,
       isEditMode,
       handleGenerateFirstName,
@@ -1419,6 +1686,7 @@ function ProfileComponent({
       formState.department_ids,
       formState.cohort_ids,
       formState.role,
+      formState.primary_department_id,
       createNamesAction,
       createFlagsAction,
       createDepartmentsAction,
@@ -1446,15 +1714,15 @@ function ProfileComponent({
           nuqsParsers={
             staffSearchParamsClient as Record<string, Parser<unknown>>
           }
-        steps={steps}
-        getStepStatus={getStepStatus}
-        serverData={staffData}
-        formFieldKeys={formFieldKeys}
-        onReset={(stepId) => handleReset(stepId)}
-        resetSuccessMessage={resetSuccessMessage}
-        onSubmit={handleSubmit}
-        submitButton={submitButton}
-        isReadonly={disabled}
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={staffData}
+          formFieldKeys={formFieldKeys}
+          onReset={(stepId) => handleReset(stepId)}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
           onFormDataChange={onFormDataChange}
@@ -1493,6 +1761,7 @@ export default React.memo(ProfileComponent, (prevProps, nextProps) => {
     email_ids: prevProps.staffData?.email_ids,
     cohort_ids: prevProps.staffData?.cohort_ids,
     role: prevProps.staffData?.role,
+    primary_department_id: prevProps.staffData?.primary_department_id,
   };
   const nextIds = {
     first_name_id: nextProps.staffData?.first_name_id,
@@ -1503,6 +1772,7 @@ export default React.memo(ProfileComponent, (prevProps, nextProps) => {
     email_ids: nextProps.staffData?.email_ids,
     cohort_ids: nextProps.staffData?.cohort_ids,
     role: nextProps.staffData?.role,
+    primary_department_id: nextProps.staffData?.primary_department_id,
   };
 
   if (

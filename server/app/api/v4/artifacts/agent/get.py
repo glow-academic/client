@@ -80,6 +80,9 @@ async def get_agent(
         # Extract params from API request
         draft_id = request.draft_id
         agent_id = request.agent_id  # Can be NULL for new mode
+        descriptions_search = request.descriptions_search
+        prompts_search = request.prompts_search
+        instructions_search = request.instructions_search
 
         # Get mcp flag from header (set by router-level dependency)
         mcp = getattr(http_request.state, "mcp", False) or False
@@ -88,6 +91,9 @@ async def get_agent(
         params = GetAgentSqlParams(
             agent_id=agent_id,
             profile_id=profile_id,
+            descriptions_search=descriptions_search,
+            prompts_search=prompts_search,
+            instructions_search=instructions_search,
             draft_id=draft_id,
             mcp=mcp,
         )

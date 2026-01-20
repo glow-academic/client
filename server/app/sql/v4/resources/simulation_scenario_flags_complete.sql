@@ -1,7 +1,7 @@
 -- Create simulation_scenario_flags resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), name (text), description (text), icon_id (uuid)
--- Returns: flag_id (uuid)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), scenario_id (uuid, required, third), flag_id (uuid, required, fourth), mcp (boolean, optional, fifth)
+-- Returns: id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -20,12 +20,11 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_simulation_scenario_flags_v4(agent_id uuid,
     group_id uuid,
-    name text,
-    description text,
-    icon_id uuid,
+    scenario_id uuid,
+    flag_id uuid,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
-    flag_id uuid
+    id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -44,6 +43,20 @@ DECLARE
     v_message_id uuid;
     v_run_id uuid;
 BEGIN
+    -- Validate scenario exists
+    IF NOT EXISTS (
+        SELECT 1 FROM scenario_artifact WHERE id = api_create_simulation_scenario_flags_v4.scenario_id
+    ) THEN
+        RAISE EXCEPTION 'Scenario % does not exist', api_create_simulation_scenario_flags_v4.scenario_id;
+    END IF;
+
+    -- Validate flag exists
+    IF NOT EXISTS (
+        SELECT 1 FROM flags_resource WHERE id = api_create_simulation_scenario_flags_v4.flag_id
+    ) THEN
+        RAISE EXCEPTION 'Flag % does not exist', api_create_simulation_scenario_flags_v4.flag_id;
+    END IF;
+
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
@@ -93,17 +106,33 @@ BEGIN
     );
     
     -- INSERT INTO scenario_flags_resource table (always insert, never update)
-    INSERT INTO scenario_flags_resource(name, description, icon_id, active, call_id, generated)
-    VALUES (name, description, icon_id, true, v_call_id, true)
-    ON CONFLICT (name) DO NOTHING
+    INSERT INTO scenario_flags_resource (
+        scenario_id,
+        flag_id,
+        active,
+        generated,
+        mcp,
+        call_id,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        api_create_simulation_scenario_flags_v4.scenario_id,
+        api_create_simulation_scenario_flags_v4.flag_id,
+        true,
+        true,
+        mcp,
+        v_call_id,
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (scenario_id, flag_id) DO UPDATE SET
+        active = true,
+        generated = EXCLUDED.generated,
+        mcp = EXCLUDED.mcp,
+        call_id = EXCLUDED.call_id,
+        updated_at = NOW()
     RETURNING id INTO v_flag_id;
-    
-    -- If conflict occurred, get the existing id
-    IF v_flag_id IS NULL THEN
-        SELECT id INTO v_flag_id
-        FROM scenario_flags_resource
-        WHERE name = api_create_simulation_scenario_flags_v4.name;
-    END IF;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
@@ -134,7 +163,7 @@ BEGIN
     FROM group_runs gr
     WHERE gr.group_id = api_create_simulation_scenario_flags_v4.group_id;
     
-    -- Return flag id
+    -- Return resource id
     RETURN QUERY SELECT v_flag_id;
 END;
 $$;

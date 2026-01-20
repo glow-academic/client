@@ -53,6 +53,8 @@ export interface ValuesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createValuesAction?:
@@ -75,6 +77,8 @@ export function Values({
   required = false,
   placeholder = "Select values...",
   description,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createValuesAction,
@@ -88,6 +92,17 @@ export function Values({
     () => value_suggestions ?? [],
     [value_suggestions]
   );
+  const filteredValues = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return allValues;
+    }
+    const term = searchTerm.toLowerCase();
+    return allValues.filter((value) => {
+      const name = value.name?.toLowerCase() ?? "";
+      const desc = value.description?.toLowerCase() ?? "";
+      return name.includes(term) || desc.includes(term);
+    });
+  }, [allValues, searchTerm]);
 
   // Track which values IDs have already had resources created
   const createdValuesIdsRef = useRef<Set<string>>(new Set());
@@ -99,14 +114,14 @@ export function Values({
 
   // Convert values array to ValuesItem format for GenericPicker
   const valuesItems = useMemo(() => {
-    return allValues
+    return filteredValues
       .filter((m) => m.value_id && m.name) // Filter out nulls
       .map((m) => ({
         id: m.value_id!,
         name: m.name!,
         ...(m.description ? { description: m.description } : {}),
       }));
-  }, [allValues]);
+  }, [filteredValues]);
 
   // Check if a values is suggested
   const isSuggested = useCallback(
@@ -175,7 +190,7 @@ export function Values({
       )}
       <GenericPicker<ValuesItem>
         items={valuesItems}
-        itemIds={allValues
+        itemIds={filteredValues
           .map((m) => m.value_id)
           .filter((id): id is string => id !== null)} // All values IDs from array, filter nulls
         selectedIds={ids}
@@ -208,6 +223,8 @@ export function Values({
             />
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

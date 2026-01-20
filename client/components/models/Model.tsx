@@ -47,6 +47,74 @@ type PatchModelDraftOut = OutputOf<"/api/v4/models/draft", "patch">;
 
 type ModelData = OutputOf<"/api/v4/models/get", "post">;
 
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
+type CreateDraftModalitiesOut = OutputOf<"/api/v4/resources/modalities", "post">;
+type CreateDraftTemperatureLevelsIn = InputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
+type CreateDraftTemperatureLevelsOut = OutputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
+type CreateDraftReasoningLevelsIn = InputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftReasoningLevelsOut = OutputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
+type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftQualitiesIn = InputOf<"/api/v4/resources/qualities", "post">;
+type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
+
+type PatchModelDraftActionInput = {
+  body: {
+    input_draft_id: string | null;
+    name_id: string | null;
+    description_id: string | null;
+    value_id: string | null;
+    endpoint_id: string | null;
+    provider_id: string | null;
+    active_flag_id: string | null;
+    modalities_enabled_flag_id: string | null;
+    temperature_enabled_flag_id: string | null;
+    pricing_enabled_flag_id: string | null;
+    voices_enabled_flag_id: string | null;
+    reasoning_levels_enabled_flag_id: string | null;
+    qualities_enabled_flag_id: string | null;
+    department_ids: string[];
+    input_modality_ids: string[];
+    output_modality_ids: string[];
+    temperature_level_ids: string[];
+    reasoning_level_ids: string[];
+    quality_ids: string[];
+    pricing_ids: string[];
+    voice_ids: string[];
+    expected_version: number;
+  };
+};
+
 export interface ModelProps {
   modelId?: string;
   // For create mode: default model detail with provider mapping
@@ -57,6 +125,39 @@ export interface ModelProps {
   patchModelDraftAction?: (
     input: PatchModelDraftIn
   ) => Promise<PatchModelDraftOut>;
+  createNamesAction?: (
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
+  createDescriptionsAction?: (
+    input: CreateDraftDescriptionsIn
+  ) => Promise<CreateDraftDescriptionsOut>;
+  createValuesAction?: (
+    input: CreateDraftValuesIn
+  ) => Promise<CreateDraftValuesOut>;
+  createEndpointsAction?: (
+    input: CreateDraftEndpointsIn
+  ) => Promise<CreateDraftEndpointsOut>;
+  createFlagsAction?: (
+    input: CreateDraftFlagsIn
+  ) => Promise<CreateDraftFlagsOut>;
+  createModalitiesAction?: (
+    input: CreateDraftModalitiesIn
+  ) => Promise<CreateDraftModalitiesOut>;
+  createTemperatureLevelsAction?: (
+    input: CreateDraftTemperatureLevelsIn
+  ) => Promise<CreateDraftTemperatureLevelsOut>;
+  createReasoningLevelsAction?: (
+    input: CreateDraftReasoningLevelsIn
+  ) => Promise<CreateDraftReasoningLevelsOut>;
+  createPricingAction?: (
+    input: CreateDraftPricingIn
+  ) => Promise<CreateDraftPricingOut>;
+  createVoicesAction?: (
+    input: CreateDraftVoicesIn
+  ) => Promise<CreateDraftVoicesOut>;
+  createQualitiesAction?: (
+    input: CreateDraftQualitiesIn
+  ) => Promise<CreateDraftQualitiesOut>;
 }
 
 function ModelComponent({
@@ -65,6 +166,17 @@ function ModelComponent({
   modelDetail: serverModelDetail,
   saveModelAction,
   patchModelDraftAction,
+  createNamesAction,
+  createDescriptionsAction,
+  createValuesAction,
+  createEndpointsAction,
+  createFlagsAction,
+  createModalitiesAction,
+  createTemperatureLevelsAction,
+  createReasoningLevelsAction,
+  createPricingAction,
+  createVoicesAction,
+  createQualitiesAction,
 }: ModelProps) {
   const router = useRouter();
   const isEditMode = !!modelId;
@@ -95,6 +207,17 @@ function ModelComponent({
     () => ({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
+      descriptionSearch: parseAsString,
+      valueSearch: parseAsString,
+      endpointSearch: parseAsString,
+      departmentSearch: parseAsString,
+      inputModalitySearch: parseAsString,
+      outputModalitySearch: parseAsString,
+      temperatureSearch: parseAsString,
+      pricingSearch: parseAsString,
+      reasoningSearch: parseAsString,
+      voiceSearch: parseAsString,
+      qualitySearch: parseAsString,
     }),
     []
   );
@@ -454,15 +577,35 @@ function ModelComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchModelDraftActionRef.current) return;
-        // Note: SQL function only accepts name_id, description_id, active_flag_id, provider_id
-        // Other fields will need to be added to SQL function in future
-        const result = await patchModelDraftActionRef.current({
+        const patchAction =
+          patchModelDraftActionRef.current as
+            | ((input: PatchModelDraftActionInput) => Promise<PatchModelDraftOut>)
+            | undefined;
+        if (!patchAction) return;
+        const result = await patchAction({
           body: {
             input_draft_id: draftId || null,
             name_id: formState.name_id,
             description_id: formState.description_id,
+            value_id: formState.value_id,
+            endpoint_id: formState.endpoint_id,
             active_flag_id: formState.active_flag_id,
+            modalities_enabled_flag_id: formState.modalities_enabled_flag_id,
+            temperature_enabled_flag_id: formState.temperature_enabled_flag_id,
+            pricing_enabled_flag_id: formState.pricing_enabled_flag_id,
+            voices_enabled_flag_id: formState.voices_enabled_flag_id,
+            reasoning_levels_enabled_flag_id:
+              formState.reasoning_levels_enabled_flag_id,
+            qualities_enabled_flag_id: formState.qualities_enabled_flag_id,
             provider_id: formState.provider_id,
+            department_ids: formState.departmentIds,
+            input_modality_ids: formState.input_modality_ids,
+            output_modality_ids: formState.output_modality_ids,
+            temperature_level_ids: formState.temperature_level_ids,
+            reasoning_level_ids: formState.reasoning_level_ids,
+            quality_ids: formState.quality_ids,
+            pricing_ids: formState.pricing_ids,
+            voice_ids: formState.voice_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -1144,7 +1287,9 @@ function ModelComponent({
         resetFields: [
           "name_id",
           "description_id",
+          "descriptionSearch",
           "value_id",
+          "valueSearch",
           "active_flag_id",
           "modalities_enabled_flag_id",
           "temperature_enabled_flag_id",
@@ -1153,6 +1298,7 @@ function ModelComponent({
           "reasoning_levels_enabled_flag_id",
           "qualities_enabled_flag_id",
           "endpoint_id",
+          "departmentSearch",
           "departmentIds",
         ],
       },
@@ -1160,7 +1306,7 @@ function ModelComponent({
         id: "customUrl",
         title: "Custom Model URL",
         description: "Configure custom base URL for this model (optional).",
-        resetFields: ["endpoint_id"],
+        resetFields: ["endpoint_id", "endpointSearch"],
         optional: true,
       },
       {
@@ -1173,47 +1319,47 @@ function ModelComponent({
         id: "inputModalities",
         title: "Input Modalities",
         description: "Configure input modalities.",
-        resetFields: ["input_modality_ids"],
+        resetFields: ["input_modality_ids", "inputModalitySearch"],
       },
       {
         id: "outputModalities",
         title: "Output Modalities",
         description: "Configure output modalities.",
-        resetFields: ["output_modality_ids"],
+        resetFields: ["output_modality_ids", "outputModalitySearch"],
       },
       {
         id: "temperature",
         title: "Temperature",
         description: "Configure temperature levels (optional).",
-        resetFields: ["temperature_level_ids"],
+        resetFields: ["temperature_level_ids", "temperatureSearch"],
         optional: true,
       },
       {
         id: "pricing",
         title: "Pricing",
         description: "Configure pricing for this model (optional).",
-        resetFields: ["pricing_ids"],
+        resetFields: ["pricing_ids", "pricingSearch"],
         optional: true,
       },
       {
         id: "reasoning",
         title: "Reasoning Levels",
         description: "Select reasoning levels (optional).",
-        resetFields: ["reasoning_level_ids"],
+        resetFields: ["reasoning_level_ids", "reasoningSearch"],
         optional: true,
       },
       {
         id: "voices",
         title: "Voices",
         description: "Select voices (optional).",
-        resetFields: ["voice_ids"],
+        resetFields: ["voice_ids", "voiceSearch"],
         optional: true,
       },
       {
         id: "qualities",
         title: "Qualities",
         description: "Select qualities (optional).",
-        resetFields: ["quality_ids"],
+        resetFields: ["quality_ids", "qualitySearch"],
         optional: true,
       },
     ],
@@ -1243,6 +1389,17 @@ function ModelComponent({
       "reasoning_level_ids",
       "voice_ids",
       "quality_ids",
+      "descriptionSearch",
+      "valueSearch",
+      "endpointSearch",
+      "departmentSearch",
+      "inputModalitySearch",
+      "outputModalitySearch",
+      "temperatureSearch",
+      "pricingSearch",
+      "reasoningSearch",
+      "voiceSearch",
+      "qualitySearch",
     ],
     []
   );
@@ -1364,8 +1521,8 @@ function ModelComponent({
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: _stepFormData,
-      setFormData: _setStepFormData,
+      formData,
+      setFormData,
       onReset,
     }: {
       stepId: string;
@@ -1378,6 +1535,27 @@ function ModelComponent({
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
       onReset?: () => void;
     }) => {
+      const descriptionSearch =
+        (formData["descriptionSearch"] as string | undefined) ?? "";
+      const valueSearch = (formData["valueSearch"] as string | undefined) ?? "";
+      const endpointSearch =
+        (formData["endpointSearch"] as string | undefined) ?? "";
+      const departmentSearch =
+        (formData["departmentSearch"] as string | undefined) ?? "";
+      const inputModalitySearch =
+        (formData["inputModalitySearch"] as string | undefined) ?? "";
+      const outputModalitySearch =
+        (formData["outputModalitySearch"] as string | undefined) ?? "";
+      const temperatureSearch =
+        (formData["temperatureSearch"] as string | undefined) ?? "";
+      const pricingSearch =
+        (formData["pricingSearch"] as string | undefined) ?? "";
+      const reasoningSearch =
+        (formData["reasoningSearch"] as string | undefined) ?? "";
+      const voiceSearch = (formData["voiceSearch"] as string | undefined) ?? "";
+      const qualitySearch =
+        (formData["qualitySearch"] as string | undefined) ?? "";
+
       // Use formState directly (components manage their own display state)
       switch (stepId) {
         case "basic":
@@ -1408,6 +1586,7 @@ function ModelComponent({
                   hideDescription={true}
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.name_agent_id ?? null}
+                  createNamesAction={createNamesAction}
                 />
               }
               resetFields={[
@@ -1436,6 +1615,10 @@ function ModelComponent({
                     modelData?.description_suggestions ?? []
                   }
                   descriptions={modelData?.descriptions ?? []}
+                  searchTerm={descriptionSearch}
+                  onSearchChange={(term: string) =>
+                    setFormData({ descriptionSearch: term || null })
+                  }
                   disabled={disabled}
                   onDescriptionIdChange={(id) =>
                     setFormState((prev) => ({ ...prev, description_id: id }))
@@ -1446,6 +1629,7 @@ function ModelComponent({
                   required={modelData?.description_required ?? false}
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.description_agent_id ?? null}
+                  createDescriptionsAction={createDescriptionsAction}
                 />
 
                 <Values
@@ -1478,6 +1662,10 @@ function ModelComponent({
                       generated: v.generated,
                     })) ?? []
                   }
+                  searchTerm={valueSearch}
+                  onSearchChange={(term: string) =>
+                    setFormData({ valueSearch: term || null })
+                  }
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState({
@@ -1491,6 +1679,7 @@ function ModelComponent({
                   description="Unique identifier for this model (used in API calls)"
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.value_agent_id ?? null}
+                  createValuesAction={createValuesAction}
                 />
 
                 {validDepartmentIds && validDepartmentIds.length > 1 && (
@@ -1518,6 +1707,11 @@ function ModelComponent({
                         name?: string | null;
                         description?: string | null;
                       }) => `${dept.name || ""} ${dept.description || ""}`}
+                      {...{ initialSearchTerm: departmentSearch }}
+                      {...{
+                        onSearchChange: (term: string) =>
+                          setFormData({ departmentSearch: term || null }),
+                      }}
                       placeholder="All Departments"
                       disabled={disabled}
                       multiSelect={true}
@@ -1540,6 +1734,7 @@ function ModelComponent({
                   required={modelData?.flag_required ?? false}
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
@@ -1564,6 +1759,7 @@ function ModelComponent({
                   }
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.modalities_enabled_flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
@@ -1591,6 +1787,7 @@ function ModelComponent({
                   agent_id={
                     modelData?.temperature_enabled_flag_agent_id ?? null
                   }
+                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
@@ -1612,6 +1809,7 @@ function ModelComponent({
                   required={modelData?.pricing_enabled_flag_required ?? false}
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.pricing_enabled_flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
@@ -1633,6 +1831,7 @@ function ModelComponent({
                   required={modelData?.voices_enabled_flag_required ?? false}
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.voices_enabled_flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
@@ -1660,6 +1859,7 @@ function ModelComponent({
                   agent_id={
                     modelData?.reasoning_levels_enabled_flag_agent_id ?? null
                   }
+                  createFlagsAction={createFlagsAction}
                 />
 
                 <Flags
@@ -1681,6 +1881,7 @@ function ModelComponent({
                   required={modelData?.qualities_enabled_flag_required ?? false}
                   group_id={modelData?.group_id ?? null}
                   agent_id={modelData?.qualities_enabled_flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1697,6 +1898,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={endpointSearch}
+              onSearchChange={(term) =>
+                setFormData({ endpointSearch: term || null })
+              }
+              searchPlaceholder="Search endpoints..."
               resetFields={["endpoint_id"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1725,6 +1931,10 @@ function ModelComponent({
                     generated: e.generated,
                   })) ?? []
                 }
+                searchTerm={endpointSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ endpointSearch: term || null })
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({
@@ -1738,6 +1948,7 @@ function ModelComponent({
                 description="Custom base URL for this model"
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.endpoint_agent_id ?? null}
+                createEndpointsAction={createEndpointsAction}
               />
             </StepCard>
           );
@@ -1798,6 +2009,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={inputModalitySearch}
+              onSearchChange={(term) =>
+                setFormData({ inputModalitySearch: term || null })
+              }
+              searchPlaceholder="Search input modalities..."
               resetFields={["input_modality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1822,6 +2038,10 @@ function ModelComponent({
                     generated: m.generated,
                   })) ?? []
                 }
+                searchTerm={inputModalitySearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ inputModalitySearch: term || null })
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, input_modality_ids: ids })
@@ -1831,6 +2051,7 @@ function ModelComponent({
                 required={modelData?.input_modalities_required ?? true}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.input_modalities_agent_id ?? null}
+                createModalitiesAction={createModalitiesAction}
               />
             </StepCard>
           );
@@ -1845,6 +2066,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={outputModalitySearch}
+              onSearchChange={(term) =>
+                setFormData({ outputModalitySearch: term || null })
+              }
+              searchPlaceholder="Search output modalities..."
               resetFields={["output_modality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1869,6 +2095,10 @@ function ModelComponent({
                     generated: m.generated,
                   })) ?? []
                 }
+                searchTerm={outputModalitySearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ outputModalitySearch: term || null })
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, output_modality_ids: ids })
@@ -1878,6 +2108,7 @@ function ModelComponent({
                 required={modelData?.output_modalities_required ?? true}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.output_modalities_agent_id ?? null}
+                createModalitiesAction={createModalitiesAction}
               />
             </StepCard>
           );
@@ -1892,6 +2123,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={temperatureSearch}
+              onSearchChange={(term) =>
+                setFormData({ temperatureSearch: term || null })
+              }
+              searchPlaceholder="Search temperature levels..."
               resetFields={["temperature_level_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1932,6 +2168,10 @@ function ModelComponent({
                     generated: t.generated,
                   })) ?? []
                 }
+                searchTerm={temperatureSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ temperatureSearch: term || null })
+                }
                 disabled={disabled}
                 onTemperatureLevelIdChange={(id) =>
                   setFormState({
@@ -1944,6 +2184,7 @@ function ModelComponent({
                 required={modelData?.temperature_levels_required ?? false}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.temperature_levels_agent_id ?? null}
+                createTemperatureLevelsAction={createTemperatureLevelsAction}
               />
             </StepCard>
           );
@@ -1958,6 +2199,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={pricingSearch}
+              onSearchChange={(term) =>
+                setFormData({ pricingSearch: term || null })
+              }
+              searchPlaceholder="Search pricing..."
               resetFields={["pricing_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1982,6 +2228,10 @@ function ModelComponent({
                     generated: p.generated,
                   })) ?? []
                 }
+                searchTerm={pricingSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ pricingSearch: term || null })
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, pricing_ids: ids })
@@ -1991,6 +2241,7 @@ function ModelComponent({
                 required={modelData?.pricing_required ?? false}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.pricing_agent_id ?? null}
+                createPricingAction={createPricingAction}
               />
             </StepCard>
           );
@@ -2005,6 +2256,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={reasoningSearch}
+              onSearchChange={(term) =>
+                setFormData({ reasoningSearch: term || null })
+              }
+              searchPlaceholder="Search reasoning levels..."
               resetFields={["reasoning_level_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -2040,6 +2296,10 @@ function ModelComponent({
                     generated: r.generated,
                   })) ?? []
                 }
+                searchTerm={reasoningSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ reasoningSearch: term || null })
+                }
                 disabled={disabled}
                 onReasoningLevelIdChange={(id) =>
                   setFormState({
@@ -2052,6 +2312,7 @@ function ModelComponent({
                 required={modelData?.reasoning_levels_required ?? false}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.reasoning_levels_agent_id ?? null}
+                createReasoningLevelsAction={createReasoningLevelsAction}
               />
             </StepCard>
           );
@@ -2066,6 +2327,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={voiceSearch}
+              onSearchChange={(term) =>
+                setFormData({ voiceSearch: term || null })
+              }
+              searchPlaceholder="Search voices..."
               resetFields={["voice_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -2076,6 +2342,10 @@ function ModelComponent({
                 show_voices={modelData?.show_voices ?? true}
                 voice_suggestions={modelData?.voice_suggestions ?? []}
                 voices={modelData?.voices ?? []}
+                searchTerm={voiceSearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ voiceSearch: term || null })
+                }
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
                   setFormState({ ...formState, voice_ids: ids })
@@ -2085,6 +2355,7 @@ function ModelComponent({
                 required={modelData?.voices_required ?? false}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.voices_agent_id ?? null}
+                createVoicesAction={createVoicesAction}
               />
             </StepCard>
           );
@@ -2099,6 +2370,11 @@ function ModelComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              searchTerm={qualitySearch}
+              onSearchChange={(term) =>
+                setFormData({ qualitySearch: term || null })
+              }
+              searchPlaceholder="Search qualities..."
               resetFields={["quality_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -2121,6 +2397,10 @@ function ModelComponent({
                     generated: q.generated,
                   })) ?? []
                 }
+                searchTerm={qualitySearch}
+                onSearchChange={(term: string) =>
+                  setFormData({ qualitySearch: term || null })
+                }
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState({ ...formState, quality_ids: ids })
@@ -2130,6 +2410,7 @@ function ModelComponent({
                 required={modelData?.qualities_required ?? false}
                 group_id={modelData?.group_id ?? null}
                 agent_id={modelData?.qualities_agent_id ?? null}
+                createQualitiesAction={createQualitiesAction}
               />
             </StepCard>
           );
@@ -2149,6 +2430,17 @@ function ModelComponent({
       handleGenerateName,
       handleGenerateDescription,
       isGenerating,
+      createNamesAction,
+      createDescriptionsAction,
+      createValuesAction,
+      createEndpointsAction,
+      createFlagsAction,
+      createModalitiesAction,
+      createTemperatureLevelsAction,
+      createReasoningLevelsAction,
+      createPricingAction,
+      createVoicesAction,
+      createQualitiesAction,
     ]
   );
 

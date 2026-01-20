@@ -104,6 +104,8 @@ CREATE TYPE types.q_get_simulation_v4_scenario_resource AS (
 
 CREATE TYPE types.q_get_simulation_v4_scenario_flag_resource AS (
     id uuid,
+    scenario_id uuid,
+    flag_id uuid,
     name text,
     description text,
     icon_id uuid,
@@ -326,6 +328,7 @@ RETURNS TABLE (
     scenario_rubrics_required boolean,
     scenario_rubric_suggestions uuid[],
     scenario_rubrics types.q_get_simulation_v4_scenario_rubric_resource[],
+    rubrics types.q_get_simulation_v4_rubric[],
     -- Multi-select resources: scenario_time_limits
     scenario_time_limit_ids uuid[],
     scenario_time_limit_resources types.q_get_simulation_v4_scenario_time_limit_resource[],
@@ -730,7 +733,7 @@ valid_rubrics_data AS (
         SELECT 1
         FROM rubric_artifacts ra
         WHERE ra.rubric_id = r.id
-          AND ra.artifact = CAST('agent' AS artifacts)
+          AND ra.artifact = CAST('rubric' AS artifacts)
       )
       AND (
         rd.department_id = ANY(udi.ids)
@@ -2109,14 +2112,15 @@ scenario_flag_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+                (sfr.id, sfr.scenario_id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false),
+                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = sfr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
-            FROM flags_resource f
+            FROM scenario_flags_resource sfr
+            JOIN flags_resource f ON f.id = sfr.flag_id
             CROSS JOIN scenario_flag_ids_data sfid
-            WHERE f.id = ANY(sfid.scenario_flag_ids)),
+            WHERE sfr.id = ANY(sfid.scenario_flag_ids)),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
         ) as scenario_flag_resources
     FROM params
@@ -2132,15 +2136,15 @@ scenario_flags_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
+                (f.id, NULL::uuid, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
                  (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
             FROM flags_resource f
-            WHERE EXISTS (
-                SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.scenario_flag_id = f.id
-            )),
+            JOIN artifact_flag_types aft ON f.type = aft.flag_type
+            WHERE f.active = true
+              AND aft.artifact = 'scenario'::artifacts),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
         ) as scenario_flags
     FROM params
@@ -2704,6 +2708,7 @@ SELECT
     false as scenario_rubrics_required,
     COALESCE((SELECT scenario_rubric_suggestions FROM scenario_rubric_suggestions_data), ARRAY[]::uuid[]) as scenario_rubric_suggestions,
     COALESCE((SELECT scenario_rubrics FROM scenario_rubrics_data), '{}'::types.q_get_simulation_v4_scenario_rubric_resource[]) as scenario_rubrics,
+    COALESCE((SELECT rubrics FROM rubrics_data), '{}'::types.q_get_simulation_v4_rubric[]) as rubrics,
     -- Multi-select resources: scenario_time_limits
     COALESCE((SELECT scenario_time_limit_ids FROM scenario_time_limit_ids_data), ARRAY[]::uuid[]) as scenario_time_limit_ids,
     COALESCE((SELECT scenario_time_limit_resources FROM scenario_time_limit_resources_data), '{}'::types.q_get_simulation_v4_scenario_time_limit_resource[]) as scenario_time_limit_resources,

@@ -419,6 +419,12 @@ domain_mapping_data AS (
 args_ids_data AS (
     SELECT 
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(da.args_id ORDER BY da.created_at)
+                 FROM draft_args da
+                 WHERE da.draft_id = (SELECT draft_id FROM params)),
+                ARRAY[]::uuid[]
+            )
             WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(ta.args_id ORDER BY ta.created_at)
@@ -497,6 +503,12 @@ args_mapping_data AS (
 args_outputs_ids_data AS (
     SELECT 
         CASE 
+            WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
+                (SELECT ARRAY_AGG(dao.args_outputs_id ORDER BY dao.created_at)
+                 FROM draft_args_outputs dao
+                 WHERE dao.draft_id = (SELECT draft_id FROM params)),
+                ARRAY[]::uuid[]
+            )
             WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(tao.args_outputs_id ORDER BY tao.created_at)

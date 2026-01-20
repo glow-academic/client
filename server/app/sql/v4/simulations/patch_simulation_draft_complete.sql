@@ -62,7 +62,7 @@ BEGIN
     IF scenario_flag_ids IS NOT NULL AND EXISTS (
         SELECT 1
         FROM unnest(scenario_flag_ids) AS scenario_flag_id
-        WHERE NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = scenario_flag_id)
+        WHERE NOT EXISTS (SELECT 1 FROM scenario_flags_resource WHERE id = scenario_flag_id)
     ) THEN
         RAISE EXCEPTION 'Scenario flag resource not found';
     END IF;

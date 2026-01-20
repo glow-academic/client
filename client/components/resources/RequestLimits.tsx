@@ -36,6 +36,13 @@ export interface RequestLimitItem {
   requests_per_day: number;
 }
 
+interface RequestLimitPickerItem {
+  id: string;
+  requests_per_day: number | null;
+}
+
+const UNLIMITED_REQUEST_ID = "unlimited";
+
 export interface RequestLimitsProps {
   request_limit_id?: string | null; // Current request_limit_id (standardized prop name)
   request_limit_resource?: {
@@ -84,7 +91,6 @@ export function RequestLimits({
   request_limit_id,
   request_limit_resource,
   show_request_limit = true,
-  request_limit_suggestions,
   request_limits,
   disabled = false,
   onRequestLimitIdChange,
@@ -102,16 +108,11 @@ export function RequestLimits({
   // Legacy props for backward compatibility
   requestLimitResource,
   requestLimitId: _requestLimitId,
-  suggestions,
 }: RequestLimitsProps) {
   // Use standardized props with fallback to legacy props
   const resource = request_limit_resource ?? requestLimitResource ?? null;
   const resourceId = request_limit_id ?? _requestLimitId ?? null;
   const show = show_request_limit ?? true;
-  const suggestionsList = useMemo(
-    () => request_limit_suggestions ?? suggestions ?? [],
-    [request_limit_suggestions, suggestions]
-  );
   const allRequestLimits = useMemo(() => request_limits ?? [], [request_limits]);
   const [customValue, setCustomValue] = useState("");
   const [isCustomEditing, setIsCustomEditing] = useState(false);
@@ -156,15 +157,33 @@ export function RequestLimits({
     );
   }, [requestLimitItems, createdRequestLimits, selectedFromResource]);
 
-  // Check if a request limit is suggested
-  const isSuggested = useCallback(
-    (requestLimitId: string) => suggestionsList.includes(requestLimitId),
-    [suggestionsList]
-  );
+  const requestLimitPickerItems = useMemo<RequestLimitPickerItem[]>(() => {
+    return [
+      { id: UNLIMITED_REQUEST_ID, requests_per_day: null },
+      ...requestLimitChoices,
+    ];
+  }, [requestLimitChoices]);
+
+  const selectedRequestLimit = useMemo(() => {
+    if (!resourceId) {
+      return { id: UNLIMITED_REQUEST_ID, requests_per_day: null };
+    }
+    return (
+      requestLimitChoices.find((item) => item.id === resourceId) ?? {
+        id: resourceId,
+        requests_per_day: null,
+      }
+    );
+  }, [resourceId, requestLimitChoices]);
 
   const handleSelect = useCallback(
     async (selectedIds: string[]) => {
       const selectedId = selectedIds.length > 0 ? selectedIds[0] : null;
+
+      if (!selectedId || selectedId === UNLIMITED_REQUEST_ID) {
+        onRequestLimitIdChange(null);
+        return;
+      }
 
       // Create resource for newly selected request limit
       if (
@@ -306,16 +325,24 @@ export function RequestLimits({
               </TooltipProvider>
             )}
           </div>
-          <GenericPicker<RequestLimitItem>
-            items={requestLimitChoices}
-            itemIds={requestLimitChoices.map((item) => item.id)}
-            selectedIds={resourceId ? [resourceId] : []}
+          <GenericPicker<RequestLimitPickerItem>
+            items={requestLimitPickerItems}
+            itemIds={requestLimitPickerItems.map((item) => item.id)}
+            selectedIds={
+              resourceId ? [resourceId] : [UNLIMITED_REQUEST_ID]
+            }
             onSelect={handleSelect}
             multiSelect={false}
             getId={(item) => item.id}
-            getLabel={(item) => `${item.requests_per_day} requests/day`}
+            getLabel={(item) =>
+              item.requests_per_day === null
+                ? "Unlimited"
+                : `${item.requests_per_day} requests/day`
+            }
             getSearchText={(item) =>
-              `${item.requests_per_day} requests/day ${item.id}`
+              item.requests_per_day === null
+                ? "Unlimited no limit"
+                : `${item.requests_per_day} requests/day ${item.id}`
             }
             placeholder={placeholder}
             disabled={disabled}
@@ -328,87 +355,73 @@ export function RequestLimits({
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => {
-            if (disabled) return;
-            onRequestLimitIdChange(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
+        {selectedRequestLimit.requests_per_day === null ? (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
               if (disabled) return;
               onRequestLimitIdChange(null);
-            }
-          }}
-          className={cn(
-            "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
-            "hover:shadow-md hover:bg-accent/50",
-            !resourceId && "ring-2 ring-primary bg-accent",
-            disabled && "opacity-60 cursor-not-allowed"
-          )}
-        >
-          <Infinity className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">Unlimited</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              No daily request limit
-            </p>
-          </div>
-          <Check
-            className={cn(
-              "absolute right-3 top-3 h-4 w-4",
-              !resourceId ? "opacity-100" : "opacity-0"
-            )}
-          />
-        </div>
-
-        {requestLimitChoices.map((item) => {
-          const isSelected = item.id === resourceId;
-          const isSuggestedItem = isSuggested(item.id);
-          return (
-            <div
-              key={item.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => {
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
                 if (disabled) return;
-                onRequestLimitIdChange(item.id);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (disabled) return;
-                  onRequestLimitIdChange(item.id);
-                }
-              }}
-              className={cn(
-                "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
-                "hover:shadow-md hover:bg-accent/50",
-                isSelected && "ring-2 ring-primary bg-accent",
-                disabled && "opacity-60 cursor-not-allowed"
-              )}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">
-                    {item.requests_per_day} requests/day
-                  </p>
-                  {isSuggestedItem && (
-                    <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                      Suggested
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Check
-                className={cn(
-                  "absolute right-3 top-3 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
-                )}
-              />
+                onRequestLimitIdChange(null);
+              }
+            }}
+            className={cn(
+              "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
+              "hover:shadow-md hover:bg-accent/50",
+              !resourceId && "ring-2 ring-primary bg-accent",
+              disabled && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            <Infinity className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Unlimited</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                No daily request limit
+              </p>
             </div>
-          );
-        })}
+            <Check
+              className={cn(
+                "absolute right-3 top-3 h-4 w-4",
+                !resourceId ? "opacity-100" : "opacity-0"
+              )}
+            />
+          </div>
+        ) : (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              if (disabled) return;
+              onRequestLimitIdChange(selectedRequestLimit.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (disabled) return;
+                onRequestLimitIdChange(selectedRequestLimit.id);
+              }
+            }}
+            className={cn(
+              "relative flex items-start gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-all",
+              "hover:shadow-md hover:bg-accent/50",
+              "ring-2 ring-primary bg-accent",
+              disabled && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">
+                {selectedRequestLimit.requests_per_day} requests/day
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedRequestLimit.requests_per_day} requests per day
+              </p>
+            </div>
+            <Check className="absolute right-3 top-3 h-4 w-4 opacity-100" />
+          </div>
+        )}
       </div>
       {!disabled && (
         <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">

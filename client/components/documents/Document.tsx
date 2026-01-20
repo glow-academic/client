@@ -77,6 +77,7 @@ export interface DocumentProps {
   mode?: "create" | "edit";
   // Server-provided data
   documentDetail?: DocumentData;
+  documentDetailDefault?: DocumentData;
   // Server actions
   saveDocumentAction?: (input: SaveDocumentIn) => Promise<SaveDocumentOut>;
   patchDocumentDraftAction?: (
@@ -106,7 +107,8 @@ export interface DocumentProps {
 function DocumentComponent({
   documentId,
   mode = documentId ? "edit" : "create",
-  documentDetail,
+  documentDetail: documentDetailProp,
+  documentDetailDefault,
   saveDocumentAction,
   patchDocumentDraftAction,
   createNamesAction,
@@ -118,6 +120,7 @@ function DocumentComponent({
 }: DocumentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
+  const documentDetail = documentDetailProp ?? documentDetailDefault;
   const {
     effectiveProfile,
     selectedDraftId,
@@ -1303,12 +1306,6 @@ function DocumentComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={uploadSearchTerm}
-              onSearchChange={(term: string) =>
-                setStepFormData({ uploadSearch: term || null })
-              }
-              searchPlaceholder="Search uploads..."
-              debounceMs={300}
               resetFields={["upload_ids", "uploadSearch"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1376,6 +1373,9 @@ function DocumentComponent({
                 uploads_agent_id={documentDetail?.uploads_agent_id ?? null}
                 createUploadsAction={createUploadsAction}
                 searchTerm={uploadSearchTerm}
+                onSearchChange={(term) =>
+                  setStepFormData({ uploadSearch: term || null })
+                }
               />
             </StepCard>
           );
@@ -1468,21 +1468,23 @@ function DocumentComponent({
 // Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(DocumentComponent, (prevProps, nextProps) => {
   // Compare documentDetail by resource IDs, not object reference
+  const prevDetail = prevProps.documentDetail ?? prevProps.documentDetailDefault;
+  const nextDetail = nextProps.documentDetail ?? nextProps.documentDetailDefault;
   const prevIds = {
-    name_id: prevProps.documentDetail?.name_id,
-    description_id: prevProps.documentDetail?.description_id,
-    active_flag_id: prevProps.documentDetail?.active_flag_id,
-    department_ids: prevProps.documentDetail?.department_ids,
-    field_ids: prevProps.documentDetail?.field_ids,
-    upload_ids: prevProps.documentDetail?.upload_ids,
+    name_id: prevDetail?.name_id,
+    description_id: prevDetail?.description_id,
+    active_flag_id: prevDetail?.active_flag_id,
+    department_ids: prevDetail?.department_ids,
+    field_ids: prevDetail?.field_ids,
+    upload_ids: prevDetail?.upload_ids,
   };
   const nextIds = {
-    name_id: nextProps.documentDetail?.name_id,
-    description_id: nextProps.documentDetail?.description_id,
-    active_flag_id: nextProps.documentDetail?.active_flag_id,
-    department_ids: nextProps.documentDetail?.department_ids,
-    field_ids: nextProps.documentDetail?.field_ids,
-    upload_ids: nextProps.documentDetail?.upload_ids,
+    name_id: nextDetail?.name_id,
+    description_id: nextDetail?.description_id,
+    active_flag_id: nextDetail?.active_flag_id,
+    department_ids: nextDetail?.department_ids,
+    field_ids: nextDetail?.field_ids,
+    upload_ids: nextDetail?.upload_ids,
   };
 
   // Compare primitive props

@@ -190,6 +190,9 @@ class GetAgentSqlParams(BaseModel):
 
     profile_id: UUID
     agent_id: UUID | None = None
+    descriptions_search: str | None = None
+    prompts_search: str | None = None
+    instructions_search: str | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 
@@ -197,6 +200,9 @@ class GetAgentSqlParams(BaseModel):
         return (
             self.profile_id,
             self.agent_id,
+            self.descriptions_search,
+            self.prompts_search,
+            self.instructions_search,
             self.draft_id,
             self.mcp,
         )
@@ -426,6 +432,9 @@ class GetAgentSqlRow(BaseModel):
 class GetAgentApiRequest(BaseModel):
 
     agent_id: UUID | None = None
+    descriptions_search: str | None = None
+    prompts_search: str | None = None
+    instructions_search: str | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 
@@ -9573,8 +9582,24 @@ class PatchModelDraftSqlParams(BaseModel):
     input_draft_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
     active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
     provider_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    input_modality_ids: list[UUID] | None = None
+    output_modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9583,8 +9608,24 @@ class PatchModelDraftSqlParams(BaseModel):
             self.input_draft_id,
             self.name_id,
             self.description_id,
+            self.value_id,
+            self.endpoint_id,
             self.active_flag_id,
+            self.modalities_enabled_flag_id,
+            self.temperature_enabled_flag_id,
+            self.pricing_enabled_flag_id,
+            self.voices_enabled_flag_id,
+            self.reasoning_levels_enabled_flag_id,
+            self.qualities_enabled_flag_id,
             self.provider_id,
+            self.department_ids,
+            self.input_modality_ids,
+            self.output_modality_ids,
+            self.temperature_level_ids,
+            self.reasoning_level_ids,
+            self.quality_ids,
+            self.pricing_ids,
+            self.voice_ids,
             self.expected_version,
         )
 
@@ -9599,8 +9640,24 @@ class PatchModelDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
+    value_id: UUID | None = None
+    endpoint_id: UUID | None = None
     active_flag_id: UUID | None = None
+    modalities_enabled_flag_id: UUID | None = None
+    temperature_enabled_flag_id: UUID | None = None
+    pricing_enabled_flag_id: UUID | None = None
+    voices_enabled_flag_id: UUID | None = None
+    reasoning_levels_enabled_flag_id: UUID | None = None
+    qualities_enabled_flag_id: UUID | None = None
     provider_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    input_modality_ids: list[UUID] | None = None
+    output_modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchModelDraftApiResponse(BaseModel):
@@ -15714,12 +15771,16 @@ class ScenarioFlagsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    scenario_id: UUID
+    flag_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.scenario_id,
+            self.flag_id,
             self.mcp,
         )
 
@@ -15731,6 +15792,8 @@ class ScenarioFlagsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    scenario_id: UUID
+    flag_id: UUID
     mcp: bool | None = False
 
 class ScenarioFlagsApiResponse(BaseModel):
@@ -15964,37 +16027,34 @@ class SimulationScenarioFlagsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
-    name: str
-    description: str
-    icon_id: UUID
+    scenario_id: UUID
+    flag_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
-            self.name,
-            self.description,
-            self.icon_id,
+            self.scenario_id,
+            self.flag_id,
             self.mcp,
         )
 
 class SimulationScenarioFlagsSqlRow(BaseModel):
 
-    flag_id: UUID | None = None
+    id: UUID | None = None
 
 class SimulationScenarioFlagsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
-    name: str
-    description: str
-    icon_id: UUID
+    scenario_id: UUID
+    flag_id: UUID
     mcp: bool | None = False
 
 class SimulationScenarioFlagsApiResponse(BaseModel):
 
-    flag_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19067,9 +19127,20 @@ class QGetSimulationV4NameResource(BaseModel):
 
 
 
+class QGetSimulationV4Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
 class QGetSimulationV4ScenarioFlagResource(BaseModel):
 
     id: UUID | None
+    scenario_id: UUID | None
+    flag_id: UUID | None
     name: str | None
     description: str | None
     icon_id: UUID | None
@@ -19183,6 +19254,7 @@ class GetSimulationSqlRow(BaseModel):
     scenario_rubrics_required: bool | None = None
     scenario_rubric_suggestions: list[UUID] | None = None
     scenario_rubrics: list[QGetSimulationV4ScenarioRubricResource] | None = None
+    rubrics: list[QGetSimulationV4Rubric] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     scenario_time_limit_resources: list[QGetSimulationV4ScenarioTimeLimitResource] | None = None
     show_scenario_time_limits: bool | None = None
@@ -19263,6 +19335,7 @@ class GetSimulationApiResponse(BaseModel):
     scenario_rubrics_required: bool | None = None
     scenario_rubric_suggestions: list[UUID] | None = None
     scenario_rubrics: list[QGetSimulationV4ScenarioRubricResource] | None = None
+    rubrics: list[QGetSimulationV4Rubric] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     scenario_time_limit_resources: list[QGetSimulationV4ScenarioTimeLimitResource] | None = None
     show_scenario_time_limits: bool | None = None
@@ -20540,18 +20613,16 @@ class PatchToolDraftSqlParams(BaseModel):
 
     profile_id: UUID
     input_draft_id: UUID | None = None
-    template_ids: list[UUID] | None = None
-    template_array_item_ids: list[UUID] | None = None
-    template_value_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_draft_id,
-            self.template_ids,
-            self.template_array_item_ids,
-            self.template_value_ids,
+            self.args_ids,
+            self.args_outputs_ids,
             self.expected_version,
         )
 
@@ -20564,9 +20635,8 @@ class PatchToolDraftSqlRow(BaseModel):
 class PatchToolDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
-    template_ids: list[UUID] | None = None
-    template_array_item_ids: list[UUID] | None = None
-    template_value_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchToolDraftApiResponse(BaseModel):

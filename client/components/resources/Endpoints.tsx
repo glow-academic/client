@@ -53,6 +53,8 @@ export interface EndpointsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createEndpointsAction?:
@@ -75,6 +77,8 @@ export function Endpoints({
   required = false,
   placeholder = "Select endpoints...",
   description,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createEndpointsAction,
@@ -88,6 +92,17 @@ export function Endpoints({
     () => endpoint_suggestions ?? [],
     [endpoint_suggestions]
   );
+  const filteredEndpoints = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return allEndpoints;
+    }
+    const term = searchTerm.toLowerCase();
+    return allEndpoints.filter((endpoint) => {
+      const name = endpoint.name?.toLowerCase() ?? "";
+      const desc = endpoint.description?.toLowerCase() ?? "";
+      return name.includes(term) || desc.includes(term);
+    });
+  }, [allEndpoints, searchTerm]);
 
   // Track which endpoint IDs have already had resources created
   const createdEndpointIdsRef = useRef<Set<string>>(new Set());
@@ -99,14 +114,14 @@ export function Endpoints({
 
   // Convert endpoints array to EndpointItem format for GenericPicker
   const endpointItems = useMemo(() => {
-    return allEndpoints
+    return filteredEndpoints
       .filter((e) => e.endpoint_id && e.name) // Filter out nulls
       .map((e) => ({
         id: e.endpoint_id!,
         name: e.name!,
         ...(e.description ? { description: e.description } : {}),
       }));
-  }, [allEndpoints]);
+  }, [filteredEndpoints]);
 
   // Check if an endpoint is suggested
   const isSuggested = useCallback(
@@ -181,7 +196,7 @@ export function Endpoints({
       )}
       <GenericPicker<EndpointItem>
         items={endpointItems}
-        itemIds={allEndpoints
+        itemIds={filteredEndpoints
           .map((e) => e.endpoint_id)
           .filter((id): id is string => id !== null)} // All endpoint IDs from array, filter nulls
         selectedIds={ids}
@@ -214,6 +229,8 @@ export function Endpoints({
             />
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

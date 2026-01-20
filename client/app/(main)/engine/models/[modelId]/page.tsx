@@ -19,6 +19,46 @@ type SaveModelIn = InputOf<"/api/v4/models/save", "post">;
 type SaveModelOut = OutputOf<"/api/v4/models/save", "post">;
 type PatchModelDraftIn = InputOf<"/api/v4/models/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/api/v4/models/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftModalitiesIn = InputOf<"/api/v4/resources/modalities", "post">;
+type CreateDraftModalitiesOut = OutputOf<"/api/v4/resources/modalities", "post">;
+type CreateDraftTemperatureLevelsIn = InputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
+type CreateDraftTemperatureLevelsOut = OutputOf<
+  "/api/v4/resources/temperature_levels",
+  "post"
+>;
+type CreateDraftReasoningLevelsIn = InputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftReasoningLevelsOut = OutputOf<
+  "/api/v4/resources/reasoning_levels",
+  "post"
+>;
+type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
+type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftQualitiesIn = InputOf<"/api/v4/resources/qualities", "post">;
+type CreateDraftQualitiesOut = OutputOf<"/api/v4/resources/qualities", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -82,6 +122,83 @@ async function patchModelDraft(
   return api.patch("/models/draft", input);
 }
 
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftValues(
+  input: CreateDraftValuesIn
+): Promise<CreateDraftValuesOut> {
+  "use server";
+  return api.post("/resources/values", input);
+}
+
+async function createDraftEndpoints(
+  input: CreateDraftEndpointsIn
+): Promise<CreateDraftEndpointsOut> {
+  "use server";
+  return api.post("/resources/endpoints", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  return api.post("/resources/flags", input);
+}
+
+async function createDraftModalities(
+  input: CreateDraftModalitiesIn
+): Promise<CreateDraftModalitiesOut> {
+  "use server";
+  return api.post("/resources/modalities", input);
+}
+
+async function createDraftTemperatureLevels(
+  input: CreateDraftTemperatureLevelsIn
+): Promise<CreateDraftTemperatureLevelsOut> {
+  "use server";
+  return api.post("/resources/temperature_levels", input);
+}
+
+async function createDraftReasoningLevels(
+  input: CreateDraftReasoningLevelsIn
+): Promise<CreateDraftReasoningLevelsOut> {
+  "use server";
+  return api.post("/resources/reasoning_levels", input);
+}
+
+async function createDraftPricing(
+  input: CreateDraftPricingIn
+): Promise<CreateDraftPricingOut> {
+  "use server";
+  return api.post("/resources/pricing", input);
+}
+
+async function createDraftVoices(
+  input: CreateDraftVoicesIn
+): Promise<CreateDraftVoicesOut> {
+  "use server";
+  return api.post("/resources/voices", input);
+}
+
+async function createDraftQualities(
+  input: CreateDraftQualitiesIn
+): Promise<CreateDraftQualitiesOut> {
+  "use server";
+  return api.post("/resources/qualities", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ModelEditPage({
   params,
@@ -129,6 +246,17 @@ export default async function ModelEditPage({
         modelDetail={model}
         saveModelAction={saveModel}
         patchModelDraftAction={patchModelDraft}
+        createNamesAction={createDraftNames}
+        createDescriptionsAction={createDraftDescriptions}
+        createValuesAction={createDraftValues}
+        createEndpointsAction={createDraftEndpoints}
+        createFlagsAction={createDraftFlags}
+        createModalitiesAction={createDraftModalities}
+        createTemperatureLevelsAction={createDraftTemperatureLevels}
+        createReasoningLevelsAction={createDraftReasoningLevels}
+        createPricingAction={createDraftPricing}
+        createVoicesAction={createDraftVoices}
+        createQualitiesAction={createDraftQualities}
       />
     </div>
   );
@@ -142,4 +270,26 @@ export type {
   PatchModelDraftOut,
   SaveModelIn,
   SaveModelOut,
+  CreateDraftNamesIn,
+  CreateDraftNamesOut,
+  CreateDraftDescriptionsIn,
+  CreateDraftDescriptionsOut,
+  CreateDraftValuesIn,
+  CreateDraftValuesOut,
+  CreateDraftEndpointsIn,
+  CreateDraftEndpointsOut,
+  CreateDraftFlagsIn,
+  CreateDraftFlagsOut,
+  CreateDraftModalitiesIn,
+  CreateDraftModalitiesOut,
+  CreateDraftTemperatureLevelsIn,
+  CreateDraftTemperatureLevelsOut,
+  CreateDraftReasoningLevelsIn,
+  CreateDraftReasoningLevelsOut,
+  CreateDraftPricingIn,
+  CreateDraftPricingOut,
+  CreateDraftVoicesIn,
+  CreateDraftVoicesOut,
+  CreateDraftQualitiesIn,
+  CreateDraftQualitiesOut,
 };

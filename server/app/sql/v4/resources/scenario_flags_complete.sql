@@ -1,6 +1,6 @@
 -- Create scenario_flags resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), and resource-specific fields
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), scenario_id (uuid, required, third), flag_id (uuid, required, fourth), mcp (boolean, optional, fifth)
 -- Returns: scenario_flags_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -20,6 +20,8 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_scenario_flags_v4(agent_id uuid,
     group_id uuid,
+    scenario_id uuid,
+    flag_id uuid,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
     scenario_flags_id uuid
@@ -41,6 +43,20 @@ DECLARE
     v_message_id uuid;
     v_run_id uuid;
 BEGIN
+    -- Validate scenario exists
+    IF NOT EXISTS (
+        SELECT 1 FROM scenario_artifact WHERE id = api_create_scenario_flags_v4.scenario_id
+    ) THEN
+        RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_flags_v4.scenario_id;
+    END IF;
+
+    -- Validate flag exists
+    IF NOT EXISTS (
+        SELECT 1 FROM flags_resource WHERE id = api_create_scenario_flags_v4.flag_id
+    ) THEN
+        RAISE EXCEPTION 'Flag % does not exist', api_create_scenario_flags_v4.flag_id;
+    END IF;
+
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
@@ -91,9 +107,33 @@ BEGIN
     );
     
     -- INSERT INTO scenario_flags_resource table (always insert, never update)
-    -- Note: Column names and values need to be adjusted based on actual table schema
-    INSERT INTO scenario_flags_resource(active, call_id, mcp)
-    VALUES (true, v_call_id, mcp)
+    INSERT INTO scenario_flags_resource (
+        scenario_id,
+        flag_id,
+        active,
+        generated,
+        mcp,
+        call_id,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        api_create_scenario_flags_v4.scenario_id,
+        api_create_scenario_flags_v4.flag_id,
+        true,
+        true,
+        mcp,
+        v_call_id,
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (scenario_id, flag_id)
+    DO UPDATE SET
+        active = true,
+        generated = EXCLUDED.generated,
+        mcp = EXCLUDED.mcp,
+        call_id = EXCLUDED.call_id,
+        updated_at = NOW()
     RETURNING id INTO v_scenario_flags_id;
     
     -- Create message record (assistant role, not completed)

@@ -480,6 +480,34 @@ BEGIN
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
+    link_scenario_flag_resources AS (
+        INSERT INTO simulation_scenario_flags (
+            simulation_id,
+            scenario_flag_id,
+            value,
+            created_at,
+            updated_at,
+            generated,
+            mcp,
+            active
+        )
+        SELECT DISTINCT
+            x.simulation_id,
+            sfid,
+            true,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN UNNEST(x.scenario_flag_ids) AS sfid
+        WHERE sfid IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_flag_id) DO UPDATE SET
+            value = EXCLUDED.value,
+            updated_at = NOW(),
+            active = true
+    ),
     remove_existing_scenario_rubrics AS (
         DELETE FROM simulation_scenario_rubrics
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)

@@ -60,6 +60,8 @@ export interface ReasoningLevelsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createReasoningLevelsAction?:
@@ -83,6 +85,8 @@ export function ReasoningLevels({
   id = "reasoning_level",
   "data-testid": dataTestId,
   helpText,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createReasoningLevelsAction,
@@ -94,11 +98,21 @@ export function ReasoningLevels({
     () => reasoning_level_suggestions ?? [],
     [reasoning_level_suggestions]
   );
+  const filteredReasoningLevels = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return reasoning_levels ?? [];
+    }
+    const term = searchTerm.toLowerCase();
+    return (reasoning_levels ?? []).filter((level) => {
+      const value = level.reasoning_level?.toLowerCase() ?? "";
+      return value.includes(term);
+    });
+  }, [reasoning_levels, searchTerm]);
 
   // Convert reasoning_levels array to ReasoningLevelItem format for GenericPicker
   const pickerItems = useMemo(() => {
-    if (reasoning_levels && reasoning_levels.length > 0) {
-      return reasoning_levels
+    if (filteredReasoningLevels.length > 0) {
+      return filteredReasoningLevels
         .filter((rl) => rl.id && rl.reasoning_level) // Filter out nulls
         .map((rl) => ({
           id: rl.id!,
@@ -106,7 +120,7 @@ export function ReasoningLevels({
         }));
     }
     return [];
-  }, [reasoning_levels]);
+  }, [filteredReasoningLevels]);
 
   // Don't render if show_reasoning_levels is false (AFTER all hooks)
   if (!show) {
@@ -167,6 +181,8 @@ export function ReasoningLevels({
             </div>
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

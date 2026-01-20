@@ -7863,6 +7863,12 @@ export interface components {
         GetAgentApiRequest: {
             /** Agent Id */
             agent_id?: string | null;
+            /** Descriptions Search */
+            descriptions_search?: string | null;
+            /** Prompts Search */
+            prompts_search?: string | null;
+            /** Instructions Search */
+            instructions_search?: string | null;
             /** Draft Id */
             draft_id?: string | null;
             /**
@@ -11363,6 +11369,8 @@ export interface components {
             scenario_rubric_suggestions?: string[] | null;
             /** Scenario Rubrics */
             scenario_rubrics?: components["schemas"]["QGetSimulationV4ScenarioRubricResource"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetSimulationV4Rubric"][] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
             /** Scenario Time Limit Resources */
@@ -12345,10 +12353,42 @@ export interface components {
             name_id?: string | null;
             /** Description Id */
             description_id?: string | null;
+            /** Value Id */
+            value_id?: string | null;
+            /** Endpoint Id */
+            endpoint_id?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
+            /** Modalities Enabled Flag Id */
+            modalities_enabled_flag_id?: string | null;
+            /** Temperature Enabled Flag Id */
+            temperature_enabled_flag_id?: string | null;
+            /** Pricing Enabled Flag Id */
+            pricing_enabled_flag_id?: string | null;
+            /** Voices Enabled Flag Id */
+            voices_enabled_flag_id?: string | null;
+            /** Reasoning Levels Enabled Flag Id */
+            reasoning_levels_enabled_flag_id?: string | null;
+            /** Qualities Enabled Flag Id */
+            qualities_enabled_flag_id?: string | null;
             /** Provider Id */
             provider_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Input Modality Ids */
+            input_modality_ids?: string[] | null;
+            /** Output Modality Ids */
+            output_modality_ids?: string[] | null;
+            /** Temperature Level Ids */
+            temperature_level_ids?: string[] | null;
+            /** Reasoning Level Ids */
+            reasoning_level_ids?: string[] | null;
+            /** Quality Ids */
+            quality_ids?: string[] | null;
+            /** Pricing Ids */
+            pricing_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -12627,12 +12667,10 @@ export interface components {
         PatchToolDraftApiRequest: {
             /** Input Draft Id */
             input_draft_id?: string | null;
-            /** Template Ids */
-            template_ids?: string[] | null;
-            /** Template Array Item Ids */
-            template_array_item_ids?: string[] | null;
-            /** Template Value Ids */
-            template_value_ids?: string[] | null;
+            /** Args Ids */
+            args_ids?: string[] | null;
+            /** Args Outputs Ids */
+            args_outputs_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -17283,10 +17321,23 @@ export interface components {
             /** Group Id */
             group_id: string | null;
         };
+        /** QGetSimulationV4Rubric */
+        QGetSimulationV4Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
         /** QGetSimulationV4ScenarioFlagResource */
         QGetSimulationV4ScenarioFlagResource: {
             /** Id */
             id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Flag Id */
+            flag_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
@@ -20275,6 +20326,16 @@ export interface components {
              */
             group_id: string;
             /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /**
+             * Flag Id
+             * Format: uuid
+             */
+            flag_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -20677,15 +20738,16 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
             /**
-             * Icon Id
+             * Scenario Id
              * Format: uuid
              */
-            icon_id: string;
+            scenario_id: string;
+            /**
+             * Flag Id
+             * Format: uuid
+             */
+            flag_id: string;
             /**
              * Mcp
              * @default false
@@ -20694,8 +20756,8 @@ export interface components {
         };
         /** SimulationScenarioFlagsApiResponse */
         SimulationScenarioFlagsApiResponse: {
-            /** Flag Id */
-            flag_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /**
          * SimulationStartedPayload

@@ -40,6 +40,8 @@ export interface VoicesProps {
   id?: string;
   required?: boolean;
   placeholder?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createVoicesAction?:
@@ -59,6 +61,8 @@ export function Voices({
   id = "voices",
   required = false,
   placeholder = "Select voices...",
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createVoicesAction,
@@ -70,16 +74,26 @@ export function Voices({
     () => voice_suggestions ?? [],
     [voice_suggestions]
   );
+  const filteredVoices = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return allVoices;
+    }
+    const term = searchTerm.toLowerCase();
+    return allVoices.filter((voice) => {
+      const name = voice.voice?.toLowerCase() ?? "";
+      return name.includes(term);
+    });
+  }, [allVoices, searchTerm]);
 
   // Convert voices array to VoiceItem format for GenericPicker
   const voiceItems = useMemo(() => {
-    return allVoices
+    return filteredVoices
       .filter((v) => v.id && v.voice) // Filter out nulls
       .map((v) => ({
         id: v.id!,
         voice: v.voice!,
       }));
-  }, [allVoices]);
+  }, [filteredVoices]);
 
   // Check if a voice is suggested
   const isSuggested = useCallback(
@@ -101,7 +115,7 @@ export function Voices({
 
       <GenericPicker<VoiceItem>
         items={voiceItems}
-        itemIds={allVoices
+        itemIds={filteredVoices
           .map((v) => v.id)
           .filter((id): id is string => id !== null)} // All voice IDs from array, filter nulls
         selectedIds={ids}
@@ -128,6 +142,8 @@ export function Voices({
             />
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

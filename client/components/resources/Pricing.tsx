@@ -53,6 +53,8 @@ export interface PricingProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createPricingAction?:
@@ -75,6 +77,8 @@ export function Pricing({
   required = false,
   placeholder = "Select pricing...",
   description,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createPricingAction,
@@ -88,6 +92,17 @@ export function Pricing({
     () => pricing_suggestions ?? [],
     [pricing_suggestions]
   );
+  const filteredPricing = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return allPricing;
+    }
+    const term = searchTerm.toLowerCase();
+    return allPricing.filter((pricing) => {
+      const name = pricing.name?.toLowerCase() ?? "";
+      const desc = pricing.description?.toLowerCase() ?? "";
+      return name.includes(term) || desc.includes(term);
+    });
+  }, [allPricing, searchTerm]);
 
   // Track which pricing IDs have already had resources created
   const createdPricingIdsRef = useRef<Set<string>>(new Set());
@@ -99,14 +114,14 @@ export function Pricing({
 
   // Convert pricing array to PricingItem format for GenericPicker
   const pricingItems = useMemo(() => {
-    return allPricing
+    return filteredPricing
       .filter((m) => m.pricing_id && m.name) // Filter out nulls
       .map((m) => ({
         id: m.pricing_id!,
         name: m.name!,
         ...(m.description ? { description: m.description } : {}),
       }));
-  }, [allPricing]);
+  }, [filteredPricing]);
 
   // Check if a pricing is suggested
   const isSuggested = useCallback(
@@ -175,7 +190,7 @@ export function Pricing({
       )}
       <GenericPicker<PricingItem>
         items={pricingItems}
-        itemIds={allPricing
+        itemIds={filteredPricing
           .map((m) => m.pricing_id)
           .filter((id): id is string => id !== null)} // All pricing IDs from array, filter nulls
         selectedIds={ids}
@@ -208,6 +223,8 @@ export function Pricing({
             />
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

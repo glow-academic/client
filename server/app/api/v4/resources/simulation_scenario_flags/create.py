@@ -76,14 +76,14 @@ async def create_simulation_scenario_flags(
                 ),
             )
 
-            if not result or not result.flag_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create simulation_scenario_flags")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                simulation_scenario_flags={"id": str(result.flag_id)},
+                simulation_scenario_flags={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

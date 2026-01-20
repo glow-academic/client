@@ -284,6 +284,7 @@ function SimulationComponent({
         simulationData.scenario_rubric_suggestions,
       scenario_rubrics:
         simulationData.scenario_rubrics,
+      rubrics: simulationData.rubrics,
       scenario_time_limit_ids: simulationData.scenario_time_limit_ids,
       scenario_time_limit_resources:
         simulationData.scenario_time_limit_resources,
@@ -351,6 +352,7 @@ function SimulationComponent({
     simulationData?.scenario_rubrics_required,
     simulationData?.scenario_rubric_suggestions,
     simulationData?.scenario_rubrics,
+    simulationData?.rubrics,
     simulationData?.scenario_time_limit_ids,
     simulationData?.scenario_time_limit_resources,
     simulationData?.show_scenario_time_limits,
@@ -1750,7 +1752,7 @@ function SimulationComponent({
                     setStepFormData({ scenarioShowSelected: value }),
                 },
               ]}
-              searchTerm={scenarioSearch || undefined}
+              searchTerm={scenarioSearch ?? ""}
               onSearchChange={(term: string) =>
                 setStepFormData({ scenarioSearch: term || null })
               }
@@ -1841,6 +1843,10 @@ function SimulationComponent({
                     currentSimulationData.scenario_flag_suggestions ?? []
                   }
                   scenario_flags={currentSimulationData.scenario_flags ?? []}
+                  scenario_ids={formState.scenario_ids ?? []}
+                  scenario_resources={
+                    currentSimulationData.scenario_resources ?? []
+                  }
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
@@ -1911,6 +1917,11 @@ function SimulationComponent({
                   }
                   scenario_rubrics={
                     currentSimulationData.scenario_rubrics ?? []
+                  }
+                  rubrics={currentSimulationData.rubrics ?? []}
+                  scenario_ids={formState.scenario_ids ?? []}
+                  scenario_resources={
+                    currentSimulationData.scenario_resources ?? []
                   }
                   disabled={disabled}
                   onChange={(ids) =>

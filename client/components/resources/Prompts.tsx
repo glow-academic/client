@@ -64,6 +64,8 @@ export interface PromptsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createPromptsAction?:
@@ -95,6 +97,8 @@ export function Prompts({
   id = "prompt",
   "data-testid": dataTestId,
   helpText,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createPromptsAction,
@@ -350,51 +354,51 @@ export function Prompts({
             </Tooltip>
           </TooltipProvider>
           {/* GenericPicker for version history */}
-          {pickerItems.length > 0 && (
-            <GenericPicker
-              items={pickerItems}
-              selectedIds={resourceId ? [resourceId] : []}
-              onSelect={(ids) => handlePromptSelect(ids[0] || null)}
-              multiSelect={false}
-              getId={(item) => item.prompt_id || ""}
-              getLabel={(item) =>
-                item.name || item.system_prompt || "Unknown Prompt"
-              }
-              getSearchText={(item) =>
-                `${item.name || ""} ${item.description || ""} ${item.system_prompt || ""}`.trim()
-              }
-              renderPreview={(item) => (
-                <div className="space-y-1">
-                  <div className="font-medium">
-                    {item.name || "Untitled Prompt"}
-                  </div>
-                  {item.description && (
-                    <div className="text-sm text-muted-foreground">
-                      {item.description}
-                    </div>
-                  )}
-                  {item.system_prompt && (
-                    <div className="text-xs text-muted-foreground max-w-md line-clamp-3">
-                      {item.system_prompt}
-                    </div>
-                  )}
-                  {item.department_ids && item.department_ids.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      Departments: {item.department_ids.length}
-                    </div>
-                  )}
+          <GenericPicker
+            items={pickerItems}
+            selectedIds={resourceId ? [resourceId] : []}
+            onSelect={(ids) => handlePromptSelect(ids[0] || null)}
+            multiSelect={false}
+            getId={(item) => item.prompt_id || ""}
+            getLabel={(item) =>
+              item.name || item.system_prompt || "Unknown Prompt"
+            }
+            getSearchText={(item) =>
+              `${item.name || ""} ${item.description || ""} ${item.system_prompt || ""}`.trim()
+            }
+            renderPreview={(item) => (
+              <div className="space-y-1">
+                <div className="font-medium">
+                  {item.name || "Untitled Prompt"}
                 </div>
-              )}
-              placeholder={placeholder}
-              disabled={disabled}
-              compact={true}
-              buttonClassName="h-8"
-              showLabel={false}
-              emptyMessage="No prompts available"
-              groupHeading="Prompts"
-              data-testid={dataTestId}
-            />
-          )}
+                {item.description && (
+                  <div className="text-sm text-muted-foreground">
+                    {item.description}
+                  </div>
+                )}
+                {item.system_prompt && (
+                  <div className="text-xs text-muted-foreground max-w-md line-clamp-3">
+                    {item.system_prompt}
+                  </div>
+                )}
+                {item.department_ids && item.department_ids.length > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    Departments: {item.department_ids.length}
+                  </div>
+                )}
+              </div>
+            )}
+            placeholder={placeholder}
+            disabled={disabled}
+            compact={true}
+            buttonClassName="h-8"
+            showLabel={false}
+            emptyMessage="No prompts available"
+            groupHeading="Prompts"
+            data-testid={dataTestId}
+            {...(searchTerm ? { initialSearchTerm: searchTerm } : {})}
+            {...(onSearchChange ? { onSearchChange } : {})}
+          />
         </div>
       </div>
 

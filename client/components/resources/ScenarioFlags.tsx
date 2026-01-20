@@ -1,15 +1,14 @@
 /**
  * ScenarioFlags.tsx
- * Resource component for simulation scenario flag selection
- * Uses GenericPicker to select existing simulation scenario flag resources
- * Manages scenario_flag_ids array and reports to parent
+ * Resource component for per-scenario flag selection
+ * Uses base flags list and creates scenario_flags_resource entries
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -18,8 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = InputOf<
   "/api/v4/resources/simulation_scenario_flags",
@@ -30,41 +29,42 @@ type CreateDraftSimulationScenarioFlagsOut = OutputOf<
   "post"
 >;
 
-export interface ScenarioFlagItem {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export interface ScenarioFlagsProps {
-  scenario_flag_ids?: string[]; // Current scenario flag resource IDs (standardized prop name)
+  scenario_flag_ids?: string[];
   scenario_flag_resources?: Array<{
     id: string | null;
-    name: string | null;
-    description?: string | null;
-    icon_id?: string | null;
+    scenario_id: string | null;
+    flag_id: string | null;
     generated?: boolean | null;
-  }>; // Selected scenario flag resources (each includes generated field)
-  show_scenario_flags?: boolean; // Whether to show this resource picker
-  scenario_flag_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  }>;
+  show_scenario_flags?: boolean;
   scenario_flags?: Array<{
     id: string | null;
+    scenario_id: string | null;
+    flag_id: string | null;
     name: string | null;
     description?: string | null;
     icon_id?: string | null;
     generated?: boolean | null;
-  }>; // All available scenario flags from API (each includes generated field)
-  disabled?: boolean; // Based on can_edit flag
-  onChange: (ids: string[]) => void; // Update scenario_flag_ids in form state
+  }>;
+  scenario_ids?: string[];
+  scenario_resources?: Array<{
+    id: string | null;
+    scenario_id: string | null;
+    name: string | null;
+    description?: string | null;
+    generated?: boolean | null;
+  }>;
+  disabled?: boolean;
+  onChange: (ids: string[]) => void;
   label?: string;
   id?: string;
   required?: boolean;
-  placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  agent_id?: string | null; // Agent ID for resource creation
+  group_id?: string | null;
+  agent_id?: string | null;
   createScenarioFlagsAction?:
-    | ((
+    | ( (
         input: CreateDraftSimulationScenarioFlagsIn
       ) => Promise<CreateDraftSimulationScenarioFlagsOut>)
     | undefined;
@@ -72,18 +72,27 @@ export interface ScenarioFlagsProps {
   isGenerating?: boolean;
 }
 
+const NONE_OPTION = "__none__";
+
+type ScenarioFlagOption = {
+  id: string;
+  name: string;
+  description?: string;
+  isNone?: boolean;
+};
+
 export function ScenarioFlags({
-  scenario_flag_ids,
+  scenario_flag_ids: _scenario_flag_ids,
   scenario_flag_resources,
   show_scenario_flags = false,
-  scenario_flag_suggestions,
   scenario_flags,
+  scenario_ids = [],
+  scenario_resources,
   disabled = false,
   onChange,
   label = "Scenario Flags",
   id = "scenario_flags",
   required = false,
-  placeholder = "Select scenario flags...",
   description,
   group_id,
   agent_id,
@@ -91,102 +100,160 @@ export function ScenarioFlags({
   onGenerate,
   isGenerating = false,
 }: ScenarioFlagsProps) {
-  const ids = useMemo(() => scenario_flag_ids ?? [], [scenario_flag_ids]);
   const show = show_scenario_flags ?? false;
-  const allScenarioFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
-  const suggestionsList = useMemo(
-    () => scenario_flag_suggestions ?? [],
-    [scenario_flag_suggestions]
+  const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
+  const currentResources = useMemo(
+    () => scenario_flag_resources ?? [],
+    [scenario_flag_resources]
   );
+  const scenarioLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (scenario_resources ?? []).forEach((scenario) => {
+      if (scenario.scenario_id) {
+        const name = scenario.name?.trim() || "";
+        const descriptionText = scenario.description?.trim() || "";
+        map.set(
+          scenario.scenario_id,
+          name || descriptionText || "Untitled scenario"
+        );
+      }
+    });
+    return map;
+  }, [scenario_resources]);
 
-  // Track which scenario flag IDs have already had resources created
-  const createdScenarioFlagIdsRef = useRef<Set<string>>(new Set());
+  const [flagIdByScenario, setFlagIdByScenario] = useState<
+    Map<string, string | null>
+  >(new Map());
+  const [scenarioFlagIdsByScenario, setScenarioFlagIdsByScenario] = useState<
+    Map<string, string>
+  >(new Map());
+  const createdFlagKeysRef = useRef<Set<string>>(new Set());
 
-  // Initialize createdScenarioFlagIdsRef with current IDs
   useEffect(() => {
-    ids.forEach((id) => createdScenarioFlagIdsRef.current.add(id));
-  }, [ids]);
+    const nextFlags = new Map<string, string | null>();
+    const nextIds = new Map<string, string>();
 
-  // Convert scenario flags array to ScenarioFlagItem format for GenericPicker
-  const scenarioFlagItems = useMemo(() => {
-    return allScenarioFlags
-      .filter((f) => f.id && f.name) // Filter out nulls
-      .map((f) => ({
-        id: f.id!,
-        name: f.name!,
-        ...(f.description ? { description: f.description } : {}), // Only include if not null/undefined
-      }));
-  }, [allScenarioFlags]);
-
-  // Check if a scenario flag is suggested
-  const isSuggested = useCallback(
-    (scenarioFlagId: string) => suggestionsList.includes(scenarioFlagId),
-    [suggestionsList]
-  );
-
-  const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdScenarioFlagIdsRef.current.has(id)
-      );
-
-      // Create resources for newly selected scenario flags
-      if (
-        newlySelected.length > 0 &&
-        createScenarioFlagsAction &&
-        agent_id &&
-        group_id
-      ) {
-        for (const scenarioFlagId of newlySelected) {
-          try {
-            // Find the scenario flag resource to get name/description
-            const scenarioFlagResource = allScenarioFlags.find(
-              (f) => f.id === scenarioFlagId
-            );
-            if (scenarioFlagResource?.name) {
-              await createScenarioFlagsAction({
-                body: {
-                  agent_id: agent_id,
-                  group_id: group_id,
-                  name: scenarioFlagResource.name,
-                  description: scenarioFlagResource.description || "",
-                  icon_id: scenarioFlagResource.icon_id || null,
-                  mcp: false,
-                },
-              });
-              createdScenarioFlagIdsRef.current.add(scenarioFlagId);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create scenario flag resource for ${scenarioFlagId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
+    currentResources.forEach((resource) => {
+      if (resource.scenario_id) {
+        nextFlags.set(resource.scenario_id, resource.flag_id ?? null);
+        if (resource.id) {
+          nextIds.set(resource.scenario_id, resource.id);
         }
       }
+    });
 
-      // Update parent state
-      onChange(selectedIds);
+    scenario_ids.forEach((scenarioId) => {
+      if (!nextFlags.has(scenarioId)) {
+        nextFlags.set(scenarioId, null);
+      }
+    });
+
+    setFlagIdByScenario(nextFlags);
+    setScenarioFlagIdsByScenario(nextIds);
+  }, [currentResources, scenario_ids]);
+
+  const emitIds = useCallback(
+    (next: Map<string, string>) => {
+      const ids = scenario_ids
+        .map((scenarioId) => next.get(scenarioId))
+        .filter((value): value is string => Boolean(value));
+      onChange(ids);
+    },
+    [onChange, scenario_ids]
+  );
+
+  const createScenarioFlag = useCallback(
+    async (scenarioId: string, flagId: string) => {
+      if (!createScenarioFlagsAction || !agent_id || !group_id) {
+        return;
+      }
+      const key = `${scenarioId}:${flagId}`;
+      if (createdFlagKeysRef.current.has(key)) {
+        return;
+      }
+      createdFlagKeysRef.current.add(key);
+
+      try {
+        const result = await createScenarioFlagsAction({
+          body: {
+            agent_id: agent_id,
+            group_id: group_id,
+            scenario_id: scenarioId,
+            flag_id: flagId,
+            mcp: false,
+          },
+        });
+
+        if (!result?.id) {
+          return;
+        }
+
+        setScenarioFlagIdsByScenario((prev) => {
+          const next = new Map(prev);
+          next.set(scenarioId, result.id as string);
+          emitIds(next);
+          return next;
+        });
+      } catch {
+        // Resource creation errors are handled by API; keep UI state intact.
+      }
     },
     [
-      ids,
-      onChange,
       createScenarioFlagsAction,
       agent_id,
       group_id,
-      allScenarioFlags,
+      emitIds,
     ]
   );
 
-  // Check if any scenario flag resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return scenario_flag_resources?.some((f) => f.generated) ?? false;
-  }, [scenario_flag_resources]);
+  const handleSelect = useCallback(
+    (scenarioId: string, value: string) => {
+      const nextFlagId = value === NONE_OPTION ? null : value;
 
-  // Don't render if show_scenario_flags is false (AFTER all hooks)
+      setFlagIdByScenario((prev) => {
+        const next = new Map(prev);
+        next.set(scenarioId, nextFlagId);
+        return next;
+      });
+
+      if (nextFlagId === null) {
+        setScenarioFlagIdsByScenario((prev) => {
+          const next = new Map(prev);
+          next.delete(scenarioId);
+          emitIds(next);
+          return next;
+        });
+        return;
+      }
+
+      setScenarioFlagIdsByScenario((prev) => {
+        const next = new Map(prev);
+        if (next.has(scenarioId)) {
+          next.delete(scenarioId);
+          emitIds(next);
+        }
+        return next;
+      });
+
+      void createScenarioFlag(scenarioId, nextFlagId);
+    },
+    [createScenarioFlag, emitIds]
+  );
+
+  const flagOptions = useMemo<ScenarioFlagOption[]>(() => {
+    return allFlags
+      .filter((flag) => flag.flag_id && flag.name)
+      .map((flag) => ({
+        id: flag.flag_id as string,
+        name: flag.name as string,
+        description: flag.description ?? "",
+      }));
+  }, [allFlags]);
+
+  const hasGenerated = useMemo(() => {
+    return currentResources.some((flag) => flag.generated);
+  }, [currentResources]);
+
   if (!show) {
     return null;
   }
@@ -231,47 +298,70 @@ export function ScenarioFlags({
           )}
         </div>
       )}
-      <GenericPicker<ScenarioFlagItem>
-        items={scenarioFlagItems}
-        itemIds={allScenarioFlags
-          .map((f) => f.id)
-          .filter((id): id is string => id !== null)} // All scenario flag IDs from array, filter nulls
-        selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
+      <div className="space-y-2">
+        {scenario_ids.map((scenarioId) => {
+          const labelText =
+            scenarioLabelMap.get(scenarioId) ?? scenarioId.slice(0, 8);
+          const selectedFlagId = flagIdByScenario.get(scenarioId) ?? null;
+          return (
+            <div
+              key={scenarioId}
+              className="space-y-2 rounded-lg border p-2"
+            >
+              <Label className="text-sm font-medium" title={labelText}>
+                {labelText}
+              </Label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+                {flagOptions.map((option) => {
+                  const isSelected = selectedFlagId === option.id;
+                  return (
+                    <div
+                      key={option.id}
+                      className={cn(
+                        "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
+                        isSelected && "border-primary/50 bg-accent/40"
+                      )}
+                    >
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-medium">{option.name}</div>
+                        {option.description && (
+                          <div className="text-[11px] text-muted-foreground leading-snug">
+                            {option.description}
+                          </div>
+                        )}
+                      </div>
+                      <Switch
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleSelect(scenarioId, option.id);
+                            return;
+                          }
+                          if (!required) {
+                            handleSelect(scenarioId, NONE_OPTION);
+                          }
+                        }}
+                        disabled={disabled}
+                        className="shrink-0"
+                      />
+                    </div>
+                  );
+                })}
+                {flagOptions.length === 0 && (
+                  <div className="col-span-full text-sm text-muted-foreground">
+                    No scenario flags available.
                   </div>
                 )}
               </div>
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
+          );
+        })}
+        {scenario_ids.length === 0 && (
+          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
+            No scenarios selected. Select scenarios first to choose flags.
           </div>
         )}
-        placeholder={placeholder}
-        disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
-      />
+      </div>
     </div>
   );
 }

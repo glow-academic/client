@@ -173,11 +173,6 @@ export function Tools({
       <Label htmlFor={id} className="flex items-center gap-1">
         {label}
         {required && <span className="text-destructive">*</span>}
-        {description && (
-          <span className="text-xs text-muted-foreground ml-2">
-            {description}
-          </span>
-        )}
       </Label>
       <SelectableGrid<ToolsItem>
         items={displayTools}

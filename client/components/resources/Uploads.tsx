@@ -178,7 +178,7 @@ export function Uploads({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/uploads/upload`,
+          endpoint: `/api/uploads/save`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,

@@ -18,6 +18,7 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
 import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
 import { Button } from "@/components/ui/button";
@@ -34,8 +35,9 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Loader2, Sparkles } from "lucide-react";
-import { parseAsString, type Parser } from "nuqs";
+import { cn } from "@/lib/utils";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
@@ -120,6 +122,10 @@ function ToolComponent({
     () => ({
       // Draft ID (URL-backed, updated when draft is created)
       draftId: parseAsString,
+      argsSearch: parseAsString,
+      argsOutputsSearch: parseAsString,
+      argsShowSelected: parseAsBoolean,
+      argsOutputsShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -177,6 +183,64 @@ function ToolComponent({
     [stableToolDataFields]
   );
 
+  const argsItems = useMemo(() => {
+    return (
+      stableToolDataFields?.args
+        ?.filter(
+          (arg): arg is NonNullable<typeof arg> =>
+            !!arg && !!arg.id && !!arg.name
+        )
+        .map((arg) => ({
+          id: arg.id!,
+          name: arg.name!,
+          description: arg.description ?? "",
+          field_type: arg.field_type ?? "",
+          required: arg.required ?? false,
+          position: arg.position ?? 0,
+          generated: arg.generated ?? false,
+        }))
+        .sort((a, b) =>
+          a.position === b.position
+            ? a.name.localeCompare(b.name)
+            : a.position - b.position
+        ) ?? []
+    );
+  }, [stableToolDataFields?.args]);
+
+  const argsOutputsItems = useMemo(() => {
+    return (
+      stableToolDataFields?.args_outputs
+        ?.filter(
+          (output): output is NonNullable<typeof output> =>
+            !!output && !!output.id && !!output.name && !!output.args_id
+        )
+        .map((output) => ({
+          id: output.id!,
+          args_id: output.args_id!,
+          name: output.name!,
+          template: output.template ?? "",
+          generated: output.generated ?? false,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)) ?? []
+    );
+  }, [stableToolDataFields?.args_outputs]);
+
+  const argsNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    argsItems.forEach((arg) => {
+      map.set(arg.id, arg.name);
+    });
+    return map;
+  }, [argsItems]);
+
+  const argsOutputsById = useMemo(() => {
+    const map = new Map<string, { id: string; args_id: string }>();
+    argsOutputsItems.forEach((output) => {
+      map.set(output.id, output);
+    });
+    return map;
+  }, [argsOutputsItems]);
+
   const getInitialFormState = useCallback(() => {
     const data = toolDataRef.current;
     if (!data) {
@@ -200,6 +264,28 @@ function ToolComponent({
   React.useEffect(() => {
     formStateRef.current = formState;
   }, [formState]);
+
+  useEffect(() => {
+    setFormState((prev) => {
+      if (prev.args_outputs_ids.length === 0) {
+        return prev;
+      }
+      const allowedArgs = new Set(prev.args_ids);
+      const nextArgsOutputs = prev.args_outputs_ids.filter((outputId) => {
+        const output = argsOutputsById.get(outputId);
+        if (!output) return false;
+        if (allowedArgs.size === 0) return true;
+        return allowedArgs.has(output.args_id);
+      });
+      if (nextArgsOutputs.length === prev.args_outputs_ids.length) {
+        return prev;
+      }
+      return {
+        ...prev,
+        args_outputs_ids: nextArgsOutputs,
+      };
+    });
+  }, [argsOutputsById, formState.args_ids]);
 
   // Memoize stringified array dependencies
   const argsIdsStr = React.useMemo(
@@ -259,6 +345,91 @@ function ToolComponent({
   React.useEffect(() => {
     patchToolDraftActionRef.current = patchToolDraftAction;
   }, [patchToolDraftAction]);
+
+  // Draft version tracking for optimistic concurrency control
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
+  const lastSavedVersionRef = React.useRef(0);
+  React.useEffect(() => {
+    lastSavedVersionRef.current = lastSavedVersion;
+  }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    toolData && "draft_version" in toolData
+      ? (toolData as { draft_version?: number | null }).draft_version
+      : null;
+  React.useEffect(() => {
+    if (
+      typeof draftVersion === "number" &&
+      draftVersion !== lastSavedVersionRef.current
+    ) {
+      setLastSavedVersion(draftVersion);
+      lastSavedVersionRef.current = draftVersion;
+    }
+  }, [draftVersion]);
+
+  const formArgsIdsStr = useMemo(
+    () => JSON.stringify(formState.args_ids ?? []),
+    [formState.args_ids]
+  );
+  const formArgsOutputsIdsStr = useMemo(
+    () => JSON.stringify(formState.args_outputs_ids ?? []),
+    [formState.args_outputs_ids]
+  );
+
+  const draftPatchKey = useMemo(
+    () =>
+      JSON.stringify({
+        draftId: draftId || null,
+        args_ids: formState.args_ids,
+        args_outputs_ids: formState.args_outputs_ids,
+      }),
+    [draftId, formArgsIdsStr, formArgsOutputsIdsStr]
+  );
+
+  const lastPatchedKeyRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    const hasResourceIds =
+      formState.args_ids.length > 0 || formState.args_outputs_ids.length > 0;
+
+    if (!hasResourceIds || !patchToolDraftActionRef.current) {
+      return;
+    }
+
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        if (!patchToolDraftActionRef.current) return;
+        const result = await patchToolDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            args_ids: formState.args_ids,
+            args_outputs_ids: formState.args_outputs_ids,
+            expected_version: lastSavedVersionRef.current,
+          },
+        });
+
+        lastPatchedKeyRef.current = draftPatchKey;
+
+        if (result.draft_id && result.draft_id !== draftId) {
+          // Sync URL to server-returned draft_id to avoid stale draft mismatch
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        }
+
+        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
+          setLastSavedVersion(result.new_version ?? 0);
+          lastSavedVersionRef.current = result.new_version ?? 0;
+        }
+      } catch {
+        // Draft save failed - API logs handle details
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [draftPatchKey, draftId, formState.args_ids, formState.args_outputs_ids]);
 
   // WebSocket handlers for AI generation
   useEffect(() => {
@@ -668,12 +839,24 @@ function ToolComponent({
         id: "args",
         title: "Args",
         description: "Select and edit args for this tool.",
+        filters: [
+          {
+            key: "argsShowSelected",
+            label: "Show selected",
+          },
+        ],
         resetFields: ["args_ids"],
       },
       {
         id: "args_outputs",
         title: "Args Outputs",
         description: "Select and edit args outputs for this tool.",
+        filters: [
+          {
+            key: "argsOutputsShowSelected",
+            label: "Show selected",
+          },
+        ],
         resetFields: ["args_outputs_ids"],
       },
     ],
@@ -681,7 +864,13 @@ function ToolComponent({
   );
 
   const formFieldKeys = useMemo(
-    () => ["name", "description", "args_ids", "args_outputs_ids"],
+    () => [
+      "draftId",
+      "argsSearch",
+      "argsOutputsSearch",
+      "argsShowSelected",
+      "argsOutputsShowSelected",
+    ],
     []
   );
 
@@ -704,8 +893,8 @@ function ToolComponent({
         case "basic":
           return {
             ...prev,
-            name_id: null,
-            description_id: null,
+            name: "",
+            description: "",
           };
         case "args":
           return {
@@ -741,8 +930,9 @@ function ToolComponent({
       stepTitle,
       stepDescription,
       stepNumber,
-      formData: _stepFormData,
-      setFormData: _setStepFormData,
+      formData,
+      setFormData,
+      filters,
       onReset,
     }: {
       stepId: string;
@@ -817,6 +1007,28 @@ function ToolComponent({
           );
 
         case "args": {
+          const argsSearch = (formData["argsSearch"] as string | undefined) ?? "";
+          const argsShowSelected =
+            (formData["argsShowSelected"] as boolean | null | undefined) ??
+            false;
+          const normalizedArgsSearch = argsSearch.trim().toLowerCase();
+          let filteredArgsItems = argsItems;
+
+          if (argsShowSelected) {
+            filteredArgsItems = filteredArgsItems.filter((item) =>
+              formState.args_ids.includes(item.id)
+            );
+          }
+
+          if (normalizedArgsSearch) {
+            filteredArgsItems = filteredArgsItems.filter((item) => {
+              const searchable = `${item.name} ${item.description} ${item.field_type}`.toLowerCase();
+              return searchable.includes(normalizedArgsSearch);
+            });
+          }
+
+          const argsSuggestions = currentToolData?.args_suggestions ?? [];
+
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -828,6 +1040,12 @@ function ToolComponent({
               resetFields={["args_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              searchTerm={argsSearch}
+              onSearchChange={(term) =>
+                setFormData({ argsSearch: term || null })
+              }
+              searchPlaceholder="Search args..."
+              {...(filters ? { filters } : {})}
               actions={
                 stepResources["args"] &&
                 stepResources["args"].length > 0 &&
@@ -874,40 +1092,149 @@ function ToolComponent({
                 ) : undefined
               }
             >
-              <Args
-                args_ids={formState.args_ids ?? []}
-                input_args_fields={
-                  currentToolData?.input_args_fields
-                    ?.filter(
-                      (f): f is NonNullable<typeof f> =>
-                        f !== null &&
-                        f.args_id !== null &&
-                        f.name !== null &&
-                        f.field_type !== null &&
-                        f.required !== null &&
-                        f.position !== null
-                    )
-                    .map((f) => ({
-                      args_id: f.args_id!,
-                      name: f.name!,
-                      description: f.description ?? "",
-                      field_type: f.field_type!,
-                      required: f.required!,
-                      default_value: f.default_value ?? "",
-                      position: f.position!,
-                      generated: f.generated ?? false,
-                    })) ?? []
-                }
-                disabled={disabled}
-                {...(createArgsAction ? { createArgsAction } : {})}
-                group_id={currentToolData?.group_id ?? null}
-                agent_id={currentToolData?.args_agent_id ?? null}
-              />
+              <div className="space-y-6">
+                <SelectableGrid
+                  items={filteredArgsItems}
+                  selectedId={null}
+                  selectedIds={formState.args_ids ?? []}
+                  onSelect={(argsId) => {
+                    setFormState((prev) => {
+                      const isSelected = prev.args_ids.includes(argsId);
+                      const nextArgsIds = isSelected
+                        ? prev.args_ids.filter((id) => id !== argsId)
+                        : [...prev.args_ids, argsId];
+                      return {
+                        ...prev,
+                        args_ids: nextArgsIds,
+                      };
+                    });
+                  }}
+                  getId={(item) => item.id}
+                  renderItem={(item, isSelected) => {
+                    const isSuggested = argsSuggestions.includes(item.id);
+                    return (
+                      <div
+                        className={cn(
+                          "relative flex flex-col gap-2 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                          "hover:shadow-md hover:bg-accent/50",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          isSelected && "ring-2 ring-primary bg-accent",
+                          isSuggested &&
+                            !isSelected &&
+                            "ring-2 ring-primary/40"
+                        )}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                            <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          <div className="text-sm font-semibold leading-tight">
+                            {item.name}
+                          </div>
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground line-clamp-2">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {item.field_type && (
+                            <span className="rounded-md border px-2 py-0.5">
+                              {item.field_type}
+                            </span>
+                          )}
+                          {item.required && (
+                            <span className="rounded-md border px-2 py-0.5">
+                              Required
+                            </span>
+                          )}
+                          {item.generated && (
+                            <span className="rounded-md border px-2 py-0.5">
+                              Generated
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }}
+                  emptyMessage={
+                    normalizedArgsSearch
+                      ? "No args match your search."
+                      : "No args available yet."
+                  }
+                  disabled={disabled}
+                />
+
+                <Args
+                  args_ids={formState.args_ids ?? []}
+                  input_args_fields={
+                    currentToolData?.input_args_fields
+                      ?.filter(
+                        (f): f is NonNullable<typeof f> =>
+                          f !== null &&
+                          f.args_id !== null &&
+                          f.name !== null &&
+                          f.field_type !== null &&
+                          f.required !== null &&
+                          f.position !== null
+                      )
+                      .map((f) => ({
+                        args_id: f.args_id!,
+                        name: f.name!,
+                        description: f.description ?? "",
+                        field_type: f.field_type!,
+                        required: f.required!,
+                        default_value: f.default_value ?? "",
+                        position: f.position!,
+                        generated: f.generated ?? false,
+                      })) ?? []
+                  }
+                  disabled={disabled}
+                  {...(createArgsAction ? { createArgsAction } : {})}
+                  group_id={currentToolData?.group_id ?? null}
+                  agent_id={currentToolData?.args_agent_id ?? null}
+                />
+              </div>
             </StepCard>
           );
         }
 
         case "args_outputs": {
+          const argsOutputsSearch =
+            (formData["argsOutputsSearch"] as string | undefined) ?? "";
+          const argsOutputsShowSelected =
+            (formData["argsOutputsShowSelected"] as boolean | null | undefined) ??
+            false;
+          const normalizedArgsOutputsSearch =
+            argsOutputsSearch.trim().toLowerCase();
+          const selectedArgs = new Set(formState.args_ids);
+          let filteredArgsOutputsItems = argsOutputsItems;
+
+          if (selectedArgs.size > 0) {
+            filteredArgsOutputsItems = filteredArgsOutputsItems.filter((item) =>
+              selectedArgs.has(item.args_id)
+            );
+          }
+
+          if (argsOutputsShowSelected) {
+            filteredArgsOutputsItems = filteredArgsOutputsItems.filter((item) =>
+              formState.args_outputs_ids.includes(item.id)
+            );
+          }
+
+          if (normalizedArgsOutputsSearch) {
+            filteredArgsOutputsItems = filteredArgsOutputsItems.filter((item) => {
+              const argName = argsNameById.get(item.args_id) ?? "";
+              const searchable = `${item.name} ${item.template} ${argName}`.toLowerCase();
+              return searchable.includes(normalizedArgsOutputsSearch);
+            });
+          }
+
+          const argsOutputsSuggestions =
+            currentToolData?.args_outputs_suggestions ?? [];
+
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -919,6 +1246,12 @@ function ToolComponent({
               resetFields={["args_outputs_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              searchTerm={argsOutputsSearch}
+              onSearchChange={(term) =>
+                setFormData({ argsOutputsSearch: term || null })
+              }
+              searchPlaceholder="Search args outputs..."
+              {...(filters ? { filters } : {})}
               actions={
                 stepResources["args_outputs"] &&
                 stepResources["args_outputs"].length > 0 &&
@@ -967,54 +1300,137 @@ function ToolComponent({
                 ) : undefined
               }
             >
-              <ArgsOutputs
-                args_outputs_ids={formState.args_outputs_ids ?? []}
-                output_args_outputs={
-                  currentToolData?.output_args_outputs
-                    ?.filter(
-                      (o): o is NonNullable<typeof o> =>
-                        o !== null &&
-                        o.args_outputs_id !== null &&
-                        o.args_id !== null &&
-                        o.name !== null
-                    )
-                    .map((o) => ({
-                      args_outputs_id: o.args_outputs_id!,
-                      args_id: o.args_id!,
-                      name: o.name!,
-                      template: o.template ?? "",
-                      generated: o.generated ?? false,
-                    })) ?? []
-                }
-                input_args_fields={
-                  currentToolData?.input_args_fields
-                    ?.filter(
-                      (f): f is NonNullable<typeof f> =>
-                        f !== null &&
-                        f.args_id !== null &&
-                        f.name !== null &&
-                        f.field_type !== null &&
-                        f.required !== null &&
-                        f.position !== null
-                    )
-                    .map((f) => ({
-                      args_id: f.args_id!,
-                      name: f.name!,
-                      description: f.description ?? "",
-                      field_type: f.field_type!,
-                      required: f.required!,
-                      default_value: f.default_value ?? "",
-                      position: f.position!,
-                      generated: f.generated ?? false,
-                    })) ?? []
-                }
-                disabled={disabled}
-                {...(createArgsOutputsAction
-                  ? { createArgsOutputsAction }
-                  : {})}
-                group_id={currentToolData?.group_id ?? null}
-                agent_id={currentToolData?.args_outputs_agent_id ?? null}
-              />
+              <div className="space-y-6">
+                <SelectableGrid
+                  items={filteredArgsOutputsItems}
+                  selectedId={null}
+                  selectedIds={formState.args_outputs_ids ?? []}
+                  onSelect={(argsOutputsId) => {
+                    setFormState((prev) => {
+                      const isSelected = prev.args_outputs_ids.includes(
+                        argsOutputsId
+                      );
+                      if (isSelected) {
+                        return {
+                          ...prev,
+                          args_outputs_ids: prev.args_outputs_ids.filter(
+                            (id) => id !== argsOutputsId
+                          ),
+                        };
+                      }
+                      const output = argsOutputsById.get(argsOutputsId);
+                      const nextArgsIds =
+                        output && !prev.args_ids.includes(output.args_id)
+                          ? [...prev.args_ids, output.args_id]
+                          : prev.args_ids;
+                      return {
+                        ...prev,
+                        args_ids: nextArgsIds,
+                        args_outputs_ids: [...prev.args_outputs_ids, argsOutputsId],
+                      };
+                    });
+                  }}
+                  getId={(item) => item.id}
+                  renderItem={(item, isSelected) => {
+                    const argName = argsNameById.get(item.args_id) ?? "Arg";
+                    const isSuggested = argsOutputsSuggestions.includes(item.id);
+                    return (
+                      <div
+                        className={cn(
+                          "relative flex flex-col gap-2 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                          "hover:shadow-md hover:bg-accent/50",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          isSelected && "ring-2 ring-primary bg-accent",
+                          isSuggested &&
+                            !isSelected &&
+                            "ring-2 ring-primary/40"
+                        )}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                            <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          <div className="text-sm font-semibold leading-tight">
+                            {item.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Arg: {argName}
+                          </div>
+                        </div>
+                        {item.template && (
+                          <div className="text-xs text-muted-foreground line-clamp-2 font-mono">
+                            {item.template}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {item.generated && (
+                            <span className="rounded-md border px-2 py-0.5">
+                              Generated
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }}
+                  emptyMessage={
+                    normalizedArgsOutputsSearch
+                      ? "No args outputs match your search."
+                      : "No args outputs available yet."
+                  }
+                  disabled={disabled}
+                />
+
+                <ArgsOutputs
+                  args_outputs_ids={formState.args_outputs_ids ?? []}
+                  output_args_outputs={
+                    currentToolData?.output_args_outputs
+                      ?.filter(
+                        (o): o is NonNullable<typeof o> =>
+                          o !== null &&
+                          o.args_outputs_id !== null &&
+                          o.args_id !== null &&
+                          o.name !== null
+                      )
+                      .map((o) => ({
+                        args_outputs_id: o.args_outputs_id!,
+                        args_id: o.args_id!,
+                        name: o.name!,
+                        template: o.template ?? "",
+                        generated: o.generated ?? false,
+                      })) ?? []
+                  }
+                  input_args_fields={
+                    currentToolData?.input_args_fields
+                      ?.filter(
+                        (f): f is NonNullable<typeof f> =>
+                          f !== null &&
+                          f.args_id !== null &&
+                          f.name !== null &&
+                          f.field_type !== null &&
+                          f.required !== null &&
+                          f.position !== null
+                      )
+                      .map((f) => ({
+                        args_id: f.args_id!,
+                        name: f.name!,
+                        description: f.description ?? "",
+                        field_type: f.field_type!,
+                        required: f.required!,
+                        default_value: f.default_value ?? "",
+                        position: f.position!,
+                        generated: f.generated ?? false,
+                      })) ?? []
+                  }
+                  disabled={disabled}
+                  {...(createArgsOutputsAction
+                    ? { createArgsOutputsAction }
+                    : {})}
+                  group_id={currentToolData?.group_id ?? null}
+                  agent_id={currentToolData?.args_outputs_agent_id ?? null}
+                />
+              </div>
             </StepCard>
           );
         }
@@ -1034,6 +1450,10 @@ function ToolComponent({
       canRegenerate,
       handleOpenStepCardModal,
       isGenerating,
+      argsItems,
+      argsOutputsItems,
+      argsNameById,
+      argsOutputsById,
     ]
   );
 

@@ -66,6 +66,8 @@ export interface TemperatureLevelsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   showSlider?: boolean; // Whether to show slider for visual feedback
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
@@ -94,6 +96,8 @@ export function TemperatureLevels({
   id = "temperature_level",
   "data-testid": dataTestId,
   helpText,
+  searchTerm,
+  onSearchChange,
   showSlider = false,
   group_id,
   agent_id,
@@ -106,12 +110,22 @@ export function TemperatureLevels({
     () => temperature_level_suggestions ?? [],
     [temperature_level_suggestions]
   );
+  const filteredTemperatureLevels = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return temperature_levels ?? [];
+    }
+    const term = searchTerm.toLowerCase();
+    return (temperature_levels ?? []).filter((tl) => {
+      const value = tl.temperature?.toLowerCase() ?? "";
+      return value.includes(term);
+    });
+  }, [temperature_levels, searchTerm]);
 
   // Convert temperature_levels array to TemperatureLevelItem format for GenericPicker
   // Only include lower bounds (is_upper = false) for selection
   const pickerItems = useMemo(() => {
-    if (temperature_levels && temperature_levels.length > 0) {
-      return temperature_levels
+    if (filteredTemperatureLevels.length > 0) {
+      return filteredTemperatureLevels
         .filter(
           (tl) => tl.id && tl.temperature && tl.is_upper === false
         ) // Filter out nulls and upper bounds
@@ -122,7 +136,7 @@ export function TemperatureLevels({
         }));
     }
     return [];
-  }, [temperature_levels]);
+  }, [filteredTemperatureLevels]);
 
   // Get current temperature value from selected level
   const currentTemperature = useMemo(() => {
@@ -230,6 +244,8 @@ export function TemperatureLevels({
             <div className="font-medium">Temperature: {item.temperature}</div>
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

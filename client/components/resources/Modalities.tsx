@@ -56,6 +56,8 @@ export interface ModalitiesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createModalitiesAction?:
@@ -78,6 +80,8 @@ export function Modalities({
   required = false,
   placeholder = "Select modalities...",
   description,
+  searchTerm,
+  onSearchChange,
   group_id,
   agent_id,
   createModalitiesAction,
@@ -91,6 +95,17 @@ export function Modalities({
     () => modality_suggestions ?? [],
     [modality_suggestions]
   );
+  const filteredModalities = useMemo(() => {
+    if (!searchTerm?.trim()) {
+      return allModalities;
+    }
+    const term = searchTerm.toLowerCase();
+    return allModalities.filter((modality) => {
+      const name = modality.name?.toLowerCase() ?? "";
+      const desc = modality.description?.toLowerCase() ?? "";
+      return name.includes(term) || desc.includes(term);
+    });
+  }, [allModalities, searchTerm]);
 
   // Track which modality IDs have already had resources created
   const createdModalityIdsRef = useRef<Set<string>>(new Set());
@@ -102,14 +117,14 @@ export function Modalities({
 
   // Convert modalities array to ModalityItem format for GenericPicker
   const modalityItems = useMemo(() => {
-    return allModalities
+    return filteredModalities
       .filter((m) => m.modality_id && m.name) // Filter out nulls
       .map((m) => ({
         id: m.modality_id!,
         name: m.name!,
         ...(m.description ? { description: m.description } : {}),
       }));
-  }, [allModalities]);
+  }, [filteredModalities]);
 
   // Check if a modality is suggested
   const isSuggested = useCallback(
@@ -178,7 +193,7 @@ export function Modalities({
       )}
       <GenericPicker<ModalityItem>
         items={modalityItems}
-        itemIds={allModalities
+        itemIds={filteredModalities
           .map((m) => m.modality_id)
           .filter((id): id is string => id !== null)} // All modality IDs from array, filter nulls
         selectedIds={ids}
@@ -211,6 +226,8 @@ export function Modalities({
             />
           </div>
         )}
+        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
+        {...(onSearchChange ? { onSearchChange } : {})}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}

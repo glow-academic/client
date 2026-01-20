@@ -72,10 +72,9 @@ export async function POST(request: NextRequest) {
     response.headers.forEach((value, key) => {
       if (key.toLowerCase() === "location") {
         // Rewrite backend location to BFF location
-        // Handle both with and without app prefix: /api/v4/uploads/upload/... or /prefix/api/v4/uploads/upload/...
         const location = value.replace(
           /\/api\/v4\/uploads\/save\//,
-          "/api/uploads/upload/",
+          "/api/uploads/save/",
         );
         headers.set(key, location);
       } else {

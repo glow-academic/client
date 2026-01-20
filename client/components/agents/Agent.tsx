@@ -276,7 +276,9 @@ export default function Agent({
     modelShowSelected: parseAsBoolean,
     reasoningSearch: parseAsString,
     voiceSearch: parseAsString,
-    _promptSearch: parseAsString,
+    descriptionSearch: parseAsString,
+    promptSearch: parseAsString,
+    instructionsSearch: parseAsString,
   } as const;
 
   // URL-backed state using nuqs (only navigation/search params)
@@ -653,13 +655,6 @@ export default function Agent({
       }
     }
 
-    const promptStep = {
-      id: "prompt",
-      title: "Prompt Instructions",
-      description: "Define the system prompt that controls agent behavior.",
-      resetFields: ["prompt_id"] as string[],
-    };
-
     const instructionsStep = {
       id: "instructions",
       title: "Instructions",
@@ -668,7 +663,14 @@ export default function Agent({
       resetFields: ["instructions_id"] as string[],
     };
 
-    return [...baseSteps, ...configSteps, promptStep, instructionsStep];
+    const promptStep = {
+      id: "prompt",
+      title: "Prompt Instructions",
+      description: "Define the system prompt that controls agent behavior.",
+      resetFields: ["prompt_id"] as string[],
+    };
+
+    return [...baseSteps, ...configSteps, instructionsStep, promptStep];
   }, [selectedModelCapabilities]);
 
   // Reset handler for GenericForm - resets draftState fields
@@ -1391,6 +1393,11 @@ export default function Agent({
             }) => {
               switch (stepId) {
                 case "basic": {
+                  const descriptionSearch =
+                    (stepFormData["descriptionSearch"] as
+                      | string
+                      | null
+                      | undefined) || "";
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1503,8 +1510,12 @@ export default function Agent({
                             setDraftState((prev) => ({
                               ...prev,
                               description_id: descriptionId,
-                            }));
+                              }));
                           }}
+                          searchTerm={descriptionSearch}
+                          onSearchChange={(term: string) =>
+                            setStepFormData({ descriptionSearch: term || null })
+                          }
                           onGenerate={handleGenerateDescription}
                           isGenerating={isGenerating("descriptions")}
                           label="Description"
@@ -1568,6 +1579,10 @@ export default function Agent({
                 }
 
                 case "tools": {
+                  const toolSearch =
+                    (stepFormData["toolSearch"] as string) || "";
+                  const toolShowSelected =
+                    (stepFormData["toolShowSelected"] as boolean) ?? false;
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1576,6 +1591,22 @@ export default function Agent({
                       stepDescription={stepDescription}
                       isReadonly={isReadonly}
                       isEditMode={isEditMode}
+                      searchTerm={toolSearch}
+                      onSearchChange={(term) =>
+                        setStepFormData({ toolSearch: term || null })
+                      }
+                      searchPlaceholder="Search tools..."
+                      filters={[
+                        {
+                          key: "showSelected",
+                          label: "Show selected",
+                          value: toolShowSelected,
+                          onChange: (value: boolean) =>
+                            setStepFormData({
+                              toolShowSelected: value || null,
+                            }),
+                        },
+                      ]}
                       resetFields={["tool_ids"]}
                       {...(onReset ? { onReset } : {})}
                       resetLabel="Reset"
@@ -1644,15 +1675,11 @@ export default function Agent({
                         required={agentData?.tools_required ?? false}
                         group_id={agentData?.group_id ?? null}
                         agent_id={agentData?.tools_agent_id ?? null}
-                        searchTerm={
-                          (stepFormData["toolSearch"] as string) || ""
-                        }
+                        searchTerm={toolSearch}
                         onSearchChange={(term) =>
                           setStepFormData({ toolSearch: term || null })
                         }
-                        showSelectedFilter={
-                          (stepFormData["toolShowSelected"] as boolean) || false
-                        }
+                        showSelectedFilter={toolShowSelected}
                         onShowSelectedChange={(value) =>
                           setStepFormData({ toolShowSelected: value })
                         }
@@ -1664,6 +1691,8 @@ export default function Agent({
                 case "model": {
                   const modelSearch =
                     (stepFormData["modelSearch"] as string) || "";
+                  const modelShowSelected =
+                    (stepFormData["modelShowSelected"] as boolean) ?? false;
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -1677,6 +1706,17 @@ export default function Agent({
                         setStepFormData({ modelSearch: term || null })
                       }
                       searchPlaceholder="Search models..."
+                      filters={[
+                        {
+                          key: "showSelected",
+                          label: "Show selected",
+                          value: modelShowSelected,
+                          onChange: (value: boolean) =>
+                            setStepFormData({
+                              modelShowSelected: value || null,
+                            }),
+                        },
+                      ]}
                       resetFields={["modelId"]}
                       actions={
                         stepResources["model"] &&
@@ -1751,10 +1791,7 @@ export default function Agent({
                         onSearchChange={(term) =>
                           setStepFormData({ modelSearch: term || null })
                         }
-                        showSelectedFilter={
-                          (stepFormData["modelShowSelected"] as boolean) ||
-                          false
-                        }
+                        showSelectedFilter={modelShowSelected}
                         onShowSelectedChange={(value) =>
                           setStepFormData({ modelShowSelected: value })
                         }
@@ -2045,6 +2082,8 @@ export default function Agent({
                 }
 
                 case "prompt": {
+                  const promptSearch =
+                    (stepFormData["promptSearch"] as string) || "";
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2116,6 +2155,10 @@ export default function Agent({
                         onPromptIdChange={(id) => {
                           setDraftState((prev) => ({ ...prev, prompt_id: id }));
                         }}
+                        searchTerm={promptSearch}
+                        onSearchChange={(term: string) =>
+                          setStepFormData({ promptSearch: term || null })
+                        }
                         group_id={agentData?.group_id ?? null}
                         agent_id={agentData?.prompts_agent_id ?? null}
                         createPromptsAction={createPromptsAction}
@@ -2125,6 +2168,8 @@ export default function Agent({
                 }
 
                 case "instructions": {
+                  const instructionsSearch =
+                    (stepFormData["instructionsSearch"] as string) || "";
                   return (
                     <StepCard
                       stepStatus={stepStatus}
@@ -2193,6 +2238,10 @@ export default function Agent({
                             ...prev,
                             instructions_id: id,
                           }))
+                        }
+                        searchTerm={instructionsSearch}
+                        onSearchChange={(term: string) =>
+                          setStepFormData({ instructionsSearch: term || null })
                         }
                         group_id={agentData?.group_id ?? null}
                         agent_id={agentData?.instructions_agent_id ?? null}

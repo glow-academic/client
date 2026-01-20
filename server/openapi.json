@@ -30968,6 +30968,39 @@
             ],
             "title": "Agent Id"
           },
+          "descriptions_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descriptions Search"
+          },
+          "prompts_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompts Search"
+          },
+          "instructions_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Search"
+          },
           "draft_id": {
             "anyOf": [
               {
@@ -51145,6 +51178,20 @@
             ],
             "title": "Scenario Rubrics"
           },
+          "rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Rubric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
           "scenario_time_limit_ids": {
             "anyOf": [
               {
@@ -54869,6 +54916,30 @@
             ],
             "title": "Description Id"
           },
+          "value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Id"
+          },
+          "endpoint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint Id"
+          },
           "active_flag_id": {
             "anyOf": [
               {
@@ -54881,6 +54952,78 @@
             ],
             "title": "Active Flag Id"
           },
+          "modalities_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities Enabled Flag Id"
+          },
+          "temperature_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Enabled Flag Id"
+          },
+          "pricing_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Enabled Flag Id"
+          },
+          "voices_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Enabled Flag Id"
+          },
+          "reasoning_levels_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Enabled Flag Id"
+          },
+          "qualities_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Enabled Flag Id"
+          },
           "provider_id": {
             "anyOf": [
               {
@@ -54892,6 +55035,126 @@
               }
             ],
             "title": "Provider Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "input_modality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modality Ids"
+          },
+          "output_modality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modality Ids"
+          },
+          "temperature_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Level Ids"
+          },
+          "reasoning_level_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Level Ids"
+          },
+          "quality_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Ids"
+          },
+          "pricing_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Ids"
+          },
+          "voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Ids"
           },
           "expected_version": {
             "anyOf": [
@@ -56288,7 +56551,7 @@
             ],
             "title": "Input Draft Id"
           },
-          "template_ids": {
+          "args_ids": {
             "anyOf": [
               {
                 "items": {
@@ -56301,9 +56564,9 @@
                 "type": "null"
               }
             ],
-            "title": "Template Ids"
+            "title": "Args Ids"
           },
-          "template_array_item_ids": {
+          "args_outputs_ids": {
             "anyOf": [
               {
                 "items": {
@@ -56316,22 +56579,7 @@
                 "type": "null"
               }
             ],
-            "title": "Template Array Item Ids"
-          },
-          "template_value_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Value Ids"
+            "title": "Args Outputs Ids"
           },
           "expected_version": {
             "anyOf": [
@@ -81103,6 +81351,51 @@
         ],
         "title": "QGetSimulationV4NameResource"
       },
+      "QGetSimulationV4Rubric": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetSimulationV4Rubric"
+      },
       "QGetSimulationV4ScenarioFlagResource": {
         "properties": {
           "id": {
@@ -81116,6 +81409,30 @@
               }
             ],
             "title": "Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
           },
           "name": {
             "anyOf": [
@@ -81178,6 +81495,8 @@
         "type": "object",
         "required": [
           "id",
+          "scenario_id",
+          "flag_id",
           "name",
           "description",
           "icon_id",
@@ -96250,6 +96569,16 @@
             "format": "uuid",
             "title": "Group Id"
           },
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "flag_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Flag Id"
+          },
           "mcp": {
             "anyOf": [
               {
@@ -96266,7 +96595,9 @@
         "type": "object",
         "required": [
           "agent_id",
-          "group_id"
+          "group_id",
+          "scenario_id",
+          "flag_id"
         ],
         "title": "ScenarioFlagsApiRequest"
       },
@@ -97105,18 +97436,15 @@
             "format": "uuid",
             "title": "Group Id"
           },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "icon_id": {
+          "scenario_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Icon Id"
+            "title": "Scenario Id"
+          },
+          "flag_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Flag Id"
           },
           "mcp": {
             "anyOf": [
@@ -97135,15 +97463,14 @@
         "required": [
           "agent_id",
           "group_id",
-          "name",
-          "description",
-          "icon_id"
+          "scenario_id",
+          "flag_id"
         ],
         "title": "SimulationScenarioFlagsApiRequest"
       },
       "SimulationScenarioFlagsApiResponse": {
         "properties": {
-          "flag_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -97153,7 +97480,7 @@
                 "type": "null"
               }
             ],
-            "title": "Flag Id"
+            "title": "Id"
           }
         },
         "type": "object",

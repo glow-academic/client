@@ -141,6 +141,9 @@ CREATE TYPE types.q_get_agent_v4_tool AS (
 CREATE OR REPLACE FUNCTION api_get_agent_v4(
     profile_id uuid,
     agent_id uuid DEFAULT NULL,
+    descriptions_search text DEFAULT NULL,
+    prompts_search text DEFAULT NULL,
+    instructions_search text DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 )
@@ -246,6 +249,9 @@ WITH params AS (
     SELECT 
         agent_id AS agent_id,
         profile_id AS profile_id,
+        descriptions_search AS descriptions_search,
+        prompts_search AS prompts_search,
+        instructions_search AS instructions_search,
         draft_id AS draft_id,
         COALESCE(mcp, false) AS mcp
 ),
@@ -969,6 +975,9 @@ descriptions_data AS (
                     )
                 )
             )
+            -- Search filter: if descriptions_search provided, match description text
+            AND (p.descriptions_search IS NULL OR p.descriptions_search = '' OR
+                 LOWER(d.description) LIKE '%' || LOWER(p.descriptions_search) || '%')
             AND d.description IS NOT NULL
             AND d.description != ''
         )
@@ -1009,6 +1018,9 @@ instructions_data AS (
                         )
                     )
                 )
+                -- Search filter: if instructions_search provided, match template text
+                AND (p.instructions_search IS NULL OR p.instructions_search = '' OR
+                     LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
                 AND i.template IS NOT NULL
                 AND i.template != ''
             )
@@ -1182,7 +1194,16 @@ prompt_mapping_data AS (
     FROM params x
     LEFT JOIN agent_all_prompts ap ON ap.agent_id = x.agent_id
     CROSS JOIN default_prompt_count dpc
-    WHERE x.agent_id IS NOT NULL AND ap.prompt_id IS NOT NULL
+    WHERE x.agent_id IS NOT NULL
+      AND ap.prompt_id IS NOT NULL
+      AND (
+        ap.prompt_id = (SELECT prompt_id FROM prompt_resource_data)
+        OR x.prompts_search IS NULL
+        OR x.prompts_search = ''
+        OR LOWER(COALESCE(ap.prompt_name, '')) LIKE '%' || LOWER(x.prompts_search) || '%'
+        OR LOWER(COALESCE(ap.prompt_description, '')) LIKE '%' || LOWER(x.prompts_search) || '%'
+        OR LOWER(COALESCE(ap.system_prompt, '')) LIKE '%' || LOWER(x.prompts_search) || '%'
+      )
 ),
 -- Always return at least one row for prompt_mapping_data (for CROSS JOIN safety)
 prompt_mapping_data_safe AS (

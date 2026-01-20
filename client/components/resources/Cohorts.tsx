@@ -53,6 +53,9 @@ export interface CohortsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  searchTerm?: string;
+  showSelectedFilter?: boolean;
+  emptyMessage?: string;
   group_id?: string | null;
   agent_id?: string | null;
   createCohortsAction?:
@@ -76,6 +79,9 @@ export function Cohorts({
   required = false,
   placeholder = "Select cohorts...",
   description,
+  searchTerm = "",
+  showSelectedFilter = false,
+  emptyMessage = "No cohorts found.",
   group_id,
   agent_id,
   createCohortsAction,
@@ -109,6 +115,31 @@ export function Cohorts({
         ...(c.description ? { description: c.description } : {}),
       }));
   }, [allCohorts]);
+
+  const displayCohorts = useMemo(() => {
+    let filtered = cohortItems;
+    const trimmedSearch = searchTerm.trim().toLowerCase();
+
+    if (trimmedSearch) {
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(trimmedSearch) ||
+          c.description?.toLowerCase().includes(trimmedSearch)
+      );
+    }
+
+    if (showSelectedFilter) {
+      filtered = filtered.filter((c) => ids.includes(c.id));
+    }
+
+    return [...filtered].sort((a, b) => {
+      const aSelected = ids.includes(a.id);
+      const bSelected = ids.includes(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [cohortItems, searchTerm, showSelectedFilter, ids]);
 
   const isSuggested = useCallback(
     (cohortId: string) => suggestionsList.includes(cohortId),
@@ -207,7 +238,7 @@ export function Cohorts({
         </div>
       )}
       <SelectableGrid<CohortItem>
-        items={cohortItems}
+        items={displayCohorts}
         selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
@@ -243,7 +274,7 @@ export function Cohorts({
             </div>
           </div>
         )}
-        emptyMessage="No cohorts found."
+        emptyMessage={emptyMessage}
         disabled={disabled}
       />
     </div>

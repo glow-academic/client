@@ -158,6 +158,9 @@ export default async function AgentEditPage({
   // Inline server-side parsers for agent search params
   const agentSearchParams = {
     draftId: parseAsString,
+    descriptionSearch: parseAsString,
+    promptSearch: parseAsString,
+    instructionsSearch: parseAsString,
   };
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
@@ -168,6 +171,9 @@ export default async function AgentEditPage({
       body: {
         agent_id: agentId,
         draft_id: q.draftId ?? null,
+        descriptions_search: q.descriptionSearch ?? null,
+        prompts_search: q.promptSearch ?? null,
+        instructions_search: q.instructionsSearch ?? null,
       } as GetAgentIn["body"],
     };
     const agentDetail = agentId ? await getAgent(input) : null;

@@ -508,7 +508,17 @@ emails_data AS (
                 ORDER BY e.email
             )
             FROM emails_resource e
-            WHERE e.active = true),
+            WHERE e.active = true
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM profile_emails pe
+                  WHERE pe.email_id = e.id
+                    AND pe.active = true
+                    AND (
+                        (SELECT resolved_target_profile_id FROM resolve_target_profile_id) IS NULL
+                        OR pe.profile_id <> (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+                    )
+              )),
             ARRAY[]::types.q_get_profile_v4_email_resource[]
         ) as emails
     FROM params
