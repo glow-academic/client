@@ -7,10 +7,6 @@
 
 "use client";
 
-import type { InputOf, OutputOf } from "@/lib/api/types";
-
-type CreateDraftInstructionsIn = InputOf<"/api/v4/resources/instructions", "post">;
-type CreateDraftInstructionsOut = OutputOf<"/api/v4/resources/instructions", "post">;
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +19,16 @@ import {
 import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+
+type CreateDraftInstructionsIn = InputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
+type CreateDraftInstructionsOut = OutputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
 
 export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
@@ -87,18 +93,20 @@ export function Instructions({
   const resource = instructions_resource ?? instructionsResource ?? null;
   const resourceId = instructions_id ?? instructionsId ?? null;
   const show = show_instructions ?? true;
-  const suggestionsList = instructions_suggestions ?? suggestions ?? [];
+  const suggestionsList = useMemo(
+    () => instructions_suggestions ?? suggestions ?? [],
+    [instructions_suggestions, suggestions]
+  );
 
   // Handle nullable resource properties
-  const resourceTemplate = resource?.template ?? null;
-  const [internalValue, setInternalValue] = useState(
-    resourceTemplate || ""
-  );
+  const resourceTemplate = resource?.template ?? "";
+  const [internalValue, setInternalValue] = useState(resourceTemplate);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(
-    resourceTemplate || ""
-  );
+  const lastSavedValueRef = useRef<string>(resourceTemplate);
   const isInitialMountRef = useRef(true);
+  const saveSeqRef = useRef(0);
+  const isDirtyRef = useRef(false);
+  const lastServerTextRef = useRef<string>(resourceTemplate);
 
   // Use resourceId for validation/debugging
   useEffect(() => {
@@ -108,17 +116,36 @@ export function Instructions({
     }
   }, [resourceId, resource]);
 
-  // Use suggestionsList for autocomplete (if needed in future)
-  // Currently suggestions are handled by parent, but we track them here
-  const _hasSuggestions = suggestionsList.length > 0;
+  const instructionsById = useMemo(() => {
+    const mapping: Record<string, string> = {};
+    (instructions ?? []).forEach((inst) => {
+      if (inst.id && inst.template) {
+        mapping[inst.id] = inst.template;
+      }
+    });
+    return mapping;
+  }, [instructions]);
 
   // Update internal value when instructions_resource changes
   useEffect(() => {
-    if (resourceTemplate) {
-      setInternalValue(resourceTemplate);
-      lastSavedValueRef.current = resourceTemplate;
+    const resourceMatchesId =
+      (resourceId && resource?.id && resourceId === resource.id) ||
+      (resourceId === null &&
+        (resource?.id === null || resource?.id === undefined));
+    const resourceValue = resourceMatchesId ? resourceTemplate : "";
+    const mappedValue = resourceId ? instructionsById[resourceId] : undefined;
+    const hasServerValue =
+      resourceValue !== "" || mappedValue !== undefined || resourceId === null;
+    if (!hasServerValue) return;
+    const serverValue =
+      resourceValue !== "" ? resourceValue : mappedValue ?? "";
+    if (serverValue === lastServerTextRef.current) return;
+    if (!isDirtyRef.current) {
+      setInternalValue(serverValue);
+      lastSavedValueRef.current = serverValue;
     }
-  }, [resourceTemplate]);
+    lastServerTextRef.current = serverValue;
+  }, [resourceTemplate, resourceId, instructionsById]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -146,6 +173,7 @@ export function Instructions({
 
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
+      const seq = ++saveSeqRef.current;
       try {
         if (internalValue.trim()) {
           if (!agent_id || !group_id) {
@@ -158,14 +186,17 @@ export function Instructions({
               template: internalValue,
             },
           });
+          if (seq !== saveSeqRef.current) return;
           if (result.instruction_id) {
             onInstructionsIdChange(result.instruction_id);
           }
         } else {
+          if (seq !== saveSeqRef.current) return;
           // Clear resource ID if value is empty
           onInstructionsIdChange(null);
         }
         lastSavedValueRef.current = internalValue;
+        isDirtyRef.current = false;
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("Failed to create instructions resource:", error);
@@ -181,6 +212,7 @@ export function Instructions({
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
+    isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
   // Use instructions array if available, otherwise create placeholder mapping
@@ -257,7 +289,23 @@ export function Instructions({
           items={pickerItems}
           selectedIds={resourceId ? [resourceId] : []}
           onSelect={(ids) => {
-            onInstructionsIdChange(ids[0] || null);
+            const selectedId = ids[0] || null;
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
+            }
+            saveSeqRef.current += 1;
+            if (selectedId) {
+              const nextValue = instructionsById[selectedId] ?? "";
+              setInternalValue(nextValue);
+              lastSavedValueRef.current = nextValue;
+              lastServerTextRef.current = nextValue;
+            } else {
+              setInternalValue("");
+              lastSavedValueRef.current = "";
+              lastServerTextRef.current = "";
+            }
+            isDirtyRef.current = false;
+            onInstructionsIdChange(selectedId);
           }}
           getId={(item) => (typeof item === 'string' ? item : item.id)}
           getLabel={(item) => {

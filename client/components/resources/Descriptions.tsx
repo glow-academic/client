@@ -124,6 +124,16 @@ export function Descriptions({
   // Keep a stable "server identity" for when we should accept server as source of truth
   const lastServerTextRef = useRef<string>(resourceDescription);
 
+  const descriptionsById = useMemo(() => {
+    const mapping: Record<string, string> = {};
+    (descriptions ?? []).forEach((desc) => {
+      if (desc.id && desc.description) {
+        mapping[desc.id] = desc.description;
+      }
+    });
+    return mapping;
+  }, [descriptions]);
+
   // Use resourceId for validation/debugging
   useEffect(() => {
     if (resourceId && !resource?.id) {
@@ -135,18 +145,25 @@ export function Descriptions({
   // Update internal value when description_resource changes
   // Only sync if server text actually changed AND user is not actively editing
   useEffect(() => {
+    const mappedValue = resourceId ? descriptionsById[resourceId] : undefined;
+    const hasServerValue =
+      resourceDescription !== "" || mappedValue !== undefined || resourceId === null;
+    if (!hasServerValue) return;
+    const serverValue =
+      resourceDescription !== "" ? resourceDescription : mappedValue ?? "";
+
     // If server is pushing the same text again, ignore.
-    if (resourceDescription === lastServerTextRef.current) return;
+    if (serverValue === lastServerTextRef.current) return;
 
     // If user is editing (dirty), do NOT clobber their input.
     // Only sync if we are not dirty.
     if (!isDirtyRef.current) {
-      setInternalValue(resourceDescription);
-      lastSavedValueRef.current = resourceDescription;
+      setInternalValue(serverValue);
+      lastSavedValueRef.current = serverValue;
     }
 
-    lastServerTextRef.current = resourceDescription;
-  }, [resourceDescription]);
+    lastServerTextRef.current = serverValue;
+  }, [resourceDescription, resourceId, descriptionsById]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -262,16 +279,6 @@ export function Descriptions({
     }
     return Object.values(suggestionsMapping);
   }, [descriptions, suggestionsMapping]);
-
-  const descriptionsById = useMemo(() => {
-    const mapping: Record<string, string> = {};
-    (descriptions ?? []).forEach((desc) => {
-      if (desc.id && desc.description) {
-        mapping[desc.id] = desc.description;
-      }
-    });
-    return mapping;
-  }, [descriptions]);
 
   // Don't render if show_description is false (AFTER all hooks)
   if (!show) {

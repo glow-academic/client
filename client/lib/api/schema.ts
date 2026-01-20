@@ -7428,6 +7428,8 @@ export interface components {
              * Format: uuid
              */
             scenario_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** DuplicateScenarioApiResponse */
         DuplicateScenarioApiResponse: {
@@ -20178,6 +20180,8 @@ export interface components {
             question_ids?: string[] | null;
             /** Input Scenario Id */
             input_scenario_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** SaveScenarioApiResponse */
         SaveScenarioApiResponse: {

@@ -24,11 +24,11 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
-import { Simulations } from "@/components/resources/Simulations";
 import {
   SimulationPositions,
   type SimulationPositionItem,
 } from "@/components/resources/SimulationPositions";
+import { Simulations } from "@/components/resources/Simulations";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -484,10 +484,10 @@ function CohortComponent({
             simulation_position_values:
               formState.simulation_positions.length > 0
                 ? formState.simulation_ids.map(
-                    (simulationId) =>
+                    (simulationId, index) =>
                       formState.simulation_positions.find(
                         (position) => position.simulation_id === simulationId
-                      )?.value ?? null
+                      )?.value ?? index + 1
                   )
                 : null,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
@@ -575,7 +575,10 @@ function CohortComponent({
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
         if (data.resource_type === "simulation_positions") {
-          if (data.simulation_positions && data.simulation_positions.length > 0) {
+          if (
+            data.simulation_positions &&
+            data.simulation_positions.length > 0
+          ) {
             setFormState((prev) => {
               const nextPositions = new Map<string, SimulationPositionItem>();
               prev.simulation_positions.forEach((pos) => {
@@ -584,7 +587,11 @@ function CohortComponent({
                 }
               });
               data.simulation_positions?.forEach((pos) => {
-                if (pos.simulation_id && pos.value !== null && pos.value !== undefined) {
+                if (
+                  pos.simulation_id &&
+                  pos.value !== null &&
+                  pos.value !== undefined
+                ) {
                   nextPositions.set(pos.simulation_id, {
                     simulation_id: pos.simulation_id,
                     value: pos.value,
@@ -963,6 +970,16 @@ function CohortComponent({
                 .sort((a, b) => a.value - b.value)
                 .map((position) => position.simulation_id)
             : formState.simulation_ids;
+        console.log("body", {
+          input_cohort_id: isEditMode && cohortId ? cohortId : null,
+          name_id: formState.name_id,
+          description_id: formState.description_id || null,
+          active_flag_id: formState.active_flag_id || null,
+          department_ids: formState.department_ids || [],
+          simulation_ids: orderedSimulationIds.filter(
+            (id): id is string => id !== null
+          ) as string[],
+        });
         await saveCohortAction({
           body: {
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
@@ -970,7 +987,9 @@ function CohortComponent({
             description_id: formState.description_id || null,
             active_flag_id: formState.active_flag_id || null,
             department_ids: formState.department_ids || [],
-            simulation_ids: orderedSimulationIds || [],
+            simulation_ids: orderedSimulationIds.filter(
+              (id): id is string => id !== null
+            ) as string[],
           },
         });
         toast.success(
@@ -1304,9 +1323,7 @@ function CohortComponent({
                   description_resource={
                     currentCohortData?.description_resource ?? null
                   }
-                  show_description={
-                    currentCohortData?.show_description ?? true
-                  }
+                  show_description={currentCohortData?.show_description ?? true}
                   description_suggestions={
                     currentCohortData?.description_suggestions ?? []
                   }
@@ -1483,9 +1500,7 @@ function CohortComponent({
                 simulation_resources={
                   currentCohortData?.simulation_resources ?? []
                 }
-                show_simulations={
-                  currentCohortData?.show_simulations ?? false
-                }
+                show_simulations={currentCohortData?.show_simulations ?? false}
                 simulation_suggestions={
                   currentCohortData?.simulation_suggestions ?? []
                 }
@@ -1514,9 +1529,7 @@ function CohortComponent({
                 show_simulation_positions={
                   currentCohortData?.show_simulation_positions ?? false
                 }
-                simulation_positions={
-                  formState.simulation_positions ?? []
-                }
+                simulation_positions={formState.simulation_positions ?? []}
                 disabled={disabled}
                 onChange={(positions) => {
                   const orderedSimulationIds = [...positions]

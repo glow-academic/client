@@ -114,17 +114,6 @@ export function ProblemStatements({
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(initialValue);
 
-  // Update internal value when problem_statement_resource changes
-  useEffect(() => {
-    const serverValue = resourceProblemStatement || defaultProblemStatement || "";
-    if (serverValue === lastServerTextRef.current) return;
-    if (!isDirtyRef.current) {
-      setInternalValue(serverValue);
-      lastSavedValueRef.current = serverValue;
-    }
-    lastServerTextRef.current = serverValue;
-  }, [resourceProblemStatement, defaultProblemStatement]);
-
   // Debounced resource creation
   useEffect(() => {
     // Skip on initial mount
@@ -225,6 +214,39 @@ export function ProblemStatements({
     return mapping;
   }, [problemStatementsArray, suggestionsList]);
 
+  const problemStatementsById = useMemo(() => {
+    const mapping: Record<string, string> = {};
+    problemStatementsArray.forEach((ps) => {
+      if (ps.id && ps.problem_statement) {
+        mapping[ps.id] = ps.problem_statement;
+      }
+    });
+    return mapping;
+  }, [problemStatementsArray]);
+
+  // Update internal value when problem_statement_resource changes
+  useEffect(() => {
+    const resourceMatchesId =
+      (resourceId && resource?.id && resourceId === resource.id) ||
+      (resourceId === null &&
+        (resource?.id === null || resource?.id === undefined));
+    const resourceValue = resourceMatchesId ? resourceProblemStatement : "";
+    const mappedValue = resourceId ? problemStatementsById[resourceId] : undefined;
+    const hasServerValue =
+      resourceValue !== "" || mappedValue !== undefined || resourceId === null;
+    if (!hasServerValue) return;
+    const serverValue =
+      resourceValue !== ""
+        ? resourceValue
+        : mappedValue ?? defaultProblemStatement ?? "";
+    if (serverValue === lastServerTextRef.current) return;
+    if (!isDirtyRef.current) {
+      setInternalValue(serverValue);
+      lastSavedValueRef.current = serverValue;
+    }
+    lastServerTextRef.current = serverValue;
+  }, [resourceProblemStatement, defaultProblemStatement, resourceId, problemStatementsById]);
+
   const pickerItems: Array<{
     id: string | null;
     problem_statement: string | null;
@@ -235,16 +257,6 @@ export function ProblemStatements({
     }
     return Object.values(suggestionsMapping);
   }, [problemStatementsArray, suggestionsMapping]);
-
-  const problemStatementsById = useMemo(() => {
-    const mapping: Record<string, string> = {};
-    problemStatementsArray.forEach((ps) => {
-      if (ps.id && ps.problem_statement) {
-        mapping[ps.id] = ps.problem_statement;
-      }
-    });
-    return mapping;
-  }, [problemStatementsArray]);
 
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {

@@ -17251,11 +17251,13 @@ class DuplicateScenarioSqlParams(BaseModel):
 
     scenario_id: UUID
     profile_id: UUID
+    group_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.scenario_id,
             self.profile_id,
+            self.group_id,
         )
 
 class DuplicateScenarioSqlRow(BaseModel):
@@ -17267,6 +17269,7 @@ class DuplicateScenarioSqlRow(BaseModel):
 class DuplicateScenarioApiRequest(BaseModel):
 
     scenario_id: UUID
+    group_id: UUID | None = None
 
 class DuplicateScenarioApiResponse(BaseModel):
 
@@ -18200,6 +18203,7 @@ class SaveScenarioSqlParams(BaseModel):
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
     input_scenario_id: UUID | None = None
+    group_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -18225,6 +18229,7 @@ class SaveScenarioSqlParams(BaseModel):
             self.video_ids,
             self.question_ids,
             self.input_scenario_id,
+            self.group_id,
         )
 
 class SaveScenarioSqlRow(BaseModel):
@@ -18255,6 +18260,7 @@ class SaveScenarioApiRequest(BaseModel):
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
     input_scenario_id: UUID | None = None
+    group_id: UUID | None = None
 
 class SaveScenarioApiResponse(BaseModel):
 

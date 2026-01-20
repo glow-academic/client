@@ -52,14 +52,119 @@ scenario_exists_check AS (
         SELECT 1 FROM scenario_artifact WHERE id = (SELECT scenario_id FROM params)
     )::boolean as scenario_exists
 ),
+usage_check AS (
+    SELECT (
+        SELECT COUNT(*)
+        FROM simulation_scenarios ss
+        WHERE ss.scenario_id = x.scenario_id
+          AND EXISTS (
+              SELECT 1
+              FROM simulation_scenario_flags ssf
+              JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
+              JOIN flags_resource f ON sfr.flag_id = f.id
+              WHERE ssf.simulation_id = ss.simulation_id
+                AND sfr.scenario_id = ss.scenario_id
+                AND f.name = 'active'
+                AND ssf.value = true
+          )
+    ) + (
+        SELECT COUNT(*) FROM chats c WHERE c.scenario_id = x.scenario_id
+    ) as usage_count
+    FROM params x
+),
 scenario_info AS (
     -- Check if scenario exists and get name
     SELECT 
         s.id,
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
-        (SELECT COUNT(*) FROM simulation_scenarios ss WHERE ss.scenario_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)) as usage_count
-    FROM scenario_artifact s
-    WHERE s.id = (SELECT scenario_id FROM params)
+        uc.usage_count
+    FROM params x
+    JOIN scenario_artifact s ON s.id = x.scenario_id
+    CROSS JOIN usage_check uc
+),
+delete_scenario_departments AS (
+    DELETE FROM scenario_departments sd
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sd.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_documents AS (
+    DELETE FROM scenario_documents sd
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sd.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_fields AS (
+    DELETE FROM scenario_fields sf
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sf.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_images AS (
+    DELETE FROM scenario_images si
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE si.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_objectives AS (
+    DELETE FROM scenario_objectives so
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE so.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_parameters AS (
+    DELETE FROM scenario_parameters sp
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sp.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_personas AS (
+    DELETE FROM scenario_personas sp
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sp.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_problem_statements AS (
+    DELETE FROM scenario_problem_statements sps
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sps.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_questions AS (
+    DELETE FROM scenario_questions sq
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sq.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenario_tree AS (
+    DELETE FROM scenario_tree st
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE (st.parent_id = x.scenario_id OR st.child_id = x.scenario_id)
+      AND uc.usage_count = 0
+),
+delete_scenario_videos AS (
+    DELETE FROM scenario_videos sv
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sv.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
+),
+delete_scenarios_resource AS (
+    DELETE FROM scenarios_resource sr
+    USING params x
+    CROSS JOIN usage_check uc
+    WHERE sr.scenario_id = x.scenario_id
+      AND uc.usage_count = 0
 ),
 delete_scenario AS (
     -- Delete scenario only if it exists and is not in use

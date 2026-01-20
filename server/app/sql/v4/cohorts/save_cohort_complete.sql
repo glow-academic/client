@@ -73,6 +73,18 @@ BEGIN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
 
+    IF department_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM unnest(department_ids) AS dept_id
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM departments_resource dr
+            WHERE dr.id = dept_id OR dr.department_id = dept_id
+        )
+    ) THEN
+        RAISE EXCEPTION 'Department resource not found for provided IDs';
+    END IF;
+
     SELECT id INTO v_default_call_id FROM calls LIMIT 1;
     IF v_default_call_id IS NULL THEN
         RAISE EXCEPTION 'No call_id found for simulation_positions_resource inserts';
@@ -194,17 +206,27 @@ BEGIN
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
+    department_resource_ids AS (
+        SELECT
+            dept_id,
+            COALESCE(dr_by_id.id, dr_by_artifact.id) AS department_resource_id
+        FROM params x
+        CROSS JOIN UNNEST(x.department_ids) AS dept_id
+        LEFT JOIN departments_resource dr_by_id ON dr_by_id.id = dept_id
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.department_id = dept_id
+        WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
+    ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
         INSERT INTO cohort_departments (cohort_id, department_id, active, created_at, updated_at)
         SELECT 
             x.cohort_id,
-            dept_id,
+            dri.department_resource_id,
             true,
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.department_ids) as dept_id
+        JOIN department_resource_ids dri ON dri.department_resource_id IS NOT NULL
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT cohort_departments_pkey DO UPDATE SET
             active = true,

@@ -47,7 +47,7 @@ BEGIN
     v_artifact_id := api_create_departments_v4.department_id;
     
     -- Validate that department artifact exists
-    IF NOT EXISTS (SELECT 1 FROM department_artifact WHERE id = v_artifact_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM department_artifact WHERE department_artifact.id = v_artifact_id) THEN
         RAISE EXCEPTION 'Department artifact % does not exist', v_artifact_id;
     END IF;
     -- Lookup tool_id from agent_tools + resource_tools
@@ -104,7 +104,7 @@ BEGIN
     -- Create resource with new unique id and department_id FK
     INSERT INTO departments_resource(id, department_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
     VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_departments_v4.group_id, NOW(), NOW())
-    RETURNING id INTO v_resource_id;
+    RETURNING departments_resource.id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();

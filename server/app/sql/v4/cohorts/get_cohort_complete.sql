@@ -563,7 +563,7 @@ simulation_mapping_data AS (
 -- Cohort simulation IDs (always return at least one row)
 draft_simulation_ids_data AS (
     SELECT 
-        COALESCE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), ARRAY[]::uuid[]) as simulation_ids
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
     FROM params x
     LEFT JOIN draft_simulations ds ON ds.draft_id = x.draft_id
     LIMIT 1
@@ -573,7 +573,7 @@ cohort_simulation_ids_data AS (
         CASE 
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(cs.simulation_id ORDER BY cs.created_at)
+                (SELECT ARRAY_REMOVE(ARRAY_AGG(cs.simulation_id ORDER BY cs.created_at), NULL)
                  FROM cohort_simulations cs
                  WHERE cs.cohort_id = (SELECT cohort_id FROM params)
                    AND cs.active = true),

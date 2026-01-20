@@ -49,10 +49,16 @@ WITH params AS (
         api_insert_scenario_variant_v4.objectives_enabled AS objectives_enabled,
         api_insert_scenario_variant_v4.images_enabled AS images_enabled
 ),
+default_call AS (
+    SELECT id as call_id
+    FROM calls
+    LIMIT 1
+),
 get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT p.name, NOW(), NOW()
+    INSERT INTO names_resource (name, created_at, updated_at, call_id)
+    SELECT p.name, NOW(), NOW(), dc.call_id
     FROM params p
+    CROSS JOIN default_call dc
     WHERE p.name IS NOT NULL AND p.name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name as name_value
@@ -63,13 +69,19 @@ get_flag_ids AS (
         (SELECT id FROM flags_resource WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
         (SELECT id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id
 ),
+new_group AS (
+    INSERT INTO groups (created_at, updated_at)
+    VALUES (NOW(), NOW())
+    RETURNING id
+),
 new_scenario AS (
     INSERT INTO scenario_artifact (
+        group_id,
         created_at,
         updated_at
     )
-    SELECT NOW(), NOW()
-    FROM params
+    SELECT ng.id, NOW(), NOW()
+    FROM new_group ng
     RETURNING id
 ),
 link_name AS (

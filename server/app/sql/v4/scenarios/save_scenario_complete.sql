@@ -56,7 +56,8 @@ CREATE OR REPLACE FUNCTION api_save_scenario_v4(
     objective_ids uuid[] DEFAULT NULL,
     video_ids uuid[] DEFAULT NULL,
     question_ids uuid[] DEFAULT NULL,
-    input_scenario_id uuid DEFAULT NULL
+    input_scenario_id uuid DEFAULT NULL,
+    group_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_id uuid,
@@ -76,14 +77,28 @@ DECLARE
     v_questions_enabled_flag_id uuid;
     v_problem_statement_enabled_flag_id uuid;
     v_use_templates_flag_id uuid;
+    v_group_id uuid;
 BEGIN
     -- Determine if create or update
     is_create := (input_scenario_id IS NULL);
 
     -- Create or update scenario_artifact
     IF is_create THEN
-        INSERT INTO scenario_artifact (created_at, updated_at)
-        VALUES (NOW(), NOW())
+        IF group_id IS NULL THEN
+            INSERT INTO groups (created_at, updated_at)
+            VALUES (NOW(), NOW())
+            RETURNING id INTO v_group_id;
+        ELSE
+            v_group_id := group_id;
+
+            IF NOT EXISTS (SELECT 1 FROM groups WHERE id = v_group_id) THEN
+                INSERT INTO groups (id, created_at, updated_at)
+                VALUES (v_group_id, NOW(), NOW());
+            END IF;
+        END IF;
+
+        INSERT INTO scenario_artifact (group_id, created_at, updated_at)
+        VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_scenario_id;
     ELSE
         v_scenario_id := input_scenario_id;
