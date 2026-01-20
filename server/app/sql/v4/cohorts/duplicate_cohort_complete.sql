@@ -50,29 +50,54 @@ original_cohort AS (
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
+default_call AS (
+    SELECT id as call_id
+    FROM calls
+    LIMIT 1
+),
 -- Insert title INTO names_resource table
 new_title_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT title || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at, updated_at, call_id)
+    SELECT title || ' Copy', NOW(), NOW(), dc.call_id
     FROM original_cohort
+    CROSS JOIN default_call dc
     WHERE title IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
+existing_description_resource AS (
+    SELECT d.id as description_id, d.description
+    FROM original_cohort oc
+    JOIN descriptions_resource d ON d.description = oc.description
+    WHERE oc.description IS NOT NULL AND oc.description != ''
+    LIMIT 1
+),
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at, updated_at, call_id)
+    SELECT description, NOW(), NOW(), dc.call_id
     FROM original_cohort
+    CROSS JOIN default_call dc
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+      AND NOT EXISTS (SELECT 1 FROM existing_description_resource)
     RETURNING id as description_id, description
 ),
+description_resource AS (
+    SELECT description_id, description FROM new_description_resource
+    UNION ALL
+    SELECT description_id, description FROM existing_description_resource
+    LIMIT 1
+),
+new_group AS (
+    INSERT INTO groups (created_at, updated_at)
+    VALUES (NOW(), NOW())
+    RETURNING id
+),
 new_cohort AS (
-    -- Create duplicate cohort without title, description, active columns
-    INSERT INTO cohort_artifact (created_at, updated_at)
-    SELECT NOW(), NOW()
-    FROM original_cohort
+    -- Create duplicate cohort with new group_id
+    INSERT INTO cohort_artifact (group_id, created_at, updated_at)
+    SELECT ng.id, NOW(), NOW()
+    FROM new_group ng
     RETURNING id
 ),
 -- Link cohort to title
@@ -92,11 +117,11 @@ link_cohort_description AS (
     INSERT INTO cohort_descriptions (cohort_id, description_id, created_at, updated_at)
     SELECT 
         nc.id,
-        ndr.description_id,
+        dr.description_id,
         NOW(),
         NOW()
     FROM new_cohort nc
-    CROSS JOIN new_description_resource ndr
+    CROSS JOIN description_resource dr
     ON CONFLICT (cohort_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link cohort active flag (set to false for duplicate)

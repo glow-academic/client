@@ -37,6 +37,7 @@ DECLARE
     v_actor_name text;
     is_create boolean;
     v_default_call_id uuid;
+    v_group_id uuid;
 BEGIN
     -- Determine if create or update
     is_create := (input_cohort_id IS NULL);
@@ -44,8 +45,12 @@ BEGIN
     -- Create or UPDATE cohort_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO cohort_artifact (created_at, updated_at)
+        INSERT INTO groups (created_at, updated_at)
         VALUES (NOW(), NOW())
+        RETURNING id INTO v_group_id;
+
+        INSERT INTO cohort_artifact (group_id, created_at, updated_at)
+        VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_cohort_id;
     ELSE
         -- UPDATE path
@@ -75,17 +80,17 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM cohort_names WHERE cohort_id = v_cohort_id;
-        DELETE FROM cohort_descriptions WHERE cohort_id = v_cohort_id;
-        DELETE FROM cohort_departments WHERE cohort_id = v_cohort_id;
-        DELETE FROM cohort_simulations WHERE cohort_id = v_cohort_id;
-        DELETE FROM cohort_simulation_positions WHERE cohort_id = v_cohort_id;
+        DELETE FROM cohort_names WHERE cohort_names.cohort_id = v_cohort_id;
+        DELETE FROM cohort_descriptions WHERE cohort_descriptions.cohort_id = v_cohort_id;
+        DELETE FROM cohort_departments WHERE cohort_departments.cohort_id = v_cohort_id;
+        DELETE FROM cohort_simulations WHERE cohort_simulations.cohort_id = v_cohort_id;
+        DELETE FROM cohort_simulation_positions WHERE cohort_simulation_positions.cohort_id = v_cohort_id;
         -- Update existing active flag if it exists
         UPDATE cohort_flags SET
             flag_id = COALESCE(api_save_cohort_v4.active_flag_id, cohort_flags.flag_id),
             value = CASE WHEN api_save_cohort_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
-        WHERE cohort_id = v_cohort_id
+        WHERE cohort_flags.cohort_id = v_cohort_id
           ;
     END IF;
     
@@ -178,7 +183,6 @@ BEGIN
     insert_cohort_active_flag AS (
         INSERT INTO cohort_flags (cohort_id, flag_id, value, created_at, updated_at) SELECT x.cohort_id,
             COALESCE(x.active_flag_id, f.id),
-            'active'::type_cohort_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             NOW()
@@ -270,7 +274,7 @@ BEGIN
             false
         FROM params x
         CROSS JOIN upsert_simulation_positions usp
-        ON CONFLICT (cohort_id, simulation_position_id) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT cohort_simulation_positions_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     )
