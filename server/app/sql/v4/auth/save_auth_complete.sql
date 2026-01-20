@@ -45,14 +45,9 @@ CREATE TYPE types.i_save_auth_v4_auth_item AS (
 
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_save_auth_v4(
-    name_id uuid,
+    draft_id uuid,
     profile_id uuid,
-    input_auth_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL,
-    protocol_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    slug_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    auth_items types.i_save_auth_v4_auth_item[] DEFAULT ARRAY[]::types.i_save_auth_v4_auth_item[]
+    input_auth_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     auth_id uuid,
@@ -65,47 +60,107 @@ DECLARE
     v_auth_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_group_id uuid;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_protocol_ids uuid[];
+    v_slug_ids uuid[];
+    v_auth_items types.i_save_auth_v4_auth_item[];
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'Draft ID is required';
+    END IF;
+
+    SELECT d.group_id INTO v_group_id
+    FROM drafts d
+    WHERE d.id = draft_id;
+
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+    END IF;
+
+    SELECT dn.names_id INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id INTO v_active_flag_id
+    FROM draft_flags df
+    WHERE df.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT COALESCE(ARRAY_AGG(dp.protocols_id ORDER BY dp.created_at), ARRAY[]::uuid[])
+    INTO v_protocol_ids
+    FROM draft_protocols dp
+    WHERE dp.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(ds.slugs_id ORDER BY ds.created_at), ARRAY[]::uuid[])
+    INTO v_slug_ids
+    FROM draft_slugs ds
+    WHERE ds.draft_id = draft_id;
+
+    SELECT COALESCE(
+        ARRAY_AGG(
+            (dai.name, dai.description, dai.encrypted, dai.position, dai.active, dai.key_id)::types.i_save_auth_v4_auth_item
+            ORDER BY dai.position
+        ),
+        ARRAY[]::types.i_save_auth_v4_auth_item[]
+    )
+    INTO v_auth_items
+    FROM draft_auth_items dai
+    WHERE dai.draft_id = draft_id;
+
     -- Determine if create or update
     is_create := (input_auth_id IS NULL);
     
     -- Create or UPDATE auth_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO auths_resource (id)
-        VALUES (uuidv7())
+        INSERT INTO auths_resource (id, group_id)
+        VALUES (uuidv7(), v_group_id)
         RETURNING id INTO v_auth_id;
     ELSE
         -- UPDATE path
         v_auth_id := input_auth_id;
         UPDATE auths_resource
-        SET updated_at = NOW()
+        SET updated_at = NOW(),
+            group_id = v_group_id
         WHERE id = v_auth_id;
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
     
     -- Validate protocol_ids exist
-    IF COALESCE(array_length(protocol_ids, 1), 0) > 0 THEN
-        IF NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = ANY(protocol_ids)) THEN
+    IF COALESCE(array_length(v_protocol_ids, 1), 0) > 0 THEN
+        IF NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = ANY(v_protocol_ids)) THEN
             RAISE EXCEPTION 'One or more protocol resources not found';
         END IF;
     END IF;
     
     -- Validate slug_ids exist
-    IF COALESCE(array_length(slug_ids, 1), 0) > 0 THEN
-        IF NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = ANY(slug_ids)) THEN
+    IF COALESCE(array_length(v_slug_ids, 1), 0) > 0 THEN
+        IF NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = ANY(v_slug_ids)) THEN
             RAISE EXCEPTION 'One or more slug resources not found';
         END IF;
     END IF;
@@ -119,8 +174,8 @@ BEGIN
         DELETE FROM auth_items WHERE auth_id = v_auth_id;
         -- Update existing active flag if it exists
         UPDATE auth_flags SET
-            flag_id = COALESCE(api_save_auth_v4.active_flag_id, auth_flags.flag_id),
-            value = CASE WHEN api_save_auth_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            flag_id = COALESCE(v_active_flag_id, auth_flags.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE auth_id = v_auth_id
           ;
@@ -131,12 +186,12 @@ BEGIN
     WITH params AS (
         SELECT
             v_auth_id AS auth_id,
-            name_id,
-            description_id,
-            active_flag_id,
-            COALESCE(protocol_ids, ARRAY[]::uuid[]) AS protocol_ids,
-            COALESCE(slug_ids, ARRAY[]::uuid[]) AS slug_ids,
-            COALESCE(auth_items, ARRAY[]::types.i_save_auth_v4_auth_item[]) AS auth_items,
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
+            COALESCE(v_protocol_ids, ARRAY[]::uuid[]) AS protocol_ids,
+            COALESCE(v_slug_ids, ARRAY[]::uuid[]) AS slug_ids,
+            COALESCE(v_auth_items, ARRAY[]::types.i_save_auth_v4_auth_item[]) AS auth_items,
             profile_id
     ),
     user_profile AS (

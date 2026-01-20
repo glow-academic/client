@@ -2215,13 +2215,11 @@ class PatchAuthDraftApiResponse(BaseModel):
 
 class ResolveDefaultIdpProfileSqlParams(BaseModel):
 
-    department_id: str
-    auth_mode: str
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.department_id,
-            self.auth_mode,
+            self.profile_id,
         )
 
 class ResolveDefaultIdpProfileSqlRow(BaseModel):
@@ -2234,8 +2232,7 @@ class ResolveDefaultIdpProfileSqlRow(BaseModel):
 
 class ResolveDefaultIdpProfileApiRequest(BaseModel):
 
-    department_id: str
-    auth_mode: str
+    pass
 
 class ResolveDefaultIdpProfileApiResponse(BaseModel):
 
@@ -2249,41 +2246,17 @@ class ResolveDefaultIdpProfileApiResponse(BaseModel):
 
 # Generated from: save_auth
 
-class ISaveAuthV4AuthItem(BaseModel):
-
-    name: str | None
-    description: str | None
-    encrypted: bool | None
-    position: int | None
-    active: bool | None
-    key_id: UUID | None
-
 class SaveAuthSqlParams(BaseModel):
 
-    name_id: UUID
+    draft_id: UUID
     profile_id: UUID
     input_auth_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    protocol_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    slug_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_items: list[ISaveAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
-        # Convert auth_items composite array to tuples for asyncpg
-        auth_items_tuples = [
-            (conn.name, conn.description, conn.encrypted, conn.position, conn.active, conn.key_id)
-            for conn in (self.auth_items or [])
-        ]
         return (
-            self.name_id,
+            self.draft_id,
             self.profile_id,
             self.input_auth_id,
-            self.description_id,
-            self.active_flag_id,
-            self.protocol_ids,
-            self.slug_ids,
-            auth_items_tuples,
         )
 
 class SaveAuthSqlRow(BaseModel):
@@ -2293,13 +2266,8 @@ class SaveAuthSqlRow(BaseModel):
 
 class SaveAuthApiRequest(BaseModel):
 
-    name_id: UUID
+    draft_id: UUID
     input_auth_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    protocol_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    slug_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth_items: list[ISaveAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SaveAuthApiResponse(BaseModel):
 
@@ -4950,21 +4918,15 @@ class PatchDepartmentDraftApiResponse(BaseModel):
 
 class SaveDepartmentSqlParams(BaseModel):
 
-    name_id: UUID
-    active_flag_id: UUID
+    draft_id: UUID
     profile_id: UUID
     input_department_id: UUID | None = None
-    description_id: UUID | None = None
-    settings_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.active_flag_id,
+            self.draft_id,
             self.profile_id,
             self.input_department_id,
-            self.description_id,
-            self.settings_id,
         )
 
 class SaveDepartmentSqlRow(BaseModel):
@@ -4974,11 +4936,8 @@ class SaveDepartmentSqlRow(BaseModel):
 
 class SaveDepartmentApiRequest(BaseModel):
 
-    name_id: UUID
-    active_flag_id: UUID
+    draft_id: UUID
     input_department_id: UUID | None = None
-    description_id: UUID | None = None
-    settings_id: UUID | None = None
 
 class SaveDepartmentApiResponse(BaseModel):
 
@@ -8388,6 +8347,34 @@ class GetDepartmentsForOrgSyncApiResponse(BaseModel):
 
 
 
+# Generated from: get_setting_profiles_for_idp
+
+class GetSettingProfilesForIdpSqlParams(BaseModel):
+
+    pass
+
+class GetSettingProfilesForIdpSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    role: str | None = None
+    setting_id: UUID | None = None
+    department_id: UUID | None = None
+
+class GetSettingProfilesForIdpApiRequest(BaseModel):
+
+    pass
+
+class GetSettingProfilesForIdpApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    role: str | None = None
+    setting_id: UUID | None = None
+    department_id: UUID | None = None
+
+
+
 # Generated from: update_master_realm_ssl
 
 class UpdateMasterRealmSslSqlParams(BaseModel):
@@ -10896,31 +10883,15 @@ class PatchPersonaDraftApiResponse(BaseModel):
 
 class SavePersonaSqlParams(BaseModel):
 
-    name_id: UUID
-    color_id: UUID
-    icon_id: UUID
-    instructions_id: UUID
-    department_ids: list[UUID]
+    draft_id: UUID
     profile_id: UUID
-    example_ids: list[UUID]
-    field_ids: list[UUID]
     input_persona_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.color_id,
-            self.icon_id,
-            self.instructions_id,
-            self.department_ids,
+            self.draft_id,
             self.profile_id,
-            self.example_ids,
-            self.field_ids,
             self.input_persona_id,
-            self.description_id,
-            self.active_flag_id,
         )
 
 class SavePersonaSqlRow(BaseModel):
@@ -10930,16 +10901,8 @@ class SavePersonaSqlRow(BaseModel):
 
 class SavePersonaApiRequest(BaseModel):
 
-    name_id: UUID
-    color_id: UUID
-    icon_id: UUID
-    instructions_id: UUID
-    department_ids: list[UUID]
-    example_ids: list[UUID]
-    field_ids: list[UUID]
+    draft_id: UUID
     input_persona_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
 
 class SavePersonaApiResponse(BaseModel):
 
@@ -22079,6 +22042,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentsForOrgSyncApiRequest",
         "GetDepartmentsForOrgSyncApiResponse",
     ),
+    "app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql": (
+        "GetSettingProfilesForIdpSqlParams",
+        "GetSettingProfilesForIdpSqlRow",
+        "GetSettingProfilesForIdpApiRequest",
+        "GetSettingProfilesForIdpApiResponse",
+    ),
     "app/sql/v4/keycloak/update_master_realm_ssl_complete.sql": (
         "UpdateMasterRealmSslSqlParams",
         "UpdateMasterRealmSslSqlRow",
@@ -24057,6 +24026,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -17,12 +17,9 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_save_department_v4(
-    name_id uuid,
-    active_flag_id uuid,
+    draft_id uuid,
     profile_id uuid,
-    input_department_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    settings_id uuid DEFAULT NULL
+    input_department_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     department_id uuid,
@@ -36,17 +33,49 @@ DECLARE
     v_actor_name text;
     v_group_id uuid;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
+    v_settings_id uuid;
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'Draft ID is required';
+    END IF;
+
+    SELECT d.group_id INTO v_group_id
+    FROM drafts d
+    WHERE d.id = draft_id;
+
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+    END IF;
+
+    SELECT dn.names_id INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id INTO v_active_flag_id
+    FROM draft_flags df
+    WHERE df.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT ds.settings_id INTO v_settings_id
+    FROM draft_settings ds
+    WHERE ds.draft_id = draft_id
+    LIMIT 1;
+
     -- Determine if create or update
     is_create := (input_department_id IS NULL);
     
     -- Create or UPDATE department_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path: Create group first, then department
-        INSERT INTO groups (created_at, updated_at)
-        VALUES (NOW(), NOW())
-        RETURNING id INTO v_group_id;
-        
         INSERT INTO department_artifact (group_id, created_at, updated_at)
         VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_department_id;
@@ -59,16 +88,20 @@ BEGIN
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
@@ -77,8 +110,8 @@ BEGIN
         DELETE FROM department_descriptions WHERE department_id = v_department_id;
         -- Update existing active flag if it exists
         UPDATE department_flags SET
-            flag_id = COALESCE(api_save_department_v4.active_flag_id, department_flags.flag_id),
-            value = CASE WHEN api_save_department_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            flag_id = COALESCE(v_active_flag_id, department_flags.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE department_id = v_department_id
           ;
@@ -89,10 +122,10 @@ BEGIN
     WITH params AS (
         SELECT
             v_department_id AS department_id,
-            name_id,
-            description_id,
-            active_flag_id,
-            COALESCE(settings_id, NULL::uuid) AS settings_id,
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
+            COALESCE(v_settings_id, NULL::uuid) AS settings_id,
             profile_id
     ),
     user_profile AS (

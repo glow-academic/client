@@ -1,17 +1,16 @@
--- Resolve profile ID, primary email, name, and role FROM department-id + auth-mode
--- For use by custom OIDC Identity Provider
+-- Resolve profile ID, primary email, name, and role FROM profile_id
+-- For use by custom OIDC Identity Provider (default-idp)
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Drop function if exists (handle signature changes)
 DO $$ 
 BEGIN
-    DROP FUNCTION IF EXISTS api_resolve_default_idp_profile_v4(text, text);
+    DROP FUNCTION IF EXISTS api_resolve_default_idp_profile_v4(uuid);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 -- Create function
 CREATE OR REPLACE FUNCTION api_resolve_default_idp_profile_v4(
-    department_id text,
-    auth_mode text
+    profile_id uuid
 )
 RETURNS TABLE (
     profile_id uuid,
@@ -23,81 +22,19 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    WITH resolve_profile_from_department AS (
+    WITH resolved_profile AS (
         SELECT 
-            CASE 
-                WHEN auth_mode = 'default-guest' THEN
-                    COALESCE(
-                        -- Try department-specific settings first (only if department_id is provided)
-                        CASE 
-                            WHEN department_id IS NOT NULL AND department_id != '' THEN
-                                (SELECT sp.profile_id
-                                 FROM setting_artifact s
-                                 JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                                 JOIN setting_profiles sp ON sp.setting_id = s.id AND sp.active = true
-                                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                                 JOIN roles_resource r ON r.id = pr.role_id
-                                 WHERE ds.department_id = department_id::uuid 
-                                   AND r.role = 'guest'::profile_role
-                                   AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
-                                 LIMIT 1)
-                            ELSE NULL::uuid
-                        END,
-                        -- Fallback to default settings (no department links) - always try this
-                        (SELECT sp.profile_id
-                         FROM setting_artifact s
-                         JOIN setting_profiles sp ON sp.setting_id = s.id AND sp.active = true
-                         JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                         JOIN roles_resource r ON r.id = pr.role_id
-                         WHERE r.role = 'guest'::profile_role
-                           AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
-                           AND NOT EXISTS (
-                               SELECT 1 FROM department_settings ds 
-                               WHERE ds.settings_id = s.id AND ds.active = true
-                           )
-                         LIMIT 1)
-                    )
-                WHEN auth_mode = 'default-account' THEN
-                    COALESCE(
-                        -- Try department-specific settings first (only if department_id is provided)
-                        CASE 
-                            WHEN department_id IS NOT NULL AND department_id != '' THEN
-                                (SELECT sp.profile_id
-                                 FROM setting_artifact s
-                                 JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                                 JOIN setting_profiles sp ON sp.setting_id = s.id AND sp.active = true
-                                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                                 JOIN roles_resource r ON r.id = pr.role_id
-                                 WHERE ds.department_id = department_id::uuid 
-                                   AND r.role IN ('admin'::profile_role, 'superadmin'::profile_role)
-                                   AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
-                                 LIMIT 1)
-                            ELSE NULL::uuid
-                        END,
-                        -- Fallback to default settings (no department links) - always try this
-                        (SELECT sp.profile_id
-                         FROM setting_artifact s
-                         JOIN setting_profiles sp ON sp.setting_id = s.id AND sp.active = true
-                         JOIN profile_roles pr ON pr.profile_id = sp.profile_id
-                         JOIN roles_resource r ON r.id = pr.role_id
-                         WHERE r.role IN ('admin'::profile_role, 'superadmin'::profile_role)
-                           AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
-                           AND NOT EXISTS (
-                               SELECT 1 FROM department_settings ds 
-                               WHERE ds.settings_id = s.id AND ds.active = true
-                           )
-                         LIMIT 1)
-                    )
-            END as resolved_profile_id
+            profile_id as resolved_profile_id
+        WHERE profile_id IS NOT NULL
     ),
     profile_with_details AS (
         SELECT 
-            rpfd.resolved_profile_id as profile_id,
+            rp.resolved_profile_id as profile_id,
             -- Get primary email (must match exactly what's in profile_emails table)
             (SELECT e.email 
              FROM profile_emails pe 
              JOIN emails_resource e ON pe.email_id = e.id 
-             WHERE pe.profile_id = rpfd.resolved_profile_id 
+             WHERE pe.profile_id = rp.resolved_profile_id 
                AND pe.is_primary = true 
                AND pe.active = true 
              LIMIT 1) as primary_email,
@@ -105,24 +42,39 @@ AS $$
             (SELECT n.name 
              FROM profile_names pn 
              JOIN names_resource n ON pn.name_id = n.id 
-             WHERE pn.profile_id = rpfd.resolved_profile_id 
+             WHERE pn.profile_id = rp.resolved_profile_id 
                AND pn.type = 'first' 
              LIMIT 1) as first_name,
             -- Get last name
             (SELECT n2.name 
              FROM profile_names pn2 
              JOIN names_resource n2 ON pn2.name_id = n2.id 
-             WHERE pn2.profile_id = rpfd.resolved_profile_id 
+             WHERE pn2.profile_id = rp.resolved_profile_id 
                AND pn2.type = 'last' 
              LIMIT 1) as last_name,
             -- Get role
             (SELECT r.role 
              FROM profile_roles pr 
              JOIN roles_resource r ON pr.role_id = r.id 
-             WHERE pr.profile_id = rpfd.resolved_profile_id 
+             WHERE pr.profile_id = rp.resolved_profile_id 
              LIMIT 1) as role
-        FROM resolve_profile_from_department rpfd
-        WHERE rpfd.resolved_profile_id IS NOT NULL
+        FROM resolved_profile rp
+        WHERE rp.resolved_profile_id IS NOT NULL
+          AND EXISTS (
+              SELECT 1
+              FROM setting_profiles sp
+              JOIN setting_artifact s ON s.id = sp.setting_id
+              WHERE sp.profile_id = rp.resolved_profile_id
+                AND sp.active = true
+                AND EXISTS (
+                    SELECT 1
+                    FROM setting_flags sf
+                    JOIN flags_resource f ON sf.flag_id = f.id
+                    WHERE sf.setting_id = s.id
+                      AND f.name = 'active'
+                      AND sf.value = true
+                )
+          )
     )
     SELECT 
         profile_id,

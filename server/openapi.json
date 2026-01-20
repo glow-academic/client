@@ -24172,35 +24172,13 @@
             }
           },
           {
-            "name": "mode",
+            "name": "profile_id",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Mode"
-            }
-          },
-          {
-            "name": "department_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Department Id"
+              "type": "string",
+              "format": "uuid",
+              "title": "Profile Id"
             }
           }
         ],
@@ -51838,87 +51816,6 @@
           "target_field"
         ],
         "title": "IProcessDocumentCsvV4ColumnMapping"
-      },
-      "ISaveAuthV4AuthItem": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "encrypted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Encrypted"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "encrypted",
-          "position",
-          "active",
-          "key_id"
-        ],
-        "title": "ISaveAuthV4AuthItem"
       },
       "ISaveParameterV4FieldConnection": {
         "properties": {
@@ -93194,10 +93091,10 @@
       },
       "SaveAuthApiRequest": {
         "properties": {
-          "name_id": {
+          "draft_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Name Id"
+            "title": "Draft Id"
           },
           "input_auth_id": {
             "anyOf": [
@@ -93210,79 +93107,11 @@
               }
             ],
             "title": "Input Auth Id"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "protocol_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Protocol Ids"
-          },
-          "slug_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Slug Ids"
-          },
-          "auth_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ISaveAuthV4AuthItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Items"
           }
         },
         "type": "object",
         "required": [
-          "name_id"
+          "draft_id"
         ],
         "title": "SaveAuthApiRequest"
       },
@@ -93372,15 +93201,10 @@
       },
       "SaveDepartmentApiRequest": {
         "properties": {
-          "name_id": {
+          "draft_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Name Id"
-          },
-          "active_flag_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Active Flag Id"
+            "title": "Draft Id"
           },
           "input_department_id": {
             "anyOf": [
@@ -93393,36 +93217,11 @@
               }
             ],
             "title": "Input Department Id"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "settings_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Id"
           }
         },
         "type": "object",
         "required": [
-          "name_id",
-          "active_flag_id"
+          "draft_id"
         ],
         "title": "SaveDepartmentApiRequest"
       },
@@ -94310,49 +94109,10 @@
       },
       "SavePersonaApiRequest": {
         "properties": {
-          "name_id": {
+          "draft_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Name Id"
-          },
-          "color_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Color Id"
-          },
-          "icon_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Icon Id"
-          },
-          "instructions_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Instructions Id"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "example_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Example Ids"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Field Ids"
+            "title": "Draft Id"
           },
           "input_persona_id": {
             "anyOf": [
@@ -94365,41 +94125,11 @@
               }
             ],
             "title": "Input Persona Id"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
           }
         },
         "type": "object",
         "required": [
-          "name_id",
-          "color_id",
-          "icon_id",
-          "instructions_id",
-          "department_ids",
-          "example_ids",
-          "field_ids"
+          "draft_id"
         ],
         "title": "SavePersonaApiRequest"
       },

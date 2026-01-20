@@ -1318,119 +1318,30 @@ def get_idp_base_url() -> str:
     return get_idp_public_url()
 
 
-async def sync_default_idp(kc_admin: Any) -> None:
-    """Sync default-idp Identity Provider to master realm.
-    
-    This IdP handles guest and default-account authentication flows.
-    It's hidden from the login page and only accessible via kc_idp_hint.
-    
-    Args:
-        kc_admin: KeycloakAdmin instance (must be in master realm)
-    """
-    try:
-        # Ensure we're in master realm
-        kc_admin.change_current_realm(realm_name="master")
-        
-        # Get IdP URLs - public for browser redirects, internal for server-to-server calls
-        idp_public_url = get_idp_public_url()  # Used in authorizationUrl (browser redirect)
-        idp_internal_url = get_idp_internal_url()  # Used in tokenUrl/jwksUrl (server-to-server)
-        
-        # Generate or retrieve client secret (should be stored securely in production)
-        # For now, use AUTH_SECRET as the client secret (shared secret between Keycloak and IdP)
-        client_secret = os.getenv("AUTH_SECRET")
-        if not client_secret:
-            logger.warning("AUTH_SECRET not found, cannot create default-idp")
-            return
-        
-        # Legacy single default-idp (kept for backward compatibility)
-        # Uses mode=guest as default (can be overridden via state token)
-        payload = {
-            "alias": "default-idp",
-            "providerId": "oidc",
-            "displayName": "Default Account / Guest",
-            "enabled": True,
-            "trustEmail": True,
-            "hideOnLogin": False,  # Must be False so it appears in social.providers for theme rendering
-            "config": {
-                "authorizationUrl": f"{idp_public_url}/authorize?mode=guest",  # Browser-accessible URL
-                "tokenUrl": f"{idp_internal_url}/token",  # Server-to-server URL
-                "jwksUrl": f"{idp_internal_url}/jwks",  # Server-to-server URL
-                "issuer": idp_public_url,  # Issuer should match public URL
-                "clientId": "keycloak-broker",  # Keycloak acts as client
-                "clientSecret": client_secret,
-                "useJwksUrl": "true",
-                "syncMode": "FORCE",
-            }
-        }
-        
-        # Create or update IdP
-        try:
-            kc_admin.get_idp(idp_alias="default-idp")
-            # IdP exists, update it
-            kc_admin.update_idp(idp_alias="default-idp", payload=payload)
-            logger.info("✅ Updated default-idp Identity Provider")
-        except Exception:
-            # IdP doesn't exist, create it
-            kc_admin.create_idp(payload=payload)
-            logger.info("✅ Created default-idp Identity Provider")
-    except Exception as e:
-        logger.warning(f"Failed to sync default-idp: {e}", exc_info=True)
-
-
-async def sync_default_idp_for_department(
-    department_id: str | None,
-    mode: str,  # "guest" or "default-account"
+async def sync_default_idp_for_profile(
+    profile_id: str,
+    profile_name: str | None,
     kc_admin: Any,
 ) -> str:
-    """Sync a default-idp instance for a specific department/mode combination.
+    """Sync a default-idp instance for a specific profile.
     
-    Returns the IdP alias (e.g., "default-idp-guest-dept-123" or "default-idp-default-platform")
-    
-    All IdP instances use the same OIDC endpoints (/default-idp/authorize, etc.)
-    The state token encodes department_id + mode, so backend can differentiate.
-    
-    Args:
-        department_id: Department ID (UUID string) or None for platform-level
-        mode: "guest" or "default-account"
-        kc_admin: KeycloakAdmin instance (must be in master realm)
-    
-    Returns:
-        IdP alias string
+    Each profile gets its own IdP alias: default-idp-profile-{profile_id}.
     """
     try:
-        # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
         
-        # Generate alias based on department and mode
-        if department_id:
-            alias = f"default-idp-{mode}-dept-{department_id}"
-            display_name = f"Default Account / Guest - {mode} - Department {department_id}"
-        else:
-            alias = f"default-idp-{mode}-platform"
-            display_name = f"Default Account / Guest - {mode} - Platform"
+        alias = f"default-idp-profile-{profile_id}"
+        display_name = profile_name or f"Default Profile {profile_id}"
         
-        # Get IdP URLs - public for browser redirects, internal for server-to-server calls
-        idp_public_url = get_idp_public_url()  # Used in authorizationUrl (browser redirect)
-        idp_internal_url = get_idp_internal_url()  # Used in tokenUrl/jwksUrl (server-to-server)
+        idp_public_url = get_idp_public_url()
+        idp_internal_url = get_idp_internal_url()
         
-        # Generate or retrieve client secret (should be stored securely in production)
         client_secret = os.getenv("AUTH_SECRET")
         if not client_secret:
             logger.warning(f"AUTH_SECRET not found, cannot create {alias}")
             return alias
         
-        # Extract mode and department_id from alias to pass as query params
-        # This allows the /authorize endpoint to know which flow to use
-        # Format: default-idp-{mode}-dept-{department_id} or default-idp-{mode}-platform
-        mode_param = "guest" if "guest" in alias else "default-account"
-        dept_param = department_id if department_id else ""
-        
-        # Build authorizationUrl with mode and department_id as query params
-        # Keycloak will append its own state parameter, so we use & to chain params
-        # This URL must be accessible from the browser
-        auth_url = f"{idp_public_url}/authorize?mode={mode_param}"
-        if dept_param:
-            auth_url += f"&department_id={dept_param}"
+        auth_url = f"{idp_public_url}/authorize?profile_id={profile_id}"
         
         payload = {
             "alias": alias,
@@ -1438,34 +1349,34 @@ async def sync_default_idp_for_department(
             "displayName": display_name,
             "enabled": True,
             "trustEmail": True,
-            "hideOnLogin": False,  # Must be False so it appears in social.providers for theme rendering
+            "hideOnLogin": False,
             "config": {
-                "authorizationUrl": auth_url,  # Browser-accessible URL (includes mode and department_id as query params)
-                "tokenUrl": f"{idp_internal_url}/token",  # Server-to-server URL
-                "jwksUrl": f"{idp_internal_url}/jwks",  # Server-to-server URL
-                "issuer": idp_public_url,  # Issuer should match public URL
-                "clientId": "keycloak-broker",  # Keycloak acts as client
+                "authorizationUrl": auth_url,
+                "tokenUrl": f"{idp_internal_url}/token",
+                "jwksUrl": f"{idp_internal_url}/jwks",
+                "issuer": idp_public_url,
+                "clientId": "keycloak-broker",
                 "clientSecret": client_secret,
                 "useJwksUrl": "true",
                 "syncMode": "FORCE",
             }
         }
         
-        # Create or update IdP
         try:
             kc_admin.get_idp(idp_alias=alias)
-            # IdP exists, update it
             kc_admin.update_idp(idp_alias=alias, payload=payload)
             logger.info(f"✅ Updated {alias} Identity Provider")
         except Exception:
-            # IdP doesn't exist, create it
             kc_admin.create_idp(payload=payload)
             logger.info(f"✅ Created {alias} Identity Provider")
         
         return alias
     except Exception as e:
-        logger.warning(f"Failed to sync {alias if 'alias' in locals() else 'default-idp'}: {e}", exc_info=True)
-        return alias if 'alias' in locals() else "default-idp"
+        logger.warning(
+            f"Failed to sync default-idp for profile {profile_id}: {e}",
+            exc_info=True,
+        )
+        return alias if "alias" in locals() else f"default-idp-profile-{profile_id}"
 
 
 async def sync_identity_providers(
@@ -1476,9 +1387,8 @@ async def sync_identity_providers(
     
     - Realm-level: Auths from default settings (platform login) - alias: slug
     - Department-scoped: Auths from department settings - alias: auth_{slug}_{auth_id} (1:1 mapping)
-    - Default-idp: Custom OIDC IdP instances for guest/default-account flows
-      - Platform-level: default-idp-guest-platform, default-idp-default-platform
-      - Department-level: default-idp-guest-dept-{id}, default-idp-default-dept-{id}
+    - Default-idp: Custom OIDC IdP instances per setting profile
+      - Alias format: default-idp-profile-{profile_id}
     
     All IdPs have hideOnLogin=False so they appear in social.providers for theme filtering.
     Theme controls visibility based on department selection and authorization checks.
@@ -1493,53 +1403,30 @@ async def sync_identity_providers(
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
         
-        # Step 0: Sync default-idp instances (custom OIDC IdP for guest/default-account)
-        # Strategy: Only create platform-level instances if there are 0 departments
-        # Otherwise, only create department-level instances
-        logger.info("Syncing default-idp Identity Provider instances...")
+        # Step 0: Sync default-idp instances (custom OIDC IdP per profile)
+        logger.info("Syncing default-idp Identity Provider instances (per profile)...")
         
-        # Check if departments exist
         async with pool.acquire() as conn:
-            dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
-            dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
+            profiles_sql = load_sql("app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql")
+            profiles_is_function, profiles_function_name, profiles_schema = _detect_function_in_sql(profiles_sql)
             
-            if dept_is_function and dept_function_name:
-                dept_function_call_sql = f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
-                departments = await conn.fetch(dept_function_call_sql)
+            if profiles_is_function and profiles_function_name:
+                profiles_call_sql = f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
+                profile_rows = await conn.fetch(profiles_call_sql)
                 
-                if len(departments) == 0:
-                    # No departments: create platform-level default-idp instances only
-                    logger.info("No departments found - creating platform-level default-idp instances")
-                    await sync_default_idp_for_department(None, "guest", kc_admin)
-                    await sync_default_idp_for_department(None, "default-account", kc_admin)
-                else:
-                    # Departments exist: create department-level default-idp instances only
-                    logger.info(f"Found {len(departments)} departments - creating department-level default-idp instances")
+                seen_profiles: set[str] = set()
+                for profile_row in profile_rows:
+                    profile = dict(profile_row)
+                    profile_id = str(profile["profile_id"])
+                    profile_name = profile.get("profile_name")
                     
-                    # Get SQL for checking auth providers per department
-                    auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
-                    auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
+                    if profile_id in seen_profiles:
+                        continue
+                    seen_profiles.add(profile_id)
                     
-                    if not auths_is_function or not auths_function_name:
-                        raise ValueError("Expected function definition in get_auths_for_org_complete.sql")
-                    
-                    for dept_row in departments:
-                        dept = dict(dept_row)
-                        dept_id = str(dept["department_id"])
-                        
-                        # Always sync guest IdP
-                        await sync_default_idp_for_department(dept_id, "guest", kc_admin)
-                        
-                        # Only sync default-account IdP if department has 0 auth providers
-                        import uuid
-                        auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
-                        dept_auths = await conn.fetch(auths_function_call_sql, uuid.UUID(dept_id))
-                        
-                        if len(dept_auths) == 0:
-                            logger.info(f"Department {dept_id} has 0 auth providers - creating default-account IdP")
-                            await sync_default_idp_for_department(dept_id, "default-account", kc_admin)
-                        else:
-                            logger.info(f"Department {dept_id} has {len(dept_auths)} auth providers - skipping default-account IdP")
+                    await sync_default_idp_for_profile(profile_id, profile_name, kc_admin)
+            else:
+                raise ValueError("Expected function definition in get_setting_profiles_for_idp_complete.sql")
         
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
@@ -1697,26 +1584,17 @@ async def sync_identity_providers(
             existing_idps = kc_admin.get_idps()
             
             # Collect expected default-idp aliases (from Step 0 sync)
-            # Strategy: Platform-level only if 0 departments, otherwise department-level only
             expected_default_idp_aliases: set[str] = set()
             async with pool.acquire() as conn:
-                dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
-                dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
-                if dept_is_function and dept_function_name:
-                    dept_function_call_sql = f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
-                    departments = await conn.fetch(dept_function_call_sql)
-                    
-                    if len(departments) == 0:
-                        # No departments: expect platform-level instances only
-                        expected_default_idp_aliases.add("default-idp-guest-platform")
-                        expected_default_idp_aliases.add("default-idp-default-account-platform")
-                    else:
-                        # Departments exist: expect department-level instances only
-                        for dept_row in departments:
-                            dept = dict(dept_row)
-                            dept_id = str(dept["department_id"])
-                            expected_default_idp_aliases.add(f"default-idp-guest-dept-{dept_id}")
-                            expected_default_idp_aliases.add(f"default-idp-default-account-dept-{dept_id}")
+                profiles_sql = load_sql("app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql")
+                profiles_is_function, profiles_function_name, profiles_schema = _detect_function_in_sql(profiles_sql)
+                if profiles_is_function and profiles_function_name:
+                    profiles_call_sql = f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
+                    profile_rows = await conn.fetch(profiles_call_sql)
+                    for profile_row in profile_rows:
+                        profile = dict(profile_row)
+                        profile_id = str(profile["profile_id"])
+                        expected_default_idp_aliases.add(f"default-idp-profile-{profile_id}")
             
             # Get expected realm-level slugs
             async with pool.acquire() as conn:
@@ -1765,8 +1643,18 @@ async def sync_identity_providers(
             for idp in existing_idps:
                 idp_alias = idp.get("alias", "")
                 
-                # Skip default-idp instances (they're managed separately and should always exist if synced)
-                if idp_alias.startswith("default-idp-"):
+                # Handle default-idp instances separately
+                if idp_alias.startswith("default-idp-profile-"):
+                    if idp_alias not in expected_default_idp_aliases:
+                        try:
+                            kc_admin.delete_idp(idp_alias=idp_alias)
+                            logger.info(f"🗑️  Deleted obsolete default-idp: {idp_alias}")
+                        except Exception as delete_e:
+                            error_str = str(delete_e).lower()
+                            if "not found" in error_str or "404" in error_str:
+                                pass
+                            else:
+                                logger.warning(f"Failed to delete IdP '{idp_alias}': {delete_e}")
                     continue
                 
                 # Check if it's realm-level or department-scoped

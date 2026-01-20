@@ -33,6 +33,8 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     platform_providers: list[str] = []
     all_idp_aliases: set[str] = set()
     default_idp_aliases: set[str] = set()  # Track default-idp aliases separately
+    profile_aliases_by_dept: dict[str, list[str]] = {}
+    platform_profile_aliases: list[str] = []
     
     async with pool.acquire() as conn:
         # Step 1: Get ALL realm-level IdP aliases (for platform fallback)
@@ -45,7 +47,32 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
             platform_providers = [str(p["slug"]) for p in realm_level_providers]
             all_idp_aliases.update(platform_providers)
         
-        # Step 2: Get ALL departments with titles
+        # Step 2: Get all default-idp profile aliases (per settings)
+        profiles_sql = load_sql("app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql")
+        profiles_is_function, profiles_function_name, profiles_schema = _detect_function_in_sql(profiles_sql)
+        if profiles_is_function and profiles_function_name:
+            profiles_call_sql = f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
+            profile_rows = await conn.fetch(profiles_call_sql)
+            
+            for profile_row in profile_rows:
+                profile = dict(profile_row)
+                profile_id = str(profile["profile_id"])
+                department_id = profile.get("department_id")
+                alias = f"default-idp-profile-{profile_id}"
+                
+                default_idp_aliases.add(alias)
+                all_idp_aliases.add(alias)
+                
+                if department_id:
+                    dept_key = str(department_id)
+                    dept_aliases = profile_aliases_by_dept.setdefault(dept_key, [])
+                    if alias not in dept_aliases:
+                        dept_aliases.append(alias)
+                else:
+                    if alias not in platform_profile_aliases:
+                        platform_profile_aliases.append(alias)
+        
+        # Step 3: Get ALL departments with titles
         dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
         is_function, function_name, schema = _detect_function_in_sql(dept_sql)
         
@@ -55,8 +82,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
             departments = await conn.fetch(function_call_sql)
             has_departments = len(departments) > 0
             
-            # Step 3: For each department, get its allowed IdPs and determine default-idp availability
-            # Only process departments if they exist (no platform-level fallback)
+            # Step 4: For each department, get its allowed IdPs and profile-default IdPs
             for dept_row in departments:
                 dept = dict(dept_row)
                 dept_id = str(dept["department_id"])
@@ -73,85 +99,34 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
                 auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql)
                 
                 dept_aliases: list[str] = []
+                dept_aliases_set: set[str] = set()
                 if auths_is_function and auths_function_name:
                     import uuid
                     auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
                     org_providers = await conn.fetch(auths_function_call_sql, uuid.UUID(dept_id))
                     
                     # Build department-scoped IdP aliases (auth_{slug}_{auth_id})
-                    dept_aliases = [f"auth_{p['slug']}_{p['id']}" for p in org_providers]
+                    for provider in org_providers:
+                        alias = f"auth_{provider['slug']}_{provider['id']}"
+                        if alias not in dept_aliases_set:
+                            dept_aliases.append(alias)
+                            dept_aliases_set.add(alias)
                     all_idp_aliases.update(dept_aliases)
                 
-                # Check if default-idp instances should be available for this department
-                # Use check_login_authorization to determine availability
-                check_auth_sql = load_sql("app/sql/v4/profile/check_login_authorization_complete.sql")
-                check_auth_is_function, check_auth_function_name, check_auth_schema = _detect_function_in_sql(check_auth_sql)
+                # Add default-idp profile aliases for this department
+                for alias in profile_aliases_by_dept.get(dept_id, []):
+                    if alias not in dept_aliases_set:
+                        dept_aliases.append(alias)
+                        dept_aliases_set.add(alias)
                 
-                if check_auth_is_function and check_auth_function_name:
-                    import uuid
-
-                    # Pass department_id as text (SQL function accepts text, converts to uuid internally)
-                    check_auth_function_call_sql = f'SELECT * FROM "{check_auth_schema}"."{check_auth_function_name}"($1)'
-                    auth_result = await conn.fetchrow(check_auth_function_call_sql, dept_id if dept_id else None)
-                    
-                    if auth_result:
-                        auth_data = dict(auth_result)
-                        guest_enabled = auth_data.get("guest_login_enabled", False)
-                        dept_auth_count = auth_data.get("department_auth_providers_count", 0) or 0
-                        active_dept_count = auth_data.get("active_departments_count", 0) or 0
-                        default_auth_count = auth_data.get("default_settings_auth_providers_count", 0) or 0
-                        depts_without_auth_count = auth_data.get("departments_without_auth_providers_count", 0) or 0
-                        
-                        # Add guest default-idp if guest login is enabled
-                        if guest_enabled:
-                            guest_alias = f"default-idp-guest-dept-{dept_id}"
-                            dept_aliases.append(guest_alias)
-                            default_idp_aliases.add(guest_alias)
-                            all_idp_aliases.add(guest_alias)
-                        
-                        # Add default-account default-idp if no other providers available
-                        # Logic matches check_login_authorization: default-account available when:
-                        # - No active departments, OR
-                        # - Department has no auth providers, OR
-                        # - Platform has no default auth providers and all departments have auth providers
-                        # Department-specific: available if department has no auth providers
-                        if dept_auth_count == 0:
-                            default_account_alias = f"default-idp-default-account-dept-{dept_id}"  # Match sync alias format
-                            dept_aliases.append(default_account_alias)
-                            default_idp_aliases.add(default_account_alias)
-                            all_idp_aliases.add(default_account_alias)
-                
-                # Department gets: department-scoped IdPs + default-idp instances
                 allowed_providers_by_dept[dept_id] = dept_aliases
         
-        # Step 4: Add platform-level default-idp instances ONLY if there are no departments
-        # If departments exist, we don't use platform-level instances (always use first department)
+        # Step 5: Add platform-level default-idp profile aliases ONLY if there are no departments
+        # If departments exist, we don't use platform-level instances
         if not has_departments:
-            check_auth_sql = load_sql("app/sql/v4/profile/check_login_authorization_complete.sql")
-            check_auth_is_function, check_auth_function_name, check_auth_schema = _detect_function_in_sql(check_auth_sql)
-            
-            if check_auth_is_function and check_auth_function_name:
-                check_auth_function_call_sql = f'SELECT * FROM "{check_auth_schema}"."{check_auth_function_name}"(NULL)'
-                auth_result = await conn.fetchrow(check_auth_function_call_sql)
-                
-                if auth_result:
-                    auth_data = dict(auth_result)
-                    guest_enabled = auth_data.get("guest_login_enabled", False)
-                    active_dept_count = auth_data.get("active_departments_count", 0) or 0
-                    default_auth_count = auth_data.get("default_settings_auth_providers_count", 0) or 0
-                    depts_without_auth_count = auth_data.get("departments_without_auth_providers_count", 0) or 0
-                    
-                    # Add platform-level guest default-idp if guest login is enabled
-                    if guest_enabled:
-                        platform_providers.append("default-idp-guest-platform")
-                        default_idp_aliases.add("default-idp-guest-platform")
-                        all_idp_aliases.add("default-idp-guest-platform")
-                    
-                    # Add platform-level default-account default-idp if appropriate
-                    if active_dept_count == 0 or (default_auth_count == 0 and depts_without_auth_count > 0):
-                        platform_providers.append("default-idp-default-account-platform")
-                        default_idp_aliases.add("default-idp-default-account-platform")
-                        all_idp_aliases.add("default-idp-default-account-platform")
+            for alias in platform_profile_aliases:
+                if alias not in platform_providers:
+                    platform_providers.append(alias)
     
     # Step 4: Generate FreeMarker file with department-based mapping
     # Use UPLOAD_FOLDER constant for consistent routing (works in Docker and local dev)

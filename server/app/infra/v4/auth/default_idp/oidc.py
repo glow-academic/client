@@ -4,13 +4,12 @@ import os
 import secrets
 import time
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (CheckLoginAuthorizationSqlParams,
-                           CheckLoginAuthorizationSqlRow,
-                           ResolveDefaultIdpProfileSqlParams,
+from app.sql.types import (ResolveDefaultIdpProfileSqlParams,
                            ResolveDefaultIdpProfileSqlRow, load_sql_query)
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
@@ -18,7 +17,6 @@ from fastapi.responses import RedirectResponse
 from jose import jwt
 
 from .jwks import get_key_id, get_private_key
-from .state import verify_state_token
 
 router = APIRouter()
 
@@ -68,10 +66,7 @@ async def authorize(
     state: str = Query(...),
     scope: str = Query("openid profile email"),
     nonce: str | None = Query(None),  # Extract nonce from Keycloak's authorization request
-    # Custom parameters passed via IdP authorizationUrl config
-    # Format: /authorize?mode=guest&department_id=... (Keycloak preserves these)
-    mode: str | None = Query(None),
-    department_id: str | None = Query(None),
+    profile_id: UUID = Query(...),
     conn: Annotated[asyncpg.Connection, Depends(get_db)] = None,
 ) -> RedirectResponse:
     """Authorization endpoint - handles Keycloak broker redirects."""
@@ -86,108 +81,18 @@ async def authorize(
                 detail=f"Unsupported response_type: {response_type}. Only 'code' is supported."
             )
         
-        # Extract mode and department_id from query params (preferred) or state token (fallback)
-        extracted_mode: str | None = mode
-        extracted_department_id: str | None = department_id
-        extracted_nonce: str | None = nonce  # Use nonce from Keycloak's request
-        
-        # If not in query params, try to extract from state token (backward compatibility)
-        if not extracted_mode:
-            try:
-                state_payload = verify_state_token(state)
-                extracted_mode = state_payload.get("mode")
-                if not extracted_department_id:
-                    extracted_department_id = state_payload.get("department_id")
-                if not extracted_nonce:
-                    extracted_nonce = state_payload.get("nonce")
-            except (jwt.ExpiredSignatureError, jwt.JWTError):
-                # State token is Keycloak's OAuth state, not our custom token
-                # Nonce should come from query parameter
-                pass
-        
-        # Require mode parameter
-        if not extracted_mode:
-            raise HTTPException(
-                status_code=400,
-                detail="Mode parameter is required. Ensure IdP authorizationUrl includes ?mode=guest or ?mode=default-account"
-            )
-        
         # Use nonce from Keycloak's request if provided, otherwise generate one
         # Keycloak typically sends nonce for OIDC flows, but we'll handle both cases
-        if not extracted_nonce:
+        if not nonce:
             # Generate nonce if Keycloak didn't provide one (shouldn't happen in normal OIDC flow)
-            extracted_nonce = secrets.token_urlsafe(32)
-        
-        # Use extracted values
-        department_id = extracted_department_id
-        mode = extracted_mode
-        nonce = extracted_nonce  # Use nonce from Keycloak's request (or generated fallback)
-        
-        # Map mode to auth_mode for SQL function
-        # mode uses "guest" or "default-account", SQL expects "default-guest" or "default-account"
-        auth_mode = "default-guest" if mode == "guest" else "default-account"
-        
-        # Validate authorization using existing SQL function
-        sql_query = load_sql_query("app/sql/v4/profile/check_login_authorization_complete.sql")
-        auth_params = CheckLoginAuthorizationSqlParams(
-            department_id=department_id if department_id else None
-        )
-        sql_params = auth_params.to_tuple()
-        
-        auth_result = await execute_sql_typed(
-            conn,
-            "app/sql/v4/profile/check_login_authorization_complete.sql",
-            params=auth_params,
-        )
-        auth_data = cast(CheckLoginAuthorizationSqlRow, auth_result)
-        
-        # Check authorization based on mode
-        if mode == "guest":
-            if not auth_data.guest_login_enabled:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Guest login is not enabled for this configuration."
-                )
-        elif mode == "default-account":
-            active_dept_count = auth_data.active_departments_count or 0
-            dept_auth_count = auth_data.department_auth_providers_count or 0
-            default_auth_count = auth_data.default_settings_auth_providers_count or 0
-            depts_without_auth_count = auth_data.departments_without_auth_providers_count or 0
-            department_exists = auth_data.department_exists or False
-            
-            if active_dept_count == 0:
-                pass  # Allow (initial setup)
-            elif active_dept_count > 0:
-                if not department_id:
-                    if default_auth_count > 0:
-                        raise HTTPException(
-                            status_code=403,
-                            detail="Default account login not available. Please select a department or use an authentication provider."
-                        )
-                    if depts_without_auth_count == 0:
-                        raise HTTPException(
-                            status_code=403,
-                            detail="Default account login not available. Please select a department or use an authentication provider."
-                        )
-                else:
-                    if not department_exists:
-                        raise HTTPException(
-                            status_code=400,
-                            detail="Invalid department specified."
-                        )
-                    if dept_auth_count > 0:
-                        raise HTTPException(
-                            status_code=403,
-                            detail="Default account login not available for this department. Please use an authentication provider."
-                        )
-        else:
-            raise HTTPException(status_code=400, detail=f"Invalid mode: {mode}")
+            nonce = secrets.token_urlsafe(32)
         
         # Resolve profile using new SQL function
+        sql_query = load_sql_query("app/sql/v4/auth/resolve_default_idp_profile_complete.sql")
         profile_params = ResolveDefaultIdpProfileSqlParams(
-            department_id=department_id if department_id else "",
-            auth_mode=auth_mode,
+            profile_id=profile_id,
         )
+        sql_params = profile_params.to_tuple()
         
         profile_result = await execute_sql_typed(
             conn,
@@ -198,7 +103,7 @@ async def authorize(
         if not profile_result:
             raise HTTPException(
                 status_code=404,
-                detail="Profile not found for this department and mode combination."
+                detail="Profile not found for this default IdP login."
             )
         
         profile_data = cast(ResolveDefaultIdpProfileSqlRow, profile_result)
@@ -206,7 +111,7 @@ async def authorize(
         if not profile_data.profile_id or not profile_data.primary_email:
             raise HTTPException(
                 status_code=404,
-                detail="Profile or email not found for this department and mode combination."
+                detail="Profile or email not found for this default IdP login."
             )
         
         # Generate authorization code

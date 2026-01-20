@@ -17,11 +17,9 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_save_provider_v4(
-    name_id uuid,
+    draft_id uuid,
     profile_id uuid,
-    input_provider_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL
+    input_provider_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     provider_id uuid,
@@ -35,18 +33,42 @@ DECLARE
     v_actor_name text;
     v_group_id uuid;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_active_flag_id uuid;
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'Draft ID is required';
+    END IF;
+
+    SELECT d.group_id INTO v_group_id
+    FROM drafts d
+    WHERE d.id = draft_id;
+
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+    END IF;
+
+    SELECT dn.names_id INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id INTO v_active_flag_id
+    FROM draft_flags df
+    WHERE df.draft_id = draft_id
+    LIMIT 1;
     -- Determine if create or update
     is_create := (input_provider_id IS NULL);
     
     -- Create or UPDATE provider_artifact first (outside CTE)
     IF is_create THEN
-        -- CREATE path - need to create group first
-        INSERT INTO groups (created_at, updated_at)
-        VALUES (NOW(), NOW())
-        RETURNING id INTO v_group_id;
-        
-        -- Create provider with group_id
+        -- CREATE path - use draft group_id
         INSERT INTO provider_artifact (group_id, created_at, updated_at)
         VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_provider_id;
@@ -54,21 +76,26 @@ BEGIN
         -- UPDATE path
         v_provider_id := input_provider_id;
         UPDATE provider_artifact
-        SET updated_at = NOW()
+        SET updated_at = NOW(),
+            group_id = v_group_id
         WHERE id = v_provider_id;
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
@@ -77,8 +104,8 @@ BEGIN
         DELETE FROM provider_descriptions WHERE provider_descriptions.provider_id = v_provider_id;
         -- Update existing active flag if it exists
         UPDATE provider_flags SET
-            flag_id = COALESCE(api_save_provider_v4.active_flag_id, provider_flags.flag_id),
-            value = CASE WHEN api_save_provider_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            flag_id = COALESCE(v_active_flag_id, provider_flags.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE provider_flags.provider_id = v_provider_id
           ;
@@ -89,9 +116,9 @@ BEGIN
     WITH params AS (
         SELECT
             v_provider_id AS p_provider_id,
-            name_id,
-            description_id,
-            active_flag_id,
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_active_flag_id AS active_flag_id,
             profile_id
     ),
     user_profile AS (

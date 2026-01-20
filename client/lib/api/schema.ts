@@ -11775,21 +11775,6 @@ export interface components {
             /** Target Field */
             target_field: string | null;
         };
-        /** ISaveAuthV4AuthItem */
-        ISaveAuthV4AuthItem: {
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Encrypted */
-            encrypted: boolean | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Key Id */
-            key_id: string | null;
-        };
         /** ISaveParameterV4FieldConnection */
         ISaveParameterV4FieldConnection: {
             /** Field Id */
@@ -19806,22 +19791,12 @@ export interface components {
         /** SaveAuthApiRequest */
         SaveAuthApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
+            draft_id: string;
             /** Input Auth Id */
             input_auth_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Protocol Ids */
-            protocol_ids?: string[] | null;
-            /** Slug Ids */
-            slug_ids?: string[] | null;
-            /** Auth Items */
-            auth_items?: components["schemas"]["ISaveAuthV4AuthItem"][] | null;
         };
         /** SaveAuthApiResponse */
         SaveAuthApiResponse: {
@@ -19850,21 +19825,12 @@ export interface components {
         /** SaveDepartmentApiRequest */
         SaveDepartmentApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
-            /**
-             * Active Flag Id
-             * Format: uuid
-             */
-            active_flag_id: string;
+            draft_id: string;
             /** Input Department Id */
             input_department_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Settings Id */
-            settings_id?: string | null;
         };
         /** SaveDepartmentApiResponse */
         SaveDepartmentApiResponse: {
@@ -20065,37 +20031,12 @@ export interface components {
         /** SavePersonaApiRequest */
         SavePersonaApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
-            /**
-             * Color Id
-             * Format: uuid
-             */
-            color_id: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
-            /**
-             * Instructions Id
-             * Format: uuid
-             */
-            instructions_id: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Example Ids */
-            example_ids: string[];
-            /** Field Ids */
-            field_ids: string[];
+            draft_id: string;
             /** Input Persona Id */
             input_persona_id?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
         };
         /** SavePersonaApiResponse */
         SavePersonaApiResponse: {
@@ -31906,8 +31847,7 @@ export interface operations {
                 state: string;
                 scope?: string;
                 nonce?: string | null;
-                mode?: string | null;
-                department_id?: string | null;
+                profile_id: string;
             };
             header?: never;
             path?: never;

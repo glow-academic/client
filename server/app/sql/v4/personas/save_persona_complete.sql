@@ -17,17 +17,9 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_save_persona_v4(
-    name_id uuid,
-    color_id uuid,
-    icon_id uuid,
-    instructions_id uuid,
-    department_ids uuid[],
+    draft_id uuid,
     profile_id uuid,
-    example_ids uuid[],
-    field_ids uuid[],
-    input_persona_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    active_flag_id uuid DEFAULT NULL
+    input_persona_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     persona_id uuid,
@@ -40,7 +32,66 @@ DECLARE
     v_persona_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_color_id uuid;
+    v_icon_id uuid;
+    v_instructions_id uuid;
+    v_active_flag_id uuid;
+    v_department_ids uuid[];
+    v_example_ids uuid[];
+    v_field_ids uuid[];
 BEGIN
+    IF draft_id IS NULL THEN
+        RAISE EXCEPTION 'Draft ID is required';
+    END IF;
+
+    -- Load draft resources
+    SELECT dn.names_id INTO v_name_id
+    FROM draft_names dn
+    WHERE dn.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dd.descriptions_id INTO v_description_id
+    FROM draft_descriptions dd
+    WHERE dd.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT dc.colors_id INTO v_color_id
+    FROM draft_colors dc
+    WHERE dc.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT di.icons_id INTO v_icon_id
+    FROM draft_icons di
+    WHERE di.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT din.instructions_id INTO v_instructions_id
+    FROM draft_instructions din
+    WHERE din.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT df.flags_id INTO v_active_flag_id
+    FROM draft_flags df
+    WHERE df.draft_id = draft_id
+    LIMIT 1;
+
+    SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
+    INTO v_department_ids
+    FROM draft_departments ddp
+    WHERE ddp.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), ARRAY[]::uuid[])
+    INTO v_example_ids
+    FROM draft_examples de
+    WHERE de.draft_id = draft_id;
+
+    SELECT COALESCE(ARRAY_AGG(dfld.fields_id ORDER BY dfld.created_at), ARRAY[]::uuid[])
+    INTO v_field_ids
+    FROM draft_fields dfld
+    WHERE dfld.draft_id = draft_id;
+
     -- Determine if create or update
     is_create := (input_persona_id IS NULL);
     
@@ -59,28 +110,44 @@ BEGIN
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF v_name_id IS NULL THEN
+        RAISE EXCEPTION 'Name resource is required';
+    END IF;
+
+    IF v_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = v_name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', v_name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF v_description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = v_description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
     
-    IF color_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM colors_resource WHERE id = color_id) THEN
-        RAISE EXCEPTION 'Color resource not found: %', color_id;
+    IF v_color_id IS NULL THEN
+        RAISE EXCEPTION 'Color resource is required';
+    END IF;
+
+    IF v_color_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM colors_resource WHERE id = v_color_id) THEN
+        RAISE EXCEPTION 'Color resource not found: %', v_color_id;
     END IF;
     
-    IF icon_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM icons_resource WHERE id = icon_id) THEN
-        RAISE EXCEPTION 'Icon resource not found: %', icon_id;
+    IF v_icon_id IS NULL THEN
+        RAISE EXCEPTION 'Icon resource is required';
+    END IF;
+
+    IF v_icon_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM icons_resource WHERE id = v_icon_id) THEN
+        RAISE EXCEPTION 'Icon resource not found: %', v_icon_id;
     END IF;
     
-    IF instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions_resource WHERE id = instructions_id) THEN
-        RAISE EXCEPTION 'Instructions resource not found: %', instructions_id;
+    IF v_instructions_id IS NULL THEN
+        RAISE EXCEPTION 'Instructions resource is required';
+    END IF;
+
+    IF v_instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions_resource WHERE id = v_instructions_id) THEN
+        RAISE EXCEPTION 'Instructions resource not found: %', v_instructions_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
-        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    IF v_active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = v_active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', v_active_flag_id;
     END IF;
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
@@ -95,8 +162,8 @@ BEGIN
         DELETE FROM persona_examples WHERE persona_id = v_persona_id;
         -- Update existing active flag if it exists
         UPDATE persona_flags SET
-            flag_id = COALESCE(api_save_persona_v4.active_flag_id, persona_flags.flag_id),
-            value = CASE WHEN api_save_persona_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            flag_id = COALESCE(v_active_flag_id, persona_flags.flag_id),
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE persona_id = v_persona_id
           ;
@@ -107,16 +174,16 @@ BEGIN
     WITH params AS (
         SELECT
             v_persona_id AS persona_id,
-            name_id,
-            description_id,
-            color_id,
-            icon_id,
-            instructions_id,
-            active_flag_id,
-            COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+            v_name_id AS name_id,
+            v_description_id AS description_id,
+            v_color_id AS color_id,
+            v_icon_id AS icon_id,
+            v_instructions_id AS instructions_id,
+            v_active_flag_id AS active_flag_id,
+            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
             profile_id,
-            COALESCE(example_ids, ARRAY[]::uuid[]) AS example_ids,
-            COALESCE(field_ids, ARRAY[]::uuid[]) AS field_ids
+            COALESCE(v_example_ids, ARRAY[]::uuid[]) AS example_ids,
+            COALESCE(v_field_ids, ARRAY[]::uuid[]) AS field_ids
     ),
     user_profile AS (
         SELECT 
