@@ -254,14 +254,14 @@ simulation_options_cte AS (
 scenario_options_cte AS (
     SELECT 
         sc.scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) AS scenario_title,
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) AS scenario_title,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN attempt_chats ac ON ac.attempt_id = haf.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
     JOIN scenarios_resource s ON s.id = sc.scenario_id
     WHERE sc.scenario_id IS NOT NULL
-    GROUP BY sc.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
+    GROUP BY sc.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
     ORDER BY scenario_title
 ),
 -- Apply additional filters (profileIds, simulationIds, scenarioIds, infiniteMode)
@@ -696,7 +696,7 @@ scenario_names AS (
         COALESCE(sn.names, ARRAY[]::text[]) AS names
     FROM final_rows_with_search fr
     LEFT JOIN LATERAL (
-        SELECT ARRAY_AGG((SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)) AS names
+        SELECT ARRAY_AGG((SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)) AS names
         FROM unnest(fr.scenario_ids_assigned) sid
         JOIN scenarios_resource s ON s.id = sid
     ) sn ON TRUE

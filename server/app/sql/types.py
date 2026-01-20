@@ -18098,11 +18098,14 @@ class PatchScenarioDraftSqlParams(BaseModel):
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
+    problem_statement_id: UUID | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -18121,11 +18124,14 @@ class PatchScenarioDraftSqlParams(BaseModel):
             self.department_ids,
             self.persona_ids,
             self.document_ids,
+            self.template_document_ids,
             self.parameter_ids,
             self.field_ids,
             self.image_ids,
             self.objective_ids,
-            self.problem_statement_ids,
+            self.problem_statement_id,
+            self.video_ids,
+            self.question_ids,
             self.expected_version,
         )
 
@@ -18150,11 +18156,14 @@ class PatchScenarioDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
+    problem_statement_id: UUID | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchScenarioDraftApiResponse(BaseModel):
@@ -18162,131 +18171,6 @@ class PatchScenarioDraftApiResponse(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
-
-
-
-# Generated from: save_scenario
-
-class QSaveScenarioV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    field_ids: list[UUID] | None
-
-
-
-
-class QSaveScenarioV4QuestionTimestamp(BaseModel):
-
-    question_id: UUID | None
-    video_id: UUID | None
-    timestamps: list[float] | None
-
-class SaveScenarioSqlParams(BaseModel):
-
-    name: str
-    active: bool
-    objectives_enabled: bool
-    images_enabled: bool
-    video_enabled: bool
-    questions_enabled: bool
-    problem_statement_enabled: bool
-    problem_statement: str
-    document_ids: list[str]
-    objective_ids: list[str]
-    parameters: list[QSaveScenarioV4Parameter]
-    profile_id: UUID
-    input_scenario_id: UUID | None = None
-    description: str | None = None
-    problem_statement_name: str | None = None
-    problem_statement_versions: list[str] | None = None
-    department_ids: list[str] | None = None
-    persona_ids: list[str] | None = None
-    template_document_ids: list[str] | None = None
-    upload_ids: list[UUID] | None = None
-    image_names: list[str] | None = None
-    video_ids: list[str] | None = None
-    active_video_id: str | None = None
-    question_ids: list[str] | None = None
-    question_timestamps: list[QSaveScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    run_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert parameters composite array to tuples for asyncpg
-        parameters_tuples = [
-            (conn.parameter_id, conn.field_ids)
-            for conn in (self.parameters or [])
-        ]
-        # Convert question_timestamps composite array to tuples for asyncpg
-        question_timestamps_tuples = [
-            (conn.question_id, conn.video_id, conn.timestamps)
-            for conn in (self.question_timestamps or [])
-        ]
-        return (
-            self.name,
-            self.active,
-            self.objectives_enabled,
-            self.images_enabled,
-            self.video_enabled,
-            self.questions_enabled,
-            self.problem_statement_enabled,
-            self.problem_statement,
-            self.document_ids,
-            self.objective_ids,
-            parameters_tuples,
-            self.profile_id,
-            self.input_scenario_id,
-            self.description,
-            self.problem_statement_name,
-            self.problem_statement_versions,
-            self.department_ids,
-            self.persona_ids,
-            self.template_document_ids,
-            self.upload_ids,
-            self.image_names,
-            self.video_ids,
-            self.active_video_id,
-            self.question_ids,
-            question_timestamps_tuples,
-            self.run_id,
-        )
-
-class SaveScenarioSqlRow(BaseModel):
-
-    scenario_id: UUID | None = None
-    actor_name: str | None = None
-
-class SaveScenarioApiRequest(BaseModel):
-
-    name: str
-    active: bool
-    objectives_enabled: bool
-    images_enabled: bool
-    video_enabled: bool
-    questions_enabled: bool
-    problem_statement_enabled: bool
-    problem_statement: str
-    document_ids: list[str]
-    objective_ids: list[str]
-    parameters: list[QSaveScenarioV4Parameter]
-    input_scenario_id: UUID | None = None
-    description: str | None = None
-    problem_statement_name: str | None = None
-    problem_statement_versions: list[str] | None = None
-    department_ids: list[str] | None = None
-    persona_ids: list[str] | None = None
-    template_document_ids: list[str] | None = None
-    upload_ids: list[UUID] | None = None
-    image_names: list[str] | None = None
-    video_ids: list[str] | None = None
-    active_video_id: str | None = None
-    question_ids: list[str] | None = None
-    question_timestamps: list[QSaveScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    run_id: UUID | None = None
-
-class SaveScenarioApiResponse(BaseModel):
-
-    scenario_id: UUID | None = None
-    actor_name: str | None = None
 
 
 
@@ -22965,12 +22849,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchScenarioDraftApiRequest",
         "PatchScenarioDraftApiResponse",
     ),
-    "app/sql/v4/scenarios/save_scenario_complete.sql": (
-        "SaveScenarioSqlParams",
-        "SaveScenarioSqlRow",
-        "SaveScenarioApiRequest",
-        "SaveScenarioApiResponse",
-    ),
     "app/sql/v4/schemas/get_schema_with_fields_complete.sql": (
         "GetSchemaWithFieldsSqlParams",
         "GetSchemaWithFieldsSqlRow",
@@ -24788,11 +24666,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenarios/patch_scenario_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/save_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload

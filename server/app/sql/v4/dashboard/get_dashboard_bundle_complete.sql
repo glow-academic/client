@@ -2785,7 +2785,7 @@ filt AS (
             sim_perf AS (
                 SELECT f.simulation_id,
                        f.scenario_id,
-                       (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1) AS scenario_name,
+                       (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1) AS scenario_name,
                        COALESCE(AVG(f.grade_percent), 0)::float AS avg_score,
                        COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::float AS success_rate,
                        COUNT(*)::int AS total_attempts,
@@ -2793,7 +2793,7 @@ filt AS (
                 FROM filt f
                 JOIN scenarios_resource sc ON sc.id = f.scenario_id
                 WHERE f.simulation_id IS NOT NULL AND f.scenario_id IS NOT NULL
-                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1)
+                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1)
             ),
             simulation_performance_scenario_facts_agg AS (
                 SELECT COALESCE(

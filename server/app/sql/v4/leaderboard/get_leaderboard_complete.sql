@@ -349,7 +349,7 @@ all_scenario_ids AS (
 scenario_data AS (
     SELECT 
         sc.id as scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1) as name,
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1) as name,
         COALESCE(
             (SELECT ps.problem_statement 
              FROM scenario_problem_statements sps 
