@@ -12566,6 +12566,8 @@ export interface components {
             persona_ids?: string[] | null;
             /** Document Ids */
             document_ids?: string[] | null;
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
             /** Parameter Ids */
             parameter_ids?: string[] | null;
             /** Field Ids */
@@ -12574,8 +12576,12 @@ export interface components {
             image_ids?: string[] | null;
             /** Objective Ids */
             objective_ids?: string[] | null;
-            /** Problem Statement Ids */
-            problem_statement_ids?: string[] | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -19376,22 +19382,6 @@ export interface components {
             /** Rubric Ids */
             rubric_ids: string[] | null;
         };
-        /** QSaveScenarioV4Parameter */
-        QSaveScenarioV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Field Ids */
-            field_ids: string[] | null;
-        };
-        /** QSaveScenarioV4QuestionTimestamp */
-        QSaveScenarioV4QuestionTimestamp: {
-            /** Question Id */
-            question_id: string | null;
-            /** Video Id */
-            video_id: string | null;
-            /** Timestamps */
-            timestamps: number[] | null;
-        };
         /** QSearchSimulatableProfilesV4Profile */
         QSearchSimulatableProfilesV4Profile: {
             /** Profile Id */
@@ -20143,56 +20133,51 @@ export interface components {
         };
         /** SaveScenarioApiRequest */
         SaveScenarioApiRequest: {
-            /** Name */
-            name: string;
-            /** Active */
-            active: boolean;
-            /** Objectives Enabled */
-            objectives_enabled: boolean;
-            /** Images Enabled */
-            images_enabled: boolean;
-            /** Video Enabled */
-            video_enabled: boolean;
-            /** Questions Enabled */
-            questions_enabled: boolean;
-            /** Problem Statement Enabled */
-            problem_statement_enabled: boolean;
-            /** Problem Statement */
-            problem_statement: string;
-            /** Document Ids */
-            document_ids: string[];
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Parameters */
-            parameters: components["schemas"]["QSaveScenarioV4Parameter"][];
-            /** Input Scenario Id */
-            input_scenario_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Problem Statement Name */
-            problem_statement_name?: string | null;
-            /** Problem Statement Versions */
-            problem_statement_versions?: string[] | null;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Description Id */
+            description_id?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Objectives Enabled Flag Id */
+            objectives_enabled_flag_id?: string | null;
+            /** Images Enabled Flag Id */
+            images_enabled_flag_id?: string | null;
+            /** Video Enabled Flag Id */
+            video_enabled_flag_id?: string | null;
+            /** Questions Enabled Flag Id */
+            questions_enabled_flag_id?: string | null;
+            /** Problem Statement Enabled Flag Id */
+            problem_statement_enabled_flag_id?: string | null;
+            /** Use Templates Flag Id */
+            use_templates_flag_id?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
             /** Template Document Ids */
             template_document_ids?: string[] | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
-            /** Image Names */
-            image_names?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
             /** Video Ids */
             video_ids?: string[] | null;
-            /** Active Video Id */
-            active_video_id?: string | null;
             /** Question Ids */
             question_ids?: string[] | null;
-            /** Question Timestamps */
-            question_timestamps?: components["schemas"]["QSaveScenarioV4QuestionTimestamp"][] | null;
-            /** Run Id */
-            run_id?: string | null;
+            /** Input Scenario Id */
+            input_scenario_id?: string | null;
         };
         /** SaveScenarioApiResponse */
         SaveScenarioApiResponse: {

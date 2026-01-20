@@ -18174,6 +18174,95 @@ class PatchScenarioDraftApiResponse(BaseModel):
 
 
 
+# Generated from: save_scenario
+
+class SaveScenarioSqlParams(BaseModel):
+
+    profile_id: UUID
+    name_id: UUID
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    input_scenario_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.name_id,
+            self.description_id,
+            self.problem_statement_id,
+            self.active_flag_id,
+            self.objectives_enabled_flag_id,
+            self.images_enabled_flag_id,
+            self.video_enabled_flag_id,
+            self.questions_enabled_flag_id,
+            self.problem_statement_enabled_flag_id,
+            self.use_templates_flag_id,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.template_document_ids,
+            self.parameter_ids,
+            self.field_ids,
+            self.image_ids,
+            self.objective_ids,
+            self.video_ids,
+            self.question_ids,
+            self.input_scenario_id,
+        )
+
+class SaveScenarioSqlRow(BaseModel):
+
+    scenario_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveScenarioApiRequest(BaseModel):
+
+    name_id: UUID
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    use_templates_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    input_scenario_id: UUID | None = None
+
+class SaveScenarioApiResponse(BaseModel):
+
+    scenario_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_schema_with_fields
 
 class GetSchemaWithFieldsSqlParams(BaseModel):
@@ -22849,6 +22938,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchScenarioDraftApiRequest",
         "PatchScenarioDraftApiResponse",
     ),
+    "app/sql/v4/scenarios/save_scenario_complete.sql": (
+        "SaveScenarioSqlParams",
+        "SaveScenarioSqlRow",
+        "SaveScenarioApiRequest",
+        "SaveScenarioApiResponse",
+    ),
     "app/sql/v4/schemas/get_schema_with_fields_complete.sql": (
         "GetSchemaWithFieldsSqlParams",
         "GetSchemaWithFieldsSqlRow",
@@ -24666,6 +24761,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenarios/patch_scenario_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenarios/save_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload

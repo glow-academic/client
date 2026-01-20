@@ -68,32 +68,26 @@ async def save_scenario(
                 )
 
             # Parameters: 0-3
-            parameter_count = len(request.parameters or [])
+            parameter_count = len(request.parameter_ids or [])
             if parameter_count > 3:
                 raise ValueError(
                     f"Parameters must be between 0 and 3. Received {parameter_count}."
                 )
 
-            # Each parameter's fields: 1-3 per parameter
-            for param in request.parameters or []:
-                field_ids = param.field_ids or []
-                field_count = len(field_ids)
-                if field_count < 1 or field_count > 3:
-                    raise ValueError(
-                        f"Fields for parameter {param.parameter_id} must be between 1 and 3. "
-                        f"Received {field_count}."
-                    )
+            # Fields: 1-3 when parameters are present
+            field_count = len(request.field_ids or [])
+            if parameter_count > 0 and (field_count < 1 or field_count > 3):
+                raise ValueError(
+                    f"Fields must be between 1 and 3 when parameters are selected. "
+                    f"Received {field_count}."
+                )
 
-            # Objectives: 0-3 (SQL will filter composite IDs)
+            # Objectives: 0-3
             objective_count = len(request.objective_ids or [])
             if objective_count > 3:
                 raise ValueError(
                     f"Objectives must be between 0 and 3. Received {objective_count}."
                 )
-
-            # Validate upload_ids and image_names match in length
-            if len(request.upload_ids or []) != len(request.image_names or []):
-                raise ValueError("upload_ids and image_names must have the same length")
 
         # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id

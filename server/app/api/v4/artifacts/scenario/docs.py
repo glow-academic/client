@@ -11,7 +11,7 @@ def get_scenarios_docs() -> dict[str, Any]:
         resources, frontend information, and GLOW context.
     """
     return {
-        "name": "scenarios",
+        "name": "scenario",  # Singular - matches MCP artifact discovery
         "type": "artifact",
         "database": {
             "table": "scenario_artifact",

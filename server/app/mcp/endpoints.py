@@ -735,8 +735,9 @@ def get_artifact_operation_description(operation: str) -> str:
         "get": """Get an artifact or resource by name.
 
 Args:
-    name: Artifact name (e.g., "agent", "persona", "cohort", "document").
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+    name: Artifact name (e.g., "agent", "persona", "cohort", "document", "scenario").
+          Use singular form: "scenario" not "scenarios".
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}", operation="get") first to get exact schema.
 
 Payload Structure:
     Common fields for "get" operations:
@@ -748,6 +749,9 @@ Example:
     payload: {{"agent_id": "123e4567-e89b-12d3-a456-426614174000"}}
     or
     payload: {{"agent_id": null}}  # for new item
+    
+    name: "scenario"  # singular, not "scenarios"
+    payload: {{"scenario_id": "123e4567-e89b-12d3-a456-426614174000"}}
 
 Returns:
     Object containing:
@@ -758,7 +762,7 @@ Returns:
     - ... artifact-specific fields and related resources
 
 Workflow:
-    1. Call payload_artifact(name="agent") to get exact payload schema
+    1. Call payload_artifact(name="agent", operation="get") to get exact payload schema
     2. Construct payload with required fields
     3. Call get_artifact with name and payload""",
         
@@ -789,13 +793,13 @@ Workflow:
         "list": """List items for an artifact or resource.
 
 Args:
-    name: Artifact name (e.g., "agent", "persona", "cohort").
-    payload: Request payload with filter parameters. Call payload_artifact(name="{name}") first to get exact schema.
+    name: Artifact name (e.g., "agent", "persona", "cohort", "scenario"). Use singular form.
+    payload: Request payload with filter parameters. Call payload_artifact(name="{name}", operation="list") first to get exact schema.
 
 Payload Structure:
     Common fields for "list" operations:
     - Filters may include department_ids, cohort_ids, search terms, etc.
-    - Use payload_artifact(name="{name}") to see available filters
+    - Use payload_artifact(name="{name}", operation="list") to see available filters
 
 Example:
     name: "agent"
@@ -807,15 +811,15 @@ Returns:
     List of artifact objects, each containing id, name, timestamps, and related data.
 
 Workflow:
-    1. Call payload_artifact(name="agent") to get exact payload schema
+    1. Call payload_artifact(name="agent", operation="list") to get exact payload schema
     2. Construct payload with filter parameters (or empty for all)
     3. Call list_artifact with name and payload""",
         
         "duplicate": """Duplicate an artifact or resource.
 
 Args:
-    name: Artifact name (e.g., "agent", "persona").
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+    name: Artifact name (e.g., "agent", "persona", "scenario"). Use singular form.
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}", operation="duplicate") first to get exact schema.
 
 Payload Structure:
     Typically includes:
@@ -830,15 +834,15 @@ Returns:
     Object with duplicated artifact data including new id.
 
 Workflow:
-    1. Call payload_artifact(name="agent") to get exact payload schema
+    1. Call payload_artifact(name="agent", operation="duplicate") to get exact payload schema
     2. Construct payload with source artifact_id
     3. Call duplicate_artifact with name and payload""",
         
         "delete": """Delete an artifact or resource.
 
 Args:
-    name: Artifact name (e.g., "agent", "persona").
-    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}") first to get exact schema.
+    name: Artifact name (e.g., "agent", "persona", "scenario"). Use singular form.
+    payload: Request payload. IMPORTANT: Call payload_artifact(name="{name}", operation="delete") first to get exact schema.
 
 Payload Structure:
     Typically includes:
@@ -852,18 +856,18 @@ Returns:
     Success response or error message.
 
 Workflow:
-    1. Call payload_artifact(name="agent") to get exact payload schema
+    1. Call payload_artifact(name="agent", operation="delete") to get exact payload schema
     2. Construct payload with artifact_id to delete
     3. Call delete_artifact with name and payload""",
         
         "draft": """Create or patch a draft artifact (autosave).
 
 Args:
-    name: Artifact name (e.g., "agent", "persona").
-    payload: Request payload with draft data. Call payload_artifact(name="{name}") first to get exact schema.
+    name: Artifact name (e.g., "agent", "persona", "scenario"). Use singular form.
+    payload: Request payload with draft data. Call payload_artifact(name="{name}", operation="draft") first to get exact schema.
 
 Payload Structure:
-    Use payload_artifact(name="{name}") to get the exact schema.
+    Use payload_artifact(name="{name}", operation="draft") to get the exact schema.
     Draft payloads typically include partial artifact data for autosave.
 
 Example:
@@ -874,7 +878,7 @@ Returns:
     Draft data including draft_id and version information.
 
 Workflow:
-    1. Call payload_artifact(name="agent") to get exact payload schema
+    1. Call payload_artifact(name="agent", operation="draft") to get exact payload schema
     2. Construct payload with draft data
     3. Call draft_artifact with name and payload""",
     }
@@ -923,8 +927,12 @@ def get_available_operations(name: str) -> list[str]:
     return list(HANDLERS[name].keys())
 
 
-def get_payload_schema(name: str) -> dict[str, Any]:
+def get_payload_schema(name: str, operation: str = "get") -> dict[str, Any]:
     """Get payload schema for artifact/resource operations.
+    
+    Args:
+        name: Artifact or resource name (e.g., "agent", "scenario", "names")
+        operation: Operation name (e.g., "get", "save", "list", "create"). Defaults to "get".
     
     Note: The 'mcp' field is automatically filtered out as it's auto-injected.
     """
@@ -932,9 +940,9 @@ def get_payload_schema(name: str) -> dict[str, Any]:
         return {"error": f"'{name}' is not a valid artifact or resource."}
 
     # Try to get schema from handler if available
-    if name in HANDLERS and "get" in HANDLERS[name]:
+    if name in HANDLERS and operation in HANDLERS[name]:
         try:
-            handler = HANDLERS[name]["get"]
+            handler = HANDLERS[name][operation]
             # Try to get request model from handler
             if hasattr(handler, "__annotations__"):
                 annotations = handler.__annotations__
@@ -1267,14 +1275,16 @@ def register_endpoints(server: FastMCP) -> None:
         return get_glow_docs()
 
     @server.tool()
-    def payload_artifact(name: str) -> dict[str, Any]:  # type: ignore[return]
+    def payload_artifact(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for an artifact.
 
         IMPORTANT: Call this tool FIRST before using artifact operations (get_artifact, save_artifact, etc.)
         to understand the exact payload structure required.
 
         Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort", "document").
+            name: Artifact name (e.g., "agent", "persona", "cohort", "document", "scenario").
+            operation: Operation name (e.g., "get", "save", "list", "duplicate", "delete", "draft").
+                      Defaults to "get". Use "save" to get schema for save operations.
 
         Returns:
             JSON schema for the payload showing:
@@ -1286,17 +1296,21 @@ def register_endpoints(server: FastMCP) -> None:
             Note: The 'mcp' field is automatically filtered out as it's auto-injected.
 
         Example:
-            name: "agent"
+            name: "agent", operation: "get"
             Returns schema with fields like agent_id, draft_id, etc.
+            
+            name: "scenario", operation: "save"
+            Returns SaveScenarioApiRequest schema with all required fields for saving.
 
         Workflow:
-            1. Call payload_artifact(name="agent") to get schema
-            2. Use the schema to construct payload for get_artifact, save_artifact, etc.
+            1. Call payload_artifact(name="agent", operation="get") to get read schema
+            2. Call payload_artifact(name="agent", operation="save") to get save schema
+            3. Use the schema to construct payload for get_artifact, save_artifact, etc.
         """
-        return get_payload_schema(name)
+        return get_payload_schema(name, operation)
 
     @server.tool()
-    def payload_resource(name: str) -> dict[str, Any]:  # type: ignore[return]
+    def payload_resource(name: str, operation: str = "create") -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for a resource.
 
         IMPORTANT: Call this tool FIRST before using create_resource to understand
@@ -1304,6 +1318,8 @@ def register_endpoints(server: FastMCP) -> None:
 
         Args:
             name: Resource name (e.g., "names", "descriptions", "flags", "departments").
+            operation: Operation name. Defaults to "create" for resources.
+                      Most resources only support "create", but some may have other operations.
 
         Returns:
             JSON schema for the payload showing:
@@ -1315,14 +1331,14 @@ def register_endpoints(server: FastMCP) -> None:
             Note: The 'mcp' field is automatically filtered out as it's auto-injected.
 
         Example:
-            name: "names"
+            name: "names", operation: "create"
             Returns schema with fields like agent_id, name, etc.
 
         Workflow:
-            1. Call payload_resource(name="names") to get schema
+            1. Call payload_resource(name="names", operation="create") to get schema
             2. Use the schema to construct payload for create_resource
         """
-        return get_payload_schema(name)
+        return get_payload_schema(name, operation)
 
     @server.tool()
     async def get_artifact(

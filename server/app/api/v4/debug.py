@@ -1,6 +1,6 @@
 """Feedback create endpoint."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -46,6 +46,8 @@ async def create_feedback(
 ) -> CreateFeedbackResponse:
     """Create new app feedback entry."""
     tags = ["feedback"]  # From router tags
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Validate feedback type

@@ -35,6 +35,7 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_save_scenario_v4(
+    profile_id uuid,
     name_id uuid,
     description_id uuid DEFAULT NULL,
     problem_statement_id uuid DEFAULT NULL,
@@ -55,7 +56,6 @@ CREATE OR REPLACE FUNCTION api_save_scenario_v4(
     objective_ids uuid[] DEFAULT NULL,
     video_ids uuid[] DEFAULT NULL,
     question_ids uuid[] DEFAULT NULL,
-    profile_id uuid,
     input_scenario_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
@@ -197,13 +197,13 @@ BEGIN
     IF name_id IS NOT NULL THEN
         INSERT INTO scenario_names (scenario_id, name_id, created_at, updated_at)
         VALUES (v_scenario_id, name_id, NOW(), NOW())
-        ON CONFLICT ON CONSTRAINT scenario_names_pkey DO UPDATE SET updated_at = NOW();
+        ON CONFLICT (scenario_id, name_id) DO UPDATE SET updated_at = NOW();
     END IF;
 
     IF description_id IS NOT NULL THEN
         INSERT INTO scenario_descriptions (scenario_id, description_id, created_at, updated_at)
         VALUES (v_scenario_id, description_id, NOW(), NOW())
-        ON CONFLICT ON CONSTRAINT scenario_descriptions_pkey DO UPDATE SET updated_at = NOW();
+        ON CONFLICT (scenario_id, description_id) DO UPDATE SET updated_at = NOW();
     END IF;
 
     -- Scenario flags (always insert known flags with true/false values)

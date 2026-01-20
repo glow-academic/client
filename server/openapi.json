@@ -56029,6 +56029,21 @@
             ],
             "title": "Document Ids"
           },
+          "template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Document Ids"
+          },
           "parameter_ids": {
             "anyOf": [
               {
@@ -56089,7 +56104,19 @@
             ],
             "title": "Objective Ids"
           },
-          "problem_statement_ids": {
+          "problem_statement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Id"
+          },
+          "video_ids": {
             "anyOf": [
               {
                 "items": {
@@ -56102,7 +56129,22 @@
                 "type": "null"
               }
             ],
-            "title": "Problem Statement Ids"
+            "title": "Video Ids"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
           },
           "expected_version": {
             "anyOf": [
@@ -92823,92 +92865,6 @@
         ],
         "title": "QSaveEvalV4RunRubricLink"
       },
-      "QSaveScenarioV4Parameter": {
-        "properties": {
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          },
-          "field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameter_id",
-          "field_ids"
-        ],
-        "title": "QSaveScenarioV4Parameter"
-      },
-      "QSaveScenarioV4QuestionTimestamp": {
-        "properties": {
-          "question_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Id"
-          },
-          "video_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Id"
-          },
-          "timestamps": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "number"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timestamps"
-          }
-        },
-        "type": "object",
-        "required": [
-          "question_id",
-          "video_id",
-          "timestamps"
-        ],
-        "title": "QSaveScenarioV4QuestionTimestamp"
-      },
       "QSearchSimulatableProfilesV4Profile": {
         "properties": {
           "profile_id": {
@@ -95784,60 +95740,12 @@
       },
       "SaveScenarioApiRequest": {
         "properties": {
-          "name": {
+          "name_id": {
             "type": "string",
-            "title": "Name"
+            "format": "uuid",
+            "title": "Name Id"
           },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "objectives_enabled": {
-            "type": "boolean",
-            "title": "Objectives Enabled"
-          },
-          "images_enabled": {
-            "type": "boolean",
-            "title": "Images Enabled"
-          },
-          "video_enabled": {
-            "type": "boolean",
-            "title": "Video Enabled"
-          },
-          "questions_enabled": {
-            "type": "boolean",
-            "title": "Questions Enabled"
-          },
-          "problem_statement_enabled": {
-            "type": "boolean",
-            "title": "Problem Statement Enabled"
-          },
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "objective_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objective Ids"
-          },
-          "parameters": {
-            "items": {
-              "$ref": "#/components/schemas/QSaveScenarioV4Parameter"
-            },
-            "type": "array",
-            "title": "Parameters"
-          },
-          "input_scenario_id": {
+          "description_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -95847,49 +95755,110 @@
                 "type": "null"
               }
             ],
-            "title": "Input Scenario Id"
+            "title": "Description Id"
           },
-          "description": {
+          "problem_statement_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
+            "title": "Problem Statement Id"
           },
-          "problem_statement_name": {
+          "active_flag_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Problem Statement Name"
+            "title": "Active Flag Id"
           },
-          "problem_statement_versions": {
+          "objectives_enabled_flag_id": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Problem Statement Versions"
+            "title": "Objectives Enabled Flag Id"
+          },
+          "images_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images Enabled Flag Id"
+          },
+          "video_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Enabled Flag Id"
+          },
+          "questions_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Enabled Flag Id"
+          },
+          "problem_statement_enabled_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Enabled Flag Id"
+          },
+          "use_templates_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Templates Flag Id"
           },
           "department_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -95903,7 +95872,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -95913,21 +95883,7 @@
             ],
             "title": "Persona Ids"
           },
-          "template_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Document Ids"
-          },
-          "upload_ids": {
+          "document_ids": {
             "anyOf": [
               {
                 "items": {
@@ -95940,13 +95896,14 @@
                 "type": "null"
               }
             ],
-            "title": "Upload Ids"
+            "title": "Document Ids"
           },
-          "image_names": {
+          "template_document_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -95954,13 +95911,74 @@
                 "type": "null"
               }
             ],
-            "title": "Image Names"
+            "title": "Template Document Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
           },
           "video_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -95970,22 +95988,12 @@
             ],
             "title": "Video Ids"
           },
-          "active_video_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Video Id"
-          },
           "question_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -95995,21 +96003,7 @@
             ],
             "title": "Question Ids"
           },
-          "question_timestamps": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QSaveScenarioV4QuestionTimestamp"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Timestamps"
-          },
-          "run_id": {
+          "input_scenario_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -96019,22 +96013,12 @@
                 "type": "null"
               }
             ],
-            "title": "Run Id"
+            "title": "Input Scenario Id"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "active",
-          "objectives_enabled",
-          "images_enabled",
-          "video_enabled",
-          "questions_enabled",
-          "problem_statement_enabled",
-          "problem_statement",
-          "document_ids",
-          "objective_ids",
-          "parameters"
+          "name_id"
         ],
         "title": "SaveScenarioApiRequest"
       },
