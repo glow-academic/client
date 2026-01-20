@@ -43,7 +43,7 @@ async def save_cohort(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveCohortApiResponse:
-    """Save cohort - handles both create (cohort_id = NULL) and update (cohort_id provided)."""
+    """Save cohort - draft-first create/update using draft resources."""
     tags = ["cohorts"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -58,9 +58,11 @@ async def save_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        if not request.draft_id:
+            raise HTTPException(status_code=400, detail="Draft ID is required")
+
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map input_cohort_id from API request (already correct field name)
             params = SaveCohortSqlParams(
                 **request.model_dump(),
                 profile_id=profile_id,
@@ -80,21 +82,12 @@ async def save_cohort(
             if not result or not result.cohort_id:
                 if request.input_cohort_id:
                     raise ValueError(f"Cohort not found: {request.input_cohort_id}")
-                else:
-                    raise ValueError("Failed to create cohort")
+                raise ValueError("Failed to save cohort")
 
             # Set audit context with data from SQL query
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add cohort to audit context if input_cohort_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
-                if request.input_cohort_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name field
-                    audit_ctx["cohort"] = {
-                        "name": getattr(request, "name", "Cohort"),
-                        "id": str(result.cohort_id),
-                    }
+                audit_ctx["cohort"] = {"id": str(result.cohort_id)}
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response

@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # Profile role type (matches database enum)
-ProfileRole = Literal["guest", "member", "instructional", "admin", "superadmin"]
+ProfileRole = Literal["guest", "member", "instructional", "admin", "superadmin", "custom"]
 
 
 class RoutePermission(BaseModel):
@@ -326,19 +326,19 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="engine",
-        roles=["superadmin"],
+        roles=["superadmin", "custom"],
         title="Engine",
         description="Engine configuration tools",
         routes=[
             RoutePermission(
                 path="/engine",
-                roles=["superadmin"],
+                roles=["superadmin", "custom"],
                 title="Engine Overview",
                 redirectTo="/engine/agents",
             ),
             RoutePermission(
                 path="/engine/agents",
-                roles=["superadmin"],
+                roles=["superadmin", "custom"],
                 title="Agents",
                 redirectTo="/engine/agents",
             ),

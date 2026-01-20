@@ -25,6 +25,7 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
+import { Profiles } from "@/components/resources/Profiles";
 import { Providers } from "@/components/resources/Providers";
 import { Button } from "@/components/ui/button";
 import {
@@ -199,6 +200,13 @@ function SettingComponent({
       departments_agent_id: settingData.departments_agent_id,
       departments: settingData.departments,
       department_ids: settingData.department_ids,
+      profile_resources: settingData.profile_resources,
+      show_profiles: settingData.show_profiles,
+      profile_suggestions: settingData.profile_suggestions,
+      profiles_required: settingData.profiles_required,
+      profiles_agent_id: settingData.profiles_agent_id,
+      profiles: settingData.profiles,
+      profile_ids: settingData.profile_ids,
       flag_resource: settingData.flag_resource,
       show_flag: settingData.show_flag,
       flag_required: settingData.flag_required,
@@ -258,6 +266,13 @@ function SettingComponent({
     settingData?.departments_agent_id,
     settingData?.departments,
     settingData?.department_ids,
+    settingData?.profile_resources,
+    settingData?.show_profiles,
+    settingData?.profile_suggestions,
+    settingData?.profiles_required,
+    settingData?.profiles_agent_id,
+    settingData?.profiles,
+    settingData?.profile_ids,
     settingData?.flag_resource,
     settingData?.show_flag,
     settingData?.flag_required,
@@ -335,6 +350,7 @@ function SettingComponent({
         color_ids: [] as string[],
         active_flag_id: null as string | null,
         department_ids: [] as string[],
+        profile_ids: [] as string[],
         auth_ids: [] as string[],
         provider_ids: [] as string[],
         key_ids: [] as string[],
@@ -348,6 +364,7 @@ function SettingComponent({
       color_ids: data.color_ids ?? [],
       active_flag_id: data.active_flag_id ?? null,
       department_ids: data.department_ids ?? [],
+      profile_ids: data.profile_ids ?? [],
       auth_ids: data.auth_ids ?? [],
       provider_ids: data.provider_ids ?? [],
       key_ids: data.key_ids ?? [],
@@ -375,6 +392,10 @@ function SettingComponent({
     () => JSON.stringify(settingData?.auth_ids ?? []),
     [settingData?.auth_ids]
   );
+  const profileIdsStr = React.useMemo(
+    () => JSON.stringify(settingData?.profile_ids ?? []),
+    [settingData?.profile_ids]
+  );
   const providerIdsStr = React.useMemo(
     () => JSON.stringify(settingData?.provider_ids ?? []),
     [settingData?.provider_ids]
@@ -396,6 +417,10 @@ function SettingComponent({
   const formStateAuthIdsStr = React.useMemo(
     () => JSON.stringify(formState.auth_ids),
     [formState.auth_ids]
+  );
+  const formStateProfileIdsStr = React.useMemo(
+    () => JSON.stringify(formState.profile_ids),
+    [formState.profile_ids]
   );
   const formStateProviderIdsStr = React.useMemo(
     () => JSON.stringify(formState.provider_ids),
@@ -419,6 +444,8 @@ function SettingComponent({
         prev.active_flag_id !== newState.active_flag_id ||
         JSON.stringify(prev.department_ids) !==
           JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.profile_ids) !==
+          JSON.stringify(newState.profile_ids) ||
         JSON.stringify(prev.auth_ids) !== JSON.stringify(newState.auth_ids) ||
         JSON.stringify(prev.provider_ids) !==
           JSON.stringify(newState.provider_ids) ||
@@ -437,6 +464,7 @@ function SettingComponent({
     settingData?.active_flag_id,
     colorIdsStr,
     departmentIdsStr,
+    profileIdsStr,
     authIdsStr,
     providerIdsStr,
     keyIdsStr,
@@ -503,6 +531,7 @@ function SettingComponent({
       color_ids: formState.color_ids,
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
+      profile_ids: formState.profile_ids,
       auth_ids: formState.auth_ids,
       provider_ids: formState.provider_ids,
       key_ids: formState.key_ids,
@@ -516,6 +545,7 @@ function SettingComponent({
     formState.active_flag_id,
     formStateColorIdsStr,
     formStateDepartmentIdsStr,
+    formStateProfileIdsStr,
     formStateAuthIdsStr,
     formStateProviderIdsStr,
     formStateKeyIdsStr,
@@ -533,6 +563,7 @@ function SettingComponent({
       formState.color_ids.length > 0 ||
       formState.active_flag_id ||
       formState.department_ids.length > 0 ||
+      formState.profile_ids.length > 0 ||
       formState.auth_ids.length > 0 ||
       formState.provider_ids.length > 0 ||
       formState.key_ids.length > 0;
@@ -557,6 +588,7 @@ function SettingComponent({
             color_ids: formState.color_ids,
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
+            profile_ids: formState.profile_ids,
             auth_ids: formState.auth_ids,
             provider_ids: formState.provider_ids,
             key_ids: formState.key_ids,
@@ -686,6 +718,7 @@ function SettingComponent({
             color_ids: formState.color_ids || [],
             active_flag_id: formState.active_flag_id || null,
             department_ids: formState.department_ids || [],
+            profile_ids: formState.profile_ids || [],
             auth_ids: formState.auth_ids || [],
             provider_ids: formState.provider_ids || [],
             key_ids: formState.key_ids || [],
@@ -829,8 +862,8 @@ function SettingComponent({
       {
         id: "configuration",
         title: "Configuration",
-        description: "Configure auths, providers, and keys.",
-        resetFields: ["auth_ids", "provider_ids", "key_ids"],
+        description: "Configure profiles, auths, providers, and keys.",
+        resetFields: ["profile_ids", "auth_ids", "provider_ids", "key_ids"],
       },
     ],
     []
@@ -844,6 +877,7 @@ function SettingComponent({
       "color_ids",
       "active",
       "department_ids",
+      "profile_ids",
       "auth_ids",
       "provider_ids",
       "key_ids",
@@ -884,6 +918,7 @@ function SettingComponent({
         case "configuration":
           return {
             ...prev,
+            profile_ids: [],
             auth_ids: [],
             provider_ids: [],
             key_ids: [],
@@ -1227,12 +1262,28 @@ function SettingComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["auth_ids", "provider_ids", "key_ids"]}
+              resetFields={["profile_ids", "auth_ids", "provider_ids", "key_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               {/* Multi-select Auths, Providers, Keys components */}
               <div className="space-y-4">
+                <Profiles
+                  profile_ids={formState.profile_ids ?? []}
+                  profile_resources={currentSettingData?.profile_resources ?? []}
+                  show_profiles={currentSettingData?.show_profiles ?? false}
+                  profile_suggestions={
+                    currentSettingData?.profile_suggestions ?? []
+                  }
+                  profiles={currentSettingData?.profiles ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, profile_ids: ids }))
+                  }
+                  label="Profiles"
+                  description="Profiles enabled for default login access."
+                />
+
                 <Auths
                   auth_ids={formState.auth_ids ?? []}
                   auth_resources={currentSettingData?.auth_resources ?? []}
@@ -1310,6 +1361,7 @@ function SettingComponent({
       // Include arrays - they're used in the callback, but the formState sync effect ensures
       // they only change when content actually changes (not just reference)
       formState.department_ids,
+      formState.profile_ids,
       formState.color_ids,
       formState.auth_ids,
       formState.provider_ids,

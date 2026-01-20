@@ -27,6 +27,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { RequestLimits } from "@/components/resources/RequestLimits";
 import { Roles } from "@/components/resources/Roles";
+import { Routes } from "@/components/resources/Routes";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -197,6 +198,12 @@ function ProfileComponent({
       emails: staffData.emails,
       cohorts: staffData.cohorts,
       role_options: staffData.role_options,
+      roles: staffData.roles,
+      role_routes: staffData.role_routes,
+      route_resources: staffData.route_resources,
+      show_routes: staffData.show_routes,
+      route_suggestions: staffData.route_suggestions,
+      routes: staffData.routes,
     };
   }, [
     staffData?.group_id,
@@ -237,9 +244,36 @@ function ProfileComponent({
     staffData?.emails,
     staffData?.cohorts,
     staffData?.role_options,
+    staffData?.roles,
+    staffData?.role_routes,
+    staffData?.route_resources,
+    staffData?.show_routes,
+    staffData?.route_suggestions,
+    staffData?.routes,
   ]);
 
   const currentStaffData = stableStaffDataFields;
+
+  const roleRoutesByRole = useMemo(() => {
+    const mapping = new Map<string, string[]>();
+    const roleRoutes = currentStaffData?.role_routes ?? [];
+    roleRoutes.forEach((entry) => {
+      if (!entry || !entry.role || !entry.route_id) return;
+      const current = mapping.get(entry.role) ?? [];
+      current.push(entry.route_id);
+      mapping.set(entry.role, current);
+    });
+    return mapping;
+  }, [currentStaffData?.role_routes]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    if (!formState.role || formState.route_ids.length > 0) return;
+    const defaults = roleRoutesByRole.get(formState.role);
+    if (defaults && defaults.length > 0) {
+      setFormState((prev) => ({ ...prev, route_ids: defaults }));
+    }
+  }, [formState.role, formState.route_ids.length, isEditMode, roleRoutesByRole]);
 
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
@@ -289,6 +323,7 @@ function ProfileComponent({
         primary_email_index: 0 as number,
         cohort_ids: [] as string[],
         role: "instructional" as string,
+        route_ids: [] as string[],
         primary_department_id: null as string | null,
       };
     }
@@ -306,6 +341,7 @@ function ProfileComponent({
       primary_email_index: data.primary_email_index ?? 0,
       cohort_ids: data.cohort_ids ?? [],
       role: data.role ?? "instructional",
+      route_ids: data.route_ids ?? [],
       primary_department_id: primaryDepartmentId,
     };
   }, []);
@@ -328,6 +364,10 @@ function ProfileComponent({
     () => JSON.stringify(staffData?.cohort_ids ?? []),
     [staffData?.cohort_ids]
   );
+  const routeIdsStr = React.useMemo(
+    () => JSON.stringify(staffData?.route_ids ?? []),
+    [staffData?.route_ids]
+  );
 
   useEffect(() => {
     const newState = getInitialFormState();
@@ -344,6 +384,8 @@ function ProfileComponent({
         JSON.stringify(prev.cohort_ids) !==
           JSON.stringify(newState.cohort_ids) ||
         prev.role !== newState.role ||
+        JSON.stringify(prev.route_ids) !==
+          JSON.stringify(newState.route_ids) ||
         prev.primary_department_id !== newState.primary_department_id
       ) {
         return newState;
@@ -358,6 +400,7 @@ function ProfileComponent({
     departmentIdsStr,
     emailIdsStr,
     cohortIdsStr,
+    routeIdsStr,
     staffData?.primary_email_index,
     staffData?.role,
   ]);
@@ -864,6 +907,10 @@ function ProfileComponent({
             department_ids: formState.department_ids || [],
             cohort_ids: formState.cohort_ids || [],
             role: formState.role || "instructional",
+            route_ids:
+              formState.route_ids && formState.route_ids.length > 0
+                ? formState.route_ids
+                : null,
             emails: emailTexts,
             primary_email_index: formState.primary_email_index ?? 0,
             ...(primaryDepartmentIndexValue !== null && {
@@ -905,6 +952,7 @@ function ProfileComponent({
       const hasLastName = !!formState.last_name_id;
       const hasDepartments = formState.department_ids.length > 0;
       const hasRole = !!formState.role;
+      const hasRoutes = formState.route_ids.length > 0;
       const hasCohorts = formState.cohort_ids.length > 0;
       const hasPrimaryDepartment = !!formState.primary_department_id;
       const hasEmails = formState.email_ids.length > 0;
@@ -928,6 +976,12 @@ function ProfileComponent({
         case "cohorts":
           if (!hasFirstName || !hasLastName) return "pending";
           return hasCohorts ? "completed" : "active";
+        case "routes":
+          if (!hasFirstName || !hasLastName) return "pending";
+          if (formState.role === "custom") {
+            return hasRoutes ? "completed" : "active";
+          }
+          return "completed";
         default:
           return "pending";
       }
@@ -972,6 +1026,13 @@ function ProfileComponent({
         resetFields: ["role", "roleSearch", "roleShowSelected"],
       },
       {
+        id: "routes",
+        title: "Routes",
+        description: "Select the routes this profile can access.",
+        optional: true,
+        resetFields: ["route_ids", "routeSearch", "routeShowSelected"],
+      },
+      {
         id: "cohorts",
         title: "Cohorts",
         description: "Assign cohorts to this staff member (optional).",
@@ -992,6 +1053,7 @@ function ProfileComponent({
       "department_ids",
       "cohort_ids",
       "role",
+      "route_ids",
       "primary_department_id",
     ],
     []
@@ -1005,6 +1067,8 @@ function ProfileComponent({
         return "Contact information reset";
       case "roles":
         return "Roles reset";
+      case "routes":
+        return "Routes reset";
       case "cohorts":
         return "Cohorts reset";
       default:
@@ -1036,6 +1100,11 @@ function ProfileComponent({
           return {
             ...prev,
             role: "",
+          };
+        case "routes":
+          return {
+            ...prev,
+            route_ids: [],
           };
         case "cohorts":
           return {
@@ -1539,12 +1608,41 @@ function ProfileComponent({
               <Roles
                 role={formState.role ?? ""}
                 role_options={currentStaffData?.role_options ?? []}
+                roles={currentStaffData?.roles ?? []}
                 disabled={disabled}
                 onRoleChange={(roleId) =>
                   setFormState((prev) => ({ ...prev, role: roleId }))
                 }
                 searchTerm={roleSearch}
                 showSelectedFilter={roleShowSelected}
+              />
+            </StepCard>
+          );
+        }
+
+        case "routes": {
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["route_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Routes
+                route_ids={formState.route_ids ?? []}
+                route_resources={currentStaffData?.route_resources ?? []}
+                show_routes={currentStaffData?.show_routes ?? true}
+                route_suggestions={currentStaffData?.route_suggestions ?? []}
+                routes={currentStaffData?.routes ?? []}
+                disabled={disabled}
+                onChange={(routeIds) =>
+                  setFormState((prev) => ({ ...prev, route_ids: routeIds }))
+                }
               />
             </StepCard>
           );
@@ -1684,6 +1782,7 @@ function ProfileComponent({
       formState.email_ids,
       formState.primary_email_index,
       formState.department_ids,
+      formState.route_ids,
       formState.cohort_ids,
       formState.role,
       formState.primary_department_id,

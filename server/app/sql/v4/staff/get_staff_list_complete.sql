@@ -349,7 +349,7 @@ staff_rows AS (
     )
     AND (
         up.role = 'superadmin'::profile_role OR
-        (up.role = 'admin'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
+        (up.role = 'admin'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)) OR
         (up.role = 'instructional'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
         (up.role = 'member'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)) OR
         (up.role = 'guest' AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'guest'::profile_role))
@@ -372,7 +372,7 @@ SELECT
                  -- Superadmin has no restrictions
                  WHEN sr.current_user_role_for_permissions = 'superadmin' THEN true
                  -- Role hierarchy: can only edit roles lower than current role
-                 WHEN sr.current_user_role_for_permissions = 'admin' AND sr.role IN ('instructional', 'member', 'guest') THEN true
+                 WHEN sr.current_user_role_for_permissions = 'admin' AND sr.role IN ('instructional', 'member', 'guest', 'custom') THEN true
                  WHEN sr.current_user_role_for_permissions = 'instructional' AND sr.role IN ('member', 'guest') THEN true
                  WHEN sr.current_user_role_for_permissions = 'member' AND sr.role = 'guest' THEN true
                  ELSE false
@@ -385,7 +385,7 @@ SELECT
                  -- Cannot delete profiles with cohort links (prevent orphaned data)
                  WHEN sr.total_cohort_links > 0 THEN false
                  -- Role hierarchy: can only delete roles lower than current role
-                 WHEN sr.current_user_role_for_permissions = 'admin' AND sr.role IN ('instructional', 'member', 'guest') THEN true
+                 WHEN sr.current_user_role_for_permissions = 'admin' AND sr.role IN ('instructional', 'member', 'guest', 'custom') THEN true
                  WHEN sr.current_user_role_for_permissions = 'instructional' AND sr.role IN ('member', 'guest') THEN true
                  WHEN sr.current_user_role_for_permissions = 'member' AND sr.role = 'guest' THEN true
                  ELSE false
@@ -460,8 +460,8 @@ SELECT
     ) as trend_data_total_requests,
     COALESCE(vdid.valid_department_ids, ARRAY[]::text[]) as valid_department_ids,
     CASE 
-        WHEN up.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[]
-        WHEN up.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::text[]
+        WHEN up.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
+        WHEN up.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
         ELSE ARRAY['instructional', 'member', 'guest']::text[]
     END as role_options,
     COALESCE(

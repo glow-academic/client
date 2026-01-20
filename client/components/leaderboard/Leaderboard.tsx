@@ -30,7 +30,8 @@ type ProfileRole =
   | "admin"
   | "instructional"
   | "member"
-  | "guest";
+  | "guest"
+  | "custom";
 
 type LeaderboardMetric = {
   has_data: boolean | null;

@@ -39,7 +39,8 @@ type ProfileRole =
   | "admin"
   | "instructional"
   | "member"
-  | "guest";
+  | "guest"
+  | "custom";
 
 // ============================================================================
 // TYPES (derived from LayoutContextResponse)
@@ -87,6 +88,7 @@ interface ProfileContextType {
 
   // Permissions data (from server)
   availableSections: string[];
+  availableRoutes: string[];
   redirectPath: string;
   scopedRoles: string[]; // Roles that the effective profile has scope to see
 
@@ -385,21 +387,29 @@ export function ProfileProviderClient({
 
   const navigateToDefault = useCallback(
     (role: ProfileRole) => {
-      const defaultSection = getFirstAvailableSectionForRole(role);
+      const availableSections = initial?.available_sections ?? [];
+      const defaultSection =
+        availableSections.length > 0
+          ? availableSections[0]
+          : getFirstAvailableSectionForRole(role);
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname]
+    [router, pathname, initial?.available_sections]
   );
 
   const isSectionAvailable = useCallback(
     (section: string, role?: ProfileRole) => {
+      const availableSections = initial?.available_sections ?? [];
+      if (availableSections.length > 0) {
+        return availableSections.includes(section);
+      }
       const targetRole = (role ||
         effectiveProfile?.role ||
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role]
+    [effectiveProfile?.role, initial?.available_sections]
   );
 
   // WebSocket helper methods
@@ -508,6 +518,7 @@ export function ProfileProviderClient({
     // LayoutContextResponse uses snake_case fields matching API response exactly (from OpenAPI schema)
     // No type assertions needed - types are auto-generated from server schema
     availableSections: initial?.available_sections ?? [],
+    availableRoutes: initial?.available_routes ?? [],
     redirectPath: initial?.redirect_path ?? "/home",
     scopedRoles: initial?.scoped_roles ?? [],
 

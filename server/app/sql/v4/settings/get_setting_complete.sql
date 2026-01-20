@@ -79,6 +79,13 @@ CREATE TYPE types.q_get_setting_v4_department AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_setting_v4_profile AS (
+    profile_id uuid,
+    name text,
+    description text,
+    generated boolean
+);
+
 CREATE TYPE types.q_get_setting_v4_auth AS (
     auth_id uuid,
     name text,
@@ -197,6 +204,14 @@ RETURNS TABLE (
     departments_required boolean,
     department_suggestions uuid[],
     departments types.q_get_setting_v4_department[],
+    -- Multi-select resources: profiles
+    profile_ids uuid[],
+    profile_resources types.q_get_setting_v4_profile[],
+    show_profiles boolean,
+    profiles_agent_id uuid,
+    profiles_required boolean,
+    profile_suggestions uuid[],
+    profiles types.q_get_setting_v4_profile[],
     -- Multi-select resources: auths
     auth_ids uuid[],
     auth_resources types.q_get_setting_v4_auth[],
@@ -331,6 +346,30 @@ department_mapping_data AS (
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
 ),
+profile_mapping_data AS (
+    SELECT
+        p.id as profile_id,
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            ''
+        ) as name,
+        COALESCE(
+            (SELECT r.name FROM profile_roles pr JOIN roles_resource r ON pr.role_id = r.id WHERE pr.profile_id = p.id LIMIT 1),
+            (SELECT r2.role::text FROM profile_roles pr2 JOIN roles_resource r2 ON pr2.role_id = r2.id WHERE pr2.profile_id = p.id LIMIT 1),
+            ''
+        ) as description,
+        false as generated
+    FROM profile_artifact p
+    WHERE EXISTS (
+        SELECT 1
+        FROM profile_flags pf
+        JOIN flags_resource f ON pf.flag_id = f.id
+        WHERE pf.profile_id = p.id
+          AND f.name = 'active'
+          AND pf.value = true
+    )
+),
 primary_department_id_data AS (
     SELECT department_id
     FROM params x
@@ -357,6 +396,10 @@ ui_flags AS (
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
         END as show_departments,
+        CASE
+            WHEN (SELECT COUNT(*) FROM profile_mapping_data) > 0 THEN true
+            ELSE false
+        END as show_profiles,
         true as show_auths,  -- Always show auths picker
         true as show_providers,  -- Always show providers picker
         true as show_keys  -- Always show keys picker
@@ -414,6 +457,34 @@ color_resource_data AS (
          FROM setting_colors sc 
          JOIN colors_resource c ON sc.color_id = c.id 
          WHERE sc.setting_id = (SELECT setting_id FROM params)) as setting_color_resources
+    FROM params
+),
+profile_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(dp.profiles_id ORDER BY dp.created_at)
+             FROM draft_profiles dp
+             WHERE dp.draft_id = (SELECT draft_id FROM params)),
+            (SELECT ARRAY_AGG(sp.profile_id ORDER BY sp.created_at)
+             FROM setting_profiles sp
+             WHERE sp.setting_id = (SELECT setting_id FROM params)
+               AND sp.active = true)
+        ) as profile_ids,
+        (SELECT ARRAY_AGG(
+            (pmd.profile_id, pmd.name, pmd.description, pmd.generated)::types.q_get_setting_v4_profile
+            ORDER BY dp.created_at
+        )
+         FROM draft_profiles dp
+         JOIN profile_mapping_data pmd ON pmd.profile_id = dp.profiles_id
+         WHERE dp.draft_id = (SELECT draft_id FROM params)) as draft_profile_resources,
+        (SELECT ARRAY_AGG(
+            (pmd.profile_id, pmd.name, pmd.description, pmd.generated)::types.q_get_setting_v4_profile
+            ORDER BY sp.created_at
+        )
+         FROM setting_profiles sp
+         JOIN profile_mapping_data pmd ON pmd.profile_id = sp.profile_id
+         WHERE sp.setting_id = (SELECT setting_id FROM params)
+           AND sp.active = true) as setting_profile_resources
     FROM params
 ),
 -- Name suggestions: linked to settings OR same group with generated=true
@@ -691,6 +762,28 @@ department_suggestions_data AS (
     FROM params
     -- Always return at least one row
     LIMIT 1
+),
+profile_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sp.profile_id ORDER BY sp.created_at DESC)
+             FROM setting_profiles sp
+             WHERE sp.active = true),
+            ARRAY[]::uuid[]
+        ) as profile_suggestions
+    FROM params
+    LIMIT 1
+),
+profiles_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (pmd.profile_id, pmd.name, pmd.description, pmd.generated)::types.q_get_setting_v4_profile
+                ORDER BY pmd.name
+            ),
+            '{}'::types.q_get_setting_v4_profile[]
+        ) as profiles
+    FROM profile_mapping_data pmd
 ),
 -- Auth IDs (selected auth IDs for setting)
 setting_auth_ids_data AS (
@@ -1768,6 +1861,18 @@ SELECT
         ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_setting_v4_department[]
     ) as departments,
+    -- Multi-select resources: profiles
+    COALESCE((SELECT profile_ids FROM profile_resource_data), ARRAY[]::uuid[]) as profile_ids,
+    COALESCE(
+        (SELECT prd.draft_profile_resources FROM profile_resource_data prd WHERE prd.draft_profile_resources IS NOT NULL LIMIT 1),
+        (SELECT prd.setting_profile_resources FROM profile_resource_data prd WHERE prd.setting_profile_resources IS NOT NULL LIMIT 1),
+        '{}'::types.q_get_setting_v4_profile[]
+    ) as profile_resources,
+    uf.show_profiles,
+    NULL::uuid as profiles_agent_id,
+    false as profiles_required,
+    COALESCE((SELECT profile_suggestions FROM profile_suggestions_data), ARRAY[]::uuid[]) as profile_suggestions,
+    COALESCE((SELECT profiles FROM profiles_data), '{}'::types.q_get_setting_v4_profile[]) as profiles,
     -- Multi-select resources: auths
     COALESCE(
         (SELECT 

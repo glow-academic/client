@@ -6,6 +6,7 @@
 import {
   BookOpen,
   Crown,
+  Flame,
   GraduationCap,
   Shield,
   User,
@@ -69,6 +70,13 @@ export const STAFF_ROLES = [
     description: "Limited access, not logged in or not registered",
     icon: User,
     color: "#6b7280", // gray
+  },
+  {
+    id: "custom",
+    name: "Benchmark",
+    description: "Benchmark access role",
+    icon: Flame,
+    color: "#f97316", // orange
   },
 ] as const;
 

@@ -13,12 +13,20 @@ import {
 } from "@/components/common/forms/staff-roles";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
+import { Check, User } from "lucide-react";
 import { useMemo } from "react";
 
 export interface RolesProps {
   role?: string | null;
   role_options?: string[];
+  roles?: Array<{
+    role: string | null;
+    name: string | null;
+    description: string | null;
+    icon_value?: string | null;
+    color_hex?: string | null;
+  }>;
   show_roles?: boolean;
   disabled?: boolean;
   onRoleChange: (roleId: string) => void;
@@ -33,6 +41,7 @@ export interface RolesProps {
 export function Roles({
   role,
   role_options,
+  roles,
   show_roles = true,
   disabled = false,
   onRoleChange,
@@ -44,11 +53,34 @@ export function Roles({
   emptyMessage = "No roles found. Try adjusting your search.",
 }: RolesProps) {
   const availableRoles = useMemo(() => {
+    const roleResources =
+      roles
+        ?.filter((r) => r.role)
+        .map((r) => {
+          const iconKey = r.icon_value ?? "";
+          const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+
+          return {
+            id: r.role as string,
+            name: r.name ?? r.role ?? "Role",
+            description: r.description ?? "",
+            icon: IconComponent,
+            color: r.color_hex ?? "#64748b",
+          };
+        }) ?? [];
+
+    if (roleResources.length > 0) {
+      if (!role_options || role_options.length === 0) {
+        return roleResources;
+      }
+      return roleResources.filter((r) => role_options.includes(r.id));
+    }
+
     if (!role_options || role_options.length === 0) {
       return STAFF_ROLES;
     }
     return STAFF_ROLES.filter((r) => role_options.includes(r.id));
-  }, [role_options]);
+  }, [role_options, roles]);
 
   const filteredRoles = useMemo(() => {
     let roles = availableRoles;

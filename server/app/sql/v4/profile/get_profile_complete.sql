@@ -75,6 +75,25 @@ CREATE TYPE types.q_get_profile_v4_flag_resource AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_profile_v4_role_resource AS (
+    role text,
+    name text,
+    description text,
+    icon_value text,
+    color_hex text
+);
+
+CREATE TYPE types.q_get_profile_v4_route_resource AS (
+    route_id uuid,
+    route text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_profile_v4_role_route AS (
+    role text,
+    route_id uuid
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_profile_v4(
     profile_id uuid,
@@ -95,6 +114,14 @@ RETURNS TABLE (
     role text,
     -- Role options
     role_options text[],
+    roles types.q_get_profile_v4_role_resource[],
+    role_routes types.q_get_profile_v4_role_route[],
+    -- Multi-select resources: routes
+    route_ids uuid[],
+    route_resources types.q_get_profile_v4_route_resource[],
+    show_routes boolean,
+    route_suggestions uuid[],
+    routes types.q_get_profile_v4_route_resource[],
     -- Single-select resources: first_name
     first_name_id uuid,
     first_name_resource types.q_get_profile_v4_name_resource,
@@ -222,16 +249,16 @@ role_options_data AS (
                     SELECT r.role::text
                     FROM roles_resource r
                     WHERE r.active = true
-                      AND r.role IN ('superadmin'::profile_role, 'admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
-                    ORDER BY array_position(ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[], r.role::text)
+                      AND r.role IN ('superadmin'::profile_role, 'admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)
+                    ORDER BY array_position(ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[], r.role::text)
                 )
             WHEN up.role = 'admin'::profile_role THEN
                 ARRAY(
                     SELECT r.role::text
                     FROM roles_resource r
                     WHERE r.active = true
-                      AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
-                    ORDER BY array_position(ARRAY['admin', 'instructional', 'member', 'guest']::text[], r.role::text)
+                      AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)
+                    ORDER BY array_position(ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[], r.role::text)
                 )
             ELSE
                 ARRAY(
@@ -244,6 +271,89 @@ role_options_data AS (
         END as role_options
     FROM user_profile up
     LIMIT 1
+),
+roles_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (r.role::text, r.name, r.description, i.value, c.hex_code)::types.q_get_profile_v4_role_resource
+                ORDER BY r.name
+            ),
+            '{}'::types.q_get_profile_v4_role_resource[]
+        ) as roles
+    FROM roles_resource r
+    LEFT JOIN icons_resource i ON i.id = r.icon_id
+    LEFT JOIN colors_resource c ON c.id = r.color_id
+    WHERE r.active = true
+),
+role_routes_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (rr.role::text, rr_route.id)::types.q_get_profile_v4_role_route
+                ORDER BY rr.role::text, rr_route.route
+            ),
+            '{}'::types.q_get_profile_v4_role_route[]
+        ) as role_routes
+    FROM role_routes rr
+    JOIN routes_resource rr_route ON rr_route.route = rr.route
+    WHERE rr.active = true
+),
+route_ids_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pr.route_id ORDER BY rr.route)
+             FROM profile_routes pr
+             JOIN routes_resource rr ON rr.id = pr.route_id
+             WHERE pr.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
+               AND pr.active = true),
+            ARRAY[]::uuid[]
+        ) as route_ids
+    FROM params
+    LIMIT 1
+),
+route_resources_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (rr.id, rr.route::text, COALESCE(rr.generated, false))::types.q_get_profile_v4_route_resource
+                ORDER BY rr.route
+            )
+            FROM routes_resource rr
+            CROSS JOIN route_ids_data rid
+            WHERE rr.id = ANY(rid.route_ids)),
+            ARRAY[]::types.q_get_profile_v4_route_resource[]
+        ) as route_resources
+    FROM params
+    LIMIT 1
+),
+route_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(rr_route.id ORDER BY rr_route.route)
+             FROM role_routes rr
+             JOIN routes_resource rr_route ON rr_route.route = rr.route
+             WHERE rr.role = COALESCE(
+                 (SELECT role::profile_role FROM target_profile_role_data),
+                 NULL::profile_role
+             )
+               AND rr.active = true),
+            ARRAY[]::uuid[]
+        ) as route_suggestions
+    FROM params
+    LIMIT 1
+),
+routes_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (rr.id, rr.route::text, COALESCE(rr.generated, false))::types.q_get_profile_v4_route_resource
+                ORDER BY rr.route
+            ),
+            '{}'::types.q_get_profile_v4_route_resource[]
+        ) as routes
+    FROM routes_resource rr
+    WHERE rr.active = true
 ),
 -- Get group_id from target profile or current profile
 group_id_data AS (
@@ -831,7 +941,11 @@ ui_flags AS (
         CASE 
             WHEN (SELECT COUNT(*) FROM cohort_mapping_data) > 0 THEN true
             ELSE false
-        END as show_cohorts
+        END as show_cohorts,
+        CASE
+            WHEN (SELECT COUNT(*) FROM routes_resource WHERE active = true) > 0 THEN true
+            ELSE false
+        END as show_routes
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -1305,7 +1419,7 @@ permissions_data_with_tools AS (
                         JOIN roles_resource r ON pr_j.role_id = r.id 
                         WHERE pr_j.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                           AND (
-                              (up.role = 'admin'::profile_role AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
+                              (up.role = 'admin'::profile_role AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role))
                               OR (up.role = 'instructional'::profile_role AND r.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
                               OR (up.role = 'member'::profile_role AND r.role IN ('member'::profile_role, 'guest'::profile_role))
                               OR (up.role = 'guest'::profile_role AND r.role = 'guest'::profile_role)
@@ -1330,7 +1444,7 @@ permissions_data_with_tools AS (
                         JOIN roles_resource r ON pr_j.role_id = r.id 
                         WHERE pr_j.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                           AND (
-                              (up.role = 'admin'::profile_role AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
+                              (up.role = 'admin'::profile_role AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role))
                               OR (up.role = 'instructional'::profile_role AND r.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
                               OR (up.role = 'member'::profile_role AND r.role IN ('member'::profile_role, 'guest'::profile_role))
                               OR (up.role = 'guest'::profile_role AND r.role = 'guest'::profile_role)
@@ -1374,6 +1488,14 @@ SELECT
     -- Role
     (SELECT role FROM target_profile_role_data) as role,
     COALESCE((SELECT role_options FROM role_options_data), ARRAY[]::text[]) as role_options,
+    COALESCE((SELECT roles FROM roles_data), ARRAY[]::types.q_get_profile_v4_role_resource[]) as roles,
+    COALESCE((SELECT role_routes FROM role_routes_data), ARRAY[]::types.q_get_profile_v4_role_route[]) as role_routes,
+    -- Multi-select resources: routes
+    COALESCE((SELECT route_ids FROM route_ids_data), ARRAY[]::uuid[]) as route_ids,
+    COALESCE((SELECT route_resources FROM route_resources_data), ARRAY[]::types.q_get_profile_v4_route_resource[]) as route_resources,
+    uf.show_routes,
+    COALESCE((SELECT route_suggestions FROM route_suggestions_data), ARRAY[]::uuid[]) as route_suggestions,
+    COALESCE((SELECT routes FROM routes_data), ARRAY[]::types.q_get_profile_v4_route_resource[]) as routes,
     -- Single-select resources: first_name
     (SELECT first_name_id FROM first_name_resource_data) as first_name_id,
     (SELECT first_name_resource FROM first_name_resource_data) as first_name_resource,

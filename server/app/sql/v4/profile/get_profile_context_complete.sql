@@ -223,6 +223,7 @@ RETURNS TABLE (
     settings_default_account_profile_id text,
     -- Computed fields
     available_sections text[],
+    available_routes text[],
     redirect_path text,
     department_ids text[],
     cohort_ids text[],
@@ -444,7 +445,7 @@ emulation_validation AS (
                       AND p_effective.id != p_actual.id
                       AND CASE 
                         WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'superadmin'::profile_role THEN true
-                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'admin'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'admin'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)
                         WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'instructional'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)
                         ELSE false
                       END
@@ -477,8 +478,8 @@ scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
     SELECT 
         CASE 
-            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[]
-            WHEN epr.role = 'admin'::profile_role THEN ARRAY['admin', 'instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            WHEN epr.role = 'admin'::profile_role THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
             WHEN epr.role = 'instructional'::profile_role THEN ARRAY['instructional', 'member', 'guest']::text[]
             WHEN epr.role = 'member'::profile_role THEN ARRAY['member']::text[]
             ELSE ARRAY['guest']::text[]
@@ -804,38 +805,42 @@ settings_resolution AS (
         JOIN names_resource n ON n.id = pn.name_id
     ),
     settings_default_guest_data AS (
-        -- Get default guest account: try selected settings first, fall back to default settings
+        -- Get default guest account from settings profiles: try selected settings first, fall back to default settings
         SELECT 
             COALESCE(
-                (SELECT dar.profile_id::text
+                (SELECT sp.profile_id::text
                  FROM selected_settings ss
-                 JOIN setting_default_accounts sda ON sda.setting_id = ss.settings_id AND sda.active = true
-                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                 WHERE dar.type = 'guest'::default_account_type AND dar.active = true
+                 JOIN setting_profiles sp ON sp.setting_id = ss.settings_id AND sp.active = true
+                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
+                 JOIN roles_resource r ON r.id = pr.role_id
+                 WHERE r.role = 'guest'::profile_role
                  LIMIT 1),
-                (SELECT dar.profile_id::text
+                (SELECT sp.profile_id::text
                  FROM default_settings ds
-                 JOIN setting_default_accounts sda ON sda.setting_id = ds.settings_id AND sda.active = true
-                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                 WHERE dar.type = 'guest'::default_account_type AND dar.active = true
+                 JOIN setting_profiles sp ON sp.setting_id = ds.settings_id AND sp.active = true
+                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
+                 JOIN roles_resource r ON r.id = pr.role_id
+                 WHERE r.role = 'guest'::profile_role
                  LIMIT 1)
             ) as default_guest_profile_id
     ),
     settings_default_account_data AS (
-        -- Get default account: try selected settings first, fall back to default settings
+        -- Get default account from settings profiles: try selected settings first, fall back to default settings
         SELECT 
             COALESCE(
-                (SELECT dar.profile_id::text
+                (SELECT sp.profile_id::text
                  FROM selected_settings ss
-                 JOIN setting_default_accounts sda ON sda.setting_id = ss.settings_id AND sda.active = true
-                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                 WHERE dar.type = 'admin'::default_account_type AND dar.active = true
+                 JOIN setting_profiles sp ON sp.setting_id = ss.settings_id AND sp.active = true
+                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
+                 JOIN roles_resource r ON r.id = pr.role_id
+                 WHERE r.role IN ('admin'::profile_role, 'superadmin'::profile_role)
                  LIMIT 1),
-                (SELECT dar.profile_id::text
+                (SELECT sp.profile_id::text
                  FROM default_settings ds
-                 JOIN setting_default_accounts sda ON sda.setting_id = ds.settings_id AND sda.active = true
-                 JOIN default_accounts_resource dar ON dar.id = sda.default_account_id
-                 WHERE dar.type = 'admin'::default_account_type AND dar.active = true
+                 JOIN setting_profiles sp ON sp.setting_id = ds.settings_id AND sp.active = true
+                 JOIN profile_roles pr ON pr.profile_id = sp.profile_id
+                 JOIN roles_resource r ON r.id = pr.role_id
+                 WHERE r.role IN ('admin'::profile_role, 'superadmin'::profile_role)
                  LIMIT 1)
             ) as default_account_profile_id
     )
@@ -892,20 +897,32 @@ actor_name_computed AS (
             NULL::text
         ) as actor_name
 ),
-available_sections_computed AS (
-    -- Compute available sections based on effective profile's role
-    -- Returns top-level sections only - sidebar will show all subsections when parent section is available
-    -- Return empty array when role is NULL (for settings-only requests)
+available_routes_data AS (
+    -- Resolve available routes from profile_routes for effective profile
     SELECT 
-        CASE 
-            WHEN epr.role IS NULL THEN ARRAY[]::text[]
-            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['home', 'leaderboard', 'practice', 'analytics', 'create', 'management', 'engine', 'system', 'health', 'benchmark', 'settings']::text[]
-            WHEN epr.role = 'admin'::profile_role THEN ARRAY['home', 'leaderboard', 'practice', 'analytics', 'create', 'management', 'engine', 'settings']::text[]
-            WHEN epr.role = 'instructional'::profile_role THEN ARRAY['home', 'leaderboard', 'practice', 'analytics', 'create']::text[]
-            WHEN epr.role = 'member'::profile_role THEN ARRAY['home', 'leaderboard', 'practice']::text[]
-            ELSE ARRAY['practice']::text[]  -- guest
-        END as available_sections
-    FROM effective_profile_role epr
+        COALESCE(
+            ARRAY_AGG(rr.route::text ORDER BY rr.route),
+            ARRAY[]::text[]
+        ) as available_routes
+    FROM profile_routes pr
+    JOIN routes_resource rr ON rr.id = pr.route_id
+    WHERE pr.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+      AND pr.active = true
+),
+available_sections_computed AS (
+    -- Compute available sections based on allowed routes
+    -- Uses first path segment (e.g. /analytics/... -> analytics)
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(DISTINCT split_part(route_path, '/', 2) ORDER BY split_part(route_path, '/', 2)),
+            ARRAY[]::text[]
+        ) as available_sections
+    FROM (
+        SELECT route_path
+        FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
+        WHERE split_part(route_path, '/', 2) IS NOT NULL
+          AND split_part(route_path, '/', 2) <> ''
+    ) routes
 ),
 redirect_path_computed AS (
     -- Compute redirect path based on effective profile's role
@@ -919,7 +936,16 @@ redirect_path_computed AS (
             WHEN epr.role = 'instructional'::profile_role THEN '/analytics/dashboard'::text
             WHEN epr.role = 'admin'::profile_role THEN '/analytics/dashboard'::text
             WHEN epr.role = 'superadmin'::profile_role THEN '/analytics/dashboard'::text
-            ELSE '/home'::text
+            ELSE COALESCE(
+                (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
+                 WHERE route_path NOT LIKE '%[%'
+                 ORDER BY route_path
+                 LIMIT 1),
+                (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
+                 ORDER BY route_path
+                 LIMIT 1),
+                '/home'::text
+            )
         END as redirect_path
     FROM effective_profile_role epr
 ),
@@ -1050,6 +1076,7 @@ SELECT
     sr.default_account_profile_id as settings_default_account_profile_id,
     -- Computed fields
     (SELECT available_sections FROM available_sections_computed) as available_sections,
+    (SELECT available_routes FROM available_routes_data) as available_routes,
     (SELECT redirect_path FROM redirect_path_computed) as redirect_path,
     (SELECT department_ids FROM department_ids_computed) as department_ids,
     (SELECT cohort_ids FROM cohort_ids_computed) as cohort_ids,

@@ -547,6 +547,7 @@ export default function Staff({
       admin: staff.filter((s) => s.role === "admin").length,
       superadmin: staff.filter((s) => s.role === "superadmin").length,
       guest: staff.filter((s) => s.role === "guest").length,
+      custom: staff.filter((s) => s.role === "custom").length,
       totalRequests: staff.reduce((sum, s) => sum + (s.total_requests || 0), 0),
     };
   }, [staff]);
@@ -669,7 +670,7 @@ export default function Staff({
 
   // CSV Import logic
   const validRoles = useMemo(() => {
-    const roleOrder = ["member", "instructional", "admin", "superadmin"];
+    const roleOrder = ["member", "instructional", "admin", "superadmin", "custom"];
     return roleOrder.filter((role) => roleOptionsForCSV.includes(role));
   }, [roleOptionsForCSV]);
 

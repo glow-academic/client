@@ -53,20 +53,6 @@ cohort_title AS (
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
-delete_cohort_departments AS (
-    DELETE FROM cohort_departments cd
-    USING params x
-    CROSS JOIN usage_check uc
-    WHERE cd.cohort_id = x.cohort_id
-      AND uc.usage_count = 0
-),
-delete_cohort_simulations AS (
-    DELETE FROM cohort_simulations cs
-    USING params x
-    CROSS JOIN usage_check uc
-    WHERE cs.cohort_id = x.cohort_id
-      AND uc.usage_count = 0
-),
 delete_result AS (
     DELETE FROM cohort_artifact c
     USING params x

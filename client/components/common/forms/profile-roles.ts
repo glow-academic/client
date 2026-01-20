@@ -8,7 +8,8 @@ export type ProfileRole =
   | "admin"
   | "instructional"
   | "member"
-  | "guest";
+  | "guest"
+  | "custom";
 
 export const PROFILE_ROLES: ProfileRole[] = [
   "superadmin",
@@ -16,6 +17,7 @@ export const PROFILE_ROLES: ProfileRole[] = [
   "instructional",
   "member",
   "guest",
+  "custom",
 ];
 
 export const ROLE_LABEL: Record<ProfileRole, string> = {
@@ -24,4 +26,5 @@ export const ROLE_LABEL: Record<ProfileRole, string> = {
   instructional: "Instructional",
   member: "Member",
   guest: "Guest",
+  custom: "Custom",
 };

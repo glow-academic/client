@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION api_patch_setting_draft_v4(
     active_flag_id uuid DEFAULT NULL,
     color_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
+    profile_ids uuid[] DEFAULT NULL,
     auth_ids uuid[] DEFAULT NULL,
     provider_ids uuid[] DEFAULT NULL,
     key_ids uuid[] DEFAULT NULL,
@@ -57,6 +58,14 @@ BEGIN
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
+
+    IF profile_ids IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM UNNEST(profile_ids) as pid
+        WHERE NOT EXISTS (SELECT 1 FROM profile_artifact WHERE id = pid)
+    ) THEN
+        RAISE EXCEPTION 'Profile resource not found in profile_artifact';
+    END IF;
     
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
@@ -88,6 +97,7 @@ BEGIN
             DELETE FROM draft_colors WHERE draft_colors.draft_id = v_draft_id;
             DELETE FROM draft_flags WHERE draft_flags.draft_id = v_draft_id;
             DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
+            DELETE FROM draft_profiles WHERE draft_profiles.draft_id = v_draft_id;
             DELETE FROM draft_auth WHERE draft_auth.draft_id = v_draft_id;
             DELETE FROM draft_providers WHERE draft_providers.draft_id = v_draft_id;
             DELETE FROM draft_keys WHERE draft_keys.draft_id = v_draft_id;
@@ -134,6 +144,16 @@ BEGIN
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+
+            IF profile_ids IS NOT NULL THEN
+                DELETE FROM draft_profiles WHERE draft_profiles.draft_id = v_draft_id;
+                INSERT INTO draft_profiles (draft_id, profiles_id, version)
+                SELECT v_draft_id, profile_id, v_new_version
+                FROM UNNEST(profile_ids) as profile_id
+                ON CONFLICT ON CONSTRAINT draft_profiles_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -224,6 +244,15 @@ BEGIN
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+
+    IF profile_ids IS NOT NULL THEN
+        INSERT INTO draft_profiles (draft_id, profiles_id, version)
+        SELECT v_draft_id, profile_id, v_new_version
+        FROM UNNEST(profile_ids) as profile_id
+        ON CONFLICT ON CONSTRAINT draft_profiles_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

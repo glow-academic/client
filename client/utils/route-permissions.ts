@@ -11,7 +11,8 @@ export type ProfileRole =
   | "admin"
   | "instructional"
   | "member"
-  | "guest";
+  | "guest"
+  | "custom";
 
 export interface RoutePermission {
   path: string;
@@ -507,19 +508,19 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
   },
   {
     section: "benchmark",
-    roles: ["superadmin"],
+    roles: ["superadmin", "custom"],
     title: "Benchmark",
     description: "Run and manage evaluations",
     routes: [
       {
         path: "/benchmark",
-        roles: ["superadmin"],
+        roles: ["superadmin", "custom"],
         title: "Benchmark",
         redirectTo: "/benchmark",
       },
       {
         path: "/benchmark/er/[eval_run_id]",
-        roles: ["superadmin"],
+        roles: ["superadmin", "custom"],
         title: "Evaluation Run",
         redirectTo: "/benchmark",
       },
@@ -608,6 +609,8 @@ export const getRedirectPathForRole = (role: ProfileRole): string => {
     case "admin":
     case "superadmin":
       return "/analytics/dashboard"; // Staff and admins start at analytics dashboard
+    case "custom":
+      return "/benchmark";
     default:
       // For unknown roles, try to determine a safe default based on available sections
       // This prevents incorrect redirects to practice page
@@ -619,6 +622,7 @@ export const getRedirectPathForRole = (role: ProfileRole): string => {
           "instructional",
           "admin",
           "superadmin",
+          "custom",
         ];
         if (validRoles.includes(role)) {
           // Fallback to home for valid but unhandled roles

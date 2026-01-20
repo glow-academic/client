@@ -3686,22 +3686,14 @@ class PatchCohortDraftApiResponse(BaseModel):
 
 class SaveCohortSqlParams(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
-    simulation_ids: list[UUID]
+    draft_id: UUID
     profile_id: UUID
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
     input_cohort_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name_id,
-            self.department_ids,
-            self.simulation_ids,
+            self.draft_id,
             self.profile_id,
-            self.description_id,
-            self.active_flag_id,
             self.input_cohort_id,
         )
 
@@ -3712,11 +3704,7 @@ class SaveCohortSqlRow(BaseModel):
 
 class SaveCohortApiRequest(BaseModel):
 
-    name_id: UUID
-    department_ids: list[UUID]
-    simulation_ids: list[UUID]
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    draft_id: UUID
     input_cohort_id: UUID | None = None
 
 class SaveCohortApiResponse(BaseModel):
@@ -11983,6 +11971,34 @@ class QGetProfileV4RequestLimitResource(BaseModel):
     requests_per_day: int | None
     generated: bool | None
 
+
+
+
+class QGetProfileV4RoleResource(BaseModel):
+
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+
+
+
+
+class QGetProfileV4RoleRoute(BaseModel):
+
+    role: str | None
+    route_id: UUID | None
+
+
+
+
+class QGetProfileV4RouteResource(BaseModel):
+
+    route_id: UUID | None
+    route: str | None
+    generated: bool | None
+
 class GetProfileSqlRow(BaseModel):
 
     actor_name: str | None = None
@@ -11994,6 +12010,13 @@ class GetProfileSqlRow(BaseModel):
     profile_id: UUID | None = None
     role: str | None = None
     role_options: list[str] | None = None
+    roles: list[QGetProfileV4RoleResource] | None = None
+    role_routes: list[QGetProfileV4RoleRoute] | None = None
+    route_ids: list[UUID] | None = None
+    route_resources: list[QGetProfileV4RouteResource] | None = None
+    show_routes: bool | None = None
+    route_suggestions: list[UUID] | None = None
+    routes: list[QGetProfileV4RouteResource] | None = None
     first_name_id: UUID | None = None
     first_name_resource: QGetProfileV4NameResource | None = None
     show_first_name: bool | None = None
@@ -12058,6 +12081,13 @@ class GetProfileApiResponse(BaseModel):
     profile_id: UUID | None = None
     role: str | None = None
     role_options: list[str] | None = None
+    roles: list[QGetProfileV4RoleResource] | None = None
+    role_routes: list[QGetProfileV4RoleRoute] | None = None
+    route_ids: list[UUID] | None = None
+    route_resources: list[QGetProfileV4RouteResource] | None = None
+    show_routes: bool | None = None
+    route_suggestions: list[UUID] | None = None
+    routes: list[QGetProfileV4RouteResource] | None = None
     first_name_id: UUID | None = None
     first_name_resource: QGetProfileV4NameResource | None = None
     show_first_name: bool | None = None
@@ -12301,6 +12331,7 @@ class GetProfileContextSqlRow(BaseModel):
     settings_default_guest_profile_id: str | None = None
     settings_default_account_profile_id: str | None = None
     available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
     redirect_path: str | None = None
     department_ids: list[str] | None = None
     cohort_ids: list[str] | None = None
@@ -12386,6 +12417,7 @@ class GetProfileContextApiResponse(BaseModel):
     settings_default_guest_profile_id: str | None = None
     settings_default_account_profile_id: str | None = None
     available_sections: list[str] | None = None
+    available_routes: list[str] | None = None
     redirect_path: str | None = None
     department_ids: list[str] | None = None
     cohort_ids: list[str] | None = None
@@ -12408,6 +12440,7 @@ class SaveProfileSqlParams(BaseModel):
     active: bool | None = None
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
     primary_email_index: int | None = None
     primary_department_index: int | None = None
     input_profile_id: UUID | None = None
@@ -12425,6 +12458,7 @@ class SaveProfileSqlParams(BaseModel):
             self.active,
             self.cohort_ids,
             self.department_ids,
+            self.route_ids,
             self.primary_email_index,
             self.primary_department_index,
             self.input_profile_id,
@@ -12448,6 +12482,7 @@ class SaveProfileApiRequest(BaseModel):
     active: bool | None = None
     cohort_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
     primary_email_index: int | None = None
     primary_department_index: int | None = None
     input_profile_id: UUID | None = None
@@ -18556,6 +18591,16 @@ class QGetSettingV4NameResource(BaseModel):
 
 
 
+class QGetSettingV4Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
 class QGetSettingV4Provider(BaseModel):
 
     provider_id: UUID | None
@@ -18606,6 +18651,13 @@ class GetSettingSqlRow(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetSettingV4Department] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_resources: list[QGetSettingV4Profile] | None = None
+    show_profiles: bool | None = None
+    profiles_agent_id: UUID | None = None
+    profiles_required: bool | None = None
+    profile_suggestions: list[UUID] | None = None
+    profiles: list[QGetSettingV4Profile] | None = None
     auth_ids: list[UUID] | None = None
     auth_resources: list[QGetSettingV4Auth] | None = None
     show_auths: bool | None = None
@@ -18677,6 +18729,13 @@ class GetSettingApiResponse(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetSettingV4Department] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_resources: list[QGetSettingV4Profile] | None = None
+    show_profiles: bool | None = None
+    profiles_agent_id: UUID | None = None
+    profiles_required: bool | None = None
+    profile_suggestions: list[UUID] | None = None
+    profiles: list[QGetSettingV4Profile] | None = None
     auth_ids: list[UUID] | None = None
     auth_resources: list[QGetSettingV4Auth] | None = None
     show_auths: bool | None = None
@@ -18762,6 +18821,7 @@ class PatchSettingDraftSqlParams(BaseModel):
     active_flag_id: UUID | None = None
     color_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
     provider_ids: list[UUID] | None = None
     key_ids: list[UUID] | None = None
@@ -18776,6 +18836,7 @@ class PatchSettingDraftSqlParams(BaseModel):
             self.active_flag_id,
             self.color_ids,
             self.department_ids,
+            self.profile_ids,
             self.auth_ids,
             self.provider_ids,
             self.key_ids,
@@ -18796,6 +18857,7 @@ class PatchSettingDraftApiRequest(BaseModel):
     active_flag_id: UUID | None = None
     color_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
     provider_ids: list[UUID] | None = None
     key_ids: list[UUID] | None = None
@@ -18821,6 +18883,7 @@ class SaveSettingSqlParams(BaseModel):
     provider_ids: list[UUID]
     key_ids: list[UUID]
     input_setting_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
 
@@ -18834,6 +18897,7 @@ class SaveSettingSqlParams(BaseModel):
             self.provider_ids,
             self.key_ids,
             self.input_setting_id,
+            self.profile_ids,
             self.description_id,
             self.active_flag_id,
         )
@@ -18852,6 +18916,7 @@ class SaveSettingApiRequest(BaseModel):
     provider_ids: list[UUID]
     key_ids: list[UUID]
     input_setting_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
 

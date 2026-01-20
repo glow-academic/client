@@ -957,6 +957,11 @@ function CohortComponent({
         throw new Error("Save action not available");
       }
 
+      if (!draftId) {
+        toast.error("Draft not ready. Please wait a moment and try again.");
+        throw new Error("Draft ID is required");
+      }
+
       // Ensure required fields are present (TypeScript guard)
       if (!formState.name_id) {
         toast.error("Required fields are missing");
@@ -964,32 +969,10 @@ function CohortComponent({
       }
 
       try {
-        const orderedSimulationIds =
-          formState.simulation_positions.length > 0
-            ? [...formState.simulation_positions]
-                .sort((a, b) => a.value - b.value)
-                .map((position) => position.simulation_id)
-            : formState.simulation_ids;
-        console.log("body", {
-          input_cohort_id: isEditMode && cohortId ? cohortId : null,
-          name_id: formState.name_id,
-          description_id: formState.description_id || null,
-          active_flag_id: formState.active_flag_id || null,
-          department_ids: formState.department_ids || [],
-          simulation_ids: orderedSimulationIds.filter(
-            (id): id is string => id !== null
-          ) as string[],
-        });
         await saveCohortAction({
           body: {
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id || null,
-            active_flag_id: formState.active_flag_id || null,
-            department_ids: formState.department_ids || [],
-            simulation_ids: orderedSimulationIds.filter(
-              (id): id is string => id !== null
-            ) as string[],
+            draft_id: draftId,
           },
         });
         toast.success(

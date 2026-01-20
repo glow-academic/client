@@ -11,7 +11,8 @@ export type ProfileRole =
   | "admin"
   | "instructional"
   | "member"
-  | "guest";
+  | "guest"
+  | "custom";
 
 // Re-export the functions from route-permissions for backward compatibility
 export {

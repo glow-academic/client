@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION api_save_setting_v4(
     provider_ids uuid[],
     key_ids uuid[],
     input_setting_id uuid DEFAULT NULL,
+    profile_ids uuid[] DEFAULT NULL,
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL
 )
@@ -76,6 +77,7 @@ BEGIN
         DELETE FROM setting_descriptions WHERE setting_id = v_setting_id;
         DELETE FROM setting_colors WHERE setting_id = v_setting_id;
         DELETE FROM department_settings WHERE settings_id = v_setting_id;
+        DELETE FROM setting_profiles WHERE setting_id = v_setting_id;
         DELETE FROM setting_auths WHERE settings_id = v_setting_id;
         DELETE FROM setting_providers WHERE settings_id = v_setting_id;
         -- Update existing active flag if it exists
@@ -97,6 +99,7 @@ BEGIN
             active_flag_id,
             COALESCE(color_ids, ARRAY[]::uuid[]) AS color_ids,
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+            COALESCE(profile_ids, ARRAY[]::uuid[]) AS profile_ids,
             profile_id,
             COALESCE(auth_ids, ARRAY[]::uuid[]) AS auth_ids,
             COALESCE(provider_ids, ARRAY[]::uuid[]) AS provider_ids,
@@ -214,6 +217,21 @@ BEGIN
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT department_settings_pkey DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+    ),
+    link_profiles AS (
+        INSERT INTO setting_profiles (setting_id, profile_id, active, created_at, updated_at)
+        SELECT 
+            x.setting_id,
+            profile_id,
+            true,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.profile_ids) as profile_id
+        WHERE COALESCE(array_length(x.profile_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT setting_profiles_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),

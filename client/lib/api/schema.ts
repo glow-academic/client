@@ -684,7 +684,7 @@ export interface paths {
         put?: never;
         /**
          * Save Cohort
-         * @description Save cohort - handles both create (cohort_id = NULL) and update (cohort_id provided).
+         * @description Save cohort - draft-first create/update using draft resources.
          */
         post: operations["save_cohort_api_v4_cohorts_save_post"];
         delete?: never;
@@ -10117,6 +10117,20 @@ export interface components {
             role?: string | null;
             /** Role Options */
             role_options?: string[] | null;
+            /** Roles */
+            roles?: components["schemas"]["QGetProfileV4RoleResource"][] | null;
+            /** Role Routes */
+            role_routes?: components["schemas"]["QGetProfileV4RoleRoute"][] | null;
+            /** Route Ids */
+            route_ids?: string[] | null;
+            /** Route Resources */
+            route_resources?: components["schemas"]["QGetProfileV4RouteResource"][] | null;
+            /** Show Routes */
+            show_routes?: boolean | null;
+            /** Route Suggestions */
+            route_suggestions?: string[] | null;
+            /** Routes */
+            routes?: components["schemas"]["QGetProfileV4RouteResource"][] | null;
             /** First Name Id */
             first_name_id?: string | null;
             first_name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
@@ -10393,6 +10407,8 @@ export interface components {
             settings_default_account_profile_id?: string | null;
             /** Available Sections */
             available_sections?: string[] | null;
+            /** Available Routes */
+            available_routes?: string[] | null;
             /** Redirect Path */
             redirect_path?: string | null;
             /** Department Ids */
@@ -11180,6 +11196,20 @@ export interface components {
             department_suggestions?: string[] | null;
             /** Departments */
             departments?: components["schemas"]["QGetSettingV4Department"][] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Profile Resources */
+            profile_resources?: components["schemas"]["QGetSettingV4Profile"][] | null;
+            /** Show Profiles */
+            show_profiles?: boolean | null;
+            /** Profiles Agent Id */
+            profiles_agent_id?: string | null;
+            /** Profiles Required */
+            profiles_required?: boolean | null;
+            /** Profile Suggestions */
+            profile_suggestions?: string[] | null;
+            /** Profiles */
+            profiles?: components["schemas"]["QGetSettingV4Profile"][] | null;
             /** Auth Ids */
             auth_ids?: string[] | null;
             /** Auth Resources */
@@ -12613,6 +12643,8 @@ export interface components {
             color_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
             /** Auth Ids */
             auth_ids?: string[] | null;
             /** Provider Ids */
@@ -16096,6 +16128,35 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetProfileV4RoleResource */
+        QGetProfileV4RoleResource: {
+            /** Role */
+            role: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Value */
+            icon_value: string | null;
+            /** Color Hex */
+            color_hex: string | null;
+        };
+        /** QGetProfileV4RoleRoute */
+        QGetProfileV4RoleRoute: {
+            /** Role */
+            role: string | null;
+            /** Route Id */
+            route_id: string | null;
+        };
+        /** QGetProfileV4RouteResource */
+        QGetProfileV4RouteResource: {
+            /** Route Id */
+            route_id: string | null;
+            /** Route */
+            route: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetProviderV4DescriptionResource */
         QGetProviderV4DescriptionResource: {
             /** Id */
@@ -16611,6 +16672,17 @@ export interface components {
             id: string | null;
             /** Name */
             name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4Profile */
+        QGetSettingV4Profile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -19761,18 +19833,10 @@ export interface components {
         /** SaveCohortApiRequest */
         SaveCohortApiRequest: {
             /**
-             * Name Id
+             * Draft Id
              * Format: uuid
              */
-            name_id: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
+            draft_id: string;
             /** Input Cohort Id */
             input_cohort_id?: string | null;
         };
@@ -20061,6 +20125,8 @@ export interface components {
             cohort_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Route Ids */
+            route_ids?: string[] | null;
             /** Primary Email Index */
             primary_email_index?: number | null;
             /** Primary Department Index */
@@ -20209,6 +20275,8 @@ export interface components {
             key_ids: string[];
             /** Input Setting Id */
             input_setting_id?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
             /** Description Id */
             description_id?: string | null;
             /** Active Flag Id */

@@ -30,7 +30,8 @@ type ProfileRole =
   | "admin"
   | "instructional"
   | "member"
-  | "guest";
+  | "guest"
+  | "custom";
 
 export type SimulationFilter = "practice" | "general" | "archived";
 

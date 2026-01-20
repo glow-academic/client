@@ -30,6 +30,7 @@ CREATE OR REPLACE FUNCTION api_save_profile_v4(
     active boolean DEFAULT NULL,
     cohort_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
+    route_ids uuid[] DEFAULT NULL,
     primary_email_index integer DEFAULT NULL,
     primary_department_index integer DEFAULT NULL,
     input_profile_id uuid DEFAULT NULL,
@@ -133,6 +134,7 @@ BEGIN
             COALESCE(active, true) AS active,
             COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+            route_ids AS route_ids,
             v_primary_email_index AS primary_email_index,
             COALESCE(primary_department_index, 0) AS primary_department_index,
             is_create AS             is_create,
@@ -140,6 +142,22 @@ BEGIN
             last_active,
             requests_per_day,
             api_save_profile_v4.actor_profile_id AS actor_profile_id
+    ),
+    resolved_route_ids AS (
+        SELECT
+            CASE
+                WHEN p.route_ids IS NOT NULL THEN p.route_ids
+                WHEN p.role IS NOT NULL THEN COALESCE(
+                    (SELECT ARRAY_AGG(rr_route.id ORDER BY rr_route.route)
+                     FROM role_routes rr
+                     JOIN routes_resource rr_route ON rr_route.route = rr.route
+                     WHERE rr.role = p.role::profile_role
+                       AND rr.active = true),
+                    ARRAY[]::uuid[]
+                )
+                ELSE ARRAY[]::uuid[]
+            END as route_ids
+        FROM params p
     ),
     -- Insert/update first_name in names table if provided
     first_name_resource AS (
@@ -339,6 +357,30 @@ BEGIN
         WHERE array_length(x.department_ids, 1) > 0
         ON CONFLICT (profile_id, department_id) DO UPDATE SET
             is_primary = EXCLUDED.is_primary,
+            active = true,
+            updated_at = NOW()
+    ),
+    route_delete AS (
+        DELETE FROM profile_routes
+        WHERE profile_id = (SELECT target_profile_id FROM params)
+          AND EXISTS (SELECT 1 FROM params WHERE NOT is_create AND route_ids IS NOT NULL)
+    ),
+    route_insert AS (
+        INSERT INTO profile_routes (profile_id, route_id, active, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.target_profile_id,
+            route_id,
+            true,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN resolved_route_ids rri
+        CROSS JOIN UNNEST(rri.route_ids) as route_id
+        WHERE (x.is_create OR x.route_ids IS NOT NULL)
+          AND COALESCE(array_length(rri.route_ids, 1), 0) > 0
+        ON CONFLICT (profile_id, route_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),
