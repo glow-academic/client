@@ -1281,7 +1281,7 @@ function SettingComponent({
                     setFormState((prev) => ({ ...prev, profile_ids: ids }))
                   }
                   label="Profiles"
-                  description="Profiles enabled for default login access."
+                  description="Profiles enabled for identity provider login."
                 />
 
                 <Auths

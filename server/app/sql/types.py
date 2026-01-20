@@ -12169,6 +12169,17 @@ class QGetProfileContextV4Provider(BaseModel):
 
 
 
+class QGetProfileContextV4RoleResource(BaseModel):
+
+    role: str | None
+    name: str | None
+    description: str | None
+    icon_value: str | None
+    color_hex: str | None
+
+
+
+
 class QGetProfileContextV4Simulation(BaseModel):
 
     simulation_id: UUID | None
@@ -12256,6 +12267,7 @@ class GetProfileContextSqlRow(BaseModel):
     simulations: list[QGetProfileContextV4Simulation] | None = None
     earliest_attempt_date: str | None = None
     scoped_roles: list[str] | None = None
+    role_resources: list[QGetProfileContextV4RoleResource] | None = None
     settings_id: str | None = None
     settings_created_at: str | None = None
     settings_active: bool | None = None
@@ -12333,6 +12345,7 @@ class GetProfileContextApiResponse(BaseModel):
     simulations: list[QGetProfileContextV4Simulation] | None = None
     earliest_attempt_date: str | None = None
     scoped_roles: list[str] | None = None
+    role_resources: list[QGetProfileContextV4RoleResource] | None = None
     settings_id: str | None = None
     settings_created_at: str | None = None
     settings_active: bool | None = None

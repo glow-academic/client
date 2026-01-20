@@ -46,6 +46,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import {
   Building2,
   Check,
@@ -54,6 +55,7 @@ import {
   Plus,
   Power,
   Trash2,
+  User,
   Users,
   X,
 } from "lucide-react";
@@ -550,9 +552,31 @@ export default function StaffNewEdit({
 
   // Filtered roles for role selection
   const filteredRoles = useMemo(() => {
-    const allRoles = STAFF_ROLES.filter((role) =>
-      (scopedRoles || []).includes(role.id)
-    );
+    const roleResources =
+      staffData?.roles
+        ?.filter((role) => role?.role)
+        .map((role) => {
+          const iconKey = role.icon_value ?? "";
+          const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+          return {
+            id: role.role ?? "",
+            name: role.name ?? role.role ?? "Role",
+            description: role.description ?? "",
+            icon: IconComponent,
+            color: role.color_hex ?? "#64748b",
+          };
+        }) ?? [];
+
+    const baseRoles = roleResources.length > 0 ? roleResources : STAFF_ROLES;
+    const allowedRoles =
+      staffData?.role_options && staffData.role_options.length > 0
+        ? staffData.role_options
+        : scopedRoles || [];
+    const allowedSet =
+      allowedRoles.length > 0 ? new Set(allowedRoles) : null;
+    const allRoles = allowedSet
+      ? baseRoles.filter((role) => allowedSet.has(role.id))
+      : baseRoles;
     const searchTerm = (urlParams.roleSearch as string) || "";
     if (!searchTerm.trim()) {
       return allRoles;

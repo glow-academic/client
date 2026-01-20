@@ -84,6 +84,14 @@ CREATE TYPE types.q_get_profile_context_v4_auth AS (
     slug text
 );
 
+CREATE TYPE types.q_get_profile_context_v4_role_resource AS (
+    role text,
+    name text,
+    description text,
+    icon_value text,
+    color_hex text
+);
+
 CREATE TYPE types.q_get_profile_context_v4_provider AS (
     provider_id text,
     name text,
@@ -181,6 +189,7 @@ RETURNS TABLE (
     simulations types.q_get_profile_context_v4_simulation[],
     earliest_attempt_date timestamptz,
     scoped_roles text[],
+    role_resources types.q_get_profile_context_v4_role_resource[],
     -- Settings data (all fields prefixed with settings_)
     settings_id text,
     settings_created_at timestamptz,
@@ -644,6 +653,20 @@ settings_resolution AS (
     LEFT JOIN settings_providers_data spd ON true
     LIMIT 1
 ),
+roles_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (r.role::text, r.name, r.description, i.value, c.hex_code)::types.q_get_profile_context_v4_role_resource
+                ORDER BY r.name
+            ),
+            '{}'::types.q_get_profile_context_v4_role_resource[]
+        ) as role_resources
+    FROM roles_resource r
+    LEFT JOIN icons_resource i ON i.id = r.icon_id
+    LEFT JOIN colors_resource c ON c.id = r.color_id
+    WHERE r.active = true
+),
 actor_name_computed AS (
     -- Compute actor_name from effective_profile_id if available, else actual_profile_id
     -- This is used for audit logging
@@ -799,6 +822,7 @@ SELECT
     sa.simulations as simulations,
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
+    (SELECT role_resources FROM roles_data) as role_resources,
     -- Settings data (all fields prefixed with settings_)
     sr.settings_id as settings_id,
     sr.settings_created_at as settings_created_at,

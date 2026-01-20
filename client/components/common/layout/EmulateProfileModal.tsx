@@ -10,7 +10,10 @@ import type {
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
-import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
+import {
+  STAFF_ROLES,
+  generateGradientFromHex,
+} from "@/components/common/forms/staff-roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
+import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 
 export interface EmulateProfileModalProps {
   open: boolean;
@@ -49,7 +53,7 @@ export function EmulateProfileModal({
   searchSimulatableProfiles,
   switchEffectiveProfile,
 }: EmulateProfileModalProps) {
-  const { activeProfile } = useProfile();
+  const { activeProfile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
     null,
@@ -60,6 +64,56 @@ export function EmulateProfileModal({
   const [isEmulating, setIsEmulating] = useState(false);
   const [fullEmulation, setFullEmulation] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const roleResourceMap = useMemo(() => {
+    if (!roleResources || roleResources.length === 0) return null;
+    const map = new Map<
+      string,
+      {
+        name: string;
+        description: string;
+        icon: typeof User;
+        color: string;
+      }
+    >();
+    roleResources.forEach((resource) => {
+      if (!resource?.role) return;
+      const iconKey = resource.icon_value ?? "";
+      const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+      map.set(resource.role, {
+        name: resource.name ?? resource.role ?? "Role",
+        description: resource.description ?? "",
+        icon: IconComponent,
+        color: resource.color_hex ?? "#64748b",
+      });
+    });
+    return map;
+  }, [roleResources]);
+
+  const getRoleDisplay = useCallback(
+    (roleId?: string | null) => {
+      if (!roleId) return null;
+      const resource = roleResourceMap?.get(roleId);
+      if (resource) {
+        return resource;
+      }
+      const fallback = STAFF_ROLES.find((role) => role.id === roleId);
+      if (fallback) {
+        return {
+          name: fallback.name,
+          description: fallback.description ?? "",
+          icon: fallback.icon,
+          color: fallback.color ?? "#64748b",
+        };
+      }
+      return {
+        name: roleId,
+        description: "",
+        icon: User,
+        color: "#64748b",
+      };
+    },
+    [roleResourceMap],
+  );
 
   // Check if user is superadmin
   const isSuperadmin = activeProfile?.role === "superadmin";
@@ -264,38 +318,28 @@ export function EmulateProfileModal({
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            const roleData = STAFF_ROLES.find(
-                              (r) => r.id === profile.role,
-                            );
-                            if (!roleData) {
+                            const roleInfo = getRoleDisplay(profile.role);
+                            if (!roleInfo) {
                               return (
                                 <Badge variant="outline">{profile.role}</Badge>
                               );
                             }
-                            const IconComponent = roleData.icon;
-                            const hexColor = roleData.color || "#64748b";
-                            // Generate gradient from hex color
-                            const cleanHex = hexColor.replace("#", "");
-                            const r = parseInt(cleanHex.substr(0, 2), 16);
-                            const g = parseInt(cleanHex.substr(2, 2), 16);
-                            const b = parseInt(cleanHex.substr(4, 2), 16);
-                            const lighterR = Math.min(255, r + 60);
-                            const lighterG = Math.min(255, g + 60);
-                            const lighterB = Math.min(255, b + 60);
-                            const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                            const gradientStyle = `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+                            const IconComponent = roleInfo.icon;
+                            const gradientStyle = generateGradientFromHex(
+                              roleInfo.color,
+                            );
 
                             return (
                               <div className="flex items-center gap-2">
                                 <div
                                   className="p-1.5 rounded-md shadow-sm flex-shrink-0"
-                                  style={{
-                                    background: gradientStyle,
-                                  }}
+                                  style={{ background: gradientStyle }}
                                 >
                                   <IconComponent className="h-3.5 w-3.5 text-white" />
                                 </div>
-                                <span className="text-sm">{roleData.name}</span>
+                                <span className="text-sm">
+                                  {roleInfo.name}
+                                </span>
                               </div>
                             );
                           })()}

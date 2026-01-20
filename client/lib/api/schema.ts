@@ -10288,6 +10288,8 @@ export interface components {
             earliest_attempt_date?: string | null;
             /** Scoped Roles */
             scoped_roles?: string[] | null;
+            /** Role Resources */
+            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
             /** Settings Id */
             settings_id?: string | null;
             /** Settings Created At */
@@ -15893,6 +15895,19 @@ export interface components {
             description: string | null;
             /** Value */
             value: string | null;
+        };
+        /** QGetProfileContextV4RoleResource */
+        QGetProfileContextV4RoleResource: {
+            /** Role */
+            role: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Value */
+            icon_value: string | null;
+            /** Color Hex */
+            color_hex: string | null;
         };
         /** QGetProfileContextV4Simulation */
         QGetProfileContextV4Simulation: {

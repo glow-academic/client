@@ -29,7 +29,10 @@ import { toast } from "sonner";
 
 // UI Components
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { STAFF_ROLES } from "@/components/common/forms/staff-roles";
+import {
+  STAFF_ROLES,
+  generateGradientFromHex,
+} from "@/components/common/forms/staff-roles";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -84,6 +87,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
+import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import {
   Check,
   CheckCircle2,
@@ -410,8 +414,11 @@ export default function Staff({
   bulkCreateOrUpdateStaffAction,
 }: ProfilesProps) {
   const router = useRouter();
-  const { effectiveProfile, departmentIds: profileDepartmentIds } =
-    useProfile();
+  const {
+    effectiveProfile,
+    departmentIds: profileDepartmentIds,
+    roleResources,
+  } = useProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Selection state
@@ -667,6 +674,27 @@ export default function Staff({
     () => initialCreateStaffData?.role_options || [],
     [initialCreateStaffData]
   );
+  const roleResourcesForCSV = useMemo(() => {
+    const baseRoles =
+      initialCreateStaffData?.roles && initialCreateStaffData.roles.length > 0
+        ? initialCreateStaffData.roles
+        : roleResources || [];
+    return (
+      baseRoles
+        ?.filter((role) => role?.role)
+        .map((role) => {
+          const iconKey = role.icon_value ?? "";
+          const IconComponent = PERSONA_ICON_MAP[iconKey] ?? UserIcon;
+          return {
+            id: role.role ?? "",
+            name: role.name ?? role.role ?? "Role",
+            description: role.description ?? "",
+            icon: IconComponent,
+            color: role.color_hex ?? "#64748b",
+          };
+        }) ?? []
+    );
+  }, [initialCreateStaffData, roleResources]);
 
   // CSV Import logic
   const validRoles = useMemo(() => {
@@ -2276,7 +2304,10 @@ export default function Staff({
                                     }
                                   >
                                     <GenericPicker
-                                      items={STAFF_ROLES.filter((r) =>
+                                      items={(roleResourcesForCSV.length > 0
+                                        ? roleResourcesForCSV
+                                        : STAFF_ROLES
+                                      ).filter((r) =>
                                         validRoles.includes(r.id)
                                       )}
                                       selectedIds={
@@ -2301,44 +2332,15 @@ export default function Staff({
                                           role.icon || UserIcon;
                                         const hexColor =
                                           role.color || "#64748b";
-                                        const generateGradient = (
-                                          hex: string
-                                        ) => {
-                                          const cleanHex = hex.replace("#", "");
-                                          const r = parseInt(
-                                            cleanHex.substr(0, 2),
-                                            16
-                                          );
-                                          const g = parseInt(
-                                            cleanHex.substr(2, 2),
-                                            16
-                                          );
-                                          const b = parseInt(
-                                            cleanHex.substr(4, 2),
-                                            16
-                                          );
-                                          const lighterR = Math.min(
-                                            255,
-                                            r + 60
-                                          );
-                                          const lighterG = Math.min(
-                                            255,
-                                            g + 60
-                                          );
-                                          const lighterB = Math.min(
-                                            255,
-                                            b + 60
-                                          );
-                                          const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                                          return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                                        };
                                         return (
                                           <div className="flex items-center gap-3 w-full">
                                             <div
                                               className="p-2 rounded-lg shadow-lg flex-shrink-0"
                                               style={{
                                                 background:
-                                                  generateGradient(hexColor),
+                                                  generateGradientFromHex(
+                                                    hexColor
+                                                  ),
                                               }}
                                             >
                                               <IconComponent className="h-4 w-4 text-white" />
@@ -2372,44 +2374,15 @@ export default function Staff({
                                           role?.icon || UserIcon;
                                         const hexColor =
                                           role?.color || "#64748b";
-                                        const generateGradient = (
-                                          hex: string
-                                        ) => {
-                                          const cleanHex = hex.replace("#", "");
-                                          const r = parseInt(
-                                            cleanHex.substr(0, 2),
-                                            16
-                                          );
-                                          const g = parseInt(
-                                            cleanHex.substr(2, 2),
-                                            16
-                                          );
-                                          const b = parseInt(
-                                            cleanHex.substr(4, 2),
-                                            16
-                                          );
-                                          const lighterR = Math.min(
-                                            255,
-                                            r + 60
-                                          );
-                                          const lighterG = Math.min(
-                                            255,
-                                            g + 60
-                                          );
-                                          const lighterB = Math.min(
-                                            255,
-                                            b + 60
-                                          );
-                                          const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                                          return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
-                                        };
                                         return (
                                           <div className="flex items-center gap-2 flex-1 min-w-0">
                                             <div
                                               className="p-1 rounded-md shadow-sm flex-shrink-0"
                                               style={{
                                                 background:
-                                                  generateGradient(hexColor),
+                                                  generateGradientFromHex(
+                                                    hexColor
+                                                  ),
                                               }}
                                             >
                                               <IconComponent className="h-3.5 w-3.5 text-white" />

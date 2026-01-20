@@ -54,6 +54,9 @@ export type SimulationContextItem = NonNullable<
   LayoutContextResponse["simulations"]
 >[number];
 export type DraftItem = NonNullable<LayoutContextResponse["drafts"]>[number];
+export type RoleResourceItem = NonNullable<
+  LayoutContextResponse["role_resources"]
+>[number];
 
 // Note: With server-side access control, users without valid sessions won't reach pages
 // (they see UnifiedAccessDenied). However, we handle null profiles gracefully for
@@ -91,6 +94,7 @@ interface ProfileContextType {
   availableRoutes: string[];
   redirectPath: string;
   scopedRoles: string[]; // Roles that the effective profile has scope to see
+  roleResources: RoleResourceItem[];
 
   // Settings data (from server)
   // Note: Settings are stored as flat fields (settings_*) in LayoutContextResponse
@@ -521,6 +525,7 @@ export function ProfileProviderClient({
     availableRoutes: initial?.available_routes ?? [],
     redirectPath: initial?.redirect_path ?? "/home",
     scopedRoles: initial?.scoped_roles ?? [],
+    roleResources: initial?.role_resources ?? [],
 
     // Settings data (from server) - handle null initial gracefully
     // Note: Settings are stored as flat fields (settings_*) in LayoutContextResponse

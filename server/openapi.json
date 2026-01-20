@@ -43533,6 +43533,20 @@
             ],
             "title": "Scoped Roles"
           },
+          "role_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV4RoleResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Resources"
+          },
           "settings_id": {
             "anyOf": [
               {
@@ -72292,6 +72306,74 @@
           "value"
         ],
         "title": "QGetProfileContextV4Provider"
+      },
+      "QGetProfileContextV4RoleResource": {
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Value"
+          },
+          "color_hex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Hex"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "name",
+          "description",
+          "icon_value",
+          "color_hex"
+        ],
+        "title": "QGetProfileContextV4RoleResource"
       },
       "QGetProfileContextV4Simulation": {
         "properties": {
