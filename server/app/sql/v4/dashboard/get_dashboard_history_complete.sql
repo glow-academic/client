@@ -175,10 +175,13 @@ history_attempts AS (
     WHERE sa.created_at >= (SELECT start_date FROM params)
       AND sa.created_at <= (SELECT end_date FROM params)
       -- Dashboard never filters by profile - always filter by roles
-      AND (SELECT r.role FROM profile_roles pr_j 
-           JOIN roles_resource r ON pr_j.role_id = r.id 
-           WHERE pr_j.profile_id = p_attempt.id 
-           LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[])
+      AND COALESCE(
+            (SELECT r.role FROM profile_roles pr_j 
+             JOIN roles_resource r ON pr_j.role_id = r.id 
+             WHERE pr_j.profile_id = p_attempt.id 
+             LIMIT 1),
+            'member'::profile_role
+          ) = ANY((SELECT roles FROM params)::profile_role[])
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (
@@ -230,11 +233,11 @@ history_attempts_filtered AS (
 profile_options_cte AS (
     SELECT 
         haf.profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') AS profile_name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') AS profile_name,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN profile_artifact p ON p.id = haf.profile_id
-    GROUP BY haf.profile_id, (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1)
+    GROUP BY haf.profile_id, (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND  LIMIT 1)
     ORDER BY profile_name
 ),
 -- Get all unique simulation options from filtered attempts (before history-specific filters)
@@ -547,7 +550,7 @@ attempt_joined AS (
             WHEN sr.rubric_points IS NULL OR sr.rubric_points = 0 THEN NULL
             ELSE ROUND((sr.rubric_pass_points::numeric / sr.rubric_points::numeric) * 100.0)::int
         END AS pass_pct,
-        (COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) AS profile_name,
+        (COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')) AS profile_name,
         COALESCE(
             (SELECT SUM(stlr.time_limit_seconds)
              FROM simulation_scenario_time_limits sstl

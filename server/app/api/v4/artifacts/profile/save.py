@@ -114,13 +114,13 @@ async def save_profile(
                 if request.input_profile_id:
                     # Update mode: use request name (from request body)
                     audit_ctx["profile"] = {
-                        "name": f"{request.first_name or ''} {request.last_name or ''}".strip() or "Profile",
+                        "name": request.name or "Profile",
                         "id": str(result.profile_id),
                     }
                 else:
                     # Create mode: use request name
                     audit_ctx["profile"] = {
-                        "name": f"{request.first_name or ''} {request.last_name or ''}".strip() or "Profile",
+                        "name": request.name or "Profile",
                         "id": str(result.profile_id),
                     }
                 audit_set(http_request, **audit_ctx)

@@ -31,7 +31,6 @@ SCENARIO_RESOURCE_TYPES = [
     "descriptions",
     "problem_statements",
     "objectives",
-    "ranges",
     "scenario_flags",
     "images",
     "videos",
@@ -41,6 +40,7 @@ SCENARIO_RESOURCE_TYPES = [
     "personas",
     "documents",
     "parameters",
+    "templates",
 ]
 
 
@@ -176,26 +176,6 @@ async def _scenario_generate_impl(
                     "resource_type": "objectives",
                     "resource_ids": [str(o.id) for o in result.objectives if o.id]
                 })
-            if result.persona_ranges:
-                resources.append({
-                    "resource_type": "ranges",
-                    "resource_ids": [str(r.id) for r in result.persona_ranges if r.id]
-                })
-            if result.document_ranges:
-                resources.append({
-                    "resource_type": "ranges",
-                    "resource_ids": [str(r.id) for r in result.document_ranges if r.id]
-                })
-            if result.parameter_ranges:
-                resources.append({
-                    "resource_type": "ranges",
-                    "resource_ids": [str(r.id) for r in result.parameter_ranges if r.id]
-                })
-            if result.field_ranges:
-                resources.append({
-                    "resource_type": "ranges",
-                    "resource_ids": [str(r.id) for r in result.field_ranges if r.id]
-                })
             if result.departments:
                 resources.append({
                     "resource_type": "departments",
@@ -220,6 +200,11 @@ async def _scenario_generate_impl(
                 resources.append({
                     "resource_type": "parameters",
                     "resource_ids": [str(p.parameter_id) for p in result.parameters if p.parameter_id]
+                })
+            if result.templates:
+                resources.append({
+                    "resource_type": "templates",
+                    "resource_ids": [str(t.id) for t in result.templates if t.id]
                 })
             if result.images:
                 resources.append({

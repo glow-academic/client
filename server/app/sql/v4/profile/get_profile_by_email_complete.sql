@@ -27,8 +27,7 @@ CREATE OR REPLACE FUNCTION api_get_profile_by_email_v4(
 )
 RETURNS TABLE (
     profile_id uuid,
-    first_name text,
-    last_name text,
+    name text,
     emails text[],
     primary_email text,
     role text,
@@ -54,8 +53,7 @@ actor_name_computed AS (
         CASE 
             WHEN (SELECT profile_id FROM params) IS NOT NULL THEN
                 COALESCE(
-                    (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'first' LIMIT 1) || ' ' ||
-                    (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = (SELECT profile_id FROM params) AND pn2.type = 'last' LIMIT 1),
+                    (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
                     ''
                 )
             ELSE NULL
@@ -64,8 +62,7 @@ actor_name_computed AS (
 target_profile AS (
     SELECT 
         p.id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
-        (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         (SELECT r.role FROM profile_roles pr_j 
@@ -100,8 +97,7 @@ target_profile AS (
 )
 SELECT 
     tp.id as profile_id,
-    tp.first_name,
-    tp.last_name,
+    tp.name,
     COALESCE(tp.emails, ARRAY[]::text[]) as emails,
     tp.primary_email,
     tp.role,

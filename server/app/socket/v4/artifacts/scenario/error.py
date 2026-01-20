@@ -7,15 +7,17 @@ from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import (ValidateScenarioResourceErrorSqlParams,
+                           ValidateScenarioResourceErrorSqlRow)
 from fastapi import APIRouter
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-# TODO: Create SQL function for validation
-# SQL_PATH = "app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql"
+SQL_PATH = "app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql"
 
 
 @internal_sio.on("resource_error")  # type: ignore
@@ -46,24 +48,23 @@ async def handle_scenarios_error(data: dict[str, Any]) -> None:
 
     group_id = uuid.UUID(group_id_str)
 
-    # TODO: Query SQL function - SQL handles validation (handles both resource_type and resource_types)
-    # For now, skip validation and emit directly
-    # try:
-    #     async with get_db_connection() as conn:
-    #         params = ValidateScenarioResourceErrorSqlParams(
-    #             profile_id=profile_id,
-    #             group_id=group_id,
-    #             resource_type=resource_type or "",  # SQL function expects non-null, empty string if None
-    #             resource_types=resource_types or [],  # SQL function expects non-null array
-    #             artifact_type="scenario",  # Always "scenario" for this handler
-    #         )
-    #         result = cast(
-    #             ValidateScenarioResourceErrorSqlRow,
-    #             await execute_sql_typed(conn, SQL_PATH, params=params),
-    #         )
-    # except Exception:
-    #     # SQL function raised error (validation failed) - return early
-    #     return
+    # Query SQL function - SQL handles validation (handles both resource_type and resource_types)
+    try:
+        async with get_db_connection() as conn:
+            params = ValidateScenarioResourceErrorSqlParams(
+                profile_id=profile_id,
+                group_id=group_id,
+                resource_type=resource_type or "",  # SQL function expects non-null, empty string if None
+                resource_types=resource_types or [],  # SQL function expects non-null array
+                artifact_type="scenario",  # Always "scenario" for this handler
+            )
+            result = cast(
+                ValidateScenarioResourceErrorSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+    except Exception:
+        # SQL function raised error (validation failed) - return early
+        return
 
     error_message = data.get("error_message") or data.get(
         "message", "An error occurred during scenario generation"

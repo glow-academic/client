@@ -26,7 +26,7 @@ const columnMap = {
   scenarios: "Scenarios",
   search: "Search",
   // Reports page columns
-  firstName: "Name",
+  name: "Name",
   username: "Alias",
   avgScore: "Score",
   totalSessions: "Sessions",
@@ -74,7 +74,7 @@ const columnMap = {
   simulationName: "Simulation",
   numScenariosCompleted: "Scenarios",
   personaNames: "Personas",
-  first_name: "Staff Member",
+  name: "Staff Member",
   last_active: "Last Active",
   requests: "Requests / Day",
   total_requests: "Total Requests",

@@ -79,11 +79,13 @@ export default function AccoladeCard({
               style={{ outlineWidth: "1px", outlineStyle: "solid" }}
             >
               <AvatarFallback>
-                {getInitials(`${user.first_name ?? ""} ${user.last_name ?? ""}`)}
+                {getInitials(user.name ?? "")}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex flex-col items-center w-full">
-              <p className="text-lg font-bold text-center truncate w-full">{`${user.first_name ?? ""} ${user.last_name ?? ""}`}</p>
+              <p className="text-lg font-bold text-center truncate w-full">
+                {user.name ?? ""}
+              </p>
               <p className="text-xs text-muted-foreground text-center truncate w-full">
                 {details}
               </p>

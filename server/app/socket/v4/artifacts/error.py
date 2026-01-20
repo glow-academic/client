@@ -69,9 +69,9 @@ async def _generate_error_impl(
             },
         )
 
-        # Also emit resource_error for resource handlers (like persona)
+        # Also emit resource_error for resource handlers (like persona/scenario/simulation)
         # Resource handlers listen to resource_error instead of agent-specific events
-        if data.artifact_type and data.artifact_type not in AGENT_ERROR_MAPPING:
+        if data.artifact_type:
             await internal_sio.emit(
                 "resource_error",
                 {

@@ -175,8 +175,7 @@ export function ProfileProviderClient({
     if (!initial) return null;
     return {
       id: initial.actual_id ?? "",
-      first_name: initial.actual_first_name ?? null,
-      last_name: initial.actual_last_name ?? null,
+      name: initial.actual_name ?? null,
       emails: initial.actual_emails ?? [],
       primary_email: initial.actual_primary_email ?? null,
       role: initial.actual_role ?? "guest",
@@ -193,8 +192,7 @@ export function ProfileProviderClient({
     if (!initial) return null;
     return {
       id: initial.id ?? "",
-      first_name: initial.first_name ?? null,
-      last_name: initial.last_name ?? null,
+      name: initial.name ?? null,
       emails: initial.emails ?? [],
       primary_email: initial.primary_email ?? null,
       role: initial.role ?? "guest",

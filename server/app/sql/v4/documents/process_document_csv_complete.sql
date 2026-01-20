@@ -75,8 +75,7 @@ CREATE TYPE types.q_process_document_csv_v4_csv_row_error AS (
 
 CREATE TYPE types.q_process_document_csv_v4_processed_row AS (
     row_index integer,
-    first_name text,  -- snake_case, not camelCase
-    last_name text,   -- snake_case, not camelCase
+    name text,  -- snake_case, not camelCase
     emails text[],
     primary_email_index integer,
     role text,
@@ -114,8 +113,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             'System'
         ) as actor_name
     FROM params x

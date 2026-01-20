@@ -122,22 +122,14 @@ RETURNS TABLE (
     show_routes boolean,
     route_suggestions uuid[],
     routes types.q_get_profile_v4_route_resource[],
-    -- Single-select resources: first_name
-    first_name_id uuid,
-    first_name_resource types.q_get_profile_v4_name_resource,
-    show_first_name boolean,
-    first_name_agent_id uuid,
-    first_name_required boolean,
-    first_name_suggestions uuid[],
-    first_names types.q_get_profile_v4_name_resource[],
-    -- Single-select resources: last_name
-    last_name_id uuid,
-    last_name_resource types.q_get_profile_v4_name_resource,
-    show_last_name boolean,
-    last_name_agent_id uuid,
-    last_name_required boolean,
-    last_name_suggestions uuid[],
-    last_names types.q_get_profile_v4_name_resource[],
+    -- Single-select resources: name
+    name_id uuid,
+    name_resource types.q_get_profile_v4_name_resource,
+    show_name boolean,
+    name_agent_id uuid,
+    name_required boolean,
+    name_suggestions uuid[],
+    names types.q_get_profile_v4_name_resource[],
     -- Multi-select resources: emails
     email_ids uuid[],
     email_resources types.q_get_profile_v4_email_resource[],
@@ -175,7 +167,10 @@ RETURNS TABLE (
     cohorts_agent_id uuid,
     cohorts_required boolean,
     cohort_suggestions uuid[],
-    cohorts types.q_get_profile_v4_cohort[]
+    cohorts types.q_get_profile_v4_cohort[],
+    -- Multi-resource combination agent IDs (after all individual resources)
+    basic_agent_id uuid,
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -216,7 +211,7 @@ resolve_target_profile_id AS (
 user_profile AS (
     SELECT 
         (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -366,14 +361,14 @@ group_id_data AS (
     FROM params
     LIMIT 1
 ),
--- First name resource data
-first_name_resource_data AS (
+-- Name resource data
+name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pn.name_id FROM profile_names pn WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'first' LIMIT 1),
+            (SELECT pn.name_id FROM profile_names pn WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) LIMIT 1),
             NULL::uuid
-        ) as first_name_id,
+        ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
             FROM (
@@ -385,41 +380,15 @@ first_name_resource_data AS (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM profile_names pn
                 JOIN names_resource n ON n.id = pn.name_id
-                WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'first'
+                WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
             ) n
             ORDER BY priority
             LIMIT 1
-        ) as first_name_resource
+        ) as name_resource
     FROM params
 ),
--- Last name resource data
-last_name_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pn.name_id FROM profile_names pn WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'last' LIMIT 1),
-            NULL::uuid
-        ) as last_name_id,
-        (
-            SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
-            FROM (
-                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM draft_names dn
-                JOIN names_resource n ON n.id = dn.names_id
-                WHERE dn.draft_id = (SELECT draft_id FROM params)
-                UNION ALL
-                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
-                FROM profile_names pn
-                JOIN names_resource n ON n.id = pn.name_id
-                WHERE pn.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pn.type = 'last'
-            ) n
-            ORDER BY priority
-            LIMIT 1
-        ) as last_name_resource
-    FROM params
-),
--- First name suggestions: linked to profiles with active=true OR same group with generated=true
-first_name_suggestions_data AS (
+-- Name suggestions: linked to profiles with active=true OR same group with generated=true
+name_suggestions_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
@@ -428,7 +397,7 @@ first_name_suggestions_data AS (
                  FROM profile_names pn
                  JOIN names_resource n ON n.id = pn.name_id
                  CROSS JOIN group_id_data gid
-                 WHERE pn.type = 'first'
+                 WHERE pn.name_id IS NOT NULL
                    AND pn.name_id IS NOT NULL
                    AND n.name IS NOT NULL
                    AND n.name != ''
@@ -455,84 +424,25 @@ first_name_suggestions_data AS (
                  LIMIT 20
              ) pn),
             ARRAY[]::uuid[]
-        ) as first_name_suggestions
+        ) as name_suggestions
     FROM params
     LIMIT 1
 ),
-first_names_suggestions_objects AS (
+names_suggestions_objects AS (
     SELECT 
         COALESCE(
             (
                 SELECT ARRAY_AGG(
                     (n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
-                    ORDER BY array_position(fns.first_name_suggestions, n.id)
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
                 )
-                FROM first_name_suggestions_data fns
-                CROSS JOIN LATERAL unnest(fns.first_name_suggestions) AS suggestion_id
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
                 JOIN names_resource n ON n.id = suggestion_id
                 WHERE n.name IS NOT NULL AND n.name != ''
             ),
             ARRAY[]::types.q_get_profile_v4_name_resource[]
-        ) as first_names
-    FROM params
-    LIMIT 1
-),
--- Last name suggestions: linked to profiles with active=true OR same group with generated=true
-last_name_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
-             FROM (
-                 SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
-                 FROM profile_names pn
-                 JOIN names_resource n ON n.id = pn.name_id
-                 CROSS JOIN group_id_data gid
-                 WHERE pn.type = 'last'
-                   AND pn.name_id IS NOT NULL
-                   AND n.name IS NOT NULL
-                   AND n.name != ''
-                   AND (
-                       -- Option 1: Linked to profiles (profile_names junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true
-                       pn.generated = false
-                       OR
-                       (
-                           pn.generated = true
-                           AND n.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = n.call_id
-                                 AND gr.group_id = gid.group_id
-                           )
-                       )
-                   )
-                 GROUP BY pn.name_id
-                 ORDER BY MAX(pn.created_at) DESC
-                 LIMIT 20
-             ) pn),
-            ARRAY[]::uuid[]
-        ) as last_name_suggestions
-    FROM params
-    LIMIT 1
-),
-last_names_suggestions_objects AS (
-    SELECT 
-        COALESCE(
-            (
-                SELECT ARRAY_AGG(
-                    (n.id, n.name, COALESCE(n.generated, false))::types.q_get_profile_v4_name_resource
-                    ORDER BY array_position(lns.last_name_suggestions, n.id)
-                )
-                FROM last_name_suggestions_data lns
-                CROSS JOIN LATERAL unnest(lns.last_name_suggestions) AS suggestion_id
-                JOIN names_resource n ON n.id = suggestion_id
-                WHERE n.name IS NOT NULL AND n.name != ''
-            ),
-            ARRAY[]::types.q_get_profile_v4_name_resource[]
-        ) as last_names
+        ) as names
     FROM params
     LIMIT 1
 ),
@@ -928,8 +838,7 @@ cohorts_data AS (
 ui_flags AS (
     SELECT 
         -- Single-select resource flags (based on whether options exist)
-        true as show_first_name,  -- Always show first name picker
-        true as show_last_name,  -- Always show last name picker
+        true as show_name,  -- Always show name picker
         true as show_emails,  -- Always show emails picker
         true as show_request_limit,  -- Always show request limit picker
         true as show_flag,  -- Flag is a boolean toggle that should be shown
@@ -969,71 +878,8 @@ user_departments_for_agents AS (
     FROM params p
     JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
 ),
--- Agent selection for 'names' resource (first_name)
-first_name_agent_data AS (
-    WITH eligible_agents AS (
-        SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent_artifact a
-        CROSS JOIN params p
-        CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
-              AND af.value = true
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id
-              AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
-        )
-        AND (
-            EXISTS (
-                SELECT 1 FROM agent_departments ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
-            )
-            OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
-                WHERE ad2.agent_id = a.id AND ad2.active = true
-            )
-        )
-        AND EXISTS (
-            SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
-        )
-    ),
-    agent_department_preference AS (
-        SELECT 
-            ea.agent_id,
-            CASE 
-                WHEN sd.department_id IS NOT NULL 
-                     AND EXISTS (
-                         SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
-                           AND ad.active = true
-                     )
-                THEN 0
-                ELSE 1
-            END as dept_preference,
-            ea.updated_at
-        FROM eligible_agents ea
-        CROSS JOIN selected_department_for_agents sd
-    )
-    SELECT adp.agent_id
-    FROM agent_department_preference adp
-    ORDER BY 
-        adp.dept_preference ASC,
-        adp.updated_at DESC,
-        adp.agent_id ASC
-    LIMIT 1
-),
--- Agent selection for 'names' resource (last_name) - same as first_name
-last_name_agent_data AS (
+-- Agent selection for 'names' resource (name)
+name_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a
@@ -1351,6 +1197,182 @@ departments_agent_data AS (
 cohorts_agent_data AS (
     SELECT NULL::uuid as agent_id
 ),
+-- Agent selection for 'basic' multi-resource combination (names + flags + departments + emails)
+basic_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'profile'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+    ),
+    agent_tool_resources AS (
+        SELECT 
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_resources,
+            ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT 
+            atr.agent_id,
+            atr.tool_resources,
+            ARRAY_LENGTH(
+                ARRAY(
+                    SELECT unnest(atr.tool_resources)
+                    EXCEPT
+                    SELECT unnest(ARRAY['names', 'flags', 'departments', 'emails']::text[])
+                ),
+                1
+            ) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'flags', 'departments', 'emails']::text[] <@ atr.tool_resources
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ascores.agent_id,
+            ascores.unmatched_count,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ascores.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.unmatched_count ASC,
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'general' - agent with ALL profile tools (names, flags, request_limits, departments, emails, cohorts)
+general_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent_artifact a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'profile'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+    ),
+    agent_tool_resources AS (
+        SELECT 
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_resources,
+            ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT 
+            atr.agent_id,
+            atr.tool_resources,
+            ARRAY_LENGTH(
+                ARRAY(
+                    SELECT unnest(atr.tool_resources)
+                    EXCEPT
+                    SELECT unnest(ARRAY['names', 'flags', 'request_limits', 'departments', 'emails', 'cohorts']::text[])
+                ),
+                1
+            ) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'flags', 'request_limits', 'departments', 'emails', 'cohorts']::text[] <@ atr.tool_resources
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ascores.agent_id,
+            ascores.unmatched_count,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ascores.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.unmatched_count ASC,
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Check for missing tools on required resources (after all agent selection CTEs and ui_flags)
 -- IMPORTANT: We check for TOOLS existence (not agents). Tools are required, agents are optional.
 -- If no tools exist for a resource, we error. If tools exist but no agent exists, that's fine (manual entry).
@@ -1392,8 +1414,7 @@ missing_tools_check AS (
     SELECT 
         ARRAY_REMOVE(ARRAY[
             -- Check if tools exist (not agents). Error only if NO tools exist.
-            CASE WHEN NOT tec.names_has_tools THEN 'first_name' ELSE NULL END,
-            CASE WHEN NOT tec.names_has_tools THEN 'last_name' ELSE NULL END,
+            CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
             CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
@@ -1496,28 +1517,17 @@ SELECT
     uf.show_routes,
     COALESCE((SELECT route_suggestions FROM route_suggestions_data), ARRAY[]::uuid[]) as route_suggestions,
     COALESCE((SELECT routes FROM routes_data), ARRAY[]::types.q_get_profile_v4_route_resource[]) as routes,
-    -- Single-select resources: first_name
-    (SELECT first_name_id FROM first_name_resource_data) as first_name_id,
-    (SELECT first_name_resource FROM first_name_resource_data) as first_name_resource,
+    -- Single-select resources: name
+    (SELECT name_id FROM name_resource_data) as name_id,
+    (SELECT name_resource FROM name_resource_data) as name_resource,
     CASE 
         WHEN NOT tec.names_has_tools THEN false
-        ELSE uf.show_first_name
-    END as show_first_name,
-    (SELECT agent_id FROM first_name_agent_data) as first_name_agent_id,
-    true as first_name_required,
-    COALESCE((SELECT first_name_suggestions FROM first_name_suggestions_data), ARRAY[]::uuid[]) as first_name_suggestions,
-    COALESCE((SELECT first_names FROM first_names_suggestions_objects), ARRAY[]::types.q_get_profile_v4_name_resource[]) as first_names,
-    -- Single-select resources: last_name
-    (SELECT last_name_id FROM last_name_resource_data) as last_name_id,
-    (SELECT last_name_resource FROM last_name_resource_data) as last_name_resource,
-    CASE 
-        WHEN NOT tec.names_has_tools THEN false
-        ELSE uf.show_last_name
-    END as show_last_name,
-    (SELECT agent_id FROM last_name_agent_data) as last_name_agent_id,
-    true as last_name_required,
-    COALESCE((SELECT last_name_suggestions FROM last_name_suggestions_data), ARRAY[]::uuid[]) as last_name_suggestions,
-    COALESCE((SELECT last_names FROM last_names_suggestions_objects), ARRAY[]::types.q_get_profile_v4_name_resource[]) as last_names,
+        ELSE uf.show_name
+    END as show_name,
+    (SELECT agent_id FROM name_agent_data) as name_agent_id,
+    true as name_required,
+    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
+    COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_profile_v4_name_resource[]) as names,
     -- Multi-select resources: emails
     COALESCE((SELECT email_ids FROM email_ids_data), ARRAY[]::uuid[]) as email_ids,
     COALESCE((SELECT email_resources FROM email_resources_data), ARRAY[]::types.q_get_profile_v4_email_resource[]) as email_resources,
@@ -1566,6 +1576,8 @@ SELECT
     uf.show_cohorts,
     (SELECT agent_id FROM cohorts_agent_data) as cohorts_agent_id,
     false as cohorts_required,
+    (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
+    (SELECT agent_id FROM general_agent_data) as general_agent_id,
     COALESCE((SELECT cohort_suggestions FROM cohort_suggestions_data), ARRAY[]::uuid[]) as cohort_suggestions,
     COALESCE((SELECT cohorts FROM cohorts_data), ARRAY[]::types.q_get_profile_v4_cohort[]) as cohorts
 FROM user_profile up
@@ -1575,12 +1587,9 @@ CROSS JOIN role_options_data rod
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN group_id_data gid
-CROSS JOIN first_name_resource_data fnrd
-CROSS JOIN last_name_resource_data lnrd
-CROSS JOIN first_name_suggestions_data fnsd
-CROSS JOIN last_name_suggestions_data lnsd
-CROSS JOIN first_names_suggestions_objects fnso
-CROSS JOIN last_names_suggestions_objects lnso
+CROSS JOIN name_resource_data nrd
+CROSS JOIN name_suggestions_data nsd
+CROSS JOIN names_suggestions_objects nso
 CROSS JOIN email_ids_data eid
 CROSS JOIN email_resources_data erd
 CROSS JOIN email_suggestions_data esd

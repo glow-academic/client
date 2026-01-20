@@ -47,13 +47,14 @@ RETURNS TABLE (
     scenario_ids uuid[],
     scenario_flag_ids uuid[],
     scenario_position_ids uuid[],
-    scenario_rubric_ids uuid[]
+    scenario_rubric_ids uuid[],
+    scenario_time_limit_ids uuid[]
 )
 LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
-    valid_simulation_resource_types text[] := ARRAY['names', 'descriptions', 'departments', 'flags', 'scenarios', 'scenario_flags', 'scenario_positions', 'scenario_rubrics'];
+    valid_simulation_resource_types text[] := ARRAY['names', 'descriptions', 'departments', 'flags', 'scenarios', 'scenario_flags', 'scenario_positions', 'scenario_rubrics', 'scenario_time_limits'];
 BEGIN
     -- Validate artifact_type (all validation in SQL)
     IF artifact_type != 'simulation' THEN
@@ -75,6 +76,7 @@ BEGIN
         CASE WHEN resource_type = 'scenarios' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as scenario_ids,
         CASE WHEN resource_type = 'scenario_flags' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as scenario_flag_ids,
         CASE WHEN resource_type = 'scenario_positions' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as scenario_position_ids,
-        CASE WHEN resource_type = 'scenario_rubrics' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as scenario_rubric_ids;
+        CASE WHEN resource_type = 'scenario_rubrics' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as scenario_rubric_ids,
+        CASE WHEN resource_type = 'scenario_time_limits' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as scenario_time_limit_ids;
 END;
 $$;

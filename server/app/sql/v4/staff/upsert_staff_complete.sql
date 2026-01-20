@@ -36,8 +36,7 @@ END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.i_upsert_staff_v4_profile AS (
-    first_name text,
-    last_name text,
+    name text,
     emails text[],  -- Array of all emails
     primary_email_index integer,  -- Index in emails array for primary (defaults to 0)
     role text,
@@ -71,8 +70,7 @@ profiles_expanded AS (
     SELECT 
         profile_data,
         row_number() OVER () as profile_idx,
-        profile_data.first_name AS first_name,
-        profile_data.last_name AS last_name,
+        profile_data.name AS name,
         profile_data.emails AS emails,
         COALESCE(profile_data.primary_email_index, 0) AS primary_email_index,
         profile_data.emails[COALESCE(profile_data.primary_email_index, 0) + 1] AS primary_email,  -- PostgreSQL arrays are 1-indexed
@@ -85,7 +83,7 @@ profiles_expanded AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.current_profile_id
 ),
@@ -139,8 +137,7 @@ profile_upsert_with_idx AS (
     -- Prepare profile data with existing profile IDs
     SELECT 
         pe.profile_idx,
-        pe.first_name,
-        pe.last_name,
+        pe.name,
         pe.role,
         pe.active,
         pe.primary_email,
@@ -150,21 +147,12 @@ profile_upsert_with_idx AS (
     LEFT JOIN existing_profiles ep ON ep.profile_idx = pe.profile_idx
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pe.profile_idx AND rv.can_assign = true)
 ),
--- Insert all unique first_names INTO names_resource table
-first_names_resources AS (
+-- Insert all unique names INTO names_resource table
+names_resources AS (
     INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT DISTINCT pwi.first_name, NOW(), NOW()
+    SELECT DISTINCT pwi.name, NOW(), NOW()
     FROM profile_upsert_with_idx pwi
-    WHERE pwi.first_name IS NOT NULL AND pwi.first_name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-    RETURNING id as name_id, name
-),
--- Insert all unique last_names INTO names_resource table
-last_names_resources AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT DISTINCT pwi.last_name, NOW(), NOW()
-    FROM profile_upsert_with_idx pwi
-    WHERE pwi.last_name IS NOT NULL AND pwi.last_name != ''
+    WHERE pwi.name IS NOT NULL AND pwi.name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
@@ -207,37 +195,22 @@ profile_role_insert_upsert AS (
 delete_old_names AS (
     DELETE FROM profile_names
     WHERE profile_id IN (SELECT id FROM profile_upsert)
-      AND type IN ('first'::type_profile_names, 'last'::type_profile_names)
 ),
--- Link profiles to first_names
-link_profile_first_names AS (
-    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+-- Link profiles to names
+link_profile_names AS (
+    INSERT INTO profile_names (profile_id, name_id, created_at, updated_at)
     SELECT 
         pu.id,
-        fnr.name_id,
-        'first'::type_profile_names,
+        nr.name_id,
         NOW(),
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
-    JOIN first_names_resources fnr ON fnr.name = pwi.first_name
-    WHERE pwi.first_name IS NOT NULL AND pwi.first_name != ''
-    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
-),
--- Link profiles to last_names
-link_profile_last_names AS (
-    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
-    SELECT 
-        pu.id,
-        lnr.name_id,
-        'last'::type_profile_names,
-        NOW(),
-        NOW()
-    FROM profile_upsert pu
-    JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
-    JOIN last_names_resources lnr ON lnr.name = pwi.last_name
-    WHERE pwi.last_name IS NOT NULL AND pwi.last_name != ''
-    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+    JOIN names_resources nr ON nr.name = pwi.name
+    WHERE pwi.name IS NOT NULL AND pwi.name != ''
+    ON CONFLICT (profile_id) DO UPDATE SET
+        name_id = EXCLUDED.name_id,
+        updated_at = NOW()
 ),
 -- Link profile active flags
 link_profile_active_flags AS (

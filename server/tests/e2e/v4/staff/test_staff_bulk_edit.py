@@ -32,15 +32,11 @@ def test_staff_bulk_edit_role(page: Page, base_url: str) -> None:
 
         for i in range(2):
             staff_name = generate_unique_staff_name(f"Bulk Edit Staff {i}")
-            parts = staff_name.split()
-            first_name = parts[0] if parts else f"Bulk{i}"
-            last_name = parts[1] if len(parts) > 1 else "Staff"
             email = f"bulk-edit-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
-                first_name=first_name,
-                last_name=last_name,
+                name=staff_name,
                 email=email,
                 role="guest",
                 department_id=department_id,
@@ -141,15 +137,11 @@ def test_staff_bulk_edit_requests_per_day(page: Page, base_url: str) -> None:
 
         for i in range(2):
             staff_name = generate_unique_staff_name(f"Bulk Requests Staff {i}")
-            parts = staff_name.split()
-            first_name = parts[0] if parts else f"BulkReq{i}"
-            last_name = parts[1] if len(parts) > 1 else "Staff"
             email = f"bulk-requests-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
-                first_name=first_name,
-                last_name=last_name,
+                name=staff_name,
                 email=email,
                 role="guest",
                 department_id=department_id,
@@ -225,15 +217,11 @@ def test_staff_bulk_edit_keep_current(page: Page, base_url: str) -> None:
         roles = ["guest", "member"]
         for i, role in enumerate(roles):
             staff_name = generate_unique_staff_name(f"Keep Current Staff {i}")
-            parts = staff_name.split()
-            first_name = parts[0] if parts else f"Keep{i}"
-            last_name = parts[1] if len(parts) > 1 else "Staff"
             email = f"keep-current-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
-                first_name=first_name,
-                last_name=last_name,
+                name=staff_name,
                 email=email,
                 role=role,
                 department_id=department_id,

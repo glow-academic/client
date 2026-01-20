@@ -23,8 +23,7 @@ END $$;
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_save_profile_v4(
     actor_profile_id uuid,
-    first_name text DEFAULT NULL,
-    last_name text DEFAULT NULL,
+    name text DEFAULT NULL,
     emails text[] DEFAULT NULL,
     role text DEFAULT NULL,
     active boolean DEFAULT NULL,
@@ -84,8 +83,7 @@ BEGIN
     -- Get actor name
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             ''
         ) INTO v_actor_name
     FROM profile_artifact p
@@ -127,8 +125,7 @@ BEGIN
     WITH params AS (
         SELECT
             v_profile_id AS target_profile_id,
-            first_name,
-            last_name,
+            name,
             COALESCE(emails, ARRAY[]::text[]) AS emails,
             role,
             COALESCE(active, true) AS active,
@@ -159,61 +156,36 @@ BEGIN
             END as route_ids
         FROM params p
     ),
-    -- Insert/update first_name in names table if provided
-    first_name_resource AS (
+    -- Insert/update name in names table if provided
+    name_resource AS (
         INSERT INTO names_resource (name, created_at, updated_at)
-        SELECT first_name, NOW(), NOW()
+        SELECT name, NOW(), NOW()
         FROM params
-        WHERE first_name IS NOT NULL AND first_name != ''
+        WHERE name IS NOT NULL AND name != ''
         ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-        RETURNING id as first_name_id, name
-    ),
-    -- Insert/update last_name in names table if provided
-    last_name_resource AS (
-        INSERT INTO names_resource (name, created_at, updated_at)
-        SELECT last_name, NOW(), NOW()
-        FROM params
-        WHERE last_name IS NOT NULL AND last_name != ''
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-        RETURNING id as last_name_id, name
+        RETURNING id as name_id, name
     ),
     -- Delete old name links if updating
     delete_old_names AS (
         DELETE FROM profile_names
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
-          AND (
-              EXISTS (SELECT 1 FROM first_name_resource)
-              OR EXISTS (SELECT 1 FROM last_name_resource)
-          )
+          AND EXISTS (SELECT 1 FROM name_resource)
     ),
-    -- Link profile to first_name
-    link_profile_first_name AS (
-        INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    -- Link profile to name
+    link_profile_name AS (
+        INSERT INTO profile_names (profile_id, name_id, created_at, updated_at)
         SELECT 
             x.target_profile_id,
-            fnr.first_name_id,
-            'first'::type_profile_names,
+            nr.name_id,
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN first_name_resource fnr
-        WHERE x.first_name IS NOT NULL AND x.first_name != ''
-        ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
-    ),
-    -- Link profile to last_name
-    link_profile_last_name AS (
-        INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
-        SELECT 
-            x.target_profile_id,
-            lnr.last_name_id,
-            'last'::type_profile_names,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN last_name_resource lnr
-        WHERE x.last_name IS NOT NULL AND x.last_name != ''
-        ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+        CROSS JOIN name_resource nr
+        WHERE x.name IS NOT NULL AND x.name != ''
+        ON CONFLICT (profile_id) DO UPDATE SET
+            name_id = EXCLUDED.name_id,
+            updated_at = NOW()
     ),
     -- Insert/update role via profile_roles junction if provided
     role_resource AS (

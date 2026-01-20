@@ -149,10 +149,8 @@ export async function generateMetadata(
     });
 
     const name = reportsData.profile_name || "";
-    const firstName = name.split(" ")[0] || "";
-    const lastName = name.split(" ").slice(1).join(" ") || "";
     return {
-      title: `${firstName} ${lastName}`,
+      title: name,
       description: `${name ? `${name} - ` : ""}Individual teaching assistant performance reports and assessment analytics. Track pedagogical progress, teaching effectiveness metrics, and professional development outcomes through detailed evaluation data.`,
     };
   } catch {

@@ -136,8 +136,7 @@ def fetch_staff_detail(
 def create_staff_api(
     request: APIRequestContext,
     *,
-    first_name: str,
-    last_name: str,
+    name: str,
     email: str,
     role: str,
     department_id: str | None = None,
@@ -152,8 +151,7 @@ def create_staff_api(
         effective_profile_id=effective_profile_id,
     )
     payload = {
-        "firstName": first_name,
-        "lastName": last_name,
+        "name": name,
         "emails": [email],
         "primary_email_index": 0,
         "role": role,

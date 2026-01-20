@@ -35,6 +35,7 @@ SIMULATION_RESOURCE_TYPES = [
     "scenario_flags",
     "scenario_positions",
     "scenario_rubrics",
+    "scenario_time_limits",
 ]
 
 
@@ -113,6 +114,10 @@ async def _simulation_generate_impl(
                     "departments": result.departments_agent_id,
                     "flags": result.flag_agent_id,
                     "scenarios": result.scenarios_agent_id,
+                    "scenario_flags": result.scenario_flags_agent_id,
+                    "scenario_positions": result.scenario_positions_agent_id,
+                    "scenario_rubrics": result.scenario_rubrics_agent_id,
+                    "scenario_time_limits": result.scenario_time_limits_agent_id,
                     "general": result.general_agent_id,
                     "all": result.general_agent_id,
                 }
@@ -181,6 +186,11 @@ async def _simulation_generate_impl(
                 resources.append({
                     "resource_type": "scenario_rubrics",
                     "resource_ids": [str(sr.id) for sr in result.scenario_rubrics if sr.id]
+                })
+            if result.scenario_time_limits:
+                resources.append({
+                    "resource_type": "scenario_time_limits",
+                    "resource_ids": [str(stl.id) for stl in result.scenario_time_limits if stl.id]
                 })
 
             # Get group_id from response if available

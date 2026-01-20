@@ -12,8 +12,6 @@ export interface ProfileMappingItem {
   profile_id: string;
   name: string;
   role: string;
-  first_name: string;
-  last_name: string;
 }
 
 /**
@@ -65,8 +63,6 @@ export function buildProfileMapping(
       profile_id: staff.profile_id,
       name: staff.name || "",
       role: staff.role || "",
-      first_name: staff.first_name || "",
-      last_name: staff.last_name || "",
     };
   });
   return mapping;
@@ -129,4 +125,3 @@ export function filterProfilesByRole(
     .filter((profile) => profile.role === role)
     .map((profile) => profile.profile_id);
 }
-

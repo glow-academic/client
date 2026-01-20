@@ -159,6 +159,15 @@ async def _cohort_generate_impl(
                     "resource_type": "simulations",
                     "resource_ids": [str(s.simulation_id) for s in result.simulations if s.simulation_id]
                 })
+            if result.simulation_positions:
+                resources.append({
+                    "resource_type": "simulation_positions",
+                    "resource_ids": [
+                        f"{sp.simulation_id}-{sp.value}"
+                        for sp in result.simulation_positions
+                        if sp.simulation_id is not None and sp.value is not None
+                    ],
+                })
 
             # Get group_id from response if available
             group_id: uuid.UUID | None = result.group_id

@@ -7,15 +7,19 @@ from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import (ValidateScenarioResourceProgressSqlParams,
+                           ValidateScenarioResourceProgressSqlRow)
 from fastapi import APIRouter
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-# TODO: Create SQL function for validation
-# SQL_PATH = "app/sql/v4/scenarios/validate_scenario_resource_progress_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/scenarios/validate_scenario_resource_progress_complete.sql"
+)
 
 
 @internal_sio.on("resource_progress")  # type: ignore
@@ -45,23 +49,22 @@ async def handle_scenarios_progress(data: dict[str, Any]) -> None:
 
     group_id = uuid.UUID(group_id_str)
 
-    # TODO: Query SQL function - SQL handles validation
-    # For now, skip validation and emit directly
-    # try:
-    #     async with get_db_connection() as conn:
-    #         params = ValidateScenarioResourceProgressSqlParams(
-    #             profile_id=profile_id,
-    #             group_id=group_id,
-    #             resource_type=resource_type,
-    #             artifact_type="scenario",  # Always "scenario" for this handler
-    #         )
-    #         result = cast(
-    #             ValidateScenarioResourceProgressSqlRow,
-    #             await execute_sql_typed(conn, SQL_PATH, params=params),
-    #         )
-    # except Exception:
-    #     # SQL function raised error (validation failed) - return early
-    #     return
+    # Query SQL function - SQL handles validation
+    try:
+        async with get_db_connection() as conn:
+            params = ValidateScenarioResourceProgressSqlParams(
+                profile_id=profile_id,
+                group_id=group_id,
+                resource_type=resource_type,
+                artifact_type="scenario",  # Always "scenario" for this handler
+            )
+            result = cast(
+                ValidateScenarioResourceProgressSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+    except Exception:
+        # SQL function raised error (validation failed) - return early
+        return
 
     # Emit scenario-specific progress event with all fields from internal event
     await sio.emit(

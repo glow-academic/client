@@ -63,9 +63,6 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
     try:
         # Create test staff
         staff_name = generate_unique_staff_name("Cache Edit Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "CacheEdit"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"cache-edit-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
@@ -77,8 +74,7 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,
@@ -107,9 +103,9 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
         edit_dialog = page.get_by_test_id("dialog-edit-staff")
         edit_dialog.wait_for(state="visible", timeout=10000)
 
-        first_name_input = page.get_by_test_id("input-staff-first-name")
-        updated_name = f"{first_name} Updated"
-        first_name_input.fill(updated_name)
+        name_input = page.get_by_test_id("input-staff-name")
+        updated_name = f"{staff_name} Updated"
+        name_input.fill(updated_name)
 
         submit_button = page.get_by_test_id("btn-submit-staff-edit")
         submit_button.click()
@@ -153,9 +149,6 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
     try:
         # Create test staff
         staff_name = generate_unique_staff_name("Cache Delete Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "CacheDel"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"cache-delete-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
@@ -167,8 +160,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,
@@ -268,9 +260,6 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
     try:
         # Create test staff via API (outside UI)
         staff_name = generate_unique_staff_name("Refresh Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "Refresh"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"refresh-staff-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
@@ -282,8 +271,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,

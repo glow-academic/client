@@ -67,10 +67,7 @@ export async function generateMetadata(
       } as GetStaffIn["body"],
     };
     const staffDetail = await getStaff(input);
-    const staffName =
-      staffDetail.first_name && staffDetail.last_name
-        ? `${staffDetail.first_name} ${staffDetail.last_name}`
-        : staffDetail.name;
+    const staffName = staffDetail.name;
     return {
       title: `Edit ${staffName || "Staff"}`,
       description: `${staffName ? `Edit ${staffName} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,

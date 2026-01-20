@@ -68,28 +68,7 @@ AS $$
                  JOIN names_resource n ON n.id = pn.name_id
                  WHERE pn.profile_id = pr.profile_id
                    AND pn.active = true
-                   AND pn.type = 'full'::type_profile_names
                  LIMIT 1),
-                NULLIF(
-                    concat_ws(
-                        ' ',
-                        (SELECT n.name
-                         FROM profile_names pn
-                         JOIN names_resource n ON n.id = pn.name_id
-                         WHERE pn.profile_id = pr.profile_id
-                           AND pn.active = true
-                           AND pn.type = 'first'::type_profile_names
-                         LIMIT 1),
-                        (SELECT n.name
-                         FROM profile_names pn
-                         JOIN names_resource n ON n.id = pn.name_id
-                         WHERE pn.profile_id = pr.profile_id
-                           AND pn.active = true
-                           AND pn.type = 'last'::type_profile_names
-                         LIMIT 1)
-                    ),
-                    ''
-                ),
                 pr.profile_id::text
             ) as profile_name,
             COALESCE(

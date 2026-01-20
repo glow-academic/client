@@ -19,30 +19,18 @@ const keycloakClientSecret = process.env["AUTH_KEYCLOAK_SECRET"] || "";
 // Default issuer (master realm) - used as fallback
 const defaultIssuer = `${keycloakPublicUrl}/realms/master`;
 
-// Helper function to parse name into firstName and lastName
-function parseName(name: string | null | undefined): {
-  firstName: string;
-  lastName: string;
-} {
-  const nameParts = name?.split(" ") || [];
-  const firstName = nameParts[0] || "Unknown";
-  const lastName = nameParts[nameParts.length - 1] || "User";
-  return { firstName, lastName };
-}
-
 // Helper function to create a profile with guest role
 async function createGuestProfile(
   email: string,
   name: string | null | undefined
 ): Promise<void> {
-  const { firstName, lastName } = parseName(name);
+  const profileName = (name ?? "").trim() || "Unknown User";
   try {
     // Use auth/upsert endpoint to create or update profile
     // profile_id_new is optional - SQL generates it server-side if not provided
     await api.post("/auth/upsert", {
       body: {
-        first_name: firstName,
-        last_name: lastName,
+        name: profileName,
         emails: [email],
         role: "guest",
         primary_email_index: 0,
@@ -169,14 +157,13 @@ export const {
           // Use auth/upsert endpoint to update existing profile
           // Note: last_login and last_active are not supported by upsert endpoint
           // These may need to be handled separately or the endpoint extended
-          const { firstName, lastName } = parseName(user.name);
+          const profileName = (user.name ?? "").trim() || "Unknown User";
           try {
             // Use auth/upsert endpoint to update existing profile
             // profile_id_new is optional - SQL finds existing profile by email and uses that ID
             await api.post("/auth/upsert", {
               body: {
-                first_name: firstName,
-                last_name: lastName,
+                name: profileName,
                 emails: [user.email || ""],
                 role: existingProfile.role || "guest",
                 primary_email_index: 0,
@@ -216,7 +203,8 @@ export const {
             return;
           }
 
-          const { firstName, lastName } = parseName(profile?.name || user.name);
+          const profileName =
+            (profile?.name || user.name || "").trim() || "Unknown User";
 
           // V3 API - fetch profile by email
           let existingProfile = null;
@@ -244,8 +232,7 @@ export const {
             try {
               await api.post("/auth/upsert", {
                 body: {
-                  first_name: firstName,
-                  last_name: lastName,
+                  name: profileName,
                   emails: [user.email],
                   role: existingProfile.role || "guest",
                   primary_email_index: 0,

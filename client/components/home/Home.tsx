@@ -313,7 +313,7 @@ export default function Home({ homeData }: HomeProps) {
       {/* Header with title */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
-          Welcome back, {effectiveProfile?.first_name}!
+          Welcome back, {effectiveProfile?.name}!
         </h2>
       </div>
 

@@ -7,15 +7,17 @@ from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import (GetScenarioResourceIdsByGroupIdSqlParams,
+                           GetScenarioResourceIdsByGroupIdSqlRow)
 from fastapi import APIRouter
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-# TODO: Create SQL function for validation
-# SQL_PATH = "app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"
+SQL_PATH = "app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"
 
 
 @internal_sio.on("resource_complete")  # type: ignore
@@ -69,45 +71,62 @@ async def handle_scenario_artifact_complete(data: dict[str, Any]) -> None:
     group_id = uuid.UUID(group_id_str)
     resource_id = uuid.UUID(resource_id_str)
 
-    # TODO: Query SQL function - SQL handles validation and mapping
-    # For now, emit with resource_id directly
-    # try:
-    #     async with get_db_connection() as conn:
-    #         params = GetScenarioResourceIdsByGroupIdSqlParams(
-    #             profile_id=profile_id,
-    #             group_id=group_id,
-    #             resource_id=resource_id,
-    #             resource_type=resource_type,
-    #             artifact_type="scenario",  # Always "scenario" for this handler
-    #         )
-    #         result = cast(
-    #             GetScenarioResourceIdsByGroupIdSqlRow,
-    #             await execute_sql_typed(conn, SQL_PATH, params=params),
-    #         )
-    # except Exception as e:
-    #     # SQL function raised error (validation failed) - emit error to client
-    #     await sio.emit(
-    #         "artifact_generation_error",
-    #         {
-    #             "artifact_type": "scenario",
-    #             "resource_type": resource_type,
-    #             "group_id": group_id_str,
-    #             "success": False,
-    #             "message": str(e),
-    #         },
-    #         room=sid,
-    #     )
-    #     return
+    # Query SQL function - SQL handles validation and mapping (no-op, no queries)
+    try:
+        async with get_db_connection() as conn:
+            params = GetScenarioResourceIdsByGroupIdSqlParams(
+                profile_id=profile_id,
+                group_id=group_id,
+                resource_id=resource_id,
+                resource_type=resource_type,
+                artifact_type="scenario",  # Always "scenario" for this handler
+            )
+            result = cast(
+                GetScenarioResourceIdsByGroupIdSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+    except Exception as e:
+        # SQL function raised error (validation failed) - emit error to client
+        await sio.emit(
+            "artifact_generation_error",
+            {
+                "artifact_type": "scenario",
+                "resource_type": resource_type,
+                "group_id": group_id_str,
+                "success": False,
+                "message": str(e),
+            },
+            room=sid,
+        )
+        return
 
-    # Emit granular event with resource ID
-    # TODO: Map resource_id to specific resource field IDs once SQL function is created
+    # Emit granular event with mapped resource ID (one field set, others NULL)
     await sio.emit(
         "scenario_generation_complete",
         {
             "artifact_type": "scenario",
             "group_id": group_id_str,
             "resource_type": resource_type,
-            "resource_id": resource_id_str,
+            "name_id": str(result.name_id) if result.name_id else None,
+            "description_id": str(result.description_id)
+            if result.description_id
+            else None,
+            "problem_statement_id": str(result.problem_statement_id)
+            if result.problem_statement_id
+            else None,
+            "active_flag_id": str(result.active_flag_id)
+            if result.active_flag_id
+            else None,
+            "objective_ids": [str(oid) for oid in (result.objective_ids or [])],
+            "department_ids": [str(did) for did in (result.department_ids or [])],
+            "persona_ids": [str(pid) for pid in (result.persona_ids or [])],
+            "document_ids": [str(did) for did in (result.document_ids or [])],
+            "template_ids": [str(tid) for tid in (result.template_ids or [])],
+            "parameter_ids": [str(pid) for pid in (result.parameter_ids or [])],
+            "field_ids": [str(fid) for fid in (result.field_ids or [])],
+            "image_ids": [str(iid) for iid in (result.image_ids or [])],
+            "video_ids": [str(vid) for vid in (result.video_ids or [])],
+            "question_ids": [str(qid) for qid in (result.question_ids or [])],
             "success": True,
             "message": f"{resource_type} generation completed successfully",
             "run_id": data.get("run_id"),

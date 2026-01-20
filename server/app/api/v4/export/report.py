@@ -292,8 +292,7 @@ async def export_report(
 
             export_profile = {
                 "profileId": str(profile.profile_id),
-                "firstName": profile.first_name or "",
-                "lastName": profile.last_name or "",
+                "name": profile.name or "",
                 "email": profile.primary_email or "",
                 "role": profile.role or "",
                 "metrics": export_metrics,
@@ -486,9 +485,7 @@ def generate_regular_csv(data: list[dict[str, Any]], metrics: list[str]) -> str:
         metrics_data = profile.get("metrics", {}) or {}
 
         # Add name and email
-        first_name = profile.get("firstName", "")
-        last_name = profile.get("lastName", "")
-        row.append(f"{first_name} {last_name}".strip())
+        row.append(profile.get("name", ""))
         row.append(profile.get("email") or "")
 
         # Add selected metrics

@@ -18,7 +18,7 @@ async def test_process_csv(
     response = await client.post(
         "/api/v4/staff/csv",
         json={
-            "csv_data": "first_name,last_name,email\nTest,Staff,test@example.com",
+            "csv_data": "name,email\nTest Staff,test@example.com",
             "column_mapping": {},
         },
     )

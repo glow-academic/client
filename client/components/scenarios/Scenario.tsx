@@ -152,8 +152,7 @@ type ScenarioResourceType =
   | "fields"
   | "images"
   | "videos"
-  | "questions"
-  | "ranges";
+  | "questions";
 
 type ScenarioFormState = {
   name_id: string | null;
@@ -1012,7 +1011,6 @@ function ScenarioComponent({
         "images",
         "videos",
         "questions",
-        "ranges",
       ];
 
       if (
@@ -1547,7 +1545,6 @@ function ScenarioComponent({
       images: "Images",
       videos: "Videos",
       questions: "Questions",
-      ranges: "Ranges",
     }),
     []
   );

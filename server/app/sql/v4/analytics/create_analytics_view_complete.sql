@@ -260,18 +260,21 @@ SELECT
       AND f.name = 'practice'
       AND sf.value = TRUE
   ) AS is_practice,
-  sa.archived                   AS is_archived,
+  COALESCE(sa.archived, FALSE)  AS is_archived,
   (NOT EXISTS (
     SELECT 1 FROM simulation_flags sf
     JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
       AND f.name = 'practice'
       AND sf.value = TRUE
-  ) AND NOT sa.archived) AS is_general,
-  (SELECT r.role FROM profile_roles pr_j 
-   JOIN roles_resource r ON pr_j.role_id = r.id 
-   WHERE pr_j.profile_id = pr.id 
-   LIMIT 1) AS profile_role,
+  ) AND NOT COALESCE(sa.archived, FALSE)) AS is_general,
+  COALESCE(
+    (SELECT r.role FROM profile_roles pr_j 
+     JOIN roles_resource r ON pr_j.role_id = r.id 
+     WHERE pr_j.profile_id = pr.id 
+     LIMIT 1),
+    'member'::profile_role
+  ) AS profile_role,
   cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
   -- chat_completed_at removed (use grade_created_at or time_taken_seconds as source of truth)

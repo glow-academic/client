@@ -139,8 +139,7 @@ export default function Reports({
           
           return {
             profileId: String(rowObj["profile_id"] || ""),
-            firstName: String(rowObj["first_name"] || ""),
-            lastName: String(rowObj["last_name"] || ""),
+            name: String(rowObj["name"] || ""),
             email: primaryEmail || (emails && emails.length > 0 ? emails[0] : ""),
             emails: emails,
             primary_email: primaryEmail,
@@ -374,8 +373,7 @@ export default function Reports({
   // Define ProfileRow type from reports data structure
   type ProfileRow = {
     profileId: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
     emails?: string[];
     primary_email?: string | null;
@@ -600,13 +598,13 @@ export default function Reports({
       // Name column
       {
         id: "profileName",
-        accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+        accessorFn: (row) => row.name,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Name" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const displayName = `${profile.firstName} ${profile.lastName}`;
+          const displayName = profile.name;
           return (
             <div
               className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0 max-w-[130px]"

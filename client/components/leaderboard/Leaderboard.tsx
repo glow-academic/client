@@ -45,8 +45,7 @@ type LeaderboardMetric = {
 
 type LeaderboardRow = {
   profile_id: string | null;
-  first_name: string | null;
-  last_name: string | null;
+  name: string | null;
   simulation_ids: string[] | null;
   scenario_ids: string[] | null;
   metrics: {
@@ -62,10 +61,15 @@ type LeaderboardRow = {
 };
 
 // Helper function to get initials from name
-const getInitials = (firstName: string | null, lastName: string | null): string => {
-  const first = firstName?.charAt(0) || "";
-  const last = lastName?.charAt(0) || "";
-  return `${first}${last}`.toUpperCase();
+const getInitials = (name: string | null): string => {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 };
 
 export interface LeaderboardProps {
@@ -502,7 +506,7 @@ export default function Leaderboard({
         .filter((r) => r.metrics !== null && r.profile_id !== null)
         .map((r) => ({
           id: r.profile_id!,
-          name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || r.profile_id!,
+          name: r.name || r.profile_id!,
           profileId: r.profile_id!, // Add profileId for filtering
           simulationIds: (r.simulation_ids || []).map(String), // Add simulation IDs for filtering
           scenarioIds: (r.scenario_ids || []).map(String), // Add scenario IDs for filtering
@@ -562,8 +566,7 @@ export default function Leaderboard({
                       accolade?.holder && accolade.holder.profile_id
                         ? {
                             id: accolade.holder.profile_id,
-                            first_name: accolade.holder.first_name ?? null,
-                            last_name: accolade.holder.last_name ?? null,
+                            name: accolade.holder.name ?? null,
                             emails: [],
                             primary_email: null,
                             role: "guest" as ProfileRole,
@@ -640,18 +643,14 @@ export default function Leaderboard({
                         className="h-10 w-10 outline outline-muted-foreground"
                         style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                       >
-                        <AvatarFallback>
-                          {getInitials(
-                            selected.accolade.holder.first_name ?? "",
-                            selected.accolade.holder.last_name ?? "",
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">
-                          {selected.accolade.holder.first_name}{" "}
-                          {selected.accolade.holder.last_name}
-                        </div>
+                          <AvatarFallback>
+                            {getInitials(selected.accolade.holder.name ?? "")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {selected.accolade.holder.name}
+                          </div>
                         <div className="text-sm text-muted-foreground">
                           {selected.accolade.details}
                         </div>
@@ -708,17 +707,13 @@ export default function Leaderboard({
                                 }}
                               >
                                 <AvatarFallback>
-                                  {getInitials(
-                                    challenger.row.first_name ?? "",
-                                    challenger.row.last_name ?? "",
-                                  )}
+                                  {getInitials(challenger.row.name ?? "")}
                                 </AvatarFallback>
                               </Avatar>
                             </div>
                             <div>
                               <div className="font-medium text-sm">
-                                {challenger.row.first_name}{" "}
-                                {challenger.row.last_name}
+                                {challenger.row.name}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {challenger.metricLabel}

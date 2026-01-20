@@ -45,7 +45,7 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
-    valid_simulation_resource_types text[] := ARRAY['names', 'descriptions', 'departments', 'flags', 'scenarios', 'scenario_flags', 'scenario_positions', 'scenario_rubrics'];
+    valid_simulation_resource_types text[] := ARRAY['names', 'descriptions', 'departments', 'flags', 'scenarios', 'scenario_flags', 'scenario_positions', 'scenario_rubrics', 'scenario_time_limits'];
 BEGIN
     -- Validate artifact_type (all validation in SQL)
     IF artifact_type != 'simulation' THEN

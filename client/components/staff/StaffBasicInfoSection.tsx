@@ -19,8 +19,7 @@ export interface DepartmentItem {
 
 export interface StaffBasicInfoSectionProps {
   // Data
-  firstName: string;
-  lastName: string;
+  name: string;
   departmentIds: string[];
   primaryDepartmentId: string | undefined;
   validDepartmentIds: string[];
@@ -30,8 +29,7 @@ export interface StaffBasicInfoSectionProps {
   active: boolean;
 
   // Callbacks
-  onFirstNameChange: (value: string) => void;
-  onLastNameChange: (value: string) => void;
+  onNameChange: (value: string) => void;
   onDepartmentIdsChange: (ids: string[]) => void;
   onPrimaryDepartmentIdChange: (id: string | undefined) => void;
   onRequestsPerDayChange: (value: number | "") => void;
@@ -44,8 +42,7 @@ export interface StaffBasicInfoSectionProps {
 }
 
 export function StaffBasicInfoSection({
-  firstName,
-  lastName,
+  name,
   departmentIds,
   primaryDepartmentId,
   validDepartmentIds,
@@ -53,8 +50,7 @@ export function StaffBasicInfoSection({
   requestsPerDay,
   requestsPerDayEnabled,
   active,
-  onFirstNameChange,
-  onLastNameChange,
+  onNameChange,
   onDepartmentIdsChange,
   onPrimaryDepartmentIdChange,
   onRequestsPerDayChange,
@@ -67,44 +63,25 @@ export function StaffBasicInfoSection({
     <div className="space-y-4">
       {/* Click-to-edit Name Section */}
       <div className="space-y-2">
-        {/* First Name - Required, Large */}
+        {/* Name - Required, Large */}
         <div>
           <input
             type="text"
-            id="firstName"
-            data-testid="input-staff-first-name"
-            value={firstName}
-            onChange={(e) => onFirstNameChange(e.target.value)}
+            id="name"
+            data-testid="input-staff-name"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
             className={cn(
               "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
             )}
-            placeholder="First Name"
+            placeholder="Name"
             required
             disabled={isReadonly || isSubmitting}
           />
           <p className="text-xs text-muted-foreground mt-1 px-2">
-            {firstName === "" || !firstName
-              ? "Click to edit • First name is required"
+            {name === "" || !name
+              ? "Click to edit • Name is required"
               : "Click to edit"}
-          </p>
-        </div>
-
-        {/* Last Name - Optional, Smaller */}
-        <div>
-          <input
-            type="text"
-            id="lastName"
-            data-testid="input-staff-last-name"
-            value={lastName}
-            onChange={(e) => onLastNameChange(e.target.value)}
-            className={cn(
-              "w-full text-lg font-medium border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-            )}
-            placeholder="Last Name (optional)"
-            disabled={isReadonly || isSubmitting}
-          />
-          <p className="text-xs text-muted-foreground mt-1 px-2">
-            Click to edit • Optional
           </p>
         </div>
       </div>

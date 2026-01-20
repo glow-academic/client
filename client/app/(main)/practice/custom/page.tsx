@@ -127,13 +127,12 @@ export default async function PracticeCustomPage({
   const practiceData = await getPractice(practiceFilters);
 
   // Extract ProfileItem objects from LayoutContextOut
-  // LayoutContextOut has effective profile fields directly (id, first_name, etc.)
-  // and actual profile fields prefixed with actual_ (actual_id, actual_first_name, etc.)
+  // LayoutContextOut has effective profile fields directly (id, name, etc.)
+  // and actual profile fields prefixed with actual_ (actual_id, actual_name, etc.)
   const effectiveProfile: ProfileItem | null = profileContext.id
     ? {
         id: profileContext.id,
-        first_name: profileContext.first_name || null,
-        last_name: profileContext.last_name || null,
+        name: profileContext.name || null,
         emails: profileContext.emails || [],
         primary_email: profileContext.primary_email || null,
         role: profileContext.role || null,
@@ -150,8 +149,7 @@ export default async function PracticeCustomPage({
   const actualProfile: ProfileItem | null = profileContext.actual_id
     ? {
         id: profileContext.actual_id,
-        first_name: profileContext.actual_first_name || null,
-        last_name: profileContext.actual_last_name || null,
+        name: profileContext.actual_name || null,
         emails: profileContext.actual_emails || [],
         primary_email: profileContext.actual_primary_email || null,
         role: profileContext.actual_role || null,

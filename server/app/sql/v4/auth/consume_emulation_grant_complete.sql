@@ -25,7 +25,7 @@ RETURNS TABLE (
     full_emulation boolean
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 WITH params AS (
     SELECT grant_id AS grant_id

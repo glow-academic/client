@@ -15,8 +15,7 @@ CREATE OR REPLACE FUNCTION api_resolve_default_idp_profile_v4(
 RETURNS TABLE (
     profile_id uuid,
     primary_email text,
-    first_name text,
-    last_name text,
+    name text,
     role profile_role
 )
 LANGUAGE sql
@@ -38,20 +37,12 @@ AS $$
                AND pe.is_primary = true 
                AND pe.active = true 
              LIMIT 1) as primary_email,
-            -- Get first name
+            -- Get name
             (SELECT n.name 
              FROM profile_names pn 
              JOIN names_resource n ON pn.name_id = n.id 
              WHERE pn.profile_id = rp.resolved_profile_id 
-               AND pn.type = 'first' 
-             LIMIT 1) as first_name,
-            -- Get last name
-            (SELECT n2.name 
-             FROM profile_names pn2 
-             JOIN names_resource n2 ON pn2.name_id = n2.id 
-             WHERE pn2.profile_id = rp.resolved_profile_id 
-               AND pn2.type = 'last' 
-             LIMIT 1) as last_name,
+             LIMIT 1) as name,
             -- Get role
             (SELECT r.role 
              FROM profile_roles pr 
@@ -79,8 +70,7 @@ AS $$
     SELECT 
         profile_id,
         primary_email,
-        first_name,
-        last_name,
+        name,
         role
     FROM profile_with_details
     WHERE profile_id IS NOT NULL

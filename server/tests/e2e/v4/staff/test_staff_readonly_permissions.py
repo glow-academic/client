@@ -25,7 +25,7 @@ def test_staff_readonly_permissions(page: Page, base_url: str) -> None:
         pytest.skip("No read-only staff available in current dataset")
 
     profile_id = readonly_staff["profile_id"]
-    staff_name = f"{readonly_staff.get('first_name', '')} {readonly_staff.get('last_name', '')}".strip()
+    staff_name = readonly_staff.get("name", "")
 
     page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")

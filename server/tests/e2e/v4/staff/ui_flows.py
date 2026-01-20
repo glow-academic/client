@@ -28,13 +28,9 @@ def edit_staff_via_ui(
     edit_dialog.wait_for(state="visible", timeout=10000)
 
     if updates:
-        if "first_name" in updates:
-            first_name_input = page.get_by_test_id("input-staff-first-name")
-            first_name_input.fill(updates["first_name"])
-
-        if "last_name" in updates:
-            last_name_input = page.get_by_test_id("input-staff-last-name")
-            last_name_input.fill(updates["last_name"])
+        if "name" in updates:
+            name_input = page.get_by_test_id("input-staff-name")
+            name_input.fill(updates["name"])
 
         if "role" in updates:
             role_picker = page.get_by_test_id("input-staff-role")

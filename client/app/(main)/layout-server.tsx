@@ -162,13 +162,12 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
 }
 
 // Export ProfileItem type derived from server response
-// Extracts profile fields from LayoutContextOut (effective profile fields: id, first_name, etc.)
+// Extracts profile fields from LayoutContextOut (effective profile fields: id, name, etc.)
 // Uses inferred types to ensure type safety
 export type ProfileItem = Pick<
   LayoutContextOut,
   | "id"
-  | "first_name"
-  | "last_name"
+  | "name"
   | "emails"
   | "primary_email"
   | "role"

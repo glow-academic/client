@@ -100,14 +100,7 @@ async def get_profile(
             audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add profile to audit context if target_profile_id was provided (detail mode)
             if request.target_profile_id:
-                # Construct name from first_name and last_name resources
-                profile_name = ""
-                if result.first_name_resource and result.last_name_resource:
-                    profile_name = f"{result.first_name_resource.name} {result.last_name_resource.name}"
-                elif result.first_name_resource:
-                    profile_name = result.first_name_resource.name
-                elif result.last_name_resource:
-                    profile_name = result.last_name_resource.name
+                profile_name = result.name_resource.name if result.name_resource else ""
                 audit_ctx["profile"] = {
                     "name": profile_name,
                     "id": str(result.profile_id) if result.profile_id else "",

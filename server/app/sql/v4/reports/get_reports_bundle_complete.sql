@@ -124,8 +124,7 @@ CREATE TYPE types.q_reports_bundle_v4_profile_metrics AS (
 -- Profile data
 CREATE TYPE types.q_reports_bundle_v4_profile AS (
     profile_id uuid,
-    first_name text,
-    last_name text,
+    name text,
     emails text[],
     primary_email text,
     role text,
@@ -218,8 +217,8 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -235,7 +234,6 @@ settings_thresholds AS (
         SELECT 1 FROM setting_flags sf
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.setting_id = s.id
-          AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
           AND f.name = 'active'
           AND sf.value = TRUE
     )
@@ -245,20 +243,25 @@ settings_thresholds AS (
 filtered_profiles AS (
     SELECT 
         p.id, 
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1) AS first_name, 
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1) AS last_name, 
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) AS name, 
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        (SELECT r.role FROM profile_roles pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
-         WHERE pr_j.profile_id = p.id 
-         LIMIT 1) as role,
+        COALESCE(
+            (SELECT r.role FROM profile_roles pr_j 
+             JOIN roles_resource r ON pr_j.role_id = r.id 
+             WHERE pr_j.profile_id = p.id 
+             LIMIT 1),
+            'member'::profile_role
+        ) as role,
         p.created_at
     FROM profile_artifact p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.email_id = e.id
     WHERE 
-        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[]))
+        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR COALESCE(
+            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1),
+            'member'::profile_role
+        ) = ANY((SELECT roles FROM params)::profile_role[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
             SELECT 1 FROM profile_cohorts cp 
             WHERE cp.profile_id = p.id 
@@ -323,8 +326,7 @@ filt AS (
 profile_metrics AS (
     SELECT
         fp.id AS profile_id,
-        fp.first_name,
-        fp.last_name,
+        fp.name,
         fp.emails,
         fp.primary_email,
         fp.role,
@@ -335,7 +337,7 @@ profile_metrics AS (
         AVG(f.time_taken_seconds / 60.0) FILTER (WHERE f.time_taken_seconds IS NOT NULL) AS avg_time_minutes
     FROM filtered_profiles fp
     LEFT JOIN filt f ON f.profile_id = fp.id
-    GROUP BY fp.id, fp.first_name, fp.last_name, fp.emails, fp.primary_email, fp.role
+    GROUP BY fp.id, fp.name, fp.emails, fp.primary_email, fp.role
 ),
 total_time_per_profile AS (
     SELECT
@@ -808,13 +810,12 @@ profile_options_cte AS (
     SELECT 
         am.profile_id,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id AND pn.type = 'full'::type_profile_names LIMIT 1),
-            am.first_name || ' ' || am.last_name,
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id LIMIT 1),
             'Unknown'
         ) AS profile_name,
         COUNT(*) AS count
     FROM all_metrics am
-    GROUP BY am.profile_id, am.first_name, am.last_name
+    GROUP BY am.profile_id, am.name
     ORDER BY profile_name
 ),
 simulation_options_cte AS (
@@ -880,10 +881,10 @@ paginated_metrics AS (
         END ASC NULLS LAST,
         -- Text sorting (profileName)
         CASE 
-            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'DESC' THEN LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id AND pn.type = 'full'::type_profile_names LIMIT 1), am.first_name || ' ' || am.last_name, ''))
+            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'DESC' THEN LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id LIMIT 1), am.name, ''))
         END DESC NULLS LAST,
         CASE 
-            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'ASC' THEN LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id AND pn.type = 'full'::type_profile_names LIMIT 1), am.first_name || ' ' || am.last_name, ''))
+            WHEN (SELECT sort_by FROM params) = 'profileName' AND (SELECT sort_order FROM params) = 'ASC' THEN LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = am.profile_id LIMIT 1), am.name, ''))
         END ASC NULLS LAST,
         am.profile_id
     LIMIT (SELECT page_size FROM params)
@@ -893,8 +894,7 @@ paginated_metrics AS (
 profiles_with_metrics AS (
     SELECT
         pm.profile_id,
-        pm.first_name,
-        pm.last_name,
+        pm.name,
         pm.emails,
         pm.primary_email,
         pm.role,
@@ -1276,8 +1276,7 @@ profiles_with_metrics AS (
 profiles_with_profile_metrics AS (
     SELECT
         pwm.profile_id,
-        pwm.first_name,
-        pwm.last_name,
+        pwm.name,
         pwm.emails,
         pwm.primary_email,
         pwm.role,
@@ -1302,8 +1301,7 @@ profiles_final AS (
     SELECT
         ARRAY_AGG(
             (pwm.profile_id,
-             pwm.first_name,
-             pwm.last_name,
+             pwm.name,
              pwm.emails,
              pwm.primary_email,
              pwm.role,

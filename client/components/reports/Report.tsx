@@ -17,8 +17,14 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useEffect, useMemo } from "react";
 
 // Helper function to get initials
-const getInitials = (firstName: string, lastName: string): string => {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+const getInitials = (name: string): string => {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 };
 
 // Helper function to get role badge variant
@@ -67,8 +73,7 @@ export default function Report({
     () =>
       profileData
         ? {
-            firstName: profileData.name?.split(" ")[0] || "",
-            lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
+            name: profileData.name || "",
             email:
               profileData.emails && profileData.emails.length > 0
                 ? profileData.emails.join(", ")
@@ -81,11 +86,10 @@ export default function Report({
 
   // Set breadcrumb context when profile data is loaded
   useEffect(() => {
-    if (profile?.firstName && profile?.lastName && profileId) {
-      const fullName = `${profile.firstName} ${profile.lastName}`;
+    if (profile?.name && profileId) {
       setEntityMetadata({
         entityId: profileId,
-        entityName: fullName,
+        entityName: profile.name,
         entityType: "profile",
       });
     }
@@ -116,12 +120,12 @@ export default function Report({
               style={{ outlineWidth: "1px", outlineStyle: "solid" }}
             >
               <AvatarFallback>
-                {getInitials(profile.firstName, profile.lastName)}
+                {getInitials(profile.name)}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold">
-                {profile.firstName} {profile.lastName}
+                {profile.name}
               </h1>
               <p className="text-muted-foreground">
                 {profile.email || "No email"}

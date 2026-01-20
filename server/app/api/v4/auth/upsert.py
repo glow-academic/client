@@ -94,7 +94,7 @@ async def create_or_update_profile(
             created = result.created
 
             # Set audit context
-            profile_name = f"{request.first_name} {request.last_name}"
+            profile_name = request.name
             if result.actor_name:
                 audit_set(
                     http_request,

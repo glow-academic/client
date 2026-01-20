@@ -655,14 +655,14 @@ export function UnifiedSidebar({
                         {!effectiveProfile
                           ? "GU"
                           : getInitials(
-                              (effectiveProfile?.first_name || "") +
-                                " " +
-                                (effectiveProfile?.last_name || "")
+                              effectiveProfile?.name || ""
                             )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5 leading-none text-left">
-                      <span className="font-medium truncate">{`${effectiveProfile?.first_name || "Guest"} ${effectiveProfile?.last_name || "User"}`}</span>
+                      <span className="font-medium truncate">
+                        {effectiveProfile?.name || "Guest User"}
+                      </span>
                       {/* Capitalize the role for display */}
                       <span className="text-xs capitalize">
                         {effectiveProfile?.role || "guest"}

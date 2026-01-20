@@ -248,8 +248,7 @@ export default function StaffNewEdit({
 
   // Local draft state (not in URL)
   type DraftState = {
-    firstName: string;
-    lastName: string;
+    name: string;
     emails: string[];
     primaryEmailIndex: number | undefined;
     role: string;
@@ -266,8 +265,7 @@ export default function StaffNewEdit({
     const data = isEditMode ? staffDetail : staffDetailDefault;
     if (!data) {
       return {
-        firstName: "",
-        lastName: "",
+        name: "",
         emails: [],
         primaryEmailIndex: undefined,
         role: "instructional",
@@ -315,8 +313,7 @@ export default function StaffNewEdit({
       "cohort_ids" in data && data.cohort_ids ? data.cohort_ids : [];
 
     return {
-      firstName: data.first_name || "",
-      lastName: data.last_name || "",
+      name: data.name || "",
       emails: emails,
       primaryEmailIndex:
         primaryIndex !== undefined && primaryIndex >= 0
@@ -342,16 +339,14 @@ export default function StaffNewEdit({
     staffDetailDefaultId,
     draftId,
     urlDraftId,
-    staffDetailDefault?.first_name,
-    staffDetailDefault?.last_name,
+    staffDetailDefault?.name,
     staffDetailDefault?.emails,
     staffDetailDefault?.role,
     staffDetailDefault?.requests_per_day,
     staffDetailDefault?.cohort_ids,
     staffDetailDefault?.department_ids,
     staffDetailDefault?.active,
-    staffDetail?.first_name,
-    staffDetail?.last_name,
+    staffDetail?.name,
     staffDetail?.emails,
     staffDetail?.role,
     staffDetail?.requests_per_day,
@@ -454,9 +449,7 @@ export default function StaffNewEdit({
   // Step status calculation (uses draftState, not formData)
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasFirstName = !!(
-        draftState.firstName && String(draftState.firstName).trim()
-      );
+      const hasName = !!(draftState.name && String(draftState.name).trim());
       const hasRole = !!(draftState.role && String(draftState.role).trim());
       const hasDepartments =
         (draftState.departmentIds?.length || 0) > 0 ||
@@ -475,18 +468,18 @@ export default function StaffNewEdit({
 
       switch (stepId) {
         case "role":
-          if (!hasFirstName) return "pending";
+          if (!hasName) return "pending";
           return hasRole ? "completed" : "active";
         case "primaryDepartment":
-          if (!hasFirstName || !hasRole) return "pending";
+          if (!hasName || !hasRole) return "pending";
           if (!hasDepartments) return "pending";
           return hasPrimaryDepartment ? "completed" : "active";
         case "emails":
-          if (!hasFirstName || !hasRole) return "pending";
+          if (!hasName || !hasRole) return "pending";
           if (hasDepartments && !hasPrimaryDepartment) return "pending";
           return hasEmails && hasPrimaryEmail ? "completed" : "active";
         case "cohorts":
-          if (!hasFirstName || !hasRole) return "pending";
+          if (!hasName || !hasRole) return "pending";
           if (hasDepartments && !hasPrimaryDepartment) return "pending";
           if (!hasEmails || !hasPrimaryEmail) return "pending";
           return "completed";
@@ -704,9 +697,9 @@ export default function StaffNewEdit({
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
       // Use draftState, not formData parameter
-      if (!draftState.firstName?.trim()) {
-        toast.error("First name is required");
-        throw new Error("First name is required");
+      if (!draftState.name?.trim()) {
+        toast.error("Name is required");
+        throw new Error("Name is required");
       }
 
       const validEmails = (draftState.emails || []).filter(
@@ -775,8 +768,7 @@ export default function StaffNewEdit({
           body: {
             profiles: [
               {
-                first_name: draftState.firstName,
-                last_name: draftState.lastName || "",
+                name: draftState.name,
                 emails: validEmails,
                 primary_email_index:
                   draftState.primaryEmailIndex != null &&
@@ -1420,10 +1412,10 @@ export default function StaffNewEdit({
     ]
   );
 
-  // Render first name section (not a step, but part of the form)
-  const renderFirstNameSection = () => {
+  // Render name section (not a step, but part of the form)
+  const renderNameSection = () => {
     if (
-      draftState.firstName === undefined ||
+      draftState.name === undefined ||
       !staffData?.departments ||
       staffData?.valid_department_ids === undefined
     ) {
@@ -1435,36 +1427,22 @@ export default function StaffNewEdit({
         <div>
           <input
             type="text"
-            id="firstName"
-            data-testid="input-staff-first-name"
-            value={String(draftState.firstName || "")}
+            id="name"
+            data-testid="input-staff-name"
+            value={String(draftState.name || "")}
             onChange={(e) =>
-              setDraftState((prev) => ({ ...prev, firstName: e.target.value }))
+              setDraftState((prev) => ({ ...prev, name: e.target.value }))
             }
             className={cn(
               "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
             )}
-            placeholder="First Name"
+            placeholder="Name"
             required
             disabled={isReadonly}
           />
           <p className="text-xs text-muted-foreground mt-1 px-2">
             Click to edit
           </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Last Name</Label>
-          <Input
-            id="lastName"
-            data-testid="input-staff-last-name"
-            value={String(draftState.lastName || "")}
-            onChange={(e) =>
-              setDraftState((prev) => ({ ...prev, lastName: e.target.value }))
-            }
-            placeholder="Last Name (optional)"
-            disabled={isReadonly}
-          />
         </div>
 
         {staffData.valid_department_ids &&
@@ -1666,11 +1644,11 @@ export default function StaffNewEdit({
         )}
 
         <div className="w-full">
-          {/* First Name Section - rendered before GenericForm */}
-          {renderFirstNameSection() && (
+          {/* Name Section - rendered before GenericForm */}
+          {renderNameSection() && (
             <div className="mb-8">
               <div className="bg-card border border-border rounded-lg p-6">
-                {renderFirstNameSection()}
+                {renderNameSection()}
               </div>
             </div>
           )}

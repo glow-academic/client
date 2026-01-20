@@ -157,8 +157,7 @@ RETURNS TABLE (
     is_authorized boolean,
     -- Actual profile fields (prefixed with actual_)
     actual_id uuid,
-    actual_first_name text,
-    actual_last_name text,
+    actual_name text,
     actual_emails text[],
     actual_primary_email text,
     actual_role text,
@@ -171,8 +170,7 @@ RETURNS TABLE (
     actual_primary_department_id uuid,
     -- Effective profile fields (unprefixed)
     id uuid,
-    first_name text,
-    last_name text,
+    name text,
     emails text[],
     primary_email text,
     role text,
@@ -306,8 +304,7 @@ actual_profile_data AS (
     -- Return NULL values when profile ID is NULL (for settings-only requests)
     SELECT 
         p.id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
-        (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         (SELECT r.role FROM profile_roles pr_j 
@@ -342,8 +339,7 @@ actual_profile_data AS (
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
     SELECT 
         NULL::uuid as id,
-        NULL::text as first_name,
-        NULL::text as last_name,
+        NULL::text as name,
         NULL::text[] as emails,
         NULL::text as primary_email,
         NULL::profile_role as role,
@@ -361,8 +357,7 @@ effective_profile_data AS (
     -- Return NULL values when profile ID is NULL (for settings-only requests)
     SELECT 
         p.id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
-        (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         (SELECT r.role FROM profile_roles pr_j 
@@ -397,8 +392,7 @@ effective_profile_data AS (
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
     SELECT 
         NULL::uuid as id,
-        NULL::text as first_name,
-        NULL::text as last_name,
+        NULL::text as name,
         NULL::text[] as emails,
         NULL::text as primary_email,
         NULL::profile_role as role,
@@ -673,10 +667,10 @@ actor_name_computed AS (
     -- Return NULL when both profile IDs are NULL (for settings-only requests)
     SELECT 
         COALESCE(
-            (SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')
+            (SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
              FROM profile_artifact p
              WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
-            (SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')
+            (SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
              FROM profile_artifact p
              WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids) LIMIT 1),
             NULL::text
@@ -790,8 +784,7 @@ SELECT
     ev.is_authorized::boolean as is_authorized,
     -- Actual profile fields (prefixed with actual_)
     apd.id as actual_id,
-    apd.first_name as actual_first_name,
-    apd.last_name as actual_last_name,
+    apd.name as actual_name,
     COALESCE(apd.emails, ARRAY[]::text[]) as actual_emails,
     apd.primary_email as actual_primary_email,
     apd.role as actual_role,
@@ -804,8 +797,7 @@ SELECT
     apd.primary_department_id as actual_primary_department_id,
     -- Effective profile fields (unprefixed)
     epd.id,
-    epd.first_name,
-    epd.last_name,
+    epd.name,
     COALESCE(epd.emails, ARRAY[]::text[]) as emails,
     epd.primary_email,
     epd.role,

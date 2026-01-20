@@ -131,8 +131,8 @@ profile_role_check AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -198,7 +198,11 @@ runs_base AS (
             OR (SELECT roles FROM params) IS NULL
             OR COALESCE(array_length((SELECT roles FROM params), 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT id FROM profile_artifact p WHERE EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role::text = ANY((SELECT roles FROM params)::text[]))
+                SELECT DISTINCT p.id
+                FROM profile_artifact p
+                LEFT JOIN profile_roles pr_j ON pr_j.profile_id = p.id
+                LEFT JOIN roles_resource r ON pr_j.role_id = r.id
+                WHERE COALESCE(r.role, 'member'::profile_role)::text = ANY((SELECT roles FROM params)::text[])
             )
         )
         -- Cohort filter (via profile_cohorts)
@@ -301,7 +305,7 @@ SELECT
     ) as models,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_analytics_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''))::types.q_get_pricing_analytics_v4_profile
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_profile[]
     ) as profiles,

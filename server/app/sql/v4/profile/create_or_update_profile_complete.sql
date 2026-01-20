@@ -22,8 +22,7 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_create_or_update_profile_v4(
-    first_name text,
-    last_name text,
+    name text,
     emails text[],  -- Array of all emails (first one is primary by default)
     role text,
     current_profile_id uuid DEFAULT NULL,  -- current user's profile_id for role validation
@@ -44,8 +43,7 @@ AS $$
 WITH params AS (
     SELECT 
         COALESCE(profile_id_new, gen_random_uuid()) AS profile_id_new,  -- Generate UUID if not provided
-        first_name AS first_name,
-        last_name AS last_name,
+        name AS name,
         COALESCE(emails, ARRAY[]::text[]) AS emails,
         COALESCE(primary_email_index, 0) AS primary_email_index,
         role AS role,
@@ -56,7 +54,7 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
     FROM params x
     LEFT JOIN profile_artifact p ON p.id = x.current_profile_id
     WHERE x.current_profile_id IS NOT NULL
@@ -98,23 +96,14 @@ existing_profile AS (
     -- Find existing profile by primary email in profile_emails table
     SELECT pe.profile_id as id FROM profile_emails pe JOIN emails_resource e ON pe.email_id = e.id WHERE e.email = (SELECT email FROM primary_email) AND pe.active = true LIMIT 1
 ),
--- Insert/update first_name in names table
-first_name_resource AS (
+-- Insert/update name in names table
+name_resource AS (
     INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT first_name, NOW(), NOW()
+    SELECT name, NOW(), NOW()
     FROM params
-    WHERE first_name IS NOT NULL AND first_name != ''
+    WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-    RETURNING id as first_name_id, name
-),
--- Insert/update last_name in names table
-last_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT last_name, NOW(), NOW()
-    FROM params
-    WHERE last_name IS NOT NULL AND last_name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-    RETURNING id as last_name_id, name
+    RETURNING id as name_id, name
 ),
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
@@ -149,47 +138,20 @@ profile_role_insert AS (
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     RETURNING profile_id
 ),
--- Delete existing profile_names links for first_name
-delete_old_first_name AS (
-    DELETE FROM profile_names
-    WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
-      AND type = 'first'::type_profile_names
-      AND EXISTS (SELECT 1 FROM profile_upsert)
-),
--- Link profile to first_name
-link_profile_first_name AS (
-    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+-- Link profile to name
+link_profile_name AS (
+    INSERT INTO profile_names (profile_id, name_id, created_at, updated_at)
     SELECT 
         pu.id,
-        fnr.first_name_id,
-        'first'::type_profile_names,
+        nr.name_id,
         NOW(),
         NOW()
     FROM profile_upsert pu
-    CROSS JOIN first_name_resource fnr
+    CROSS JOIN name_resource nr
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
-),
--- Delete existing profile_names links for last_name
-delete_old_last_name AS (
-    DELETE FROM profile_names
-    WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
-      AND type = 'last'::type_profile_names
-      AND EXISTS (SELECT 1 FROM profile_upsert)
-),
--- Link profile to last_name
-link_profile_last_name AS (
-    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
-    SELECT 
-        pu.id,
-        lnr.last_name_id,
-        'last'::type_profile_names,
-        NOW(),
-        NOW()
-    FROM profile_upsert pu
-    CROSS JOIN last_name_resource lnr
-    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (profile_id) DO UPDATE SET
+        name_id = EXCLUDED.name_id,
+        updated_at = NOW()
 ),
 -- UPDATE profile_artifact active flag
 update_profile_active_flag AS (

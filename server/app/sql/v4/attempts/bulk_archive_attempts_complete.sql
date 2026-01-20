@@ -54,9 +54,10 @@ DECLARE
     v_use_attempt_ids_mode boolean;
 BEGIN
     -- Get actor name
-    SELECT first_name || ' ' || last_name INTO v_actor_name
-    FROM profile_artifact
-    WHERE id = profile_id;
+    SELECT COALESCE(
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_id LIMIT 1),
+        ''
+    ) INTO v_actor_name;
 
     -- Determine mode: use attempt_ids if provided and non-empty
     v_use_attempt_ids_mode := cardinality(attempt_ids) > 0;
@@ -226,7 +227,7 @@ BEGIN
             LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
             WHERE 
                 (search IS NULL OR search = '' OR
-                 LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
+                 LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
                  LOWER(haf.simulation_name) LIKE '%' || LOWER(search) || '%' OR
                  EXISTS (
                      SELECT 1

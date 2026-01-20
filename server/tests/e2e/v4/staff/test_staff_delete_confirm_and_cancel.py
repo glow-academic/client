@@ -34,9 +34,6 @@ def test_staff_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
     try:
         # Create test staff member
         staff_name = generate_unique_staff_name("Deletable Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "Deletable"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"deletable-staff-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
@@ -48,8 +45,7 @@ def test_staff_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,
@@ -171,15 +167,11 @@ def test_staff_bulk_delete_confirm_and_cancel(page: Page, base_url: str) -> None
 
         for i in range(2):
             staff_name = generate_unique_staff_name(f"Bulk Delete Staff {i}")
-            parts = staff_name.split()
-            first_name = parts[0] if parts else f"BulkDel{i}"
-            last_name = parts[1] if len(parts) > 1 else "Staff"
             email = f"bulk-delete-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
-                first_name=first_name,
-                last_name=last_name,
+                name=staff_name,
                 email=email,
                 role="guest",
                 department_id=department_id,
@@ -267,9 +259,6 @@ def test_staff_bulk_delete_mixed_deletable_non_deletable(
     try:
         # Create one deletable staff
         staff_name = generate_unique_staff_name("Mixed Delete Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "Mixed"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"mixed-delete-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
@@ -281,8 +270,7 @@ def test_staff_bulk_delete_mixed_deletable_non_deletable(
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,

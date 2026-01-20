@@ -21,7 +21,7 @@ RETURNS TABLE (
     revoked_count bigint
 )
 LANGUAGE sql
-STABLE
+VOLATILE
 AS $$
 WITH params AS (
     SELECT profile_id AS profile_id

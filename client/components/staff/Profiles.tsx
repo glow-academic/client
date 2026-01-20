@@ -152,11 +152,14 @@ export interface ProfilesProps {
 }
 
 // Helper functions
-const getInitials = (firstName: string, lastName: string): string => {
-  if (!firstName && !lastName) return "??";
-  const first = firstName?.charAt(0) || "";
-  const last = lastName?.charAt(0) || "";
-  return (first + last).toUpperCase() || "??";
+const getInitials = (name: string): string => {
+  if (!name) return "??";
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("");
+  return initials.slice(0, 2).toUpperCase() || "??";
 };
 
 const getRoleIcon = (role: string) => {
@@ -216,15 +219,9 @@ type CSVStage = "upload" | "mapping" | "review";
 
 const TARGET_FIELDS = [
   {
-    value: "first_name", // snake_case
-    label: "First Name",
-    description: "The staff member's first name",
-    required: true,
-  },
-  {
-    value: "last_name", // snake_case
-    label: "Last Name",
-    description: "The staff member's last name",
+    value: "name", // snake_case
+    label: "Name",
+    description: "The staff member's full name",
     required: true,
   },
   {
@@ -279,13 +276,8 @@ const unparseCSV = (data: Record<string, string>[]): string => {
 
 const autoMapColumn = (columnName: string): string | null => {
   const lower = columnName.toLowerCase().trim();
-  if (
-    ["first name", "firstname", "first_name", "fname", "first"].includes(lower)
-  ) {
-    return "first_name"; // snake_case
-  }
-  if (["last name", "lastname", "last_name", "lname", "last"].includes(lower)) {
-    return "last_name"; // snake_case
+  if (["name", "full name", "fullname", "full_name"].includes(lower)) {
+    return "name"; // snake_case
   }
   if (
     ["email", "alias", "username", "user", "login", "email address"].includes(
@@ -791,7 +783,7 @@ export default function Staff({
           }));
           setColumnMappings(mappings);
 
-          const requiredFields = ["first_name", "last_name", "email"]; // snake_case
+          const requiredFields = ["name", "email"]; // snake_case
           const initialIncludes: Record<string, boolean> = {};
           headers.forEach((header) => {
             const mappedField = autoMapColumn(header);
@@ -840,24 +832,21 @@ export default function Staff({
   const downloadTemplate = useCallback(() => {
     const template = [
       {
-        first_name: "Sarah", // snake_case
-        last_name: "Johnson", // snake_case
+        name: "Sarah Johnson", // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
         cohort: "",
       },
       {
-        first_name: "Jane", // snake_case
-        last_name: "Smith", // snake_case
+        name: "Jane Smith", // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
         cohort: "",
       },
       {
-        first_name: "John", // snake_case
-        last_name: "Doe", // snake_case
+        name: "John Doe", // snake_case
         email: "redacted@purdue.edu",
         role: "member",
         department: "",
@@ -883,7 +872,7 @@ export default function Staff({
       (m) => m.csv_column && includedColumns[m.csv_column] !== false
     );
 
-    const requiredFields = ["firstName", "lastName", "email"];
+    const requiredFields = ["name", "email"];
     const mappedFields = activeMappings
       .map((m) => m.target_field)
       .filter((f): f is string => f !== null);
@@ -1082,8 +1071,7 @@ export default function Staff({
           emails.push("");
         }
         return {
-          first_name: row.first_name ?? "", // snake_case
-          last_name: row.last_name ?? "", // snake_case
+          name: row.name ?? "", // snake_case
           emails: emails,
           primary_email_index:
             row.primary_email_index !== null &&
@@ -1151,7 +1139,7 @@ export default function Staff({
   const columns = useMemo<ColumnDef<ProfileListItem>[]>(
     () => [
       {
-        accessorKey: "first_name",
+        accessorKey: "name",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Staff Member" />
         ),
@@ -1164,12 +1152,12 @@ export default function Staff({
                   className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
                   style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                 >
-                  {getInitials(staff.first_name ?? "", staff.last_name ?? "")}
+                  {getInitials(staff.name ?? "")}
                 </div>
                 <div className="text-left">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm">
-                      {staff.first_name} {staff.last_name}
+                      {staff.name}
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -1199,8 +1187,7 @@ export default function Staff({
             (staff.primary_email !== null &&
               staff.primary_email.toLowerCase().includes(valueLower));
           return Boolean(
-            (staff.first_name ?? "").toLowerCase().includes(valueLower) ||
-              (staff.last_name ?? "").toLowerCase().includes(valueLower) ||
+            (staff.name ?? "").toLowerCase().includes(valueLower) ||
               emailMatch
           );
         },
@@ -1212,7 +1199,7 @@ export default function Staff({
             row.emails && row.emails.length > 0
               ? row.emails.join(" ")
               : row.primary_email || "";
-          return `${row.first_name} ${row.last_name} ${emails}`.toLowerCase();
+          return `${row.name} ${emails}`.toLowerCase();
         },
         header: "Search",
         cell: () => null,
@@ -2180,8 +2167,7 @@ export default function Staff({
                         <TableHeader>
                           <TableRow>
                             <TableHead>Row</TableHead>
-                            <TableHead>First Name</TableHead>
-                            <TableHead>Last Name</TableHead>
+                            <TableHead>Name</TableHead>
                             <TableHead>Alias</TableHead>
                             <TableHead>Role</TableHead>
                             {validDepartmentIdsForCSV.length > 1 && (
@@ -2204,11 +2190,8 @@ export default function Staff({
                             .map((row, index) => {
                               const editableRow = editableRows[index] || row;
                               const errors = editableRow.errors ?? [];
-                              const hasFirstNameError = errors.some(
-                                (e) => e.field === "first_name" // snake_case
-                              );
-                              const hasLastNameError = errors.some(
-                                (e) => e.field === "last_name" // snake_case
+                              const hasNameError = errors.some(
+                                (e) => e.field === "name" // snake_case
                               );
                               const hasAliasError = errors.some(
                                 (e) => e.field === "email"
@@ -2239,36 +2222,17 @@ export default function Staff({
                                   <TableCell>{row.row_index}</TableCell>
                                   <TableCell
                                     className={
-                                      hasFirstNameError
+                                      hasNameError
                                         ? "bg-destructive/10"
                                         : ""
                                     }
                                   >
                                     <Input
-                                      value={editableRow.first_name || ""} // snake_case
+                                      value={editableRow.name || ""} // snake_case
                                       onChange={(e) =>
                                         updateEditableRow(
                                           index,
-                                          "first_name", // snake_case
-                                          e.target.value || null
-                                        )
-                                      }
-                                      className="h-8 w-full min-w-[120px]"
-                                    />
-                                  </TableCell>
-                                  <TableCell
-                                    className={
-                                      hasLastNameError
-                                        ? "bg-destructive/10"
-                                        : ""
-                                    }
-                                  >
-                                    <Input
-                                      value={editableRow.last_name || ""} // snake_case
-                                      onChange={(e) =>
-                                        updateEditableRow(
-                                          index,
-                                          "last_name", // snake_case
+                                          "name", // snake_case
                                           e.target.value || null
                                         )
                                       }
@@ -2542,7 +2506,7 @@ export default function Staff({
                               key={staff.profile_id ?? `staff-${cohortCount}`}
                               className="text-red-600 dark:text-red-300"
                             >
-                              • {staff.first_name} {staff.last_name} (
+                              • {staff.name} (
                               {staff.primary_email ||
                                 (staff.emails && staff.emails.length > 0
                                   ? staff.emails[0]
@@ -2577,7 +2541,7 @@ export default function Staff({
                               key={s.profile_id}
                               className="text-yellow-700 dark:text-yellow-300"
                             >
-                              • {s.first_name} {s.last_name} (
+                              • {s.name} (
                               {s.primary_email ||
                                 (s.emails && s.emails.length > 0
                                   ? s.emails[0]
@@ -2644,8 +2608,7 @@ export default function Staff({
           <AlertDialogContent data-testid="dialog-delete-staff">
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Delete {deleteStaffMember?.first_name}{" "}
-                {deleteStaffMember?.last_name}?
+                Delete {deleteStaffMember?.name}?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete the account. Default profiles and
@@ -2667,7 +2630,7 @@ export default function Staff({
                         </p>
                         <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                            • {staffMember.first_name} {staffMember.last_name} (
+                            • {staffMember.name} (
                             {staffMember.primary_email ||
                               (staffMember.emails &&
                               staffMember.emails.length > 0
@@ -2694,7 +2657,7 @@ export default function Staff({
                       <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                         <ul className="text-sm space-y-2">
                           <li className="text-red-600 dark:text-red-300">
-                            • {staffMember.first_name} {staffMember.last_name} (
+                            • {staffMember.name} (
                             {staffMember.primary_email ||
                               (staffMember.emails &&
                               staffMember.emails.length > 0

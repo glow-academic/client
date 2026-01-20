@@ -27,12 +27,7 @@ STABLE
 AS $$
     SELECT COALESCE(
         (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id 
-         WHERE pn.profile_id = $1 AND pn.type = 'full' LIMIT 1),
-        (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 
-         JOIN names_resource n1 ON pn1.name_id = n1.id 
-         JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id 
-         JOIN names_resource n2 ON pn2.name_id = n2.id 
-         WHERE pn1.profile_id = $1 AND pn1.type = 'first' AND pn2.type = 'last' LIMIT 1),
+         WHERE pn.profile_id = $1 LIMIT 1),
         ''
     ) as actor_name
 $$;

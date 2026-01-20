@@ -176,8 +176,7 @@ async def authorize(
         _authorization_codes[code] = {
             "profile_id": str(profile_data.profile_id),
             "email": profile_data.primary_email,
-            "first_name": profile_data.first_name or "",
-            "last_name": profile_data.last_name or "",
+            "name": profile_data.name or "",
             "role": str(profile_data.role) if profile_data.role else None,
             "nonce": nonce,
             "expires_at": expires_at,
@@ -255,13 +254,10 @@ async def token(
         key_id = get_key_id()
         private_key = get_private_key()
         
-        # Build name from first_name and last_name
-        name_parts = []
-        if code_data["first_name"]:
-            name_parts.append(code_data["first_name"])
-        if code_data["last_name"]:
-            name_parts.append(code_data["last_name"])
-        name = " ".join(name_parts) if name_parts else ""
+        name = code_data["name"]
+        name_parts = name.split()
+        given_name = name_parts[0] if name_parts else ""
+        family_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
         
         # Build stable sub claim: default:<department_id>:<mode>:<profile_id>
         # Note: We don't have department_id in code_data, so we'll use a simpler format
@@ -279,8 +275,8 @@ async def token(
             "email": code_data["email"],
             "email_verified": True,
             "name": name,
-            "given_name": code_data["first_name"] or "",
-            "family_name": code_data["last_name"] or "",
+            "given_name": given_name,
+            "family_name": family_name,
         }
         
         id_token = jwt.encode(

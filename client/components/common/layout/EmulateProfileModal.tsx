@@ -307,7 +307,7 @@ export function EmulateProfileModal({
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {profile.first_name || ""} {profile.last_name || ""}
+                          {profile.name || ""}
                         </TableCell>
                         <TableCell>
                           {profile.emails && profile.emails.length > 0

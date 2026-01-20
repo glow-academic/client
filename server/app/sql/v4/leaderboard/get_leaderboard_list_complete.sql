@@ -34,8 +34,7 @@ END $$;
 -- 3) Recreate types
 CREATE TYPE types.q_get_leaderboard_list_v4_row AS (
     profile_id uuid,
-    first_name text,
-    last_name text,
+    name text,
     simulation_ids uuid[],
     scenario_ids uuid[],
     total_attempts int,
@@ -88,8 +87,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -120,7 +118,6 @@ filt AS (
             SELECT 1 FROM simulation_flags sf
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
-              AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
               AND f.name = 'active'
               AND sf.value = TRUE
           )
@@ -147,8 +144,7 @@ filt AS (
 profile_stats AS (
     SELECT
         f.profile_id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id AND pn.type = 'first'::type_profile_names LIMIT 1) AS first_name,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id AND pn.type = 'last'::type_profile_names LIMIT 1) AS last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id LIMIT 1) AS name,
         COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
         ROUND(MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL))::int AS highest_score,
         ROUND(AVG(f.num_messages_total) FILTER (WHERE f.num_messages_total IS NOT NULL))::int AS avg_messages,
@@ -264,8 +260,7 @@ SELECT
     COALESCE(
         ARRAY_AGG(
             (ps.profile_id,
-             ps.first_name,
-             ps.last_name,
+             ps.name,
              COALESCE(ps.simulation_ids, ARRAY[]::uuid[]),
              COALESCE(ps.scenario_ids, ARRAY[]::uuid[]),
              ps.total_attempts,

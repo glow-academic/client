@@ -23,6 +23,7 @@ from .artifacts import (
     cohort,
     document,
     persona,
+    profile,
     rubric,
     scenario,
 )
@@ -66,6 +67,9 @@ server_router.include_router(persona.server_router)
 
 client_router.include_router(cohort.client_router)
 server_router.include_router(cohort.server_router)
+
+client_router.include_router(profile.client_router)
+server_router.include_router(profile.server_router)
 
 # Include attempts routers (simulation, benchmark)
 client_router.include_router(simulation.client_router)

@@ -161,18 +161,12 @@ function ProfileComponent({
     if (!staffData) return null;
     return {
       group_id: staffData.group_id,
-      first_name_resource: staffData.first_name_resource,
-      show_first_name: staffData.show_first_name,
-      first_name_suggestions: staffData.first_name_suggestions,
-      first_names: staffData.first_names,
-      first_name_required: staffData.first_name_required,
-      first_name_agent_id: staffData.first_name_agent_id,
-      last_name_resource: staffData.last_name_resource,
-      show_last_name: staffData.show_last_name,
-      last_name_suggestions: staffData.last_name_suggestions,
-      last_names: staffData.last_names,
-      last_name_required: staffData.last_name_required,
-      last_name_agent_id: staffData.last_name_agent_id,
+      name_resource: staffData.name_resource,
+      show_name: staffData.show_name,
+      name_suggestions: staffData.name_suggestions,
+      names: staffData.names,
+      name_required: staffData.name_required,
+      name_agent_id: staffData.name_agent_id,
       flag_resource: staffData.flag_resource,
       show_flag: staffData.show_flag,
       flag_required: staffData.flag_required,
@@ -207,18 +201,12 @@ function ProfileComponent({
     };
   }, [
     staffData?.group_id,
-    staffData?.first_name_resource,
-    staffData?.show_first_name,
-    staffData?.first_name_suggestions,
-    staffData?.first_names,
-    staffData?.first_name_required,
-    staffData?.first_name_agent_id,
-    staffData?.last_name_resource,
-    staffData?.show_last_name,
-    staffData?.last_name_suggestions,
-    staffData?.last_names,
-    staffData?.last_name_required,
-    staffData?.last_name_agent_id,
+    staffData?.name_resource,
+    staffData?.show_name,
+    staffData?.name_suggestions,
+    staffData?.names,
+    staffData?.name_required,
+    staffData?.name_agent_id,
     staffData?.flag_resource,
     staffData?.show_flag,
     staffData?.flag_required,
@@ -281,8 +269,7 @@ function ProfileComponent({
       switch (resourceType) {
         case "names":
           return (
-            (stableStaffDataFields.first_name_resource?.generated ?? false) ||
-            (stableStaffDataFields.last_name_resource?.generated ?? false)
+            stableStaffDataFields.name_resource?.generated ?? false
           );
         case "flags":
           return stableStaffDataFields.flag_resource?.generated ?? false;
@@ -314,8 +301,7 @@ function ProfileComponent({
     const data = staffDataRef.current;
     if (!data) {
       return {
-        first_name_id: null as string | null,
-        last_name_id: null as string | null,
+        name_id: null as string | null,
         active_flag_id: null as string | null,
         request_limit_id: null as string | null,
         department_ids: [] as string[],
@@ -332,8 +318,7 @@ function ProfileComponent({
         ? data.primary_department_id
         : data.department_ids?.[0] ?? null;
     return {
-      first_name_id: data.first_name_id ?? null,
-      last_name_id: data.last_name_id ?? null,
+      name_id: data.name_id ?? null,
       active_flag_id: data.active_flag_id ?? null,
       request_limit_id: data.request_limit_id ?? null,
       department_ids: data.department_ids ?? [],
@@ -373,8 +358,7 @@ function ProfileComponent({
     const newState = getInitialFormState();
     setFormState((prev) => {
       if (
-        prev.first_name_id !== newState.first_name_id ||
-        prev.last_name_id !== newState.last_name_id ||
+        prev.name_id !== newState.name_id ||
         prev.active_flag_id !== newState.active_flag_id ||
         prev.request_limit_id !== newState.request_limit_id ||
         JSON.stringify(prev.department_ids) !==
@@ -393,8 +377,7 @@ function ProfileComponent({
       return prev;
     });
   }, [
-    staffData?.first_name_id,
-    staffData?.last_name_id,
+    staffData?.name_id,
     staffData?.active_flag_id,
     staffData?.request_limit_id,
     departmentIdsStr,
@@ -456,8 +439,7 @@ function ProfileComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
-      first_name_id?: string | null;
-      last_name_id?: string | null;
+      name_id?: string | null;
       active_flag_id?: string | null;
       request_limit_id?: string | null;
       department_ids?: string[];
@@ -491,8 +473,7 @@ function ProfileComponent({
         setFormState((prev) => {
           const updates: Partial<typeof prev> = {};
 
-          if (data.first_name_id) updates.first_name_id = data.first_name_id;
-          if (data.last_name_id) updates.last_name_id = data.last_name_id;
+          if (data.name_id) updates.name_id = data.name_id;
           if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
           if (data.request_limit_id)
             updates.request_limit_id = data.request_limit_id;
@@ -680,13 +661,7 @@ function ProfileComponent({
     [socket, isConnected, staffId]
   );
 
-  const handleGenerateFirstName = useCallback(
-    async () =>
-      handleGenerateResources(["names"], determineAgentType(["names"])),
-    [handleGenerateResources, determineAgentType]
-  );
-
-  const handleGenerateLastName = useCallback(
+  const handleGenerateName = useCallback(
     async () =>
       handleGenerateResources(["names"], determineAgentType(["names"])),
     [handleGenerateResources, determineAgentType]
@@ -783,10 +758,7 @@ function ProfileComponent({
   );
 
   useEffect(() => {
-    const staffName =
-      staffData?.first_name && staffData?.last_name
-        ? `${staffData.first_name} ${staffData.last_name}`
-        : staffData?.name;
+    const staffName = staffData?.name;
     if (staffName && staffId && isEditMode) {
       setEntityMetadata({
         entityId: staffId,
@@ -819,14 +791,9 @@ function ProfileComponent({
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (staffData?.first_name_required && !formState.first_name_id) {
-        toast.error("First name is required");
-        throw new Error("First name is required");
-      }
-
-      if (staffData?.last_name_required && !formState.last_name_id) {
-        toast.error("Last name is required");
-        throw new Error("Last name is required");
+      if (staffData?.name_required && !formState.name_id) {
+        toast.error("Name is required");
+        throw new Error("Name is required");
       }
 
       if (
@@ -864,7 +831,7 @@ function ProfileComponent({
         throw new Error("Save action not available");
       }
 
-      if (!formState.first_name_id || !formState.last_name_id) {
+      if (!formState.name_id) {
         toast.error("Required fields are missing");
         throw new Error("Required fields are missing");
       }
@@ -892,8 +859,7 @@ function ProfileComponent({
         await saveStaffAction({
           body: {
             input_staff_id: isEditMode && staffId ? staffId : null,
-            first_name_id: formState.first_name_id,
-            last_name_id: formState.last_name_id,
+            name_id: formState.name_id,
             active_flag_id: formState.active_flag_id || null,
             requests_per_day:
               formState.request_limit_id && formState.request_limit_id !== ""
@@ -936,8 +902,7 @@ function ProfileComponent({
       effectiveProfile?.id,
       saveStaffAction,
       router,
-      staffData?.first_name_required,
-      staffData?.last_name_required,
+      staffData?.name_required,
       staffData?.departments_required,
       staffData?.emails_required,
       staffData?.email_resources,
@@ -948,8 +913,7 @@ function ProfileComponent({
 
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasFirstName = !!formState.first_name_id;
-      const hasLastName = !!formState.last_name_id;
+      const hasName = !!formState.name_id;
       const hasDepartments = formState.department_ids.length > 0;
       const hasRole = !!formState.role;
       const hasRoutes = formState.route_ids.length > 0;
@@ -960,24 +924,24 @@ function ProfileComponent({
 
       switch (stepId) {
         case "basic":
-          if (!hasFirstName || !hasLastName) return "active";
+          if (!hasName) return "active";
           if (needsDepartments) {
             return hasDepartments ? "completed" : "active";
           }
           return "completed";
         case "contact":
-          if (!hasFirstName || !hasLastName) return "pending";
+          if (!hasName) return "pending";
           if (!hasEmails) return "active";
           if (needsDepartments && !hasPrimaryDepartment) return "active";
           return "completed";
         case "roles":
-          if (!hasFirstName || !hasLastName) return "pending";
+          if (!hasName) return "pending";
           return hasRole ? "completed" : "active";
         case "cohorts":
-          if (!hasFirstName || !hasLastName) return "pending";
+          if (!hasName) return "pending";
           return hasCohorts ? "completed" : "active";
         case "routes":
-          if (!hasFirstName || !hasLastName) return "pending";
+          if (!hasName) return "pending";
           if (formState.role === "custom") {
             return hasRoutes ? "completed" : "active";
           }
@@ -1011,7 +975,7 @@ function ProfileComponent({
         title: "Basic Information",
         description:
           "Set the staff member's name, departments, and active status.",
-        resetFields: ["first_name", "last_name", "active", "department_ids"],
+        resetFields: ["name", "active", "department_ids"],
       },
       {
         id: "contact",
@@ -1045,8 +1009,7 @@ function ProfileComponent({
 
   const formFieldKeys = useMemo(
     () => [
-      "first_name",
-      "last_name",
+      "name",
       "active",
       "emails",
       "request_limit",
@@ -1082,8 +1045,7 @@ function ProfileComponent({
         case "basic":
           return {
             ...prev,
-            first_name_id: null,
-            last_name_id: null,
+            name_id: null,
             active_flag_id: null,
             department_ids: [],
             primary_department_id: null,
@@ -1167,60 +1129,31 @@ function ProfileComponent({
               customHeader={
                 <div className="flex items-end gap-2">
                   <Names
-                    name_id={formState.first_name_id ?? null}
-                    name_resource={
-                      currentStaffData?.first_name_resource ?? null
-                    }
-                    show_name={currentStaffData?.show_first_name ?? true}
-                    name_suggestions={
-                      currentStaffData?.first_name_suggestions ?? []
-                    }
-                    names={currentStaffData?.first_names ?? []}
+                    name_id={formState.name_id ?? null}
+                    name_resource={currentStaffData?.name_resource ?? null}
+                    show_name={currentStaffData?.show_name ?? true}
+                    name_suggestions={currentStaffData?.name_suggestions ?? []}
+                    names={currentStaffData?.names ?? []}
                     disabled={disabled}
                     onNameIdChange={(nameId) =>
                       setFormState((prev) => ({
                         ...prev,
-                        first_name_id: nameId,
+                        name_id: nameId,
                       }))
                     }
-                    onGenerate={handleGenerateFirstName}
+                    onGenerate={handleGenerateName}
                     isGenerating={isGenerating("names")}
-                    placeholder="e.g., John"
-                    defaultName="First Name"
-                    required={currentStaffData?.first_name_required ?? false}
+                    placeholder="e.g., Jane Doe"
+                    defaultName="Name"
+                    required={currentStaffData?.name_required ?? false}
                     hideDescription={true}
                     group_id={currentStaffData?.group_id ?? null}
-                    agent_id={currentStaffData?.first_name_agent_id ?? null}
-                    createNamesAction={createNamesAction}
-                  />
-                  <Names
-                    name_id={formState.last_name_id ?? null}
-                    name_resource={currentStaffData?.last_name_resource ?? null}
-                    show_name={currentStaffData?.show_last_name ?? true}
-                    name_suggestions={
-                      currentStaffData?.last_name_suggestions ?? []
-                    }
-                    names={currentStaffData?.last_names ?? []}
-                    disabled={disabled}
-                    onNameIdChange={(nameId) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        last_name_id: nameId,
-                      }))
-                    }
-                    onGenerate={handleGenerateLastName}
-                    isGenerating={isGenerating("names")}
-                    placeholder="e.g., Doe"
-                    defaultName="Last Name"
-                    required={currentStaffData?.last_name_required ?? false}
-                    hideDescription={true}
-                    group_id={currentStaffData?.group_id ?? null}
-                    agent_id={currentStaffData?.last_name_agent_id ?? null}
+                    agent_id={currentStaffData?.name_agent_id ?? null}
                     createNamesAction={createNamesAction}
                   />
                 </div>
               }
-              resetFields={["first_name", "last_name", "active", "department_ids"]}
+              resetFields={["name", "active", "department_ids"]}
               actions={
                 stepResources["basic"] && stepResources["basic"].length > 0 ? (
                   <TooltipProvider>
@@ -1766,8 +1699,7 @@ function ProfileComponent({
       currentStaffData,
       disabled,
       isEditMode,
-      handleGenerateFirstName,
-      handleGenerateLastName,
+      handleGenerateName,
       handleGenerateDepartments,
       handleGenerateFlags,
       handleGenerateEmails,
@@ -1775,8 +1707,7 @@ function ProfileComponent({
       handleGenerateCohorts,
       isGenerating,
       stepResources,
-      formState.first_name_id,
-      formState.last_name_id,
+      formState.name_id,
       formState.active_flag_id,
       formState.request_limit_id,
       formState.email_ids,
@@ -1852,8 +1783,7 @@ function ProfileComponent({
 
 export default React.memo(ProfileComponent, (prevProps, nextProps) => {
   const prevIds = {
-    first_name_id: prevProps.staffData?.first_name_id,
-    last_name_id: prevProps.staffData?.last_name_id,
+    name_id: prevProps.staffData?.name_id,
     active_flag_id: prevProps.staffData?.active_flag_id,
     request_limit_id: prevProps.staffData?.request_limit_id,
     department_ids: prevProps.staffData?.department_ids,
@@ -1863,8 +1793,7 @@ export default React.memo(ProfileComponent, (prevProps, nextProps) => {
     primary_department_id: prevProps.staffData?.primary_department_id,
   };
   const nextIds = {
-    first_name_id: nextProps.staffData?.first_name_id,
-    last_name_id: nextProps.staffData?.last_name_id,
+    name_id: nextProps.staffData?.name_id,
     active_flag_id: nextProps.staffData?.active_flag_id,
     request_limit_id: nextProps.staffData?.request_limit_id,
     department_ids: nextProps.staffData?.department_ids,

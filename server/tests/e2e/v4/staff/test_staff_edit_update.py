@@ -26,9 +26,6 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
     try:
         # Create a test staff member
         staff_name = generate_unique_staff_name("Editable Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "Editable"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"editable-staff-{int(time.time() * 1000)}@purdue.edu"
 
         # Get department ID from existing staff list
@@ -41,8 +38,7 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,
@@ -68,24 +64,19 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
         expect(edit_dialog).to_be_visible()
 
         # Verify form fields populate correctly
-        first_name_input = page.get_by_test_id("input-staff-first-name")
-        first_name_input.wait_for(state="visible", timeout=10000)
-        expect(first_name_input).to_have_value(first_name)
-
-        last_name_input = page.get_by_test_id("input-staff-last-name")
-        expect(last_name_input).to_have_value(last_name)
+        name_input = page.get_by_test_id("input-staff-name")
+        name_input.wait_for(state="visible", timeout=10000)
+        expect(name_input).to_have_value(staff_name)
 
         email_input = page.get_by_test_id("input-staff-email")
         expect(email_input).to_have_value(email)
         expect(email_input).to_be_disabled()
 
         # Update fields
-        updated_first_name = f"{first_name} Updated"
-        updated_last_name = f"{last_name} Updated"
+        updated_name = f"{staff_name} Updated"
         updated_requests = "200"
 
-        first_name_input.fill(updated_first_name)
-        last_name_input.fill(updated_last_name)
+        name_input.fill(updated_name)
 
         requests_input = page.get_by_test_id("input-staff-requests-per-day")
         requests_input.fill(updated_requests)
@@ -120,8 +111,7 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
             f"[data-testid='staff-row'][data-profile-id='{created_profile_id}']"
         )
         expect(staff_row).to_be_visible()
-        expect(staff_row).to_contain_text(updated_first_name)
-        expect(staff_row).to_contain_text(updated_last_name)
+        expect(staff_row).to_contain_text(updated_name)
 
     finally:
         if created_profile_id:
@@ -161,11 +151,11 @@ def test_staff_edit_cancel_dialog(page: Page, base_url: str) -> None:
     edit_dialog.wait_for(state="visible", timeout=10000)
 
     # Get original values
-    first_name_input = page.get_by_test_id("input-staff-first-name")
-    original_value = first_name_input.input_value()
+    name_input = page.get_by_test_id("input-staff-name")
+    original_value = name_input.input_value()
 
     # Make changes
-    first_name_input.fill("Changed Name That Should Not Save")
+    name_input.fill("Changed Name That Should Not Save")
 
     # Cancel
     cancel_button = page.get_by_test_id("btn-cancel-staff-edit")
@@ -177,8 +167,8 @@ def test_staff_edit_cancel_dialog(page: Page, base_url: str) -> None:
     # Verify changes not persisted - reopen dialog
     edit_button.click()
     edit_dialog.wait_for(state="visible", timeout=10000)
-    first_name_input = page.get_by_test_id("input-staff-first-name")
-    expect(first_name_input).to_have_value(original_value)
+    name_input = page.get_by_test_id("input-staff-name")
+    expect(name_input).to_have_value(original_value)
 
     cancel_button = page.get_by_test_id("btn-cancel-staff-edit")
     cancel_button.click()
@@ -207,8 +197,8 @@ def test_staff_edit_cancel_confirmation(page: Page, base_url: str) -> None:
     edit_dialog.wait_for(state="visible", timeout=10000)
 
     # Make changes
-    first_name_input = page.get_by_test_id("input-staff-first-name")
-    first_name_input.fill("Test Change")
+    name_input = page.get_by_test_id("input-staff-name")
+    name_input.fill("Test Change")
 
     # Submit to get confirmation dialog
     submit_button = page.get_by_test_id("btn-submit-staff-edit")
@@ -228,8 +218,8 @@ def test_staff_edit_cancel_confirmation(page: Page, base_url: str) -> None:
     expect(edit_dialog).to_be_visible()
 
     # Verify changes still in form
-    first_name_input = page.get_by_test_id("input-staff-first-name")
-    expect(first_name_input).to_have_value("Test Change")
+    name_input = page.get_by_test_id("input-staff-name")
+    expect(name_input).to_have_value("Test Change")
 
     # Cancel edit dialog
     cancel_button = page.get_by_test_id("btn-cancel-staff-edit")
@@ -242,9 +232,6 @@ def test_staff_edit_unlimited_requests(page: Page, base_url: str) -> None:
     try:
         # Create test staff
         staff_name = generate_unique_staff_name("Unlimited Staff")
-        parts = staff_name.split()
-        first_name = parts[0] if parts else "Unlimited"
-        last_name = parts[1] if len(parts) > 1 else "Staff"
         email = f"unlimited-staff-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
@@ -256,8 +243,7 @@ def test_staff_edit_unlimited_requests(page: Page, base_url: str) -> None:
 
         created_profile_id = create_staff_api(
             page.context.request,
-            first_name=first_name,
-            last_name=last_name,
+            name=staff_name,
             email=email,
             role="guest",
             department_id=department_id,
