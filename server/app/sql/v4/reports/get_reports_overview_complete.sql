@@ -588,7 +588,7 @@ user_profile AS (
     SELECT 
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND  LIMIT 1),
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id LIMIT 1),
             'System'
         ) as actor_name
     FROM profile_artifact
@@ -600,7 +600,7 @@ profile_data AS (
         pa.id as profile_id,
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = pa.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = pa.id AND  LIMIT 1),
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = pa.id LIMIT 1),
             'System'
         ) as profile_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true AND e.email IS NOT NULL) as profile_emails,

@@ -22,14 +22,9 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH first_name_resource AS (
+    WITH name_resource AS (
         INSERT INTO names_resource(name)
-        VALUES (profile_first_name)
-        RETURNING id
-    ),
-    last_name_resource AS (
-        INSERT INTO names_resource(name)
-        VALUES (profile_last_name)
+        VALUES (CONCAT_WS(' ', profile_first_name, profile_last_name))
         RETURNING id
     ),
     active_flag AS (
@@ -40,16 +35,10 @@ AS $$
         VALUES (profile_role::profile_role)
         RETURNING id, created_at, updated_at
     ),
-    profile_first_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id, type)
-        SELECT np.id, fnr.id, 'first'::type_profile_names
-        FROM new_profile np, first_name_resource fnr
-        RETURNING profile_id
-    ),
-    profile_last_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id, type)
-        SELECT np.id, lnr.id, 'last'::type_profile_names
-        FROM new_profile np, last_name_resource lnr
+    profile_name_link AS (
+        INSERT INTO profile_names(profile_id, name_id)
+        SELECT np.id, nr.id
+        FROM new_profile np, name_resource nr
         RETURNING profile_id
     ),
     profile_flag_link AS (
@@ -60,8 +49,8 @@ AS $$
     )
     SELECT 
         np.id AS profile_id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'first' LIMIT 1) AS first_name,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'last' LIMIT 1) AS last_name,
+        profile_first_name AS first_name,
+        profile_last_name AS last_name,
         (SELECT role::text FROM profiles_resource p WHERE p.id = np.id) AS role,
         EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         np.created_at,

@@ -225,7 +225,7 @@ profile_options_cte AS (
         haf.profile_id,
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND  LIMIT 1),
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
             ''
         ) AS profile_name,
         COUNT(DISTINCT haf.attempt_id) AS count
@@ -548,7 +548,7 @@ attempt_joined AS (
         END AS pass_pct,
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND  LIMIT 1),
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
             ''
         ) AS profile_name,
         COALESCE(
@@ -825,7 +825,7 @@ user_profile AS (
     SELECT 
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND  LIMIT 1),
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id LIMIT 1),
             'System'
         ) as actor_name
     FROM resolve_profile_id rpi

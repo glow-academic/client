@@ -6733,10 +6733,8 @@ export interface components {
         };
         /** CreateOrUpdateProfileApiRequest */
         CreateOrUpdateProfileApiRequest: {
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
+            /** Name */
+            name: string;
             /** Emails */
             emails: string[];
             /** Role */
@@ -7009,10 +7007,6 @@ export interface components {
             profile_exists?: boolean | null;
             /** Profile Id */
             profile_id?: string | null;
-            /** First Name */
-            first_name?: string | null;
-            /** Last Name */
-            last_name?: string | null;
             /** Name */
             name?: string | null;
             /** Deleted */
@@ -10130,32 +10124,19 @@ export interface components {
             route_suggestions?: string[] | null;
             /** Routes */
             routes?: components["schemas"]["QGetProfileV4RouteResource"][] | null;
-            /** First Name Id */
-            first_name_id?: string | null;
-            first_name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
-            /** Show First Name */
-            show_first_name?: boolean | null;
-            /** First Name Agent Id */
-            first_name_agent_id?: string | null;
-            /** First Name Required */
-            first_name_required?: boolean | null;
-            /** First Name Suggestions */
-            first_name_suggestions?: string[] | null;
-            /** First Names */
-            first_names?: components["schemas"]["QGetProfileV4NameResource"][] | null;
-            /** Last Name Id */
-            last_name_id?: string | null;
-            last_name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
-            /** Show Last Name */
-            show_last_name?: boolean | null;
-            /** Last Name Agent Id */
-            last_name_agent_id?: string | null;
-            /** Last Name Required */
-            last_name_required?: boolean | null;
-            /** Last Name Suggestions */
-            last_name_suggestions?: string[] | null;
-            /** Last Names */
-            last_names?: components["schemas"]["QGetProfileV4NameResource"][] | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetProfileV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetProfileV4NameResource"][] | null;
             /** Email Ids */
             email_ids?: string[] | null;
             /** Email Resources */
@@ -10220,6 +10201,10 @@ export interface components {
             cohort_suggestions?: string[] | null;
             /** Cohorts */
             cohorts?: components["schemas"]["QGetProfileV4Cohort"][] | null;
+            /** Basic Agent Id */
+            basic_agent_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetProfileByEmailApiRequest */
         GetProfileByEmailApiRequest: {
@@ -10230,10 +10215,8 @@ export interface components {
         GetProfileByEmailApiResponse: {
             /** Profile Id */
             profile_id?: string | null;
-            /** First Name */
-            first_name?: string | null;
-            /** Last Name */
-            last_name?: string | null;
+            /** Name */
+            name?: string | null;
             /** Emails */
             emails?: string[] | null;
             /** Primary Email */
@@ -10272,10 +10255,8 @@ export interface components {
             is_authorized?: boolean | null;
             /** Actual Id */
             actual_id?: string | null;
-            /** Actual First Name */
-            actual_first_name?: string | null;
-            /** Actual Last Name */
-            actual_last_name?: string | null;
+            /** Actual Name */
+            actual_name?: string | null;
             /** Actual Emails */
             actual_emails?: string[] | null;
             /** Actual Primary Email */
@@ -10298,10 +10279,8 @@ export interface components {
             actual_primary_department_id?: string | null;
             /** Id */
             id?: string | null;
-            /** First Name */
-            first_name?: string | null;
-            /** Last Name */
-            last_name?: string | null;
+            /** Name */
+            name?: string | null;
             /** Emails */
             emails?: string[] | null;
             /** Primary Email */
@@ -11769,10 +11748,8 @@ export interface components {
         };
         /** IUpsertStaffV4Profile */
         IUpsertStaffV4Profile: {
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email Index */
@@ -14863,10 +14840,8 @@ export interface components {
         QGetLeaderboardBundleV4Row: {
             /** Profile Id */
             profile_id: string | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Simulation Ids */
             simulation_ids: string[] | null;
             /** Scenario Ids */
@@ -14899,10 +14874,8 @@ export interface components {
         QGetLeaderboardListV4Row: {
             /** Profile Id */
             profile_id: string | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Simulation Ids */
             simulation_ids: string[] | null;
             /** Scenario Ids */
@@ -18502,10 +18475,6 @@ export interface components {
         QListStaffV4Staff: {
             /** Profile Id */
             profile_id: string | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email */
@@ -18559,10 +18528,8 @@ export interface components {
         QProcessCsvV4ProcessedRow: {
             /** Row Index */
             row_index: number | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email Index */
@@ -18589,10 +18556,8 @@ export interface components {
         QProcessDocumentCsvV4ProcessedRow: {
             /** Row Index */
             row_index: number | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email Index */
@@ -18695,10 +18660,8 @@ export interface components {
         QReportsBundleV4Profile: {
             /** Profile Id */
             profile_id: string | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email */
@@ -19441,10 +19404,8 @@ export interface components {
         QSearchSimulatableProfilesV4Profile: {
             /** Profile Id */
             profile_id: string | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
+            /** Name */
+            name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email */
@@ -19488,10 +19449,6 @@ export interface components {
         QSearchStaffV4Staff: {
             /** Profile Id */
             profile_id: string | null;
-            /** First Name */
-            first_name: string | null;
-            /** Last Name */
-            last_name: string | null;
             /** Emails */
             emails: string[] | null;
             /** Primary Email */
@@ -20048,10 +20005,8 @@ export interface components {
              * Format: uuid
              */
             actor_profile_id: string;
-            /** First Name */
-            first_name?: string | null;
-            /** Last Name */
-            last_name?: string | null;
+            /** Name */
+            name?: string | null;
             /** Emails */
             emails?: string[] | null;
             /** Role */

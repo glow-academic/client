@@ -18,14 +18,9 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH first_name_resource AS (
+    WITH name_resource AS (
         INSERT INTO names_resource(name)
-        VALUES (test_create_test_profile_v4.first_name)
-        RETURNING id
-    ),
-    last_name_resource AS (
-        INSERT INTO names_resource(name)
-        VALUES (test_create_test_profile_v4.last_name)
+        VALUES (CONCAT_WS(' ', test_create_test_profile_v4.first_name, test_create_test_profile_v4.last_name))
         RETURNING id
     ),
     active_flag AS (
@@ -36,16 +31,10 @@ AS $$
         VALUES (test_create_test_profile_v4.role::profile_role)
         RETURNING id, role::text
     ),
-    profile_first_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id, type)
-        SELECT np.id, fnr.id, 'first'::type_profile_names
-        FROM new_profile np, first_name_resource fnr
-        RETURNING profile_id
-    ),
-    profile_last_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id, type)
-        SELECT np.id, lnr.id, 'last'::type_profile_names
-        FROM new_profile np, last_name_resource lnr
+    profile_name_link AS (
+        INSERT INTO profile_names(profile_id, name_id)
+        SELECT np.id, nr.id
+        FROM new_profile np, name_resource nr
         RETURNING profile_id
     ),
     profile_flag_link AS (

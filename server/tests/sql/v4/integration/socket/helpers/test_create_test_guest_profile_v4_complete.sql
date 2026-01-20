@@ -14,23 +14,14 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH first_name_resource AS (
+    WITH name_resource AS (
         INSERT INTO names_resource(name)
-        VALUES ('Guest')
+        VALUES ('Guest User')
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
-    first_name_lookup AS (
-        SELECT id FROM names_resource WHERE name = 'Guest' LIMIT 1
-    ),
-    last_name_resource AS (
-        INSERT INTO names_resource(name)
-        VALUES ('User')
-        ON CONFLICT (name) DO NOTHING
-        RETURNING id
-    ),
-    last_name_lookup AS (
-        SELECT id FROM names_resource WHERE name = 'User' LIMIT 1
+    name_lookup AS (
+        SELECT id FROM names_resource WHERE name = 'Guest User' LIMIT 1
     ),
     active_flag AS (
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
@@ -40,16 +31,10 @@ AS $$
         VALUES ('guest') 
         RETURNING id
     ),
-    profile_first_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id, type)
-        SELECT np.id, COALESCE(fnr.id, fnl.id), 'first'::type_profile_names
-        FROM new_profile np, first_name_resource fnr FULL OUTER JOIN first_name_lookup fnl ON true
-        RETURNING profile_id
-    ),
-    profile_last_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id, type)
-        SELECT np.id, COALESCE(lnr.id, lnl.id), 'last'::type_profile_names
-        FROM new_profile np, last_name_resource lnr FULL OUTER JOIN last_name_lookup lnl ON true
+    profile_name_link AS (
+        INSERT INTO profile_names(profile_id, name_id)
+        SELECT np.id, COALESCE(nr.id, nl.id)
+        FROM new_profile np, name_resource nr FULL OUTER JOIN name_lookup nl ON true
         RETURNING profile_id
     ),
     profile_flag_link AS (

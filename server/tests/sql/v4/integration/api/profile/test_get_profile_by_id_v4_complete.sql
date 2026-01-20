@@ -22,8 +22,8 @@ STABLE
 AS $$
     SELECT 
         p.id AS profile_id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) AS first_name,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last' LIMIT 1) AS last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) AS first_name,
+        NULL::text AS last_name,
         p.role::text,
         EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         p.last_login,

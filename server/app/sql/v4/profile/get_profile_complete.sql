@@ -1576,10 +1576,10 @@ SELECT
     uf.show_cohorts,
     (SELECT agent_id FROM cohorts_agent_data) as cohorts_agent_id,
     false as cohorts_required,
-    (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
-    (SELECT agent_id FROM general_agent_data) as general_agent_id,
     COALESCE((SELECT cohort_suggestions FROM cohort_suggestions_data), ARRAY[]::uuid[]) as cohort_suggestions,
-    COALESCE((SELECT cohorts FROM cohorts_data), ARRAY[]::types.q_get_profile_v4_cohort[]) as cohorts
+    COALESCE((SELECT cohorts FROM cohorts_data), ARRAY[]::types.q_get_profile_v4_cohort[]) as cohorts,
+    (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
+    (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN target_profile_role_data tprd

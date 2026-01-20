@@ -2314,8 +2314,7 @@ class ResolveDefaultIdpProfileSqlRow(BaseModel):
 
     profile_id: UUID | None = None
     primary_email: str | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     role: str | None = None
 
 class ResolveDefaultIdpProfileApiRequest(BaseModel):
@@ -2326,8 +2325,7 @@ class ResolveDefaultIdpProfileApiResponse(BaseModel):
 
     profile_id: UUID | None = None
     primary_email: str | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     role: str | None = None
 
 
@@ -5825,8 +5823,7 @@ class QProcessDocumentCsvV4CsvRowError(BaseModel):
 class QProcessDocumentCsvV4ProcessedRow(BaseModel):
 
     row_index: int | None
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     emails: list[str] | None
     primary_email_index: int | None
     role: str | None
@@ -8588,8 +8585,7 @@ class QGetLeaderboardBundleV4Metrics(BaseModel):
 class QGetLeaderboardBundleV4Row(BaseModel):
 
     profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     simulation_ids: list[UUID] | None
     scenario_ids: list[UUID] | None
     metrics: QGetLeaderboardBundleV4Metrics | None
@@ -8677,8 +8673,7 @@ class GetLeaderboardListSqlParams(BaseModel):
 class QGetLeaderboardListV4Row(BaseModel):
 
     profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     simulation_ids: list[UUID] | None
     scenario_ids: list[UUID] | None
     total_attempts: int | None
@@ -11832,8 +11827,7 @@ class CheckLoginAuthorizationApiResponse(BaseModel):
 
 class CreateOrUpdateProfileSqlParams(BaseModel):
 
-    first_name: str
-    last_name: str
+    name: str
     emails: list[str]
     role: str
     current_profile_id: UUID | None = None
@@ -11845,8 +11839,7 @@ class CreateOrUpdateProfileSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.first_name,
-            self.last_name,
+            self.name,
             self.emails,
             self.role,
             self.current_profile_id,
@@ -11865,8 +11858,7 @@ class CreateOrUpdateProfileSqlRow(BaseModel):
 
 class CreateOrUpdateProfileApiRequest(BaseModel):
 
-    first_name: str
-    last_name: str
+    name: str
     emails: list[str]
     role: str
     current_profile_id: UUID | None = None
@@ -11901,8 +11893,6 @@ class DeleteProfileSqlRow(BaseModel):
 
     profile_exists: bool | None = None
     profile_id: UUID | None = None
-    first_name: str | None = None
-    last_name: str | None = None
     name: str | None = None
     deleted: bool | None = None
     actor_name: str | None = None
@@ -11916,8 +11906,6 @@ class DeleteProfileApiResponse(BaseModel):
 
     profile_exists: bool | None = None
     profile_id: UUID | None = None
-    first_name: str | None = None
-    last_name: str | None = None
     name: str | None = None
     deleted: bool | None = None
     actor_name: str | None = None
@@ -11940,8 +11928,7 @@ class GetProfileByEmailSqlParams(BaseModel):
 class GetProfileByEmailSqlRow(BaseModel):
 
     profile_id: UUID | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     emails: list[str] | None = None
     primary_email: str | None = None
     role: str | None = None
@@ -11961,8 +11948,7 @@ class GetProfileByEmailApiRequest(BaseModel):
 class GetProfileByEmailApiResponse(BaseModel):
 
     profile_id: UUID | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     emails: list[str] | None = None
     primary_email: str | None = None
     role: str | None = None
@@ -12093,20 +12079,13 @@ class GetProfileSqlRow(BaseModel):
     show_routes: bool | None = None
     route_suggestions: list[UUID] | None = None
     routes: list[QGetProfileV4RouteResource] | None = None
-    first_name_id: UUID | None = None
-    first_name_resource: QGetProfileV4NameResource | None = None
-    show_first_name: bool | None = None
-    first_name_agent_id: UUID | None = None
-    first_name_required: bool | None = None
-    first_name_suggestions: list[UUID] | None = None
-    first_names: list[QGetProfileV4NameResource] | None = None
-    last_name_id: UUID | None = None
-    last_name_resource: QGetProfileV4NameResource | None = None
-    show_last_name: bool | None = None
-    last_name_agent_id: UUID | None = None
-    last_name_required: bool | None = None
-    last_name_suggestions: list[UUID] | None = None
-    last_names: list[QGetProfileV4NameResource] | None = None
+    name_id: UUID | None = None
+    name_resource: QGetProfileV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetProfileV4NameResource] | None = None
     email_ids: list[UUID] | None = None
     email_resources: list[QGetProfileV4EmailResource] | None = None
     show_emails: bool | None = None
@@ -12140,6 +12119,8 @@ class GetProfileSqlRow(BaseModel):
     cohorts_required: bool | None = None
     cohort_suggestions: list[UUID] | None = None
     cohorts: list[QGetProfileV4Cohort] | None = None
+    basic_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
 
 class GetProfileApiRequest(BaseModel):
 
@@ -12164,20 +12145,13 @@ class GetProfileApiResponse(BaseModel):
     show_routes: bool | None = None
     route_suggestions: list[UUID] | None = None
     routes: list[QGetProfileV4RouteResource] | None = None
-    first_name_id: UUID | None = None
-    first_name_resource: QGetProfileV4NameResource | None = None
-    show_first_name: bool | None = None
-    first_name_agent_id: UUID | None = None
-    first_name_required: bool | None = None
-    first_name_suggestions: list[UUID] | None = None
-    first_names: list[QGetProfileV4NameResource] | None = None
-    last_name_id: UUID | None = None
-    last_name_resource: QGetProfileV4NameResource | None = None
-    show_last_name: bool | None = None
-    last_name_agent_id: UUID | None = None
-    last_name_required: bool | None = None
-    last_name_suggestions: list[UUID] | None = None
-    last_names: list[QGetProfileV4NameResource] | None = None
+    name_id: UUID | None = None
+    name_resource: QGetProfileV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetProfileV4NameResource] | None = None
     email_ids: list[UUID] | None = None
     email_resources: list[QGetProfileV4EmailResource] | None = None
     show_emails: bool | None = None
@@ -12211,6 +12185,8 @@ class GetProfileApiResponse(BaseModel):
     cohorts_required: bool | None = None
     cohort_suggestions: list[UUID] | None = None
     cohorts: list[QGetProfileV4Cohort] | None = None
+    basic_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
 
 
 
@@ -12350,8 +12326,7 @@ class GetProfileContextSqlRow(BaseModel):
 
     is_authorized: bool | None = None
     actual_id: UUID | None = None
-    actual_first_name: str | None = None
-    actual_last_name: str | None = None
+    actual_name: str | None = None
     actual_emails: list[str] | None = None
     actual_primary_email: str | None = None
     actual_role: str | None = None
@@ -12363,8 +12338,7 @@ class GetProfileContextSqlRow(BaseModel):
     actual_updated_at: str | None = None
     actual_primary_department_id: UUID | None = None
     id: UUID | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     emails: list[str] | None = None
     primary_email: str | None = None
     role: str | None = None
@@ -12428,8 +12402,7 @@ class GetProfileContextApiResponse(BaseModel):
 
     is_authorized: bool | None = None
     actual_id: UUID | None = None
-    actual_first_name: str | None = None
-    actual_last_name: str | None = None
+    actual_name: str | None = None
     actual_emails: list[str] | None = None
     actual_primary_email: str | None = None
     actual_role: str | None = None
@@ -12441,8 +12414,7 @@ class GetProfileContextApiResponse(BaseModel):
     actual_updated_at: str | None = None
     actual_primary_department_id: UUID | None = None
     id: UUID | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     emails: list[str] | None = None
     primary_email: str | None = None
     role: str | None = None
@@ -12498,13 +12470,60 @@ class GetProfileContextApiResponse(BaseModel):
 
 
 
+# Generated from: get_profile_resource_ids_by_group_id
+
+class GetProfileResourceIdsByGroupIdSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class GetProfileResourceIdsByGroupIdSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    email_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
+
+class GetProfileResourceIdsByGroupIdApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class GetProfileResourceIdsByGroupIdApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    email_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    route_ids: list[UUID] | None = None
+
+
+
 # Generated from: save_profile
 
 class SaveProfileSqlParams(BaseModel):
 
     actor_profile_id: UUID
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     emails: list[str] | None = None
     role: str | None = None
     active: bool | None = None
@@ -12521,8 +12540,7 @@ class SaveProfileSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.actor_profile_id,
-            self.first_name,
-            self.last_name,
+            self.name,
             self.emails,
             self.role,
             self.active,
@@ -12545,8 +12563,7 @@ class SaveProfileSqlRow(BaseModel):
 class SaveProfileApiRequest(BaseModel):
 
     actor_profile_id: UUID
-    first_name: str | None = None
-    last_name: str | None = None
+    name: str | None = None
     emails: list[str] | None = None
     role: str | None = None
     active: bool | None = None
@@ -12585,8 +12602,7 @@ class SearchSimulatableProfilesSqlParams(BaseModel):
 class QSearchSimulatableProfilesV4Profile(BaseModel):
 
     profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     emails: list[str] | None
     primary_email: str | None
     role: str | None
@@ -12670,6 +12686,75 @@ class UpdateProfileToInactiveApiResponse(BaseModel):
 
     profile_exists: bool | None = None
     profile_id: UUID | None = None
+
+
+
+# Generated from: validate_profile_resource_error
+
+class ValidateProfileResourceErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.resource_types,
+            self.artifact_type,
+        )
+
+class ValidateProfileResourceErrorSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateProfileResourceErrorApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+class ValidateProfileResourceErrorApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
+# Generated from: validate_profile_resource_progress
+
+class ValidateProfileResourceProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class ValidateProfileResourceProgressSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateProfileResourceProgressApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class ValidateProfileResourceProgressApiResponse(BaseModel):
+
+    is_valid: bool | None = None
 
 
 
@@ -13157,8 +13242,7 @@ class QReportsBundleV4ProfileMetrics(BaseModel):
 class QReportsBundleV4Profile(BaseModel):
 
     profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     emails: list[str] | None
     primary_email: str | None
     role: str | None
@@ -18125,6 +18209,68 @@ class GetScenarioApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_resource_ids_by_group_id
+
+class GetScenarioResourceIdsByGroupIdSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class GetScenarioResourceIdsByGroupIdSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objective_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+
+class GetScenarioResourceIdsByGroupIdApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class GetScenarioResourceIdsByGroupIdApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    objective_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    template_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+
+
+
 # Generated from: patch_scenario_draft
 
 class PatchScenarioDraftSqlParams(BaseModel):
@@ -18248,6 +18394,75 @@ class SaveScenarioApiResponse(BaseModel):
 
     scenario_id: UUID | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: validate_scenario_resource_error
+
+class ValidateScenarioResourceErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.resource_types,
+            self.artifact_type,
+        )
+
+class ValidateScenarioResourceErrorSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateScenarioResourceErrorApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+class ValidateScenarioResourceErrorApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
+# Generated from: validate_scenario_resource_progress
+
+class ValidateScenarioResourceProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class ValidateScenarioResourceProgressSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidateScenarioResourceProgressApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class ValidateScenarioResourceProgressApiResponse(BaseModel):
+
+    is_valid: bool | None = None
 
 
 
@@ -19363,6 +19578,7 @@ class GetSimulationResourceIdsByGroupIdSqlRow(BaseModel):
     scenario_flag_ids: list[UUID] | None = None
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
 
 class GetSimulationResourceIdsByGroupIdApiRequest(BaseModel):
 
@@ -19381,6 +19597,7 @@ class GetSimulationResourceIdsByGroupIdApiResponse(BaseModel):
     scenario_flag_ids: list[UUID] | None = None
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
 
 
 
@@ -19983,8 +20200,6 @@ class QListStaffV4Department(BaseModel):
 class QListStaffV4Staff(BaseModel):
 
     profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
     emails: list[str] | None
     primary_email: str | None
     name: str | None
@@ -20090,8 +20305,6 @@ class QSearchStaffV4Department(BaseModel):
 class QSearchStaffV4Staff(BaseModel):
 
     profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
     emails: list[str] | None
     primary_email: str | None
     name: str | None
@@ -20165,8 +20378,7 @@ class QProcessCsvV4CsvRowError(BaseModel):
 class QProcessCsvV4ProcessedRow(BaseModel):
 
     row_index: int | None
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     emails: list[str] | None
     primary_email_index: int | None
     role: str | None
@@ -20199,8 +20411,7 @@ class ProcessCsvApiResponse(BaseModel):
 
 class IUpsertStaffV4Profile(BaseModel):
 
-    first_name: str | None
-    last_name: str | None
+    name: str | None
     emails: list[str] | None
     primary_email_index: int | None
     role: str | None
@@ -20216,7 +20427,7 @@ class UpsertStaffSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert profiles composite array to tuples for asyncpg
         profiles_tuples = [
-            (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
+            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
             for conn in (self.profiles or [])
         ]
         return (
@@ -22268,6 +22479,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileContextApiRequest",
         "GetProfileContextApiResponse",
     ),
+    "app/sql/v4/profile/get_profile_resource_ids_by_group_id_complete.sql": (
+        "GetProfileResourceIdsByGroupIdSqlParams",
+        "GetProfileResourceIdsByGroupIdSqlRow",
+        "GetProfileResourceIdsByGroupIdApiRequest",
+        "GetProfileResourceIdsByGroupIdApiResponse",
+    ),
     "app/sql/v4/profile/save_profile_complete.sql": (
         "SaveProfileSqlParams",
         "SaveProfileSqlRow",
@@ -22291,6 +22508,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateProfileToInactiveSqlRow",
         "UpdateProfileToInactiveApiRequest",
         "UpdateProfileToInactiveApiResponse",
+    ),
+    "app/sql/v4/profile/validate_profile_resource_error_complete.sql": (
+        "ValidateProfileResourceErrorSqlParams",
+        "ValidateProfileResourceErrorSqlRow",
+        "ValidateProfileResourceErrorApiRequest",
+        "ValidateProfileResourceErrorApiResponse",
+    ),
+    "app/sql/v4/profile/validate_profile_resource_progress_complete.sql": (
+        "ValidateProfileResourceProgressSqlParams",
+        "ValidateProfileResourceProgressSqlRow",
+        "ValidateProfileResourceProgressApiRequest",
+        "ValidateProfileResourceProgressApiResponse",
     ),
     "app/sql/v4/providers/delete_provider_complete.sql": (
         "DeleteProviderSqlParams",
@@ -22910,6 +23139,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioApiRequest",
         "GetScenarioApiResponse",
     ),
+    "app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql": (
+        "GetScenarioResourceIdsByGroupIdSqlParams",
+        "GetScenarioResourceIdsByGroupIdSqlRow",
+        "GetScenarioResourceIdsByGroupIdApiRequest",
+        "GetScenarioResourceIdsByGroupIdApiResponse",
+    ),
     "app/sql/v4/scenarios/patch_scenario_draft_complete.sql": (
         "PatchScenarioDraftSqlParams",
         "PatchScenarioDraftSqlRow",
@@ -22921,6 +23156,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveScenarioSqlRow",
         "SaveScenarioApiRequest",
         "SaveScenarioApiResponse",
+    ),
+    "app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql": (
+        "ValidateScenarioResourceErrorSqlParams",
+        "ValidateScenarioResourceErrorSqlRow",
+        "ValidateScenarioResourceErrorApiRequest",
+        "ValidateScenarioResourceErrorApiResponse",
+    ),
+    "app/sql/v4/scenarios/validate_scenario_resource_progress_complete.sql": (
+        "ValidateScenarioResourceProgressSqlParams",
+        "ValidateScenarioResourceProgressSqlRow",
+        "ValidateScenarioResourceProgressApiRequest",
+        "ValidateScenarioResourceProgressApiResponse",
     ),
     "app/sql/v4/schemas/get_schema_with_fields_complete.sql": (
         "GetSchemaWithFieldsSqlParams",
@@ -24218,6 +24465,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/profile/get_profile_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/profile/save_profile_complete.sql"]
     ) -> SqlString: ...
 
@@ -24234,6 +24486,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/profile/update_profile_to_inactive_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/profile/validate_profile_resource_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/profile/validate_profile_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -24753,12 +25015,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/scenarios/patch_scenario_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenarios/save_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenarios/validate_scenario_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload

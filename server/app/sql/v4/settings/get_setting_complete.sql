@@ -351,7 +351,7 @@ profile_mapping_data AS (
         p.id as profile_id,
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND  LIMIT 1),
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
             ''
         ) as name,
         COALESCE(

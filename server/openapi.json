@@ -27510,13 +27510,9 @@
       },
       "CreateOrUpdateProfileApiRequest": {
         "properties": {
-          "first_name": {
+          "name": {
             "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "items": {
@@ -27610,8 +27606,7 @@
         },
         "type": "object",
         "required": [
-          "first_name",
-          "last_name",
+          "name",
           "emails",
           "role"
         ],
@@ -28431,28 +28426,6 @@
               }
             ],
             "title": "Profile Id"
-          },
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
           },
           "name": {
             "anyOf": [
@@ -43873,7 +43846,7 @@
             ],
             "title": "Routes"
           },
-          "first_name_id": {
+          "name_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -43883,9 +43856,9 @@
                 "type": "null"
               }
             ],
-            "title": "First Name Id"
+            "title": "Name Id"
           },
-          "first_name_resource": {
+          "name_resource": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/QGetProfileV4NameResource"
@@ -43895,7 +43868,7 @@
               }
             ]
           },
-          "show_first_name": {
+          "show_name": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -43904,9 +43877,9 @@
                 "type": "null"
               }
             ],
-            "title": "Show First Name"
+            "title": "Show Name"
           },
-          "first_name_agent_id": {
+          "name_agent_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -43916,9 +43889,9 @@
                 "type": "null"
               }
             ],
-            "title": "First Name Agent Id"
+            "title": "Name Agent Id"
           },
-          "first_name_required": {
+          "name_required": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -43927,9 +43900,9 @@
                 "type": "null"
               }
             ],
-            "title": "First Name Required"
+            "title": "Name Required"
           },
-          "first_name_suggestions": {
+          "name_suggestions": {
             "anyOf": [
               {
                 "items": {
@@ -43942,9 +43915,9 @@
                 "type": "null"
               }
             ],
-            "title": "First Name Suggestions"
+            "title": "Name Suggestions"
           },
-          "first_names": {
+          "names": {
             "anyOf": [
               {
                 "items": {
@@ -43956,92 +43929,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Names"
-          },
-          "last_name_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name Id"
-          },
-          "last_name_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetProfileV4NameResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "show_last_name": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Last Name"
-          },
-          "last_name_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name Agent Id"
-          },
-          "last_name_required": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name Required"
-          },
-          "last_name_suggestions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name Suggestions"
-          },
-          "last_names": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetProfileV4NameResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Names"
+            "title": "Names"
           },
           "email_ids": {
             "anyOf": [
@@ -44459,6 +44347,30 @@
               }
             ],
             "title": "Cohorts"
+          },
+          "basic_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basic Agent Id"
+          },
+          "general_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "General Agent Id"
           }
         },
         "type": "object",
@@ -44491,7 +44403,7 @@
             ],
             "title": "Profile Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -44500,18 +44412,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -44708,7 +44609,7 @@
             ],
             "title": "Actual Id"
           },
-          "actual_first_name": {
+          "actual_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -44717,18 +44618,7 @@
                 "type": "null"
               }
             ],
-            "title": "Actual First Name"
-          },
-          "actual_last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actual Last Name"
+            "title": "Actual Name"
           },
           "actual_emails": {
             "anyOf": [
@@ -44856,7 +44746,7 @@
             ],
             "title": "Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -44865,18 +44755,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -53157,7 +53036,7 @@
       },
       "IUpsertStaffV4Profile": {
         "properties": {
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -53166,18 +53045,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -53259,8 +53127,7 @@
         },
         "type": "object",
         "required": [
-          "first_name",
-          "last_name",
+          "name",
           "emails",
           "primary_email_index",
           "role",
@@ -68048,7 +67915,7 @@
             ],
             "title": "Profile Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -68057,18 +67924,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "simulation_ids": {
             "anyOf": [
@@ -68114,8 +67970,7 @@
         "type": "object",
         "required": [
           "profile_id",
-          "first_name",
-          "last_name",
+          "name",
           "simulation_ids",
           "scenario_ids",
           "metrics"
@@ -68253,7 +68108,7 @@
             ],
             "title": "Profile Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -68262,18 +68117,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "simulation_ids": {
             "anyOf": [
@@ -68408,8 +68252,7 @@
         "type": "object",
         "required": [
           "profile_id",
-          "first_name",
-          "last_name",
+          "name",
           "simulation_ids",
           "scenario_ids",
           "total_attempts",
@@ -87961,28 +87804,6 @@
             ],
             "title": "Profile Id"
           },
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
-          },
           "emails": {
             "anyOf": [
               {
@@ -88161,8 +87982,6 @@
         "type": "object",
         "required": [
           "profile_id",
-          "first_name",
-          "last_name",
           "emails",
           "primary_email",
           "name",
@@ -88282,7 +88101,7 @@
             ],
             "title": "Row Index"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -88291,18 +88110,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -88386,8 +88194,7 @@
         "type": "object",
         "required": [
           "row_index",
-          "first_name",
-          "last_name",
+          "name",
           "emails",
           "primary_email_index",
           "role",
@@ -88454,7 +88261,7 @@
             ],
             "title": "Row Index"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -88463,18 +88270,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -88558,8 +88354,7 @@
         "type": "object",
         "required": [
           "row_index",
-          "first_name",
-          "last_name",
+          "name",
           "emails",
           "primary_email_index",
           "role",
@@ -89064,7 +88859,7 @@
             ],
             "title": "Profile Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -89073,18 +88868,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -89164,8 +88948,7 @@
         "type": "object",
         "required": [
           "profile_id",
-          "first_name",
-          "last_name",
+          "name",
           "emails",
           "primary_email",
           "role",
@@ -93280,7 +93063,7 @@
             ],
             "title": "Profile Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -93289,18 +93072,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
@@ -93420,8 +93192,7 @@
         "type": "object",
         "required": [
           "profile_id",
-          "first_name",
-          "last_name",
+          "name",
           "emails",
           "primary_email",
           "role",
@@ -93538,28 +93309,6 @@
               }
             ],
             "title": "Profile Id"
-          },
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
           },
           "emails": {
             "anyOf": [
@@ -93739,8 +93488,6 @@
         "type": "object",
         "required": [
           "profile_id",
-          "first_name",
-          "last_name",
           "emails",
           "primary_email",
           "name",
@@ -95530,7 +95277,7 @@
             "format": "uuid",
             "title": "Actor Profile Id"
           },
-          "first_name": {
+          "name": {
             "anyOf": [
               {
                 "type": "string"
@@ -95539,18 +95286,7 @@
                 "type": "null"
               }
             ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Name"
           },
           "emails": {
             "anyOf": [
