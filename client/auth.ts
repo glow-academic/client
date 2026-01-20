@@ -124,6 +124,15 @@ export const {
           authorizationUrl.searchParams.set("department", department);
         }
 
+        const idpHint = params["kc_idp_hint"];
+        if (idpHint) {
+          authorizationUrl.searchParams.set("kc_idp_hint", idpHint);
+        }
+        const loginHint = params["login_hint"];
+        if (loginHint) {
+          authorizationUrl.searchParams.set("login_hint", loginHint);
+        }
+
         return authorizationUrl.toString();
       },
     }),

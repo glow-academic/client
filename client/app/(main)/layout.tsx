@@ -16,6 +16,7 @@ import {
   getLayoutContextData,
   refreshAnalytics,
   searchSimulatableProfiles,
+  stopEmulation,
   switchEffectiveProfile,
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
@@ -73,6 +74,7 @@ export default async function MainLayout({
           attemptData={attemptData}
           activeSettings={activeSettings}
           switchEffectiveProfileAction={switchEffectiveProfile}
+          stopEmulationAction={stopEmulation}
           createFeedbackAction={createFeedback}
           refreshAnalyticsAction={refreshAnalytics}
           searchSimulatableProfilesAction={searchSimulatableProfiles}
@@ -128,6 +130,7 @@ export default async function MainLayout({
         attemptData={attemptData}
         activeSettings={activeSettings}
         switchEffectiveProfileAction={switchEffectiveProfile}
+        stopEmulationAction={stopEmulation}
         createFeedbackAction={createFeedback}
         refreshAnalyticsAction={refreshAnalytics}
         searchSimulatableProfilesAction={searchSimulatableProfiles}

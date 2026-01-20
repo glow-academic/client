@@ -2,7 +2,7 @@
  * Server component that fetches profile context data
  */
 "use server";
-import { getSession, update } from "@/auth";
+import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Session } from "next-auth";
@@ -12,8 +12,8 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v4/auth/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v4/auth/context", "post">;
-type AuthorizeEmulationIn = InputOf<"/api/v4/auth/emulate", "post">;
-type AuthorizeEmulationOut = OutputOf<"/api/v4/auth/emulate", "post">;
+type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
+type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v4/debug/debug", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v4/debug/debug", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v4/analytics/refresh", "post">;
@@ -336,24 +336,26 @@ export async function getLayoutContextData(session?: Session | null) {
 type SwitchEffectiveProfileParams = {
   targetProfileId: string;
   fullEmulation?: boolean;
-  emulationTTL?: number | null;
 };
 
 type SwitchEffectiveProfileResult = {
   ok: boolean;
   reason?: string;
+  redirectUrl?: string;
 };
 
-async function authorizeEmulation(
-  input: AuthorizeEmulationIn
-): Promise<AuthorizeEmulationOut> {
+type StopEmulationIn = InputOf<"/api/v4/auth/emulate/stop", "post">;
+type StopEmulationOut = OutputOf<"/api/v4/auth/emulate/stop", "post">;
+
+async function createEmulationGrant(
+  input: CreateEmulationGrantIn
+): Promise<CreateEmulationGrantOut> {
   return api.post("/auth/emulate", input);
 }
 
 /**
- * Server action to switch the effective profile in the session.
- * This replaces client-side useSession().update() calls.
- * Uses server-side session mutation via NextAuth's unstable_update.
+ * Server action to start emulation via default-idp.
+ * Returns a redirect URL to complete sign-in as the target profile.
  */
 export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
@@ -365,35 +367,37 @@ export async function switchEffectiveProfile(
     }
 
     const isSelf = input.targetProfileId === session.user.profileId;
-
-    if (!isSelf) {
-      const res = await authorizeEmulation({
-        body: {
-          requester_profile_id: session.user.profileId,
-          target_profile_id: input.targetProfileId,
-        },
-      });
-
-      if (!res.allowed) {
-        return { ok: false, reason: res.reason ?? "Emulation not allowed" };
-      }
+    if (isSelf) {
+      return { ok: false, reason: "Already using this profile" };
     }
 
-    // Update session server-side
-    await update({
-      effectiveProfileId: input.targetProfileId,
-      fullEmulation: !!input.fullEmulation && !isSelf,
-      emulationTTL: isSelf
-        ? null
-        : (input.emulationTTL ?? Date.now() + 2 * 60 * 60 * 1000),
+    const res = await createEmulationGrant({
+      body: {
+        requester_profile_id: session.user.profileId,
+        target_profile_id: input.targetProfileId,
+        full_emulation: !!input.fullEmulation,
+      },
     });
 
-    return { ok: true };
+    if (!res.allowed) {
+      return { ok: false, reason: res.reason ?? "Emulation not allowed" };
+    }
+    if (!res.redirect_url) {
+      return { ok: false, reason: "Missing redirect URL" };
+    }
+
+    return { ok: true, redirectUrl: res.redirect_url };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return { ok: false, reason: errorMessage };
   }
+}
+
+export async function stopEmulation(
+  input: StopEmulationIn
+): Promise<StopEmulationOut> {
+  return api.post("/auth/emulate/stop", input);
 }
 
 /** Server action to clear session cookies. */

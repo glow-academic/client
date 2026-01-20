@@ -9,6 +9,8 @@ import type {
   CreateFeedbackOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
+  StopEmulationIn,
+  StopEmulationOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
@@ -79,6 +81,7 @@ export interface UnifiedSidebarProps
   switchEffectiveProfile: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
+  stopEmulation: (input: StopEmulationIn) => Promise<StopEmulationOut>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
     input: SearchSimulatableProfilesIn
@@ -121,6 +124,7 @@ export function UnifiedSidebar({
   activeSection,
   onSectionChange,
   switchEffectiveProfile,
+  stopEmulation,
   createFeedback,
   searchSimulatableProfiles,
   ...props
@@ -528,24 +532,14 @@ export function UnifiedSidebar({
     if (!activeProfile?.id) return;
 
     try {
-      const result = await switchEffectiveProfile({
-        targetProfileId: activeProfile.id,
-        fullEmulation: false,
-        emulationTTL: null,
-      });
-
-      if (!result.ok) {
-        toast.error(result.reason || "Failed to exit emulation");
-        return;
-      }
+      await stopEmulation({ body: {} });
 
       toast.success("Emulation exited successfully");
-      // Session updated server-side, refresh to pick up changes
-      router.refresh();
+      await federatedLogout();
     } catch {
       toast.error("Failed to exit emulation");
     }
-  }, [activeProfile?.id, switchEffectiveProfile, router]);
+  }, [activeProfile?.id, stopEmulation, federatedLogout]);
 
   // Check if currently emulating
   const isEmulating =

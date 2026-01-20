@@ -203,23 +203,21 @@ export function EmulateProfileModal({
       const result = await switchEffectiveProfile({
         targetProfileId: selectedProfileId,
         fullEmulation: fullEmulation && isSuperadmin,
-        emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours TTL
       });
 
-      if (!result.ok) {
+      if (!result.ok || !result.redirectUrl) {
         toast.error(result.reason || "Failed to emulate profile");
         return;
       }
 
       toast.success(
         fullEmulation && isSuperadmin
-          ? "Full emulation enabled. You must log out to exit."
-          : "Emulation enabled successfully",
+          ? "Full emulation enabled. Redirecting..."
+          : "Emulation enabled. Redirecting...",
       );
 
-      // Close modal and refresh page
       onOpenChange(false);
-      window.location.reload();
+      window.location.href = result.redirectUrl;
     } catch {
       toast.error("Failed to emulate profile");
     } finally {

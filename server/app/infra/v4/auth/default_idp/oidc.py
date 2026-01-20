@@ -9,8 +9,13 @@ from uuid import UUID
 import asyncpg
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (ResolveDefaultIdpProfileSqlParams,
-                           ResolveDefaultIdpProfileSqlRow, load_sql_query)
+from app.sql.types import (
+    ConsumeEmulationGrantSqlParams,
+    ConsumeEmulationGrantSqlRow,
+    ResolveDefaultIdpProfileSqlParams,
+    ResolveDefaultIdpProfileSqlRow,
+    load_sql_query,
+)
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
@@ -66,7 +71,9 @@ async def authorize(
     state: str = Query(...),
     scope: str = Query("openid profile email"),
     nonce: str | None = Query(None),  # Extract nonce from Keycloak's authorization request
-    profile_id: UUID = Query(...),
+    profile_id: UUID | None = Query(None),
+    emulation_grant: UUID | None = Query(None),
+    login_hint: str | None = Query(None),
     conn: Annotated[asyncpg.Connection, Depends(get_db)] = None,
 ) -> RedirectResponse:
     """Authorization endpoint - handles Keycloak broker redirects."""
@@ -87,10 +94,57 @@ async def authorize(
             # Generate nonce if Keycloak didn't provide one (shouldn't happen in normal OIDC flow)
             nonce = secrets.token_urlsafe(32)
         
+        resolved_profile_id = profile_id
+        if emulation_grant is None and login_hint:
+            try:
+                emulation_grant = UUID(login_hint)
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid emulation grant token.",
+                )
+
+        if emulation_grant is not None:
+            sql_query = load_sql_query(
+                "app/sql/v4/auth/consume_emulation_grant_complete.sql"
+            )
+            grant_params = ConsumeEmulationGrantSqlParams(
+                grant_id=emulation_grant,
+            )
+            sql_params = grant_params.to_tuple()
+
+            grant_result = await execute_sql_typed(
+                conn,
+                "app/sql/v4/auth/consume_emulation_grant_complete.sql",
+                params=grant_params,
+            )
+            if not grant_result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Emulation grant not found.",
+                )
+
+            grant_data = cast(ConsumeEmulationGrantSqlRow, grant_result)
+            if not grant_data.ok or not grant_data.target_profile_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail=grant_data.reason or "Emulation grant invalid.",
+                )
+
+            resolved_profile_id = grant_data.target_profile_id
+
+        if resolved_profile_id is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing profile_id for default IdP login.",
+            )
+
         # Resolve profile using new SQL function
-        sql_query = load_sql_query("app/sql/v4/auth/resolve_default_idp_profile_complete.sql")
+        sql_query = load_sql_query(
+            "app/sql/v4/auth/resolve_default_idp_profile_complete.sql"
+        )
         profile_params = ResolveDefaultIdpProfileSqlParams(
-            profile_id=profile_id,
+            profile_id=resolved_profile_id,
         )
         sql_params = profile_params.to_tuple()
         

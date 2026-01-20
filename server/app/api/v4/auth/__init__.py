@@ -3,6 +3,7 @@
 from app.api.v4.auth.context import router as context_router
 from app.api.v4.auth.email import router as email_router
 from app.api.v4.auth.emulate import router as emulate_router
+from app.api.v4.auth.stop_emulation import router as stop_emulation_router
 from app.api.v4.auth.login import router as login_router
 from app.api.v4.auth.simulatable import router as simulatable_router
 from app.api.v4.auth.upsert import router as upsert_router
@@ -17,4 +18,5 @@ router.include_router(email_router)
 router.include_router(upsert_router)
 router.include_router(simulatable_router)
 router.include_router(emulate_router)
+router.include_router(stop_emulation_router)
 # Note: default_idp_router moved to root level in main.py (infrastructure-level, not versioned)

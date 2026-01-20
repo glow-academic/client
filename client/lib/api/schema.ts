@@ -4555,9 +4555,29 @@ export interface paths {
         put?: never;
         /**
          * Authorize Emulation
-         * @description Check if emulation is authorized.
+         * @description Create emulation grant and return default-idp redirect URL.
          */
         post: operations["authorize_emulation_api_v4_auth_emulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/auth/emulate/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Emulation
+         * @description Revoke emulation grants for the current profile.
+         */
+        post: operations["stop_emulation_api_v4_auth_emulate_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6153,28 +6173,6 @@ export interface components {
             /** Audio Id */
             audio_id?: string | null;
         };
-        /** AuthorizeEmulationApiRequest */
-        AuthorizeEmulationApiRequest: {
-            /**
-             * Requester Profile Id
-             * Format: uuid
-             */
-            requester_profile_id: string;
-            /**
-             * Target Profile Id
-             * Format: uuid
-             */
-            target_profile_id: string;
-        };
-        /** AuthorizeEmulationApiResponse */
-        AuthorizeEmulationApiResponse: {
-            /** Allowed */
-            allowed?: boolean | null;
-            /** Reason */
-            reason?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** AuthsApiRequest */
         AuthsApiRequest: {
             /**
@@ -6670,6 +6668,52 @@ export interface components {
         ConversationsApiResponse: {
             /** Conversation Id */
             conversation_id?: string | null;
+        };
+        /** CreateEmulationGrantApiRequest */
+        CreateEmulationGrantApiRequest: {
+            /**
+             * Requester Profile Id
+             * Format: uuid
+             */
+            requester_profile_id: string;
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
+            /**
+             * Full Emulation
+             * @default false
+             */
+            full_emulation: boolean | null;
+            /**
+             * Ttl Minutes
+             * @default 120
+             */
+            ttl_minutes: number | null;
+            /** Signin Base Url */
+            signin_base_url?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
+            /** Idp Alias */
+            idp_alias?: string | null;
+        };
+        /** CreateEmulationGrantApiResponse */
+        CreateEmulationGrantApiResponse: {
+            /** Allowed */
+            allowed?: boolean | null;
+            /** Reason */
+            reason?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Grant Id */
+            grant_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Redirect Url */
+            redirect_url?: string | null;
         };
         /** CreateFeedbackRequest */
         CreateFeedbackRequest: {
@@ -20793,6 +20837,13 @@ export interface components {
             /** Practice Department Id */
             practice_department_id?: string | null;
         };
+        /** StopEmulationApiRequest */
+        StopEmulationApiRequest: Record<string, never>;
+        /** StopEmulationApiResponse */
+        StopEmulationApiResponse: {
+            /** Revoked Count */
+            revoked_count?: number | null;
+        };
         /**
          * StopSimulationErrorPayload
          * @description Response indicating an error occurred while stopping simulation.
@@ -29499,7 +29550,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthorizeEmulationApiRequest"];
+                "application/json": components["schemas"]["CreateEmulationGrantApiRequest"];
             };
         };
         responses: {
@@ -29509,7 +29560,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthorizeEmulationApiResponse"];
+                    "application/json": components["schemas"]["CreateEmulationGrantApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_emulation_api_v4_auth_emulate_stop_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopEmulationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StopEmulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -31665,7 +31753,9 @@ export interface operations {
                 state: string;
                 scope?: string;
                 nonce?: string | null;
-                profile_id: string;
+                profile_id?: string | null;
+                emulation_grant?: string | null;
+                login_hint?: string | null;
             };
             header?: never;
             path?: never;

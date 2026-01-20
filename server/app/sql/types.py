@@ -1822,6 +1822,94 @@ class GetAudioRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: consume_emulation_grant
+
+class ConsumeEmulationGrantSqlParams(BaseModel):
+
+    grant_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.grant_id,
+        )
+
+class ConsumeEmulationGrantSqlRow(BaseModel):
+
+    ok: bool | None = None
+    reason: str | None = None
+    actor_profile_id: UUID | None = None
+    target_profile_id: UUID | None = None
+    full_emulation: bool | None = None
+
+class ConsumeEmulationGrantApiRequest(BaseModel):
+
+    grant_id: UUID
+
+class ConsumeEmulationGrantApiResponse(BaseModel):
+
+    ok: bool | None = None
+    reason: str | None = None
+    actor_profile_id: UUID | None = None
+    target_profile_id: UUID | None = None
+    full_emulation: bool | None = None
+
+
+
+# Generated from: create_emulation_grant
+
+class CreateEmulationGrantSqlParams(BaseModel):
+
+    requester_profile_id: UUID
+    target_profile_id: UUID
+    full_emulation: bool | None = False
+    ttl_minutes: int | None = 120
+    signin_base_url: str | None = None
+    callback_url: str | None = None
+    idp_alias: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.requester_profile_id,
+            self.target_profile_id,
+            self.full_emulation,
+            self.ttl_minutes,
+            self.signin_base_url,
+            self.callback_url,
+            self.idp_alias,
+        )
+
+class CreateEmulationGrantSqlRow(BaseModel):
+
+    allowed: bool | None = None
+    reason: str | None = None
+    actor_name: str | None = None
+    grant_id: UUID | None = None
+    expires_at: str | None = None
+    target_profile_id: UUID | None = None
+    redirect_url: str | None = None
+
+class CreateEmulationGrantApiRequest(BaseModel):
+
+    requester_profile_id: UUID
+    target_profile_id: UUID
+    full_emulation: bool | None = False
+    ttl_minutes: int | None = 120
+    signin_base_url: str | None = None
+    callback_url: str | None = None
+    idp_alias: str | None = None
+
+class CreateEmulationGrantApiResponse(BaseModel):
+
+    allowed: bool | None = None
+    reason: str | None = None
+    actor_name: str | None = None
+    grant_id: UUID | None = None
+    expires_at: str | None = None
+    target_profile_id: UUID | None = None
+    redirect_url: str | None = None
+
+
+
 # Generated from: delete_auth
 
 class DeleteAuthSqlParams(BaseModel):
@@ -2273,6 +2361,31 @@ class SaveAuthApiResponse(BaseModel):
 
     auth_id: UUID | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: stop_emulation
+
+class StopEmulationSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class StopEmulationSqlRow(BaseModel):
+
+    revoked_count: int | None = None
+
+class StopEmulationApiRequest(BaseModel):
+
+    pass
+
+class StopEmulationApiResponse(BaseModel):
+
+    revoked_count: int | None = None
 
 
 
@@ -21159,6 +21272,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAudioRunContextAndCreateRunApiRequest",
         "GetAudioRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/auth/consume_emulation_grant_complete.sql": (
+        "ConsumeEmulationGrantSqlParams",
+        "ConsumeEmulationGrantSqlRow",
+        "ConsumeEmulationGrantApiRequest",
+        "ConsumeEmulationGrantApiResponse",
+    ),
+    "app/sql/v4/auth/create_emulation_grant_complete.sql": (
+        "CreateEmulationGrantSqlParams",
+        "CreateEmulationGrantSqlRow",
+        "CreateEmulationGrantApiRequest",
+        "CreateEmulationGrantApiResponse",
+    ),
     "app/sql/v4/auth/delete_auth_complete.sql": (
         "DeleteAuthSqlParams",
         "DeleteAuthSqlRow",
@@ -21206,6 +21331,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveAuthSqlRow",
         "SaveAuthApiRequest",
         "SaveAuthApiResponse",
+    ),
+    "app/sql/v4/auth/stop_emulation_complete.sql": (
+        "StopEmulationSqlParams",
+        "StopEmulationSqlRow",
+        "StopEmulationApiRequest",
+        "StopEmulationApiResponse",
     ),
     "app/sql/v4/benchmark/benchmark_eval_complete_complete.sql": (
         "BenchmarkEvalCompleteSqlParams",
@@ -23257,6 +23388,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/consume_emulation_grant_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/create_emulation_grant_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/auth/delete_auth_complete.sql"]
     ) -> SqlString: ...
 
@@ -23293,6 +23434,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/save_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/stop_emulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
