@@ -41,7 +41,7 @@ actor_profile AS (
 )
 SELECT 
     kr.key::text as key,
-    (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1)::text as name,
+    kr.name::text as name,
     ap.actor_name::text as actor_name
 FROM params x
 JOIN keys_resource kr ON kr.id = x.key_id

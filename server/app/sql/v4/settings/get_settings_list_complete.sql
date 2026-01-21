@@ -110,13 +110,13 @@ settings_keys_data AS (
         COALESCE(
             ARRAY_AGG(
                 (kr.id, 
-                 (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1),
+                 kr.name,
                  CASE 
                      WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
                      ELSE '****'
                  END,
-                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), ''),
-                 EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE),
+                 kr.description,
+                 kr.active,
                  kdd.department_ids
                 )::types.q_get_settings_list_v4_key
                 ORDER BY kr.created_at DESC

@@ -51,14 +51,11 @@ WITH params AS (
     SELECT video_id::uuid as video_id, profile_id::uuid as profile_id
 ),
 video_department AS (
-    -- Get first department_id from video_departments, or NULL if video has no department links (cross-department)
-    SELECT 
-        vd.department_id,
+    SELECT
+        NULL::uuid as department_id,
         v.id as video_id
     FROM params p
     JOIN videos_resource v ON v.id = p.video_id
-    LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true
-    ORDER BY vd.created_at
     LIMIT 1
 ),
 best_agent AS (
@@ -137,7 +134,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys_resource kr ON kr.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
+    WHERE spk.active = true AND kr.active
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
@@ -235,7 +232,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
+    LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
     LEFT JOIN profile_rate_limit prl ON TRUE
     LEFT JOIN runs_today rt ON TRUE
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)

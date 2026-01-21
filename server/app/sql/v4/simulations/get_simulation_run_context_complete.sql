@@ -176,7 +176,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys_resource kr ON kr.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
+    WHERE spk.active = true AND kr.active
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -331,7 +331,7 @@ CROSS JOIN active_settings act_s
 LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
-LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
+LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
 
 -- Voice agent joins (use simulation agent instead of persona agent)
 
@@ -358,7 +358,7 @@ CROSS JOIN active_settings act_s_voice
 LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
     AND spk_voice.settings_id = act_s_voice.settings_id 
     AND spk_voice.active = true
-LEFT JOIN keys_resource kr_voice ON kr_voice.id = spk_voice.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr_voice.id AND f.name = 'active' AND kf.value = TRUE)
+LEFT JOIN keys_resource kr_voice ON kr_voice.id = spk_voice.key_id AND kr_voice.active
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id

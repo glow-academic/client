@@ -1333,13 +1333,8 @@ scenario_videos_array AS (
         v.created_at
     FROM videos_resource v
     LEFT JOIN uploads u ON u.id = v.upload_id
-    LEFT JOIN video_departments vd_dept ON vd_dept.video_id = v.id AND vd_dept.active = true
     LEFT JOIN scenario_videos sv ON sv.video_id = v.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
     WHERE v.active = true
-    AND (
-        vd_dept.department_id IN (SELECT id FROM user_departments_rows)
-        OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
-    )
 ),
 scenario_questions_array AS (
     SELECT 
@@ -3937,12 +3932,7 @@ SELECT
             )
             FROM video_mapping_data vmd
             LEFT JOIN scenario_videos sv ON sv.video_id = vmd.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
-            LEFT JOIN video_departments vd_dept ON vd_dept.video_id = vmd.id AND vd_dept.active = true
             WHERE (
-                vd_dept.department_id IN (SELECT id FROM user_departments_rows)
-                OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vmd.id AND vd2.active = true)
-            )
-            AND (
                 (SELECT video_search FROM params LIMIT 1) IS NULL
                 OR LOWER(vmd.name) LIKE '%' || LOWER((SELECT video_search FROM params LIMIT 1)) || '%'
             )

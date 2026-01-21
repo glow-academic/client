@@ -990,13 +990,13 @@ key_suggestions_data AS (
 key_mapping_data AS (
     SELECT DISTINCT
         kr.id as key_id,
-        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) as name,
+        kr.name as name,
         CASE 
             WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
             ELSE '****'
         END as masked_key,
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) as active,
+        kr.description as description,
+        kr.active as active,
         COALESCE(
             (SELECT ARRAY_AGG(ds.department_id::text ORDER BY ds.department_id::text)
              FROM (

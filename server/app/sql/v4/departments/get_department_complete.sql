@@ -843,7 +843,7 @@ model_suggestions_data AS (
 keys_data AS (
     SELECT DISTINCT 
         kr.id as key_id, 
-        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) as name, 
+        kr.name as name, 
         CASE 
             WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
             ELSE '****'
@@ -852,10 +852,10 @@ keys_data AS (
             WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
             ELSE '****'
         END as description,
-        EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) as active,
+        kr.active as active,
         false as generated  -- Keys are not AI-generated
     FROM keys_resource kr
-    WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE) = true
+    WHERE kr.active
     AND (
         (SELECT department_id FROM params) IS NULL
         OR
@@ -880,7 +880,7 @@ key_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(kr.id ORDER BY kr.created_at DESC)
              FROM keys_resource kr
-             WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource f ON kf.flag_id = f.id WHERE kf.key_id = kr.id AND f.name = 'active' AND kf.value = TRUE)
+             WHERE kr.active
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as key_suggestions
