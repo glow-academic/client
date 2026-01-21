@@ -12518,41 +12518,77 @@ class GetProfileResourceIdsByGroupIdApiResponse(BaseModel):
 
 
 
+# Generated from: patch_profile_draft
+
+class PatchProfileDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    email_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    role: str | None = None
+    route_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.active_flag_id,
+            self.request_limit_id,
+            self.department_ids,
+            self.email_ids,
+            self.cohort_ids,
+            self.role,
+            self.route_ids,
+            self.expected_version,
+        )
+
+class PatchProfileDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchProfileDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    email_ids: list[UUID] | None = None
+    cohort_ids: list[UUID] | None = None
+    role: str | None = None
+    route_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchProfileDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_profile
 
 class SaveProfileSqlParams(BaseModel):
 
-    actor_profile_id: UUID
-    name: str | None = None
-    emails: list[str] | None = None
-    role: str | None = None
-    active: bool | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    route_ids: list[UUID] | None = None
-    primary_email_index: int | None = None
-    primary_department_index: int | None = None
+    draft_id: UUID
+    actor_profile_id: UUID | None = None
     input_profile_id: UUID | None = None
-    last_login: str
-    last_active: str
-    requests_per_day: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.draft_id,
             self.actor_profile_id,
-            self.name,
-            self.emails,
-            self.role,
-            self.active,
-            self.cohort_ids,
-            self.department_ids,
-            self.route_ids,
-            self.primary_email_index,
-            self.primary_department_index,
             self.input_profile_id,
-            self.last_login,
-            self.last_active,
-            self.requests_per_day,
         )
 
 class SaveProfileSqlRow(BaseModel):
@@ -12562,20 +12598,9 @@ class SaveProfileSqlRow(BaseModel):
 
 class SaveProfileApiRequest(BaseModel):
 
-    actor_profile_id: UUID
-    name: str | None = None
-    emails: list[str] | None = None
-    role: str | None = None
-    active: bool | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    route_ids: list[UUID] | None = None
-    primary_email_index: int | None = None
-    primary_department_index: int | None = None
+    draft_id: UUID
+    actor_profile_id: UUID | None = None
     input_profile_id: UUID | None = None
-    last_login: str
-    last_active: str
-    requests_per_day: int | None = None
 
 class SaveProfileApiResponse(BaseModel):
 
@@ -22485,6 +22510,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileResourceIdsByGroupIdApiRequest",
         "GetProfileResourceIdsByGroupIdApiResponse",
     ),
+    "app/sql/v4/profile/patch_profile_draft_complete.sql": (
+        "PatchProfileDraftSqlParams",
+        "PatchProfileDraftSqlRow",
+        "PatchProfileDraftApiRequest",
+        "PatchProfileDraftApiResponse",
+    ),
     "app/sql/v4/profile/save_profile_complete.sql": (
         "SaveProfileSqlParams",
         "SaveProfileSqlRow",
@@ -24466,6 +24497,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/profile/get_profile_resource_ids_by_group_id_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/profile/patch_profile_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

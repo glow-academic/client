@@ -6,9 +6,10 @@
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface RoutesProps {
@@ -25,6 +26,7 @@ export interface RoutesProps {
     route: string | null;
     generated?: boolean | null;
   }>;
+  showSelectedFilter?: boolean;
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
@@ -33,7 +35,6 @@ export interface RoutesProps {
   placeholder?: string;
   description?: string;
   searchTerm?: string;
-  onSearchChange?: (term: string) => void;
   searchPlaceholder?: string;
 }
 
@@ -43,15 +44,15 @@ export function Routes({
   show_routes = false,
   route_suggestions,
   routes,
+  showSelectedFilter = false,
   disabled = false,
   onChange,
   label = "Routes",
   id = "routes",
   required = false,
-  placeholder = "Select routes...",
+  placeholder = "No routes available.",
   description,
   searchTerm,
-  onSearchChange,
   searchPlaceholder = "Search routes...",
 }: RoutesProps) {
   const ids = useMemo(() => route_ids ?? [], [route_ids]);
@@ -68,13 +69,36 @@ export function Routes({
       .map((r) => ({
         id: r.route_id!,
         name: r.route!,
-        description: "",
-      }));
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [allRoutes]);
 
   const isSuggested = useCallback(
     (routeId: string) => suggestionsList.includes(routeId),
     [suggestionsList]
+  );
+
+  const filteredRoutes = useMemo(() => {
+    const term = (searchTerm || "").trim().toLowerCase();
+    const baseList = showSelectedFilter
+      ? routesItems.filter((route) => ids.includes(route.id))
+      : routesItems;
+    if (!term) {
+      return baseList;
+    }
+    return baseList.filter((route) => route.name.toLowerCase().includes(term));
+  }, [routesItems, ids, searchTerm, showSelectedFilter]);
+
+  const handleToggleRoute = useCallback(
+    (routeId: string) => {
+      if (disabled) return;
+      if (ids.includes(routeId)) {
+        onChange(ids.filter((id) => id !== routeId));
+        return;
+      }
+      onChange([...ids, routeId]);
+    },
+    [disabled, ids, onChange]
   );
 
   if (!show) {
@@ -96,30 +120,37 @@ export function Routes({
           </Label>
         </div>
       )}
-      <GenericPicker
-        items={routesItems}
+      <SelectableGrid
+        items={filteredRoutes}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={onChange}
+        onSelect={handleToggleRoute}
         getId={(route) => route.id}
-        getLabel={(route) => route.name}
-        getSearchText={(route) => route.name}
-        initialSearchTerm={searchTerm}
-        onSearchChange={onSearchChange}
-        searchPlaceholder={searchPlaceholder}
         renderItem={(route, isSelected) => (
           <div
             className={cn(
-              "flex flex-col gap-1 rounded-md border px-3 py-2 text-sm",
-              isSelected && "bg-accent border-primary/40"
+              "relative flex flex-col gap-2 rounded-xl border bg-card text-card-foreground px-4 py-3 shadow-sm transition-all",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
             )}
           >
-            <span className="font-medium">{route.name}</span>
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+              </div>
+            )}
+            <span className="text-sm font-medium leading-snug">
+              {route.name}
+            </span>
             {isSuggested(route.id) && (
               <span className="text-xs text-muted-foreground">Suggested</span>
             )}
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage={
+          searchTerm ? "No routes match your search." : placeholder
+        }
         disabled={disabled}
       />
     </div>

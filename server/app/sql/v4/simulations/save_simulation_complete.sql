@@ -32,6 +32,9 @@ AS $$
 DECLARE
     v_simulation_id uuid;
     v_actor_name text;
+    v_draft_id uuid;
+    v_profile_id uuid;
+    v_input_simulation_id uuid;
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
@@ -44,27 +47,31 @@ DECLARE
     v_scenario_rubric_ids uuid[];
     v_scenario_time_limit_ids uuid[];
 BEGIN
-    IF draft_id IS NULL THEN
+    v_draft_id := draft_id;
+    v_profile_id := profile_id;
+    v_input_simulation_id := input_simulation_id;
+
+    IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'draft_id is required';
     END IF;
 
     SELECT dn.names_id
     INTO v_name_id
     FROM draft_names dn
-    WHERE dn.draft_id = draft_id
+    WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id
     INTO v_description_id
     FROM draft_descriptions dd
-    WHERE dd.draft_id = draft_id
+    WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_active_flag_id
     FROM draft_flags df
     JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
       AND f.name = 'active'
     LIMIT 1;
 
@@ -72,42 +79,42 @@ BEGIN
     INTO v_practice_flag_id
     FROM draft_flags df
     JOIN flags_resource f ON f.id = df.flags_id
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
       AND f.name = 'practice'
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
     FROM draft_departments dd
-    WHERE dd.draft_id = draft_id;
+    WHERE dd.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_scenario_ids
     FROM draft_scenarios ds
-    WHERE ds.draft_id = draft_id;
+    WHERE ds.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsf.scenario_flags_id ORDER BY dsf.created_at), ARRAY[]::uuid[])
     INTO v_scenario_flag_ids
     FROM draft_scenario_flags dsf
-    WHERE dsf.draft_id = draft_id;
+    WHERE dsf.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsp.scenario_position_id ORDER BY dsp.created_at), ARRAY[]::uuid[])
     INTO v_scenario_position_ids
     FROM draft_scenario_positions dsp
-    WHERE dsp.draft_id = draft_id;
+    WHERE dsp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsr.scenario_rubric_id ORDER BY dsr.created_at), ARRAY[]::uuid[])
     INTO v_scenario_rubric_ids
     FROM draft_scenario_rubrics dsr
-    WHERE dsr.draft_id = draft_id;
+    WHERE dsr.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dstl.scenario_time_limit_id ORDER BY dstl.created_at), ARRAY[]::uuid[])
     INTO v_scenario_time_limit_ids
     FROM draft_scenario_time_limits dstl
-    WHERE dstl.draft_id = draft_id;
+    WHERE dstl.draft_id = v_draft_id;
 
     -- Determine if create or update
-    is_create := (input_simulation_id IS NULL);
+    is_create := (v_input_simulation_id IS NULL);
 
     -- Create or UPDATE simulation_artifact first (outside CTE)
     IF is_create THEN
@@ -117,14 +124,14 @@ BEGIN
         RETURNING id INTO v_simulation_id;
     ELSE
         -- UPDATE path
-        v_simulation_id := input_simulation_id;
+        v_simulation_id := v_input_simulation_id;
         UPDATE simulation_artifact
         SET updated_at = NOW()
         WHERE id = v_simulation_id;
 
         -- Check if simulation exists
         IF NOT FOUND THEN
-            RAISE EXCEPTION 'Simulation not found: %', input_simulation_id;
+            RAISE EXCEPTION 'Simulation not found: %', v_input_simulation_id;
         END IF;
     END IF;
 
@@ -218,7 +225,7 @@ BEGIN
             COALESCE(v_scenario_position_ids, ARRAY[]::uuid[]) AS scenario_position_ids,
             COALESCE(v_scenario_rubric_ids, ARRAY[]::uuid[]) AS scenario_rubric_ids,
             COALESCE(v_scenario_time_limit_ids, ARRAY[]::uuid[]) AS scenario_time_limit_ids,
-            profile_id
+            v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT 

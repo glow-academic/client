@@ -61,6 +61,9 @@ DECLARE
     v_actor_name text;
     is_create boolean;
     v_group_id uuid;
+    v_draft_id uuid;
+    v_profile_id uuid;
+    v_input_auth_id uuid;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
@@ -68,42 +71,46 @@ DECLARE
     v_slug_ids uuid[];
     v_auth_items types.i_save_auth_v4_auth_item[];
 BEGIN
-    IF draft_id IS NULL THEN
+    v_draft_id := draft_id;
+    v_profile_id := profile_id;
+    v_input_auth_id := input_auth_id;
+
+    IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
     SELECT d.group_id INTO v_group_id
     FROM drafts d
-    WHERE d.id = draft_id;
+    WHERE d.id = v_draft_id;
 
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
     END IF;
 
     SELECT dn.names_id INTO v_name_id
     FROM draft_names dn
-    WHERE dn.draft_id = draft_id
+    WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
     FROM draft_descriptions dd
-    WHERE dd.draft_id = draft_id
+    WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
     FROM draft_flags df
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dp.protocols_id ORDER BY dp.created_at), ARRAY[]::uuid[])
     INTO v_protocol_ids
     FROM draft_protocols dp
-    WHERE dp.draft_id = draft_id;
+    WHERE dp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.slugs_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_slug_ids
     FROM draft_slugs ds
-    WHERE ds.draft_id = draft_id;
+    WHERE ds.draft_id = v_draft_id;
 
     SELECT COALESCE(
         ARRAY_AGG(
@@ -114,10 +121,10 @@ BEGIN
     )
     INTO v_auth_items
     FROM draft_auth_items dai
-    WHERE dai.draft_id = draft_id;
+    WHERE dai.draft_id = v_draft_id;
 
     -- Determine if create or update
-    is_create := (input_auth_id IS NULL);
+    is_create := (v_input_auth_id IS NULL);
     
     -- Create or UPDATE auth_artifact first (outside CTE)
     IF is_create THEN
@@ -127,7 +134,7 @@ BEGIN
         RETURNING id INTO v_auth_id;
     ELSE
         -- UPDATE path
-        v_auth_id := input_auth_id;
+        v_auth_id := v_input_auth_id;
         UPDATE auths_resource
         SET updated_at = NOW(),
             group_id = v_group_id
@@ -192,7 +199,7 @@ BEGIN
             COALESCE(v_protocol_ids, ARRAY[]::uuid[]) AS protocol_ids,
             COALESCE(v_slug_ids, ARRAY[]::uuid[]) AS slug_ids,
             COALESCE(v_auth_items, ARRAY[]::types.i_save_auth_v4_auth_item[]) AS auth_items,
-            profile_id
+            v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT 

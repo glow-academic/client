@@ -188,11 +188,10 @@ cohorts_data AS (
 departments_data AS (
     SELECT 
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department_artifact d
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description
+    FROM departments_resource d
     WHERE (d.id IN (SELECT department_id FROM user_departments) OR d.id IN (SELECT department_id FROM all_department_ids))
-    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
 ),
 -- Trend data CTEs
 active_users_count AS (

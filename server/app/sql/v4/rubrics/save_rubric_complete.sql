@@ -32,6 +32,9 @@ AS $$
 DECLARE
     v_rubric_id uuid;
     v_actor_name text;
+    v_draft_id uuid;
+    v_profile_id uuid;
+    v_input_rubric_id uuid;
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
@@ -42,59 +45,63 @@ DECLARE
     v_standard_group_ids uuid[];
     v_standard_ids uuid[];
 BEGIN
-    IF draft_id IS NULL THEN
+    v_draft_id := draft_id;
+    v_profile_id := profile_id;
+    v_input_rubric_id := input_rubric_id;
+
+    IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'draft_id is required';
     END IF;
 
     SELECT dn.names_id
     INTO v_name_id
     FROM draft_names dn
-    WHERE dn.draft_id = draft_id
+    WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id
     INTO v_description_id
     FROM draft_descriptions dd
-    WHERE dd.draft_id = draft_id
+    WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_active_flag_id
     FROM draft_flags df
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dp.points_id
     INTO v_total_points_id
     FROM draft_points dp
-    WHERE dp.draft_id = draft_id
+    WHERE dp.draft_id = v_draft_id
     ORDER BY dp.created_at
     LIMIT 1;
 
     SELECT dp.points_id
     INTO v_pass_points_id
     FROM draft_points dp
-    WHERE dp.draft_id = draft_id
+    WHERE dp.draft_id = v_draft_id
     ORDER BY dp.created_at
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
     FROM draft_departments dd
-    WHERE dd.draft_id = draft_id;
+    WHERE dd.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsg.standard_groups_id ORDER BY dsg.created_at), ARRAY[]::uuid[])
     INTO v_standard_group_ids
     FROM draft_standard_groups dsg
-    WHERE dsg.draft_id = draft_id;
+    WHERE dsg.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.standards_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_standard_ids
     FROM draft_standards ds
-    WHERE ds.draft_id = draft_id;
+    WHERE ds.draft_id = v_draft_id;
 
     -- Determine if create or update
-    is_create := (input_rubric_id IS NULL);
+    is_create := (v_input_rubric_id IS NULL);
     
     -- Create or UPDATE rubric_artifact first (outside CTE)
     IF is_create THEN
@@ -104,7 +111,7 @@ BEGIN
         RETURNING id INTO v_rubric_id;
     ELSE
         -- UPDATE path
-        v_rubric_id := input_rubric_id;
+        v_rubric_id := v_input_rubric_id;
         UPDATE rubric_artifact
         SET updated_at = NOW()
         WHERE id = v_rubric_id;
@@ -184,7 +191,7 @@ BEGIN
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(v_standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
             COALESCE(v_standard_ids, ARRAY[]::uuid[]) AS standard_ids,
-            profile_id
+            v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT 

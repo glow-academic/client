@@ -50,6 +50,7 @@ async def _cohort_generate_impl(
     try:
         # Validate resource types
         resource_types = data.resource_types
+        error_resource_type = resource_types[0] if resource_types else None
         if not resource_types:
             await emit_to_internal(
                 "generate_error",
@@ -58,7 +59,8 @@ async def _cohort_generate_impl(
                     error_message="resource_types must be provided",
                     artifact_type="cohort",
                     group_id=None,
-                    resource_type="cohort",
+                    resource_type=error_resource_type,
+                    resource_types=resource_types,
                 ),
                 sid=sid,
             )
@@ -75,7 +77,8 @@ async def _cohort_generate_impl(
                     error_message=f"Invalid resource types: {', '.join(invalid_types)}",
                     artifact_type="cohort",
                     group_id=None,
-                    resource_type="cohort",
+                    resource_type=error_resource_type,
+                    resource_types=resource_types,
                 ),
                 sid=sid,
             )
@@ -124,7 +127,8 @@ async def _cohort_generate_impl(
                         error_message=f"No agent found for agent_type: {data.agent_type}",
                         artifact_type="cohort",
                         group_id=None,
-                        resource_type="cohort",
+                        resource_type=error_resource_type,
+                        resource_types=resource_types,
                     ),
                     sid=sid,
                 )
@@ -196,7 +200,8 @@ async def _cohort_generate_impl(
                 error_message=f"Failed to generate cohort resources: {str(e)}",
                 artifact_type="cohort",
                 group_id=None,
-                resource_type="cohort",
+                resource_type=error_resource_type,
+                resource_types=resource_types,
             ),
             sid=sid,
         )
@@ -207,6 +212,9 @@ async def cohort_generate(sid: str, data: dict[str, Any]) -> None:
     """Handle cohort_generate event (client-to-server)."""
     try:
         payload = GenerateCohortPayload(**data)
+        error_resource_type = (
+            payload.resource_types[0] if payload.resource_types else None
+        )
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
@@ -216,7 +224,8 @@ async def cohort_generate(sid: str, data: dict[str, Any]) -> None:
                     error_message="Profile not found. Please reconnect.",
                     artifact_type="cohort",
                     group_id=None,
-                    resource_type="cohort",
+                    resource_type=error_resource_type,
+                    resource_types=payload.resource_types,
                 ),
                 sid=sid,
             )
@@ -231,7 +240,8 @@ async def cohort_generate(sid: str, data: dict[str, Any]) -> None:
                 error_message=f"Invalid request: {str(e)}",
                 artifact_type="cohort",
                 group_id=None,
-                resource_type="cohort",
+                resource_type=None,
+                resource_types=None,
             ),
             sid=sid,
         )
@@ -247,6 +257,8 @@ async def cohort_generate_internal(data: dict[str, Any]) -> None:
 
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
+            resource_types = data.get("resource_types") or []
+            error_resource_type = resource_types[0] if resource_types else None
             await emit_to_internal(
                 "generate_error",
                 GenerateErrorApiRequest(
@@ -254,7 +266,8 @@ async def cohort_generate_internal(data: dict[str, Any]) -> None:
                     error_message="Profile not found. Please reconnect.",
                     artifact_type="cohort",
                     group_id=None,
-                    resource_type="cohort",
+                    resource_type=error_resource_type,
+                    resource_types=resource_types,
                 ),
                 sid=sid,
             )
@@ -262,6 +275,9 @@ async def cohort_generate_internal(data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
         payload = GenerateCohortPayload(**data)
+        error_resource_type = (
+            payload.resource_types[0] if payload.resource_types else None
+        )
         await _cohort_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
@@ -271,7 +287,8 @@ async def cohort_generate_internal(data: dict[str, Any]) -> None:
                 error_message=f"Invalid request: {str(e)}",
                 artifact_type="cohort",
                 group_id=None,
-                resource_type="cohort",
+                resource_type=None,
+                resource_types=None,
             ),
             sid=sid,
         )

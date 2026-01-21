@@ -38,7 +38,7 @@ async def save_profile(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveProfileApiResponse:
-    """Save profile - handles both create (input_profile_id = NULL) and update (input_profile_id provided)."""
+    """Save profile - draft-first create/update using draft resources."""
     tags = ["profile"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -46,47 +46,22 @@ async def save_profile(
 
     try:
         # Get profile_id from header (set by router-level dependency) - this is the actor
-        actor_profile_id = http_request.state.profile_id
-        if not actor_profile_id:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Server-side validation: enforce email requirements
-        # Only validate for create mode (input_profile_id = NULL)
-        if request.input_profile_id is None:
-            if not request.emails or len(request.emails) == 0:
-                raise ValueError("At least one email is required")
-
-            # Determine primary email index (default to 0)
-            primary_index = (
-                request.primary_email_index
-                if request.primary_email_index is not None
-                else 0
-            )
-            if primary_index < 0 or primary_index >= len(request.emails):
-                raise ValueError("Invalid primary_email_index")
-
-        # Validate emails array if provided for update mode
-        if request.input_profile_id is not None and request.emails is not None:
-            if len(request.emails) == 0:
-                raise ValueError("At least one email is required")
-
-            primary_index = (
-                request.primary_email_index
-                if request.primary_email_index is not None
-                else 0
-            )
-            if primary_index < 0 or primary_index >= len(request.emails):
-                raise ValueError("Invalid primary_email_index")
+        if not request.draft_id:
+            raise HTTPException(status_code=400, detail="Draft ID is required")
 
         async with transaction(conn):
             # Convert API request to SQL params (add actor_profile_id from header)
             # Map input_profile_id from API request
             params = SaveProfileSqlParams(
                 **request.model_dump(),
-                actor_profile_id=actor_profile_id,
+                actor_profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 
@@ -108,21 +83,8 @@ async def save_profile(
 
             # Set audit context with data from SQL query
             if result.actor_name:
-                audit_ctx = {"actor": {"name": result.actor_name, "id": actor_profile_id}}
-                # Only add profile to audit context if input_profile_id was provided (update mode)
-                # For create mode, we'll use the request name if available
-                if request.input_profile_id:
-                    # Update mode: use request name (from request body)
-                    audit_ctx["profile"] = {
-                        "name": request.name or "Profile",
-                        "id": str(result.profile_id),
-                    }
-                else:
-                    # Create mode: use request name
-                    audit_ctx["profile"] = {
-                        "name": request.name or "Profile",
-                        "id": str(result.profile_id),
-                    }
+                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
+                audit_ctx["profile"] = {"id": str(result.profile_id)}
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response

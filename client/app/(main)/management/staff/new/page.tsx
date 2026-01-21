@@ -39,6 +39,8 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "/api/v4/resources/request_limits",
   "post"
 >;
+type PatchProfileDraftIn = InputOf<"/api/v4/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/api/v4/profiles/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getStaffDefault = cache(
@@ -100,6 +102,14 @@ async function createDraftRequestLimits(
   return api.post("/resources/request_limits", input);
 }
 
+async function patchProfileDraft(
+  input: PatchProfileDraftIn
+): Promise<PatchProfileDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/profiles/draft", input);
+}
+
 /** ---- Metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -156,6 +166,7 @@ export default async function NewStaffPage({
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         staffData={staffDetailDefault}
         saveStaffAction={saveStaff}
+        patchProfileDraftAction={patchProfileDraft}
         createNamesAction={createDraftNames}
         createFlagsAction={createDraftFlags}
         createDepartmentsAction={createDraftDepartments}

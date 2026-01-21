@@ -1779,13 +1779,33 @@ export interface paths {
         put?: never;
         /**
          * Save Profile
-         * @description Save profile - handles both create (input_profile_id = NULL) and update (input_profile_id provided).
+         * @description Save profile - draft-first create/update using draft resources.
          */
         post: operations["save_profile_api_v4_profiles_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/profiles/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Profile Draft
+         * @description Patch profile draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_profile_draft_api_v4_profiles_draft_patch"];
         trace?: never;
     };
     "/api/v4/profiles/delete": {
@@ -12457,6 +12477,41 @@ export interface components {
             /** Draft Exists */
             draft_exists?: boolean | null;
         };
+        /** PatchProfileDraftApiRequest */
+        PatchProfileDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Request Limit Id */
+            request_limit_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Email Ids */
+            email_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Role */
+            role?: string | null;
+            /** Route Ids */
+            route_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchProfileDraftApiResponse */
+        PatchProfileDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
         /** PatchProviderDraftApiRequest */
         PatchProviderDraftApiRequest: {
             /** Input Draft Id */
@@ -20001,36 +20056,14 @@ export interface components {
         /** SaveProfileApiRequest */
         SaveProfileApiRequest: {
             /**
-             * Actor Profile Id
+             * Draft Id
              * Format: uuid
              */
-            actor_profile_id: string;
-            /** Name */
-            name?: string | null;
-            /** Emails */
-            emails?: string[] | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Route Ids */
-            route_ids?: string[] | null;
-            /** Primary Email Index */
-            primary_email_index?: number | null;
-            /** Primary Department Index */
-            primary_department_index?: number | null;
+            draft_id: string;
+            /** Actor Profile Id */
+            actor_profile_id?: string | null;
             /** Input Profile Id */
             input_profile_id?: string | null;
-            /** Last Login */
-            last_login: string;
-            /** Last Active */
-            last_active: string;
-            /** Requests Per Day */
-            requests_per_day?: number | null;
         };
         /** SaveProfileApiResponse */
         SaveProfileApiResponse: {
@@ -24351,6 +24384,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveProfileApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_profile_draft_api_v4_profiles_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchProfileDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchProfileDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

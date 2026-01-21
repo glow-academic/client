@@ -10,6 +10,7 @@ import {
   type ColumnDef,
   ColumnFiltersState,
   SortingState,
+  flexRender,
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
@@ -18,7 +19,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
@@ -35,7 +36,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Building2, Edit, Eye, Trash2, X } from "lucide-react";
+import {
+  Building2,
+  Edit,
+  Eye,
+  FileText,
+  Trash2,
+  X,
+} from "lucide-react";
 
 import type {
   DeleteDocumentIn,
@@ -54,6 +61,14 @@ import type {
 } from "@/app/(main)/management/documents/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
@@ -72,6 +87,38 @@ export interface DocumentsProps {
     input: DeleteDocumentIn
   ) => Promise<DeleteDocumentOut>;
 }
+
+type DocumentRow = NonNullable<DocumentsListOut["documents"]>[number];
+
+const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
+  const isPdf = document.extension?.toLowerCase() === "pdf";
+  const hasPreview = Boolean(document.upload_id && isPdf);
+  const [showPreview, setShowPreview] = useState(hasPreview);
+
+  useEffect(() => {
+    setShowPreview(hasPreview);
+  }, [hasPreview]);
+
+  if (!showPreview) {
+    return (
+      <div className="h-12 w-10 rounded border bg-muted/40 flex items-center justify-center">
+        <FileText className="h-4 w-4 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-12 w-10 rounded border overflow-hidden bg-muted/40">
+      <img
+        src={`/api/uploads/download/${document.upload_id}?preview=true`}
+        alt={document.name ?? "Document preview"}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        onError={() => setShowPreview(false)}
+      />
+    </div>
+  );
+};
 
 export default function Documents({
   listData: serverListData,
@@ -166,13 +213,39 @@ export default function Documents({
     [documentsData?.department_options]
   );
 
+  // Permission checking using server-provided flags
+  const canDeleteDocument = useCallback(
+    (documentId: string) => {
+      const doc = documents.find((d) => d.document_id === documentId);
+      return doc?.can_delete ?? false;
+    },
+    [documents]
+  );
+
   // Handle document preview
   const handlePreview = useCallback((document: (typeof documents)[number]) => {
     setPreviewDocument(document);
     setShowPreviewDialog(true);
   }, []);
 
-  // Define columns inline using useMemo (for filtering/sorting only, cards render the data)
+  // Handle document edit - navigate to edit page
+  const handleEdit = useCallback(
+    (document: (typeof documents)[number]) => {
+      router.push(`/management/documents/d/${document.document_id}`);
+    },
+    [router]
+  );
+
+  // Handle single document delete
+  const handleSingleDelete = useCallback(
+    (document: (typeof documents)[number]) => {
+      setDeletingDocument(document);
+      setShowDeleteDialog(true);
+    },
+    []
+  );
+
+  // Define table columns inline using useMemo
   const columns = useMemo<ColumnDef<(typeof documents)[number]>[]>(
     () => [
       {
@@ -181,12 +254,29 @@ export default function Documents({
           <DataTableColumnHeader column={column} title="Document" />
         ),
         cell: ({ row }) => {
-          const name = row.getValue("name") as string;
+          const name = (row.getValue("name") as string) || "Untitled";
+          const document = row.original;
           return (
-            <div className="flex items-center gap-3 max-w-[300px]">
-              <span title={name} className="text-sm font-medium">
-                {truncateText(name, 25)}
-              </span>
+            <div className="flex items-center gap-3 min-w-[240px]">
+              <DocumentPreviewThumb document={document} />
+              <div className="min-w-0">
+                <div
+                  title={name}
+                  className="text-sm font-medium truncate max-w-[260px]"
+                >
+                  {truncateText(name, 32)}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="uppercase">
+                    {document.extension ?? "FILE"}
+                  </span>
+                  {!document.active && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Inactive
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </div>
           );
         },
@@ -261,6 +351,40 @@ export default function Documents({
           );
         },
       },
+      {
+        accessorKey: "department_ids",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Departments" />
+        ),
+        cell: ({ row }) => {
+          const departmentIds = row.getValue("department_ids") as string[];
+          if (!departmentIds?.length) {
+            return (
+              <div className="max-w-[200px]">
+                <span className="text-muted-foreground text-xs">None</span>
+              </div>
+            );
+          }
+          return (
+            <div className="max-w-[220px] flex flex-wrap gap-1">
+              {departmentIds.slice(0, 2).map((id) => {
+                const dept = departmentMapping[id];
+                return (
+                  <Badge key={id} variant="outline" className="text-xs">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    {dept?.name || id}
+                  </Badge>
+                );
+              })}
+              {departmentIds.length > 2 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{departmentIds.length - 2}
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      },
       // Hidden faceting column for Departments (array of IDs)
       {
         id: "departments",
@@ -284,52 +408,72 @@ export default function Documents({
           <DataTableColumnHeader column={column} title="Updated" />
         ),
         cell: ({ row }) => {
-          const date = new Date(row.getValue("updated_at"));
-          const active = row.original.active || false;
+          const date = new Date(row.getValue("updatedAt"));
           return (
             <div className="text-xs text-muted-foreground">
               {date.toLocaleDateString()}
-              {!active && (
-                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  Inactive
-                </div>
-              )}
             </div>
           );
         },
         sortingFn: "datetime",
       },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => {
+          const document = row.original;
+          return (
+            <div className="flex items-center justify-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`preview-${document.document_id}`}
+                onClick={() => handlePreview(document)}
+                aria-label={`Preview ${document.name}`}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`edit-${document.document_id}`}
+                onClick={() => handleEdit(document)}
+                aria-label={`Edit ${document.name}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              {document.document_id &&
+                canDeleteDocument(document.document_id) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`delete-${document.document_id}`}
+                    onClick={() => handleSingleDelete(document)}
+                    aria-label={`Delete ${document.name}`}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+            </div>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
     ],
-    [scenarioMapping, fieldMapping]
+    [
+      scenarioMapping,
+      fieldMapping,
+      departmentMapping,
+      canDeleteDocument,
+      handleEdit,
+      handlePreview,
+      handleSingleDelete,
+    ]
   );
 
-  // Permission checking using server-provided flags
-  const canDeleteDocument = useCallback(
-    (documentId: string) => {
-      const doc = documents.find((d) => d.document_id === documentId);
-      return doc?.can_delete ?? false;
-    },
-    [documents]
-  );
-
-  // Handle document edit - navigate to edit page
-  const handleEdit = useCallback(
-    (document: (typeof documents)[number]) => {
-      router.push(`/management/documents/d/${document.document_id}`);
-    },
-    [router]
-  );
-
-  // Handle single document delete
-  const handleSingleDelete = useCallback(
-    (document: (typeof documents)[number]) => {
-      setDeletingDocument(document);
-      setShowDeleteDialog(true);
-    },
-    []
-  );
-
-  // Create table instance for filtering and sorting (cards are rendered from rows)
+  // Create table instance for filtering and sorting
   const table = useReactTable({
     data: documents,
     columns: columns,
@@ -347,7 +491,10 @@ export default function Documents({
     },
     initialState: {
       pagination: {
-        pageSize: 12,
+        pageSize: 20,
+      },
+      columnVisibility: {
+        departments: false,
       },
     },
   });
@@ -466,148 +613,78 @@ export default function Documents({
               </div>
             </div>
 
-            {/* Cards Grid */}
+            {/* Table */}
             <div
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-              role="grid"
-              aria-label="documents grid"
-              data-testid="documents-grid"
+              className="rounded-md border overflow-x-auto"
+              data-testid="documents-table"
             >
-              {tableRows.length ? (
-                tableRows.map((row) => {
-                  const document = row.original;
-                  return (
-                    <Card
-                      key={document.document_id}
-                      aria-label={document.name ?? undefined}
-                      data-testid="document-card"
-                      data-document-id={document.document_id ?? undefined}
-                      className="relative flex flex-col h-full"
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate">
-                              {document.name}
-                            </CardTitle>
-                            <div className="mt-1 space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {!document.active && (
-                                  <Badge variant="secondary">Inactive</Badge>
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        if (!header.column.getIsVisible()) return null;
+
+                        return (
+                          <TableHead
+                            key={header.id}
+                            colSpan={header.colSpan}
+                            className={`border-r py-2 text-xs text-center ${
+                              header.column.getCanSort()
+                                ? "cursor-pointer select-none pl-4"
+                                : ""
+                            }`}
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
                                 )}
-                              </div>
-                              {document.department_ids &&
-                                document.department_ids.length > 0 && (
-                                  <div className="flex items-center gap-1 flex-wrap">
-                                    {document.department_ids
-                                      .slice(0, 2)
-                                      .map((deptId) => {
-                                        const dept = departmentMapping[deptId];
-                                        return (
-                                          <Badge
-                                            key={deptId}
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <Building2 className="h-3 w-3 mr-1" />
-                                            {dept?.name || deptId}
-                                          </Badge>
-                                        );
-                                      })}
-                                    {document.department_ids.length > 2 && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        +{document.department_ids.length - 2}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              data-testid={`preview-${document.document_id}`}
-                              onClick={() => handlePreview(document)}
-                              aria-label={`Preview ${document.name}`}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              data-testid={`edit-${document.document_id}`}
-                              onClick={() => handleEdit(document)}
-                              aria-label={`Edit ${document.name}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            {document.document_id &&
-                              canDeleteDocument(document.document_id) && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  data-testid={`delete-${document.document_id}`}
-                                  onClick={() => handleSingleDelete(document)}
-                                  aria-label={`Delete ${document.name}`}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-                        {document.field_ids &&
-                          document.field_ids.length > 0 && (
-                            <div className="mb-3">
-                              <div className="flex flex-wrap gap-1">
-                                {document.field_ids.slice(0, 3).map((id) => {
-                                  const item = fieldMapping[id];
-                                  return (
-                                    <Badge
-                                      key={id}
-                                      variant="default"
-                                      className="text-[10px]"
-                                    >
-                                      {item?.name || id}
-                                    </Badge>
-                                  );
-                                })}
-                                {document.field_ids.length > 3 && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px]"
-                                  >
-                                    +{document.field_ids.length - 3}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        <div className="text-xs text-muted-foreground">
-                          Updated{" "}
-                          {document.updated_at
-                            ? new Date(document.updated_at).toLocaleDateString()
-                            : "-"}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No documents match the current filters.
-                </div>
-              )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {tableRows.length ? (
+                    tableRows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        className="hover:bg-muted/30 transition-colors"
+                        data-testid="documents-row"
+                        data-document-id={row.original.document_id ?? undefined}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="border-r px-3 py-2 text-center"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={table.getVisibleLeafColumns().length}
+                        className="h-24 text-center px-6"
+                      >
+                        No documents match the current filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
 
             {/* Pagination */}
-            <DataTablePagination table={table} card={true} />
+            <DataTablePagination table={table} />
           </div>
         )}
 

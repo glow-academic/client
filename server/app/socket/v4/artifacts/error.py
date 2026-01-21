@@ -24,6 +24,7 @@ class GenerateErrorApiRequest(BaseModel):
     artifact_type: str | None = None  # Artifact type (e.g., "persona")
     group_id: str | None = None
     resource_type: str | None = None  # Still needed for tool routing
+    resource_types: list[str] | None = None  # Optional: original resource_types array
 
 
 # Mapping from agent_role to agent error event name
@@ -82,6 +83,7 @@ async def _generate_error_impl(
                     "artifact_type": data.artifact_type,
                     "group_id": data.group_id,
                     "resource_type": data.resource_type,
+                    "resource_types": data.resource_types,
                 },
             )
     except Exception as e:

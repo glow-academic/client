@@ -8258,7 +8258,7 @@
           "profiles"
         ],
         "summary": "Save Profile",
-        "description": "Save profile - handles both create (input_profile_id = NULL) and update (input_profile_id provided).",
+        "description": "Save profile - draft-first create/update using draft resources.",
         "operationId": "save_profile_api_v4_profiles_save_post",
         "parameters": [
           {
@@ -8327,6 +8327,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SaveProfileApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "profiles"
+        ]
+      }
+    },
+    "/api/v4/profiles/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "profiles"
+        ],
+        "summary": "Patch Profile Draft",
+        "description": "Patch profile draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_profile_draft_api_v4_profiles_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchProfileDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchProfileDraftApiResponse"
                 }
               }
             }
@@ -55572,6 +55669,183 @@
         "type": "object",
         "title": "PatchPersonaDraftApiResponse"
       },
+      "PatchProfileDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "request_limit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Limit Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "email_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "route_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchProfileDraftApiRequest"
+      },
+      "PatchProfileDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchProfileDraftApiResponse"
+      },
       "PatchProviderDraftApiRequest": {
         "properties": {
           "input_draft_id": {
@@ -95272,124 +95546,22 @@
       },
       "SaveProfileApiRequest": {
         "properties": {
-          "actor_profile_id": {
+          "draft_id": {
             "type": "string",
             "format": "uuid",
+            "title": "Draft Id"
+          },
+          "actor_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Actor Profile Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "emails": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emails"
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "route_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Route Ids"
-          },
-          "primary_email_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email Index"
-          },
-          "primary_department_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Index"
           },
           "input_profile_id": {
             "anyOf": [
@@ -95402,32 +95574,11 @@
               }
             ],
             "title": "Input Profile Id"
-          },
-          "last_login": {
-            "type": "string",
-            "title": "Last Login"
-          },
-          "last_active": {
-            "type": "string",
-            "title": "Last Active"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
           }
         },
         "type": "object",
         "required": [
-          "actor_profile_id",
-          "last_login",
-          "last_active"
+          "draft_id"
         ],
         "title": "SaveProfileApiRequest"
       },

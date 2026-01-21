@@ -31,6 +31,9 @@ AS $$
 DECLARE
     v_persona_id uuid;
     v_actor_name text;
+    v_draft_id uuid;
+    v_profile_id uuid;
+    v_input_persona_id uuid;
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
@@ -42,58 +45,62 @@ DECLARE
     v_example_ids uuid[];
     v_field_ids uuid[];
 BEGIN
-    IF draft_id IS NULL THEN
+    v_draft_id := draft_id;
+    v_profile_id := profile_id;
+    v_input_persona_id := input_persona_id;
+
+    IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
     -- Load draft resources
     SELECT dn.names_id INTO v_name_id
     FROM draft_names dn
-    WHERE dn.draft_id = draft_id
+    WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
     FROM draft_descriptions dd
-    WHERE dd.draft_id = draft_id
+    WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dc.colors_id INTO v_color_id
     FROM draft_colors dc
-    WHERE dc.draft_id = draft_id
+    WHERE dc.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT di.icons_id INTO v_icon_id
     FROM draft_icons di
-    WHERE di.draft_id = draft_id
+    WHERE di.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT din.instructions_id INTO v_instructions_id
     FROM draft_instructions din
-    WHERE din.draft_id = draft_id
+    WHERE din.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
     FROM draft_flags df
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
     FROM draft_departments ddp
-    WHERE ddp.draft_id = draft_id;
+    WHERE ddp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), ARRAY[]::uuid[])
     INTO v_example_ids
     FROM draft_examples de
-    WHERE de.draft_id = draft_id;
+    WHERE de.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dfld.fields_id ORDER BY dfld.created_at), ARRAY[]::uuid[])
     INTO v_field_ids
     FROM draft_fields dfld
-    WHERE dfld.draft_id = draft_id;
+    WHERE dfld.draft_id = v_draft_id;
 
     -- Determine if create or update
-    is_create := (input_persona_id IS NULL);
+    is_create := (v_input_persona_id IS NULL);
     
     -- Create or UPDATE persona_artifact first (outside CTE)
     IF is_create THEN
@@ -103,7 +110,7 @@ BEGIN
         RETURNING id INTO v_persona_id;
     ELSE
         -- UPDATE path
-        v_persona_id := input_persona_id;
+        v_persona_id := v_input_persona_id;
         UPDATE persona_artifact
         SET updated_at = NOW()
         WHERE id = v_persona_id;
@@ -181,7 +188,7 @@ BEGIN
             v_instructions_id AS instructions_id,
             v_active_flag_id AS active_flag_id,
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
-            profile_id,
+            v_profile_id AS profile_id,
             COALESCE(v_example_ids, ARRAY[]::uuid[]) AS example_ids,
             COALESCE(v_field_ids, ARRAY[]::uuid[]) AS field_ids
     ),

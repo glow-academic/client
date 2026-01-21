@@ -1,4 +1,4 @@
--- Unified save profile function - handles both create (input_profile_id = NULL) and update (input_profile_id provided)
+-- Unified save profile function - draft-first create/update
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -22,20 +22,9 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_save_profile_v4(
-    actor_profile_id uuid,
-    name text DEFAULT NULL,
-    emails text[] DEFAULT NULL,
-    role text DEFAULT NULL,
-    active boolean DEFAULT NULL,
-    cohort_ids uuid[] DEFAULT NULL,
-    department_ids uuid[] DEFAULT NULL,
-    route_ids uuid[] DEFAULT NULL,
-    primary_email_index integer DEFAULT NULL,
-    primary_department_index integer DEFAULT NULL,
-    input_profile_id uuid DEFAULT NULL,
-    last_login timestamptz DEFAULT NULL,
-    last_active timestamptz DEFAULT NULL,
-    requests_per_day integer DEFAULT NULL
+    draft_id uuid,
+    actor_profile_id uuid DEFAULT NULL,
+    input_profile_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     profile_id uuid,
@@ -46,40 +35,153 @@ VOLATILE
 AS $$
 DECLARE
     v_profile_id uuid;
+    v_actor_profile_id uuid;
     v_actor_name text;
     is_create boolean;
     v_primary_email_index integer;
+    v_primary_department_index integer;
+    v_draft_profile_id uuid;
+    v_group_id uuid;
+    v_draft_id uuid;
+    v_name text;
+    v_emails text[];
+    v_role text;
+    v_active boolean;
+    v_cohort_ids uuid[];
+    v_department_ids uuid[];
+    v_route_ids uuid[];
+    v_requests_per_day integer;
+    v_active_flag_id uuid;
+    v_request_limit_id uuid;
 BEGIN
-    -- Determine if create or update
+    v_draft_id := draft_id;
+    v_actor_profile_id := actor_profile_id;
     is_create := (input_profile_id IS NULL);
-    
-    -- Set primary email index (default to 0 for create, use provided for update)
-    IF is_create THEN
-        v_primary_email_index := COALESCE(primary_email_index, 0);
+
+    IF v_actor_profile_id IS NULL THEN
+        RAISE EXCEPTION 'Profile ID is required';
+    END IF;
+
+    IF v_draft_id IS NULL THEN
+        RAISE EXCEPTION 'Draft ID is required';
+    END IF;
+
+    SELECT d.profile_id, d.group_id
+    INTO v_draft_profile_id, v_group_id
+    FROM drafts d
+    WHERE d.id = v_draft_id;
+
+    IF v_draft_profile_id IS NULL THEN
+        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
+    END IF;
+
+    IF v_draft_profile_id <> v_actor_profile_id THEN
+        RAISE EXCEPTION 'Draft does not belong to profile';
+    END IF;
+
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
+    END IF;
+
+    -- Load draft resources
+    SELECT n.name
+    INTO v_name
+    FROM draft_names dn
+    JOIN names_resource n ON n.id = dn.names_id
+    WHERE dn.draft_id = v_draft_id
+    LIMIT 1;
+
+    SELECT COALESCE(ARRAY_AGG(e.email ORDER BY de.created_at), ARRAY[]::text[])
+    INTO v_emails
+    FROM draft_emails de
+    JOIN emails_resource e ON e.id = de.emails_id
+    WHERE de.draft_id = v_draft_id
+      AND de.active = true;
+
+    SELECT r.role::text
+    INTO v_role
+    FROM draft_roles dr
+    JOIN roles_resource r ON r.id = dr.roles_id
+    WHERE dr.draft_id = v_draft_id
+      AND dr.active = true
+    LIMIT 1;
+
+    IF v_role IS NULL AND input_profile_id IS NOT NULL THEN
+        SELECT r.role::text
+        INTO v_role
+        FROM profile_roles pr
+        JOIN roles_resource r ON pr.role_id = r.id
+        WHERE pr.profile_id = input_profile_id
+          AND pr.active = true
+        LIMIT 1;
+    END IF;
+
+    IF v_role IS NULL THEN
+        v_role := 'instructional';
+    END IF;
+
+    SELECT df.flags_id
+    INTO v_active_flag_id
+    FROM draft_flags df
+    WHERE df.draft_id = v_draft_id
+    LIMIT 1;
+
+    v_active := (v_active_flag_id IS NOT NULL);
+
+    SELECT drl.request_limits_id
+    INTO v_request_limit_id
+    FROM draft_request_limits drl
+    WHERE drl.draft_id = v_draft_id
+    LIMIT 1;
+
+    IF v_request_limit_id IS NOT NULL THEN
+        SELECT rlr.requests_per_day
+        INTO v_requests_per_day
+        FROM request_limits_resource rlr
+        WHERE rlr.id = v_request_limit_id
+        LIMIT 1;
+    END IF;
+
+    SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
+    INTO v_department_ids
+    FROM draft_departments dd
+    WHERE dd.draft_id = v_draft_id
+      AND dd.active = true;
+
+    SELECT COALESCE(ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at), ARRAY[]::uuid[])
+    INTO v_cohort_ids
+    FROM draft_cohorts dc
+    WHERE dc.draft_id = v_draft_id
+      AND dc.active = true;
+
+    SELECT COALESCE(ARRAY_AGG(dr.routes_id ORDER BY dr.created_at), ARRAY[]::uuid[])
+    INTO v_route_ids
+    FROM draft_routes dr
+    WHERE dr.draft_id = v_draft_id
+      AND dr.active = true;
+
+    IF array_length(v_route_ids, 1) IS NULL THEN
+        v_route_ids := NULL;
+    END IF;
+
+    IF v_emails IS NULL OR array_length(v_emails, 1) = 0 THEN
+        RAISE EXCEPTION 'At least one email is required';
+    END IF;
+
+    v_primary_email_index := 0;
+
+    IF array_length(v_emails, 1) IS NOT NULL THEN
+        IF v_primary_email_index < 0 OR v_primary_email_index >= array_length(v_emails, 1) THEN
+            RAISE EXCEPTION 'Invalid primary_email_index';
+        END IF;
+    END IF;
+
+    IF array_length(v_department_ids, 1) IS NULL THEN
+        v_primary_department_index := NULL;
     ELSE
-        v_primary_email_index := COALESCE(primary_email_index, 0);
+        v_primary_department_index := 0;
     END IF;
-    
-    -- Validate emails array for create mode
-    IF is_create THEN
-        IF emails IS NULL OR array_length(emails, 1) = 0 THEN
-            RAISE EXCEPTION 'At least one email is required';
-        END IF;
-        IF v_primary_email_index < 0 OR v_primary_email_index >= array_length(emails, 1) THEN
-            RAISE EXCEPTION 'Invalid primary_email_index';
-        END IF;
-    END IF;
-    
-    -- Validate emails array for update mode (if provided)
-    IF NOT is_create AND emails IS NOT NULL THEN
-        IF array_length(emails, 1) = 0 THEN
-            RAISE EXCEPTION 'At least one email is required';
-        END IF;
-        IF v_primary_email_index < 0 OR v_primary_email_index >= array_length(emails, 1) THEN
-            RAISE EXCEPTION 'Invalid primary_email_index';
-        END IF;
-    END IF;
-    
+
     -- Get actor name
     SELECT 
         COALESCE(
@@ -87,7 +189,7 @@ BEGIN
             ''
         ) INTO v_actor_name
     FROM profile_artifact p
-    WHERE p.id = api_save_profile_v4.actor_profile_id;
+    WHERE p.id = v_actor_profile_id;
     
     -- Create or UPDATE profile_artifact first
     IF is_create THEN
@@ -100,7 +202,7 @@ BEGIN
         IF EXISTS (
             SELECT 1 FROM profile_emails pe
             JOIN emails_resource e ON pe.email_id = e.id
-            WHERE e.email = emails[v_primary_email_index + 1]
+            WHERE e.email = v_emails[v_primary_email_index + 1]
               AND pe.active = true
         ) THEN
             RAISE EXCEPTION 'Email already exists';
@@ -125,20 +227,18 @@ BEGIN
     WITH params AS (
         SELECT
             v_profile_id AS target_profile_id,
-            name,
-            COALESCE(emails, ARRAY[]::text[]) AS emails,
-            role,
-            COALESCE(active, true) AS active,
-            COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-            COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-            route_ids AS route_ids,
+            v_name AS name,
+            COALESCE(v_emails, ARRAY[]::text[]) AS emails,
+            v_role AS role,
+            COALESCE(v_active, true) AS active,
+            COALESCE(v_cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
+            COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
+            v_route_ids AS route_ids,
             v_primary_email_index AS primary_email_index,
-            COALESCE(primary_department_index, 0) AS primary_department_index,
-            is_create AS             is_create,
-            last_login,
-            last_active,
-            requests_per_day,
-            api_save_profile_v4.actor_profile_id AS actor_profile_id
+            v_primary_department_index AS primary_department_index,
+            is_create AS is_create,
+            v_requests_per_day AS requests_per_day,
+            v_actor_profile_id AS actor_profile_id
     ),
     resolved_route_ids AS (
         SELECT
@@ -356,38 +456,7 @@ BEGIN
             active = true,
             updated_at = NOW()
     ),
-    -- Handle last_login if provided (update mode only)
-    login_resource AS (
-        INSERT INTO logins_resource (last_login, created_at, updated_at, active, generated, mcp, call_id)
-        SELECT x.last_login, NOW(), NOW(), true, false, false, NULL
-        FROM params x
-        WHERE x.last_login IS NOT NULL
-          AND NOT x.is_create
-        ON CONFLICT (last_login) DO UPDATE SET updated_at = NOW()
-        RETURNING id as login_id
-    ),
-    profile_login_upsert AS (
-        DELETE FROM profile_logins 
-        WHERE profile_id = (SELECT target_profile_id FROM params)
-          AND EXISTS (SELECT 1 FROM params WHERE NOT is_create AND last_login IS NOT NULL)
-    ),
-    profile_login_insert AS (
-        INSERT INTO profile_logins (profile_id, login_id, created_at, updated_at, generated, mcp)
-        SELECT x.target_profile_id, lr.login_id, NOW(), NOW(), false, false
-        FROM params x
-        CROSS JOIN login_resource lr
-        WHERE x.last_login IS NOT NULL
-          AND NOT x.is_create
-    ),
-    -- Handle last_active if provided (update mode only)
-    insert_activity AS (
-        INSERT INTO profile_activity (profile_id, last_active)
-        SELECT x.target_profile_id, x.last_active
-        FROM params x
-        WHERE x.last_active IS NOT NULL
-          AND NOT x.is_create
-    ),
-    -- Handle requests_per_day if provided (update mode only)
+    -- Handle requests_per_day if provided
     request_limit_resource AS (
         INSERT INTO request_limits_resource (requests_per_day, call_id, created_at, updated_at)
         SELECT 
@@ -397,7 +466,6 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.requests_per_day IS NOT NULL
-          AND NOT x.is_create
         RETURNING id as request_limit_id, requests_per_day
     ),
     request_limit_upsert AS (
@@ -409,7 +477,6 @@ BEGIN
         FROM params x
         CROSS JOIN request_limit_resource rlr
         WHERE x.requests_per_day IS NOT NULL
-          AND NOT x.is_create
         ON CONFLICT (profile_id)
         DO UPDATE SET 
             request_limit_id = EXCLUDED.request_limit_id,

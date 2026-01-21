@@ -32,39 +32,46 @@ DECLARE
     v_provider_id uuid;
     v_actor_name text;
     v_group_id uuid;
+    v_draft_id uuid;
+    v_profile_id uuid;
+    v_input_provider_id uuid;
     is_create boolean;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
 BEGIN
-    IF draft_id IS NULL THEN
+    v_draft_id := draft_id;
+    v_profile_id := profile_id;
+    v_input_provider_id := input_provider_id;
+
+    IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
     SELECT d.group_id INTO v_group_id
     FROM drafts d
-    WHERE d.id = draft_id;
+    WHERE d.id = v_draft_id;
 
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
     END IF;
 
     SELECT dn.names_id INTO v_name_id
     FROM draft_names dn
-    WHERE dn.draft_id = draft_id
+    WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
     FROM draft_descriptions dd
-    WHERE dd.draft_id = draft_id
+    WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
     FROM draft_flags df
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
     LIMIT 1;
     -- Determine if create or update
-    is_create := (input_provider_id IS NULL);
+    is_create := (v_input_provider_id IS NULL);
     
     -- Create or UPDATE provider_artifact first (outside CTE)
     IF is_create THEN
@@ -74,7 +81,7 @@ BEGIN
         RETURNING id INTO v_provider_id;
     ELSE
         -- UPDATE path
-        v_provider_id := input_provider_id;
+        v_provider_id := v_input_provider_id;
         UPDATE provider_artifact
         SET updated_at = NOW(),
             group_id = v_group_id
@@ -119,7 +126,7 @@ BEGIN
             v_name_id AS name_id,
             v_description_id AS description_id,
             v_active_flag_id AS active_flag_id,
-            profile_id
+            v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT 

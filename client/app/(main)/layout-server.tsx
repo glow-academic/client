@@ -340,6 +340,7 @@ type SwitchEffectiveProfileParams = {
 type SwitchEffectiveProfileResult = {
   ok: boolean;
   reason?: string;
+  grantId?: string;
   redirectUrl?: string;
 };
 
@@ -381,11 +382,11 @@ export async function switchEffectiveProfile(
     if (!res.allowed) {
       return { ok: false, reason: res.reason ?? "Emulation not allowed" };
     }
-    if (!res.redirect_url) {
-      return { ok: false, reason: "Missing redirect URL" };
+    if (!res.grant_id) {
+      return { ok: false, reason: "Missing emulation grant" };
     }
 
-    return { ok: true, redirectUrl: res.redirect_url };
+    return { ok: true, grantId: res.grant_id, redirectUrl: res.redirect_url };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";

@@ -445,7 +445,8 @@ export default function Staff({
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    name: false,
+    name: true,
+    search: false,
     active: false,
     lastActive: false,
     department_ids: true,
@@ -1193,7 +1194,7 @@ export default function Staff({
         },
       },
       {
-        id: "name",
+        id: "search",
         accessorFn: (row: ProfileListItem) => {
           const emails =
             row.emails && row.emails.length > 0
@@ -1600,7 +1601,7 @@ export default function Staff({
 
   // Toolbar state
   const isFiltered = table.getState().columnFilters.length > 0;
-  const nameColumn = table.getColumn("name");
+  const nameColumn = table.getColumn("search");
   const roleColumn = table.getColumn("role");
   const lastActiveColumn = table.getColumn("lastActive");
   const departmentIdsColumn = table.getColumn("department_ids");

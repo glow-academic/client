@@ -39,6 +39,8 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "/api/v4/resources/request_limits",
   "post"
 >;
+type PatchProfileDraftIn = InputOf<"/api/v4/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/api/v4/profiles/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -131,6 +133,14 @@ async function createDraftRequestLimits(
   return api.post("/resources/request_limits", input);
 }
 
+async function patchProfileDraft(
+  input: PatchProfileDraftIn
+): Promise<PatchProfileDraftOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.patch("/profiles/draft", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function StaffEditPage({
   params,
@@ -183,6 +193,7 @@ export default async function StaffEditPage({
           staffId={profileId}
           staffData={staffDetail}
           saveStaffAction={saveStaff}
+          patchProfileDraftAction={patchProfileDraft}
           createNamesAction={createDraftNames}
           createFlagsAction={createDraftFlags}
           createDepartmentsAction={createDraftDepartments}

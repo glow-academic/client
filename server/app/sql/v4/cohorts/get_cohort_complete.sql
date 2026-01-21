@@ -824,13 +824,53 @@ name_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+                  AND rt2.resource::text <> ALL(ARRAY['names']::text[])
+            ) as extra_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_required_count < 1 THEN 2
+            WHEN adp.extra_artifact_count = 0 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -895,13 +935,53 @@ description_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['descriptions']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+                  AND rt2.resource::text <> ALL(ARRAY['descriptions']::text[])
+            ) as extra_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_required_count < 1 THEN 2
+            WHEN adp.extra_artifact_count = 0 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -966,13 +1046,53 @@ flag_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['flags']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+                  AND rt2.resource::text <> ALL(ARRAY['flags']::text[])
+            ) as extra_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_required_count < 1 THEN 2
+            WHEN adp.extra_artifact_count = 0 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1037,13 +1157,53 @@ departments_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['departments']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+                  AND rt2.resource::text <> ALL(ARRAY['departments']::text[])
+            ) as extra_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_required_count < 1 THEN 2
+            WHEN adp.extra_artifact_count = 0 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1108,13 +1268,53 @@ simulations_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['simulations']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+                  AND rt2.resource::text <> ALL(ARRAY['simulations']::text[])
+            ) as extra_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_required_count < 1 THEN 2
+            WHEN adp.extra_artifact_count = 0 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1179,13 +1379,53 @@ simulation_positions_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['simulation_positions']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+                  AND rt2.resource::text <> ALL(ARRAY['simulation_positions']::text[])
+            ) as extra_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_required_count < 1 THEN 2
+            WHEN adp.extra_artifact_count = 0 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1221,39 +1461,39 @@ basic_agent_data AS (
             )
         )
     ),
-    agent_tool_resources AS (
-        SELECT 
-            ea.agent_id,
-            COALESCE(
-                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
-                ARRAY[]::text[]
-            ) as tool_resources,
-            ea.updated_at
-        FROM eligible_agents ea
-        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-        GROUP BY ea.agent_id, ea.updated_at
-    ),
     agent_scores AS (
         SELECT 
-            atr.agent_id,
-            atr.tool_resources,
-            ARRAY_LENGTH(
-                ARRAY(
-                    SELECT unnest(atr.tool_resources)
-                    EXCEPT
-                    SELECT unnest(ARRAY['names', 'descriptions', 'flags', 'departments']::text[])
-                ),
-                1
-            ) as unmatched_count,
-            atr.updated_at
-        FROM agent_tool_resources atr
-        WHERE ARRAY['names', 'descriptions', 'flags', 'departments']::text[] <@ atr.tool_resources
+            ea.agent_id,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count,
+            ea.updated_at
+        FROM eligible_agents ea
         -- Filter by MCP flag when mcp=true
-        AND (
+        WHERE (
             (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = atr.agent_id
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = ea.agent_id
                   AND f_mcp.name = 'mcp'
                   AND af_mcp.value = true
             )
@@ -1262,7 +1502,8 @@ basic_agent_data AS (
     agent_department_preference AS (
         SELECT 
             ascores.agent_id,
-            ascores.unmatched_count,
+            ascores.matched_artifact_count,
+            ascores.extra_outside_count,
             CASE 
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
@@ -1277,11 +1518,13 @@ basic_agent_data AS (
             ascores.updated_at
         FROM agent_scores ascores
         CROSS JOIN selected_department_for_agents sd
+        WHERE ascores.matched_required_count = 4
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
-        adp.unmatched_count ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1317,39 +1560,39 @@ general_agent_data AS (
             )
         )
     ),
-    agent_tool_resources AS (
-        SELECT 
-            ea.agent_id,
-            COALESCE(
-                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
-                ARRAY[]::text[]
-            ) as tool_resources,
-            ea.updated_at
-        FROM eligible_agents ea
-        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
-        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-        GROUP BY ea.agent_id, ea.updated_at
-    ),
     agent_scores AS (
         SELECT 
-            atr.agent_id,
-            atr.tool_resources,
-            ARRAY_LENGTH(
-                ARRAY(
-                    SELECT unnest(atr.tool_resources)
-                    EXCEPT
-                    SELECT unnest(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations']::text[])
-                ),
-                1
-            ) as unmatched_count,
-            atr.updated_at
-        FROM agent_tool_resources atr
-        WHERE ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations']::text[] <@ atr.tool_resources
+            ea.agent_id,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations']::text[])
+            ) as matched_required_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as matched_artifact_count,
+            (
+                SELECT COUNT(DISTINCT rt2.resource::text)
+                FROM agent_tools at2
+                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                WHERE at2.agent_id = ea.agent_id
+                  AND at2.active = true
+                  AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
+            ) as extra_outside_count,
+            ea.updated_at
+        FROM eligible_agents ea
         -- Filter by MCP flag when mcp=true
-        AND (
+        WHERE (
             (SELECT mcp FROM params) = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = atr.agent_id
+            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = ea.agent_id
                   AND f_mcp.name = 'mcp'
                   AND af_mcp.value = true
             )
@@ -1358,7 +1601,8 @@ general_agent_data AS (
     agent_department_preference AS (
         SELECT 
             ascores.agent_id,
-            ascores.unmatched_count,
+            ascores.matched_artifact_count,
+            ascores.extra_outside_count,
             CASE 
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
@@ -1373,11 +1617,13 @@ general_agent_data AS (
             ascores.updated_at
         FROM agent_scores ascores
         CROSS JOIN selected_department_for_agents sd
+        WHERE ascores.matched_required_count = 5
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
-        adp.unmatched_count ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC

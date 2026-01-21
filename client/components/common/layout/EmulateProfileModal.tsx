@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Search } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -53,6 +54,7 @@ export function EmulateProfileModal({
   searchSimulatableProfiles,
   switchEffectiveProfile,
 }: EmulateProfileModalProps) {
+  const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
   const { activeProfile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
@@ -205,7 +207,7 @@ export function EmulateProfileModal({
         fullEmulation: fullEmulation && isSuperadmin,
       });
 
-      if (!result.ok || !result.redirectUrl) {
+      if (!result.ok || !result.grantId) {
         toast.error(result.reason || "Failed to emulate profile");
         return;
       }
@@ -217,7 +219,14 @@ export function EmulateProfileModal({
       );
 
       onOpenChange(false);
-      window.location.href = result.redirectUrl;
+      await signIn(
+        "keycloak",
+        { callbackUrl: `${appPrefix}/` },
+        {
+          kc_idp_hint: `default-idp-profile-${selectedProfileId}`,
+          login_hint: result.grantId,
+        }
+      );
     } catch {
       toast.error("Failed to emulate profile");
     } finally {

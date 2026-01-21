@@ -33,6 +33,9 @@ DECLARE
     v_default_call_id uuid;
     v_group_id uuid;
     v_draft_profile_id uuid;
+    v_draft_id uuid;
+    v_profile_id uuid;
+    v_input_cohort_id uuid;
     v_name_id uuid;
     v_description_id uuid;
     v_active_flag_id uuid;
@@ -40,52 +43,56 @@ DECLARE
     v_simulation_ids uuid[];
     is_create boolean;
 BEGIN
-    IF draft_id IS NULL THEN
+    v_draft_id := draft_id;
+    v_profile_id := profile_id;
+    v_input_cohort_id := input_cohort_id;
+
+    IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'Draft ID is required';
     END IF;
 
     SELECT d.profile_id, d.group_id
     INTO v_draft_profile_id, v_group_id
     FROM drafts d
-    WHERE d.id = draft_id;
+    WHERE d.id = v_draft_id;
 
     IF v_draft_profile_id IS NULL THEN
-        RAISE EXCEPTION 'Draft not found: %', draft_id;
+        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
     END IF;
 
-    IF v_draft_profile_id <> profile_id THEN
+    IF v_draft_profile_id <> v_profile_id THEN
         RAISE EXCEPTION 'Draft does not belong to profile';
     END IF;
 
     IF v_group_id IS NULL THEN
-        RAISE EXCEPTION 'Draft group_id not found: %', draft_id;
+        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
     END IF;
 
     -- Load draft resources (single-select + arrays)
     SELECT dn.names_id INTO v_name_id
     FROM draft_names dn
-    WHERE dn.draft_id = draft_id
+    WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
     FROM draft_descriptions dd
-    WHERE dd.draft_id = draft_id
+    WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
     FROM draft_flags df
-    WHERE df.draft_id = draft_id
+    WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
     FROM draft_departments ddp
-    WHERE ddp.draft_id = draft_id;
+    WHERE ddp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_simulation_ids
     FROM draft_simulations ds
-    WHERE ds.draft_id = draft_id;
+    WHERE ds.draft_id = v_draft_id;
 
     -- Validate required resource IDs exist
     IF v_name_id IS NULL THEN
@@ -122,7 +129,7 @@ BEGIN
     END IF;
 
     -- Determine if create or update
-    is_create := (input_cohort_id IS NULL);
+    is_create := (v_input_cohort_id IS NULL);
 
     -- Create or UPDATE cohort_artifact first (outside CTE)
     IF is_create THEN
@@ -130,7 +137,7 @@ BEGIN
         VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_cohort_id;
     ELSE
-        v_cohort_id := input_cohort_id;
+        v_cohort_id := v_input_cohort_id;
         UPDATE cohort_artifact
         SET updated_at = NOW(),
             group_id = v_group_id
@@ -162,8 +169,8 @@ BEGIN
             v_active_flag_id AS active_flag_id,
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(v_simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
-            profile_id,
-            draft_id,
+            v_profile_id AS profile_id,
+            v_draft_id AS draft_id,
             v_default_call_id AS default_call_id
     ),
     department_resource_ids AS (

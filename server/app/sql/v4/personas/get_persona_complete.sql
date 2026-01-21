@@ -1224,6 +1224,23 @@ user_departments_for_agents AS (
     FROM params p
     JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
 ),
+-- Agent tool coverage for persona artifact (used to prefer exact specialists)
+agent_artifact_tool_counts AS (
+    SELECT 
+        a.id as agent_id,
+        COUNT(DISTINCT CASE WHEN ar.resource IS NOT NULL THEN rt.resource::text END) as matched_artifact_count,
+        COUNT(DISTINCT CASE WHEN ar.resource IS NULL THEN rt.resource::text END) as extra_outside_count
+    FROM agent_artifact a
+    LEFT JOIN agent_tools at ON at.agent_id = a.id AND at.active = true
+    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (
+        SELECT 1 FROM tool_flags tf
+        JOIN flags_resource f ON tf.flag_id = f.id
+        WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true
+    )
+    LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+    LEFT JOIN artifact_resources ar ON ar.resource = rt.resource AND ar.artifact = 'persona'::artifacts
+    GROUP BY a.id
+),
 -- Agent selection for 'names' resource
 name_agent_data AS (
     WITH eligible_agents AS (
@@ -1283,13 +1300,22 @@ name_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1354,13 +1380,22 @@ description_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1425,13 +1460,22 @@ color_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1496,13 +1540,22 @@ icon_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1567,13 +1620,22 @@ instructions_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1638,13 +1700,22 @@ flag_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1701,13 +1772,22 @@ departments_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1764,13 +1844,22 @@ fields_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1827,13 +1916,22 @@ examples_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ea.updated_at
+            ea.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM eligible_agents ea
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ea.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -1922,14 +2020,22 @@ basic_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ascores.updated_at
+            ascores.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM agent_scores ascores
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ascores.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
-        adp.unmatched_count ASC,
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -2018,14 +2124,22 @@ content_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ascores.updated_at
+            ascores.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM agent_scores ascores
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ascores.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
-        adp.unmatched_count ASC,
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
@@ -2114,14 +2228,22 @@ general_agent_data AS (
                 THEN 0
                 ELSE 1
             END as dept_preference,
-            ascores.updated_at
+            ascores.updated_at,
+            COALESCE(atc.matched_artifact_count, 0) as matched_artifact_count,
+            COALESCE(atc.extra_outside_count, 0) as extra_outside_count
         FROM agent_scores ascores
         CROSS JOIN selected_department_for_agents sd
+        LEFT JOIN agent_artifact_tool_counts atc ON atc.agent_id = ascores.agent_id
     )
     SELECT adp.agent_id
     FROM agent_department_preference adp
     ORDER BY 
-        adp.unmatched_count ASC,
+        CASE 
+            WHEN adp.matched_artifact_count = 1 AND adp.extra_outside_count = 0 THEN 0
+            ELSE 1
+        END ASC,
+        adp.matched_artifact_count DESC,
+        adp.extra_outside_count ASC,
         adp.dept_preference ASC,
         adp.updated_at DESC,
         adp.agent_id ASC
