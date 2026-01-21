@@ -438,7 +438,7 @@ chat_scenario_info_bundle AS (
         sa.simulation_id
     FROM chats c
     JOIN attempt_chats ac ON ac.chat_id = c.id
-    JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    JOIN attempts_entry sa ON sa.id = ac.attempt_id
     WHERE c.id IN (SELECT chat_id FROM profile_chats)
 ),
 -- Get first scenario's rubric per simulation for bundle (fallback)

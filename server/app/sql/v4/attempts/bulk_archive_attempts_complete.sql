@@ -65,7 +65,7 @@ BEGIN
     IF v_use_attempt_ids_mode THEN
         -- attempt_ids mode: Archive specific attempts
         WITH update_attempts AS (
-            UPDATE simulation_attempts
+            UPDATE attempts_entry
             SET archived = api_bulk_archive_attempts_v4.archived
             WHERE id = ANY(attempt_ids)
               AND archived != api_bulk_archive_attempts_v4.archived
@@ -125,7 +125,7 @@ BEGIN
                 (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
                 sim.practice_simulation,
                 COALESCE(sdd.department_ids, NULL) as department_ids
-            FROM simulation_attempts sa
+            FROM attempts_entry sa
             JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
             JOIN simulation_artifact sim ON sim.id = sa.simulation_id
             JOIN profile_artifact p_attempt ON p_attempt.id = ap.profile_id
@@ -237,7 +237,7 @@ BEGIN
                  ))
         ),
         filter_update AS (
-            UPDATE simulation_attempts
+            UPDATE attempts_entry
             SET archived = api_bulk_archive_attempts_v4.archived
             WHERE id IN (SELECT attempt_id FROM final_filtered_attempts)
               AND archived != api_bulk_archive_attempts_v4.archived

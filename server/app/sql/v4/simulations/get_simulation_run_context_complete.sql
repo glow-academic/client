@@ -76,7 +76,7 @@ WITH scenario_dept AS (
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
     FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
-    INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    INNER JOIN attempts_entry sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     WHERE sc.id = chat_id
 ),
@@ -289,7 +289,7 @@ SELECT
 
 FROM chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
-INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+INNER JOIN attempts_entry sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios_resource s ON s.scenario_id = sc.scenario_id
 LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true

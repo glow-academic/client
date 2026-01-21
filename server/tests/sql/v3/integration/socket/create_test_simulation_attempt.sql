@@ -57,7 +57,7 @@ scenario_dept AS (
     FROM scenario s, dept d
 ),
 attempt AS (
-    INSERT INTO simulation_attempts(simulation_id, archived)
+    INSERT INTO attempts_entry(simulation_id, archived)
     SELECT s.id, false
     FROM all_sims s
     RETURNING id

@@ -46,7 +46,7 @@ chat_context AS (
     FROM params p
     JOIN chats c ON c.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = c.id
-    JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    JOIN attempts_entry sa ON sa.id = ac.attempt_id
     LEFT JOIN groups g ON g.id = (SELECT cg.group_id FROM chat_groups cg WHERE cg.chat_id = c.id LIMIT 1)
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LIMIT 1

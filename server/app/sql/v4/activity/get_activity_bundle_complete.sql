@@ -78,7 +78,7 @@ daily_feedback AS (
     SELECT 
         DATE(created_at) as date,
         COUNT(*) as feedback_count
-    FROM feedback_problems
+    FROM problems_entry
     WHERE created_at >= NOW() - INTERVAL '90 days'
     GROUP BY DATE(created_at)
 ),
@@ -113,7 +113,7 @@ combined_daily AS (
 SELECT 
     up.actor_name::text as actor_name,
     (SELECT COUNT(DISTINCT profile_id) FROM profile_activity)::bigint as active_profiles_count,
-    (SELECT COUNT(*) FROM feedback_problems)::bigint as total_feedback_count,
+    (SELECT COUNT(*) FROM problems_entry)::bigint as total_feedback_count,
     (SELECT COUNT(*) FROM activity)::bigint as total_activity_entries,
     (SELECT COUNT(*) FROM activity WHERE error = true)::bigint as total_errors_count,
     COALESCE(

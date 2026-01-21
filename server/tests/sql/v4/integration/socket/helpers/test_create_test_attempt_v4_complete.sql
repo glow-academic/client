@@ -13,7 +13,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO simulation_attempts(simulation_id, archived) 
+    INSERT INTO attempts_entry(simulation_id, archived) 
     VALUES (test_create_test_attempt_v4.simulation_id, false) 
     RETURNING id as attempt_id;
 $$;

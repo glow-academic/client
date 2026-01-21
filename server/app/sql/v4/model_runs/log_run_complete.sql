@@ -106,7 +106,7 @@ million_image_unit AS (
 ),
 -- Upsert pricing usage (conditional based on token types)
 upsert_input_text_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'input'::pricing_type,
@@ -123,7 +123,7 @@ upsert_input_text_usage AS (
         updated_at = now()
 ),
 upsert_input_audio_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'input'::pricing_type,
@@ -140,7 +140,7 @@ upsert_input_audio_usage AS (
         updated_at = now()
 ),
 upsert_input_image_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'input'::pricing_type,
@@ -157,7 +157,7 @@ upsert_input_image_usage AS (
         updated_at = now()
 ),
 upsert_output_text_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'output'::pricing_type,
@@ -174,7 +174,7 @@ upsert_output_text_usage AS (
         updated_at = now()
 ),
 upsert_output_audio_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'output'::pricing_type,
@@ -191,7 +191,7 @@ upsert_output_audio_usage AS (
         updated_at = now()
 ),
 upsert_cached_text_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'cached'::pricing_type,
@@ -208,7 +208,7 @@ upsert_cached_text_usage AS (
         updated_at = now()
 ),
 upsert_cached_audio_usage AS (
-    INSERT INTO run_pricing_usage (run_id, pricing_type, unit_id, count, updated_at)
+    INSERT INTO run_pricing_entry (run_id, pricing_type, unit_id, count, updated_at)
     SELECT 
         ur.id,
         'cached'::pricing_type,

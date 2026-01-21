@@ -32,7 +32,7 @@ WITH RECURSIVE attempt_base AS (
         sa.id as attempt_id,
         sa.simulation_id,
         sa.infinite_mode
-    FROM simulation_attempts sa
+    FROM attempts_entry sa
     WHERE sa.id = attempt_id
 ),
 simulation_scenarios_list AS (

@@ -1431,14 +1431,14 @@ class QGetSimulationAttemptV4HintsByMessage(BaseModel):
 
 
 
-class QGetSimulationAttemptV4MessageFeedbackHighlight(BaseModel):
+class QGetSimulationAttemptV4HighlightsEntry(BaseModel):
 
     section: str | None
 
 
 
 
-class QGetSimulationAttemptV4MessageFeedbackReplace(BaseModel):
+class QGetSimulationAttemptV4ReplacementsEntry(BaseModel):
 
     section: str | None
     replace: str | None
@@ -1448,8 +1448,8 @@ class QGetSimulationAttemptV4MessageFeedback(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    replaces: list[QGetSimulationAttemptV4MessageFeedbackReplace] | None
-    highlights: list[QGetSimulationAttemptV4MessageFeedbackHighlight] | None
+    replaces: list[QGetSimulationAttemptV4ReplacementsEntry] | None
+    highlights: list[QGetSimulationAttemptV4HighlightsEntry] | None
 
 class QGetSimulationAttemptV4Message(BaseModel):
 

@@ -109,12 +109,12 @@ CREATE TYPE types.q_get_simulation_attempt_v4_aggregated_results AS (
 );
 
 -- Message feedback types
-CREATE TYPE types.q_get_simulation_attempt_v4_message_feedback_replace AS (
+CREATE TYPE types.q_get_simulation_attempt_v4_replacements_entry AS (
     section text,
     replace text
 );
 
-CREATE TYPE types.q_get_simulation_attempt_v4_message_feedback_highlight AS (
+CREATE TYPE types.q_get_simulation_attempt_v4_highlights_entry AS (
     section text
 );
 
@@ -122,8 +122,8 @@ CREATE TYPE types.q_get_simulation_attempt_v4_message_feedback AS (
     id uuid,
     name text,
     description text,
-    replaces types.q_get_simulation_attempt_v4_message_feedback_replace[],
-    highlights types.q_get_simulation_attempt_v4_message_feedback_highlight[]
+    replaces types.q_get_simulation_attempt_v4_replacements_entry[],
+    highlights types.q_get_simulation_attempt_v4_highlights_entry[]
 );
 
 CREATE TYPE types.q_get_simulation_attempt_v4_message AS (
@@ -487,7 +487,7 @@ WITH params AS (
 ),
 attempt_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM simulation_attempts WHERE id = (SELECT attempt_id FROM params)
+        SELECT 1 FROM attempts_entry WHERE id = (SELECT attempt_id FROM params)
     )::boolean as attempt_exists
 ),
 actor_profile AS (
@@ -537,7 +537,7 @@ attempt_base AS (
         s.created_at as sim_created_at,
         s.updated_at as sim_updated_at
     FROM params x
-    JOIN simulation_attempts sa ON sa.id = x.attempt_id
+    JOIN attempts_entry sa ON sa.id = x.attempt_id
     JOIN simulation_artifact s ON s.id = sa.simulation_id
 ),
 attempt_profiles_data AS (
@@ -750,7 +750,7 @@ previous_chat_scenario_root_mapping AS (
         CROSS JOIN current_attempt_profile cap
         JOIN chats sc ON EXISTS (
             SELECT 1 FROM attempt_chats ac2
-            JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
+            JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
             JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
             WHERE ac2.chat_id = sc.id
               AND ap2.profile_id = cap.profile_id
@@ -830,7 +830,7 @@ previous_chats_with_grades AS (
     CROSS JOIN attempt_base ab
     JOIN chats sc ON EXISTS (
         SELECT 1 FROM attempt_chats ac2
-        JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
+        JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
         JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
         WHERE ac2.chat_id = sc.id
           AND ap2.profile_id = cap.profile_id
@@ -850,9 +850,9 @@ previous_chats_with_grades AS (
     JOIN attempt_chats ac2 ON EXISTS (
         SELECT 1 FROM chats c_check WHERE c_check.id = sc.id
     ) AND EXISTS (
-        SELECT 1 FROM simulation_attempts sa_check WHERE sa_check.id = ac2.attempt_id
+        SELECT 1 FROM attempts_entry sa_check WHERE sa_check.id = ac2.attempt_id
     )
-    JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
+    JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
     JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
     LEFT JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
@@ -901,7 +901,7 @@ previous_attempt_rubric_points AS (
         sa.simulation_id,
         COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)::integer as total_points
     FROM previous_chats_with_grades pwg
-    JOIN simulation_attempts sa ON sa.id = pwg.attempt_id
+    JOIN attempts_entry sa ON sa.id = pwg.attempt_id
     JOIN simulation_artifact s ON s.id = sa.simulation_id
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id 
@@ -1228,7 +1228,7 @@ grades_data AS (
     JOIN grades scg ON scg.run_id = r.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
     LEFT JOIN attempt_chats ac_sim ON ac_sim.chat_id = c.id
-    LEFT JOIN simulation_attempts sa_sim ON sa_sim.id = ac_sim.attempt_id
+    LEFT JOIN attempts_entry sa_sim ON sa_sim.id = ac_sim.attempt_id
     LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id = sa_sim.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
     LEFT JOIN LATERAL (
@@ -1260,16 +1260,16 @@ message_feedbacks_data AS (
         s.message_id,
         gs.grade_id,
         (s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
-         '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[],
+         '{}'::types.q_get_simulation_attempt_v4_replacements_entry[],
          COALESCE(
-             (SELECT ARRAY_AGG((mfh.section)::types.q_get_simulation_attempt_v4_message_feedback_highlight ORDER BY mfh.idx)
-                        FROM message_feedback_highlight mfh
+             (SELECT ARRAY_AGG((mfh.section)::types.q_get_simulation_attempt_v4_highlights_entry ORDER BY mfh.idx)
+                        FROM highlights_entry mfh
                         WHERE mfh.message_feedback_id = s.id),
-             '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
+             '{}'::types.q_get_simulation_attempt_v4_highlights_entry[]
          )
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
     FROM strengths_resource s
-    JOIN grade_strengths gs ON gs.strength_id = s.id
+    JOIN strengths_entry gs ON gs.strength_id = s.id
     WHERE gs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
     UNION ALL
     -- Improvements with replaces
@@ -1278,15 +1278,15 @@ message_feedbacks_data AS (
         gi.grade_id,
         (i.id, i.name, i.description,
          COALESCE(
-             (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_message_feedback_replace ORDER BY mfr.idx)
-                        FROM message_feedback_replace mfr
+             (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_replacements_entry ORDER BY mfr.idx)
+                        FROM replacements_entry mfr
                         WHERE mfr.message_feedback_id = i.id),
-             '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[]
+             '{}'::types.q_get_simulation_attempt_v4_replacements_entry[]
          ),
-         '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
+         '{}'::types.q_get_simulation_attempt_v4_highlights_entry[]
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
     FROM improvements_resource i
-    JOIN grade_improvements gi ON gi.improvement_id = i.id
+    JOIN improvements_entry gi ON gi.improvement_id = i.id
     WHERE gi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),
 message_feedbacks_grouped AS (
@@ -1380,7 +1380,7 @@ feedbacks_grouped AS (
             '{}'::types.q_get_simulation_attempt_v4_feedback[]
         ) as feedbacks
     FROM feedbacks_resource f
-    JOIN grade_feedbacks gf ON gf.feedback_id = f.id
+    JOIN feedbacks_entry gf ON gf.feedback_id = f.id
     WHERE gf.grade_id IN (
         SELECT (gd.grade).id FROM grades_data gd
     )

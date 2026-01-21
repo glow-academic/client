@@ -519,7 +519,7 @@ earliest_attempt AS (
     -- Get attempts for those profiles
     JOIN attempt_profiles ap ON ap.profile_id = pd_all.profile_id
         AND ap.active = true
-    JOIN simulation_attempts sa ON sa.id = ap.attempt_id
+    JOIN attempts_entry sa ON sa.id = ap.attempt_id
     WHERE pd_effective.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd_effective.active = true
 ),

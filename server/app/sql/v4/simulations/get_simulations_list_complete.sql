@@ -151,11 +151,11 @@ simulation_scenarios_data AS (
         AND ssf.value = true)
     GROUP BY ss.simulation_id
 ),
-simulation_attempts AS (
+attempts_entry AS (
     SELECT 
         sa.simulation_id,
         COUNT(*) as attempt_count
-    FROM simulation_attempts sa
+    FROM attempts_entry sa
     GROUP BY sa.simulation_id
 ),
 simulation_active_cohort_links AS (
@@ -245,7 +245,7 @@ simulation_data AS (
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
     LEFT JOIN simulation_scenarios_data ssd ON ssd.simulation_id = s.id
-    LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
+    LEFT JOIN attempts_entry sa ON sa.simulation_id = s.id
     LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
     LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id

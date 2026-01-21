@@ -110,7 +110,7 @@ WITH params AS (
 ),
 -- Create the attempt first
 new_attempt AS (
-    INSERT INTO simulation_attempts (simulation_id, infinite_mode, created_at)
+    INSERT INTO attempts_entry (simulation_id, infinite_mode, created_at)
     SELECT p.simulation_id, p.infinite_mode, now()
     FROM params p
     RETURNING id as attempt_id

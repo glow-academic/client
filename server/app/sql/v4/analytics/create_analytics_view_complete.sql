@@ -118,7 +118,7 @@ profile_cohorts_for_sim AS (
            WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
                AND f.name = 'active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
-  FROM simulation_attempts sa
+  FROM attempts_entry sa
   LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 ),
 -- Pick one attempt per chat to avoid duplicate chat_id rows
@@ -128,7 +128,7 @@ chat_first_attempt AS (
     ac.chat_id,
     ac.attempt_id
   FROM attempt_chats ac
-  JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+  JOIN attempts_entry sa ON sa.id = ac.attempt_id
   LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
   ORDER BY ac.chat_id, 
     CASE WHEN ap.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
@@ -193,7 +193,7 @@ effective_profile_department AS (
              ORDER BY pd2.created_at ASC
              LIMIT 1)
          ) AS department_id
-  FROM (SELECT DISTINCT ap.profile_id FROM simulation_attempts sa
+  FROM (SELECT DISTINCT ap.profile_id FROM attempts_entry sa
         JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE) pd
 ),
 -- Get first department_id for each entity from junction tables
@@ -320,7 +320,7 @@ SELECT
   ) AS department_id
 FROM chats sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
-JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
+JOIN attempts_entry sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
 LEFT JOIN profile_artifact pr ON pr.id = ap.profile_id
@@ -406,8 +406,8 @@ CREATE INDEX analytics_attempt_created_at_idx
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
   ON grades (run_id, created_at DESC);
 
--- Feedback lookup by grade (via grade_feedbacks junction table)
--- Note: grade_id column removed FROM feedbacks_resource table, use grade_feedbacks junction table instead
+-- Feedback lookup by grade (via feedbacks_entry junction table)
+-- Note: grade_id column removed FROM feedbacks_resource table, use feedbacks_entry junction table instead
 
 -- Standards mapping
 CREATE INDEX IF NOT EXISTS standards_group_idx
@@ -467,8 +467,8 @@ CREATE INDEX IF NOT EXISTS group_runs_group_id_idx
 CREATE INDEX IF NOT EXISTS group_runs_run_id_idx
   ON group_runs (run_id);
 
-CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
-  ON simulation_attempts (archived);
+CREATE INDEX IF NOT EXISTS attempts_entry_archived_idx
+  ON attempts_entry (archived);
 
 -- Additional Performance Indexes for Analytics Functions
 -- On the materialized view "analytics"

@@ -155,7 +155,7 @@ runs_base AS (
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
-    -- Join to simulations via group_runs → groups → chats → attempt_chats → simulation_attempts → simulations
+    -- Join to simulations via group_runs → groups → chats → attempt_chats → attempts_entry → simulations
     LEFT JOIN group_runs gr ON gr.run_id = mr.id
     LEFT JOIN groups g ON g.id = gr.group_id
     LEFT JOIN LATERAL (
@@ -168,7 +168,7 @@ runs_base AS (
     ) chat_lookup ON true
     LEFT JOIN chats c ON c.id = chat_lookup.chat_id
     LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
-    LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    LEFT JOIN attempts_entry sa ON sa.id = ac.attempt_id
     LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
     WHERE 
@@ -235,14 +235,14 @@ runs_base AS (
             OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
--- Calculate run costs using run_pricing_usage (source of truth for pricing)
+-- Calculate run costs using run_pricing_entry (source of truth for pricing)
 run_costs AS (
     SELECT 
         rpu.run_id,
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
-    FROM run_pricing_usage rpu
+    FROM run_pricing_entry rpu
     JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
     JOIN model_pricing mp ON mp.model_id = rm.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id

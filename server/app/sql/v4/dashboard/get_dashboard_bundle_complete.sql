@@ -818,7 +818,7 @@ filt AS (
                 JOIN chats c_stag ON c_stag.id = cg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
-                LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id IN (SELECT sa.simulation_id FROM simulation_attempts sa JOIN attempt_chats ac ON ac.attempt_id = sa.id WHERE ac.chat_id = c_stag.id LIMIT 1)
+                LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id IN (SELECT sa.simulation_id FROM attempts_entry sa JOIN attempt_chats ac ON ac.attempt_id = sa.id WHERE ac.chat_id = c_stag.id LIMIT 1)
                 LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c_stag.scenario_id
                 LEFT JOIN rubrics_resource r ON r.id = COALESCE(srr.rubric_id, srr_fallback.rubric_id)
                 WHERE EXISTS (
@@ -1318,7 +1318,7 @@ filt AS (
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
                 JOIN chats c ON c.id = gg.chat_id
                 JOIN attempt_chats ac ON ac.chat_id = c.id
-                JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+                JOIN attempts_entry sa ON sa.id = ac.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
                   AND scg.created_at < (SELECT end_date FROM params)
                   -- Apply same filters as filt but on attempt level
@@ -1349,7 +1349,7 @@ filt AS (
                     sa.simulation_id
                 FROM chats c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
-                JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+                JOIN attempts_entry sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
             ),
             -- Get first scenario's rubric per simulation (fallback)
@@ -1408,7 +1408,7 @@ filt AS (
                     sg.name AS group_name,
                     (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
                 FROM latest_grade_per_chat lg
-                JOIN grade_feedbacks gf ON gf.grade_id = lg.id
+                JOIN feedbacks_entry gf ON gf.grade_id = lg.id
                 JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
                 JOIN standards_resource s ON s.id = scf.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
@@ -2425,7 +2425,7 @@ filt AS (
                     sa.simulation_id
                 FROM chats c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
-                JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+                JOIN attempts_entry sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filt_for_skills)
             ),
             -- Get first scenario's rubric per simulation for skills (fallback)
@@ -2492,7 +2492,7 @@ filt AS (
                     END AS pct
                 FROM latest_grade_for_skills lg
                 JOIN filt_for_skills f ON f.chat_id = lg.chat_id
-                JOIN grade_feedbacks gf ON gf.grade_id = lg.grade_id
+                JOIN feedbacks_entry gf ON gf.grade_id = lg.grade_id
                 JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
                 JOIN standards_resource s ON s.id = scf.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true

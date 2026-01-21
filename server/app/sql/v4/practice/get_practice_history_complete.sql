@@ -141,7 +141,7 @@ history_attempts AS (
         (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) AS practice_simulation,
         COALESCE(sdd.department_ids, NULL) as department_ids
-    FROM simulation_attempts sa
+    FROM attempts_entry sa
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
     JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     LEFT JOIN (
@@ -261,7 +261,7 @@ history_chat_grades AS (
     JOIN chats c ON c.id = gg.chat_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
     LEFT JOIN attempt_chats ac_fallback ON ac_fallback.chat_id = c.id
-    LEFT JOIN simulation_attempts sa_fallback ON sa_fallback.id = ac_fallback.attempt_id
+    LEFT JOIN attempts_entry sa_fallback ON sa_fallback.id = ac_fallback.attempt_id
     LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id = sa_fallback.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
     WHERE EXISTS (
@@ -304,7 +304,7 @@ history_grade_rollup AS (
             ELSE 0 END) AS sum_grade_percent
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
-    JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    JOIN attempts_entry sa ON sa.id = ac.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     LEFT JOIN simulation_scenario_rubrics ssr_fallback_scenario ON ssr_fallback_scenario.simulation_id = sa.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback_scenario ON srr_fallback_scenario.id = ssr_fallback_scenario.scenario_rubric_id AND srr_fallback_scenario.scenario_id = sc.scenario_id
