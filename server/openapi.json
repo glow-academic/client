@@ -46225,6 +46225,16 @@
             "type": "string",
             "title": "End Date"
           },
+          "actor_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Actor Profile Id"
+          },
+          "target_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Profile Id"
+          },
           "cohort_ids": {
             "anyOf": [
               {
@@ -46282,7 +46292,9 @@
         "type": "object",
         "required": [
           "start_date",
-          "end_date"
+          "end_date",
+          "actor_profile_id",
+          "target_profile_id"
         ],
         "title": "GetReportsOverviewApiRequest"
       },

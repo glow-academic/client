@@ -161,11 +161,11 @@ export default async function PracticePage({
     ...practiceData,
   };
 
-  // Get effectiveProfileId from profile context
-  const effectiveProfileId = profileContext.id;
+  // Get profileId from profile context
+  const profileId = profileContext.id;
 
   // Check if user is a guest
-  const isGuest = !effectiveProfileId || profileContext.role === "guest";
+  const isGuest = !profileId || profileContext.role === "guest";
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
@@ -236,7 +236,6 @@ export default async function PracticePage({
               historyInfiniteMode={historyInfiniteMode}
               historySortBy={historySortBy}
               historySortOrder={historySortOrder}
-              effectiveProfileId={effectiveProfileId}
               departmentIds={profileContext.department_ids || []}
             />
           </Suspense>
@@ -268,7 +267,6 @@ async function PracticeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  effectiveProfileId: string;
   departmentIds: string[];
 }) {
   // Build history filters for practice (simplified: department_ids only)

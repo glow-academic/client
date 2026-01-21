@@ -2,7 +2,8 @@
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
--- Parameters: start_date, end_date, profile_id (required), cohort_ids, roles (kept for compatibility, not used),
+-- Parameters: start_date, end_date, actor_profile_id (required), target_profile_id (required),
+--            cohort_ids, roles (kept for compatibility, not used),
 --            simulation_filters, department_ids
 -- Returns: Complete dashboard bundle with header metrics, primary metrics, secondary metrics, 
 --          footer metrics, history, insights, thresholds, and entity mappings (as arrays)
@@ -545,7 +546,8 @@ CREATE TYPE types.q_reports_overview_v4_field AS (
 CREATE OR REPLACE FUNCTION api_get_reports_overview_v4(
     start_date text,
     end_date text,
-    profile_id uuid,
+    actor_profile_id uuid,
+    target_profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     roles profile_role[] DEFAULT ARRAY[]::profile_role[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
@@ -577,7 +579,8 @@ WITH params AS (
     SELECT 
         (start_date::timestamptz) AS start_date,
         (end_date::timestamptz) AS end_date,
-        profile_id AS profile_id,
+        actor_profile_id AS actor_profile_id,
+        target_profile_id AS target_profile_id,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
         COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[]) AS simulation_filters,
@@ -592,7 +595,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM profile_artifact
-    WHERE id = (SELECT profile_id FROM params)
+    WHERE id = (SELECT actor_profile_id FROM params)
 ),
 -- Get profile data (name, emails, role) for the target profile
 profile_data AS (
@@ -610,7 +613,7 @@ profile_data AS (
          WHERE pr_j.profile_id = pa.id 
          LIMIT 1) as profile_role
     FROM params x
-    JOIN profile_artifact pa ON pa.id = x.profile_id
+    JOIN profile_artifact pa ON pa.id = x.target_profile_id
     LEFT JOIN profile_emails pe ON pe.profile_id = pa.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.email_id = e.id
     GROUP BY pa.id
@@ -671,7 +674,7 @@ filt AS (
                         'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
         )
         -- Reports always filters by profile_id (required parameter)
-                    AND a.profile_id = (SELECT profile_id FROM params)
+        AND a.profile_id = (SELECT target_profile_id FROM params)
         -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
@@ -745,7 +748,7 @@ filt AS (
                     'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
                 )
                 -- Dashboard never filters by profile - always filter by roles
-                AND a.profile_id = (SELECT profile_id FROM params)
+                AND a.profile_id = (SELECT target_profile_id FROM params)
                 -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                 AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)

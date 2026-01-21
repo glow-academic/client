@@ -6,16 +6,25 @@
 
 "use client";
 
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import {
   STAFF_ROLES,
   generateGradientFromHex,
 } from "@/components/common/forms/staff-roles";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
-import { Check, User } from "lucide-react";
-import { useMemo } from "react";
+import { PERSONA_ICON_MAP, PERSONA_ICONS } from "@/utils/persona-icons";
+import { Check, Pencil, Plus, User, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export interface RolesProps {
   role?: string | null;
@@ -36,6 +45,164 @@ export interface RolesProps {
   searchTerm?: string;
   showSelectedFilter?: boolean;
   emptyMessage?: string;
+  onRoleResourceChange?: (
+    roleId: string,
+    updates: {
+      name: string;
+      description: string;
+      icon_value: string;
+      color_hex: string;
+    }
+  ) => void;
+}
+
+type RoleItem = {
+  id: string;
+  name: string;
+  description: string;
+  iconValue: string;
+  icon: typeof User;
+  color: string;
+};
+
+type RoleDraft = {
+  name: string;
+  description: string;
+  iconValue: string;
+  color: string;
+};
+
+type IconOption = {
+  id: string;
+  label: string;
+};
+
+const formatIconLabel = (iconName: string) =>
+  iconName.replace(/([A-Z])/g, " $1").trim();
+
+const ICON_OPTIONS: IconOption[] = PERSONA_ICONS.map((iconName) => ({
+  id: iconName,
+  label: formatIconLabel(iconName),
+}));
+
+const normalizeHex = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+};
+
+const getIconKeyFromComponent = (icon: RoleItem["icon"]) => {
+  const entry = Object.entries(PERSONA_ICON_MAP).find(
+    ([, IconComponent]) => IconComponent === icon
+  );
+  return entry?.[0] ?? "User";
+};
+
+function RoleEditor({
+  draft,
+  onChange,
+  iconOptions,
+  colorSwatches,
+  disabled,
+}: {
+  draft: RoleDraft;
+  onChange: (next: RoleDraft) => void;
+  iconOptions: IconOption[];
+  colorSwatches: string[];
+  disabled?: boolean;
+}) {
+  const currentIcon = draft.iconValue || "User";
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2">
+        <Input
+          value={draft.name}
+          onChange={(event) =>
+            onChange({ ...draft, name: event.target.value })
+          }
+          placeholder="Role name"
+          className="h-8"
+          disabled={disabled}
+        />
+        <Textarea
+          value={draft.description}
+          onChange={(event) =>
+            onChange({ ...draft, description: event.target.value })
+          }
+          placeholder="Role description"
+          className="min-h-[60px] text-sm"
+          disabled={disabled}
+        />
+      </div>
+      <div className="grid gap-2">
+        <div className="flex items-center gap-2">
+          <GenericPicker<IconOption>
+            items={iconOptions}
+            selectedIds={currentIcon ? [currentIcon] : []}
+            onSelect={(ids) => {
+              const nextIcon = ids[0] ?? "User";
+              onChange({ ...draft, iconValue: nextIcon });
+            }}
+            getId={(item) => item.id}
+            getLabel={(item) => item.label}
+            renderItem={(item) => {
+              const IconComponent =
+                PERSONA_ICON_MAP[item.id] ?? PERSONA_ICON_MAP.User;
+              return (
+                <div className="flex items-center gap-2">
+                  <IconComponent className="h-4 w-4 text-muted-foreground" />
+                  <span>{item.label}</span>
+                </div>
+              );
+            }}
+            placeholder="Icon"
+            searchPlaceholder="Search icons..."
+            showLabel={false}
+            compact={true}
+            buttonClassName="h-8"
+            disabled={disabled}
+          />
+          <div className="flex items-center gap-2">
+            <div
+              className="h-7 w-7 rounded-md border"
+              style={{
+                background:
+                  normalizeHex(draft.color) || "var(--muted-foreground)",
+              }}
+            />
+            <Input
+              value={draft.color}
+              onChange={(event) =>
+                onChange({ ...draft, color: event.target.value })
+              }
+              placeholder="#64748b"
+              className="h-8 w-[120px]"
+              disabled={disabled}
+            />
+          </div>
+        </div>
+        {colorSwatches.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {colorSwatches.map((hex) => (
+              <button
+                key={hex}
+                type="button"
+                className={cn(
+                  "h-5 w-5 rounded-full border",
+                  normalizeHex(draft.color).toLowerCase() ===
+                    normalizeHex(hex).toLowerCase() && "ring-2 ring-primary"
+                )}
+                style={{ background: hex }}
+                onClick={() => onChange({ ...draft, color: hex })}
+                disabled={disabled}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function Roles({
@@ -51,36 +218,124 @@ export function Roles({
   searchTerm = "",
   showSelectedFilter = false,
   emptyMessage = "No roles found. Try adjusting your search.",
+  onRoleResourceChange,
 }: RolesProps) {
-  const availableRoles = useMemo(() => {
+  const [roleOverrides, setRoleOverrides] = useState<
+    Record<string, RoleDraft>
+  >({});
+  const [localRoles, setLocalRoles] = useState<RoleItem[]>([]);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState<RoleDraft | null>(null);
+  const [isAddingCustomRole, setIsAddingCustomRole] = useState(false);
+  const [newCustomDraft, setNewCustomDraft] = useState<RoleDraft>({
+    name: "",
+    description: "",
+    iconValue: "User",
+    color: "#64748b",
+  });
+
+  const baseRoles = useMemo(() => {
     const roleResources =
       roles
         ?.filter((r) => r.role)
         .map((r) => {
-          const iconKey = r.icon_value ?? "";
+          const iconKey = r.icon_value ?? "User";
           const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
 
           return {
             id: r.role as string,
             name: r.name ?? r.role ?? "Role",
             description: r.description ?? "",
+            iconValue: iconKey,
             icon: IconComponent,
             color: r.color_hex ?? "#64748b",
-          };
+          } as RoleItem;
         }) ?? [];
 
     if (roleResources.length > 0) {
-      if (!role_options || role_options.length === 0) {
-        return roleResources;
-      }
-      return roleResources.filter((r) => role_options.includes(r.id));
+      return roleResources;
     }
 
-    if (!role_options || role_options.length === 0) {
-      return STAFF_ROLES;
+    return STAFF_ROLES.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description ?? "",
+      iconValue: getIconKeyFromComponent(r.icon),
+      icon: r.icon,
+      color: r.color,
+    }));
+  }, [roles]);
+
+  const availableRoles = useMemo(() => {
+    const roleSet = new Set<string>();
+    const merged: RoleItem[] = [];
+    const allowAll = !role_options || role_options.length === 0;
+    const allowRole = (roleId: string) =>
+      allowAll || role_options?.includes(roleId);
+    const addRole = (item: RoleItem) => {
+      if (!allowRole(item.id)) return;
+      if (roleSet.has(item.id)) return;
+      roleSet.add(item.id);
+      merged.push(item);
+    };
+
+    baseRoles.forEach(addRole);
+    localRoles.forEach(addRole);
+
+    return merged.map((item) => {
+      const override = roleOverrides[item.id];
+      if (!override) return item;
+      const iconKey = override.iconValue || item.iconValue;
+      const IconComponent = PERSONA_ICON_MAP[iconKey] ?? User;
+      return {
+        ...item,
+        name: override.name || item.name,
+        description: override.description || item.description,
+        iconValue: iconKey,
+        icon: IconComponent,
+        color: normalizeHex(override.color) || item.color,
+      };
+    });
+  }, [baseRoles, localRoles, role_options, roleOverrides]);
+
+  const colorSwatches = useMemo(() => {
+    const colors = new Set<string>();
+    STAFF_ROLES.forEach((r) => colors.add(r.color));
+    baseRoles.forEach((r) => colors.add(r.color));
+    localRoles.forEach((r) => colors.add(r.color));
+    return Array.from(colors);
+  }, [baseRoles, localRoles]);
+
+  const canAddCustomRole = useMemo(() => {
+    if (disabled) return false;
+    if (role_options && role_options.length > 0) {
+      return role_options.includes("custom");
     }
-    return STAFF_ROLES.filter((r) => role_options.includes(r.id));
-  }, [role_options, roles]);
+    return true;
+  }, [disabled, role_options]);
+
+  const hasCustomRole = useMemo(
+    () => availableRoles.some((r) => r.id === "custom"),
+    [availableRoles]
+  );
+
+  const defaultCustomRole = useMemo(() => {
+    const baseCustom = STAFF_ROLES.find((r) => r.id === "custom");
+    if (!baseCustom) {
+      return {
+        name: "Custom",
+        description: "Custom role",
+        iconValue: "User",
+        color: "#64748b",
+      };
+    }
+    return {
+      name: baseCustom.name,
+      description: baseCustom.description ?? "",
+      iconValue: getIconKeyFromComponent(baseCustom.icon),
+      color: baseCustom.color,
+    };
+  }, []);
 
   const filteredRoles = useMemo(() => {
     let roles = availableRoles;
@@ -99,11 +354,7 @@ export function Roles({
       roles = roles.filter((r) => r.id === role);
     }
 
-    return [...roles].sort((a, b) => {
-      if (a.id === role) return -1;
-      if (b.id === role) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    return [...roles];
   }, [availableRoles, searchTerm, showSelectedFilter, role]);
 
   if (!show_roles) {
@@ -126,6 +377,7 @@ export function Roles({
         renderItem={(item, isSelected) => {
           const IconComponent = item.icon;
           const gradientStyle = generateGradientFromHex(item.color);
+          const isEditing = editingRoleId === item.id;
 
           return (
             <div
@@ -136,6 +388,102 @@ export function Roles({
                 isSelected && "ring-2 ring-primary bg-accent"
               )}
             >
+              {!disabled && (
+                <Popover
+                  open={isEditing}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setEditingRoleId(null);
+                      setEditingDraft(null);
+                    }
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 left-2 h-7 w-7"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setEditingRoleId(item.id);
+                        setEditingDraft({
+                          name: item.name,
+                          description: item.description,
+                          iconValue: item.iconValue,
+                          color: item.color,
+                        });
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-[320px]"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {editingDraft && (
+                      <div className="space-y-3">
+                        <RoleEditor
+                          draft={editingDraft}
+                          onChange={setEditingDraft}
+                          iconOptions={ICON_OPTIONS}
+                          colorSwatches={colorSwatches}
+                          disabled={disabled}
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setEditingRoleId(null);
+                              setEditingDraft(null);
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (!editingDraft || !editingRoleId) return;
+                              const normalized = {
+                                name: editingDraft.name.trim() || item.name,
+                                description:
+                                  editingDraft.description.trim() ||
+                                  item.description,
+                                iconValue:
+                                  editingDraft.iconValue || item.iconValue,
+                                color:
+                                  normalizeHex(editingDraft.color) ||
+                                  item.color,
+                              };
+                              setRoleOverrides((prev) => ({
+                                ...prev,
+                                [editingRoleId]: normalized,
+                              }));
+                              onRoleResourceChange?.(editingRoleId, {
+                                name: normalized.name,
+                                description: normalized.description,
+                                icon_value: normalized.iconValue,
+                                color_hex: normalized.color,
+                              });
+                              setEditingRoleId(null);
+                              setEditingDraft(null);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              )}
               {isSelected && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
@@ -163,6 +511,86 @@ export function Roles({
         emptyMessage={emptyMessage}
         disabled={disabled}
       />
+      {!disabled && canAddCustomRole && !hasCustomRole && (
+        <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3">
+          {isAddingCustomRole ? (
+            <div className="space-y-3">
+              <RoleEditor
+                draft={newCustomDraft}
+                onChange={setNewCustomDraft}
+                iconOptions={ICON_OPTIONS}
+                colorSwatches={colorSwatches}
+                disabled={disabled}
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsAddingCustomRole(false);
+                    setNewCustomDraft(defaultCustomRole);
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const normalized = {
+                      name: newCustomDraft.name.trim() || "Custom",
+                      description: newCustomDraft.description.trim(),
+                      iconValue: newCustomDraft.iconValue || "User",
+                      color:
+                        normalizeHex(newCustomDraft.color) || "#64748b",
+                    };
+                    setLocalRoles((prev) => [
+                      ...prev,
+                      {
+                        id: "custom",
+                        name: normalized.name,
+                        description: normalized.description,
+                        iconValue: normalized.iconValue,
+                        icon:
+                          PERSONA_ICON_MAP[normalized.iconValue] ?? User,
+                        color: normalized.color,
+                      },
+                    ]);
+                    setRoleOverrides((prev) => ({
+                      ...prev,
+                      custom: normalized,
+                    }));
+                    onRoleResourceChange?.("custom", {
+                      name: normalized.name,
+                      description: normalized.description,
+                      icon_value: normalized.iconValue,
+                      color_hex: normalized.color,
+                    });
+                    onRoleChange("custom");
+                    setIsAddingCustomRole(false);
+                    setNewCustomDraft(defaultCustomRole);
+                  }}
+                >
+                  Add role
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setIsAddingCustomRole(true);
+                setNewCustomDraft(defaultCustomRole);
+              }}
+              className="flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add custom role
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

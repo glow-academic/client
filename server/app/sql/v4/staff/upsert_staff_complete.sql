@@ -114,10 +114,12 @@ existing_profiles AS (
     -- Find existing profiles by email in profile_emails table
     SELECT DISTINCT ON (pe_exp.primary_email)
         pe.profile_id as id,
+        p.group_id,
         pe.email,
         pe_exp.profile_idx
     FROM profiles_expanded pe_exp
     LEFT JOIN profile_emails pe ON pe.email = pe_exp.primary_email AND pe.active = true
+    LEFT JOIN profile_artifact p ON p.id = pe.profile_id
     WHERE pe.profile_id IS NOT NULL
 ),
 all_emails_expanded AS (
@@ -147,24 +149,44 @@ profile_upsert_with_idx AS (
     LEFT JOIN existing_profiles ep ON ep.profile_idx = pe.profile_idx
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pe.profile_idx AND rv.can_assign = true)
 ),
+placeholder_call_id AS (
+    SELECT id FROM calls LIMIT 1
+),
 -- Insert all unique names INTO names_resource table
 names_resources AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT DISTINCT pwi.name, NOW(), NOW()
+    INSERT INTO names_resource (name, created_at, updated_at, call_id)
+    SELECT DISTINCT pwi.name, NOW(), NOW(), (SELECT id FROM placeholder_call_id)
     FROM profile_upsert_with_idx pwi
     WHERE pwi.name IS NOT NULL AND pwi.name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
+new_groups AS (
+    SELECT
+        pwi.profile_id,
+        uuidv7() as group_id
+    FROM profile_upsert_with_idx pwi
+    WHERE pwi.will_create = true
+),
+insert_groups AS (
+    INSERT INTO groups (id, created_at, updated_at)
+    SELECT ng.group_id, NOW(), NOW()
+    FROM new_groups ng
+    RETURNING id
+),
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, updated_at
+        id, group_id, updated_at
     )
     SELECT
         pwi.profile_id,
+        COALESCE(ep.group_id, ng.group_id),
         NOW()
     FROM profile_upsert_with_idx pwi
+    LEFT JOIN existing_profiles ep ON ep.profile_idx = pwi.profile_idx
+    LEFT JOIN new_groups ng ON ng.profile_id = pwi.profile_id
+    LEFT JOIN insert_groups ig ON ig.id = ng.group_id
     ON CONFLICT (id) DO UPDATE SET
         updated_at = NOW()
     RETURNING id
@@ -172,7 +194,7 @@ profile_upsert AS (
 -- Insert/update role via profile_roles junction
 role_resource_upsert AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT DISTINCT pwi.role::profile_role, NOW(), NOW(), true, false, false, NULL::uuid
+    SELECT DISTINCT pwi.role::profile_role, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     FROM profile_upsert_with_idx pwi
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()

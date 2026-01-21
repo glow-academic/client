@@ -45,6 +45,7 @@ async function getProfileReportsFilters(searchParams?: URLSearchParams) {
   const profileContext = await getLayoutContext({
     body: {},
   });
+  const actorProfileId = profileContext.actual_id || profileContext.id || null;
 
   // Compute startDate using same logic as analytics context
   let startDate: Date;
@@ -106,6 +107,7 @@ async function getProfileReportsFilters(searchParams?: URLSearchParams) {
     department_ids: departmentIds,
     roles,
     simulation_filters: filters.simulationFilters,
+    actor_profile_id: actorProfileId,
   };
 }
 
@@ -143,7 +145,9 @@ export async function generateMetadata(
         department_ids: profileContext.department_ids || [],
         roles: profileContext.scoped_roles || [],
         simulation_filters: ["general"],
-        profile_id: profileId,
+        actor_profile_id:
+          profileContext.actual_id || profileContext.id || profileId,
+        target_profile_id: profileId,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     });
@@ -199,7 +203,8 @@ export default async function ReportsPage({
     department_ids: defaultFilters.department_ids,
     roles: defaultFilters.roles,
     simulation_filters: defaultFilters.simulation_filters,
-    profile_id: profileId, // Required for reports overview (snake_case for API)
+    actor_profile_id: defaultFilters.actor_profile_id || profileId,
+    target_profile_id: profileId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 

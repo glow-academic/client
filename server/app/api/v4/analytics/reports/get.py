@@ -62,19 +62,24 @@ async def get_reports(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
-        profile_id = http_request.state.profile_id
-        if not profile_id:
+        # Get actor profile_id from header (set by router-level dependency)
+        actor_profile_id = http_request.state.profile_id
+        if not actor_profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
+            )
+        if not request.target_profile_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Target profile ID is required for reports.",
             )
 
         # Convert API request to SQL params (add profile_id from header)
         # Note: request fields are snake_case (start_date, end_date, etc.)
         # SQL handles date conversion from text to timestamptz - no manual parsing needed
         overview_params = GetReportsOverviewSqlParams(
-            **request.model_dump(), profile_id=profile_id
+            **request.model_dump(),
         )
         sql_params = overview_params.to_tuple()
 
@@ -106,7 +111,7 @@ async def get_reports(
                 "sort_order": "desc",
             })
             history_params = GetReportsHistorySqlParams(
-                **history_request_dict, profile_id=profile_id
+                **history_request_dict,
             )
             history_result = cast(
                 GetReportsHistorySqlRow,
@@ -119,7 +124,10 @@ async def get_reports(
 
         # Set audit context using actor_name from SQL result
         if overview_result.actor_name:
-            audit_set(http_request, actor={"name": overview_result.actor_name, "id": profile_id})
+            audit_set(
+                http_request,
+                actor={"name": overview_result.actor_name, "id": actor_profile_id},
+            )
 
         # Merge history data into overview response
         # Convert overview result to dict, replace history with history data

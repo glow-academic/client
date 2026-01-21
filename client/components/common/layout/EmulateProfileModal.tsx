@@ -55,6 +55,10 @@ export function EmulateProfileModal({
   switchEffectiveProfile,
 }: EmulateProfileModalProps) {
   const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+  const normalizedPrefix = appPrefix
+    ? `/${appPrefix.replace(/^\/+|\/+$/g, "")}`
+    : "";
+  const callbackUrl = normalizedPrefix ? `${normalizedPrefix}/` : "/";
   const { activeProfile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
@@ -219,9 +223,13 @@ export function EmulateProfileModal({
       );
 
       onOpenChange(false);
+      if (result.redirectUrl) {
+        window.location.assign(result.redirectUrl);
+        return;
+      }
       await signIn(
         "keycloak",
-        { callbackUrl: `${appPrefix}/` },
+        { callbackUrl },
         {
           kc_idp_hint: `default-idp-profile-${selectedProfileId}`,
           login_hint: result.grantId,

@@ -9,8 +9,6 @@ import type {
   CreateFeedbackOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
-  StopEmulationIn,
-  StopEmulationOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
@@ -81,7 +79,6 @@ export interface UnifiedSidebarProps
   switchEffectiveProfile: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
-  stopEmulation: (input: StopEmulationIn) => Promise<StopEmulationOut>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
     input: SearchSimulatableProfilesIn
@@ -124,7 +121,6 @@ export function UnifiedSidebar({
   activeSection,
   onSectionChange,
   switchEffectiveProfile,
-  stopEmulation,
   createFeedback,
   searchSimulatableProfiles,
   ...props
@@ -527,26 +523,6 @@ export function UnifiedSidebar({
     [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
-  // Handle exit emulation
-  const handleExitEmulation = useCallback(async () => {
-    if (!activeProfile?.id) return;
-
-    try {
-      await stopEmulation({ body: {} });
-
-      toast.success("Emulation exited successfully");
-      await federatedLogout();
-    } catch {
-      toast.error("Failed to exit emulation");
-    }
-  }, [activeProfile?.id, stopEmulation, federatedLogout]);
-
-  // Check if currently emulating
-  const isEmulating =
-    activeProfile &&
-    effectiveProfile &&
-    activeProfile.id !== effectiveProfile.id;
-
   // Check if user can emulate (instructional and higher, and must be authenticated)
   // Guest/default account users can't emulate even if they have the right role
   const canEmulate =
@@ -675,18 +651,10 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Emulate or Exit Emulation - Hidden in full emulation mode */}
+                  {/* Emulate - Hidden in full emulation mode */}
                   {!isFullEmulation && (
                     <>
-                      {isEmulating ? (
-                        <>
-                          <DropdownMenuItem onClick={handleExitEmulation}>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Exit Emulation
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </>
-                      ) : canEmulate ? (
+                      {canEmulate ? (
                         <>
                           <DropdownMenuItem
                             onClick={() => setIsEmulateModalOpen(true)}

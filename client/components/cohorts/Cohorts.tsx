@@ -48,6 +48,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface CohortsProps {
   // Server-provided data (for server-side rendering)
@@ -407,73 +413,96 @@ export default function Cohorts({
           </div>
           <div className="flex items-center gap-1">
             {cohort.can_edit ? (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`edit-${cohort.cohort_id}`}
-                onClick={() => cohort.cohort_id && handleEdit(cohort.cohort_id)}
-                {...(cohort.name
-                  ? { "aria-label": `Edit ${cohort.name}` }
-                  : {})}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`edit-${cohort.cohort_id}`}
+                    onClick={() =>
+                      cohort.cohort_id && handleEdit(cohort.cohort_id)
+                    }
+                    {...(cohort.name
+                      ? { "aria-label": `Edit ${cohort.name}` }
+                      : {})}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit</TooltipContent>
+              </Tooltip>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`view-${cohort.cohort_id}`}
-                onClick={() => cohort.cohort_id && handleView(cohort.cohort_id)}
-                {...(cohort.name
-                  ? { "aria-label": `View ${cohort.name}` }
-                  : {})}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`view-${cohort.cohort_id}`}
+                    onClick={() =>
+                      cohort.cohort_id && handleView(cohort.cohort_id)
+                    }
+                    {...(cohort.name
+                      ? { "aria-label": `View ${cohort.name}` }
+                      : {})}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View</TooltipContent>
+              </Tooltip>
             )}
             {cohort.can_duplicate && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  cohort.cohort_id &&
-                  cohort.name &&
-                  handleDuplicate(cohort.cohort_id, cohort.name)
-                }
-                disabled={
-                  !cohort.cohort_id ||
-                  isDuplicating === cohort.cohort_id ||
-                  false // No pending state for server action
-                }
-                {...(cohort.name
-                  ? { "aria-label": `Duplicate ${cohort.name}` }
-                  : {})}
-                data-testid="btn-duplicate-cohort"
-                {...(cohort.name ? { title: cohort.name } : {})}
-              >
-                {cohort.cohort_id && isDuplicating === cohort.cohort_id ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      cohort.cohort_id &&
+                      cohort.name &&
+                      handleDuplicate(cohort.cohort_id, cohort.name)
+                    }
+                    disabled={
+                      !cohort.cohort_id ||
+                      isDuplicating === cohort.cohort_id ||
+                      false // No pending state for server action
+                    }
+                    {...(cohort.name
+                      ? { "aria-label": `Duplicate ${cohort.name}` }
+                      : {})}
+                    data-testid="btn-duplicate-cohort"
+                  >
+                    {cohort.cohort_id && isDuplicating === cohort.cohort_id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Duplicate</TooltipContent>
+              </Tooltip>
             )}
             {cohort.can_delete && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`delete-${cohort.cohort_id}`}
-                onClick={() =>
-                  cohort.cohort_id &&
-                  cohort.name &&
-                  handleDeleteClick(cohort.cohort_id, cohort.name)
-                }
-                {...(cohort.name
-                  ? { "aria-label": `Delete ${cohort.name}` }
-                  : {})}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`delete-${cohort.cohort_id}`}
+                    onClick={() =>
+                      cohort.cohort_id &&
+                      cohort.name &&
+                      handleDeleteClick(cohort.cohort_id, cohort.name)
+                    }
+                    {...(cohort.name
+                      ? { "aria-label": `Delete ${cohort.name}` }
+                      : {})}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete</TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -514,7 +543,8 @@ export default function Cohorts({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
       {cohorts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground">No cohorts found</p>
@@ -639,6 +669,7 @@ export default function Cohorts({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

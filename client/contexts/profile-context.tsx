@@ -171,23 +171,6 @@ export function ProfileProviderClient({
   // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
   // However, we handle null gracefully for edge cases and loading states.
   // Construct profile objects from flat fields in LayoutContextResponse
-  const bootstrapProfile = useMemo<ProfileItem | null>(() => {
-    if (!initial) return null;
-    return {
-      id: initial.actual_id ?? "",
-      name: initial.actual_name ?? null,
-      emails: initial.actual_emails ?? [],
-      primary_email: initial.actual_primary_email ?? null,
-      role: initial.actual_role ?? "guest",
-      active: initial.actual_active ?? false,
-      req_per_day: initial.actual_req_per_day ?? null,
-      last_login: initial.actual_last_login ?? null,
-      last_active: initial.actual_last_active ?? null,
-      created_at: initial.actual_created_at ?? null,
-      updated_at: initial.actual_updated_at ?? null,
-      primary_department_id: initial.actual_primary_department_id ?? null,
-    };
-  }, [initial]);
   const effectiveProfile = useMemo<ProfileItem | null>(() => {
     if (!initial) return null;
     return {
@@ -345,47 +328,9 @@ export function ProfileProviderClient({
       : allDepartmentIds;
   }, [selectedDepartmentIds, initial?.department_ids]);
 
-  // Determine if we're in full emulation mode (when "Emulate" button was pressed)
-  const isFullEmulation = useMemo(() => {
-    return Boolean(
-      bootstrapProfile &&
-        effectiveProfile &&
-        effectiveProfile.id !== bootstrapProfile.id &&
-        sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation
-    );
-  }, [
-    bootstrapProfile,
-    effectiveProfile,
-    sessionSnapshot.emulationTTL,
-    sessionSnapshot.fullEmulation,
-  ]);
-
-  const resolvedActiveProfile = useMemo<ProfileItem | null>(() => {
-    // With server-side access control, if bootstrapProfile is null, user shouldn't be here
-    // (handled by layout). However, handle null gracefully for edge cases.
-    if (!bootstrapProfile) return null;
-
-    // Three states:
-    // 1. Normal: activeProfile = bootstrapProfile, effectiveProfile = bootstrapProfile
-    // 2. Half emulation: activeProfile = bootstrapProfile, effectiveProfile = emulated profile
-    // 3. Full emulation: activeProfile = effectiveProfile (emulated profile), effectiveProfile = emulated profile
-    if (isFullEmulation && effectiveProfile) {
-      return effectiveProfile; // Full emulation: use emulated profile as active
-    } else {
-      return bootstrapProfile; // Normal or half emulation: use user's actual profile as active
-    }
-  }, [bootstrapProfile, effectiveProfile, isFullEmulation]);
-
-  const simulatedProfile = useMemo<ProfileItem | null>(() => {
-    if (!effectiveProfile || !bootstrapProfile) return null;
-    // If effective profile differs from bootstrapProfile, we are simulating
-    // simulatedProfile represents the profile we're emulating (effectiveProfile)
-    if (effectiveProfile.id !== bootstrapProfile.id) {
-      return effectiveProfile;
-    }
-    return null;
-  }, [bootstrapProfile, effectiveProfile]);
+  const isFullEmulation = false;
+  const resolvedActiveProfile = effectiveProfile;
+  const simulatedProfile: ProfileItem | null = null;
 
   const navigateToDefault = useCallback(
     (role: ProfileRole) => {
@@ -490,11 +435,7 @@ export function ProfileProviderClient({
     activeProfile: resolvedActiveProfile,
     simulatedProfile,
     effectiveProfile: effectiveProfile ?? resolvedActiveProfile ?? null,
-    isSimulating: !!(
-      bootstrapProfile &&
-      effectiveProfile &&
-      effectiveProfile.id !== bootstrapProfile.id
-    ),
+    isSimulating: false,
     isFullEmulation,
     isLoading: false, // Data comes from server, always available
     isAuthenticated: sessionSnapshot.isAuthenticated,

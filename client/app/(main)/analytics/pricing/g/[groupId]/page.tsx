@@ -58,7 +58,7 @@ export default async function PricingGroupPage({
   // Access control is handled server-side in layout
   // Get profileId from session
   const session = await getSession();
-  const profileId = session?.effectiveProfileId;
+  const profileId = session?.user?.profileId;
 
   if (!profileId || !groupId) {
     // This should not happen due to server-side access control, but handle gracefully

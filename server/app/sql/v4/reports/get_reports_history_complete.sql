@@ -2,7 +2,8 @@
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
--- Parameters: start_date, end_date, profile_id (required), cohort_ids, department_ids, roles (kept for compatibility, not used),
+-- Parameters: start_date, end_date, actor_profile_id (required), target_profile_id (required),
+--            cohort_ids, department_ids, roles (kept for compatibility, not used),
 --            simulation_filters, search, profile_ids, simulation_ids, scenario_ids, infinite_mode, sort_by, sort_order, page_size, offset
 -- Returns: Paginated history data with options arrays
 -- 1) Drop function first (breaks dependency on types)
@@ -78,7 +79,8 @@ CREATE TYPE types.q_reports_history_v4_filter_option AS (
 CREATE OR REPLACE FUNCTION api_get_reports_history_v4(
     start_date text,
     end_date text,
-    profile_id uuid,
+    actor_profile_id uuid,
+    target_profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     roles profile_role[] DEFAULT ARRAY[]::profile_role[],
@@ -113,7 +115,8 @@ WITH params AS (
     SELECT 
         (start_date::timestamptz) AS start_date,
         (end_date::timestamptz) AS end_date,
-        profile_id AS profile_id,
+        actor_profile_id AS actor_profile_id,
+        target_profile_id AS target_profile_id,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
@@ -138,7 +141,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile_artifact ON profile_artifact.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.actor_profile_id
 ),
 -- Expanded cohort list: union of provided cohortIds + profileId cohorts (reports always filters by profile)
 expanded_history_cohort_ids AS (
@@ -149,7 +152,7 @@ expanded_history_cohort_ids AS (
         UNION
         SELECT cp.cohort_id
         FROM params p
-        JOIN profile_cohorts cp ON cp.profile_id = p.profile_id
+        JOIN profile_cohorts cp ON cp.profile_id = p.target_profile_id
     ) combined
 ),
 -- Filter attempts by date, profile, cohorts, departments
@@ -180,7 +183,7 @@ history_attempts AS (
     WHERE sa.created_at >= (SELECT start_date FROM params)
       AND sa.created_at <= (SELECT end_date FROM params)
       -- Reports always filters by profile_id (required parameter)
-      AND ap.profile_id = (SELECT profile_id FROM params)
+      AND ap.profile_id = (SELECT target_profile_id FROM params)
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (

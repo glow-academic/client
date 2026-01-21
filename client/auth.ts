@@ -154,31 +154,8 @@ export const {
         }
 
         if (existingProfile) {
-          // Use auth/upsert endpoint to update existing profile
-          // Note: last_login and last_active are not supported by upsert endpoint
-          // These may need to be handled separately or the endpoint extended
-          const profileName = (user.name ?? "").trim() || "Unknown User";
-          try {
-            // Use auth/upsert endpoint to update existing profile
-            // profile_id_new is optional - SQL finds existing profile by email and uses that ID
-            await api.post("/auth/upsert", {
-              body: {
-                name: profileName,
-                emails: [user.email || ""],
-                role: existingProfile.role || "guest",
-                primary_email_index: 0,
-                active: true,
-                cohort_ids: [],
-                department_ids: [],
-              },
-            });
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to update profile ${existingProfile.id}:`,
-              error instanceof Error ? error.message : String(error)
-            );
-          }
+          // Avoid profile upserts here; they clear cohorts/departments/emails.
+          // Existing profiles should be left untouched during sign-in.
         } else {
           // Create new profile with guest role
           await createGuestProfile(user.email, user.name);
@@ -203,9 +180,6 @@ export const {
             return;
           }
 
-          const profileName =
-            (profile?.name || user.name || "").trim() || "Unknown User";
-
           // V3 API - fetch profile by email
           let existingProfile = null;
           try {
@@ -225,29 +199,8 @@ export const {
           }
 
           if (existingProfile) {
-            // Use auth/upsert endpoint to update profile
-            // Note: last_login and last_active are not supported by upsert endpoint
-            // These may need to be handled separately or the endpoint extended
-            // profile_id_new is optional - SQL finds existing profile by email and uses that ID
-            try {
-              await api.post("/auth/upsert", {
-                body: {
-                  name: profileName,
-                  emails: [user.email],
-                  role: existingProfile.role || "guest",
-                  primary_email_index: 0,
-                  active: true,
-                  cohort_ids: [],
-                  department_ids: [],
-                },
-              });
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error(
-                `Failed to update profile ${existingProfile.id}:`,
-                error instanceof Error ? error.message : String(error)
-              );
-            }
+            // Avoid profile upserts here; they clear cohorts/departments/emails.
+            // Existing profiles should be left untouched during sign-in.
           }
         }
       } catch {
@@ -256,8 +209,8 @@ export const {
     },
   },
   callbacks: {
-    // 🔑 Put identity & emulation into the JWT
-    async jwt({ token, user, account, trigger, session }) {
+    // 🔑 Put identity into the JWT
+    async jwt({ token, user, account, trigger: _trigger, session: _session }) {
       // Save the ID Token to the JWT on initial sign-in
       if (account && account["id_token"]) {
         token["id_token"] = account["id_token"];
@@ -320,35 +273,11 @@ export const {
         if (profile) {
           token["profileId"] = profile.id;
           token["role"] = profile.role || "guest"; // Ensure role defaults to guest
-          // initialize effectiveProfileId to self
-          token["effectiveProfileId"] =
-            token["effectiveProfileId"] ?? profile.id;
         } else {
           // If profile still doesn't exist after creation attempt, set default role
           // This ensures the user can still authenticate even if profile creation failed
           token["role"] = token["role"] || "guest";
         }
-      }
-
-      // Accept client/server updates (trigger: "update")
-      if (trigger === "update" && session) {
-        if (typeof session.effectiveProfileId === "string") {
-          token["effectiveProfileId"] = session.effectiveProfileId;
-        }
-        if ("emulationTTL" in session) {
-          token["emulationTTL"] =
-            (session.emulationTTL as number | null) ?? null;
-        }
-        if ("fullEmulation" in session) {
-          token["fullEmulation"] = !!session.fullEmulation;
-        }
-      }
-
-      // TTL auto-revert (hardening)
-      if (token["emulationTTL"] && Date.now() > Number(token["emulationTTL"])) {
-        token["effectiveProfileId"] = token["profileId"] ?? null;
-        token["fullEmulation"] = false; // also clear fullEmulation
-        token["emulationTTL"] = null;
       }
 
       return token;
@@ -377,13 +306,6 @@ export const {
           session.user.profileId = profileId;
         }
       }
-
-      session.effectiveProfileId =
-        (token["effectiveProfileId"] as string) ??
-        (token["profileId"] as string) ??
-        null;
-      session.emulationTTL = (token["emulationTTL"] as number | null) ?? null;
-      session.fullEmulation = !!(token["fullEmulation"] as boolean);
 
       // Pass the ID Token to the client for silent logout
       if (token["id_token"]) {

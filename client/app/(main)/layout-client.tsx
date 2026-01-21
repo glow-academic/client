@@ -46,8 +46,6 @@ import type {
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SettingsActiveClient,
-  StopEmulationIn,
-  StopEmulationOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
@@ -57,7 +55,6 @@ function MainLayoutContent({
   children,
   attemptData,
   switchEffectiveProfileAction,
-  stopEmulationAction,
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
@@ -67,7 +64,6 @@ function MainLayoutContent({
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
-  stopEmulationAction: (input: StopEmulationIn) => Promise<StopEmulationOut>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
     input: RefreshAnalyticsIn
@@ -402,7 +398,6 @@ function MainLayoutContent({
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
           switchEffectiveProfile={switchEffectiveProfileAction}
-          stopEmulation={stopEmulationAction}
           createFeedback={createFeedbackAction}
           searchSimulatableProfiles={searchSimulatableProfilesAction}
         />
@@ -483,7 +478,6 @@ export function MainLayoutClient({
   attemptData,
   activeSettings,
   switchEffectiveProfileAction,
-  stopEmulationAction,
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
@@ -496,7 +490,6 @@ export function MainLayoutClient({
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
-  stopEmulationAction: (input: StopEmulationIn) => Promise<StopEmulationOut>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
     input: RefreshAnalyticsIn
@@ -551,7 +544,6 @@ export function MainLayoutClient({
               <MainLayoutContent
                 attemptData={attemptData}
                 switchEffectiveProfileAction={switchEffectiveProfileAction}
-                stopEmulationAction={stopEmulationAction}
                 createFeedbackAction={createFeedbackAction}
                 refreshAnalyticsAction={refreshAnalyticsAction}
                 searchSimulatableProfilesAction={

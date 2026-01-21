@@ -16,7 +16,6 @@ import {
   getLayoutContextData,
   refreshAnalytics,
   searchSimulatableProfiles,
-  stopEmulation,
   switchEffectiveProfile,
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
@@ -74,7 +73,6 @@ export default async function MainLayout({
           attemptData={attemptData}
           activeSettings={activeSettings}
           switchEffectiveProfileAction={switchEffectiveProfile}
-          stopEmulationAction={stopEmulation}
           createFeedbackAction={createFeedback}
           refreshAnalyticsAction={refreshAnalytics}
           searchSimulatableProfilesAction={searchSimulatableProfiles}
@@ -102,7 +100,7 @@ export default async function MainLayout({
   if (!initial || !initial.id || !initial.actual_id) {
     // If we have a session but profile resolution failed, the session is invalid
     // Show access denied with "not-logged-in" reason to prompt re-authentication
-    const reason = session?.effectiveProfileId
+    const reason = session?.user?.profileId
       ? "not-logged-in" // Invalid session - profile doesn't exist
       : "not-logged-in"; // No session at all
     return (
@@ -130,7 +128,6 @@ export default async function MainLayout({
         attemptData={attemptData}
         activeSettings={activeSettings}
         switchEffectiveProfileAction={switchEffectiveProfile}
-        stopEmulationAction={stopEmulation}
         createFeedbackAction={createFeedback}
         refreshAnalyticsAction={refreshAnalytics}
         searchSimulatableProfilesAction={searchSimulatableProfiles}

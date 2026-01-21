@@ -164,11 +164,11 @@ export default async function PracticeCustomPage({
       }
     : null;
 
-  // Get effectiveProfileId from profile context
-  const effectiveProfileId = effectiveProfile?.id;
+  // Get profileId from profile context
+  const profileId = effectiveProfile?.id;
 
   // Check if user is a guest
-  const isGuest = !effectiveProfileId || effectiveProfile?.role === "guest";
+  const isGuest = !profileId || effectiveProfile?.role === "guest";
 
   return (
     <div className="space-y-6">

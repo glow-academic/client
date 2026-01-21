@@ -33,6 +33,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_profile_id uuid;
     v_actor_profile_id uuid;
@@ -194,8 +195,8 @@ BEGIN
     -- Create or UPDATE profile_artifact first
     IF is_create THEN
         -- CREATE path: generate new profile_id
-        INSERT INTO profile_artifact (id, created_at, updated_at)
-        VALUES (gen_random_uuid(), NOW(), NOW())
+        INSERT INTO profile_artifact (id, group_id, created_at, updated_at)
+        VALUES (gen_random_uuid(), v_group_id, NOW(), NOW())
         RETURNING id INTO v_profile_id;
         
         -- Check if primary email already exists (only for create)
@@ -256,10 +257,13 @@ BEGIN
             END as route_ids
         FROM params p
     ),
+    placeholder_call_id AS (
+        SELECT id FROM calls LIMIT 1
+    ),
     -- Insert/update name in names table if provided
     name_resource AS (
-        INSERT INTO names_resource (name, created_at, updated_at)
-        SELECT name, NOW(), NOW()
+        INSERT INTO names_resource (name, created_at, updated_at, call_id)
+        SELECT name, NOW(), NOW(), (SELECT id FROM placeholder_call_id)
         FROM params
         WHERE name IS NOT NULL AND name != ''
         ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
@@ -288,14 +292,14 @@ BEGIN
             updated_at = NOW()
     ),
     -- Insert/update role via profile_roles junction if provided
-    role_resource AS (
-        INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-        SELECT x.role::profile_role, NOW(), NOW(), true, false, false, NULL
-        FROM params x
-        WHERE x.role IS NOT NULL
-        ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
-        RETURNING id as role_id
-    ),
+role_resource AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT x.role::profile_role, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    FROM params x
+    WHERE x.role IS NOT NULL
+    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    RETURNING id as role_id
+),
     profile_role_upsert AS (
         -- Delete old role link if updating
         DELETE FROM profile_roles 
@@ -314,9 +318,9 @@ BEGIN
     ),
     -- Link/update profile active flag
     link_profile_active_flag AS (
-        INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT x.target_profile_id,
+        INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at)
+        SELECT x.target_profile_id,
             f.id,
-            'active'::type_profile_flags,
             x.active,
             NOW(),
             NOW()
@@ -324,8 +328,8 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'active'
           AND x.active IS NOT NULL
-        ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
-            value = x.active,
+        ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET 
+            value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Handle emails if provided
@@ -346,9 +350,6 @@ BEGIN
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND array_length((SELECT emails FROM params), 1) > 0
     ),
-    placeholder_call_id AS (
-        SELECT id FROM calls LIMIT 1
-    ),
     email_resources AS (
         INSERT INTO emails_resource (email, call_id, created_at, updated_at)
         SELECT DISTINCT
@@ -362,9 +363,10 @@ BEGIN
         RETURNING id as email_id, email
     ),
     email_insert AS (
-        INSERT INTO profile_emails (profile_id, email_id, is_primary, active)
+        INSERT INTO profile_emails (profile_id, email, email_id, is_primary, active)
         SELECT 
             x.target_profile_id,
+            er.email,
             er.email_id,
             aed.is_primary,
             true
@@ -373,6 +375,7 @@ BEGIN
         JOIN email_resources er ON er.email = aed.email
         WHERE array_length(x.emails, 1) > 0
         ON CONFLICT (profile_id, email_id) DO UPDATE SET 
+            email = EXCLUDED.email,
             is_primary = EXCLUDED.is_primary,
             active = true,
             updated_at = NOW()
@@ -468,20 +471,31 @@ BEGIN
         WHERE x.requests_per_day IS NOT NULL
         RETURNING id as request_limit_id, requests_per_day
     ),
-    request_limit_upsert AS (
-        INSERT INTO profile_request_limits (profile_id, request_limit_id, active)
+    request_limit_delete AS (
+        DELETE FROM profile_request_limits
+        WHERE profile_id = (SELECT target_profile_id FROM params)
+          AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
+          AND EXISTS (SELECT 1 FROM request_limit_resource)
+    ),
+    request_limit_insert AS (
+        INSERT INTO profile_request_limits (
+            profile_id,
+            request_limit_id,
+            requests_per_day,
+            active,
+            created_at,
+            updated_at
+        )
         SELECT 
             x.target_profile_id,
             rlr.request_limit_id,
-            true
+            rlr.requests_per_day,
+            true,
+            NOW(),
+            NOW()
         FROM params x
         CROSS JOIN request_limit_resource rlr
         WHERE x.requests_per_day IS NOT NULL
-        ON CONFLICT (profile_id)
-        DO UPDATE SET 
-            request_limit_id = EXCLUDED.request_limit_id,
-            active = true,
-            updated_at = NOW()
     )
     SELECT 
         x.target_profile_id AS profile_id,

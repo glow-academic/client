@@ -51,6 +51,7 @@ import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
@@ -479,93 +480,109 @@ export default function Personas({
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               {persona.can_edit ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (persona.persona_id) {
-                      handleEdit(persona.persona_id);
-                    }
-                  }}
-                  aria-label={`Edit persona ${persona.name || "Unnamed"}`}
-                  data-testid="btn-edit-persona"
-                  title={`Edit persona ${persona.name || "Unnamed"}`}
-                  className="h-9 px-3"
-                >
-                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Edit</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (persona.persona_id) {
+                          handleEdit(persona.persona_id);
+                        }
+                      }}
+                      aria-label={`Edit persona ${persona.name || "Unnamed"}`}
+                      data-testid="btn-edit-persona"
+                      className="h-9 px-3"
+                    >
+                      <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Edit</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit</TooltipContent>
+                </Tooltip>
               ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (persona.persona_id) {
-                      handleView(persona.persona_id);
-                    }
-                  }}
-                  aria-label={`View persona ${persona.name || "Unnamed"}`}
-                  data-testid="btn-view-persona"
-                  title={`View persona ${persona.name || "Unnamed"}`}
-                  className="h-9 px-3"
-                >
-                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">View</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (persona.persona_id) {
+                          handleView(persona.persona_id);
+                        }
+                      }}
+                      aria-label={`View persona ${persona.name || "Unnamed"}`}
+                      data-testid="btn-view-persona"
+                      className="h-9 px-3"
+                    >
+                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">View</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View</TooltipContent>
+                </Tooltip>
               )}
               {persona.can_duplicate && persona.persona_id && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (persona.persona_id) {
-                      handleDuplicate(
-                        persona.persona_id,
-                        persona.name || "Unnamed Persona"
-                      );
-                    }
-                  }}
-                  disabled={isDuplicating === persona.persona_id}
-                  aria-busy={
-                    isDuplicating === persona.persona_id ? true : undefined
-                  }
-                  aria-label={`Duplicate persona ${persona.name || "Unnamed"}`}
-                  data-testid="btn-duplicate-persona"
-                  title={`Duplicate persona ${persona.name || "Unnamed"}`}
-                  className="h-9 px-3"
-                >
-                  {isDuplicating === persona.persona_id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
-                  ) : (
-                    <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                  )}
-                  <span className="md:hidden">
-                    {isDuplicating === persona.persona_id
-                      ? "Duplicating..."
-                      : "Duplicate"}
-                  </span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (persona.persona_id) {
+                          handleDuplicate(
+                            persona.persona_id,
+                            persona.name || "Unnamed Persona"
+                          );
+                        }
+                      }}
+                      disabled={isDuplicating === persona.persona_id}
+                      aria-busy={
+                        isDuplicating === persona.persona_id ? true : undefined
+                      }
+                      aria-label={`Duplicate persona ${persona.name || "Unnamed"}`}
+                      data-testid="btn-duplicate-persona"
+                      className="h-9 px-3"
+                    >
+                      {isDuplicating === persona.persona_id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                      ) : (
+                        <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                      )}
+                      <span className="md:hidden">
+                        {isDuplicating === persona.persona_id
+                          ? "Duplicating..."
+                          : "Duplicate"}
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Duplicate</TooltipContent>
+                </Tooltip>
               )}
               {persona.can_delete && persona.persona_id && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (persona.persona_id) {
-                      handleDeleteClick(
-                        persona.persona_id,
-                        persona.name || "Unnamed Persona"
-                      );
-                    }
-                  }}
-                  aria-label={`Delete persona ${persona.name || "Unnamed"}`}
-                  data-testid="btn-delete-persona"
-                  title={`Delete persona ${persona.name || "Unnamed"}`}
-                  className="h-9 px-3"
-                >
-                  <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">Delete</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (persona.persona_id) {
+                          handleDeleteClick(
+                            persona.persona_id,
+                            persona.name || "Unnamed Persona"
+                          );
+                        }
+                      }}
+                      aria-label={`Delete persona ${persona.name || "Unnamed"}`}
+                      data-testid="btn-delete-persona"
+                      className="h-9 px-3"
+                    >
+                      <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Delete</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Delete</TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -591,8 +608,9 @@ export default function Personas({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="space-y-8" data-page="personas-index">
-      <div className="space-y-4">
+    <TooltipProvider>
+      <div className="space-y-8" data-page="personas-index">
+        <div className="space-y-4">
         {/* Toolbar */}
         <div
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
@@ -717,6 +735,7 @@ export default function Personas({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

@@ -560,106 +560,160 @@ export function Scenarios({
             {scenario.generated ? (
               // For generated scenarios: only show preview and duplicate
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid="btn-view-scenario"
-                  onClick={() => scenario.scenario_id && handleView(scenario.scenario_id)}
-                  className="h-9 px-3"
-                >
-                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                  <span className="md:hidden">View</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid="btn-view-scenario"
+                      onClick={() =>
+                        scenario.scenario_id &&
+                        handleView(scenario.scenario_id)
+                      }
+                      className="h-9 px-3"
+                    >
+                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">View</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View</TooltipContent>
+                </Tooltip>
                 {scenario.can_duplicate && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="btn-duplicate-scenario"
-                    onClick={() =>
-                      scenario.scenario_id && handleDuplicate(scenario.scenario_id, scenario.title || "Unnamed Scenario")
-                    }
-                    disabled={isDuplicating === scenario.scenario_id || !scenario.scenario_id}
-                    className="h-9 px-3"
-                  >
-                    {isDuplicating === scenario.scenario_id ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
-                    ) : (
-                      <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                    )}
-                    <span className="md:hidden">
-                      {isDuplicating === scenario.scenario_id
-                        ? "Duplicating..."
-                        : "Duplicate"}
-                    </span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid="btn-duplicate-scenario"
+                        onClick={() =>
+                          scenario.scenario_id &&
+                          handleDuplicate(
+                            scenario.scenario_id,
+                            scenario.title || "Unnamed Scenario"
+                          )
+                        }
+                        disabled={
+                          isDuplicating === scenario.scenario_id ||
+                          !scenario.scenario_id
+                        }
+                        className="h-9 px-3"
+                      >
+                        {isDuplicating === scenario.scenario_id ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                        ) : (
+                          <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                        )}
+                        <span className="md:hidden">
+                          {isDuplicating === scenario.scenario_id
+                            ? "Duplicating..."
+                            : "Duplicate"}
+                        </span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Duplicate</TooltipContent>
+                  </Tooltip>
                 )}
               </>
             ) : (
               // For non-generated scenarios: show edit, duplicate, and delete
               <>
                 {scenario.can_edit ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="btn-edit-scenario"
-                    onClick={() => scenario.scenario_id && handleEdit(scenario.scenario_id)}
-                    className="h-9 px-3"
-                  >
-                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                    <span className="md:hidden">Edit</span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid="btn-edit-scenario"
+                        onClick={() =>
+                          scenario.scenario_id &&
+                          handleEdit(scenario.scenario_id)
+                        }
+                        className="h-9 px-3"
+                      >
+                        <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">Edit</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit</TooltipContent>
+                  </Tooltip>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="btn-view-scenario"
-                    onClick={() => scenario.scenario_id && handleView(scenario.scenario_id)}
-                    className="h-9 px-3"
-                  >
-                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                    <span className="md:hidden">View</span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid="btn-view-scenario"
+                        onClick={() =>
+                          scenario.scenario_id &&
+                          handleView(scenario.scenario_id)
+                        }
+                        className="h-9 px-3"
+                      >
+                        <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">View</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>View</TooltipContent>
+                  </Tooltip>
                 )}
                 {scenario.can_duplicate && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="btn-duplicate-scenario"
-                    onClick={() =>
-                      scenario.scenario_id && handleDuplicate(scenario.scenario_id, scenario.title || "Unnamed Scenario")
-                    }
-                    disabled={isDuplicating === scenario.scenario_id || !scenario.scenario_id}
-                    className="h-9 px-3"
-                  >
-                    {isDuplicating === scenario.scenario_id ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
-                    ) : (
-                      <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                    )}
-                    <span className="md:hidden">
-                      {isDuplicating === scenario.scenario_id
-                        ? "Duplicating..."
-                        : "Duplicate"}
-                    </span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid="btn-duplicate-scenario"
+                        onClick={() =>
+                          scenario.scenario_id &&
+                          handleDuplicate(
+                            scenario.scenario_id,
+                            scenario.title || "Unnamed Scenario"
+                          )
+                        }
+                        disabled={
+                          isDuplicating === scenario.scenario_id ||
+                          !scenario.scenario_id
+                        }
+                        className="h-9 px-3"
+                      >
+                        {isDuplicating === scenario.scenario_id ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                        ) : (
+                          <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                        )}
+                        <span className="md:hidden">
+                          {isDuplicating === scenario.scenario_id
+                            ? "Duplicating..."
+                            : "Duplicate"}
+                        </span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Duplicate</TooltipContent>
+                  </Tooltip>
                 )}
 
                 {scenario.can_delete && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="btn-delete-scenario"
-                    onClick={() =>
-                      scenario.scenario_id && handleDeleteClick(
-                        scenario.scenario_id,
-                        scenario.title || "Unnamed Scenario",
-                      )
-                    }
-                    className="h-9 px-3"
-                  >
-                    <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
-                    <span className="md:hidden">Delete</span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid="btn-delete-scenario"
+                        onClick={() =>
+                          scenario.scenario_id &&
+                          handleDeleteClick(
+                            scenario.scenario_id,
+                            scenario.title || "Unnamed Scenario"
+                          )
+                        }
+                        className="h-9 px-3"
+                      >
+                        <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                        <span className="md:hidden">Delete</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete</TooltipContent>
+                  </Tooltip>
                 )}
               </>
             )}

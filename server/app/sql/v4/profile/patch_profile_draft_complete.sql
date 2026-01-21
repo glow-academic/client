@@ -45,6 +45,8 @@ DECLARE
     v_profile_id uuid := profile_id;
     v_group_id uuid;
     v_role_id uuid;
+    v_department_ids uuid[];
+    v_cohort_ids uuid[];
 BEGIN
     -- Validate resource IDs exist (error if missing and provided)
     IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
@@ -59,12 +61,22 @@ BEGIN
         RAISE EXCEPTION 'Request limit resource not found: %', request_limit_id;
     END IF;
 
-    IF department_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(department_ids) AS department_id
-        WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = department_id)
-    ) THEN
-        RAISE EXCEPTION 'Department resource not found';
+    IF department_ids IS NOT NULL THEN
+        SELECT ARRAY_AGG(COALESCE(dr.id, dr_by_artifact.id) ORDER BY ord)
+        INTO v_department_ids
+        FROM unnest(department_ids) WITH ORDINALITY AS input_id(id, ord)
+        LEFT JOIN departments_resource dr ON dr.id = input_id.id
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.department_id = input_id.id;
+
+        IF EXISTS (
+            SELECT 1
+            FROM unnest(department_ids) WITH ORDINALITY AS input_id(id, ord)
+            LEFT JOIN departments_resource dr ON dr.id = input_id.id
+            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.department_id = input_id.id
+            WHERE dr.id IS NULL AND dr_by_artifact.id IS NULL
+        ) THEN
+            RAISE EXCEPTION 'Department resource not found';
+        END IF;
     END IF;
 
     IF email_ids IS NOT NULL AND EXISTS (
@@ -75,18 +87,28 @@ BEGIN
         RAISE EXCEPTION 'Email resource not found';
     END IF;
 
-    IF cohort_ids IS NOT NULL AND EXISTS (
-        SELECT 1
-        FROM unnest(cohort_ids) AS cohort_id
-        WHERE NOT EXISTS (SELECT 1 FROM cohort_artifact WHERE id = cohort_id)
-    ) THEN
-        RAISE EXCEPTION 'Cohort not found';
+    IF cohort_ids IS NOT NULL THEN
+        SELECT ARRAY_AGG(COALESCE(ca.id, cr.cohort_id) ORDER BY ord)
+        INTO v_cohort_ids
+        FROM unnest(cohort_ids) WITH ORDINALITY AS input_id(id, ord)
+        LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
+        LEFT JOIN cohorts_resource cr ON cr.id = input_id.id;
+
+        IF EXISTS (
+            SELECT 1
+            FROM unnest(cohort_ids) WITH ORDINALITY AS input_id(id, ord)
+            LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
+            LEFT JOIN cohorts_resource cr ON cr.id = input_id.id
+            WHERE ca.id IS NULL AND cr.id IS NULL
+        ) THEN
+            RAISE EXCEPTION 'Cohort not found';
+        END IF;
     END IF;
 
     IF role IS NOT NULL THEN
         SELECT r.id INTO v_role_id
         FROM roles_resource r
-        WHERE r.role = role::profile_role
+        WHERE r.role = api_patch_profile_draft_v4.role::profile_role
         LIMIT 1;
 
         IF v_role_id IS NULL THEN
@@ -161,10 +183,10 @@ BEGIN
                     updated_at = now();
             END IF;
 
-            IF department_ids IS NOT NULL THEN
+            IF v_department_ids IS NOT NULL THEN
                 INSERT INTO draft_departments (draft_id, departments_id, version)
                 SELECT v_draft_id, department_id, v_new_version
-                FROM UNNEST(department_ids) as department_id
+                FROM UNNEST(v_department_ids) as department_id
                 ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
@@ -179,10 +201,10 @@ BEGIN
                     updated_at = now();
             END IF;
 
-            IF cohort_ids IS NOT NULL THEN
+            IF v_cohort_ids IS NOT NULL THEN
                 INSERT INTO draft_cohorts (draft_id, cohorts_id, version)
                 SELECT v_draft_id, cohort_id, v_new_version
-                FROM UNNEST(cohort_ids) as cohort_id
+                FROM UNNEST(v_cohort_ids) as cohort_id
                 ON CONFLICT ON CONSTRAINT draft_cohorts_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
@@ -244,10 +266,10 @@ BEGIN
             updated_at = now();
     END IF;
 
-    IF department_ids IS NOT NULL THEN
+    IF v_department_ids IS NOT NULL THEN
         INSERT INTO draft_departments (draft_id, departments_id, version)
         SELECT v_draft_id, department_id, v_new_version
-        FROM UNNEST(department_ids) as department_id
+        FROM UNNEST(v_department_ids) as department_id
         ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
@@ -262,10 +284,10 @@ BEGIN
             updated_at = now();
     END IF;
 
-    IF cohort_ids IS NOT NULL THEN
+    IF v_cohort_ids IS NOT NULL THEN
         INSERT INTO draft_cohorts (draft_id, cohorts_id, version)
         SELECT v_draft_id, cohort_id, v_new_version
-        FROM UNNEST(cohort_ids) as cohort_id
+        FROM UNNEST(v_cohort_ids) as cohort_id
         ON CONFLICT ON CONSTRAINT draft_cohorts_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();

@@ -94,12 +94,28 @@ primary_email AS (
 ),
 existing_profile AS (
     -- Find existing profile by primary email in profile_emails table
-    SELECT pe.profile_id as id FROM profile_emails pe JOIN emails_resource e ON pe.email_id = e.id WHERE e.email = (SELECT email FROM primary_email) AND pe.active = true LIMIT 1
+    SELECT pe.profile_id as id, p.group_id
+    FROM profile_emails pe
+    JOIN emails_resource e ON pe.email_id = e.id
+    JOIN profile_artifact p ON p.id = pe.profile_id
+    WHERE e.email = (SELECT email FROM primary_email)
+      AND pe.active = true
+    LIMIT 1
+),
+new_group AS (
+    INSERT INTO groups (id, created_at, updated_at)
+    SELECT uuidv7(), NOW(), NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
+      AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    RETURNING id
+),
+placeholder_call_id AS (
+    SELECT id FROM calls LIMIT 1
 ),
 -- Insert/update name in names table
 name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name, NOW(), NOW()
+    INSERT INTO names_resource (name, created_at, updated_at, call_id)
+    SELECT name, NOW(), NOW(), (SELECT id FROM placeholder_call_id)
     FROM params
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
@@ -108,10 +124,11 @@ name_resource AS (
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, updated_at
+        id, group_id, updated_at
     )
     SELECT
         COALESCE((SELECT id FROM existing_profile LIMIT 1), (SELECT profile_id_new FROM params)),  -- Use existing ID if found, else new UUID
+        COALESCE((SELECT group_id FROM existing_profile LIMIT 1), (SELECT id FROM new_group)),
         NOW()
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (id) DO UPDATE SET
@@ -121,7 +138,7 @@ profile_upsert AS (
 -- Insert/update role via profile_roles junction
 role_resource AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT (SELECT role FROM params)::profile_role, NOW(), NOW(), true, false, false, NULL
+    SELECT (SELECT role FROM params)::profile_role, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
     RETURNING id as role_id
@@ -136,6 +153,8 @@ profile_role_insert AS (
     FROM profile_upsert pu
     CROSS JOIN role_resource rr
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    ON CONFLICT (profile_id, role_id) DO UPDATE SET
+        updated_at = NOW()
     RETURNING profile_id
 ),
 -- Link profile to name
@@ -198,9 +217,10 @@ email_resources AS (
 ),
 email_upsert AS (
     -- Link emails to profile via profile_emails junction table
-    INSERT INTO profile_emails (profile_id, email_id, is_primary, active)
+    INSERT INTO profile_emails (profile_id, email, email_id, is_primary, active)
     SELECT 
         pu.id,
+        er.email,
         er.email_id,
         aed.is_primary,
         true
@@ -209,6 +229,7 @@ email_upsert AS (
     JOIN email_resources er ON er.email = aed.email
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id, email_id) DO UPDATE SET
+        email = EXCLUDED.email,
         is_primary = EXCLUDED.is_primary,
         active = true,
         updated_at = NOW()

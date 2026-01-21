@@ -8,17 +8,10 @@ type HeaderLike = {
 };
 
 const PROFILE_ID_HEADER = "x-test-profile-id";
-const EFFECTIVE_PROFILE_ID_HEADER = "x-test-effective-profile-id";
 const SIGNATURE_HEADER = "x-test-signature";
 
 export type TestProfileIds = {
   profileId: string;
-  effectiveProfileId: string;
-};
-
-export type ResolvedProfileIds = {
-  effectiveProfileId: string;
-  actualProfileId: string;
 };
 
 export function validateTestHeaders(
@@ -27,10 +20,9 @@ export function validateTestHeaders(
   const secret =
     process.env["AUTH_SECRET"] || "test_secret_key_for_integration_tests";
   const profileId = headers.get(PROFILE_ID_HEADER)?.trim();
-  const effectiveProfileId = headers.get(EFFECTIVE_PROFILE_ID_HEADER)?.trim();
   const signature = headers.get(SIGNATURE_HEADER)?.trim();
 
-  if (!profileId || !effectiveProfileId || !signature) {
+  if (!profileId || !signature) {
     return null;
   }
 
@@ -42,7 +34,7 @@ export function validateTestHeaders(
   }
 
   const hmac = createHmac("sha256", secret);
-  hmac.update(`${profileId}|${effectiveProfileId}`);
+  hmac.update(profileId);
   const expected = hmac.digest();
 
   if (provided.length !== expected.length) {
@@ -53,13 +45,10 @@ export function validateTestHeaders(
     return null;
   }
 
-  return { profileId, effectiveProfileId };
+  return { profileId };
 }
 
-export function createTestSession({
-  profileId,
-  effectiveProfileId,
-}: TestProfileIds): Session {
+export function createTestSession({ profileId }: TestProfileIds): Session {
   const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
   const baseSession: Session = {
@@ -79,9 +68,6 @@ export function createTestSession({
 
   return {
     ...baseSession,
-    effectiveProfileId,
-    emulationTTL: null,
-    fullEmulation: false,
   } as Session;
 }
 
@@ -102,8 +88,7 @@ export async function checkRouteAccess(
   role?: ProfileRole;
 }> {
   // Check if we have session profile IDs (authenticated user)
-  const hasSessionProfileIds =
-    session?.effectiveProfileId && session?.user?.profileId;
+  const hasSessionProfileIds = session?.user?.profileId;
 
   // If no session profile IDs, user is not logged in
   if (!hasSessionProfileIds) {

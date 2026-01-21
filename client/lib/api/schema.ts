@@ -10550,6 +10550,16 @@ export interface components {
             start_date: string;
             /** End Date */
             end_date: string;
+            /**
+             * Actor Profile Id
+             * Format: uuid
+             */
+            actor_profile_id: string;
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
             /** Cohort Ids */
             cohort_ids?: string[] | null;
             /** Roles */

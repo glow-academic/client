@@ -338,75 +338,110 @@ export function Simulations({
           </div>
           <div className="flex flex-wrap items-center gap-1">
             {simulation.can_edit ? (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="btn-edit-simulation"
-                onClick={() => simulation.simulation_id && handleEdit(simulation.simulation_id)}
-                aria-label={`Edit ${simulation.name || "Simulation"}`}
-                title={`Edit ${simulation.name || "Simulation"}`}
-                className="h-9 px-3"
-              >
-                <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">Edit</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="btn-edit-simulation"
+                    onClick={() =>
+                      simulation.simulation_id &&
+                      handleEdit(simulation.simulation_id)
+                    }
+                    aria-label={`Edit ${simulation.name || "Simulation"}`}
+                    className="h-9 px-3"
+                  >
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit</TooltipContent>
+              </Tooltip>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="btn-view-simulation"
-                onClick={() => simulation.simulation_id && handleEdit(simulation.simulation_id)}
-                aria-label={`View ${simulation.name}`}
-                title={`View ${simulation.name}`}
-                className="h-9 px-3"
-              >
-                <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">View</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="btn-view-simulation"
+                    onClick={() =>
+                      simulation.simulation_id &&
+                      handleEdit(simulation.simulation_id)
+                    }
+                    aria-label={`View ${simulation.name}`}
+                    className="h-9 px-3"
+                  >
+                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">View</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View</TooltipContent>
+              </Tooltip>
             )}
             {simulation.can_duplicate && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="btn-duplicate-simulation"
-                onClick={() =>
-                  simulation.simulation_id && handleDuplicate(simulation.simulation_id, simulation.name || "Simulation")
-                }
-                disabled={isDuplicating === simulation.simulation_id || !simulation.simulation_id}
-                aria-busy={
-                  isDuplicating === simulation.simulation_id ? true : undefined
-                }
-                aria-label={`Duplicate ${simulation.name || "Simulation"}`}
-                title={`Duplicate ${simulation.name || "Simulation"}`}
-                className="h-9 px-3"
-              >
-                {isDuplicating === simulation.simulation_id ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
-                ) : (
-                  <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                )}
-                <span className="md:hidden">
-                  {isDuplicating === simulation.simulation_id
-                    ? "Duplicating..."
-                    : "Duplicate"}
-                </span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="btn-duplicate-simulation"
+                    onClick={() =>
+                      simulation.simulation_id &&
+                      handleDuplicate(
+                        simulation.simulation_id,
+                        simulation.name || "Simulation"
+                      )
+                    }
+                    disabled={
+                      isDuplicating === simulation.simulation_id ||
+                      !simulation.simulation_id
+                    }
+                    aria-busy={
+                      isDuplicating === simulation.simulation_id
+                        ? true
+                        : undefined
+                    }
+                    aria-label={`Duplicate ${simulation.name || "Simulation"}`}
+                    className="h-9 px-3"
+                  >
+                    {isDuplicating === simulation.simulation_id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                    ) : (
+                      <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                    )}
+                    <span className="md:hidden">
+                      {isDuplicating === simulation.simulation_id
+                        ? "Duplicating..."
+                        : "Duplicate"}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Duplicate</TooltipContent>
+              </Tooltip>
             )}
             {simulation.can_delete && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="btn-delete-simulation"
-                onClick={() =>
-                  simulation.simulation_id && handleDeleteClick(simulation.simulation_id, simulation.name || "Simulation")
-                }
-                aria-label={`Delete ${simulation.name || "Simulation"}`}
-                title={`Delete ${simulation.name || "Simulation"}`}
-                className="h-9 px-3"
-              >
-                <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">Delete</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="btn-delete-simulation"
+                    onClick={() =>
+                      simulation.simulation_id &&
+                      handleDeleteClick(
+                        simulation.simulation_id,
+                        simulation.name || "Simulation"
+                      )
+                    }
+                    aria-label={`Delete ${simulation.name || "Simulation"}`}
+                    className="h-9 px-3"
+                  >
+                    <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Delete</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete</TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>

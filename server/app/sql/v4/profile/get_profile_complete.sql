@@ -679,7 +679,7 @@ flag_resource_data AS (
         ) as flag_resource
     FROM params
 ),
--- Department mapping data (only active departments user is linked to)
+-- Department mapping data (all active departments)
 department_mapping_data AS (
     SELECT 
         d.id as department_id,
@@ -688,11 +688,13 @@ department_mapping_data AS (
         COALESCE(pd.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
-    JOIN departments_resource d ON (
-        -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
-        AND
-        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
+    JOIN departments_resource d ON EXISTS (
+        SELECT 1
+        FROM department_flags df
+        JOIN flags_resource f ON df.flag_id = f.id
+        WHERE df.department_id = d.department_id
+          AND f.name = 'active'
+          AND df.value = true
     )
     LEFT JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pd.active = true
 ),

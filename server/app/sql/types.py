@@ -13349,7 +13349,8 @@ class GetReportsHistorySqlParams(BaseModel):
 
     start_date: str
     end_date: str
-    profile_id: UUID
+    actor_profile_id: UUID
+    target_profile_id: UUID
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     roles: Any | None = None
@@ -13368,7 +13369,8 @@ class GetReportsHistorySqlParams(BaseModel):
         return (
             self.start_date,
             self.end_date,
-            self.profile_id,
+            self.actor_profile_id,
+            self.target_profile_id,
             self.cohort_ids,
             self.department_ids,
             self.roles,
@@ -13438,6 +13440,8 @@ class GetReportsHistoryApiRequest(BaseModel):
 
     start_date: str
     end_date: str
+    actor_profile_id: UUID
+    target_profile_id: UUID
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     roles: Any | None = None
@@ -13474,7 +13478,8 @@ class GetReportsOverviewSqlParams(BaseModel):
 
     start_date: str
     end_date: str
-    profile_id: UUID
+    actor_profile_id: UUID
+    target_profile_id: UUID
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     roles: Any | None = None
     simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -13484,7 +13489,8 @@ class GetReportsOverviewSqlParams(BaseModel):
         return (
             self.start_date,
             self.end_date,
-            self.profile_id,
+            self.actor_profile_id,
+            self.target_profile_id,
             self.cohort_ids,
             self.roles,
             self.simulation_filters,
@@ -14039,6 +14045,8 @@ class GetReportsOverviewApiRequest(BaseModel):
 
     start_date: str
     end_date: str
+    actor_profile_id: UUID
+    target_profile_id: UUID
     cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     roles: Any | None = None
     simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]

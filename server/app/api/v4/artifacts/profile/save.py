@@ -11,9 +11,9 @@ from app.main import get_db, transaction
 from app.sql.types import (SaveProfileApiRequest, SaveProfileApiResponse,
                            SaveProfileSqlParams, SaveProfileSqlRow,
                            load_sql_query)
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/profile/save_profile_complete.sql"
@@ -61,8 +61,11 @@ async def save_profile(
             # Map input_profile_id from API request
             params = SaveProfileSqlParams(
                 **request.model_dump(),
-                actor_profile_id=profile_id,
             )
+            # deduplicate parameters
+            params_dict = params.model_dump()
+            params_dict["actor_profile_id"] = profile_id
+            params = SaveProfileSqlParams(**params_dict)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

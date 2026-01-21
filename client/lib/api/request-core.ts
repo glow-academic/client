@@ -50,24 +50,17 @@ export async function doRequest<T>(
   let body: BodyInit | null = null;
   let headers: HeadersInit = init?.headers ?? {};
 
-  // Automatically inject X-Profile-Id and X-Effective-Profile-Id headers when running server-side
-  // These headers are read by the backend instead of requiring profile IDs in request body
+  // Automatically inject X-Profile-Id header when running server-side
+  // This header is read by the backend instead of requiring profile IDs in request body
   if (typeof window === "undefined" && !isFetchingProfileContext) {
     try {
       isFetchingProfileContext = true;
-      const { actualProfileId, effectiveProfileId } =
-        await getValidatedProfileId();
+      const { profileId } = await getValidatedProfileId();
       isFetchingProfileContext = false;
-      if (actualProfileId) {
+      if (profileId) {
         headers = {
           ...headers,
-          "X-Profile-Id": actualProfileId,
-        };
-      }
-      if (effectiveProfileId) {
-        headers = {
-          ...headers,
-          "X-Effective-Profile-Id": effectiveProfileId,
+          "X-Profile-Id": profileId,
         };
       }
     } catch {

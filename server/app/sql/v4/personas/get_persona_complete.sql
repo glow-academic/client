@@ -355,7 +355,7 @@ field_suggestions_data AS (
                 JOIN fields_resource f ON f.id = pf.field_id
                 CROSS JOIN draft_group_data dgd
                 WHERE pf.field_id IS NOT NULL
-                  AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
+                  AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.value = true)
                    AND (
                        -- Option 1: Linked to personas with active=true
                        pf.active = true
@@ -402,9 +402,9 @@ parameter_mapping_data AS (
 field_mapping_data AS (
     SELECT 
         f.id as field_id,
-        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
-        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
+        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_resource_id = f.id LIMIT 1),
         (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pmd.parameter_id LIMIT 1) as parameter_name,
         COALESCE(f.generated, false) as generated,
         -- Add sort priority: suggested fields first (1), then others (2)
@@ -414,18 +414,18 @@ field_mapping_data AS (
         END as sort_priority
     FROM parameter_mapping_data pmd
     CROSS JOIN field_suggestions_data fsd_for_map
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.value = true)
-    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
-    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
+    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_resource_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.value = true)
+    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_resource_id = f.id LIMIT 1)
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'active' AND pf.value = true)
 ),
 -- Valid fields data for new personas (based on departments, similar to documents endpoint)
 valid_fields_data AS (
     SELECT DISTINCT
         f.id as field_id,
-        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
-        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) as parameter_id,
-        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
+        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_resource_id = f.id LIMIT 1) as parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_resource_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
         COALESCE(f.generated, false) as generated,
         -- Add sort priority: suggested fields first (1), then others (2)
         CASE 
@@ -440,8 +440,8 @@ valid_fields_data AS (
         WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.value = TRUE)
           AND EXISTS (SELECT 1 FROM parameter_flags pf2 JOIN flags_resource fl2 ON pf2.flag_id = fl2.id WHERE pf2.parameter_id = p.id AND fl2.name = 'persona_parameter' AND pf2.value = TRUE)
     )
-    LEFT JOIN fields_resource f ON f.id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl3 ON ff.flag_id = fl3.id WHERE ff.field_id = f.id AND fl3.name = 'active' AND ff.value = true)
-    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    LEFT JOIN fields_resource f ON f.id = pf_pf.field_resource_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl3 ON ff.flag_id = fl3.id WHERE ff.field_id = f.field_id AND fl3.name = 'active' AND ff.value = true)
+    LEFT JOIN field_departments fd ON fd.field_id = f.field_id AND fd.active = true
     WHERE x.persona_id IS NULL
       AND f.id IS NOT NULL  -- Filter out NULL fields
       AND (
@@ -449,7 +449,7 @@ valid_fields_data AS (
         (NOT EXISTS (SELECT 1 FROM user_departments) AND up.role = 'superadmin'::profile_role
          AND NOT EXISTS (
              SELECT 1 FROM field_departments fd2 
-             WHERE fd2.field_id = f.id 
+             WHERE fd2.field_id = f.field_id 
                  AND fd2.active = true
          ))
         OR
@@ -459,7 +459,7 @@ valid_fields_data AS (
              -- Field is in a department the user has access to
              EXISTS (
                  SELECT 1 FROM field_departments fd2
-                 WHERE fd2.field_id = f.id
+                 WHERE fd2.field_id = f.field_id
                    AND fd2.active = true
                    AND fd2.department_id IN (SELECT department_id FROM user_departments)
              )
@@ -467,7 +467,7 @@ valid_fields_data AS (
              -- Field is cross-department (not in any department)
              NOT EXISTS (
                  SELECT 1 FROM field_departments fd2 
-                 WHERE fd2.field_id = f.id 
+                 WHERE fd2.field_id = f.field_id 
                  AND fd2.active = true
              )
          ))

@@ -89,7 +89,7 @@ export type SettingsActiveClient = Omit<SettingsWithGuest, "guestProfileId">;
 /** ---- Cached fetch ---- */
 export const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
-    // Profile IDs are automatically injected via X-Profile-Id and X-Effective-Profile-Id headers
+    // Profile IDs are automatically injected via X-Profile-Id header
     // by request-core.ts, so we don't need to pass them in the body anymore.
     // The backend reads them from request.state (set by router-level dependencies).
     // We still accept them in the input for backward compatibility, but they're ignored.
@@ -132,33 +132,19 @@ const getAttemptFull = async (
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
 
-/** ---- Helper to get validated profile IDs (reusable for API calls) ----
- * Gets both actual and effective profile IDs from validated profile context.
- * Reuses getLayoutContext for consistency and caching.
- *
+/** ---- Helper to get validated profile ID (reusable for API calls) ----
  * @param session - Optional session to reuse. If not provided, will fetch session.
- * @returns Object with actualProfileId and effectiveProfileId (both can be null)
+ * @returns Object with profileId (can be null)
  */
 export async function getValidatedProfileId(session?: Session | null): Promise<{
-  actualProfileId: string | null;
-  effectiveProfileId: string | null;
+  profileId: string | null;
 }> {
   const resolvedSession = session ?? (await getSession());
 
-  // Extract profile IDs from session (works for both real and pseudo-sessions)
-  const effectiveProfileId = resolvedSession?.effectiveProfileId || null;
-  const actualProfileId = resolvedSession?.user?.profileId || null;
+  // Extract profile ID from session (works for both real and pseudo-sessions)
+  const profileId = resolvedSession?.user?.profileId || null;
 
-  // If we have session profile IDs, return them directly
-  // No need to call getLayoutContext - headers will be injected automatically by request-core.ts
-  if (effectiveProfileId && actualProfileId) {
-    return {
-      actualProfileId,
-      effectiveProfileId,
-    };
-  }
-
-  return { actualProfileId: null, effectiveProfileId: null };
+  return { profileId };
 }
 
 // Export ProfileItem type derived from server response
@@ -181,9 +167,7 @@ export type ProfileItem = Pick<
 >;
 
 export type SafeSessionSnapshot = {
-  effectiveProfileId: string | null;
-  fullEmulation: boolean;
-  emulationTTL: number | null;
+  profileId: string | null;
   isAuthenticated: boolean; // true if user has real NextAuth session
 };
 
@@ -205,17 +189,14 @@ export async function getLayoutContextData(session?: Session | null) {
   // Create session snapshot with authentication status
   // isAuthenticated distinguishes real sessions (has id_token) from pseudo-sessions (no id_token)
   const snapshot: SafeSessionSnapshot = {
-    effectiveProfileId: resolvedSession?.effectiveProfileId ?? null,
-    fullEmulation: !!resolvedSession?.fullEmulation,
-    emulationTTL: resolvedSession?.emulationTTL ?? null,
+    profileId: resolvedSession?.user?.profileId ?? null,
     // Only authenticated users have id_token (from Keycloak)
     // Sessions without id_token still render a layout context
     isAuthenticated: !!resolvedSession?.id_token,
   };
 
-  // Extract profile IDs from session
-  let effectiveProfileId = resolvedSession?.effectiveProfileId || null;
-  let actualProfileId = resolvedSession?.user?.profileId || null;
+  // Extract profile ID from session
+  let profileId = resolvedSession?.user?.profileId || null;
   let initial: LayoutContextOut | null = null;
 
   // Fetch profile context
@@ -223,8 +204,8 @@ export async function getLayoutContextData(session?: Session | null) {
     initial = await getLayoutContext({
       body: {},
     });
-    if (initial?.id && initial?.actual_id && initial.id !== effectiveProfileId) {
-      effectiveProfileId = initial.id;
+    if (initial?.id) {
+      profileId = initial.id;
     }
   } catch {
     // If context fetch fails (e.g., 403/404), return null
@@ -232,15 +213,9 @@ export async function getLayoutContextData(session?: Session | null) {
     initial = null;
   }
 
-  // Ensure we have profile IDs - use from initial if extraction failed
-  // This handles the case where initial exists but IDs weren't extracted earlier
-  if (initial) {
-    if (!effectiveProfileId && initial.id) {
-      effectiveProfileId = initial.id;
-    }
-    if (!actualProfileId && initial.actual_id) {
-      actualProfileId = initial.actual_id;
-    }
+  // Ensure we have profile ID - use from initial if extraction failed
+  if (initial && !profileId && initial.id) {
+    profileId = initial.id;
   }
 
   // Early return if no valid profile context (user not logged in or invalid session)
@@ -249,8 +224,7 @@ export async function getLayoutContextData(session?: Session | null) {
     // eslint-disable-next-line no-console
     console.log("Returning null initial:", {
       hasInitial: !!initial,
-      effectiveProfileId,
-      actualProfileId,
+      profileId,
       initialEffectiveId: initial?.id,
       initialActualId: initial?.actual_id,
     });
@@ -274,7 +248,7 @@ export async function getLayoutContextData(session?: Session | null) {
 
   // Fetch attempt data if we have an attemptId (using resolved UUID)
   let attemptData: AttemptFullOut | null = null;
-  if (attemptId && effectiveProfileId) {
+  if (attemptId && profileId) {
     try {
       attemptData = await getAttemptFull(attemptId, {
         body: { attempt_id: attemptId },
