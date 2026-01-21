@@ -49,17 +49,10 @@ insert_upload AS (
 final_upload_id AS (
     SELECT COALESCE((SELECT upload_id FROM params), (SELECT new_upload_id FROM insert_upload LIMIT 1)) as upload_id
 ),
-link_upload AS (
-    INSERT INTO video_uploads (video_id, upload_id, active, created_at, updated_at)
-    SELECT p.video_id, fi.upload_id, p.active, NOW(), NOW()
-    FROM params p
-    CROSS JOIN final_upload_id fi
-    ON CONFLICT (video_id, upload_id)
-    DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
-),
 mark_video AS (
     UPDATE videos_resource
     SET completed = TRUE,
+        upload_id = (SELECT upload_id FROM final_upload_id),
         updated_at = NOW()
     WHERE id = (SELECT video_id FROM params)
 )

@@ -35,16 +35,10 @@ WITH upload_row AS (
     VALUES (file_path, mime_type, file_size, NOW(), NOW())
     RETURNING id
 ),
-link_upload AS (
-    INSERT INTO image_uploads (image_id, upload_id, active, created_at, updated_at)
-    SELECT image_id, upload_row.id, TRUE, NOW(), NOW()
-    FROM upload_row
-    ON CONFLICT (image_id, upload_id)
-    DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
-),
 update_image AS (
     UPDATE images_resource
     SET completed = TRUE,
+        upload_id = (SELECT id FROM upload_row),
         updated_at = NOW()
     WHERE id = image_id
     RETURNING id

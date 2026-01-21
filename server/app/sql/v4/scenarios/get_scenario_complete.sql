@@ -504,12 +504,7 @@ problem_statements_array AS (
         ps.updated_at,
         1 as sort_order
     FROM problem_statements_resource ps
-    LEFT JOIN problem_statement_departments psd_dept ON psd_dept.problem_statement_id = ps.id AND psd_dept.active = true
-    WHERE (
-        psd_dept.department_id IN (SELECT id FROM user_departments_rows)
-        OR NOT EXISTS (SELECT 1 FROM problem_statement_departments psd2 WHERE psd2.problem_statement_id = ps.id AND psd2.active = true)
-    )
-    AND NOT EXISTS (
+    WHERE NOT EXISTS (
         SELECT 1
         FROM scenario_all_problem_statements saps
         WHERE saps.problem_statement_id_uuid = ps.id
@@ -1337,8 +1332,7 @@ scenario_videos_array AS (
         CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order,
         v.created_at
     FROM videos_resource v
-    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
-    LEFT JOIN uploads u ON u.id = vu.upload_id
+    LEFT JOIN uploads u ON u.id = v.upload_id
     LEFT JOIN video_departments vd_dept ON vd_dept.video_id = v.id AND vd_dept.active = true
     LEFT JOIN scenario_videos sv ON sv.video_id = v.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
     WHERE v.active = true
@@ -1356,13 +1350,8 @@ scenario_questions_array AS (
         CASE WHEN sq.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order,
         q.created_at
     FROM questions_resource q
-    LEFT JOIN question_departments qd_dept ON qd_dept.question_id = q.id AND qd_dept.active = true
     LEFT JOIN scenario_questions sq ON sq.question_id = q.id AND sq.scenario_id = (SELECT scenario_id FROM params) AND sq.active = true
     WHERE q.active = true
-    AND (
-        qd_dept.department_id IN (SELECT id FROM user_departments_rows)
-        OR NOT EXISTS (SELECT 1 FROM question_departments qd2 WHERE qd2.question_id = q.id AND qd2.active = true)
-    )
 ),
 question_options_array AS (
     SELECT 
@@ -1386,7 +1375,7 @@ question_times_array AS (
 ),
 scenario_images_array AS (
     SELECT 
-        COALESCE(iu.upload_id, i.id) as upload_id,
+        COALESCE(i.upload_id, i.id) as upload_id,
         i.name,
         u.file_path,
         u.mime_type,
@@ -1395,15 +1384,9 @@ scenario_images_array AS (
         i.updated_at,
         CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order
     FROM images_resource i
-    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
-    LEFT JOIN uploads u ON u.id = iu.upload_id
-    LEFT JOIN image_departments id_dept ON id_dept.image_id = i.id AND id_dept.active = true
+    LEFT JOIN uploads u ON u.id = i.upload_id
     LEFT JOIN scenario_images si ON si.image_id = i.id AND si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true
     WHERE i.active = true
-    AND (
-        id_dept.department_id IN (SELECT id FROM user_departments_rows)
-        OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = i.id AND id2.active = true)
-    )
 ),
 scenario_objectives_array AS (
     SELECT 
@@ -1414,13 +1397,7 @@ scenario_objectives_array AS (
         COALESCE(so.idx, 999999) as idx,
         o.created_at
     FROM objectives_resource o
-    LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o.id AND od_dept.active = true
-    LEFT JOIN scenario_objectives so ON so.objective_id = o.id AND so.scenario_id = (SELECT scenario_id FROM params)
-    WHERE (
-        od_dept.department_id IN (SELECT id FROM user_departments_rows)
-        OR NOT EXISTS (SELECT 1 FROM objective_departments od2 WHERE od2.objective_id = o.id AND od2.active = true)
-    )
-),
+    LEFT JOIN scenario_objectives so ON so.objective_id = o.id AND so.scenario_id = (SELECT scenario_id FROM params)),
 objective_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -2812,11 +2789,10 @@ image_mapping_data AS (
         i.name,
         COALESCE(u.file_path, '') as file_path,
         COALESCE(u.mime_type, '') as mime_type,
-        COALESCE(iu.upload_id, i.id) as upload_id,
+        COALESCE(i.upload_id, i.id) as upload_id,
         COALESCE(i.generated, false) as generated
     FROM images_resource i
-    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
-    LEFT JOIN uploads u ON u.id = iu.upload_id
+    LEFT JOIN uploads u ON u.id = i.upload_id
     WHERE i.active = true
 ),
 -- Video mapping data (for videos array)
@@ -2828,11 +2804,10 @@ video_mapping_data AS (
         COALESCE(v.completed, false) as completed,
         COALESCE(u.file_path, '') as file_path,
         COALESCE(u.mime_type, '') as mime_type,
-        COALESCE(vu.upload_id, v.id) as upload_id,
+        COALESCE(v.upload_id, v.id) as upload_id,
         false as generated  -- Videos are not generated resources
     FROM videos_resource v
-    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
-    LEFT JOIN uploads u ON u.id = vu.upload_id
+    LEFT JOIN uploads u ON u.id = v.upload_id
     WHERE v.active = true
 ),
 -- Question mapping data (for questions array)
@@ -3874,11 +3849,6 @@ SELECT
             )
             FROM objective_mapping_data omd
             LEFT JOIN scenario_objectives so2 ON so2.objective_id = omd.id AND so2.scenario_id = (SELECT scenario_id FROM params)
-            LEFT JOIN objective_departments od_dept ON od_dept.objective_id = omd.id AND od_dept.active = true
-            WHERE (
-                od_dept.department_id IN (SELECT id FROM user_departments_rows)
-                OR NOT EXISTS (SELECT 1 FROM objective_departments od3 WHERE od3.objective_id = omd.id AND od3.active = true)
-            )
             LIMIT 100
         ), '{}'::types.q_get_scenario_v4_objective_resource[])
         ELSE '{}'::types.q_get_scenario_v4_objective_resource[]
@@ -3894,11 +3864,10 @@ SELECT
     END as image_ids,
     CASE 
         WHEN sc.images_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((si.image_id, i.name, u.file_path, u.mime_type, COALESCE(iu.upload_id, si.image_id), false)::types.q_get_scenario_v4_image_resource ORDER BY si.created_at)
+            SELECT ARRAY_AGG((si.image_id, i.name, u.file_path, u.mime_type, COALESCE(i.upload_id, si.image_id), false)::types.q_get_scenario_v4_image_resource ORDER BY si.created_at)
             FROM scenario_images si
             JOIN images_resource i ON i.id = si.image_id
-            LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
-            LEFT JOIN uploads u ON u.id = iu.upload_id
+            LEFT JOIN uploads u ON u.id = i.upload_id
             WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
@@ -3922,12 +3891,7 @@ SELECT
             )
             FROM image_mapping_data imd
             LEFT JOIN scenario_images si ON si.image_id = imd.id AND si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true
-            LEFT JOIN image_departments id_dept ON id_dept.image_id = imd.id AND id_dept.active = true
             WHERE (
-                id_dept.department_id IN (SELECT id FROM user_departments_rows)
-                OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = imd.id AND id2.active = true)
-            )
-            AND (
                 (SELECT image_search FROM params LIMIT 1) IS NULL
                 OR LOWER(imd.name) LIKE '%' || LOWER((SELECT image_search FROM params LIMIT 1)) || '%'
             )
@@ -3946,11 +3910,10 @@ SELECT
     END as video_ids,
     CASE 
         WHEN sc.video_enabled THEN COALESCE((
-            SELECT ARRAY_AGG((sv.video_id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(vu.upload_id, sv.video_id), false)::types.q_get_scenario_v4_video_resource ORDER BY sv.created_at)
+            SELECT ARRAY_AGG((sv.video_id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(v.upload_id, sv.video_id), false)::types.q_get_scenario_v4_video_resource ORDER BY sv.created_at)
             FROM scenario_videos sv
             JOIN videos_resource v ON v.id = sv.video_id
-            LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
-            LEFT JOIN uploads u ON u.id = vu.upload_id
+            LEFT JOIN uploads u ON u.id = v.upload_id
             WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]
@@ -4024,12 +3987,6 @@ SELECT
             )
             FROM question_mapping_data qmd
             LEFT JOIN scenario_questions sq ON sq.question_id = qmd.id AND sq.scenario_id = (SELECT scenario_id FROM params) AND sq.active = true
-            LEFT JOIN question_departments qd_dept ON qd_dept.question_id = qmd.id AND qd_dept.active = true
-            WHERE (
-                qd_dept.department_id IN (SELECT id FROM user_departments_rows)
-                OR NOT EXISTS (SELECT 1 FROM question_departments qd2 WHERE qd2.question_id = qmd.id AND qd2.active = true)
-            )
-            LIMIT 100
         ), '{}'::types.q_get_scenario_v4_question_resource[])
         ELSE '{}'::types.q_get_scenario_v4_question_resource[]
     END as questions,

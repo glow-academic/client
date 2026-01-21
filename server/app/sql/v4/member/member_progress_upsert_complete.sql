@@ -267,20 +267,13 @@ link_message_to_run AS (
     ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
     RETURNING message_id, run_id
 ),
--- Create audio record and link to upload if upload_id provided
+-- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
-    INSERT INTO audios_resource (created_at, updated_at, active, generated, call_id)
-    SELECT NOW(), NOW(), true, false, NULL
+    INSERT INTO audios_resource (created_at, updated_at, active, generated, call_id, upload_id)
+    SELECT NOW(), NOW(), true, false, NULL, p.upload_id
     FROM params p
     WHERE p.upload_id IS NOT NULL
     RETURNING id as audio_id
-),
-link_audio_upload_if_provided AS (
-    INSERT INTO audio_uploads (audio_id, upload_id, active, created_at, updated_at)
-    SELECT ca.audio_id, p.upload_id, true, NOW(), NOW()
-    FROM create_audio_if_provided ca
-    CROSS JOIN params p
-    WHERE p.upload_id IS NOT NULL
 ),
 link_audio_to_message_if_provided AS (
     INSERT INTO message_audios (message_id, audio_id, created_at, updated_at)

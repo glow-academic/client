@@ -653,7 +653,7 @@ scenario_videos_with_questions AS (
         v.id as video_id,
         v.name as video_title,
         v.length_seconds,
-        vu.upload_id,
+        v.upload_id,
         COALESCE(
             (SELECT ARRAY_AGG(
                 (q.id, q.question_text, 'choice'::text, q.allow_multiple,
@@ -678,7 +678,6 @@ scenario_videos_with_questions AS (
         ) as questions
     FROM scenario_videos sv
     JOIN videos_resource v ON v.id = sv.video_id
-    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
     WHERE sv.active = true AND v.active = true
 ),
 -- Note: Quizzes are deprecated - questions are now handled directly through scenarios
@@ -938,7 +937,7 @@ previous_chats_for_scenarios AS (
 scenario_background_images_for_simulation AS (
     SELECT DISTINCT ON (si.scenario_id)
         si.scenario_id,
-        iu.upload_id as background_image_upload_id
+        i.upload_id as background_image_upload_id
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
     JOIN scenario_images si ON EXISTS (SELECT 1 FROM simulation_scenarios ss WHERE ss.simulation_id = ab.simulation_id 
@@ -949,9 +948,8 @@ scenario_background_images_for_simulation AS (
               AND ssf.value = true)
     )
     JOIN images_resource i ON i.id = si.image_id AND i.active = true
-    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
     WHERE si.active = true
-      AND iu.upload_id IS NOT NULL
+      AND i.upload_id IS NOT NULL
     ORDER BY si.scenario_id, si.created_at ASC
 ),
 all_simulation_scenarios_with_previous_chats AS (
@@ -1011,14 +1009,13 @@ all_simulation_scenarios_with_previous_chats AS (
 scenario_background_images_for_chats AS (
     SELECT DISTINCT ON (si.scenario_id)
         si.scenario_id,
-        iu.upload_id as background_image_upload_id
+        i.upload_id as background_image_upload_id
     FROM scenario_images si
     JOIN images_resource i ON i.id = si.image_id AND i.active = true
-    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
     CROSS JOIN scenario_ids_list sil
     WHERE si.scenario_id = ANY(sil.scenario_ids) 
       AND si.active = true
-      AND iu.upload_id IS NOT NULL
+      AND i.upload_id IS NOT NULL
     ORDER BY si.scenario_id, si.created_at ASC
 ),
 scenarios_data AS (
