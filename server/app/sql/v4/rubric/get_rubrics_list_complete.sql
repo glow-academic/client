@@ -180,24 +180,24 @@ rubric_data AS (
         r.id as rubric_id,
         (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1),
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) as points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) as pass_points,
         COALESCE(rdd.department_ids, NULL) as department_ids,
         COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
         COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
         CASE 
             WHEN COALESCE(rasl.active_simulation_count, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(rasl_all.total_simulation_links, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_delete,
         CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_duplicate
     FROM rubric_artifact r
@@ -207,7 +207,7 @@ rubric_data AS (
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
     LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
     CROSS JOIN user_profile up
-    GROUP BY r.id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
+    GROUP BY r.id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
     HAVING 
         COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)

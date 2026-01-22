@@ -281,7 +281,7 @@ image_model_check AS (
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
     FROM model_modalities mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
-    WHERE mr.modality = 'image' AND mm.type = 'output'::type_model_modalities AND mm.active = true
+    WHERE mr.modality = 'image' AND mm.type = 'output'::direction_type AND mm.active = true
     GROUP BY mm.model_id
 ),
 persona_data AS (
@@ -367,18 +367,18 @@ SELECT
              simd.active, simd.practice_simulation,
              CASE 
                  WHEN COALESCE(simd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-                 WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                 WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
              CASE 
                  WHEN COALESCE(simd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
                  WHEN simd.practice_simulation = true THEN false
                  WHEN simd.total_cohort_links > 0 THEN false
-                 WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                 WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
              CASE 
-                 WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                 WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                  ELSE false
              END,
              simd.scenario_ids, simd.rubric_id, simd.num_cohorts, simd.cohort_ids, simd.updated_at

@@ -296,7 +296,7 @@ persona_department_access_check AS (
     SELECT 
         p.id as persona_id,
         CASE 
-            WHEN up.role = 'superadmin'::profile_role THEN true
+            WHEN up.role = 'superadmin'::profile_type THEN true
             WHEN EXISTS (
                 SELECT 1 FROM persona_departments pd 
                 WHERE pd.persona_id = p.id 
@@ -445,7 +445,7 @@ valid_fields_data AS (
       AND f.id IS NOT NULL  -- Filter out NULL fields
       AND (
         -- If user has no departments (superadmin), include only cross-department fields
-        (NOT EXISTS (SELECT 1 FROM user_departments) AND up.role = 'superadmin'::profile_role
+        (NOT EXISTS (SELECT 1 FROM user_departments) AND up.role = 'superadmin'::profile_type
          AND NOT EXISTS (
              SELECT 1 FROM field_departments fd2 
              WHERE fd2.field_id = f.field_id 
@@ -561,7 +561,7 @@ accessible_personas AS (
     CROSS JOIN user_profile up
     WHERE x.persona_id IS NOT NULL
       AND (
-        up.role = 'superadmin'::profile_role
+        up.role = 'superadmin'::profile_type
         OR pd.department_id IN (SELECT department_id FROM user_departments)
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
       )
@@ -849,7 +849,7 @@ flags_data AS (
     JOIN artifact_flags_relation aft ON f.type = aft.flag_type
     CROSS JOIN params p
     WHERE 
-        aft.artifact = 'persona'::artifacts
+        aft.artifact = 'persona'::artifact_type
         AND (
             -- Always include selected active_flag_id if it exists
             f.id = (SELECT active_flag_id FROM flag_resource_data)
@@ -1228,7 +1228,7 @@ agent_artifact_tool_counts AS (
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'persona'::artifacts
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'persona'::artifact_type
     GROUP BY a.id
 ),
 -- Agent selection for 'names' resource
@@ -1247,7 +1247,7 @@ name_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1265,7 +1265,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1327,7 +1327,7 @@ description_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1345,7 +1345,7 @@ description_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'descriptions'::resources
+              AND rt.resource = 'descriptions'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1407,7 +1407,7 @@ color_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1425,7 +1425,7 @@ color_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'colors'::resources
+              AND rt.resource = 'colors'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1487,7 +1487,7 @@ icon_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1505,7 +1505,7 @@ icon_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'icons'::resources
+              AND rt.resource = 'icons'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1567,7 +1567,7 @@ instructions_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1585,7 +1585,7 @@ instructions_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'instructions'::resources
+              AND rt.resource = 'instructions'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1647,7 +1647,7 @@ flag_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1665,7 +1665,7 @@ flag_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'flags'::resources
+              AND rt.resource = 'flags'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1727,7 +1727,7 @@ departments_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1745,7 +1745,7 @@ departments_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'departments'::resources
+              AND rt.resource = 'departments'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1799,7 +1799,7 @@ fields_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1817,7 +1817,7 @@ fields_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'fields'::resources
+              AND rt.resource = 'fields'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1871,7 +1871,7 @@ examples_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -1889,7 +1889,7 @@ examples_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'examples'::resources
+              AND rt.resource = 'examples'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1943,7 +1943,7 @@ basic_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -2047,7 +2047,7 @@ content_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -2151,7 +2151,7 @@ general_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'persona'::artifacts
+              AND ar.artifact = 'persona'::artifact_type
         )
         AND (
             EXISTS (
@@ -2247,43 +2247,43 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'colors'::resources 
+            WHERE rt.resource = 'colors'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as colors_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'icons'::resources 
+            WHERE rt.resource = 'icons'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as icons_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'instructions'::resources 
+            WHERE rt.resource = 'instructions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as instructions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'fields'::resources 
+            WHERE rt.resource = 'fields'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as fields_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'examples'::resources 
+            WHERE rt.resource = 'examples'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as examples_has_tools
     FROM params x
@@ -2320,7 +2320,7 @@ permissions_data_with_tools AS (
                 CASE 
                     WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
                     WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN false
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
@@ -2335,7 +2335,7 @@ permissions_data_with_tools AS (
                         'This is a default persona that cannot be edited. You can view the details but cannot make changes.'::text
                     WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN 
                         'This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN 
                         NULL::text
                     ELSE 
                         'This persona cannot be edited. You can view the details but cannot make changes.'::text

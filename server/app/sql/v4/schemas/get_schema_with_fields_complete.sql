@@ -38,7 +38,7 @@ SELECT
     ar.id as schema_id,
     ar.id as field_id,  -- Same as schema_id since each args_resource is one field
     ar.name as field_name,
-    ar.field_type::schema_field_type,  -- Cast to maintain return type
+    ar.field_type::schema_type,  -- Cast to maintain return type
     ar.required,
     ar.position,
     NULL::uuid as item_schema_id  -- schema_field_items_resource dropped

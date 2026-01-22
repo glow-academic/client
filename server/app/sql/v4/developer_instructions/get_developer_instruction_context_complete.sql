@@ -35,7 +35,7 @@ WITH agent_has_scenario_artifact AS (
         SELECT 1 
         
         WHERE NULL::uuid = p_agent_id
-        AND NULL::artifacts = 'scenario'::artifacts
+        AND NULL::artifact_type = 'scenario'::artifact_type
     ) as has_scenario
 ),
 -- Get parameters for scenario (if scenario_id provided and agent has scenario artifact)

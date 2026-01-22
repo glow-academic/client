@@ -250,7 +250,7 @@ BEGIN
                      FROM artifact_roles_relation ar
                      JOIN artifact_routes_relation art ON art.artifact = ar.artifact
                      JOIN routes_resource rr_route ON rr_route.route = art.route
-                     WHERE ar.role = p.role::profile_role),
+                     WHERE ar.role = p.role::profile_type),
                     ARRAY[]::uuid[]
                 )
                 ELSE ARRAY[]::uuid[]
@@ -294,7 +294,7 @@ BEGIN
     -- Insert/update role via profile_roles junction if provided
 role_resource AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT x.role::profile_role, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    SELECT x.role::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     FROM params x
     WHERE x.role IS NOT NULL
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()

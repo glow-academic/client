@@ -44,8 +44,8 @@ original_rubric AS (
         r.id,
         (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as name,
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as description,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) as points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) as pass_points
     FROM rubric_artifact r
     WHERE r.id = (SELECT original_rubric_id FROM params)
 ),
@@ -176,7 +176,7 @@ link_rubric_active_flag AS (
 -- Link rubric points
 link_rubric_points AS (
     INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
-    SELECT nr.rubric_id, ap.points_id, 'total'::type_rubric_points, NOW(), NOW()
+    SELECT nr.rubric_id, ap.points_id, 'total'::point_type, NOW(), NOW()
     FROM new_rubric nr
     CROSS JOIN all_points ap
     ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
@@ -184,7 +184,7 @@ link_rubric_points AS (
 -- Link rubric pass_points
 link_rubric_pass_points AS (
     INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
-    SELECT nr.rubric_id, app.pass_points_id, 'pass'::type_rubric_points, NOW(), NOW()
+    SELECT nr.rubric_id, app.pass_points_id, 'pass'::point_type, NOW(), NOW()
     FROM new_rubric nr
     CROSS JOIN all_pass_points app
     ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()

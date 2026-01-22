@@ -83,7 +83,7 @@ agent_model_modalities AS (
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND mm.type = 'output'::type_model_modalities
+      AND mm.type = 'output'::direction_type
       AND mm.active = true
       AND mr.active = true
 ),
@@ -202,7 +202,7 @@ new_developer_messages_data AS (
 ),
 new_developer_messages AS (
     INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, nd.run_id, NOW(), NOW()
+    SELECT 'developer'::message_type, false, false, nd.run_id, NOW(), NOW()
     FROM new_developer_messages_data nd
     RETURNING id, run_id, created_at, updated_at
 ),
@@ -300,7 +300,7 @@ new_user_messages_data AS (
 ),
 new_user_messages AS (
     INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
-    SELECT 'user'::message_role, false, false, nd.run_id, NOW(), NOW()
+    SELECT 'user'::message_type, false, false, nd.run_id, NOW(), NOW()
     FROM new_user_messages_data nd
     RETURNING id, run_id, created_at, updated_at
 ),

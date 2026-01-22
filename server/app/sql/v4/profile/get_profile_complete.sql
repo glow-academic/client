@@ -249,20 +249,20 @@ target_profile_role_data AS (
 role_options_data AS (
     SELECT 
         CASE 
-            WHEN up.role = 'superadmin'::profile_role THEN
+            WHEN up.role = 'superadmin'::profile_type THEN
                 ARRAY(
                     SELECT r.role::text
                     FROM roles_resource r
                     WHERE r.active = true
-                      AND r.role IN ('superadmin'::profile_role, 'admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)
+                      AND r.role IN ('superadmin'::profile_type, 'admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)
                     ORDER BY array_position(ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[], r.role::text)
                 )
-            WHEN up.role = 'admin'::profile_role THEN
+            WHEN up.role = 'admin'::profile_type THEN
                 ARRAY(
                     SELECT r.role::text
                     FROM roles_resource r
                     WHERE r.active = true
-                      AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)
+                      AND r.role IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)
                     ORDER BY array_position(ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[], r.role::text)
                 )
             ELSE
@@ -270,7 +270,7 @@ role_options_data AS (
                     SELECT r.role::text
                     FROM roles_resource r
                     WHERE r.active = true
-                      AND r.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                      AND r.role IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)
                     ORDER BY array_position(ARRAY['instructional', 'member', 'guest']::text[], r.role::text)
                 )
         END as role_options
@@ -344,8 +344,8 @@ route_suggestions_data AS (
              JOIN artifact_routes_relation art ON art.artifact = ar.artifact
              JOIN routes_resource rr_route ON rr_route.route = art.route
              WHERE ar.role = COALESCE(
-                 (SELECT role::profile_role FROM target_profile_role_data),
-                 NULL::profile_role
+                 (SELECT role::profile_type FROM target_profile_role_data),
+                 NULL::profile_type
              )),
             ARRAY[]::uuid[]
         ) as route_suggestions
@@ -903,7 +903,7 @@ agent_artifact_tool_counts AS (
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'profile'::artifacts
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'profile'::artifact_type
     GROUP BY a.id
 ),
 
@@ -923,7 +923,7 @@ name_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -941,7 +941,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -995,7 +995,7 @@ emails_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -1013,7 +1013,7 @@ emails_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'emails'::resources
+              AND rt.resource = 'emails'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1067,7 +1067,7 @@ request_limit_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -1085,7 +1085,7 @@ request_limit_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'request_limits'::resources
+              AND rt.resource = 'request_limits'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1139,7 +1139,7 @@ flag_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -1157,7 +1157,7 @@ flag_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'flags'::resources
+              AND rt.resource = 'flags'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1211,7 +1211,7 @@ departments_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -1229,7 +1229,7 @@ departments_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'departments'::resources
+              AND rt.resource = 'departments'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1287,7 +1287,7 @@ basic_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -1383,7 +1383,7 @@ general_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'profile'::artifacts
+              AND ar.artifact = 'profile'::artifact_type
         )
         AND (
             EXISTS (
@@ -1471,31 +1471,31 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'emails'::resources 
+            WHERE rt.resource = 'emails'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as emails_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'request_limits'::resources 
+            WHERE rt.resource = 'request_limits'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as request_limits_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'flags'::resources 
+            WHERE rt.resource = 'flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools
     FROM params x
@@ -1524,16 +1524,16 @@ permissions_data_with_tools AS (
             ELSE
                 -- Detail mode permissions - check role hierarchy
                 CASE 
-                    WHEN up.role = 'superadmin'::profile_role THEN true
+                    WHEN up.role = 'superadmin'::profile_type THEN true
                     WHEN EXISTS (
                         SELECT 1 FROM profile_roles pr_j 
                         JOIN roles_resource r ON pr_j.role_id = r.id 
                         WHERE pr_j.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                           AND (
-                              (up.role = 'admin'::profile_role AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role))
-                              OR (up.role = 'instructional'::profile_role AND r.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
-                              OR (up.role = 'member'::profile_role AND r.role IN ('member'::profile_role, 'guest'::profile_role))
-                              OR (up.role = 'guest'::profile_role AND r.role = 'guest'::profile_role)
+                              (up.role = 'admin'::profile_type AND r.role IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type))
+                              OR (up.role = 'instructional'::profile_type AND r.role IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type))
+                              OR (up.role = 'member'::profile_type AND r.role IN ('member'::profile_type, 'guest'::profile_type))
+                              OR (up.role = 'guest'::profile_type AND r.role = 'guest'::profile_type)
                           )
                     ) THEN true
                     ELSE false
@@ -1548,17 +1548,17 @@ permissions_data_with_tools AS (
                 CASE 
                     WHEN NOT EXISTS (SELECT 1 FROM profile_artifact WHERE id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)) THEN
                         'Profile not found or you do not have permission to view it'::text
-                    WHEN up.role = 'superadmin'::profile_role THEN 
+                    WHEN up.role = 'superadmin'::profile_type THEN 
                         NULL::text
                     WHEN EXISTS (
                         SELECT 1 FROM profile_roles pr_j 
                         JOIN roles_resource r ON pr_j.role_id = r.id 
                         WHERE pr_j.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                           AND (
-                              (up.role = 'admin'::profile_role AND r.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role))
-                              OR (up.role = 'instructional'::profile_role AND r.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
-                              OR (up.role = 'member'::profile_role AND r.role IN ('member'::profile_role, 'guest'::profile_role))
-                              OR (up.role = 'guest'::profile_role AND r.role = 'guest'::profile_role)
+                              (up.role = 'admin'::profile_type AND r.role IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type))
+                              OR (up.role = 'instructional'::profile_type AND r.role IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type))
+                              OR (up.role = 'member'::profile_type AND r.role IN ('member'::profile_type, 'guest'::profile_type))
+                              OR (up.role = 'guest'::profile_type AND r.role = 'guest'::profile_type)
                           )
                     ) THEN 
                         NULL::text

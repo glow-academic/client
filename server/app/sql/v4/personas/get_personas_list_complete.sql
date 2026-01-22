@@ -182,13 +182,13 @@ persona_data AS (
         CASE 
             WHEN pdb.active_scenario_count > 0 THEN false
             WHEN NOT pdb.has_dept_links AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN NOT pdb.has_dept_links AND up.role != 'superadmin' THEN false
             WHEN pdb.total_scenario_links > 0 THEN false
-            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_delete
     FROM persona_data_base pdb
@@ -251,7 +251,7 @@ agent_mapping_data AS (
         a.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
-        ARRAY[COALESCE(NULL::artifacts::text, '')] as roles
+        ARRAY[COALESCE(NULL::artifact_type::text, '')] as roles
     FROM agent_artifact a
     
     

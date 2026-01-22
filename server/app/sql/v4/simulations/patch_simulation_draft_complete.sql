@@ -225,7 +225,7 @@ BEGIN
     
     -- Create new draft with group_id
     INSERT INTO drafts_entry (artifact, profile_id, group_id)
-    VALUES ('simulation'::artifacts, v_profile_id, v_group_id)
+    VALUES ('simulation'::artifact_type, v_profile_id, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
     
     -- Link resources to draft

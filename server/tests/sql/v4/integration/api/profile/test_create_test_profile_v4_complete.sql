@@ -32,7 +32,7 @@ AS $$
     ),
     new_profile AS (
         INSERT INTO profiles_resource(role)
-        VALUES (profile_role::profile_role)
+        VALUES (profile_role::profile_type)
         RETURNING id, created_at, updated_at
     ),
     profile_name_link AS (

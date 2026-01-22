@@ -761,7 +761,7 @@ input_modality_ids_data AS (
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     WHERE mm.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND mm.type = 'input'::type_model_modalities
+    AND mm.type = 'input'::direction_type
     AND mm.active = true AND mr.active = true
 ),
 output_modality_ids_data AS (
@@ -774,7 +774,7 @@ output_modality_ids_data AS (
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     WHERE mm.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND mm.type = 'output'::type_model_modalities
+    AND mm.type = 'output'::direction_type
     AND mm.active = true AND mr.active = true
 ),
 modalities_draft_data AS (
@@ -1075,7 +1075,7 @@ model_all_keys AS (
         )
         OR
         -- Superadmin can see all keys
-        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile_artifact p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'superadmin'::profile_role))
+        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile_artifact p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'superadmin'::profile_type))
     )
 ),
 keys_data AS (
@@ -1365,7 +1365,7 @@ input_modality_suggestions_data AS (
                  JOIN modalities_resource mr ON mr.id = mm.modality_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mm.modality_id IS NOT NULL
-                   AND mm.type = 'input'::type_model_modalities
+                   AND mm.type = 'input'::direction_type
                    AND (
                        -- Option 1: Linked to models (model_modalities junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
@@ -1403,7 +1403,7 @@ output_modality_suggestions_data AS (
                  JOIN modalities_resource mr ON mr.id = mm.modality_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mm.modality_id IS NOT NULL
-                   AND mm.type = 'output'::type_model_modalities
+                   AND mm.type = 'output'::direction_type
                    AND (
                        -- Option 1: Linked to models (model_modalities junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
@@ -1584,85 +1584,85 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'descriptions'::resources 
+            WHERE rt.resource = 'descriptions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'flags'::resources 
+            WHERE rt.resource = 'flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'values'::resources 
+            WHERE rt.resource = 'values'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as values_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'endpoints'::resources 
+            WHERE rt.resource = 'endpoints'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as endpoints_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'providers'::resources 
+            WHERE rt.resource = 'providers'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as providers_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'keys'::resources 
+            WHERE rt.resource = 'keys'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as keys_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'modalities'::resources 
+            WHERE rt.resource = 'modalities'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as modalities_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'temperature_levels'::resources 
+            WHERE rt.resource = 'temperature_levels'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as temperature_levels_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'reasoning_levels'::resources 
+            WHERE rt.resource = 'reasoning_levels'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as reasoning_levels_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'qualities'::resources 
+            WHERE rt.resource = 'qualities'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as qualities_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'pricing'::resources 
+            WHERE rt.resource = 'pricing'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as pricing_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'voices'::resources 
+            WHERE rt.resource = 'voices'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as voices_has_tools
     FROM params x
@@ -1679,7 +1679,7 @@ ui_flags AS (
             ELSE false
         END as show_description,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM flags_resource f JOIN artifact_flags_relation aft ON f.type = aft.flag_type WHERE aft.artifact = 'model'::artifacts) THEN true
+            WHEN EXISTS (SELECT 1 FROM flags_resource f JOIN artifact_flags_relation aft ON f.type = aft.flag_type WHERE aft.artifact = 'model'::artifact_type) THEN true
             ELSE false
         END as show_flag,
         CASE 
@@ -1783,7 +1783,7 @@ flags_data AS (
     JOIN artifact_flags_relation aft ON f.type = aft.flag_type
     CROSS JOIN params p
     WHERE 
-        aft.artifact = 'model'::artifacts
+        aft.artifact = 'model'::artifact_type
         AND (
             -- Always include selected active_flag_id if it exists
             f.id = (SELECT active_flag_id FROM flag_resource_data)
@@ -1980,13 +1980,13 @@ permissions_data AS (
             WHEN (SELECT model_id FROM params) IS NULL THEN
                 -- New mode: check if user can create models
                 CASE 
-                    WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
             ELSE
                 -- Detail mode: check if user can edit model
                 CASE 
-                    WHEN up.role = 'superadmin'::profile_role THEN true
+                    WHEN up.role = 'superadmin'::profile_type THEN true
                     WHEN EXISTS (
                         SELECT 1 FROM model_departments md
                         JOIN user_departments ud ON md.department_id = ud.department_id
@@ -2008,7 +2008,7 @@ permissions_data AS (
             ELSE
                 -- Detail mode: compute disabled_reason
                 CASE 
-                    WHEN up.role != 'superadmin'::profile_role 
+                    WHEN up.role != 'superadmin'::profile_type 
                     AND NOT EXISTS (
                         SELECT 1 FROM model_departments md
                         JOIN user_departments ud ON md.department_id = ud.department_id
@@ -2288,7 +2288,7 @@ SELECT
         JOIN modalities_resource mr ON mr.id = mm.modality_id
         WHERE mm.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
-        AND mm.type = 'input'::type_model_modalities
+        AND mm.type = 'input'::direction_type
         AND mm.active = true AND mr.active = true),
         '{}'::types.q_get_model_v4_modality_resource[]
     ) as input_modality_resources,
@@ -2325,7 +2325,7 @@ SELECT
         JOIN modalities_resource mr ON mr.id = mm.modality_id
         WHERE mm.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
-        AND mm.type = 'output'::type_model_modalities
+        AND mm.type = 'output'::direction_type
         AND mm.active = true AND mr.active = true),
         '{}'::types.q_get_model_v4_modality_resource[]
     ) as output_modality_resources,

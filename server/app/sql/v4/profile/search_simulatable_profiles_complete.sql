@@ -117,9 +117,9 @@ simulatable_data AS (
     ) pa ON true
     WHERE p.id != (SELECT profile_id FROM params)
       AND CASE 
-        WHEN rr.role = 'superadmin'::profile_role THEN true
-        WHEN rr.role = 'admin'::profile_role THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
-        WHEN rr.role = 'instructional'::profile_role THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)
+        WHEN rr.role = 'superadmin'::profile_type THEN true
+        WHEN rr.role = 'admin'::profile_type THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)
+        WHEN rr.role = 'instructional'::profile_type THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)
         ELSE false
       END
       AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR ((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails pe_search JOIN emails_resource e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || (SELECT query FROM params) || '%') OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1)::text ILIKE '%' || (SELECT query FROM params) || '%'))

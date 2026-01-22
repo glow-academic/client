@@ -133,11 +133,11 @@ cohort_profiles_role_filtered AS (
         cp.cohort_id,
         ARRAY_AGG(cp.profile_id) FILTER (
             WHERE 
-                (up.role = 'superadmin'::profile_role) OR
-                (up.role = 'admin'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
-                (up.role = 'instructional'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
-                (up.role = 'member'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)) OR
-                (up.role = 'guest'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = 'guest'::profile_role)
+                (up.role = 'superadmin'::profile_type) OR
+                (up.role = 'admin'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)) OR
+                (up.role = 'instructional'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)) OR
+                (up.role = 'member'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)) OR
+                (up.role = 'guest'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = 'guest'::profile_type)
         ) as profile_ids
     FROM profile_cohorts cp
     JOIN profile_artifact p ON p.id = cp.profile_id
@@ -274,12 +274,12 @@ cohorts_data AS (
         COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
         CASE 
             WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) AND COALESCE(cu.usage_count, 0) = 0 THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) AND COALESCE(cu.usage_count, 0) = 0 THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate,
@@ -298,7 +298,7 @@ cohorts_data AS (
     LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
     CROSS JOIN user_profile up
     WHERE (
-        (up.role = 'instructional'::profile_role AND uic.cohort_id IS NOT NULL)
+        (up.role = 'instructional'::profile_type AND uic.cohort_id IS NOT NULL)
         OR
         up.role != 'instructional'
     )

@@ -201,7 +201,7 @@ BEGIN
         UPDATE field_parameters 
         SET active = false, updated_at = NOW()
         WHERE field_id = (SELECT field_id FROM params)
-          AND type = 'conditional'::type_field_parameters
+          AND type = 'conditional'::parameter_type
           AND NOT (SELECT is_create FROM params)
     ),
     -- Link conditional parameters
@@ -210,7 +210,7 @@ BEGIN
         SELECT 
             x.field_id,
             cond_param_id::uuid,
-            'conditional'::type_field_parameters,
+            'conditional'::parameter_type,
             true,
             NOW(),
             NOW()

@@ -164,7 +164,7 @@ CREATE OR REPLACE FUNCTION api_get_reports_bundle_v4(
     profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_role[],
+    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT NULL,
     profile_ids uuid[] DEFAULT ARRAY[]::uuid[],
     simulation_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -198,7 +198,7 @@ WITH params AS (
         profile_id AS profile_id,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-        COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
+        COALESCE(roles, ARRAY[]::profile_type[]) AS roles,
         CASE 
             WHEN simulation_filters IS NULL OR cardinality(simulation_filters) = 0 
             THEN ARRAY['general']::text[]
@@ -226,9 +226,9 @@ user_profile AS (
 -- Get thresholds from active settings
 settings_thresholds AS (
     SELECT 
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1), 85) AS success_threshold,
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1), 80) AS warning_threshold,
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1), 70) AS danger_threshold
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::threshold_type LIMIT 1), 85) AS success_threshold,
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::threshold_type LIMIT 1), 80) AS warning_threshold,
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1), 70) AS danger_threshold
     FROM setting_artifact s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf
@@ -251,17 +251,17 @@ filtered_profiles AS (
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1),
-            'member'::profile_role
+            'member'::profile_type
         ) as role,
         p.created_at
     FROM profile_artifact p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.email_id = e.id
     WHERE 
-        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR COALESCE(
+        (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR COALESCE(
             (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1),
-            'member'::profile_role
-        ) = ANY((SELECT roles FROM params)::profile_role[]))
+            'member'::profile_type
+        ) = ANY((SELECT roles FROM params)::profile_type[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
             SELECT 1 FROM profile_cohorts cp 
             WHERE cp.profile_id = p.id 

@@ -329,7 +329,7 @@ BEGIN
 
         -- Create draft
         INSERT INTO drafts_entry (artifact, profile_id, group_id)
-        VALUES ('scenario'::artifacts, v_profile_id, v_group_id)
+        VALUES ('scenario'::artifact_type, v_profile_id, v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
         
         v_draft_exists := false;

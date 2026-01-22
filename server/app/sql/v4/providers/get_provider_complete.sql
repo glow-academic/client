@@ -154,19 +154,19 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'descriptions'::resources 
+            WHERE rt.resource = 'descriptions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'flags'::resources 
+            WHERE rt.resource = 'flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools
     FROM params x
@@ -450,7 +450,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
@@ -478,7 +478,7 @@ description_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
-              AND rt.resource = 'descriptions'::resources
+              AND rt.resource = 'descriptions'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
@@ -506,7 +506,7 @@ flag_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
-              AND rt.resource = 'flags'::resources
+              AND rt.resource = 'flags'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
@@ -526,7 +526,7 @@ SELECT
     up.actor_name,
     pec.provider_exists,
     CASE 
-        WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+        WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
         WHEN array_length(mtc.missing_resources, 1) > 0 THEN false
         ELSE true
     END as can_edit,

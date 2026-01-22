@@ -31,7 +31,7 @@ DECLARE
 BEGIN
     -- Check if artifact_type is a valid artifacts enum value
     IF EXISTS (
-        SELECT 1 FROM unnest(enum_range(NULL::artifacts)) AS e
+        SELECT 1 FROM unnest(enum_range(NULL::artifact_type)) AS e
         WHERE e::text = artifact_type
     ) THEN
         v_event_name := artifact_type || '_end';

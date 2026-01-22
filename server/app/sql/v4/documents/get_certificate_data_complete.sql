@@ -172,7 +172,7 @@ user_sim_status AS (
         aa.simulation_id,
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
-            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
+            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::point_type LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1),0))
              FROM simulation_artifact s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id 
                AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)

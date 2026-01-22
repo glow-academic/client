@@ -48,7 +48,7 @@ BEGIN
     JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_values_v4.agent_id
-      AND rt.resource = 'values'::resources
+      AND rt.resource = 'values'::resource_type
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1;
@@ -99,7 +99,7 @@ BEGIN
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
     INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
-    VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
+    VALUES (v_message_id, 'assistant'::message_type, false, false, NOW(), NOW());
     
     -- Link message to call
     UPDATE calls_entry SET message_id = v_message_id WHERE id = v_call_id;

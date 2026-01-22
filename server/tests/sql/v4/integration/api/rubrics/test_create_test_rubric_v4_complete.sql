@@ -66,13 +66,13 @@ AS $$
     ),
     rubric_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
-        SELECT nr.id, pr.id, 'total'::type_rubric_points
+        SELECT nr.id, pr.id, 'total'::point_type
         FROM new_rubric nr, points_resource_cte pr
         RETURNING rubric_id
     ),
     rubric_pass_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
-        SELECT nr.id, ppr.id, 'pass'::type_rubric_points
+        SELECT nr.id, ppr.id, 'pass'::point_type
         FROM new_rubric nr, pass_points_resource_cte ppr
         RETURNING rubric_id
     ),
@@ -86,8 +86,8 @@ AS $$
         nr.id AS rubric_id,
         (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = nr.id LIMIT 1) AS name,
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = nr.id LIMIT 1) AS description,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS points,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS pass_points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'total'::point_type LIMIT 1) AS points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'pass'::point_type LIMIT 1) AS pass_points,
         EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = nr.id AND fl.name = 'active'  AND rf.value = TRUE) AS active,
         nr.created_at,
         nr.updated_at

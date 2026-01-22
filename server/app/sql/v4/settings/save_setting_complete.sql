@@ -180,7 +180,7 @@ BEGIN
         SELECT 
             x.setting_id,
             color_id,
-            'primary'::type_setting_colors,  -- Default to primary, can be extended later
+            'primary'::color_type,  -- Default to primary, can be extended later
             NOW(),
             NOW()
         FROM params x

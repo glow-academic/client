@@ -240,7 +240,7 @@ filtered_evals AS (
                 SELECT 1 FROM user_departments ud
                 WHERE ud.department_id::text = ANY(edept.department_ids)
             )
-            OR up.role IN ('admin'::profile_role, 'superadmin'::profile_role)
+            OR up.role IN ('admin'::profile_type, 'superadmin'::profile_type)
         )
 ),
 eval_agents_aggregated AS (
@@ -303,7 +303,7 @@ SELECT
     COALESCE(ea.evals_array, '{}'::types.q_list_evals_v4_eval[]) as evals,
     -- Rubrics array
     COALESCE(
-        (SELECT ARRAY_AGG((r.id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), ''), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1))::types.q_list_evals_v4_rubric)
+        (SELECT ARRAY_AGG((r.id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), ''), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1))::types.q_list_evals_v4_rubric)
          FROM all_rubric_ids ari
          JOIN rubrics_resource r ON r.id = ari.rubric_id),
         '{}'::types.q_list_evals_v4_rubric[]

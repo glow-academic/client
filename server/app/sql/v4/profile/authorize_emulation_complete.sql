@@ -63,9 +63,9 @@ simulatable_profiles AS (
     CROSS JOIN requester_role rr
     WHERE p.id != (SELECT requester_profile_id FROM params)
       AND CASE 
-        WHEN rr.role = 'superadmin'::profile_role THEN true
-        WHEN rr.role = 'admin'::profile_role THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
-        WHEN rr.role = 'instructional'::profile_role THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)
+        WHEN rr.role = 'superadmin'::profile_type THEN true
+        WHEN rr.role = 'admin'::profile_type THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)
+        WHEN rr.role = 'instructional'::profile_type THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)
         ELSE false
       END
 ),

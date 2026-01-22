@@ -91,15 +91,15 @@ provider_data AS (
         p.updated_at,
         ''::text as base_url,
         CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_delete,
         CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_duplicate
     FROM providers_resource p

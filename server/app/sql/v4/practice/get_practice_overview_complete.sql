@@ -196,8 +196,8 @@ sim_meta AS (
          ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) 
          LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS rubric_points,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS rubric_pass_points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points,
         s.updated_at
     FROM simulation_artifact s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
@@ -296,8 +296,8 @@ activity_by_profile_sim AS (
 sim_pass_pct AS (
     SELECT DISTINCT ON (s.id)
            s.id AS simulation_id,
-           CASE WHEN (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1) > 0
-                THEN ((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1)::numeric) * 100.0
+           CASE WHEN (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1) > 0
+                THEN ((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::point_type LIMIT 1)::numeric / (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
                 ELSE 70 END AS pass_pct
     FROM simulation_artifact s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)

@@ -217,19 +217,19 @@ filtered_profile_ids AS (
     JOIN profile_roles_cte pr ON pr.profile_id IN (SELECT profile_id FROM all_profile_ids_raw)
     WHERE 
         -- superadmin can see all
-        up.role = 'superadmin'::profile_role
+        up.role = 'superadmin'::profile_type
         OR
         -- admin can see admin, instructional, member, guest
-        (up.role = 'admin'::profile_role AND pr.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
+        (up.role = 'admin'::profile_type AND pr.role IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type))
         OR
         -- instructional can see instructional, member, guest
-        (up.role = 'instructional'::profile_role AND pr.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role))
+        (up.role = 'instructional'::profile_type AND pr.role IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type))
         OR
         -- member can see member, guest
-        (up.role = 'member'::profile_role AND pr.role IN ('member'::profile_role, 'guest'::profile_role))
+        (up.role = 'member'::profile_type AND pr.role IN ('member'::profile_type, 'guest'::profile_type))
         OR
         -- guest can only see guest
-        (up.role = 'guest'::profile_role AND pr.role = 'guest'::profile_role)
+        (up.role = 'guest'::profile_type AND pr.role = 'guest'::profile_type)
 ),
 department_profiles_filtered_data AS (
     SELECT 
@@ -256,17 +256,17 @@ departments_data AS (
         COALESCE(dcd.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
         COALESCE(dpf.profile_ids, ARRAY[]::uuid[]) as profile_ids,
         CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(dacl.total_cohort_links, 0) > 0 THEN false
             WHEN COALESCE(dpwo.profiles_with_only_this_dept, 0) > 0 THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_delete,
         CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_duplicate
     FROM department_artifact d

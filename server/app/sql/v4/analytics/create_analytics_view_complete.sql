@@ -258,7 +258,7 @@ SELECT
      JOIN roles_resource r ON pr_j.role_id = r.id 
      WHERE pr_j.profile_id = pr.id 
      LIMIT 1),
-    'member'::profile_role
+    'member'::profile_type
   ) AS profile_role,
   cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
@@ -267,18 +267,18 @@ SELECT
   lg.time_taken_seconds         AS time_taken_seconds,
 
   lg.rubric_id                  AS rubric_id,
-  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS rubric_points,
-  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS rubric_pass_points,
+  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points,
+  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points,
   CASE
-    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) = 0 THEN NULL
-    ELSE (lg.score / (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1)::numeric) * 100.0
+    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) = 0 THEN NULL
+    ELSE (lg.score / (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
   END                           AS grade_percent,
   CASE
     WHEN lg.score IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) IS NULL THEN NULL
-    ELSE (lg.score >= (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric)
+         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) IS NULL THEN NULL
+    ELSE (lg.score >= (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1)::numeric)
   END                           AS passed,
 
   (sc.completed OR lg.simulation_chat_id IS NOT NULL)

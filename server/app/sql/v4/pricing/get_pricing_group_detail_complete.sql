@@ -182,7 +182,7 @@ runs_departments AS (
 group_access_check AS (
     SELECT 
         CASE 
-            WHEN up.role = 'superadmin'::profile_role THEN true
+            WHEN up.role = 'superadmin'::profile_type THEN true
             WHEN EXISTS (
                 SELECT 1 FROM runs_departments rd
                 JOIN profile_departments pd ON pd.department_id = rd.department_id
@@ -313,7 +313,7 @@ messages_with_tree AS (
             WHERE m_parent.id = m.id
             AND r_parent.group_id = r_child.group_id
             AND r_child.id = mp.run_id
-            AND (m.role IN ('user'::message_role, 'assistant'::message_role) OR rim_parent.idx = 0)
+            AND (m.role IN ('user'::message_type, 'assistant'::message_type) OR rim_parent.idx = 0)
         )
     ),
     messages_without_parents AS (
@@ -362,7 +362,7 @@ messages_with_tree AS (
         JOIN groups_entry g ON g.id = rgm.group_id
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
-        JOIN messages_entry m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_role, 'developer'::message_role)
+        JOIN messages_entry m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_type, 'developer'::message_type)
         JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_path mp
@@ -459,9 +459,9 @@ runs_with_messages AS (
         SELECT m.id, m.created_at
         FROM messages_entry m
         WHERE m.run_id = current_run.run_id
-        AND m.role IN ('user'::message_role, 'assistant'::message_role)
+        AND m.role IN ('user'::message_type, 'assistant'::message_type)
         ORDER BY
-            CASE WHEN m.role = 'assistant'::message_role THEN 0 ELSE 1 END,
+            CASE WHEN m.role = 'assistant'::message_type THEN 0 ELSE 1 END,
             m.created_at DESC
         LIMIT 1
     ) latest_msg ON true
@@ -541,10 +541,10 @@ runs_with_context_index AS (
                         row_number() OVER (ORDER BY 
                             m.depth ASC,
                             CASE 
-                                WHEN m.role::message_role = 'system'::message_role THEN 1
-                                WHEN m.role::message_role = 'developer'::message_role THEN 2
-                                WHEN m.role::message_role = 'user'::message_role THEN 3
-                                WHEN m.role::message_role = 'assistant'::message_role THEN 4
+                                WHEN m.role::message_type = 'system'::message_type THEN 1
+                                WHEN m.role::message_type = 'developer'::message_type THEN 2
+                                WHEN m.role::message_type = 'user'::message_type THEN 3
+                                WHEN m.role::message_type = 'assistant'::message_type THEN 4
                                 ELSE 5
                             END,
                             m.run_idx,

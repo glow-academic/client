@@ -32,7 +32,7 @@ BEGIN
     -- First check if resource exists in resource_tools_relation
     IF NOT EXISTS (
         SELECT 1 FROM resource_tools_relation
-        WHERE resource = resource_type::resources
+        WHERE resource = resource_type::resource_type
     ) THEN
         RETURN;  -- Return empty (no rows)
     END IF;

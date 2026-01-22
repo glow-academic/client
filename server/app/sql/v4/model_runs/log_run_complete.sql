@@ -275,7 +275,7 @@ existing_system_message AS (
 ),
 new_system_message AS (
     INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
-    SELECT 'system'::message_role, false, false, NOW(), NOW()
+    SELECT 'system'::message_type, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as system_message_id, created_at, updated_at
@@ -396,7 +396,7 @@ existing_developer_messages AS (
 ),
 new_developer_messages AS (
     INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    SELECT 'developer'::message_type, false, false, NOW(), NOW()
     FROM developer_messages_processed dmp
     WHERE NOT EXISTS (
         SELECT 1 FROM existing_developer_messages edm 
@@ -535,7 +535,7 @@ existing_assistant_message AS (
     SELECT m.id as assistant_message_id, m.created_at, m.updated_at
     FROM params x
     JOIN messages_entry m ON m.run_id = x.run_id
-    WHERE m.role = 'assistant'::message_role
+    WHERE m.role = 'assistant'::message_type
       AND x.assistant_output IS NOT NULL
       AND trim(x.assistant_output) != ''
     ORDER BY m.created_at DESC
@@ -550,7 +550,7 @@ update_existing_assistant_message AS (
 ),
 new_assistant_message AS (
     INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
-    SELECT 'assistant'::message_role, true, false, NOW(), NOW()
+    SELECT 'assistant'::message_type, true, false, NOW(), NOW()
     FROM params x
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
       AND NOT EXISTS (SELECT 1 FROM existing_assistant_message)

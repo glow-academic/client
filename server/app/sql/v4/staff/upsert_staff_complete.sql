@@ -101,10 +101,10 @@ role_validation AS (
         pe.profile_idx,
         pe.role as profile_role,
         CASE 
-            WHEN cur.role = 'superadmin'::profile_role AND pe.role::profile_role IN ('superadmin'::profile_role, 'admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role) THEN true
-            WHEN cur.role = 'admin'::profile_role AND pe.role::profile_role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role) THEN true
-            WHEN cur.role = 'instructional'::profile_role AND pe.role::profile_role IN ('member'::profile_role, 'guest'::profile_role) THEN true
-            WHEN cur.role = 'member'::profile_role AND pe.role::profile_role = 'guest'::profile_role THEN true
+            WHEN cur.role = 'superadmin'::profile_type AND pe.role::profile_type IN ('superadmin'::profile_type, 'admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type) THEN true
+            WHEN cur.role = 'admin'::profile_type AND pe.role::profile_type IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type) THEN true
+            WHEN cur.role = 'instructional'::profile_type AND pe.role::profile_type IN ('member'::profile_type, 'guest'::profile_type) THEN true
+            WHEN cur.role = 'member'::profile_type AND pe.role::profile_type = 'guest'::profile_type THEN true
             ELSE false
         END as can_assign
     FROM current_user_role cur
@@ -194,7 +194,7 @@ profile_upsert AS (
 -- Insert/update role via profile_roles junction
 role_resource_upsert AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT DISTINCT pwi.role::profile_role, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    SELECT DISTINCT pwi.role::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     FROM profile_upsert_with_idx pwi
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
@@ -209,7 +209,7 @@ profile_role_insert_upsert AS (
     SELECT pu.id, rru.role_id, NOW(), NOW(), false, false
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
-    JOIN role_resource_upsert rru ON rru.role = pwi.role::profile_role
+    JOIN role_resource_upsert rru ON rru.role = pwi.role::profile_type
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
     RETURNING profile_id
 ),

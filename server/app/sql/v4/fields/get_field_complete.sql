@@ -570,7 +570,7 @@ agent_artifact_tool_counts AS (
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'field'::artifacts
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'field'::artifact_type
     GROUP BY a.id
 ),
 
@@ -590,7 +590,7 @@ name_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'field'::artifacts
+              AND ar.artifact = 'field'::artifact_type
         )
         AND (
             EXISTS (
@@ -608,7 +608,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -670,7 +670,7 @@ description_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'field'::artifacts
+              AND ar.artifact = 'field'::artifact_type
         )
         AND (
             EXISTS (
@@ -688,7 +688,7 @@ description_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'descriptions'::resources
+              AND rt.resource = 'descriptions'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -750,7 +750,7 @@ active_flag_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'field'::artifacts
+              AND ar.artifact = 'field'::artifact_type
         )
         AND (
             EXISTS (
@@ -768,7 +768,7 @@ active_flag_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'flags'::resources
+              AND rt.resource = 'flags'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -830,7 +830,7 @@ departments_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'field'::artifacts
+              AND ar.artifact = 'field'::artifact_type
         )
         AND (
             EXISTS (
@@ -848,7 +848,7 @@ departments_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'departments'::resources
+              AND rt.resource = 'departments'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -910,7 +910,7 @@ parameters_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'field'::artifacts
+              AND ar.artifact = 'field'::artifact_type
         )
         AND (
             EXISTS (
@@ -928,7 +928,7 @@ parameters_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'parameters'::resources
+              AND rt.resource = 'parameters'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -982,19 +982,19 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'parameters'::resources 
+            WHERE rt.resource = 'parameters'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as parameters_has_tools
     FROM params x
@@ -1026,7 +1026,7 @@ permissions_data_with_tools AS (
                 -- Detail mode permissions
                 CASE 
                     WHEN fdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-                    WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
@@ -1039,7 +1039,7 @@ permissions_data_with_tools AS (
                 CASE 
                     WHEN fdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
                         'This is a default field that cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN 
+                    WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN 
                         NULL::text
                     ELSE 
                         'This field cannot be edited. You can view the details but cannot make changes.'::text
@@ -1117,7 +1117,7 @@ user_has_field_access AS (
             SELECT 1 FROM profile_roles pr_j 
             JOIN roles_resource r ON pr_j.role_id = r.id 
             WHERE pr_j.profile_id = p.id 
-            AND r.role = 'superadmin'::profile_role
+            AND r.role = 'superadmin'::profile_type
         )
     ) OR (
         SELECT NOT EXISTS(

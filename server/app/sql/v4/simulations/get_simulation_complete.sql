@@ -419,7 +419,7 @@ user_context AS (
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1),
-            'guest'::profile_role
+            'guest'::profile_type
         ) as role,
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
@@ -442,7 +442,7 @@ simulation_department_access_check AS (
     SELECT 
         x.simulation_id,
         CASE 
-            WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN true
+            WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN true
             WHEN EXISTS (
                 SELECT 1 FROM simulation_departments sd 
                 WHERE sd.simulation_id = x.simulation_id 
@@ -1079,7 +1079,7 @@ agent_artifact_tool_counts AS (
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'simulation'::artifacts
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'simulation'::artifact_type
     GROUP BY a.id
 ),
 
@@ -1452,7 +1452,7 @@ name_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1470,7 +1470,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -1531,7 +1531,7 @@ description_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1549,7 +1549,7 @@ description_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'descriptions'::resources
+              AND rt.resource = 'descriptions'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -1610,7 +1610,7 @@ departments_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1628,7 +1628,7 @@ departments_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'departments'::resources
+              AND rt.resource = 'departments'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -1689,7 +1689,7 @@ flag_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1707,7 +1707,7 @@ flag_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'flags'::resources
+              AND rt.resource = 'flags'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -1768,7 +1768,7 @@ scenarios_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1786,7 +1786,7 @@ scenarios_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'scenarios'::resources
+              AND rt.resource = 'scenarios'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -1847,7 +1847,7 @@ scenario_flags_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1865,7 +1865,7 @@ scenario_flags_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'scenario_flags'::resources
+              AND rt.resource = 'scenario_flags'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -1926,7 +1926,7 @@ scenario_rubrics_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -1944,7 +1944,7 @@ scenario_rubrics_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'scenario_rubrics'::resources
+              AND rt.resource = 'scenario_rubrics'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -2005,7 +2005,7 @@ scenario_time_limits_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -2023,7 +2023,7 @@ scenario_time_limits_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'scenario_time_limits'::resources
+              AND rt.resource = 'scenario_time_limits'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -2084,7 +2084,7 @@ scenario_positions_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -2102,7 +2102,7 @@ scenario_positions_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'scenario_positions'::resources
+              AND rt.resource = 'scenario_positions'::resource_type
         )
         AND (
             (SELECT mcp FROM params) = false
@@ -2283,7 +2283,7 @@ scenario_flags_data AS (
             FROM flags_resource f
             JOIN artifact_flags_relation aft ON f.type = aft.flag_type
             WHERE f.active = true
-              AND aft.artifact = 'scenario'::artifacts),
+              AND aft.artifact = 'scenario'::artifact_type),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]
         ) as scenario_flags
     FROM params
@@ -2454,7 +2454,7 @@ general_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'simulation'::artifacts
+              AND ar.artifact = 'simulation'::artifact_type
         )
         AND (
             EXISTS (
@@ -2547,31 +2547,31 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'descriptions'::resources 
+            WHERE rt.resource = 'descriptions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'flags'::resources 
+            WHERE rt.resource = 'flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'scenarios'::resources 
+            WHERE rt.resource = 'scenarios'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as scenarios_has_tools
     FROM params x
@@ -2606,15 +2606,15 @@ permissions_data_with_tools AS (
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
                 CASE 
-                    WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN true
+                    WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN true
                     WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
                     ELSE false
                 END
             -- Detail mode: check department access and role
             ELSE
                 CASE 
-                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_role) != 'superadmin' THEN false
-                    WHEN COALESCE(uc.role, 'guest'::profile_role) IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_type) != 'superadmin' THEN false
+                    WHEN COALESCE(uc.role, 'guest'::profile_type) IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
@@ -2622,15 +2622,15 @@ permissions_data_with_tools AS (
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
                 CASE 
-                    WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN NULL::text
+                    WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN NULL::text
                     WHEN (SELECT COUNT(*) FROM department_mapping_data) = 0 THEN 'No accessible departments found for user'::text
                     ELSE NULL::text
                 END
             -- Detail mode: check department access and role
             ELSE
                 CASE 
-                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_role) != 'superadmin' THEN 'No departments assigned to this simulation'::text
-                    WHEN COALESCE(uc.role, 'guest'::profile_role) NOT IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 'Insufficient permissions to edit simulation'::text
+                    WHEN COALESCE((SELECT department_ids FROM simulation_base LIMIT 1), NULL) IS NULL AND COALESCE(uc.role, 'guest'::profile_type) != 'superadmin' THEN 'No departments assigned to this simulation'::text
+                    WHEN COALESCE(uc.role, 'guest'::profile_type) NOT IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN 'Insufficient permissions to edit simulation'::text
                     ELSE NULL::text
                 END
         END as base_disabled_reason
@@ -2694,7 +2694,7 @@ SELECT
         FROM draft_payload_data),
         sb.department_ids,
         CASE 
-            WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN NULL::uuid[]
+            WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN NULL::uuid[]
             ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
         END,
         ARRAY[]::uuid[]
@@ -2719,7 +2719,7 @@ SELECT
                 FROM draft_payload_data),
                 sb.department_ids,
                 CASE 
-                    WHEN COALESCE(uc.role, 'guest'::profile_role) = 'superadmin'::profile_role THEN NULL::uuid[]
+                    WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN NULL::uuid[]
                     ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
                 END,
                 ARRAY[]::uuid[]

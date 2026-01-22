@@ -376,7 +376,7 @@ total_points_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.points_id FROM points_draft dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rp.point_id FROM rubric_points rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::type_rubric_points LIMIT 1)
+            (SELECT rp.point_id FROM rubric_points rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::point_type LIMIT 1)
         ) as total_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
@@ -389,7 +389,7 @@ total_points_resource_data AS (
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 2 as priority
                 FROM rubric_points rp 
                 JOIN points_resource p ON rp.point_id = p.id 
-                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::type_rubric_points
+                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::point_type
             ) p
             ORDER BY priority
             LIMIT 1
@@ -401,7 +401,7 @@ pass_points_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.points_id FROM points_draft dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rp.point_id FROM rubric_points rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::type_rubric_points LIMIT 1)
+            (SELECT rp.point_id FROM rubric_points rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::point_type LIMIT 1)
         ) as pass_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
@@ -414,7 +414,7 @@ pass_points_resource_data AS (
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 2 as priority
                 FROM rubric_points rp 
                 JOIN points_resource p ON rp.point_id = p.id 
-                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::type_rubric_points
+                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::point_type
             ) p
             ORDER BY priority
             LIMIT 1
@@ -798,7 +798,7 @@ agent_artifact_tool_counts AS (
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'rubric'::artifacts
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'rubric'::artifact_type
     GROUP BY a.id
 ),
 
@@ -818,7 +818,7 @@ name_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -836,7 +836,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -898,7 +898,7 @@ description_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -916,7 +916,7 @@ description_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'descriptions'::resources
+              AND rt.resource = 'descriptions'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -978,7 +978,7 @@ departments_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -996,7 +996,7 @@ departments_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'departments'::resources
+              AND rt.resource = 'departments'::resource_type
         )
     ),
     agent_department_preference AS (
@@ -1050,7 +1050,7 @@ flag_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -1068,7 +1068,7 @@ flag_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'flags'::resources
+              AND rt.resource = 'flags'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1130,7 +1130,7 @@ points_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -1148,7 +1148,7 @@ points_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'points'::resources
+              AND rt.resource = 'points'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1210,7 +1210,7 @@ standard_groups_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -1228,7 +1228,7 @@ standard_groups_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'standard_groups'::resources
+              AND rt.resource = 'standard_groups'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1290,7 +1290,7 @@ standards_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifacts
+              AND ar.artifact = 'rubric'::artifact_type
         )
         AND (
             EXISTS (
@@ -1308,7 +1308,7 @@ standards_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'standards'::resources
+              AND rt.resource = 'standards'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -1384,43 +1384,43 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'descriptions'::resources 
+            WHERE rt.resource = 'descriptions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'flags'::resources 
+            WHERE rt.resource = 'flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'points'::resources 
+            WHERE rt.resource = 'points'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as points_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'standard_groups'::resources 
+            WHERE rt.resource = 'standard_groups'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as standard_groups_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'standards'::resources 
+            WHERE rt.resource = 'standards'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as standards_has_tools
     FROM params x
@@ -1457,7 +1457,7 @@ permissions_data_with_tools AS (
                 -- Detail mode permissions
                 CASE 
                     WHEN rdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
@@ -1470,7 +1470,7 @@ permissions_data_with_tools AS (
                 CASE 
                     WHEN rdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
                         'This is a default rubric that cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN 
                         NULL::text
                     ELSE 
                         'This rubric cannot be edited. You can view the details but cannot make changes.'::text

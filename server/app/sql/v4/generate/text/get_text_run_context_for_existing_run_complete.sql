@@ -275,7 +275,7 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifacts::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resources IS NULL  -- Backward compatibility: include all tools
@@ -522,7 +522,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(NULL::artifacts::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
+        COALESCE(NULL::artifact_type::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,  -- Don't append developer instructions here - Python will handle it
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,

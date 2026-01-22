@@ -272,7 +272,7 @@ sim_first_scenario_rubric AS (
     LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
     LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-    LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
+    LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::point_type
     LEFT JOIN points_resource p_total ON p_total.id = rp_total.point_id
     WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
@@ -294,17 +294,17 @@ history_grade_rollup AS (
       AND hcg.chat_id IS NOT NULL
       AND hcg.rubric_id IS NULL
     LEFT JOIN rubrics_resource r ON r.id = hcg.rubric_id
-    LEFT JOIN rubric_points rp_r ON rp_r.rubric_id = r.id AND rp_r.type = 'total'::type_rubric_points
+    LEFT JOIN rubric_points rp_r ON rp_r.rubric_id = r.id AND rp_r.type = 'total'::point_type
     LEFT JOIN points_resource p_r ON p_r.id = rp_r.point_id
     LEFT JOIN rubrics_resource r_fallback_scenario ON r_fallback_scenario.id = srr_fallback_scenario.rubric_id
-    LEFT JOIN rubric_points rp_fallback_scenario ON rp_fallback_scenario.rubric_id = r_fallback_scenario.id AND rp_fallback_scenario.type = 'total'::type_rubric_points
+    LEFT JOIN rubric_points rp_fallback_scenario ON rp_fallback_scenario.rubric_id = r_fallback_scenario.id AND rp_fallback_scenario.type = 'total'::point_type
     LEFT JOIN points_resource p_fallback_scenario ON p_fallback_scenario.id = rp_fallback_scenario.point_id
     LEFT JOIN sim_first_scenario_rubric sfsr ON sfsr.simulation_id = sa.simulation_id
       AND hcg.chat_id IS NOT NULL
       AND hcg.rubric_id IS NULL
       AND p_fallback_scenario.value IS NULL
     LEFT JOIN rubrics_resource r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
-    LEFT JOIN rubric_points rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'::type_rubric_points
+    LEFT JOIN rubric_points rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'::point_type
     LEFT JOIN points_resource p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY sc.attempt_id
@@ -420,9 +420,9 @@ simulation_rubrics AS (
     LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
     LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-    LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
+    LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::point_type
     LEFT JOIN points_resource p_total ON p_total.id = rp_total.point_id
-    LEFT JOIN rubric_points rp_pass ON rp_pass.rubric_id = r.id AND rp_pass.type = 'pass'::type_rubric_points
+    LEFT JOIN rubric_points rp_pass ON rp_pass.rubric_id = r.id AND rp_pass.type = 'pass'::point_type
     LEFT JOIN points_resource p_pass ON p_pass.id = rp_pass.point_id
     WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)

@@ -516,7 +516,7 @@ scenario_department_access_check AS (
         s.id as scenario_id,
         CASE 
             WHEN (SELECT scenario_id FROM params) IS NULL THEN NULL::boolean
-            WHEN up.role = 'superadmin'::profile_role THEN true
+            WHEN up.role = 'superadmin'::profile_type THEN true
             WHEN EXISTS (
                 SELECT 1 FROM scenario_departments sd 
                 WHERE sd.scenario_id = s.id 
@@ -1487,7 +1487,7 @@ valid_personas_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN field_parameters fcp ON fcp.field_id = pf.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN field_parameters fcp ON fcp.field_id = pf.field_id AND fcp.type = 'conditional'::parameter_type
                         JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
@@ -1522,7 +1522,7 @@ valid_personas_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN field_parameters fcp ON fcp.field_id = pf.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN field_parameters fcp ON fcp.field_id = pf.field_id AND fcp.type = 'conditional'::parameter_type
                         JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
@@ -1780,7 +1780,7 @@ valid_documents_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::parameter_type
                         JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
@@ -1802,7 +1802,7 @@ valid_documents_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::parameter_type
                         JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
@@ -1926,7 +1926,7 @@ document_data_base AS (
                 OR EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                    JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::parameter_type
                     JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
@@ -1948,7 +1948,7 @@ document_data_base AS (
                 OR EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                    JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::parameter_type
                     JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
@@ -2283,7 +2283,7 @@ field_conditional_parameters_data AS (
         fcp.field_id,
         ARRAY_AGG(fcp.parameter_id ORDER BY fcp.parameter_id) as conditional_parameter_ids
     FROM field_parameters fcp
-    WHERE fcp.active = true AND fcp.type = 'conditional'::type_field_parameters
+    WHERE fcp.active = true AND fcp.type = 'conditional'::parameter_type
     GROUP BY fcp.field_id
 ),
 parameter_item_data AS (
@@ -2616,7 +2616,7 @@ agent_artifact_tool_counts AS (
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'scenario'::artifacts
+    LEFT JOIN artifact_resources_relation ar ON ar.resource = rt.resource AND ar.artifact = 'scenario'::artifact_type
     GROUP BY a.id
 ),
 
@@ -2628,7 +2628,7 @@ valid_agents_array AS (
         a.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
-        ARRAY[COALESCE(NULL::artifacts::text, '')] as roles
+        ARRAY[COALESCE(NULL::artifact_type::text, '')] as roles
     FROM agent_artifact a
     
     
@@ -2636,11 +2636,11 @@ valid_agents_array AS (
     CROSS JOIN expected_agent_role ear
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true) 
     AND (
-        NULL::artifacts = CAST(ear.role AS artifacts)
-        OR NULL::artifacts = CAST('scenario' AS artifacts)
-        OR NULL::artifacts = CAST('scenario' AS artifacts)
+        NULL::artifact_type = CAST(ear.role AS artifacts)
+        OR NULL::artifact_type = CAST('scenario' AS artifacts)
+        OR NULL::artifact_type = CAST('scenario' AS artifacts)
     )
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, ''), ear.role
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifact_type::text, ''), ear.role
     HAVING 
         COUNT(NULL::uuid) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -2759,7 +2759,7 @@ field_mapping_data AS (
             FROM field_parameters fcp
             WHERE fcp.field_id = f.id
               AND fcp.active = true
-              AND fcp.type = 'conditional'::type_field_parameters
+              AND fcp.type = 'conditional'::parameter_type
         ), ARRAY[]::uuid[]) as conditional_parameter_ids,
         COALESCE(f.generated, false) as generated
     FROM fields_resource f
@@ -2928,7 +2928,7 @@ name_agent_data AS (
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'scenario'::artifacts
+              AND ar.artifact = 'scenario'::artifact_type
         )
         AND (
             EXISTS (
@@ -2946,7 +2946,7 @@ name_agent_data AS (
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
-              AND rt.resource = 'names'::resources
+              AND rt.resource = 'names'::resource_type
         )
         -- Filter by MCP flag when mcp=true
         AND (
@@ -3005,7 +3005,7 @@ description_agent_data AS (
             SELECT 1 FROM agent_tools at
             JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
-            WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts
+            WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type
         )
         AND (
             EXISTS (
@@ -3019,7 +3019,7 @@ description_agent_data AS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
-            WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'descriptions'::resources
+            WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'descriptions'::resource_type
         )
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
@@ -3037,9 +3037,9 @@ problem_statement_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'problem_statements'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'problem_statements'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3054,9 +3054,9 @@ departments_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'departments'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'departments'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3070,9 +3070,9 @@ fields_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'fields'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'fields'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3086,9 +3086,9 @@ objectives_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'objectives'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'objectives'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3102,9 +3102,9 @@ images_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'images'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'images'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3118,9 +3118,9 @@ videos_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'videos'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'videos'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3134,9 +3134,9 @@ questions_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'questions'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'questions'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3150,9 +3150,9 @@ templates_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'templates'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'templates'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3166,9 +3166,9 @@ personas_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'personas'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'personas'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3182,9 +3182,9 @@ documents_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'documents'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'documents'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3198,9 +3198,9 @@ parameters_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'parameters'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'parameters'::resource_type)
     ),
     agent_department_preference AS (
         SELECT ea.agent_id, CASE WHEN sd.department_id IS NOT NULL AND EXISTS (SELECT 1 FROM agent_departments ad WHERE ad.agent_id = ea.agent_id AND ad.department_id = sd.department_id AND ad.active = true) THEN 0 ELSE 1 END as dept_preference, ea.updated_at
@@ -3214,9 +3214,9 @@ active_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3230,9 +3230,9 @@ objectives_enabled_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3246,9 +3246,9 @@ images_enabled_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3262,9 +3262,9 @@ video_enabled_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3278,9 +3278,9 @@ questions_enabled_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3294,9 +3294,9 @@ problem_statement_enabled_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3310,9 +3310,9 @@ use_templates_flag_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resources)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) JOIN resource_tools_relation rt ON rt.tool_id = t.id WHERE at.agent_id = a.id AND at.active = true AND rt.resource = 'scenario_flags'::resource_type)
         AND ((SELECT mcp FROM params) = false OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id AND f_mcp.name = 'mcp' AND af_mcp.value = true))
     ),
     agent_department_preference AS (
@@ -3328,7 +3328,7 @@ basic_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
     ),
     agent_tool_resources AS (
@@ -3361,7 +3361,7 @@ content_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
     ),
     agent_tool_resources AS (
@@ -3393,7 +3393,7 @@ general_agent_data AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
         FROM agent_artifact a CROSS JOIN params p CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifacts)
+        AND EXISTS (SELECT 1 FROM agent_tools at JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id JOIN artifact_resources_relation ar ON ar.resource = rt.resource WHERE at.agent_id = a.id AND at.active = TRUE AND ar.artifact = 'scenario'::artifact_type)
         AND (EXISTS (SELECT 1 FROM agent_departments ad JOIN user_departments_for_agents_scenario ud ON ad.department_id = ud.department_id WHERE ad.agent_id = a.id AND ad.active = true) OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
     ),
     agent_tool_resources AS (
@@ -3426,85 +3426,85 @@ tools_existence_check AS (
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'names'::resources 
+            WHERE rt.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'descriptions'::resources 
+            WHERE rt.resource = 'descriptions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'problem_statements'::resources 
+            WHERE rt.resource = 'problem_statements'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as problem_statements_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'departments'::resources 
+            WHERE rt.resource = 'departments'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'fields'::resources 
+            WHERE rt.resource = 'fields'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as fields_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'objectives'::resources 
+            WHERE rt.resource = 'objectives'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as objectives_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'images'::resources 
+            WHERE rt.resource = 'images'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as images_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'videos'::resources 
+            WHERE rt.resource = 'videos'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as videos_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'questions'::resources 
+            WHERE rt.resource = 'questions'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as questions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'templates'::resources 
+            WHERE rt.resource = 'templates'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as templates_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'personas'::resources 
+            WHERE rt.resource = 'personas'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as personas_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'documents'::resources 
+            WHERE rt.resource = 'documents'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as documents_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'parameters'::resources 
+            WHERE rt.resource = 'parameters'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as parameters_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
-            WHERE rt.resource = 'scenario_flags'::resources 
+            WHERE rt.resource = 'scenario_flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as scenario_flags_has_tools
     FROM params x
@@ -3547,7 +3547,7 @@ permissions_data_with_tools AS (
                 CASE 
                     WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN false
                     WHEN (COALESCE(array_length(sdd.department_ids, 1), 0) = 0 AND up.role != 'superadmin') THEN false
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN true
                     ELSE false
                 END
         END as base_can_edit,
@@ -3560,7 +3560,7 @@ permissions_data_with_tools AS (
                 CASE 
                     WHEN COALESCE(ssa.active_usage_count, 0) > 0 THEN 'Scenario is currently in use and cannot be edited.'
                     WHEN (COALESCE(array_length(sdd.department_ids, 1), 0) = 0 AND up.role != 'superadmin') THEN 'You do not have access to edit this scenario.'
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN NULL::text
+                    WHEN up.role IN ('admin'::profile_type, 'instructional'::profile_type, 'superadmin'::profile_type) THEN NULL::text
                     ELSE 'This scenario cannot be edited. You can view the details but cannot make changes.'::text
                 END
         END as base_disabled_reason

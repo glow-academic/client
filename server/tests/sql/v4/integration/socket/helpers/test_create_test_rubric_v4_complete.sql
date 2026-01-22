@@ -65,13 +65,13 @@ AS $$
     ),
     rubric_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
-        SELECT nr.id, COALESCE(pr.id, pl.id), 'total'::type_rubric_points
+        SELECT nr.id, COALESCE(pr.id, pl.id), 'total'::point_type
         FROM new_rubric nr, points_resource_cte pr FULL OUTER JOIN points_lookup pl ON true
         RETURNING rubric_id
     ),
     rubric_pass_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
-        SELECT nr.id, COALESCE(ppr.id, ppl.id), 'pass'::type_rubric_points
+        SELECT nr.id, COALESCE(ppr.id, ppl.id), 'pass'::point_type
         FROM new_rubric nr, pass_points_resource_cte ppr FULL OUTER JOIN pass_points_lookup ppl ON true
         RETURNING rubric_id
     ),

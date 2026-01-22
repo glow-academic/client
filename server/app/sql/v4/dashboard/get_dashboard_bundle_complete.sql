@@ -550,7 +550,7 @@ CREATE OR REPLACE FUNCTION api_get_dashboard_bundle_v4(
     start_date text,
     end_date text,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_role[],
+    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     profile_id uuid DEFAULT NULL
@@ -577,7 +577,7 @@ WITH params AS (
         start_date::timestamptz AS start_date,
         end_date::timestamptz AS end_date,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-        COALESCE(NULLIF(roles, ARRAY[]::profile_role[]), ARRAY[]::profile_role[]) AS roles,
+        COALESCE(NULLIF(roles, ARRAY[]::profile_type[]), ARRAY[]::profile_type[]) AS roles,
         COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[]) AS simulation_filters,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(profile_id, NULL::uuid) AS profile_id
@@ -594,9 +594,9 @@ user_profile AS (
 -- Get thresholds from active settings (defaults if no settings found)
 settings_thresholds AS (
     SELECT 
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1), 85) AS success_threshold,
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1), 80) AS warning_threshold,
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1), 70) AS danger_threshold
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::threshold_type LIMIT 1), 85) AS success_threshold,
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::threshold_type LIMIT 1), 80) AS warning_threshold,
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1), 70) AS danger_threshold
     FROM setting_artifact s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf
@@ -665,7 +665,7 @@ filt AS (
                         'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
         )
         -- Dashboard never filters by profile - always filter by roles
-                    AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
+                    AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
         -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
@@ -739,7 +739,7 @@ filt AS (
                     'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
                 )
                 -- Dashboard never filters by profile - always filter by roles
-                AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
+                AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
                 -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                 AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)
@@ -809,7 +809,7 @@ filt AS (
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = COALESCE(srr.rubric_id, srr_fallback.rubric_id) AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)) * 100.0 AS norm
+                    (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = COALESCE(srr.rubric_id, srr_fallback.rubric_id) AND rp.type = 'total'::point_type LIMIT 1), 0)) * 100.0 AS norm
                 FROM grades_entry sg
                 JOIN runs_entry r_stag ON r_stag.id = sg.run_id
                 JOIN groups_entry g_stag ON g_stag.id = r_stag.group_id
@@ -1317,7 +1317,7 @@ filt AS (
                   AND EXISTS (
                       SELECT 1 FROM analytics a
                       WHERE a.chat_id = c.id
-                        AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
+                        AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
                         AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
                         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                         AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
@@ -2231,7 +2231,7 @@ filt AS (
                             AND (SELECT r.role FROM profile_roles pr_j 
                                  JOIN roles_resource r ON pr_j.role_id = r.id 
                                  WHERE pr_j.profile_id = p.id 
-                                 LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[])
+                                 LIMIT 1) = ANY((SELECT roles FROM params)::profile_type[])
                     ) AS profile_ids,
                     ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id AND cs.active = true) AS simulation_ids
                 FROM cohort_artifact c
@@ -2384,7 +2384,7 @@ filt AS (
                 WHERE a.attempt_created_at >= (SELECT start_date FROM params)
                     AND a.attempt_created_at < (SELECT end_date FROM params)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                    AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
+                    AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
                     AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
                     AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
                     AND (

@@ -187,7 +187,7 @@ runs_base AS (
                 FROM profile_artifact p
                 LEFT JOIN profile_roles pr_j ON pr_j.profile_id = p.id
                 LEFT JOIN roles_resource r ON pr_j.role_id = r.id
-                WHERE COALESCE(r.role, 'member'::profile_role)::text = ANY((SELECT roles FROM params)::text[])
+                WHERE COALESCE(r.role, 'member'::profile_type)::text = ANY((SELECT roles FROM params)::text[])
             )
         )
         -- Cohort filter (via profile_cohorts)

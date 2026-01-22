@@ -127,7 +127,7 @@ BEGIN
         )
         VALUES (
             v_profile_id,
-            'provider'::artifacts,
+            'provider'::artifact_type,
             1,
             v_group_id,
             NOW(),

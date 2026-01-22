@@ -115,7 +115,7 @@ image_model_check AS (
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
     FROM model_modalities mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
-    WHERE mr.modality = 'image' AND mm.type = 'output'::type_model_modalities AND mm.active = true
+    WHERE mr.modality = 'image' AND mm.type = 'output'::direction_type AND mm.active = true
     GROUP BY mm.model_id
 ),
 models_with_usage AS (
@@ -157,7 +157,7 @@ models_aggregated AS (
                 (mwu.model_id, mwu.name, mwu.description, mwu.active, mwu.image_model, mwu.updated_at,
                  mwu.provider, mwu.provider_id, mwu.provider_name, mwu.base_url,
                  CASE 
-                     WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+                     WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
                      ELSE false
                  END,
                  CASE 

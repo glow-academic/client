@@ -549,7 +549,7 @@ CREATE OR REPLACE FUNCTION api_get_reports_overview_v4(
     actor_profile_id uuid,
     target_profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_role[],
+    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -582,7 +582,7 @@ WITH params AS (
         actor_profile_id AS actor_profile_id,
         target_profile_id AS target_profile_id,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-        COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
+        COALESCE(roles, ARRAY[]::profile_type[]) AS roles,
         COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[]) AS simulation_filters,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids
 ),
@@ -828,7 +828,7 @@ filt AS (
                 SELECT DISTINCT ON (ss.simulation_id)
                     ss.simulation_id,
                     srr.rubric_id,
-                    (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points
+                    (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) as points
                 FROM simulation_scenarios ss
                 LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
@@ -854,7 +854,7 @@ filt AS (
                 LEFT JOIN rubrics_resource r_fallback_scenario ON r_fallback_scenario.id = srr_fallback.rubric_id
                 LEFT JOIN sim_first_scenario_rubric_stagnation sfsr ON sfsr.simulation_id = csi.simulation_id
                   AND srr.rubric_id IS NULL
-                  AND (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL
+                  AND (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL
                 LEFT JOIN rubrics_resource r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
                 LEFT JOIN rubric_points rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'
                 LEFT JOIN points_resource p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
@@ -2119,7 +2119,7 @@ SELECT
     (SELECT profile_name FROM profile_data LIMIT 1)::text as profile_name,
     (SELECT profile_emails FROM profile_data LIMIT 1)::text[] as profile_emails,
     (SELECT profile_primary_email FROM profile_data LIMIT 1)::text as profile_primary_email,
-    (SELECT profile_role FROM profile_data LIMIT 1)::profile_role as profile_role,
+    (SELECT profile_role FROM profile_data LIMIT 1)::profile_type as profile_role,
     (SELECT profile_id FROM profile_data LIMIT 1)::uuid as profile_id,
     (SELECT header_metrics FROM header_metrics_combined LIMIT 1) as header_metrics,
     (SELECT primary_metrics FROM primary_metrics_combined LIMIT 1) as primary_metrics,

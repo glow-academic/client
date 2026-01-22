@@ -28,7 +28,7 @@ AS $$
     ),
     new_profile AS (
         INSERT INTO profiles_resource(role)
-        VALUES (test_create_test_profile_v4.role::profile_role)
+        VALUES (test_create_test_profile_v4.role::profile_type)
         RETURNING id, role::text
     ),
     profile_name_link AS (

@@ -45,7 +45,7 @@ AS $$
     ),
     new_profile AS (
         INSERT INTO profiles_resource(role)
-        SELECT test_get_or_create_test_profile_v4.role::profile_role
+        SELECT test_get_or_create_test_profile_v4.role::profile_type
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING id, test_get_or_create_test_profile_v4.role::text as role
     ),

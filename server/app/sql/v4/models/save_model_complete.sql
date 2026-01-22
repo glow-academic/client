@@ -364,14 +364,14 @@ BEGIN
 
     IF array_length(input_modality_ids, 1) > 0 THEN
         INSERT INTO model_modalities (model_id, modality_id, type, active, created_at, updated_at, generated, mcp)
-        SELECT v_model_id, mod_id, 'input'::type_model_modalities, true, NOW(), NOW(), false, false
+        SELECT v_model_id, mod_id, 'input'::direction_type, true, NOW(), NOW(), false, false
         FROM UNNEST(input_modality_ids) as mod_id
         ON CONFLICT (model_id, modality_id, type) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF array_length(output_modality_ids, 1) > 0 THEN
         INSERT INTO model_modalities (model_id, modality_id, type, active, created_at, updated_at, generated, mcp)
-        SELECT v_model_id, mod_id, 'output'::type_model_modalities, true, NOW(), NOW(), false, false
+        SELECT v_model_id, mod_id, 'output'::direction_type, true, NOW(), NOW(), false, false
         FROM UNNEST(output_modality_ids) as mod_id
         ON CONFLICT (model_id, modality_id, type) DO UPDATE SET active = true, updated_at = NOW();
     END IF;

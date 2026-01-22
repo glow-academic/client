@@ -257,9 +257,9 @@ emulation_validation AS (
                     WHERE p_actual.id = (SELECT actual_profile_id FROM resolved_profile_ids)
                       AND p_effective.id != p_actual.id
                       AND CASE 
-                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'superadmin'::profile_role THEN true
-                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'admin'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)
-                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'instructional'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'superadmin'::profile_type THEN true
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'admin'::profile_type THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'instructional'::profile_type THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)
                         ELSE false
                       END
                 )
@@ -283,7 +283,7 @@ effective_profile_role AS (
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1),
-            NULL::profile_role
+            NULL::profile_type
         ) as role
     FROM profile_artifact p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
 ),
@@ -291,10 +291,10 @@ scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
     SELECT 
         CASE 
-            WHEN epr.role = 'superadmin'::profile_role THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
-            WHEN epr.role = 'admin'::profile_role THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
-            WHEN epr.role = 'instructional'::profile_role THEN ARRAY['instructional', 'member', 'guest']::text[]
-            WHEN epr.role = 'member'::profile_role THEN ARRAY['member']::text[]
+            WHEN epr.role = 'superadmin'::profile_type THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            WHEN epr.role = 'admin'::profile_type THEN ARRAY['admin', 'instructional', 'member', 'guest', 'custom']::text[]
+            WHEN epr.role = 'instructional'::profile_type THEN ARRAY['instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'member'::profile_type THEN ARRAY['member']::text[]
             ELSE ARRAY['guest']::text[]
         END as scoped_roles
     FROM effective_profile_role epr
@@ -342,7 +342,7 @@ actual_profile_data AS (
         NULL::text as name,
         NULL::text[] as emails,
         NULL::text as primary_email,
-        NULL::profile_role as role,
+        NULL::profile_type as role,
         NULL::boolean as active,
         NULL::integer as req_per_day,
         NULL::timestamptz as last_login,
@@ -395,7 +395,7 @@ effective_profile_data AS (
         NULL::text as name,
         NULL::text[] as emails,
         NULL::text as primary_email,
-        NULL::profile_role as role,
+        NULL::profile_type as role,
         NULL::boolean as active,
         NULL::integer as req_per_day,
         NULL::timestamptz as last_login,
@@ -617,24 +617,24 @@ settings_resolution AS (
         EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) as settings_active,
         (SELECT n.name FROM setting_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1) as settings_name,
         (SELECT d.description FROM setting_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1) as settings_description,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1) as primary_color,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::type_setting_colors LIMIT 1) as accent,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'background'::type_setting_colors LIMIT 1) as background,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'surface'::type_setting_colors LIMIT 1) as surface,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'success'::type_setting_colors LIMIT 1) as success,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'warning'::type_setting_colors LIMIT 1) as warning,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'error'::type_setting_colors LIMIT 1) as error,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_background'::type_setting_colors LIMIT 1) as sidebar_background,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_primary'::type_setting_colors LIMIT 1) as sidebar_primary,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart1'::type_setting_colors LIMIT 1) as chart1,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart2'::type_setting_colors LIMIT 1) as chart2,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart3'::type_setting_colors LIMIT 1) as chart3,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart4'::type_setting_colors LIMIT 1) as chart4,
-        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart5'::type_setting_colors LIMIT 1) as chart5,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::color_type LIMIT 1) as primary_color,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::color_type LIMIT 1) as accent,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'background'::color_type LIMIT 1) as background,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'surface'::color_type LIMIT 1) as surface,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'success'::color_type LIMIT 1) as success,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'warning'::color_type LIMIT 1) as warning,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'error'::color_type LIMIT 1) as error,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_background'::color_type LIMIT 1) as sidebar_background,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_primary'::color_type LIMIT 1) as sidebar_primary,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart1'::color_type LIMIT 1) as chart1,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart2'::color_type LIMIT 1) as chart2,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart3'::color_type LIMIT 1) as chart3,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart4'::color_type LIMIT 1) as chart4,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart5'::color_type LIMIT 1) as chart5,
         EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as settings_guest_login_enabled,
-        (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1) as success_threshold,
-        (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1) as warning_threshold,
-        (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1) as danger_threshold,
+        (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::threshold_type LIMIT 1) as success_threshold,
+        (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::threshold_type LIMIT 1) as warning_threshold,
+        (SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::threshold_type LIMIT 1) as danger_threshold,
         COALESCE(sad.auth_ids, ARRAY[]::text[]) as settings_auth_ids,
         COALESCE(sad.auths, '{}'::types.q_get_profile_context_v4_auth[]) as settings_auths,
         COALESCE(spd.provider_ids, ARRAY[]::text[]) as settings_provider_ids,
@@ -708,11 +708,11 @@ redirect_path_computed AS (
     SELECT 
         CASE 
             WHEN epr.role IS NULL THEN NULL::text
-            WHEN epr.role = 'guest'::profile_role THEN '/practice'::text
-            WHEN epr.role = 'member'::profile_role THEN '/home'::text
-            WHEN epr.role = 'instructional'::profile_role THEN '/analytics/dashboard'::text
-            WHEN epr.role = 'admin'::profile_role THEN '/analytics/dashboard'::text
-            WHEN epr.role = 'superadmin'::profile_role THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'guest'::profile_type THEN '/practice'::text
+            WHEN epr.role = 'member'::profile_type THEN '/home'::text
+            WHEN epr.role = 'instructional'::profile_type THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'admin'::profile_type THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'superadmin'::profile_type THEN '/analytics/dashboard'::text
             ELSE COALESCE(
                 (SELECT route_path FROM UNNEST((SELECT available_routes FROM available_routes_data)) as route_path
                  WHERE route_path NOT LIKE '%[%'

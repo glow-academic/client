@@ -25,7 +25,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT NULL::artifacts::text
+    SELECT NULL::artifact_type::text
     
     
     WHERE NULL::uuid = $1

@@ -39,7 +39,7 @@ BEGIN
         ''::text as template  -- templates are handled by args_outputs, not outputs
     FROM resource_outputs_relation ro
     JOIN outputs o ON o.id = ro.outputs_id
-    WHERE ro.resource = api_get_resource_schema_fields_v4.resource_type::resources
+    WHERE ro.resource = api_get_resource_schema_fields_v4.resource_type::resource_type
     ORDER BY o.name;  -- Order by name since position doesn't exist
 END;
 $$;

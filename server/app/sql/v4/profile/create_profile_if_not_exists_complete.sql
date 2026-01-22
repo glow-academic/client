@@ -99,7 +99,7 @@ profile_insert AS (
 -- Insert role (only if creating)
 role_resource AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT (SELECT role FROM params)::profile_role, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    SELECT (SELECT role FROM params)::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     WHERE EXISTS (SELECT 1 FROM profile_insert)
     ON CONFLICT (role) DO NOTHING
     RETURNING id as role_id
@@ -107,7 +107,7 @@ role_resource AS (
 role_id_lookup AS (
     SELECT COALESCE(
         (SELECT role_id FROM role_resource),
-        (SELECT id FROM roles_resource WHERE role = (SELECT role FROM params)::profile_role)
+        (SELECT id FROM roles_resource WHERE role = (SELECT role FROM params)::profile_type)
     ) as role_id
 ),
 profile_role_insert AS (

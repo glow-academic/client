@@ -100,7 +100,7 @@ field_conditional_parameters_agg AS (
         ARRAY_AGG(fcp.parameter_id::text ORDER BY (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)) as conditional_parameter_ids
     FROM field_parameters fcp
     JOIN parameters_resource p ON p.id = fcp.parameter_id
-    WHERE fcp.active = true AND fcp.type = 'conditional'::type_field_parameters
+    WHERE fcp.active = true AND fcp.type = 'conditional'::parameter_type
     GROUP BY fcp.field_id
 ),
 fields_data AS (
@@ -116,12 +116,12 @@ fields_data AS (
         COALESCE(fcpa.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
         CASE 
             WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_edit,
         CASE 
             WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
+            WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate
@@ -134,7 +134,7 @@ fields_data AS (
     WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = true)
     AND (
         -- Superadmin can see all fields
-        up.role = 'superadmin'::profile_role
+        up.role = 'superadmin'::profile_type
         OR
         -- Include fields with no departments (cross-department)
         NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)

@@ -56,7 +56,7 @@ CREATE OR REPLACE FUNCTION api_get_per_simulation_metrics_v4(
     profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_role[],
+    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     profile_ids uuid[] DEFAULT ARRAY[]::uuid[],
     simulation_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -75,7 +75,7 @@ WITH params AS (
         profile_id,
         COALESCE(NULLIF(cohort_ids, ARRAY[]::uuid[]), ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(NULLIF(department_ids, ARRAY[]::uuid[]), ARRAY[]::uuid[]) AS department_ids,
-        COALESCE(NULLIF(roles, ARRAY[]::profile_role[]), ARRAY[]::profile_role[]) AS roles,
+        COALESCE(NULLIF(roles, ARRAY[]::profile_type[]), ARRAY[]::profile_type[]) AS roles,
         COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[]) AS simulation_filters,
         COALESCE(NULLIF(profile_ids, ARRAY[]::uuid[]), ARRAY[]::uuid[]) AS profile_ids,
         COALESCE(NULLIF(simulation_ids, ARRAY[]::uuid[]), ARRAY[]::uuid[]) AS simulation_ids,
@@ -86,7 +86,7 @@ filtered_profiles AS (
         p.id
     FROM profile_artifact p
     WHERE 
-        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[]))
+        (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_type[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
             SELECT 1 FROM profile_cohorts cp 
             WHERE cp.profile_id = p.id 

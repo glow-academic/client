@@ -209,7 +209,7 @@ admin_users_by_date AS (
     FROM profile_artifact p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_role, 'superadmin'::profile_role)
+    AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_type, 'superadmin'::profile_type)
     GROUP BY DATE(p.created_at)
 ),
 admin_users_cumulative AS (
@@ -226,7 +226,7 @@ instructional_users_by_date AS (
     FROM profile_artifact p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'instructional'::profile_role)
+    AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'instructional'::profile_type)
     GROUP BY DATE(p.created_at)
 ),
 instructional_users_cumulative AS (
@@ -243,7 +243,7 @@ member_users_by_date AS (
     FROM profile_artifact p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'member'::profile_role)
+    AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'member'::profile_type)
     GROUP BY DATE(p.created_at)
 ),
 member_users_cumulative AS (
@@ -340,16 +340,16 @@ staff_rows AS (
     CROSS JOIN user_profile up
     WHERE (
         -- Superadmins see all profiles (bypass department filter)
-        up.role = 'superadmin'::profile_role 
+        up.role = 'superadmin'::profile_type 
         -- Non-superadmins only see profiles that share departments with them
         OR pd.department_id IN (SELECT department_id FROM user_departments)
     )
     AND (
-        up.role = 'superadmin'::profile_role OR
-        (up.role = 'admin'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role, 'custom'::profile_role)) OR
-        (up.role = 'instructional'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
-        (up.role = 'member'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)) OR
-        (up.role = 'guest' AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'guest'::profile_role))
+        up.role = 'superadmin'::profile_type OR
+        (up.role = 'admin'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)) OR
+        (up.role = 'instructional'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)) OR
+        (up.role = 'member'::profile_type AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)) OR
+        (up.role = 'guest' AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'guest'::profile_type))
     )
     GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
              pa.last_active, rl.requests_per_day,

@@ -26,6 +26,6 @@ AS $$
     JOIN profiles_resource p ON p.id = pe.profile_id
     WHERE pe.email = test_get_superadmin_alias_v4.email
       AND pe.active = true
-      AND p.role = 'superadmin'::profile_role
+      AND p.role = 'superadmin'::profile_type
     LIMIT 1;
 $$;

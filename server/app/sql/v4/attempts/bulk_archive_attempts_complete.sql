@@ -31,7 +31,7 @@ CREATE OR REPLACE FUNCTION api_bulk_archive_attempts_v4(
     end_date text DEFAULT NULL,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_role[],
+    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     search text DEFAULT NULL,
     profile_ids_filter uuid[] DEFAULT ARRAY[]::uuid[],
@@ -93,14 +93,14 @@ BEGIN
                 CASE 
                     WHEN profile_id::text IS NULL OR profile_id::text = '' THEN
                         CASE 
-                            WHEN 'superadmin'::profile_role = ANY(roles) THEN 'superadmin'::text
-                            WHEN 'admin'::profile_role = ANY(roles) THEN 'admin'::text
-                            WHEN 'instructional'::profile_role = ANY(roles) THEN 'instructional'::text
-                            WHEN 'member'::profile_role = ANY(roles) THEN 'member'::text
+                            WHEN 'superadmin'::profile_type = ANY(roles) THEN 'superadmin'::text
+                            WHEN 'admin'::profile_type = ANY(roles) THEN 'admin'::text
+                            WHEN 'instructional'::profile_type = ANY(roles) THEN 'instructional'::text
+                            WHEN 'member'::profile_type = ANY(roles) THEN 'member'::text
                             ELSE 'guest'::text
                         END
                     ELSE COALESCE((SELECT role::text FROM profile_artifact WHERE id = profile_id), 'guest'::text)
-                END::profile_role as role
+                END::profile_type as role
         ),
         expanded_history_cohort_ids AS (
             SELECT DISTINCT cohort_id
@@ -153,11 +153,11 @@ BEGIN
               AND ((profile_id::text IS NULL OR profile_id::text = '') OR sa.profile_id = profile_id)
               AND (cardinality(department_ids) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && department_ids::text[])
               AND (
-                hvr.role = 'superadmin'::profile_role OR
-                (hvr.role = 'admin'::profile_role AND p_attempt.role IN ('admin'::profile_role, 'instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
-                (hvr.role = 'instructional'::profile_role AND p_attempt.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)) OR
-                (hvr.role = 'member'::profile_role AND p_attempt.role IN ('member'::profile_role, 'guest'::profile_role)) OR
-                (hvr.role = 'guest'::profile_role AND p_attempt.role = 'guest'::profile_role)
+                hvr.role = 'superadmin'::profile_type OR
+                (hvr.role = 'admin'::profile_type AND p_attempt.role IN ('admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)) OR
+                (hvr.role = 'instructional'::profile_type AND p_attempt.role IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type)) OR
+                (hvr.role = 'member'::profile_type AND p_attempt.role IN ('member'::profile_type, 'guest'::profile_type)) OR
+                (hvr.role = 'guest'::profile_type AND p_attempt.role = 'guest'::profile_type)
               )
         ),
         history_attempt_cohorts AS (

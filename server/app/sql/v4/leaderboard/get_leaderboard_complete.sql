@@ -128,8 +128,8 @@ WITH params AS (
 -- Get colors from active settings (defaults if no settings found)
 settings_colors AS (
     SELECT 
-        COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1), '#171717') AS primary_color,
-        COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::type_setting_colors LIMIT 1), '#f5f5f5') AS accent
+        COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::color_type LIMIT 1), '#171717') AS primary_color,
+        COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::color_type LIMIT 1), '#f5f5f5') AS accent
     FROM setting_artifact s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf

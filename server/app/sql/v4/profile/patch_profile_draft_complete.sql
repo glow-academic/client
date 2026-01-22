@@ -108,7 +108,7 @@ BEGIN
     IF role IS NOT NULL THEN
         SELECT r.id INTO v_role_id
         FROM roles_resource r
-        WHERE r.role = api_patch_profile_draft_v4.role::profile_role
+        WHERE r.role = api_patch_profile_draft_v4.role::profile_type
         LIMIT 1;
 
         IF v_role_id IS NULL THEN
@@ -238,7 +238,7 @@ BEGIN
     RETURNING id INTO v_group_id;
 
     INSERT INTO drafts_entry (artifact, profile_id, group_id)
-    VALUES ('profile'::artifacts, v_profile_id, v_group_id)
+    VALUES ('profile'::artifact_type, v_profile_id, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link resources to draft

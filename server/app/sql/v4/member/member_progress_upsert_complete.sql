@@ -142,14 +142,14 @@ latest_user_message AS (
     SELECT m.id as message_id
     FROM upserted_run ur
     JOIN messages_entry m ON m.run_id = ur.run_id
-    WHERE m.role = 'user'::message_role
+    WHERE m.role = 'user'::message_type
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
 -- Upsert user message (create if empty, update if exists)
 create_message_if_needed AS (
     INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
-    SELECT 'user'::message_role, true, p.audio, NOW(), NOW()
+    SELECT 'user'::message_type, true, p.audio, NOW(), NOW()
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING id as message_id, created_at, updated_at
@@ -255,7 +255,7 @@ latest_message_for_branch AS (
     JOIN chats_entry c ON c.id = p.chat_id
     JOIN runs_entry r ON r.group_id = c.group_id
     JOIN messages_entry m ON m.run_id = r.id
-    WHERE m.role IN ('user'::message_role, 'assistant'::message_role, 'system'::message_role, 'developer'::message_role)
+    WHERE m.role IN ('user'::message_type, 'assistant'::message_type, 'system'::message_type, 'developer'::message_type)
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
@@ -323,12 +323,12 @@ existing_system_message AS (
     FROM messages_entry m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
-    WHERE m.role = 'system'::message_role
+    WHERE m.role = 'system'::message_type
     LIMIT 1
 ),
 new_system_message AS (
     INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
-    SELECT 'system'::message_role, false, false, NOW(), NOW()
+    SELECT 'system'::message_type, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as system_message_id, created_at, updated_at
@@ -376,12 +376,12 @@ existing_scenario_developer_message AS (
     FROM messages_entry m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN scenario_developer_hash sdh ON message_content_hash(ce.content, 'developer') = sdh.hash
-    WHERE m.role = 'developer'::message_role
+    WHERE m.role = 'developer'::message_type
     LIMIT 1
 ),
 new_scenario_developer_message AS (
     INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    SELECT 'developer'::message_type, false, false, NOW(), NOW()
     FROM scenario_developer_content sdc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
     RETURNING id as developer_message_id, created_at, updated_at

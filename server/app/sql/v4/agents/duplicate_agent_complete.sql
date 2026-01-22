@@ -30,13 +30,13 @@ source_agent AS (
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1),
         (SELECT m.id FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
-        COALESCE(NULL::artifacts::text, '') as role,  -- Derive FROM agent_artifact's tools via artifact_resources_relation
+        COALESCE(NULL::artifact_type::text, '') as role,  -- Derive FROM agent_artifact's tools via artifact_resources_relation
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
         -- Get temperature and reasoning from junction tables
         atl.temperature_level_id,
         arl.reasoning_level_id,
-        NULL::artifacts  -- Need artifact for linking
+        NULL::artifact_type  -- Need artifact for linking
     FROM params x
     JOIN agents_resource a ON a.id = x.agent_id
     LEFT JOIN LATERAL (

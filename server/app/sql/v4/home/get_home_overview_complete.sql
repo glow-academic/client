@@ -170,17 +170,17 @@ profile_role_lookup AS (
         END AS mode,
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN false
-            ELSE COALESCE((SELECT r.role = 'member'::profile_role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1), false)
+            ELSE COALESCE((SELECT r.role = 'member'::profile_type FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1), false)
         END AS is_member_mode,
         -- Compute role hierarchy array based on profile's role
         CASE
-            WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'member' THEN ARRAY['member', 'guest']::profile_role[]
-            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'guest' THEN ARRAY['guest']::profile_role[]
-            ELSE ARRAY['instructional', 'member', 'guest']::profile_role[]  -- Default fallback
+            WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'member', 'guest']::profile_type[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_type[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_type[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_type[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'member' THEN ARRAY['member', 'guest']::profile_type[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'guest' THEN ARRAY['guest']::profile_type[]
+            ELSE ARRAY['instructional', 'member', 'guest']::profile_type[]  -- Default fallback
         END AS role_hierarchy
     FROM resolve_profile_id rpi
 ),
@@ -266,7 +266,7 @@ user_sim_status AS (
         COALESCE(aa.simulation_id, cac.simulation_id) AS simulation_id,
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         COALESCE(BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
-            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
+            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::point_type LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1),0))
              FROM simulation_artifact s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
              LEFT JOIN simulation_scenario_rubrics ssr_rubric ON ssr_rubric.simulation_id = ss_rubric.simulation_id
@@ -327,8 +327,8 @@ sim_meta AS (
          ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) 
          LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
-        COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0) AS rubric_points,
-        COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1), 0) AS rubric_pass_points
+        COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1), 0) AS rubric_points,
+        COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::point_type LIMIT 1), 0) AS rubric_pass_points
     FROM simulation_artifact s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
     LEFT JOIN simulation_scenario_rubrics ssr_rubric ON ssr_rubric.simulation_id = ss_rubric.simulation_id

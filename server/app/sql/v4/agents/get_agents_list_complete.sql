@@ -102,7 +102,7 @@ filtered_agents AS (
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1) as description,
         (SELECT m.id FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
-        COALESCE(NULL::artifacts::text, '') as role,  -- Derive from agent's tools via artifact_resources_relation
+        COALESCE(NULL::artifact_type::text, '') as role,  -- Derive from agent's tools via artifact_resources_relation
         a.updated_at
     FROM agent_artifact a
     LEFT JOIN LATERAL (
@@ -114,7 +114,7 @@ filtered_agents AS (
         LIMIT 1
     ) da ON TRUE
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, NULL::artifacts, a.updated_at
+    GROUP BY a.id, NULL::artifact_type, a.updated_at
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(NULL::uuid) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -129,11 +129,11 @@ SELECT
              COALESCE(tl.temperature, 0.0),
              fa.model_id, fa.role, fa.updated_at,
              COALESCE(addd.department_ids, ARRAY[]::text[]),
-             CASE WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END,
+             CASE WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true ELSE false END,
              true,
              CASE 
                  WHEN COALESCE(adl.total_links, 0) > 0 THEN false
-                 WHEN up.role = 'superadmin'::profile_role THEN true
+                 WHEN up.role = 'superadmin'::profile_type THEN true
                  ELSE false
              END,
              (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),

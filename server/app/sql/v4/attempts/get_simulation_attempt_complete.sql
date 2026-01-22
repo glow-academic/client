@@ -848,7 +848,7 @@ previous_attempt_time_aggregation AS (
 previous_attempt_rubric_points AS (
     SELECT DISTINCT ON (sa.simulation_id)
         sa.simulation_id,
-        COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)::integer as total_points
+        COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::point_type LIMIT 1), 0)::integer as total_points
     FROM previous_chats_with_grades pwg
     JOIN attempts_entry sa ON sa.id = pwg.attempt_id
     JOIN simulation_artifact s ON s.id = sa.simulation_id
@@ -1047,7 +1047,7 @@ messages_with_tree AS (
         SELECT 
             m.id, 
             c.id AS chat_id, 
-            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
+            CASE WHEN m.role = 'user'::message_type THEN 'query' ELSE 'response' END as type, 
             ce.content, 
             m.created_at, 
             m.completed, 
@@ -1061,7 +1061,7 @@ messages_with_tree AS (
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
-          AND m.role IN ('user'::message_role, 'assistant'::message_role)
+          AND m.role IN ('user'::message_type, 'assistant'::message_type)
           AND NOT EXISTS (
               SELECT 1 FROM message_tree_entry mt
               WHERE mt.parent_id = m.id AND mt.active = true
@@ -1072,7 +1072,7 @@ messages_with_tree AS (
         SELECT
             m.id,
             mp.chat_id,
-            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type,
+            CASE WHEN m.role = 'user'::message_type THEN 'query' ELSE 'response' END as type,
             ce.content,
             m.created_at,
             m.completed,
@@ -1088,7 +1088,7 @@ messages_with_tree AS (
         JOIN chats_entry c ON c.group_id = r.group_id
         CROSS JOIN chat_ids_list cil
         WHERE mp.depth < 1000
-          AND m.role IN ('user'::message_role, 'assistant'::message_role)
+          AND m.role IN ('user'::message_type, 'assistant'::message_type)
           AND c.id = mp.chat_id
           AND c.id = ANY(cil.chat_ids)
     ),
@@ -1096,7 +1096,7 @@ messages_with_tree AS (
         SELECT
             m.id,
             c.id AS chat_id,
-            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type,
+            CASE WHEN m.role = 'user'::message_type THEN 'query' ELSE 'response' END as type,
             ce.content,
             m.created_at,
             m.completed,
@@ -1110,7 +1110,7 @@ messages_with_tree AS (
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
-          AND m.role IN ('user'::message_role, 'assistant'::message_role)
+          AND m.role IN ('user'::message_type, 'assistant'::message_type)
           AND NOT EXISTS (
               SELECT 1 FROM message_tree_entry mt
               WHERE mt.child_id = m.id AND mt.active = true
@@ -1259,7 +1259,7 @@ hints_data AS (
                      '{}'::types.q_get_simulation_attempt_v4_hint[]
                  )
                 )::types.q_get_simulation_attempt_v4_hints_by_message
-            ) FILTER (WHERE m.role = 'assistant'::message_role),
+            ) FILTER (WHERE m.role = 'assistant'::message_type),
             '{}'::types.q_get_simulation_attempt_v4_hints_by_message[]
         ) as hints
     FROM params x
@@ -1273,7 +1273,7 @@ hints_data AS (
     JOIN messages_entry m ON m.run_id = r.id
     CROSS JOIN chat_ids_list cil
     WHERE c.id = ANY(cil.chat_ids)
-      AND m.role IN ('user'::message_role, 'assistant'::message_role)
+      AND m.role IN ('user'::message_type, 'assistant'::message_type)
       AND ab.sim_practice_simulation = true
     GROUP BY c.id
 ),
@@ -1437,7 +1437,7 @@ dynamic_rubric_per_chat AS (
                      '{}'::types.q_get_simulation_attempt_v4_skill_feedback[]
                  ),
                  COALESCE(
-                     (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::type_rubric_points LIMIT 1),
+                     (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::point_type LIMIT 1),
                      0
                  )::float
                 )::types.q_get_simulation_attempt_v4_dynamic_rubric
@@ -1593,15 +1593,15 @@ aggregated_results_data AS (
             WHEN COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
                 (COALESCE(SUM((grade).score::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL), 0)::float,
                  COALESCE(
-                     (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::type_rubric_points LIMIT 1) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL),
+                     (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::point_type LIMIT 1) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL),
                      0
                  )::float,
                  CASE 
-                     WHEN (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::type_rubric_points LIMIT 1) > 0 
+                     WHEN (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::point_type LIMIT 1) > 0 
                         AND COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
                          ROUND(
                              (SUM((grade).score::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL)::numeric / 
-                              ((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::type_rubric_points LIMIT 1) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL))::numeric) * 100.0,
+                              ((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::point_type LIMIT 1) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL))::numeric) * 100.0,
                              1
                          )::float
                      ELSE 0.0

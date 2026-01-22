@@ -283,7 +283,7 @@ BEGIN
         SELECT 
             x.rubric_id,
             x.total_points_id,
-            'total'::type_rubric_points,
+            'total'::point_type,
             NOW(),
             NOW()
         FROM params x
@@ -296,7 +296,7 @@ BEGIN
         SELECT 
             x.rubric_id,
             x.pass_points_id,
-            'pass'::type_rubric_points,
+            'pass'::point_type,
             NOW(),
             NOW()
         FROM params x
