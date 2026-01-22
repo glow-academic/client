@@ -8986,6 +8986,61 @@ class CreateModelRunApiResponse(BaseModel):
 
 
 
+# Generated from: log_run
+
+class LogRunSqlParams(BaseModel):
+
+    run_id: UUID
+    input_text_tokens: int
+    input_audio_tokens: int
+    input_image_tokens: int
+    output_text_tokens: int
+    output_audio_tokens: int
+    cached_text_tokens: int
+    cached_audio_tokens: int
+    department_id: UUID | None = None
+    developer_contents: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    assistant_output: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.input_text_tokens,
+            self.input_audio_tokens,
+            self.input_image_tokens,
+            self.output_text_tokens,
+            self.output_audio_tokens,
+            self.cached_text_tokens,
+            self.cached_audio_tokens,
+            self.department_id,
+            self.developer_contents,
+            self.assistant_output,
+        )
+
+class LogRunSqlRow(BaseModel):
+
+    success: int | None = None
+
+class LogRunApiRequest(BaseModel):
+
+    run_id: UUID
+    input_text_tokens: int
+    input_audio_tokens: int
+    input_image_tokens: int
+    output_text_tokens: int
+    output_audio_tokens: int
+    cached_text_tokens: int
+    cached_audio_tokens: int
+    department_id: UUID | None = None
+    developer_contents: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    assistant_output: str | None = None
+
+class LogRunApiResponse(BaseModel):
+
+    success: int | None = None
+
+
+
 # Generated from: delete_model
 
 class DeleteModelSqlParams(BaseModel):
@@ -17447,6 +17502,533 @@ class InsertScenarioVariantApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario
+
+class QGetScenarioV4FieldParamFilter(BaseModel):
+
+    parameter_id: UUID | None
+    show_selected: bool | None
+
+class GetScenarioSqlParams(BaseModel):
+
+    profile_id: UUID
+    scenario_id: UUID | None = None
+    document_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    description_search: str | None = None
+    problem_statement_search: str | None = None
+    template_search: str | None = None
+    image_search: str | None = None
+    video_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: list[QGetScenarioV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_show_selected_by_param composite array to tuples for asyncpg
+        field_show_selected_by_param_tuples = [
+            (conn.parameter_id, conn.show_selected)
+            for conn in (self.field_show_selected_by_param or [])
+        ]
+        return (
+            self.profile_id,
+            self.scenario_id,
+            self.document_ids,
+            self.problem_statement_ids,
+            self.template_document_ids,
+            self.filter_department_ids,
+            self.filter_persona_ids,
+            self.filter_document_ids,
+            self.filter_parameter_ids,
+            self.filter_field_ids,
+            self.persona_search,
+            self.document_search,
+            self.parameter_search,
+            self.description_search,
+            self.problem_statement_search,
+            self.template_search,
+            self.image_search,
+            self.video_search,
+            self.persona_show_selected,
+            self.document_show_selected,
+            self.parameter_show_selected,
+            field_show_selected_by_param_tuples,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetScenarioV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+    file_path: str | None
+    mime_type: str | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    parent_document_id: UUID | None
+
+
+
+
+class QGetScenarioV4Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+    conditional_parameter_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    icon_name: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4ImageResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4ObjectiveResource(BaseModel):
+
+    id: UUID | None
+    objective: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+    scenario_parameter: bool | None
+    video_parameter: bool | None
+
+
+
+
+class QGetScenarioV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    example: str | None
+
+
+
+
+class QGetScenarioV4ProblemStatementResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4QuestionResource(BaseModel):
+
+    id: UUID | None
+    question_text: str | None
+    allow_multiple: bool | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4TemplateResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    html: str | None
+    generated: bool | None
+
+
+
+
+class QGetScenarioV4VideoResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    length_seconds: int | None
+    completed: bool | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    generated: bool | None
+
+class GetScenarioSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    scenario_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetScenarioV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetScenarioV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetScenarioV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetScenarioV4DescriptionResource] | None = None
+    problem_statement_id: UUID | None = None
+    problem_statement_resource: QGetScenarioV4ProblemStatementResource | None = None
+    show_problem_statement: bool | None = None
+    problem_statement_agent_id: UUID | None = None
+    problem_statement_required: bool | None = None
+    problem_statement_suggestions: list[UUID] | None = None
+    problem_statements: list[QGetScenarioV4ProblemStatementResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    objectives_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_objectives_enabled_flag: bool | None = None
+    objectives_enabled_flag_agent_id: UUID | None = None
+    objectives_enabled_flag_required: bool | None = None
+    images_enabled_flag_id: UUID | None = None
+    images_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_images_enabled_flag: bool | None = None
+    images_enabled_flag_agent_id: UUID | None = None
+    images_enabled_flag_required: bool | None = None
+    video_enabled_flag_id: UUID | None = None
+    video_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_video_enabled_flag: bool | None = None
+    video_enabled_flag_agent_id: UUID | None = None
+    video_enabled_flag_required: bool | None = None
+    questions_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_questions_enabled_flag: bool | None = None
+    questions_enabled_flag_agent_id: UUID | None = None
+    questions_enabled_flag_required: bool | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_problem_statement_enabled_flag: bool | None = None
+    problem_statement_enabled_flag_agent_id: UUID | None = None
+    problem_statement_enabled_flag_required: bool | None = None
+    use_templates_flag_id: UUID | None = None
+    use_templates_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_use_templates_flag: bool | None = None
+    use_templates_flag_agent_id: UUID | None = None
+    use_templates_flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetScenarioV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetScenarioV4Department] | None = None
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetScenarioV4Field] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetScenarioV4Field] | None = None
+    objective_ids: list[UUID] | None = None
+    objective_resources: list[QGetScenarioV4ObjectiveResource] | None = None
+    show_objectives: bool | None = None
+    objectives_agent_id: UUID | None = None
+    objectives_required: bool | None = None
+    objective_suggestions: list[UUID] | None = None
+    objectives: list[QGetScenarioV4ObjectiveResource] | None = None
+    image_ids: list[UUID] | None = None
+    image_resources: list[QGetScenarioV4ImageResource] | None = None
+    show_images: bool | None = None
+    images_agent_id: UUID | None = None
+    images_required: bool | None = None
+    image_suggestions: list[UUID] | None = None
+    images: list[QGetScenarioV4ImageResource] | None = None
+    video_ids: list[UUID] | None = None
+    video_resources: list[QGetScenarioV4VideoResource] | None = None
+    show_videos: bool | None = None
+    videos_agent_id: UUID | None = None
+    videos_required: bool | None = None
+    video_suggestions: list[UUID] | None = None
+    videos: list[QGetScenarioV4VideoResource] | None = None
+    question_ids: list[UUID] | None = None
+    question_resources: list[QGetScenarioV4QuestionResource] | None = None
+    show_questions: bool | None = None
+    questions_agent_id: UUID | None = None
+    questions_required: bool | None = None
+    question_suggestions: list[UUID] | None = None
+    questions: list[QGetScenarioV4QuestionResource] | None = None
+    template_ids: list[UUID] | None = None
+    template_resources: list[QGetScenarioV4TemplateResource] | None = None
+    show_templates: bool | None = None
+    templates_agent_id: UUID | None = None
+    templates_required: bool | None = None
+    template_suggestions: list[UUID] | None = None
+    templates: list[QGetScenarioV4TemplateResource] | None = None
+    persona_ids: list[UUID] | None = None
+    persona_resources: list[QGetScenarioV4Persona] | None = None
+    show_personas: bool | None = None
+    personas_agent_id: UUID | None = None
+    personas_required: bool | None = None
+    persona_suggestions: list[UUID] | None = None
+    personas: list[QGetScenarioV4Persona] | None = None
+    document_ids: list[UUID] | None = None
+    document_resources: list[QGetScenarioV4Document] | None = None
+    show_documents: bool | None = None
+    documents_agent_id: UUID | None = None
+    documents_required: bool | None = None
+    document_suggestions: list[UUID] | None = None
+    documents: list[QGetScenarioV4Document] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_resources: list[QGetScenarioV4Parameter] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
+    parameters: list[QGetScenarioV4Parameter] | None = None
+    basic_agent_id: UUID | None = None
+    content_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
+
+class GetScenarioApiRequest(BaseModel):
+
+    scenario_id: UUID | None = None
+    document_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    description_search: str | None = None
+    problem_statement_search: str | None = None
+    template_search: str | None = None
+    image_search: str | None = None
+    video_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: list[QGetScenarioV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetScenarioApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    scenario_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetScenarioV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetScenarioV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetScenarioV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetScenarioV4DescriptionResource] | None = None
+    problem_statement_id: UUID | None = None
+    problem_statement_resource: QGetScenarioV4ProblemStatementResource | None = None
+    show_problem_statement: bool | None = None
+    problem_statement_agent_id: UUID | None = None
+    problem_statement_required: bool | None = None
+    problem_statement_suggestions: list[UUID] | None = None
+    problem_statements: list[QGetScenarioV4ProblemStatementResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    objectives_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_objectives_enabled_flag: bool | None = None
+    objectives_enabled_flag_agent_id: UUID | None = None
+    objectives_enabled_flag_required: bool | None = None
+    images_enabled_flag_id: UUID | None = None
+    images_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_images_enabled_flag: bool | None = None
+    images_enabled_flag_agent_id: UUID | None = None
+    images_enabled_flag_required: bool | None = None
+    video_enabled_flag_id: UUID | None = None
+    video_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_video_enabled_flag: bool | None = None
+    video_enabled_flag_agent_id: UUID | None = None
+    video_enabled_flag_required: bool | None = None
+    questions_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_questions_enabled_flag: bool | None = None
+    questions_enabled_flag_agent_id: UUID | None = None
+    questions_enabled_flag_required: bool | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_problem_statement_enabled_flag: bool | None = None
+    problem_statement_enabled_flag_agent_id: UUID | None = None
+    problem_statement_enabled_flag_required: bool | None = None
+    use_templates_flag_id: UUID | None = None
+    use_templates_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_use_templates_flag: bool | None = None
+    use_templates_flag_agent_id: UUID | None = None
+    use_templates_flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetScenarioV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetScenarioV4Department] | None = None
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetScenarioV4Field] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetScenarioV4Field] | None = None
+    objective_ids: list[UUID] | None = None
+    objective_resources: list[QGetScenarioV4ObjectiveResource] | None = None
+    show_objectives: bool | None = None
+    objectives_agent_id: UUID | None = None
+    objectives_required: bool | None = None
+    objective_suggestions: list[UUID] | None = None
+    objectives: list[QGetScenarioV4ObjectiveResource] | None = None
+    image_ids: list[UUID] | None = None
+    image_resources: list[QGetScenarioV4ImageResource] | None = None
+    show_images: bool | None = None
+    images_agent_id: UUID | None = None
+    images_required: bool | None = None
+    image_suggestions: list[UUID] | None = None
+    images: list[QGetScenarioV4ImageResource] | None = None
+    video_ids: list[UUID] | None = None
+    video_resources: list[QGetScenarioV4VideoResource] | None = None
+    show_videos: bool | None = None
+    videos_agent_id: UUID | None = None
+    videos_required: bool | None = None
+    video_suggestions: list[UUID] | None = None
+    videos: list[QGetScenarioV4VideoResource] | None = None
+    question_ids: list[UUID] | None = None
+    question_resources: list[QGetScenarioV4QuestionResource] | None = None
+    show_questions: bool | None = None
+    questions_agent_id: UUID | None = None
+    questions_required: bool | None = None
+    question_suggestions: list[UUID] | None = None
+    questions: list[QGetScenarioV4QuestionResource] | None = None
+    template_ids: list[UUID] | None = None
+    template_resources: list[QGetScenarioV4TemplateResource] | None = None
+    show_templates: bool | None = None
+    templates_agent_id: UUID | None = None
+    templates_required: bool | None = None
+    template_suggestions: list[UUID] | None = None
+    templates: list[QGetScenarioV4TemplateResource] | None = None
+    persona_ids: list[UUID] | None = None
+    persona_resources: list[QGetScenarioV4Persona] | None = None
+    show_personas: bool | None = None
+    personas_agent_id: UUID | None = None
+    personas_required: bool | None = None
+    persona_suggestions: list[UUID] | None = None
+    personas: list[QGetScenarioV4Persona] | None = None
+    document_ids: list[UUID] | None = None
+    document_resources: list[QGetScenarioV4Document] | None = None
+    show_documents: bool | None = None
+    documents_agent_id: UUID | None = None
+    documents_required: bool | None = None
+    document_suggestions: list[UUID] | None = None
+    documents: list[QGetScenarioV4Document] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_resources: list[QGetScenarioV4Parameter] | None = None
+    show_parameters: bool | None = None
+    parameters_agent_id: UUID | None = None
+    parameters_required: bool | None = None
+    parameter_suggestions: list[UUID] | None = None
+    parameters: list[QGetScenarioV4Parameter] | None = None
+    basic_agent_id: UUID | None = None
+    content_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
+
+
+
 # Generated from: get_scenario_resource_ids_by_group_id
 
 class GetScenarioResourceIdsByGroupIdSqlParams(BaseModel):
@@ -21516,6 +22098,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateModelRunApiRequest",
         "CreateModelRunApiResponse",
     ),
+    "app/sql/v4/model_runs/log_run_complete.sql": (
+        "LogRunSqlParams",
+        "LogRunSqlRow",
+        "LogRunApiRequest",
+        "LogRunApiResponse",
+    ),
     "app/sql/v4/models/delete_model_complete.sql": (
         "DeleteModelSqlParams",
         "DeleteModelSqlRow",
@@ -22337,6 +22925,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertScenarioVariantSqlRow",
         "InsertScenarioVariantApiRequest",
         "InsertScenarioVariantApiResponse",
+    ),
+    "app/sql/v4/scenarios/get_scenario_complete.sql": (
+        "GetScenarioSqlParams",
+        "GetScenarioSqlRow",
+        "GetScenarioApiRequest",
+        "GetScenarioApiResponse",
     ),
     "app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql": (
         "GetScenarioResourceIdsByGroupIdSqlParams",
@@ -23494,6 +24088,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/model_runs/log_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/models/delete_model_complete.sql"]
     ) -> SqlString: ...
 
@@ -24175,6 +24774,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/insert_scenario_variant_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/scenarios/get_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload

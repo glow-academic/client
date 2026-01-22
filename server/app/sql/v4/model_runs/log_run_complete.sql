@@ -284,7 +284,7 @@ new_system_message AS (
 get_prompt_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
-    INNER JOIN resource_tools_relation rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
+    INNER JOIN resource_tools_relation rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resource_type)
     INNER JOIN runs_entry r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
     
     
@@ -408,7 +408,7 @@ new_developer_messages AS (
 get_instruct_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
-    INNER JOIN resource_tools_relation rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
+    INNER JOIN resource_tools_relation rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resource_type)
     INNER JOIN runs_entry r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
     
     

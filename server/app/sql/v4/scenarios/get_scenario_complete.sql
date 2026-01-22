@@ -2636,9 +2636,9 @@ valid_agents_array AS (
     CROSS JOIN expected_agent_role ear
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true) 
     AND (
-        NULL::artifact_type = CAST(ear.role AS artifacts)
-        OR NULL::artifact_type = CAST('scenario' AS artifacts)
-        OR NULL::artifact_type = CAST('scenario' AS artifacts)
+        NULL::artifact_type = CAST(ear.role AS artifact_type)
+        OR NULL::artifact_type = CAST('scenario' AS artifact_type)
+        OR NULL::artifact_type = CAST('scenario' AS artifact_type)
     )
     GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifact_type::text, ''), ear.role
     HAVING 
