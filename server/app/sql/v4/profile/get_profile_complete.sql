@@ -292,17 +292,17 @@ roles_data AS (
     WHERE r.active = true
 ),
 role_routes_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
-                (rr.role::text, rr_route.id)::types.q_get_profile_v4_role_route
-                ORDER BY rr.role::text, rr_route.route
+                (ar.role::text, rr_route.id)::types.q_get_profile_v4_role_route
+                ORDER BY ar.role::text, rr_route.route
             ),
             '{}'::types.q_get_profile_v4_role_route[]
         ) as role_routes
-    FROM role_routes rr
-    JOIN routes_resource rr_route ON rr_route.route = rr.route
-    WHERE rr.active = true
+    FROM artifact_roles ar
+    JOIN artifact_routes art ON art.artifact = ar.artifact
+    JOIN routes_resource rr_route ON rr_route.route = art.route
 ),
 route_ids_data AS (
     SELECT 
@@ -337,16 +337,16 @@ route_resources_data AS (
     LIMIT 1
 ),
 route_suggestions_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT ARRAY_AGG(rr_route.id ORDER BY rr_route.route)
-             FROM role_routes rr
-             JOIN routes_resource rr_route ON rr_route.route = rr.route
-             WHERE rr.role = COALESCE(
+             FROM artifact_roles ar
+             JOIN artifact_routes art ON art.artifact = ar.artifact
+             JOIN routes_resource rr_route ON rr_route.route = art.route
+             WHERE ar.role = COALESCE(
                  (SELECT role::profile_role FROM target_profile_role_data),
                  NULL::profile_role
-             )
-               AND rr.active = true),
+             )),
             ARRAY[]::uuid[]
         ) as route_suggestions
     FROM params

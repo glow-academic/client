@@ -55,6 +55,16 @@ get_tool_info AS (
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1
 ),
+-- Get assistant message_id for this run (used when creating call)
+assistant_message AS (
+    SELECT m.id as message_id
+    FROM params p
+    JOIN message_runs mr ON mr.run_id = p.run_id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.role = 'assistant'
+    ORDER BY m.created_at
+    LIMIT 1
+),
 -- Get or create tool_call (by call_id or tool_call_id)
 existing_tool_call AS (
     SELECT tc.id as tool_call_id, tc.external_call_id
@@ -66,17 +76,19 @@ existing_tool_call AS (
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
-    SELECT 
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, message_id, created_at, updated_at)
+    SELECT
         COALESCE(p.call_id, 'text_' || p.tool_call_id),
         gt.tool_id,
         (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gt.tool_id LIMIT 1),
         '',
         false,
+        am.message_id,
         NOW(),
         NOW()
     FROM params p
     CROSS JOIN get_tool_info gt
+    LEFT JOIN assistant_message am ON true
     WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
     RETURNING id as tool_call_id, external_call_id
 ),
@@ -84,25 +96,6 @@ selected_tool_call AS (
     SELECT tool_call_id::text, external_call_id FROM existing_tool_call
     UNION ALL
     SELECT tool_call_id::text, external_call_id FROM create_tool_call
-),
--- Link call to message via calls.message_id
-link_call_to_message AS (
-    UPDATE calls
-    SET message_id = subq.message_id
-    FROM (
-        SELECT
-            m.id as message_id,
-            uuid(stc.tool_call_id) as call_id
-        FROM params p
-        CROSS JOIN selected_tool_call stc
-        JOIN message_runs mr ON mr.run_id = p.run_id
-        JOIN messages m ON m.id = mr.message_id
-        WHERE m.role = 'assistant'
-        ORDER BY m.created_at
-        LIMIT 1
-    ) subq
-    WHERE calls.id = subq.call_id
-    RETURNING calls.id as call_id
 ),
 -- Accumulate arguments_raw (SQL accumulates!)
 accumulate_arguments AS (
