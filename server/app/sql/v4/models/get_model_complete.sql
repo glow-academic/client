@@ -420,7 +420,7 @@ draft_group_data AS (
         ) as group_id,
         COALESCE(d.version, 0) as draft_version
     FROM params x
-    LEFT JOIN resource_drafts d ON d.id = x.draft_id
+    LEFT JOIN drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),

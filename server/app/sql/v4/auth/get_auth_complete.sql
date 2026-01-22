@@ -182,7 +182,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN resource_drafts d ON d.id = x.draft_id
+    LEFT JOIN drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -1225,7 +1225,7 @@ SELECT
         (SELECT COALESCE(jsonb_object_agg(aid.auth_item_id::text, aid.encrypted), '{}'::jsonb) FROM auth_items_data aid),
         '{}'::jsonb
     ) as auth_item_encrypted_states,
-    COALESCE((SELECT d.version FROM resource_drafts d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
+    COALESCE((SELECT d.version FROM drafts_entry d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf

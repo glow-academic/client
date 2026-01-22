@@ -184,7 +184,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN resource_drafts d ON d.id = x.draft_id
+    LEFT JOIN drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -368,7 +368,7 @@ routes_data AS (
 group_id_data AS (
     SELECT 
         COALESCE(
-            (SELECT d.group_id FROM resource_drafts d WHERE d.id = (SELECT draft_id FROM params)),
+            (SELECT d.group_id FROM drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
             (SELECT p.group_id FROM profile_artifact p WHERE p.id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)),
             (SELECT p.group_id FROM profile_artifact p WHERE p.id = (SELECT resolved_profile_id FROM resolve_current_profile_id))
         ) as group_id

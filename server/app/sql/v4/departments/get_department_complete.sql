@@ -210,7 +210,7 @@ draft_payload_data AS (
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
-    JOIN resource_drafts d ON d.id = x.draft_id
+    JOIN drafts_entry d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
     LIMIT 1
@@ -223,7 +223,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN resource_drafts d ON d.id = x.draft_id
+    LEFT JOIN drafts_entry d ON d.id = x.draft_id
     -- Always return at least one row
     WHERE TRUE
     LIMIT 1

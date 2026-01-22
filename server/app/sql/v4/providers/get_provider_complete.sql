@@ -127,7 +127,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN resource_drafts d ON d.id = x.draft_id
+    LEFT JOIN drafts_entry d ON d.id = x.draft_id
     LEFT JOIN provider_artifact p ON p.id = x.provider_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id/provider_id case)
     WHERE TRUE
@@ -137,7 +137,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN resource_drafts d ON d.id = x.draft_id
+    LEFT JOIN drafts_entry d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),

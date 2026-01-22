@@ -49,7 +49,7 @@ BEGIN
     END IF;
 
     SELECT d.group_id INTO v_group_id
-    FROM resource_drafts d
+    FROM drafts_entry d
     WHERE d.id = v_draft_id;
 
     IF v_group_id IS NULL THEN

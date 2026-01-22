@@ -56,7 +56,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM resource_drafts WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
@@ -65,7 +65,7 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
         
-        UPDATE resource_drafts
+        UPDATE drafts_entry
         SET version = drafts.version + 1,
             updated_at = now(),
             group_id = COALESCE(group_id, v_group_id)
@@ -117,7 +117,7 @@ BEGIN
         RETURNING id INTO v_group_id;
         
         -- Create draft
-        INSERT INTO resource_drafts (
+        INSERT INTO drafts_entry (
             profile_id,
             artifact,
             version,

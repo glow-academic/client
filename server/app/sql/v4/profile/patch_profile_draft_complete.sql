@@ -127,7 +127,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM resource_drafts WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM drafts_entry WHERE id = input_draft_id;
 
         -- Create group if draft doesn't have one (safety check)
         IF v_group_id IS NULL THEN
@@ -136,7 +136,7 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE resource_drafts
+        UPDATE drafts_entry
         SET version = drafts.version + 1,
             updated_at = now(),
             group_id = COALESCE(group_id, v_group_id)
@@ -237,7 +237,7 @@ BEGIN
     VALUES (NOW(), NOW())
     RETURNING id INTO v_group_id;
 
-    INSERT INTO resource_drafts (artifact, profile_id, group_id)
+    INSERT INTO drafts_entry (artifact, profile_id, group_id)
     VALUES ('profile'::artifacts, v_profile_id, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
 
