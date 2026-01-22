@@ -20,7 +20,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, message, endpoint, profile_id, error, created_at
-    FROM activity
+    FROM audits
     WHERE message = p_message AND endpoint = p_endpoint
     ORDER BY created_at DESC
     LIMIT 1;

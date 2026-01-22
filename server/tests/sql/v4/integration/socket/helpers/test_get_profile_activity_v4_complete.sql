@@ -13,8 +13,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT last_active 
-    FROM profile_activity 
+    SELECT last_active
+    FROM activity
     WHERE profile_id = test_get_profile_activity_v4.profile_id 
     ORDER BY created_at DESC 
     LIMIT 1;

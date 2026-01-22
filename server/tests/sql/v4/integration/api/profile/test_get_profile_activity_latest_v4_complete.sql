@@ -19,7 +19,7 @@ AS $$
         profile_id,
         last_active,
         created_at
-    FROM profile_activity
+    FROM activity
     WHERE profile_id = input_profile_id
     ORDER BY created_at DESC
     LIMIT 1;
