@@ -1495,7 +1495,7 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
                 if existing_mapper:
                     # Update existing mapper
                     mapper["id"] = existing_mapper["id"]
-                    kc_admin.update_idp_mapper(
+                    kc_admin.update_mapper_in_idp(
                         idp_alias=alias,
                         mapper_id=existing_mapper["id"],
                         payload=mapper,
@@ -1503,7 +1503,7 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
                     logger.debug(f"✅ Updated IdP mapper: {mapper['name']}")
                 else:
                     # Create new mapper
-                    kc_admin.add_idp_mapper(idp_alias=alias, payload=mapper)
+                    kc_admin.add_mapper_to_idp(idp_alias=alias, payload=mapper)
                     logger.debug(f"✅ Created IdP mapper: {mapper['name']}")
             except Exception as mapper_e:
                 logger.warning(
@@ -1597,9 +1597,7 @@ async def ensure_emulation_client_mappers(kc_admin: Any) -> None:
 
         # Get existing mappers
         try:
-            existing_mappers = kc_admin.get_client_protocol_mappers(
-                client_internal_id, protocol="openid-connect"
-            )
+            existing_mappers = kc_admin.get_mappers_from_client(client_internal_id)
         except Exception:
             existing_mappers = []
 
@@ -1613,13 +1611,17 @@ async def ensure_emulation_client_mappers(kc_admin: Any) -> None:
                 if existing:
                     # Update existing
                     mapper["id"] = existing["id"]
-                    kc_admin.update_client_protocol_mapper(
-                        client_internal_id, existing["id"], mapper
+                    kc_admin.update_client_mapper(
+                        client_id=client_internal_id,
+                        mapper_id=existing["id"],
+                        payload=mapper,
                     )
                     logger.debug(f"✅ Updated client mapper: {mapper['name']}")
                 else:
                     # Create new
-                    kc_admin.create_client_protocol_mapper(client_internal_id, mapper)
+                    kc_admin.add_mapper_to_client(
+                        client_id=client_internal_id, payload=mapper
+                    )
                     logger.debug(f"✅ Created client mapper: {mapper['name']}")
             except Exception as mapper_e:
                 error_str = str(mapper_e).lower()
@@ -1757,8 +1759,8 @@ async def sync_identity_providers(
                         all_idps = kc_admin.get_idps()
                         for idp in all_idps:
                             alias = idp.get("alias", "")
-                            # Only delete realm-level IdPs (not department-scoped auth_* or default-idp-*)
-                            if alias and not alias.startswith("auth_") and not alias.startswith("default-idp-"):
+                            # Only delete realm-level IdPs (not department-scoped auth_* or any default-idp*)
+                            if alias and not alias.startswith("auth_") and not alias.startswith("default-idp"):
                                 if alias not in realm_level_aliases_to_keep:
                                     try:
                                         kc_admin.delete_idp(idp_alias=alias)
@@ -1902,8 +1904,12 @@ async def sync_identity_providers(
             # Delete IdPs that shouldn't exist
             for idp in existing_idps:
                 idp_alias = idp.get("alias", "")
-                
-                # Handle default-idp instances separately
+
+                # Skip the emulation default-idp (always keep it)
+                if idp_alias == "default-idp":
+                    continue
+
+                # Handle default-idp-profile-* instances separately
                 if idp_alias.startswith("default-idp-profile-"):
                     if idp_alias not in expected_default_idp_aliases:
                         try:
@@ -1916,7 +1922,7 @@ async def sync_identity_providers(
                             else:
                                 logger.warning(f"Failed to delete IdP '{idp_alias}': {delete_e}")
                     continue
-                
+
                 # Check if it's realm-level or department-scoped
                 if idp_alias.startswith("auth_"):
                     # Department-scoped IdP (auth_{slug}_{auth_id} pattern)
