@@ -144,11 +144,10 @@ link_profile_to_run AS (
       )
     RETURNING run_id
 ),
--- Get speak tool_id for member agent
+-- Get speak tool_id for member agent (find by name only since 'contents' is now an entry type)
 get_speak_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('contents' AS resources)
     WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'speak' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
     LIMIT 1
 ),
@@ -200,7 +199,7 @@ link_user_tool_call_to_message AS (
 existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
-    JOIN message_contents mc ON mc.message_id = lum.message_id AND mc.idx = 0
+    JOIN contents_entry ce ON ce.message_id = lum.message_id AND ce.idx = 0
     JOIN message_runs mr ON mr.message_id = lum.message_id
     JOIN calls tc ON tc.message_id = lum.message_id
     LIMIT 1
@@ -212,21 +211,11 @@ user_tool_call_id AS (
     SELECT tool_call_id FROM existing_user_tool_call
 ),
 insert_user_content_if_needed AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT p.message_contents, cm.created_at, cm.updated_at
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT cm.message_id, p.message_contents, 0, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
     CROSS JOIN user_tool_call_id utc
-    WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
-    RETURNING id as content_id, created_at, updated_at
-),
-update_message_content_if_needed AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT cm.message_id, ic.content_id, 0, ic.created_at, ic.updated_at
-    FROM create_message_if_needed cm
-    CROSS JOIN params p
-    CROSS JOIN user_tool_call_id utc
-    CROSS JOIN insert_user_content_if_needed ic
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
 ),
 update_existing_message AS (
@@ -239,14 +228,12 @@ update_existing_message AS (
     RETURNING id as message_id
 ),
 update_existing_message_content AS (
-    UPDATE contents
+    UPDATE contents_entry
     SET content = p.message_contents,
         updated_at = NOW()
-    FROM params p,
-         message_contents mc
-    WHERE mc.content_id = contents.id
-      AND mc.message_id = (SELECT message_id FROM latest_user_message)
-      AND mc.idx = 0
+    FROM params p
+    WHERE contents_entry.message_id = (SELECT message_id FROM latest_user_message)
+      AND contents_entry.idx = 0
       AND EXISTS (SELECT 1 FROM latest_user_message)
 ),
 upserted_message AS (
@@ -377,9 +364,8 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
     WHERE m.role = 'system'::message_role
     LIMIT 1
 ),
@@ -391,20 +377,11 @@ new_system_message AS (
     RETURNING id as system_message_id, created_at, updated_at
 ),
 -- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
-insert_system_content_step1 AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT smc.content, nsm.created_at, nsm.updated_at
-    FROM new_system_message nsm
-    CROSS JOIN system_message_content smc
-    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING id as content_id, created_at, updated_at
-),
 insert_system_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT nsm.system_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT nsm.system_message_id, smc.content, 0, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
-    CROSS JOIN insert_system_content_step1 ic
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
@@ -440,9 +417,8 @@ scenario_developer_hash AS (
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
     FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN scenario_developer_hash sdh ON message_content_hash(cnt.content, 'developer') = sdh.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN scenario_developer_hash sdh ON message_content_hash(ce.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'::message_role
     LIMIT 1
 ),
@@ -454,20 +430,11 @@ new_scenario_developer_message AS (
     RETURNING id as developer_message_id, created_at, updated_at
 ),
 -- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
-insert_scenario_developer_content_step1 AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT sdc.content, nsdm.created_at, nsdm.updated_at
-    FROM new_scenario_developer_message nsdm
-    CROSS JOIN scenario_developer_content sdc
-    WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
-    RETURNING id as content_id, created_at, updated_at
-),
 insert_scenario_developer_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT nsdm.developer_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT nsdm.developer_message_id, sdc.content, 0, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
-    CROSS JOIN insert_scenario_developer_content_step1 ic
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
 ),
 scenario_developer_message AS (

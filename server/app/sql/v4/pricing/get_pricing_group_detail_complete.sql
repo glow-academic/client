@@ -408,7 +408,7 @@ messages_with_tree AS (
 ),
 -- Get all content entries for each message
 messages_with_content AS (
-    SELECT 
+    SELECT
         mwt.id,
         mwt.run_id,
         mwt.role,
@@ -419,14 +419,13 @@ messages_with_content AS (
         mwt.depth,
         COALESCE(
             ARRAY_AGG(
-                (mc.idx, cnt.content, mc.created_at, mc.updated_at)::types.q_get_pricing_group_detail_v4_content
-                ORDER BY mc.idx
-            ) FILTER (WHERE mc.idx IS NOT NULL),
+                (ce.idx, ce.content, ce.created_at, ce.updated_at)::types.q_get_pricing_group_detail_v4_content
+                ORDER BY ce.idx
+            ) FILTER (WHERE ce.idx IS NOT NULL),
             ARRAY[(0, '', mwt.created_at, mwt.updated_at)::types.q_get_pricing_group_detail_v4_content]
         ) as contents
     FROM messages_with_tree mwt
-    LEFT JOIN message_contents mc ON mc.message_id = mwt.id
-    LEFT JOIN contents cnt ON cnt.id = mc.content_id
+    LEFT JOIN contents_entry ce ON ce.message_id = mwt.id
     GROUP BY mwt.id, mwt.run_id, mwt.role, mwt.created_at, mwt.completed, mwt.updated_at, mwt.run_idx, mwt.depth
 ),
 -- Get run idx for each run

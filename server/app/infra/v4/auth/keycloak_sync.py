@@ -1379,6 +1379,262 @@ async def sync_default_idp_for_profile(
         return alias if "alias" in locals() else f"default-idp-profile-{profile_id}"
 
 
+async def sync_emulation_default_idp(kc_admin: Any) -> str:
+    """Sync a single default-idp for all emulation flows.
+
+    This IdP is used for profile emulation. It's hidden from login templates
+    since it's only accessed via emulation grants, not direct login.
+
+    The IdP uses login_hint to receive the emulation grant ID, which contains
+    the target profile information.
+
+    Returns:
+        The IdP alias: "default-idp"
+    """
+    alias = "default-idp"
+
+    try:
+        kc_admin.change_current_realm(realm_name="master")
+
+        idp_public_url = get_idp_public_url()
+        idp_internal_url = get_idp_internal_url()
+
+        client_secret = os.getenv("AUTH_SECRET")
+        if not client_secret:
+            logger.warning(f"AUTH_SECRET not found, cannot create {alias}")
+            return alias
+
+        # Authorization URL without hardcoded profile_id - uses login_hint for emulation grants
+        auth_url = f"{idp_public_url}/authorize"
+
+        payload = {
+            "alias": alias,
+            "providerId": "oidc",
+            "displayName": "Emulation Login",
+            "enabled": True,
+            "trustEmail": True,
+            # Hidden from login page - only used for emulation via redirect
+            "hideOnLogin": True,
+            "config": {
+                "authorizationUrl": auth_url,
+                "tokenUrl": f"{idp_internal_url}/token",
+                "jwksUrl": f"{idp_internal_url}/jwks",
+                "userInfoUrl": f"{idp_internal_url}/userinfo",
+                "issuer": idp_public_url,
+                "clientId": "keycloak-broker",
+                "clientSecret": client_secret,
+                "useJwksUrl": "true",
+                "syncMode": "FORCE",
+                # Forward login_hint to our IdP
+                "loginHint": "true",
+            }
+        }
+
+        try:
+            kc_admin.get_idp(idp_alias=alias)
+            kc_admin.update_idp(idp_alias=alias, payload=payload)
+            logger.info(f"✅ Updated {alias} Identity Provider (for emulation)")
+        except Exception:
+            kc_admin.create_idp(payload=payload)
+            logger.info(f"✅ Created {alias} Identity Provider (for emulation)")
+
+        # Add IdP mappers to import custom claims from our IdP tokens
+        # These claims will be stored as user attributes and can be included in client tokens
+        custom_claim_mappers = [
+            {
+                "name": "profile_id-mapper",
+                "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+                "identityProviderAlias": alias,
+                "config": {
+                    "claim": "profile_id",
+                    "user.attribute": "profile_id",
+                    "syncMode": "FORCE",
+                },
+            },
+            {
+                "name": "role-mapper",
+                "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+                "identityProviderAlias": alias,
+                "config": {
+                    "claim": "role",
+                    "user.attribute": "glow_role",
+                    "syncMode": "FORCE",
+                },
+            },
+            {
+                "name": "is_emulation-mapper",
+                "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+                "identityProviderAlias": alias,
+                "config": {
+                    "claim": "is_emulation",
+                    "user.attribute": "is_emulation",
+                    "syncMode": "FORCE",
+                },
+            },
+            {
+                "name": "actor_profile_id-mapper",
+                "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+                "identityProviderAlias": alias,
+                "config": {
+                    "claim": "actor_profile_id",
+                    "user.attribute": "actor_profile_id",
+                    "syncMode": "FORCE",
+                },
+            },
+        ]
+
+        for mapper in custom_claim_mappers:
+            try:
+                # Try to get existing mappers
+                existing_mappers = kc_admin.get_idp_mappers(idp_alias=alias)
+                existing_mapper = next(
+                    (m for m in existing_mappers if m.get("name") == mapper["name"]),
+                    None,
+                )
+
+                if existing_mapper:
+                    # Update existing mapper
+                    mapper["id"] = existing_mapper["id"]
+                    kc_admin.update_idp_mapper(
+                        idp_alias=alias,
+                        mapper_id=existing_mapper["id"],
+                        payload=mapper,
+                    )
+                    logger.debug(f"✅ Updated IdP mapper: {mapper['name']}")
+                else:
+                    # Create new mapper
+                    kc_admin.add_idp_mapper(idp_alias=alias, payload=mapper)
+                    logger.debug(f"✅ Created IdP mapper: {mapper['name']}")
+            except Exception as mapper_e:
+                logger.warning(
+                    f"Failed to sync IdP mapper '{mapper['name']}': {mapper_e}"
+                )
+
+        return alias
+    except Exception as e:
+        logger.warning(
+            f"Failed to sync emulation default-idp: {e}",
+            exc_info=True,
+        )
+        return alias
+
+
+async def ensure_emulation_client_mappers(kc_admin: Any) -> None:
+    """Ensure client mappers exist to include emulation claims in tokens.
+
+    Creates protocol mappers on glow-client to include profile_id, role,
+    is_emulation, and actor_profile_id user attributes in the ID token.
+    """
+    client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
+
+    try:
+        kc_admin.change_current_realm(realm_name="master")
+
+        # Get client internal ID
+        clients = kc_admin.get_clients()
+        client = next((c for c in clients if c.get("clientId") == client_id), None)
+        if not client:
+            logger.warning(f"Client '{client_id}' not found, skipping mappers")
+            return
+
+        client_internal_id = client["id"]
+
+        # Define mappers for emulation claims
+        claim_mappers = [
+            {
+                "name": "profile_id",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-usermodel-attribute-mapper",
+                "config": {
+                    "user.attribute": "profile_id",
+                    "claim.name": "profile_id",
+                    "id.token.claim": "true",
+                    "access.token.claim": "true",
+                    "userinfo.token.claim": "true",
+                    "jsonType.label": "String",
+                },
+            },
+            {
+                "name": "glow_role",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-usermodel-attribute-mapper",
+                "config": {
+                    "user.attribute": "glow_role",
+                    "claim.name": "role",
+                    "id.token.claim": "true",
+                    "access.token.claim": "true",
+                    "userinfo.token.claim": "true",
+                    "jsonType.label": "String",
+                },
+            },
+            {
+                "name": "is_emulation",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-usermodel-attribute-mapper",
+                "config": {
+                    "user.attribute": "is_emulation",
+                    "claim.name": "is_emulation",
+                    "id.token.claim": "true",
+                    "access.token.claim": "true",
+                    "userinfo.token.claim": "true",
+                    "jsonType.label": "boolean",
+                },
+            },
+            {
+                "name": "actor_profile_id",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-usermodel-attribute-mapper",
+                "config": {
+                    "user.attribute": "actor_profile_id",
+                    "claim.name": "actor_profile_id",
+                    "id.token.claim": "true",
+                    "access.token.claim": "true",
+                    "userinfo.token.claim": "true",
+                    "jsonType.label": "String",
+                },
+            },
+        ]
+
+        # Get existing mappers
+        try:
+            existing_mappers = kc_admin.get_client_protocol_mappers(
+                client_internal_id, protocol="openid-connect"
+            )
+        except Exception:
+            existing_mappers = []
+
+        for mapper in claim_mappers:
+            try:
+                existing = next(
+                    (m for m in existing_mappers if m.get("name") == mapper["name"]),
+                    None,
+                )
+
+                if existing:
+                    # Update existing
+                    mapper["id"] = existing["id"]
+                    kc_admin.update_client_protocol_mapper(
+                        client_internal_id, existing["id"], mapper
+                    )
+                    logger.debug(f"✅ Updated client mapper: {mapper['name']}")
+                else:
+                    # Create new
+                    kc_admin.create_client_protocol_mapper(client_internal_id, mapper)
+                    logger.debug(f"✅ Created client mapper: {mapper['name']}")
+            except Exception as mapper_e:
+                error_str = str(mapper_e).lower()
+                if "already exists" in error_str or "409" in error_str:
+                    logger.debug(f"Client mapper '{mapper['name']}' already exists")
+                else:
+                    logger.warning(
+                        f"Failed to sync client mapper '{mapper['name']}': {mapper_e}"
+                    )
+
+        logger.info("✅ Emulation client mappers configured")
+    except Exception as e:
+        logger.warning(f"Failed to ensure emulation client mappers: {e}", exc_info=True)
+
+
 async def sync_identity_providers(
     kc_admin: Any,
     pool: Any,
@@ -1402,8 +1658,12 @@ async def sync_identity_providers(
     try:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
-        
-        # Step 0: Sync default-idp instances (custom OIDC IdP per profile)
+
+        # Step 0a: Sync single default-idp for emulation flows (hidden from login)
+        logger.info("Syncing emulation default-idp Identity Provider...")
+        await sync_emulation_default_idp(kc_admin)
+
+        # Step 0b: Sync default-idp instances (custom OIDC IdP per profile)
         logger.info("Syncing default-idp Identity Provider instances (per profile)...")
         
         async with pool.acquire() as conn:
@@ -1824,7 +2084,11 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         # Sync identity providers (realm-level + department-scoped)
         # All IdPs are hidden, theme controls visibility based on client_id
         await sync_identity_providers(kc_admin, pool)
-        
+
+        # Ensure emulation client mappers are configured
+        # These mappers include profile_id, role, is_emulation, actor_profile_id in client tokens
+        await ensure_emulation_client_mappers(kc_admin)
+
         # Generate theme provider mapping (client_id -> allowed IdP aliases)
         logger.info("Generating comprehensive Keycloak theme provider mapping...")
         try:

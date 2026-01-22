@@ -54,7 +54,9 @@ async def authorize_emulation(
         prefix = f"/{app_prefix}" if app_prefix else ""
         signin_base_url = f"{origin}{prefix}/api/auth/signin/keycloak"
         callback_url = quote(f"{origin}{prefix}/", safe="")
-        idp_alias = f"default-idp-profile-{request.target_profile_id}"
+        # Use single default-idp for all emulation flows (hidden from login, handles all profiles)
+        # The grant ID passed via login_hint contains target_profile_id
+        idp_alias = "default-idp"
 
         # Convert API request to SQL params using double star pattern
         params = CreateEmulationGrantSqlParams(

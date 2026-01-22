@@ -214,6 +214,35 @@ export const {
       // Save the ID Token to the JWT on initial sign-in
       if (account && account["id_token"]) {
         token["id_token"] = account["id_token"];
+
+        // Check for custom claims from default-idp (emulation flow)
+        // These claims are passed through Keycloak's ID token when properly configured
+        try {
+          // Decode ID token without verification (Keycloak already verified it)
+          const idTokenParts = (account["id_token"] as string).split(".");
+          if (idTokenParts.length === 3) {
+            const payload = JSON.parse(
+              Buffer.from(idTokenParts[1], "base64").toString("utf8")
+            );
+
+            // Check for direct profile_id claim from default-idp
+            if (payload["profile_id"]) {
+              token["profileId"] = payload["profile_id"];
+              token["role"] = payload["role"] || "guest";
+
+              // Store emulation context if present
+              if (payload["is_emulation"]) {
+                token["isEmulation"] = true;
+                token["actorProfileId"] = payload["actor_profile_id"];
+              }
+
+              // Skip email lookup since we have direct profile info
+              return token;
+            }
+          }
+        } catch {
+          // Failed to decode ID token, fall back to email lookup
+        }
       }
 
       // On initial sign in, attach canonical profileId/role from email lookup
@@ -304,6 +333,14 @@ export const {
         const profileId = token["profileId"] as string | undefined;
         if (profileId) {
           session.user.profileId = profileId;
+        }
+
+        // Expose emulation context if present
+        if (token["isEmulation"]) {
+          session.user.isEmulation = true;
+          session.user.actorProfileId = token["actorProfileId"] as
+            | string
+            | undefined;
         }
       }
 

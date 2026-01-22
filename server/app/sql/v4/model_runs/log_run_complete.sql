@@ -271,9 +271,8 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
     WHERE m.role = 'system'
     LIMIT 1
 ),
@@ -322,7 +321,7 @@ link_system_tool_call AS (
 existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
-    JOIN message_contents mc ON mc.message_id = esm.system_message_id AND mc.idx = 0
+    JOIN contents_entry ce ON ce.message_id = esm.system_message_id AND ce.idx = 0
     JOIN message_runs mr ON mr.message_id = esm.system_message_id
     JOIN calls tc ON tc.message_id = esm.system_message_id
     LIMIT 1
@@ -332,22 +331,12 @@ system_tool_call_id AS (
     UNION ALL
     SELECT tool_call_id FROM existing_system_tool_call
 ),
-insert_system_content_step1 AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT smc.content, nsm.created_at, nsm.updated_at
-    FROM new_system_message nsm
-    CROSS JOIN system_message_content smc
-    CROSS JOIN system_tool_call_id stc
-    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING id as content_id, content, created_at, updated_at
-),
 insert_system_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT nsm.system_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT nsm.system_message_id, smc.content, 0, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
     CROSS JOIN system_tool_call_id stc
-    JOIN insert_system_content_step1 ic ON ic.content = smc.content
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
@@ -390,16 +379,15 @@ developer_messages_processed AS (
     FROM developer_contents_filtered dcf
 ),
 existing_developer_messages_with_rn AS (
-    SELECT 
+    SELECT
         dmp.content,
         dmp.first_idx,
         m.id as message_id,
         ROW_NUMBER() OVER (PARTITION BY dmp.content ORDER BY m.created_at ASC) as rn
     FROM developer_messages_processed dmp
     JOIN messages m ON m.role = 'developer'
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN contents cnt ON cnt.id = mc.content_id
-        AND message_content_hash(cnt.content, 'developer') = dmp.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+        AND message_content_hash(ce.content, 'developer') = dmp.hash
 ),
 existing_developer_messages AS (
     SELECT 
@@ -479,7 +467,7 @@ developer_message_with_tool_call AS (
 existing_developer_calls AS (
     SELECT edm.message_id, tc.id as tool_call_id
     FROM existing_developer_messages edm
-    JOIN message_contents mc ON mc.message_id = edm.message_id AND mc.idx = 0
+    JOIN contents_entry ce ON ce.message_id = edm.message_id AND ce.idx = 0
     JOIN message_runs mr ON mr.message_id = edm.message_id
     JOIN calls tc ON tc.message_id = edm.message_id
 ),
@@ -488,46 +476,24 @@ all_developer_calls AS (
     UNION ALL
     SELECT message_id, tool_call_id FROM existing_developer_calls
 ),
-insert_developer_content_step1 AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT 
-        dmp.content, 
+insert_developer_content AS (
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT
+        adtcm.message_id,
+        dmp.content,
+        0,
         dmtc.created_at,
         dmtc.updated_at
     FROM all_developer_calls adtcm
     JOIN developer_message_with_tool_call dmtc ON dmtc.message_id = adtcm.message_id
     JOIN developer_messages_processed dmp ON EXISTS (
-        SELECT 1 FROM new_developer_messages ndm 
+        SELECT 1 FROM new_developer_messages ndm
         WHERE ndm.message_id = adtcm.message_id
     )
     WHERE NOT EXISTS (
-        SELECT 1 FROM existing_developer_messages edm 
-        JOIN message_contents mc2 ON mc2.message_id = edm.message_id AND mc2.idx = 0
-        JOIN contents cnt2 ON cnt2.id = mc2.content_id
-        WHERE cnt2.content = dmp.content
-    )
-    RETURNING id as content_id, created_at, updated_at
-),
-insert_developer_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT 
-        adtcm.message_id,
-        ic.content_id,
-        0,
-        ic.created_at,
-        ic.updated_at
-    FROM all_developer_calls adtcm
-    JOIN developer_message_with_tool_call dmtc ON dmtc.message_id = adtcm.message_id
-    JOIN developer_messages_processed dmp ON EXISTS (
-        SELECT 1 FROM new_developer_messages ndm 
-        WHERE ndm.message_id = adtcm.message_id
-    )
-    CROSS JOIN insert_developer_content_step1 ic
-    WHERE NOT EXISTS (
-        SELECT 1 FROM existing_developer_messages edm 
-        JOIN message_contents mc2 ON mc2.message_id = edm.message_id AND mc2.idx = 0
-        JOIN contents cnt2 ON cnt2.id = mc2.content_id
-        WHERE cnt2.content = dmp.content
+        SELECT 1 FROM existing_developer_messages edm
+        JOIN contents_entry ce2 ON ce2.message_id = edm.message_id AND ce2.idx = 0
+        WHERE ce2.content = dmp.content
     )
 ),
 all_developer_messages AS (
@@ -625,36 +591,25 @@ link_assistant_tool_call AS (
     RETURNING calls.id as call_id
 ),
 existing_assistant_content AS (
-    SELECT mc.content_id
+    SELECT ce.id as content_id
     FROM assistant_message am
-    JOIN message_contents mc ON mc.message_id = am.assistant_message_id AND mc.idx = 0
+    JOIN contents_entry ce ON ce.message_id = am.assistant_message_id AND ce.idx = 0
     LIMIT 1
 ),
 update_existing_assistant_content AS (
-    UPDATE contents
+    UPDATE contents_entry
     SET content = trim(x.assistant_output),
         updated_at = NOW()
     FROM params x
-    WHERE id = (SELECT content_id FROM existing_assistant_content)
+    WHERE contents_entry.id = (SELECT content_id FROM existing_assistant_content)
     RETURNING id as content_id
 ),
-insert_assistant_content_step1 AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT trim(x.assistant_output), am.created_at, am.updated_at
-    FROM params x
-    CROSS JOIN assistant_message am
-    CROSS JOIN assistant_tool_call atc
-    WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
-      AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
-    RETURNING id as content_id, created_at, updated_at
-),
 insert_assistant_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT am.assistant_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT am.assistant_message_id, trim(x.assistant_output), 0, am.created_at, am.updated_at
     FROM params x
     CROSS JOIN assistant_message am
     CROSS JOIN assistant_tool_call atc
-    CROSS JOIN insert_assistant_content_step1 ic
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
       AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
 ),

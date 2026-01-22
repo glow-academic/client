@@ -34,7 +34,7 @@ messages_data AS (
     SELECT 
         m.id,
         m.role::text,
-        cnt.content,
+        ce.content,
         m.created_at,
         m.completed,
         m.audio,
@@ -42,8 +42,7 @@ messages_data AS (
     FROM params p
     JOIN message_runs mr ON mr.run_id = p.run_id
     JOIN messages m ON m.id = mr.message_id
-    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN contents cnt ON cnt.id = mc.content_id
+    LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     LEFT JOIN calls c_audio ON c_audio.message_id = m.id
     LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     WHERE p.run_id IS NOT NULL

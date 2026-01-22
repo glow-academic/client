@@ -206,9 +206,8 @@ existing_developer_messages AS (
         dmh.run_id,
         dmh.hash
     FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN developer_message_hash_array dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN developer_message_hash_array dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     ORDER BY dmh.hash, m.created_at DESC
 ),
@@ -256,24 +255,14 @@ new_developer_messages_matched AS (
     JOIN new_developer_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_developer_contents AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT 
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT
+        nd.message_id,
         nd.content,
+        0,
         nd.created_at,
         nd.updated_at
     FROM new_developer_messages_matched nd
-    RETURNING id as content_id, content, created_at, updated_at
-),
-insert_developer_message_contents AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT 
-        nd.message_id,
-        ic.content_id,
-        0,
-        ic.created_at,
-        ic.updated_at
-    FROM new_developer_messages_matched nd
-    JOIN insert_developer_contents ic ON ic.content = nd.content
 ),
 developer_message_final AS (
     SELECT message_id, run_id FROM existing_developer_messages
@@ -314,9 +303,8 @@ existing_user_messages AS (
         umh.run_id,
         umh.hash
     FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN user_message_hash_array umh ON message_content_hash(cnt.content, 'user') = umh.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN user_message_hash_array umh ON message_content_hash(ce.content, 'user') = umh.hash
     WHERE m.role = 'user'
     ORDER BY umh.hash, m.created_at DESC
 ),
@@ -364,24 +352,14 @@ new_user_messages_matched AS (
     JOIN new_user_messages_data_numbered nd ON n.rn = nd.rn
 ),
 insert_user_contents AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT 
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT
+        nd.message_id,
         nd.content,
+        0,
         nd.created_at,
         nd.updated_at
     FROM new_user_messages_matched nd
-    RETURNING id as content_id, content, created_at, updated_at
-),
-insert_user_message_contents AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT 
-        nd.message_id,
-        ic.content_id,
-        0,
-        ic.created_at,
-        ic.updated_at
-    FROM new_user_messages_matched nd
-    JOIN insert_user_contents ic ON ic.content = nd.content
 ),
 user_message_final AS (
     SELECT message_id, run_id FROM existing_user_messages

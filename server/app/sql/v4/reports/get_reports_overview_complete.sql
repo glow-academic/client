@@ -1422,11 +1422,10 @@ filt AS (
                     rsg.rubric_id,
                     sg.id AS group_id,
                     sg.name AS group_name,
-                    (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
+                    (100.0 * SUM(fe.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
                 FROM latest_grade_per_chat lg
-                JOIN feedbacks_entry gf ON gf.grade_id = lg.id
-                JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
-                JOIN standards_resource s ON s.id = scf.standard_id
+                JOIN feedbacks_entry fe ON fe.grade_id = lg.id
+                JOIN standards_resource s ON s.id = fe.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
                 JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
                 GROUP BY lg.chat_id, rsg.rubric_id, sg.id, sg.name, sg.points

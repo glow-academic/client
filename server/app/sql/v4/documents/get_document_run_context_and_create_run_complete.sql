@@ -494,14 +494,13 @@ developer_message_hash AS (
     FROM developer_message_content dmc
 ),
 existing_developer_message AS (
-    SELECT 
-        m.id, 
+    SELECT
+        m.id,
         m.created_at,
         dmh.run_id
     FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN developer_message_hash dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
+    JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
+    JOIN developer_message_hash dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     LIMIT 1
 ),
@@ -513,25 +512,14 @@ new_developer_message AS (
     RETURNING id, created_at, updated_at
 ),
 insert_developer_content AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT 
+    INSERT INTO contents_entry (message_id, content, idx, created_at, updated_at)
+    SELECT
+        nm.id,
         (SELECT content FROM developer_message_hash LIMIT 1),
+        0,
         nm.created_at,
         nm.updated_at
     FROM new_developer_message nm
-    WHERE EXISTS (SELECT 1 FROM developer_message_content)
-    RETURNING id as content_id, created_at, updated_at
-),
-insert_developer_message_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT 
-        nm.id,
-        ic.content_id,
-        0,
-        ic.created_at,
-        ic.updated_at
-    FROM new_developer_message nm
-    CROSS JOIN insert_developer_content ic
     WHERE EXISTS (SELECT 1 FROM developer_message_content)
 ),
 developer_message_final AS (

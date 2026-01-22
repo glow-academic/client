@@ -822,7 +822,7 @@ previous_chats_with_grades AS (
         sc.created_at,
         scg.score,
         scg.passed,
-        COALESCE(t.time_taken, 0) as time_taken
+        COALESCE(te.time_taken, 0) as time_taken
     FROM params x
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN simulation_scenarios_list ssl
@@ -861,8 +861,7 @@ previous_chats_with_grades AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
-    LEFT JOIN times_resource t ON t.id = gt.time_id
+    LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
     WHERE ap2.profile_id = cap.profile_id
       AND sc.completed = true
       AND COALESCE(
@@ -878,7 +877,7 @@ previous_chats_with_grades AS (
 previous_attempt_time_aggregation AS (
     SELECT 
         ac.attempt_id,
-        COALESCE(SUM(COALESCE(t.time_taken, 0)), 0)::integer as total_time_taken
+        COALESCE(SUM(COALESCE(te.time_taken, 0)), 0)::integer as total_time_taken
     FROM previous_chats_with_grades pwg
     JOIN attempt_chats ac ON ac.attempt_id = pwg.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
@@ -890,8 +889,7 @@ previous_attempt_time_aggregation AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
-    LEFT JOIN times_resource t ON t.id = gt.time_id
+    LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
     WHERE sc.completed = true
     GROUP BY ac.attempt_id
 ),
@@ -1098,7 +1096,7 @@ messages_with_tree AS (
             m.id, 
             c.id AS chat_id, 
             CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
-            cnt.content, 
+            ce.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -1112,8 +1110,7 @@ messages_with_tree AS (
         JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id
         JOIN messages m ON m.id = mr.message_id
-        LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN contents cnt ON cnt.id = mc.content_id
+        LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
@@ -1129,7 +1126,7 @@ messages_with_tree AS (
             m.id, 
             mp.chat_id, 
             CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
-            cnt.content, 
+            ce.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -1137,8 +1134,7 @@ messages_with_tree AS (
             mp.depth + 1 as depth,
             mp.path_root_id
         FROM messages m
-        LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN contents cnt ON cnt.id = mc.content_id
+        LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
         JOIN message_runs mr ON mr.message_id = m.id
@@ -1159,7 +1155,7 @@ messages_with_tree AS (
             m.id, 
             c.id AS chat_id, 
             CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
-            cnt.content, 
+            ce.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -1173,8 +1169,7 @@ messages_with_tree AS (
         JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id
         JOIN messages m ON m.id = mr.message_id
-        LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN contents cnt ON cnt.id = mc.content_id
+        LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
@@ -1208,7 +1203,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(t.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
+        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(te.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     JOIN chats c ON EXISTS (
         SELECT 1 FROM chat_groups cg2
@@ -1238,8 +1233,7 @@ grades_data AS (
         ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss_fallback.simulation_id AND spr.scenario_id = ss_fallback.scenario_id LIMIT 1)
         LIMIT 1
     ) sfsr ON srr.rubric_id IS NULL AND srr_fallback.rubric_id IS NULL
-    LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
-    LEFT JOIN times_resource t ON t.id = gt.time_id
+    LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
@@ -1253,38 +1247,36 @@ grades_data AS (
 ),
 message_feedbacks_data AS (
     -- Strengths with highlights
-    SELECT 
-        s.message_id,
-        gs.grade_id,
-        (s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
+    SELECT
+        se.message_id,
+        se.grade_id,
+        (se.id, se.name, se.description,
          '{}'::types.q_get_simulation_attempt_v4_replacements_entry[],
          COALESCE(
              (SELECT ARRAY_AGG((mfh.section)::types.q_get_simulation_attempt_v4_highlights_entry ORDER BY mfh.idx)
                         FROM highlights_entry mfh
-                        WHERE mfh.message_feedback_id = s.id),
+                        WHERE mfh.message_feedback_id = se.id),
              '{}'::types.q_get_simulation_attempt_v4_highlights_entry[]
          )
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
-    FROM strengths_resource s
-    JOIN strengths_entry gs ON gs.strength_id = s.id
-    WHERE gs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    FROM strengths_entry se
+    WHERE se.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
     UNION ALL
     -- Improvements with replaces
-    SELECT 
-        i.message_id,
-        gi.grade_id,
-        (i.id, i.name, i.description,
+    SELECT
+        ie.message_id,
+        ie.grade_id,
+        (ie.id, ie.name, ie.description,
          COALESCE(
              (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_replacements_entry ORDER BY mfr.idx)
                         FROM replacements_entry mfr
-                        WHERE mfr.message_feedback_id = i.id),
+                        WHERE mfr.message_feedback_id = ie.id),
              '{}'::types.q_get_simulation_attempt_v4_replacements_entry[]
          ),
          '{}'::types.q_get_simulation_attempt_v4_highlights_entry[]
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
-    FROM improvements_resource i
-    JOIN improvements_entry gi ON gi.improvement_id = i.id
-    WHERE gi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    FROM improvements_entry ie
+    WHERE ie.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),
 message_feedbacks_grouped AS (
     SELECT 
@@ -1333,12 +1325,11 @@ hints_data AS (
                 (m.id,
                  COALESCE(
                      (SELECT ARRAY_AGG(
-                         (mh.message_id, h.hint, mh.idx, mh.created_at)::types.q_get_simulation_attempt_v4_hint
-                         ORDER BY mh.idx
+                         (he.message_id, he.hint, he.idx, he.created_at)::types.q_get_simulation_attempt_v4_hint
+                         ORDER BY he.idx
                      )
-                     FROM message_hints mh
-                     JOIN hints_resource h ON h.id = mh.hint_id
-                     WHERE mh.message_id = m.id),
+                     FROM hints_entry he
+                     WHERE he.message_id = m.id),
                      '{}'::types.q_get_simulation_attempt_v4_hint[]
                  )
                 )::types.q_get_simulation_attempt_v4_hints_by_message
@@ -1368,20 +1359,19 @@ hints_data AS (
     GROUP BY c.id
 ),
 feedbacks_grouped AS (
-    SELECT 
-        gf.grade_id as grade_id,
+    SELECT
+        fe.grade_id as grade_id,
         COALESCE(
             ARRAY_AGG(
-                (f.id, f.created_at, f.standard_id, gf.grade_id, f.total::float, f.feedback)::types.q_get_simulation_attempt_v4_feedback
+                (fe.id, fe.created_at, fe.standard_id, fe.grade_id, fe.total::float, fe.feedback)::types.q_get_simulation_attempt_v4_feedback
             ),
             '{}'::types.q_get_simulation_attempt_v4_feedback[]
         ) as feedbacks
-    FROM feedbacks_resource f
-    JOIN feedbacks_entry gf ON gf.feedback_id = f.id
-    WHERE gf.grade_id IN (
+    FROM feedbacks_entry fe
+    WHERE fe.grade_id IN (
         SELECT (gd.grade).id FROM grades_data gd
     )
-    GROUP BY gf.grade_id
+    GROUP BY fe.grade_id
 ),
 rubric_standard_groups AS (
     SELECT 

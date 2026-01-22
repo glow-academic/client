@@ -172,7 +172,13 @@ async def authorize(
         code = secrets.token_urlsafe(32)
         expires_at = int(time.time()) + _code_ttl
         
-        # Store authorization code with profile data
+        # Determine if this is an emulation flow
+        is_emulation = emulation_grant is not None
+        actor_profile_id = None
+        if is_emulation and 'grant_data' in dir() and grant_data:
+            actor_profile_id = str(grant_data.actor_profile_id) if grant_data.actor_profile_id else None
+
+        # Store authorization code with profile data (including emulation context)
         _authorization_codes[code] = {
             "profile_id": str(profile_data.profile_id),
             "email": profile_data.primary_email,
@@ -182,6 +188,9 @@ async def authorize(
             "expires_at": expires_at,
             "client_id": client_id,
             "redirect_uri": redirect_uri,
+            # Emulation context
+            "is_emulation": is_emulation,
+            "actor_profile_id": actor_profile_id,
         }
         
         # Clean up expired codes (simple cleanup, could be optimized)
@@ -264,7 +273,7 @@ async def token(
         # Keycloak will handle user linking based on email
         sub = f"default:{code_data['profile_id']}"
         
-        # Create ID token
+        # Create ID token with emulation context
         id_token_payload = {
             "iss": base_url,
             "aud": client_id,
@@ -277,6 +286,12 @@ async def token(
             "name": name,
             "given_name": given_name,
             "family_name": family_name,
+            # Custom claims for direct profile resolution (bypasses email lookup)
+            "profile_id": code_data["profile_id"],
+            "role": code_data.get("role"),
+            # Emulation context - allows client to know this is an emulated session
+            "is_emulation": code_data.get("is_emulation", False),
+            "actor_profile_id": code_data.get("actor_profile_id"),
         }
         
         id_token = jwt.encode(
