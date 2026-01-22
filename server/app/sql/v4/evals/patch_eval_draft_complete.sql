@@ -70,12 +70,12 @@ BEGIN
         END IF;
         
         UPDATE drafts_entry
-        SET version = drafts.version + 1,
+        SET version = drafts_entry.version + 1,
             updated_at = now(),
-            group_id = COALESCE(group_id, v_group_id)
+            group_id = COALESCE(drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND drafts.profile_id = v_profile_id
-          AND drafts.version = expected_version
+          AND drafts_entry.profile_id = v_profile_id
+          AND drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
         IF v_draft_id IS NOT NULL THEN
