@@ -41,16 +41,16 @@ DECLARE
     v_message_id uuid;
     v_run_id uuid;
 BEGIN
-    -- Lookup tool_id from agent_tools + resource_tools_relation
+    -- Lookup tool_id from agent_tools_junction + resource_tools_relation
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
-    FROM agent_tools at
+    FROM agent_tools_junction at
     JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_providers_v4.agent_id
       AND rt.resource = 'providers'::resource_type
       AND at.active = true
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
@@ -61,7 +61,7 @@ BEGIN
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
-            SELECT 1 FROM agent_flags 
+            SELECT 1 FROM agent_flags_junction 
             WHERE agent_id = api_create_providers_v4.agent_id 
                
               AND value = true

@@ -43,14 +43,14 @@ run_info AS (
             (SELECT sd.department_id FROM runs_entry r2
              JOIN groups_entry g ON g.id = r2.group_id
              JOIN chats_entry c ON c.group_id = g.id
-             JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
+             JOIN scenario_departments_junction sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
             (SELECT pd.department_id FROM runs_entry r2_prof
-             JOIN profile_departments pd ON pd.profile_id = r2_prof.profile_id AND pd.active = true
+             JOIN profile_departments_junction pd ON pd.profile_id = r2_prof.profile_id AND pd.active = true
              WHERE r2_prof.id = x.run_id LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
+            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
         ) as department_id
     FROM params x
     JOIN runs_entry r ON r.id = x.run_id
@@ -233,10 +233,10 @@ persona_system_prompt AS (
         END as system_prompt
     FROM run_info ri
     JOIN personas_resource p ON p.id = ri.persona_id
-    LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
+    LEFT JOIN persona_instructions_junction pi ON pi.persona_id = p.id
     LEFT JOIN instructions_resource pi_inst ON pi_inst.id = pi.instruction_id
     JOIN agents_resource a ON a.id = ri.agent_id
-    LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+    LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.persona_id IS NOT NULL
     AND pr_default.system_prompt IS NOT NULL
@@ -248,7 +248,7 @@ agent_system_prompt AS (
         pr_default.system_prompt as system_prompt
     FROM run_info ri
     JOIN agents_resource a ON a.id = ri.agent_id
-    LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+    LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.agent_id IS NOT NULL
     AND ri.persona_id IS NULL
@@ -288,7 +288,7 @@ get_prompt_tool_id AS (
     INNER JOIN runs_entry r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
     
     
-    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'prompt' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    WHERE (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'prompt' AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 system_tool_call AS (
@@ -296,7 +296,7 @@ system_tool_call AS (
     SELECT 
         'log_run_system_' || nsm.system_message_id::text, 
         gpt.tool_id, 
-        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gpt.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gpt.tool_id LIMIT 1),
         '',
         true, 
         nsm.created_at, 
@@ -412,7 +412,7 @@ get_instruct_tool_id AS (
     INNER JOIN runs_entry r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
     
     
-    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'instruct' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    WHERE (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'instruct' AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 developer_calls_with_rn AS (
@@ -420,7 +420,7 @@ developer_calls_with_rn AS (
     SELECT 
         'log_run_developer_' || ndm.message_id::text, 
         git.tool_id, 
-        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = git.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = git.tool_id LIMIT 1),
         '',
         true, 
         ndm.created_at, 

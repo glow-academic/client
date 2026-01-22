@@ -104,12 +104,12 @@ updated_standards AS (
     WHERE s.id = dd.standard_id
       AND s.standard_group_id = dd.standard_group_id
       AND EXISTS (
-          SELECT 1 FROM rubric_standard_groups rsg
+          SELECT 1 FROM rubric_standard_groups_junction rsg
           WHERE rsg.standard_group_id = s.standard_group_id
           AND rsg.rubric_id = (SELECT rubric_id FROM params)
           AND rsg.active = true
       )
-    RETURNING s.standard_group_id, s.id as standard_id, (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1)
+    RETURNING s.standard_group_id, s.id as standard_id, (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1)
 )
 SELECT 
     COUNT(*)::int as updated_count,

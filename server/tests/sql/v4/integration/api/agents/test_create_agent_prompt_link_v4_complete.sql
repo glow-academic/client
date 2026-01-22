@@ -17,7 +17,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO agent_prompts(agent_id, prompt_id, active)
+    INSERT INTO agent_prompts_junction(agent_id, prompt_id, active)
     VALUES (
         test_create_agent_prompt_link_v4.agent_id,
         test_create_agent_prompt_link_v4.prompt_id,

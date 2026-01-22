@@ -17,7 +17,7 @@ AS $$
     WITH groups_flag AS (
         SELECT id FROM flags_resource WHERE name = 'groups_entry' LIMIT 1
     )
-    UPDATE eval_flags ef
+    UPDATE eval_flags_junction ef
     SET value = test_update_eval_use_groups_v4.use_groups
     FROM groups_flag gf
     WHERE ef.eval_id = test_update_eval_use_groups_v4.eval_id

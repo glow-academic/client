@@ -21,6 +21,6 @@ AS $$
         department_id,
         active,
         created_at
-    FROM rubric_departments
+    FROM rubric_departments_junction
     WHERE rubric_id = input_rubric_id;
 $$;

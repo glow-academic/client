@@ -54,14 +54,14 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
     FROM params x
     LEFT JOIN profile_artifact p ON p.id = x.current_profile_id
     WHERE x.current_profile_id IS NOT NULL
 ),
 current_user_role AS (
     -- Get current user's role for validation (if provided)
-    SELECT (SELECT r.role FROM profile_roles pr_j 
+    SELECT (SELECT r.role FROM profile_roles_junction pr_j 
             JOIN roles_resource r ON pr_j.role_id = r.id 
             WHERE pr_j.profile_id = p.id 
             LIMIT 1) as role 
@@ -93,9 +93,9 @@ primary_email AS (
     WHERE array_length(emails, 1) > primary_email_index
 ),
 existing_profile AS (
-    -- Find existing profile by primary email in profile_emails table
+    -- Find existing profile by primary email in profile_emails_junction table
     SELECT pe.profile_id as id, p.group_id
-    FROM profile_emails pe
+    FROM profile_emails_junction pe
     JOIN emails_resource e ON pe.email_id = e.id
     JOIN profile_artifact p ON p.id = pe.profile_id
     WHERE e.email = (SELECT email FROM primary_email)
@@ -135,7 +135,7 @@ profile_upsert AS (
         updated_at = NOW()
     RETURNING id, NOT EXISTS(SELECT 1 FROM existing_profile) as created
 ),
--- Insert/update role via profile_roles junction
+-- Insert/update role via profile_roles_junction junction
 role_resource AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
     SELECT (SELECT role FROM params)::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
@@ -144,11 +144,11 @@ role_resource AS (
     RETURNING id as role_id
 ),
 profile_type_upsert AS (
-    DELETE FROM profile_roles WHERE profile_id IN (SELECT id FROM profile_upsert)
+    DELETE FROM profile_roles_junction WHERE profile_id IN (SELECT id FROM profile_upsert)
     RETURNING profile_id
 ),
 profile_type_insert AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, updated_at, generated, mcp)
     SELECT pu.id, rr.role_id, NOW(), NOW(), false, false
     FROM profile_upsert pu
     CROSS JOIN role_resource rr
@@ -159,7 +159,7 @@ profile_type_insert AS (
 ),
 -- Link profile to name
 link_profile_name AS (
-    INSERT INTO profile_names (profile_id, name_id, created_at, updated_at)
+    INSERT INTO profile_names_junction (profile_id, name_id, created_at, updated_at)
     SELECT 
         pu.id,
         nr.name_id,
@@ -174,7 +174,7 @@ link_profile_name AS (
 ),
 -- UPDATE profile_artifact active flag
 update_profile_active_flag AS (
-    INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at) SELECT pu.id,
+    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at, updated_at) SELECT pu.id,
         f.id,
         (SELECT active FROM params),
         NOW(),
@@ -189,7 +189,7 @@ update_profile_active_flag AS (
 ),
 email_deactivate_all AS (
     -- Deactivate all existing emails for this profile
-    UPDATE profile_emails SET
+    UPDATE profile_emails_junction SET
         active = false,
         updated_at = NOW()
     WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
@@ -216,8 +216,8 @@ email_resources AS (
     RETURNING id as email_id, email
 ),
 email_upsert AS (
-    -- Link emails to profile via profile_emails junction table
-    INSERT INTO profile_emails (profile_id, email, email_id, is_primary, active)
+    -- Link emails to profile via profile_emails_junction junction table
+    INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
     SELECT 
         pu.id,
         er.email,
@@ -236,13 +236,13 @@ email_upsert AS (
 ),
 dept_cleanup AS (
     -- Delete existing department relationships
-    DELETE FROM profile_departments
+    DELETE FROM profile_departments_junction
     WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
       AND EXISTS (SELECT 1 FROM profile_upsert)
 ),
 dept_insert AS (
     -- Insert department relationships (first one as primary)
-    INSERT INTO profile_departments (profile_id, department_id, is_primary, active, created_at, updated_at)
+    INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at, updated_at)
     SELECT 
         pu.id,
         dept_id,
@@ -261,13 +261,13 @@ dept_insert AS (
 ),
 cohort_cleanup AS (
     -- Delete existing cohort relationships
-    DELETE FROM profile_cohorts
+    DELETE FROM profile_cohorts_junction
     WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
       AND EXISTS (SELECT 1 FROM profile_upsert)
 ),
 cohort_insert AS (
     -- Insert cohort relationships
-    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
+    INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
     SELECT 
         pu.id,
         cohort_id,

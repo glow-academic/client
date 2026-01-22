@@ -73,16 +73,16 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM setting_names WHERE setting_id = v_setting_id;
-        DELETE FROM setting_descriptions WHERE setting_id = v_setting_id;
-        DELETE FROM setting_colors WHERE setting_id = v_setting_id;
-        DELETE FROM department_settings WHERE settings_id = v_setting_id;
-        DELETE FROM setting_profiles WHERE setting_id = v_setting_id;
-        DELETE FROM setting_auths WHERE settings_id = v_setting_id;
-        DELETE FROM setting_providers WHERE settings_id = v_setting_id;
+        DELETE FROM setting_names_junction WHERE setting_id = v_setting_id;
+        DELETE FROM setting_descriptions_junction WHERE setting_id = v_setting_id;
+        DELETE FROM setting_colors_junction WHERE setting_id = v_setting_id;
+        DELETE FROM department_settings_junction WHERE settings_id = v_setting_id;
+        DELETE FROM setting_profiles_junction WHERE setting_id = v_setting_id;
+        DELETE FROM setting_auths_junction WHERE settings_id = v_setting_id;
+        DELETE FROM setting_providers_junction WHERE settings_id = v_setting_id;
         -- Update existing active flag if it exists
-        UPDATE setting_flags SET
-            flag_id = COALESCE(api_save_setting_v4.active_flag_id, setting_flags.flag_id),
+        UPDATE setting_flags_junction SET
+            flag_id = COALESCE(api_save_setting_v4.active_flag_id, setting_flags_junction.flag_id),
             value = CASE WHEN api_save_setting_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE setting_id = v_setting_id
@@ -107,21 +107,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM department_settings
-        WHERE department_settings.settings_id = (SELECT p.setting_id FROM params p LIMIT 1) AND active = true
+        FROM department_settings_junction
+        WHERE department_settings_junction.settings_id = (SELECT p.setting_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -152,7 +152,7 @@ BEGIN
     ),
     -- Link setting to name
     link_setting_name AS (
-        INSERT INTO setting_names (setting_id, name_id, created_at, updated_at)
+        INSERT INTO setting_names_junction (setting_id, name_id, created_at, updated_at)
         SELECT 
             x.setting_id,
             x.name_id,
@@ -164,7 +164,7 @@ BEGIN
     ),
     -- Link setting to description
     link_setting_description AS (
-        INSERT INTO setting_descriptions (setting_id, description_id, created_at, updated_at)
+        INSERT INTO setting_descriptions_junction (setting_id, description_id, created_at, updated_at)
         SELECT 
             x.setting_id,
             x.description_id,
@@ -176,7 +176,7 @@ BEGIN
     ),
     -- Link colors (multi-select, old ones already deleted above if update)
     link_colors AS (
-        INSERT INTO setting_colors (setting_id, color_id, type, created_at, updated_at)
+        INSERT INTO setting_colors_junction (setting_id, color_id, type, created_at, updated_at)
         SELECT 
             x.setting_id,
             color_id,
@@ -190,7 +190,7 @@ BEGIN
     ),
     -- Insert or UPDATE setting_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_setting_active_flag AS (
-        INSERT INTO setting_flags (setting_id, flag_id, value, created_at, updated_at) SELECT x.setting_id,
+        INSERT INTO setting_flags_junction (setting_id, flag_id, value, created_at, updated_at) SELECT x.setting_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -199,14 +199,14 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'setting_active'
         ON CONFLICT ON CONSTRAINT setting_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, setting_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, setting_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link departments (old ones already deleted above if update)
-    -- Use department_settings table (reverse direction: settings_id -> department_id)
+    -- Use department_settings_junction table (reverse direction: settings_id -> department_id)
     link_departments AS (
-        INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
+        INSERT INTO department_settings_junction (settings_id, department_id, active, created_at, updated_at)
         SELECT 
             x.setting_id,
             dept_id,
@@ -221,7 +221,7 @@ BEGIN
             updated_at = NOW()
     ),
     link_profiles AS (
-        INSERT INTO setting_profiles (setting_id, profile_id, active, created_at, updated_at)
+        INSERT INTO setting_profiles_junction (setting_id, profile_id, active, created_at, updated_at)
         SELECT 
             x.setting_id,
             profile_id,
@@ -237,7 +237,7 @@ BEGIN
     ),
     -- Link auths (old ones already deleted above if update)
     link_auths AS (
-        INSERT INTO setting_auths (settings_id, auth_id, active, created_at, updated_at)
+        INSERT INTO setting_auths_junction (settings_id, auth_id, active, created_at, updated_at)
         SELECT 
             x.setting_id,
             auth_id,
@@ -253,7 +253,7 @@ BEGIN
     ),
     -- Link providers (old ones already deleted above if update)
     link_providers AS (
-        INSERT INTO setting_providers (settings_id, providers_id, active, created_at, updated_at)
+        INSERT INTO setting_providers_junction (settings_id, providers_id, active, created_at, updated_at)
         SELECT 
             x.setting_id,
             provider_id,
@@ -267,7 +267,7 @@ BEGIN
             active = true,
             updated_at = NOW()
     )
-    -- Note: Keys are handled separately via setting_provider_keys (ternary relationship with providers)
+    -- Note: Keys are handled separately via setting_provider_keys_junction (ternary relationship with providers)
     -- Keys require both setting_id and providers_id, so they're managed in a separate endpoint
     SELECT 
         x.setting_id AS setting_id,

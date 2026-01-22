@@ -37,15 +37,15 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 simulation_info AS (
     SELECT 
         s.id,
-        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
-        (SELECT COUNT(*) FROM cohort_simulations WHERE cohort_simulations.simulation_id = s.id) as usage_count
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
+        (SELECT COUNT(*) FROM cohort_simulations_junction WHERE cohort_simulations_junction.simulation_id = s.id) as usage_count
     FROM params x
     JOIN simulation_artifact s ON s.id = x.simulation_id
 ),

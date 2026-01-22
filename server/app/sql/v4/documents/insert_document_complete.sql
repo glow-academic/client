@@ -35,7 +35,7 @@ VOLATILE
 AS $$
 WITH user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM profile_artifact p
     WHERE p.id = profile_id
 ),
@@ -76,7 +76,7 @@ link_document_agent_domain AS (
 ),
 -- Link document to description
 link_document_description AS (
-    INSERT INTO document_descriptions (document_id, description_id, created_at, updated_at)
+    INSERT INTO document_descriptions_junction (document_id, description_id, created_at, updated_at)
     SELECT 
         id.document_id,
         dr.description_id,
@@ -88,7 +88,7 @@ link_document_description AS (
 ),
 -- Link document active flag
 link_document_active_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT id.document_id,
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at) SELECT id.document_id,
         f.id,
         true,
         NOW(),
@@ -102,7 +102,7 @@ link_document_active_flag AS (
 ),
 -- Link document template flag (defaults to false)
 link_document_template_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at)
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at)
     SELECT 
         id.document_id,
         f.id,
@@ -135,14 +135,14 @@ insert_upload AS (
         updated_at = NOW()
 ),
 insert_depts AS (
-    INSERT INTO document_departments (document_id, department_id, active, created_at, updated_at)
+    INSERT INTO document_departments_junction (document_id, department_id, active, created_at, updated_at)
     SELECT document_id, dept_id, true, NOW(), NOW()
     FROM unnest(department_ids) as dept_id
     WHERE cardinality(department_ids) > 0
     RETURNING document_id
 ),
 insert_fields AS (
-    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
+    INSERT INTO document_fields_junction (document_id, field_id, active, created_at, updated_at)
     SELECT document_id, field_id, true, NOW(), NOW()
     FROM unnest(field_ids) as field_id
     WHERE cardinality(field_ids) > 0

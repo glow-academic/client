@@ -50,11 +50,11 @@ STABLE
 AS $$
     SELECT 
         e.id::text as eval_id,
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE),
+        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE),
         er.run_id::uuid as run_id,
         er.completed as run_completed
     FROM eval_attempts ea
     JOIN evals_resource e ON e.id = ea.eval_id
-    LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.run_id = socket_get_benchmark_run_start_context_v4.run_id
+    LEFT JOIN eval_runs_junction er ON er.eval_id = e.id AND er.run_id = socket_get_benchmark_run_start_context_v4.run_id
     WHERE ea.id = socket_get_benchmark_run_start_context_v4.attempt_id;
 $$;

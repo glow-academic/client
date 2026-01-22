@@ -94,22 +94,22 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM agent_names WHERE agent_id = v_agent_id;
-        DELETE FROM agent_descriptions WHERE agent_id = v_agent_id;
-        DELETE FROM agent_departments WHERE agent_id = v_agent_id;
-        DELETE FROM agent_instructions WHERE agent_id = v_agent_id;
-        DELETE FROM agent_tools WHERE agent_id = v_agent_id;
+        DELETE FROM agent_names_junction WHERE agent_id = v_agent_id;
+        DELETE FROM agent_descriptions_junction WHERE agent_id = v_agent_id;
+        DELETE FROM agent_departments_junction WHERE agent_id = v_agent_id;
+        DELETE FROM agent_instructions_junction WHERE agent_id = v_agent_id;
+        DELETE FROM agent_tools_junction WHERE agent_id = v_agent_id;
         -- Update existing active flag if it exists
-        UPDATE agent_flags SET
-            flag_id = COALESCE(api_save_agent_v4.active_flag_id, agent_flags.flag_id),
+        UPDATE agent_flags_junction SET
+            flag_id = COALESCE(api_save_agent_v4.active_flag_id, agent_flags_junction.flag_id),
             value = CASE WHEN api_save_agent_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE agent_id = v_agent_id
           ;
         -- Deactivate existing temperature/reasoning/voice links
-        UPDATE agent_temperature_levels SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
-        UPDATE agent_reasoning_levels SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
-        UPDATE agent_voices SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
+        UPDATE agent_temperature_levels_junction SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
+        UPDATE agent_reasoning_levels_junction SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
+        UPDATE agent_voices_junction SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
     END IF;
     
     -- Continue with agent save using SQL (agent already created/updated above)
@@ -152,24 +152,24 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j 
+            (SELECT r.role FROM profile_roles_junction pr_j 
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM agent_departments
-        WHERE agent_departments.agent_id = (SELECT p.agent_id FROM params p LIMIT 1) AND active = true
+        FROM agent_departments_junction
+        WHERE agent_departments_junction.agent_id = (SELECT p.agent_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -200,7 +200,7 @@ BEGIN
     ),
     -- Link agent to name
     link_agent_name AS (
-        INSERT INTO agent_names (agent_id, name_id, created_at, updated_at)
+        INSERT INTO agent_names_junction (agent_id, name_id, created_at, updated_at)
         SELECT 
             x.agent_id,
             nr.name_id,
@@ -212,7 +212,7 @@ BEGIN
     ),
     -- Link agent to description
     link_agent_description AS (
-        INSERT INTO agent_descriptions (agent_id, description_id, created_at, updated_at)
+        INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at, updated_at)
         SELECT 
             x.agent_id,
             dr.description_id,
@@ -225,12 +225,12 @@ BEGIN
     ),
     -- Link agent to model (remove old links first for update)
     remove_old_model AS (
-        DELETE FROM agent_models
+        DELETE FROM agent_models_junction
         WHERE agent_id = (SELECT agent_id FROM params)
           AND model_id != (SELECT model_id FROM params)
     ),
     link_agent_model AS (
-        INSERT INTO agent_models (agent_id, model_id, created_at, updated_at)
+        INSERT INTO agent_models_junction (agent_id, model_id, created_at, updated_at)
         SELECT 
             x.agent_id,
             x.model_id,
@@ -260,12 +260,12 @@ BEGIN
     ),
     -- Remove old prompt links for update
     remove_old_prompts AS (
-        DELETE FROM agent_prompts
+        DELETE FROM agent_prompts_junction
         WHERE agent_id = (SELECT agent_id FROM params)
     ),
     link_prompt AS (
         -- Link agent to prompt if prompt_id exists
-        INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
+        INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at, updated_at)
         SELECT 
             x.agent_id,
             sp.prompt_id,
@@ -281,7 +281,7 @@ BEGIN
     ),
     -- Link agent to instructions
     link_agent_instructions AS (
-        INSERT INTO agent_instructions (agent_id, instruction_id, created_at, updated_at)
+        INSERT INTO agent_instructions_junction (agent_id, instruction_id, created_at, updated_at)
         SELECT 
             x.agent_id,
             x.instructions_id,
@@ -293,7 +293,7 @@ BEGIN
     ),
     -- Insert or UPDATE agent_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_agent_active_flag AS (
-        INSERT INTO agent_flags (agent_id, flag_id, value, created_at, updated_at) SELECT x.agent_id,
+        INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at, updated_at) SELECT x.agent_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -302,13 +302,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'agent_active'
         ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, agent_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, agent_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO agent_departments (agent_id, department_id, active, created_at, updated_at)
+        INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at, updated_at)
         SELECT 
             x.agent_id,
             dept_id,
@@ -324,7 +324,7 @@ BEGIN
     ),
     -- Link temperature level if provided
     link_temperature_level AS (
-        INSERT INTO agent_temperature_levels (agent_id, temperature_level_id, active, created_at, updated_at)
+        INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, updated_at)
         SELECT 
             x.agent_id,
             x.temperature_level_id,
@@ -339,7 +339,7 @@ BEGIN
     ),
     -- Link reasoning level if provided
     link_reasoning_level AS (
-        INSERT INTO agent_reasoning_levels (agent_id, reasoning_level_id, active, created_at, updated_at)
+        INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, updated_at)
         SELECT 
             x.agent_id,
             x.reasoning_level_id,
@@ -354,7 +354,7 @@ BEGIN
     ),
     -- Link voices if provided
     link_voices AS (
-        INSERT INTO agent_voices (agent_id, voice_id, active, created_at, updated_at)
+        INSERT INTO agent_voices_junction (agent_id, voice_id, active, created_at, updated_at)
         SELECT 
             x.agent_id,
             voice_id,
@@ -370,7 +370,7 @@ BEGIN
     ),
     -- Link tools if provided
     link_tools AS (
-        INSERT INTO agent_tools (agent_id, tool_id, active, created_at, updated_at)
+        INSERT INTO agent_tools_junction (agent_id, tool_id, active, created_at, updated_at)
         SELECT 
             x.agent_id,
             tool_id,

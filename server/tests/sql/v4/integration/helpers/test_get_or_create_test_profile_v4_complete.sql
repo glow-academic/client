@@ -23,7 +23,7 @@ AS $$
             pe.profile_id,
             pe.email,
             p.role::text
-        FROM profile_emails pe
+        FROM profile_emails_junction pe
         JOIN profiles_resource p ON p.id = pe.profile_id
         WHERE pe.email = test_get_or_create_test_profile_v4.email
           AND pe.active = true
@@ -50,21 +50,21 @@ AS $$
         RETURNING id, test_get_or_create_test_profile_v4.role::text as role
     ),
     new_profile_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id)
+        INSERT INTO profile_names_junction(profile_id, name_id)
         SELECT np.id, COALESCE(nr.id, nl.id)
         FROM new_profile np, name_resource nr FULL OUTER JOIN name_lookup nl ON true
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING profile_id
     ),
     new_profile_flag_link AS (
-        INSERT INTO profile_flags (profile_id, flag_id, value)
+        INSERT INTO profile_flags_junction (profile_id, flag_id, value)
         SELECT np.id, af.id, true
         FROM new_profile np, active_flag af
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING profile_id
     ),
     new_email AS (
-        INSERT INTO profile_emails(profile_id, email, is_primary, active)
+        INSERT INTO profile_emails_junction(profile_id, email, is_primary, active)
         SELECT 
             np.id,
             test_get_or_create_test_profile_v4.email,

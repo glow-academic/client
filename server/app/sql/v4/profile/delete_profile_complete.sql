@@ -45,7 +45,7 @@ profile_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.current_profile_id
 ),
@@ -53,7 +53,7 @@ profile_check AS (
     -- Check if profile exists and get details
     SELECT 
         p.id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name
     FROM profile_artifact p
     WHERE p.id = (SELECT target_profile_id FROM params)
 ),

@@ -85,14 +85,14 @@ new_scenario AS (
     RETURNING id
 ),
 link_name AS (
-    INSERT INTO scenario_names (scenario_id, name_id, created_at, updated_at)
+    INSERT INTO scenario_names_junction (scenario_id, name_id, created_at, updated_at)
     SELECT ns.id, gocn.name_id, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_or_create_name gocn
     WHERE gocn.name_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gfi.active_flag_id, p.active, NOW(), NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gfi.active_flag_id, p.active, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi
@@ -123,7 +123,7 @@ SELECT
     (SELECT created_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as created_at,
     (SELECT updated_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as updated_at,
     NULL::uuid as profile_id,
-    (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
+    (SELECT sd.department_id FROM scenario_departments_junction sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
 FROM new_scenario ns
 CROSS JOIN params p
 LEFT JOIN get_or_create_name gocn ON gocn.name_id IS NOT NULL

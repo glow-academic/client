@@ -96,16 +96,16 @@ BEGIN
     -- Validate permissions
     IF is_create THEN
         IF NOT validate_department_create_permissions(
-            (SELECT r.role::text FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
+            (SELECT r.role::text FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
             ARRAY(SELECT unnest(department_ids)::text)
         ) THEN
             RAISE EXCEPTION 'Insufficient permissions to create model';
         END IF;
     ELSE
         IF NOT validate_department_update_permissions(
-            (SELECT r.role::text FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
-            ARRAY(SELECT department_id::text FROM model_departments WHERE model_id = input_model_id AND active = true),
-            ARRAY(SELECT department_id::text FROM profile_departments WHERE profile_id = profile_id AND active = true)
+            (SELECT r.role::text FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
+            ARRAY(SELECT department_id::text FROM model_departments_junction WHERE model_id = input_model_id AND active = true),
+            ARRAY(SELECT department_id::text FROM profile_departments_junction WHERE profile_id = profile_id AND active = true)
         ) THEN
             RAISE EXCEPTION 'Insufficient permissions to UPDATE model_artifact';
         END IF;
@@ -129,35 +129,35 @@ BEGIN
     -- Handle name (using name_id resource ID)
     IF name_id IS NOT NULL THEN
         -- Delete existing name links and insert new one
-        DELETE FROM model_names WHERE model_id = v_model_id;
-        INSERT INTO model_names (model_id, name_id, created_at, updated_at, generated, mcp)
+        DELETE FROM model_names_junction WHERE model_id = v_model_id;
+        INSERT INTO model_names_junction (model_id, name_id, created_at, updated_at, generated, mcp)
         VALUES (v_model_id, name_id, NOW(), NOW(), false, false);
     ELSE
         -- Remove name if name_id is NULL
-        DELETE FROM model_names WHERE model_id = v_model_id;
+        DELETE FROM model_names_junction WHERE model_id = v_model_id;
     END IF;
 
     -- Handle description (using description_id resource ID)
     IF description_id IS NOT NULL THEN
         -- Delete existing description links and insert new one
-        DELETE FROM model_descriptions WHERE model_id = v_model_id;
-        INSERT INTO model_descriptions (model_id, description_id, created_at, updated_at, generated, mcp)
+        DELETE FROM model_descriptions_junction WHERE model_id = v_model_id;
+        INSERT INTO model_descriptions_junction (model_id, description_id, created_at, updated_at, generated, mcp)
         VALUES (v_model_id, description_id, NOW(), NOW(), false, false);
     ELSE
         -- Remove description if description_id is NULL
-        DELETE FROM model_descriptions WHERE model_id = v_model_id;
+        DELETE FROM model_descriptions_junction WHERE model_id = v_model_id;
     END IF;
 
     -- Handle active flag (using active_flag_id resource ID)
     IF active_flag_id IS NOT NULL THEN
         -- Delete existing active flag links and insert new one
-        DELETE FROM model_flags WHERE model_id = v_model_id AND flag_id = active_flag_id;
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        DELETE FROM model_flags_junction WHERE model_id = v_model_id AND flag_id = active_flag_id;
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, active_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
         -- Remove active flag if active_flag_id is NULL
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.name = 'model_active');
     END IF;
@@ -165,86 +165,86 @@ BEGIN
     -- Handle modalities_enabled flag
     IF modalities_enabled_flag_id IS NOT NULL THEN
         -- Delete existing flag of this type first
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'modalities_enabled'::flag_type);
         -- Insert new flag
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, modalities_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
         -- Remove flag if flag_id is NULL
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'modalities_enabled'::flag_type);
     END IF;
 
     -- Handle temperature_enabled flag
     IF temperature_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'temperature_enabled'::flag_type);
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, temperature_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'temperature_enabled'::flag_type);
     END IF;
 
     -- Handle pricing_enabled flag
     IF pricing_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'pricing_enabled'::flag_type);
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, pricing_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'pricing_enabled'::flag_type);
     END IF;
 
     -- Handle voices_enabled flag
     IF voices_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'voices_enabled'::flag_type);
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, voices_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'voices_enabled'::flag_type);
     END IF;
 
     -- Handle reasoning_levels_enabled flag
     IF reasoning_levels_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'reasoning_levels_enabled'::flag_type);
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, reasoning_levels_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'reasoning_levels_enabled'::flag_type);
     END IF;
 
     -- Handle qualities_enabled flag
     IF qualities_enabled_flag_id IS NOT NULL THEN
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'qualities_enabled'::flag_type);
-        INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at, generated, mcp, call_id)
         VALUES (v_model_id, qualities_enabled_flag_id, true, NOW(), NOW(), false, false, NULL)
         ON CONFLICT (model_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     ELSE
-        DELETE FROM model_flags mf
+        DELETE FROM model_flags_junction mf
         WHERE mf.model_id = v_model_id
         AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.type = 'qualities_enabled'::flag_type);
     END IF;
@@ -252,16 +252,16 @@ BEGIN
     -- Handle value (using value_id resource ID)
     IF value_id IS NOT NULL THEN
         -- Delete existing value links and insert new one
-        DELETE FROM model_values WHERE model_id = v_model_id;
-        INSERT INTO model_values (model_id, value_id, created_at, updated_at, generated, mcp)
+        DELETE FROM model_values_junction WHERE model_id = v_model_id;
+        INSERT INTO model_values_junction (model_id, value_id, created_at, updated_at, generated, mcp)
         VALUES (v_model_id, value_id, NOW(), NOW(), false, false);
     ELSE
         -- Remove value if value_id is NULL
-        DELETE FROM model_values WHERE model_id = v_model_id;
+        DELETE FROM model_values_junction WHERE model_id = v_model_id;
     END IF;
 
-    -- Handle provider link (via model_providers table)
-    -- Note: model_providers.model_id REFERENCES models_resource.id (resource), not model.id (artifact)
+    -- Handle provider link (via model_providers_junction table)
+    -- Note: model_providers_junction.model_id REFERENCES models_resource.id (resource), not model.id (artifact)
     -- So we need to get or create the models resource entry first
     -- Get or create models resource entry
     SELECT id INTO v_models_resource_id
@@ -276,8 +276,8 @@ BEGIN
         RETURNING id INTO v_models_resource_id;
     END IF;
     
-    -- Link provider via model_providers
-    INSERT INTO model_providers (model_id, providers_id, active, created_at, updated_at)
+    -- Link provider via model_providers_junction
+    INSERT INTO model_providers_junction (model_id, providers_id, active, created_at, updated_at)
     VALUES (v_models_resource_id, provider_id, true, NOW(), NOW())
     ON CONFLICT (model_id, providers_id) DO UPDATE SET
         active = true,
@@ -286,13 +286,13 @@ BEGIN
     -- Handle departments
     IF NOT is_create THEN
         -- Deactivate all existing department links for update
-        UPDATE model_departments
+        UPDATE model_departments_junction
         SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id AND active = true;
     END IF;
 
     IF array_length(department_ids, 1) > 0 THEN
-        INSERT INTO model_departments (model_id, department_id, active, created_at, updated_at)
+        INSERT INTO model_departments_junction (model_id, department_id, active, created_at, updated_at)
         SELECT v_model_id, dept_id, true, NOW(), NOW()
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT (model_id, department_id) DO UPDATE SET
@@ -303,23 +303,23 @@ BEGIN
     -- Handle endpoint (using endpoint_id resource ID)
     IF endpoint_id IS NOT NULL THEN
         -- Delete existing endpoint links and insert new one
-        DELETE FROM model_endpoints WHERE model_id = v_model_id;
-        INSERT INTO model_endpoints (model_id, endpoint_id, active, created_at, updated_at, generated, mcp)
+        DELETE FROM model_endpoints_junction WHERE model_id = v_model_id;
+        INSERT INTO model_endpoints_junction (model_id, endpoint_id, active, created_at, updated_at, generated, mcp)
         VALUES (v_model_id, endpoint_id, true, NOW(), NOW(), false, false);
     ELSE
         -- Remove endpoint if endpoint_id is NULL
-        DELETE FROM model_endpoints WHERE model_id = v_model_id;
+        DELETE FROM model_endpoints_junction WHERE model_id = v_model_id;
     END IF;
 
     -- Handle temperature levels (using temperature_level_ids resource IDs)
     -- Deactivate existing temperature levels for update
     IF NOT is_create THEN
-        UPDATE model_temperature_levels SET active = false, updated_at = NOW()
+        UPDATE model_temperature_levels_junction SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id;
     END IF;
 
     IF array_length(temperature_level_ids, 1) > 0 THEN
-        INSERT INTO model_temperature_levels (model_id, temperature_level_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_temperature_levels_junction (model_id, temperature_level_id, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, temp_level_id, true, NOW(), NOW(), false, false
         FROM UNNEST(temperature_level_ids) as temp_level_id
         ON CONFLICT (model_id, temperature_level_id) DO UPDATE SET active = true, updated_at = NOW();
@@ -328,12 +328,12 @@ BEGIN
     -- Handle pricing (using pricing_ids resource IDs)
     -- Deactivate existing pricing for update
     IF NOT is_create THEN
-        UPDATE model_pricing SET active = false, updated_at = NOW()
+        UPDATE model_pricing_junction SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id;
     END IF;
 
     IF array_length(pricing_ids, 1) > 0 THEN
-        INSERT INTO model_pricing (model_id, pricing_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_pricing_junction (model_id, pricing_id, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, pricing_id, true, NOW(), NOW(), false, false
         FROM UNNEST(pricing_ids) as pricing_id
         ON CONFLICT (model_id, pricing_id) DO UPDATE SET active = true, updated_at = NOW();
@@ -342,7 +342,7 @@ BEGIN
     -- Handle modalities (using modality_ids resource IDs)
     -- Deactivate existing modalities for update
     IF NOT is_create THEN
-        UPDATE model_modalities SET active = false, updated_at = NOW()
+        UPDATE model_modalities_junction SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id;
     END IF;
 
@@ -363,14 +363,14 @@ BEGIN
     END IF;
 
     IF array_length(input_modality_ids, 1) > 0 THEN
-        INSERT INTO model_modalities (model_id, modality_id, type, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_modalities_junction (model_id, modality_id, type, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, mod_id, 'input'::direction_type, true, NOW(), NOW(), false, false
         FROM UNNEST(input_modality_ids) as mod_id
         ON CONFLICT (model_id, modality_id, type) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF array_length(output_modality_ids, 1) > 0 THEN
-        INSERT INTO model_modalities (model_id, modality_id, type, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_modalities_junction (model_id, modality_id, type, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, mod_id, 'output'::direction_type, true, NOW(), NOW(), false, false
         FROM UNNEST(output_modality_ids) as mod_id
         ON CONFLICT (model_id, modality_id, type) DO UPDATE SET active = true, updated_at = NOW();
@@ -379,12 +379,12 @@ BEGIN
     -- Handle reasoning levels (using reasoning_level_ids resource IDs)
     -- Deactivate existing reasoning levels for update
     IF NOT is_create THEN
-        UPDATE model_reasoning_levels SET active = false, updated_at = NOW()
+        UPDATE model_reasoning_levels_junction SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id;
     END IF;
 
     IF array_length(reasoning_level_ids, 1) > 0 THEN
-        INSERT INTO model_reasoning_levels (model_id, reasoning_level_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_reasoning_levels_junction (model_id, reasoning_level_id, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, reasoning_level_id, true, NOW(), NOW(), false, false
         FROM UNNEST(reasoning_level_ids) as reasoning_level_id
         ON CONFLICT (model_id, reasoning_level_id) DO UPDATE SET active = true, updated_at = NOW();
@@ -393,12 +393,12 @@ BEGIN
     -- Handle voices (using voice_ids resource IDs)
     -- Always deactivate existing voices first for update
     IF NOT is_create THEN
-        UPDATE model_voices SET active = false, updated_at = NOW()
+        UPDATE model_voices_junction SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id;
     END IF;
 
     IF array_length(default_voice_ids, 1) > 0 THEN
-        INSERT INTO model_voices (model_id, voice_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_voices_junction (model_id, voice_id, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, voice_id, true, NOW(), NOW(), false, false
         FROM UNNEST(default_voice_ids) as voice_id
         ON CONFLICT (model_id, voice_id) DO UPDATE SET active = true, updated_at = NOW();
@@ -407,12 +407,12 @@ BEGIN
     -- Handle qualities (using quality_ids resource IDs)
     -- Deactivate existing qualities for update
     IF NOT is_create THEN
-        UPDATE model_qualities SET active = false, updated_at = NOW()
+        UPDATE model_qualities_junction SET active = false, updated_at = NOW()
         WHERE model_id = v_model_id;
     END IF;
 
     IF array_length(quality_ids, 1) > 0 THEN
-        INSERT INTO model_qualities (model_id, quality_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO model_qualities_junction (model_id, quality_id, active, created_at, updated_at, generated, mcp)
         SELECT v_model_id, quality_id, true, NOW(), NOW(), false, false
         FROM UNNEST(quality_ids) as quality_id
         ON CONFLICT (model_id, quality_id) DO UPDATE SET active = true, updated_at = NOW();
@@ -422,7 +422,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         v_model_id as model_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM profile_artifact p
     WHERE p.id = profile_id;
 END;

@@ -34,16 +34,16 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_tool AS (
     SELECT 
         t.id,
-        (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
-        (SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) as active
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
+        (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) as active
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),
@@ -51,13 +51,13 @@ original_args AS (
     -- Get args IDs from original tool
     SELECT args_id
     FROM params x
-    JOIN tool_args ta ON ta.tool_id = x.tool_id
+    JOIN tool_args_junction ta ON ta.tool_id = x.tool_id
 ),
 original_args_outputs AS (
     -- Get args_outputs IDs from original tool
     SELECT args_outputs_id
     FROM params x
-    JOIN tool_args_outputs tao ON tao.tool_id = x.tool_id
+    JOIN tool_args_outputs_junction tao ON tao.tool_id = x.tool_id
 ),
 new_tool AS (
     INSERT INTO tool_artifact (
@@ -86,7 +86,7 @@ new_tool_name AS (
     RETURNING id as name_id
 ),
 link_new_tool_name AS (
-    INSERT INTO tool_names (tool_id, name_id, created_at, updated_at, generated, mcp)
+    INSERT INTO tool_names_junction (tool_id, name_id, created_at, updated_at, generated, mcp)
     SELECT 
         nt.id,
         ntn.name_id,
@@ -115,7 +115,7 @@ new_tool_description AS (
     RETURNING id as description_id
 ),
 link_new_tool_description AS (
-    INSERT INTO tool_descriptions (tool_id, description_id, created_at, updated_at, generated, mcp)
+    INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, updated_at, generated, mcp)
     SELECT 
         nt.id,
         ntd.description_id,
@@ -129,7 +129,7 @@ link_new_tool_description AS (
 ),
 -- Insert active flag for new tool
 new_tool_active_flag AS (
-    INSERT INTO tool_flags (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT nt.id,
+    INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT nt.id,
         f.id,
         ot.active,
         NOW(),
@@ -144,7 +144,7 @@ new_tool_active_flag AS (
 ),
 -- Copy args links from original tool
 copy_args AS (
-    INSERT INTO tool_args (tool_id, args_id, created_at, updated_at)
+    INSERT INTO tool_args_junction (tool_id, args_id, created_at, updated_at)
     SELECT 
         nt.id,
         oa.args_id,
@@ -156,7 +156,7 @@ copy_args AS (
 ),
 -- Copy args_outputs links from original tool
 copy_args_outputs AS (
-    INSERT INTO tool_args_outputs (tool_id, args_outputs_id, created_at, updated_at)
+    INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, updated_at)
     SELECT 
         nt.id,
         oao.args_outputs_id,

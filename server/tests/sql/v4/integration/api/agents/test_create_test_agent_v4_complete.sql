@@ -41,25 +41,25 @@ AS $$
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     agent_name_link AS (
-        INSERT INTO agent_names(agent_id, name_id)
+        INSERT INTO agent_names_junction(agent_id, name_id)
         SELECT na.id, nr.id
         FROM new_agent na, name_resource nr
         RETURNING agent_id, name_id
     ),
     agent_description_link AS (
-        INSERT INTO agent_descriptions(agent_id, description_id)
+        INSERT INTO agent_descriptions_junction(agent_id, description_id)
         SELECT na.id, dr.id
         FROM new_agent na, description_resource dr
         RETURNING agent_id, description_id
     ),
     agent_flag_link AS (
-        INSERT INTO agent_flags (agent_id, flag_id, value)
+        INSERT INTO agent_flags_junction (agent_id, flag_id, value)
         SELECT na.id, af.id, COALESCE(test_create_test_agent_v4.active, true)
         FROM new_agent na, active_flag af
         RETURNING agent_id
     ),
     agent_model_link AS (
-        INSERT INTO agent_models(agent_id, model_id)
+        INSERT INTO agent_models_junction(agent_id, model_id)
         SELECT na.id, test_create_test_agent_v4.model_id
         FROM new_agent na
         WHERE test_create_test_agent_v4.model_id IS NOT NULL
@@ -67,10 +67,10 @@ AS $$
     )
     SELECT 
         na.id as agent_id,
-        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = na.id LIMIT 1) as name,
-        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = na.id LIMIT 1) as description,
-        (SELECT am.model_id FROM agent_models am WHERE am.agent_id = na.id LIMIT 1) as model_id,
-        EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = na.id AND fl.name = 'active'  AND af.value = TRUE) as active,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = na.id LIMIT 1) as name,
+        (SELECT d.description FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = na.id LIMIT 1) as description,
+        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = na.id LIMIT 1) as model_id,
+        EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = na.id AND fl.name = 'active'  AND af.value = TRUE) as active,
         COALESCE(test_create_test_agent_v4.role, 'assistant') as role,
         na.created_at
     FROM new_agent na;

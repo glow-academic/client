@@ -55,7 +55,7 @@ DECLARE
 BEGIN
     -- Get actor name
     SELECT COALESCE(
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_id LIMIT 1),
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_id LIMIT 1),
         ''
     ) INTO v_actor_name;
 
@@ -109,7 +109,7 @@ BEGIN
                 WHERE cardinality(cohort_ids) > 0
                 UNION
                 SELECT cp.cohort_id
-                FROM profile_cohorts cp
+                FROM profile_cohorts_junction cp
                 WHERE cp.profile_id = profile_id AND (profile_id::text IS NOT NULL AND profile_id::text != '')
             ) combined
         ),
@@ -121,7 +121,7 @@ BEGIN
                 sa.archived AS is_archived,
                 sa.infinite_mode,
                 sa.profile_id,
-                (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
+                (SELECT n.name FROM simulation_names_junction simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
                 sim.practice_simulation,
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM attempts_entry sa
@@ -132,7 +132,7 @@ BEGIN
                 SELECT 
                     sd.simulation_id,
                     ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
-                FROM simulation_departments sd
+                FROM simulation_departments_junction sd
                 WHERE sd.active = true
                 GROUP BY sd.simulation_id
             ) sdd ON sdd.simulation_id = sim.id
@@ -165,9 +165,9 @@ BEGIN
                 ha.attempt_id,
                 COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids
             FROM history_attempts ha
-            LEFT JOIN profile_cohorts cp ON cp.profile_id = ha.profile_id
+            LEFT JOIN profile_cohorts_junction cp ON cp.profile_id = ha.profile_id
             LEFT JOIN cohort_artifact c ON c.id = cp.cohort_id AND c.active = TRUE
-            LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
+            LEFT JOIN cohort_simulations_junction cs ON cs.cohort_id = c.id
             WHERE (
                 (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0
                 OR c.id IN (SELECT cohort_id FROM expanded_history_cohort_ids)
@@ -212,7 +212,7 @@ BEGIN
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
             FROM chats_entry sc
             JOIN scenarios_resource scn ON scn.id = sc.scenario_id
-            LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
+            LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = scn.id AND sp.active = TRUE
             WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
             GROUP BY sc.attempt_id
         ),
@@ -223,7 +223,7 @@ BEGIN
             LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
             WHERE 
                 (search IS NULL OR search = '' OR
-                 LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
+                 LOWER(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
                  LOWER(haf.simulation_name) LIKE '%' || LOWER(search) || '%' OR
                  EXISTS (
                      SELECT 1

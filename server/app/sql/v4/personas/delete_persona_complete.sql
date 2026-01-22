@@ -35,18 +35,18 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 usage_check AS (
     SELECT COUNT(*)::bigint as usage_count
     FROM params x
-    JOIN scenario_personas sp ON sp.persona_id = x.persona_id AND sp.active = true
+    JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id AND sp.active = true
 ),
 persona_info AS (
     SELECT 
-        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
     FROM params x
     JOIN personas_resource p ON p.id = x.persona_id
 ),

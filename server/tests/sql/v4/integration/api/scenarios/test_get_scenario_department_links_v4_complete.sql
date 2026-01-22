@@ -21,6 +21,6 @@ AS $$
         department_id,
         active,
         created_at
-    FROM scenario_departments
+    FROM scenario_departments_junction
     WHERE scenario_id = test_get_scenario_department_links_v4.input_scenario_id;
 $$;

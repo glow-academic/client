@@ -24,7 +24,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT (SELECT n.name FROM tool_names tn 
+    SELECT (SELECT n.name FROM tool_names_junction tn 
             JOIN names_resource n ON tn.name_id = n.id 
             WHERE tn.tool_id = t.id 
             LIMIT 1) as name

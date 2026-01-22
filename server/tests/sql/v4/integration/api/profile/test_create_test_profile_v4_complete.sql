@@ -36,13 +36,13 @@ AS $$
         RETURNING id, created_at, updated_at
     ),
     profile_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id)
+        INSERT INTO profile_names_junction(profile_id, name_id)
         SELECT np.id, nr.id
         FROM new_profile np, name_resource nr
         RETURNING profile_id
     ),
     profile_flag_link AS (
-        INSERT INTO profile_flags (profile_id, flag_id, value)
+        INSERT INTO profile_flags_junction (profile_id, flag_id, value)
         SELECT np.id, af.id, profile_active
         FROM new_profile np, active_flag af
         RETURNING profile_id
@@ -52,7 +52,7 @@ AS $$
         profile_first_name AS first_name,
         profile_last_name AS last_name,
         (SELECT role::text FROM profiles_resource p WHERE p.id = np.id) AS role,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         np.created_at,
         np.updated_at
     FROM new_profile np;

@@ -34,7 +34,7 @@ BEGIN
     VALUES (v_scenario_id, v_scenario_id, true);
 
     -- Insert problem statement
-    INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active)
+    INSERT INTO scenario_problem_statements_junction(scenario_id, problem_statement, active)
     VALUES (
         v_scenario_id,
         COALESCE(test_create_test_scenario_v4.scenario_problem_statement, 'Test problem statement'),
@@ -50,7 +50,7 @@ BEGIN
         s.active,
         s.created_at
     FROM scenarios_resource s
-    JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
     WHERE s.id = v_scenario_id;
 END;
 $$;

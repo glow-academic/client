@@ -141,8 +141,8 @@ resolve_profile_id AS (
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     LEFT JOIN profile_artifact p ON p.id = x.profile_id
     WHERE x.profile_id IS NOT NULL
@@ -162,7 +162,7 @@ runs_metadata AS (
         r.cached_input_tokens,
         r.key_id,
         r.agent_id,
-        (SELECT am.model_id FROM agent_models am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) as model_id,
+        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) as model_id,
         r.profile_id,
         NULL::uuid as persona_id
     FROM group_runs_list grl
@@ -174,8 +174,8 @@ runs_departments AS (
         d.id as department_id
     FROM runs_metadata rm
     LEFT JOIN agents_resource a ON a.id = rm.agent_id
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
+    LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     WHERE d.id IS NOT NULL
 ),
 -- Check department access
@@ -185,7 +185,7 @@ group_access_check AS (
             WHEN up.role = 'superadmin'::profile_type THEN true
             WHEN EXISTS (
                 SELECT 1 FROM runs_departments rd
-                JOIN profile_departments pd ON pd.department_id = rd.department_id
+                JOIN profile_departments_junction pd ON pd.department_id = rd.department_id
                 WHERE pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
                 AND pd.active = true
             ) THEN true
@@ -203,8 +203,8 @@ run_costs AS (
         ), 0) as run_cost
     FROM run_pricing_entry rpu
     JOIN runs_entry r ON r.id = rpu.run_id
-    JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
-    JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
+    JOIN agent_models_junction am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type
         AND pr.unit_id = rpu.unit_id
@@ -599,19 +599,19 @@ SELECT
     END as runs_entry,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_model
+            DISTINCT (m.id, (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_model
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_model[]
     ) as models,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_group_detail_v4_agent
+            DISTINCT (a.id, (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_group_detail_v4_agent
         ) FILTER (WHERE a.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_agent[]
     ) as agents,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_profile
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_profile[]
     ) as profiles

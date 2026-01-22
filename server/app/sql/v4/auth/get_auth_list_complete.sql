@@ -68,11 +68,11 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j 
+        (SELECT r.role FROM profile_roles_junction pr_j 
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -80,7 +80,7 @@ auth_item_counts AS (
     SELECT 
         ai_j.auth_id,
         COUNT(*) as num_items
-    FROM auth_items ai_j
+    FROM auth_items_junction ai_j
     JOIN items_resource i ON i.id = ai_j.item_id
     GROUP BY ai_j.auth_id
 ),
@@ -94,7 +94,7 @@ auth_sample_items AS (
     FROM (
         SELECT i.id, ai_j.auth_id, i.name, i.description,
                ROW_NUMBER() OVER (PARTITION BY ai_j.auth_id ORDER BY i.name) as rn
-        FROM auth_items ai_j
+        FROM auth_items_junction ai_j
         JOIN items_resource i ON i.id = ai_j.item_id
     ) ai
     WHERE ai.rn <= 3
@@ -104,7 +104,7 @@ SELECT
     up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (a.id, (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.auth_id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.auth_id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.auth_id AND f.name = 'auth_active' AND af.value = TRUE), a.updated_at,
+            (a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.auth_id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.auth_id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.auth_id AND f.name = 'auth_active' AND af.value = TRUE), a.updated_at,
              COALESCE(aic.num_items, 0),
              COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]),
              CASE WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true ELSE false END,

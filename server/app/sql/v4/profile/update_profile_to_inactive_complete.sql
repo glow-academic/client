@@ -40,8 +40,8 @@ WITH get_active_flag AS (
     LIMIT 1
 ),
 insert_or_update_flag AS (
-    -- Insert or update profile_flags to set active = false
-    INSERT INTO profile_flags (profile_id, flag_id, value) SELECT profile_id,
+    -- Insert or update profile_flags_junction to set active = false
+    INSERT INTO profile_flags_junction (profile_id, flag_id, value) SELECT profile_id,
         (SELECT flag_id FROM get_active_flag),
         false
     FROM get_active_flag

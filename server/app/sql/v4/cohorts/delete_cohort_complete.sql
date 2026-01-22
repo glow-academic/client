@@ -38,18 +38,18 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 usage_check AS (
     SELECT COUNT(*) as usage_count
     FROM params x
-    JOIN profile_cohorts cp ON cp.cohort_id = x.cohort_id
+    JOIN profile_cohorts_junction cp ON cp.cohort_id = x.cohort_id
 ),
 cohort_title AS (
     -- Get cohort title before deletion
-    SELECT (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
+    SELECT (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),

@@ -99,14 +99,14 @@ WITH params AS (
 user_departments AS (
     SELECT department_id
     FROM params x
-    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
+    JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -117,7 +117,7 @@ persona_active_scenario_links AS (
     SELECT 
         sp.persona_id,
         COUNT(*) as active_scenario_count
-    FROM scenario_personas sp
+    FROM scenario_personas_junction sp
     WHERE sp.active = true
     GROUP BY sp.persona_id
 ),
@@ -125,7 +125,7 @@ persona_all_scenario_links AS (
     SELECT 
         sp.persona_id,
         COUNT(*) as total_scenario_links
-    FROM scenario_personas sp
+    FROM scenario_personas_junction sp
     GROUP BY sp.persona_id
 ),
 persona_scenarios AS (
@@ -133,7 +133,7 @@ persona_scenarios AS (
         sp.persona_id,
         ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
-    FROM scenario_personas sp
+    FROM scenario_personas_junction sp
     JOIN scenario_tree_entry st ON st.child_id = sp.scenario_id
     WHERE sp.active = true AND st.parent_id = st.child_id
     GROUP BY sp.persona_id
@@ -142,21 +142,21 @@ persona_departments_data AS (
     SELECT 
         pd.persona_id,
         ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
-    FROM persona_departments pd
+    FROM persona_departments_junction pd
     GROUP BY pd.persona_id
 ),
 persona_data_base AS (
     SELECT 
         p.id as persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
-        (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
-        (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
-        (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
         NULL::uuid as agent_id,
         NULL::uuid as model_id,
         NULL::text as reasoning,
         NULL::numeric as temperature,
-        EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE) as active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -169,11 +169,11 @@ persona_data_base AS (
     LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
     LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
-    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE), p.updated_at, 
+    LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
+    GROUP BY p.id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = TRUE), p.updated_at, 
              pdd.department_ids, ps.scenario_ids, ps.num_scenarios, pasl.active_scenario_count, pasl_all.total_scenario_links
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
-        SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id
+        SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = p.id
     )
 ),
 persona_data AS (
@@ -200,7 +200,7 @@ all_scenario_ids AS (
 ),
 scenario_department_check AS (
     SELECT DISTINCT sd.scenario_id::text
-    FROM scenario_departments sd
+    FROM scenario_departments_junction sd
     WHERE sd.scenario_id::text = ANY(SELECT scenario_id::text FROM all_scenario_ids)
     AND sd.department_id::text = ANY(SELECT department_id::text FROM user_departments)
     AND sd.active = true
@@ -209,7 +209,7 @@ scenario_department_check AS (
     FROM scenario_artifact s
     WHERE s.id::text = ANY(SELECT scenario_id::text FROM all_scenario_ids)
     AND NOT EXISTS (
-        SELECT 1 FROM scenario_departments sd2 
+        SELECT 1 FROM scenario_departments_junction sd2 
         WHERE sd2.scenario_id = s.id AND sd2.active = true
     )
 ),
@@ -220,23 +220,23 @@ valid_scenario_ids AS (
 scenario_mapping_data AS (
     SELECT 
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1),
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as active,
         ARRAY[]::uuid[] as persona_ids,
         ARRAY[]::uuid[] as document_ids,
         ARRAY[]::uuid[] as parameter_item_ids
     FROM all_scenario_ids asi
     JOIN scenarios_resource s ON s.id = asi.scenario_id
-    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
 ),
 department_mapping_data AS (
     SELECT
         dr.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM department_artifact d
     JOIN departments_resource dr ON dr.department_id = d.id
     WHERE d.id IN (SELECT department_id FROM user_departments)
@@ -249,14 +249,14 @@ assigned_agent_ids AS (
 agent_mapping_data AS (
     SELECT 
         a.id as agent_id,
-        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(NULL::artifact_type::text, '')] as roles
     FROM agent_artifact a
     
     
     WHERE a.id IN (SELECT agent_id FROM assigned_agent_ids)
-    AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
 )
 SELECT 
     up.actor_name::text as actor_name,

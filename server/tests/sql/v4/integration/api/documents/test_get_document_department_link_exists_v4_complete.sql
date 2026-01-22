@@ -16,7 +16,7 @@ STABLE
 AS $$
     SELECT EXISTS(
         SELECT 1
-        FROM document_departments
+        FROM document_departments_junction
         WHERE document_id = input_document_id
           AND department_id = input_department_id
           AND active = true

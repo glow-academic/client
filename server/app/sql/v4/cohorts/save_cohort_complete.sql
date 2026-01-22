@@ -146,17 +146,17 @@ BEGIN
 
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM cohort_names WHERE cohort_names.cohort_id = v_cohort_id;
-        DELETE FROM cohort_descriptions WHERE cohort_descriptions.cohort_id = v_cohort_id;
-        DELETE FROM cohort_departments WHERE cohort_departments.cohort_id = v_cohort_id;
-        DELETE FROM cohort_simulations WHERE cohort_simulations.cohort_id = v_cohort_id;
-        DELETE FROM cohort_simulation_positions WHERE cohort_simulation_positions.cohort_id = v_cohort_id;
+        DELETE FROM cohort_names_junction WHERE cohort_names_junction.cohort_id = v_cohort_id;
+        DELETE FROM cohort_descriptions_junction WHERE cohort_descriptions_junction.cohort_id = v_cohort_id;
+        DELETE FROM cohort_departments_junction WHERE cohort_departments_junction.cohort_id = v_cohort_id;
+        DELETE FROM cohort_simulations_junction WHERE cohort_simulations_junction.cohort_id = v_cohort_id;
+        DELETE FROM cohort_simulation_positions_junction WHERE cohort_simulation_positions_junction.cohort_id = v_cohort_id;
         -- Update existing active flag if it exists
-        UPDATE cohort_flags SET
-            flag_id = COALESCE(v_active_flag_id, cohort_flags.flag_id),
+        UPDATE cohort_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, cohort_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
-        WHERE cohort_flags.cohort_id = v_cohort_id;
+        WHERE cohort_flags_junction.cohort_id = v_cohort_id;
     END IF;
 
     -- Continue with cohort save using SQL (cohort already created/updated above)
@@ -204,24 +204,24 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j 
+            (SELECT r.role FROM profile_roles_junction pr_j 
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params_with_departments x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM cohort_departments
-        WHERE cohort_departments.cohort_id = (SELECT p.cohort_id FROM params_with_departments p LIMIT 1) AND active = true
+        FROM cohort_departments_junction
+        WHERE cohort_departments_junction.cohort_id = (SELECT p.cohort_id FROM params_with_departments p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params_with_departments p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params_with_departments p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -252,7 +252,7 @@ BEGIN
     ),
     -- Link cohort to name
     link_cohort_name AS (
-        INSERT INTO cohort_names (cohort_id, name_id, created_at, updated_at)
+        INSERT INTO cohort_names_junction (cohort_id, name_id, created_at, updated_at)
         SELECT 
             x.cohort_id,
             x.name_id,
@@ -264,7 +264,7 @@ BEGIN
     ),
     -- Link cohort to description
     link_cohort_description AS (
-        INSERT INTO cohort_descriptions (cohort_id, description_id, created_at, updated_at)
+        INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at, updated_at)
         SELECT 
             x.cohort_id,
             x.description_id,
@@ -276,7 +276,7 @@ BEGIN
     ),
     -- Insert or UPDATE cohort_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_cohort_active_flag AS (
-        INSERT INTO cohort_flags (cohort_id, flag_id, value, created_at, updated_at) SELECT x.cohort_id,
+        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at, updated_at) SELECT x.cohort_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -285,13 +285,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'cohort_active'
         ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO cohort_departments (cohort_id, department_id, active, created_at, updated_at)
+        INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at, updated_at)
         SELECT 
             x.cohort_id,
             dri.department_resource_id,
@@ -328,7 +328,7 @@ BEGIN
           AND COALESCE(array_length(x.simulation_ids, 1), 0) > 0
     ),
     link_simulations AS (
-        INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
+        INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active)
         SELECT 
             x.cohort_id,
             swo.sim_id,
@@ -363,7 +363,7 @@ BEGIN
         RETURNING id, simulation_id, value
     ),
     link_simulation_positions AS (
-        INSERT INTO cohort_simulation_positions (
+        INSERT INTO cohort_simulation_positions_junction (
             cohort_id,
             simulation_position_id,
             active,

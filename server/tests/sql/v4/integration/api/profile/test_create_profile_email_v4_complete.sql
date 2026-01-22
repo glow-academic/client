@@ -21,7 +21,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO profile_emails(profile_id, email, is_primary, active)
+    INSERT INTO profile_emails_junction(profile_id, email, is_primary, active)
     VALUES (
         input_profile_id,
         email_address,

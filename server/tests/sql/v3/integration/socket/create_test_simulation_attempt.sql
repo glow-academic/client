@@ -33,11 +33,11 @@ all_sims AS (
     SELECT id FROM existing_sim
 ),
 sim_dept AS (
-    INSERT INTO simulation_departments(simulation_id, department_id, active)
+    INSERT INTO simulation_departments_junction(simulation_id, department_id, active)
     SELECT s.id, d.id, true
     FROM all_sims s, dept d
     WHERE NOT EXISTS (
-        SELECT 1 FROM simulation_departments sd 
+        SELECT 1 FROM simulation_departments_junction sd 
         WHERE sd.simulation_id = s.id AND sd.department_id = d.id
     )
 ),
@@ -52,7 +52,7 @@ scenario_tree_entry AS (
     FROM scenario s
 ),
 scenario_dept AS (
-    INSERT INTO scenario_departments(scenario_id, department_id, active)
+    INSERT INTO scenario_departments_junction(scenario_id, department_id, active)
     SELECT s.id, d.id, true
     FROM scenario s, dept d
 ),

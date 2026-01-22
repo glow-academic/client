@@ -162,14 +162,14 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM auth_names WHERE auth_id = v_auth_id;
-        DELETE FROM auth_descriptions WHERE auth_id = v_auth_id;
-        DELETE FROM auth_protocols WHERE auth_id = v_auth_id;
-        DELETE FROM auth_slugs WHERE auth_id = v_auth_id;
-        DELETE FROM auth_items WHERE auth_id = v_auth_id;
+        DELETE FROM auth_names_junction WHERE auth_id = v_auth_id;
+        DELETE FROM auth_descriptions_junction WHERE auth_id = v_auth_id;
+        DELETE FROM auth_protocols_junction WHERE auth_id = v_auth_id;
+        DELETE FROM auth_slugs_junction WHERE auth_id = v_auth_id;
+        DELETE FROM auth_items_junction WHERE auth_id = v_auth_id;
         -- Update existing active flag if it exists
-        UPDATE auth_flags SET
-            flag_id = COALESCE(v_active_flag_id, auth_flags.flag_id),
+        UPDATE auth_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, auth_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE auth_id = v_auth_id
@@ -186,16 +186,16 @@ BEGIN
             v_active_flag_id AS active_flag_id,
             COALESCE(v_protocol_ids, ARRAY[]::uuid[]) AS protocol_ids,
             COALESCE(v_slug_ids, ARRAY[]::uuid[]) AS slug_ids,
-            ARRAY[]::types.i_save_auth_v4_auth_item[] AS auth_items,
+            ARRAY[]::types.i_save_auth_v4_auth_item[] AS auth_items_junction,
             v_profile_id AS profile_id
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j 
+            (SELECT r.role FROM profile_roles_junction pr_j 
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
@@ -208,7 +208,7 @@ BEGIN
     ),
     -- Link auth to name
     link_auth_name AS (
-        INSERT INTO auth_names (auth_id, name_id, created_at, updated_at)
+        INSERT INTO auth_names_junction (auth_id, name_id, created_at, updated_at)
         SELECT 
             x.auth_id,
             x.name_id,
@@ -220,7 +220,7 @@ BEGIN
     ),
     -- Link auth to description
     link_auth_description AS (
-        INSERT INTO auth_descriptions (auth_id, description_id, created_at, updated_at)
+        INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at, updated_at)
         SELECT 
             x.auth_id,
             x.description_id,
@@ -232,7 +232,7 @@ BEGIN
     ),
     -- Insert or UPDATE auth_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_auth_active_flag AS (
-        INSERT INTO auth_flags (auth_id, flag_id, value, created_at, updated_at) SELECT x.auth_id,
+        INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at, updated_at) SELECT x.auth_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -241,13 +241,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'auth_active'
         ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, auth_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, auth_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link protocols (old ones already deleted above if update)
     link_protocols AS (
-        INSERT INTO auth_protocols (auth_id, protocol_id, created_at, updated_at)
+        INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at, updated_at)
         SELECT 
             x.auth_id,
             protocol_id,
@@ -261,7 +261,7 @@ BEGIN
     ),
     -- Link slugs (old ones already deleted above if update)
     link_slugs AS (
-        INSERT INTO auth_slugs (auth_id, slug_id, created_at, updated_at)
+        INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at, updated_at)
         SELECT 
             x.auth_id,
             slug_id,
@@ -273,7 +273,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT auth_slugs_pkey DO UPDATE SET
             updated_at = NOW()
     ),
-    -- Handle auth_items (special handling - not a standard resource)
+    -- Handle auth_items_junction (special handling - not a standard resource)
     items_expanded AS (
         -- Expand composite type array with row numbers for matching
         SELECT 
@@ -285,7 +285,7 @@ BEGIN
             COALESCE(item.active, true) as item_active,
             item.key_id as item_key_id
         FROM params x
-        CROSS JOIN LATERAL unnest(x.auth_items) AS item
+        CROSS JOIN LATERAL unnest(x.auth_items_junction) AS item
     ),
     new_items AS (
         -- Create all items (standalone table) - one per auth item
@@ -318,7 +318,7 @@ BEGIN
     ),
     -- Link auth to items via junction table
     link_auth_items AS (
-        INSERT INTO auth_items (auth_id, item_id, created_at, updated_at)
+        INSERT INTO auth_items_junction (auth_id, item_id, created_at, updated_at)
         SELECT 
             x.auth_id,
             iwi.item_id,
@@ -327,7 +327,7 @@ BEGIN
         FROM params x
         CROSS JOIN items_expanded ie
         JOIN items_with_idx iwi ON iwi.item_idx = ie.item_idx
-        WHERE COALESCE(array_length(x.auth_items, 1), 0) > 0
+        WHERE COALESCE(array_length(x.auth_items_junction, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT auth_items_pkey DO UPDATE SET updated_at = NOW()
     )
     SELECT 

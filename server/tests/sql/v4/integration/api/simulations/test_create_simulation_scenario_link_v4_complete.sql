@@ -20,7 +20,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH inserted_link AS (
-        INSERT INTO simulation_scenarios(simulation_id, scenario_id)
+        INSERT INTO simulation_scenarios_junction(simulation_id, scenario_id)
         VALUES (
             test_create_simulation_scenario_link_v4.input_simulation_id,
             test_create_simulation_scenario_link_v4.input_scenario_id
@@ -46,8 +46,8 @@ AS $$
         RETURNING id, scenario_id
     ),
     inserted_flag AS (
-        -- Then link simulation to scenario_flag via simulation_scenario_flags
-        INSERT INTO simulation_scenario_flags (simulation_id, scenario_flag_id, value, created_at, updated_at, generated, mcp, active)
+        -- Then link simulation to scenario_flag via simulation_scenario_flags_junction
+        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, value, created_at, updated_at, generated, mcp, active)
         SELECT 
             il.simulation_id,
             ifr.id,
@@ -76,8 +76,8 @@ AS $$
         RETURNING id, scenario_id, value
     ),
     inserted_position AS (
-        -- Then link simulation to scenario_position via simulation_scenario_positions
-        INSERT INTO simulation_scenario_positions (simulation_id, scenario_position_id, created_at, updated_at, generated, mcp, active)
+        -- Then link simulation to scenario_position via simulation_scenario_positions_junction
+        INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_position_id, created_at, updated_at, generated, mcp, active)
         SELECT 
             il.simulation_id,
             ipr.id,

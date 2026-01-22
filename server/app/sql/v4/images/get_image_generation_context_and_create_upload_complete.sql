@@ -58,14 +58,14 @@ best_agent AS (
     FROM agent_artifact a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+      AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile (or NULL if profile_id is NULL)
     SELECT
         rl.requests_per_day as req_per_day
     FROM profile_artifact prof
-    LEFT JOIN profile_request_limits prl
+    LEFT JOIN profile_request_limits_junction prl
         ON prl.profile_id = prof.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     CROSS JOIN params p
@@ -85,7 +85,7 @@ runs_today AS (
 ),
 profile_primary_department AS (
     SELECT pd.department_id
-    FROM profile_departments pd
+    FROM profile_departments_junction pd
     CROSS JOIN params p
     WHERE pd.profile_id = p.profile_id
       AND pd.is_primary = TRUE
@@ -95,9 +95,9 @@ profile_primary_department AS (
 default_settings AS (
     SELECT s.id as settings_id
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
       AND NOT EXISTS (
-          SELECT 1 FROM department_settings sd
+          SELECT 1 FROM department_settings_junction sd
           WHERE sd.settings_id = s.id AND sd.active = true
       )
     LIMIT 1
@@ -105,36 +105,36 @@ default_settings AS (
 dept_specific_settings AS (
     SELECT s.id as settings_id
     FROM setting_artifact s
-    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN department_settings_junction sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
+      AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
       AND sd.active = true
     LIMIT 1
 ),
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
-    FROM setting_provider_keys spk
+    FROM setting_provider_keys_junction spk
     JOIN keys_resource kr ON kr.id = spk.key_id
     WHERE spk.active = true AND kr.active
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM setting_artifact s
-    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN department_settings_junction sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true) AND sd.active = true
+      AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
       AND NOT EXISTS (
-          SELECT 1 FROM department_settings sd
+          SELECT 1 FROM department_settings_junction sd
           WHERE sd.settings_id = s.id AND sd.active = true
       )
     LIMIT 1
@@ -147,7 +147,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT s.id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true) LIMIT 1)
+            (SELECT s.id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true) LIMIT 1)
         ) as settings_id
 ),
 context_data AS (
@@ -155,14 +155,14 @@ context_data AS (
     SELECT
         -- Agent data
         a.id::text as agent_id,
-        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
 
         -- Model data
         m.id::text as model_id,
-        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
+        (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider,
         COALESCE(e.base_url, '') as base_url,
         kr.key as api_key,
@@ -180,31 +180,31 @@ context_data AS (
     FROM best_agent ba
     INNER JOIN agents_resource a ON a.id = ba.agent_id
     CROSS JOIN params p
-    LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+    LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
-    INNER JOIN agent_models am ON am.agent_id = a.id
+    INNER JOIN agent_models_junction am ON am.agent_id = a.id
     INNER JOIN models_resource m ON m.id = am.model_id
-    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl
+    LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN model_temperature_levels_junction mtl
         ON mtl.temperature_level_id = atl.temperature_level_id
         AND mtl.model_id = m.id
         
 LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
-    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels mrl
+    LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
+    LEFT JOIN model_reasoning_levels_junction mrl
         ON mrl.reasoning_level_id = arl.reasoning_level_id
         AND mrl.model_id = m.id
         
 LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = m.id
     LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
-    LEFT JOIN model_providers mp ON mp.model_id = m.id
+    LEFT JOIN model_providers_junction mp ON mp.model_id = m.id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
     LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
-    LEFT JOIN provider_names pn_prov ON pn_prov.provider_id = pr_prov.id
+    LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk
+    LEFT JOIN setting_provider_keys_junction spk
         ON spk.providers_id = p_prov.id
         AND spk.settings_id = act_s.settings_id
         AND spk.active = true

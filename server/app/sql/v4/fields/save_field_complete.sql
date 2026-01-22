@@ -69,21 +69,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM field_departments
-        WHERE field_departments.field_id = (SELECT p.field_id FROM params p LIMIT 1) AND active = true
+        FROM field_departments_junction
+        WHERE field_departments_junction.field_id = (SELECT p.field_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -132,14 +132,14 @@ BEGIN
     ),
     -- Conditional: Remove old name links (only for update)
     remove_old_name AS (
-        DELETE FROM field_names
+        DELETE FROM field_names_junction
         WHERE field_id = (SELECT field_id FROM params)
           AND name_id NOT IN (SELECT name_id FROM name_resource)
           AND NOT (SELECT is_create FROM params)
     ),
     -- Link field to name
     link_field_name AS (
-        INSERT INTO field_names (field_id, name_id, created_at, updated_at)
+        INSERT INTO field_names_junction (field_id, name_id, created_at, updated_at)
         SELECT 
             x.field_id,
             nr.name_id,
@@ -151,14 +151,14 @@ BEGIN
     ),
     -- Conditional: Remove old description links (only for update)
     remove_old_description AS (
-        DELETE FROM field_descriptions
+        DELETE FROM field_descriptions_junction
         WHERE field_id = (SELECT field_id FROM params)
           AND description_id NOT IN (SELECT description_id FROM description_resource)
           AND NOT (SELECT is_create FROM params)
     ),
     -- Link field to description
     link_field_description AS (
-        INSERT INTO field_descriptions (field_id, description_id, created_at, updated_at)
+        INSERT INTO field_descriptions_junction (field_id, description_id, created_at, updated_at)
         SELECT 
             x.field_id,
             dr.description_id,
@@ -170,7 +170,7 @@ BEGIN
     ),
     -- UPDATE field_artifact active flag
     update_field_active_flag AS (
-        UPDATE field_flags SET
+        UPDATE field_flags_junction SET
             value = (SELECT active FROM params),
             updated_at = NOW()
         WHERE field_id = (SELECT field_id FROM params)
@@ -179,7 +179,7 @@ BEGIN
     ),
     -- Insert field active flag (for create or if doesn't exist in update)
     insert_field_active_flag AS (
-        INSERT INTO field_flags (field_id, flag_id, value, created_at, updated_at) SELECT x.field_id,
+        INSERT INTO field_flags_junction (field_id, flag_id, value, created_at, updated_at) SELECT x.field_id,
             f.id,
             'active'::type_field_flags,
             x.active,
@@ -190,7 +190,7 @@ BEGIN
         WHERE f.name = 'field_active'
           AND (
               (SELECT is_create FROM params)
-              OR NOT EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active')
+              OR NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active')
           )
         ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
@@ -198,7 +198,7 @@ BEGIN
     ),
     -- Conditional: Delete existing conditional parameters (only for update)
     delete_existing_conditional_parameters AS (
-        UPDATE field_parameters 
+        UPDATE field_parameters_junction 
         SET active = false, updated_at = NOW()
         WHERE field_id = (SELECT field_id FROM params)
           AND type = 'conditional'::parameter_type
@@ -206,7 +206,7 @@ BEGIN
     ),
     -- Link conditional parameters
     link_conditional_parameters AS (
-        INSERT INTO field_parameters (field_id, parameter_id, type, active, created_at, updated_at)
+        INSERT INTO field_parameters_junction (field_id, parameter_id, type, active, created_at, updated_at)
         SELECT 
             x.field_id,
             cond_param_id::uuid,
@@ -223,13 +223,13 @@ BEGIN
     ),
     -- Conditional: Delete existing departments (only for update)
     delete_existing_departments AS (
-        DELETE FROM field_departments 
+        DELETE FROM field_departments_junction 
         WHERE field_id = (SELECT field_id FROM params)
           AND NOT (SELECT is_create FROM params)
     ),
     -- Link departments
     link_departments AS (
-        INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
+        INSERT INTO field_departments_junction (field_id, department_id, active, created_at, updated_at)
         SELECT 
             x.field_id,
             dept_id::uuid,

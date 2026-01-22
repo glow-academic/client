@@ -36,16 +36,16 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_dept AS (
     SELECT 
         d.id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
-        COALESCE((SELECT d.description FROM department_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) as active
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
+        COALESCE((SELECT d.description FROM department_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) as active
     FROM department_artifact d
     WHERE d.id = (SELECT department_id FROM params)
 ),
@@ -82,7 +82,7 @@ new_dept AS (
 ),
 link_name AS (
     -- Link name to new department
-    INSERT INTO department_names (department_id, name_id, created_at, updated_at)
+    INSERT INTO department_names_junction (department_id, name_id, created_at, updated_at)
     SELECT nd.id, gocn.name_id, NOW(), NOW()
     FROM new_dept nd
     CROSS JOIN get_or_create_name gocn
@@ -90,7 +90,7 @@ link_name AS (
 ),
 link_description AS (
     -- Link description to new department (if provided)
-    INSERT INTO department_descriptions (department_id, description_id, created_at, updated_at)
+    INSERT INTO department_descriptions_junction (department_id, description_id, created_at, updated_at)
     SELECT nd.id, gocd.description_id, NOW(), NOW()
     FROM new_dept nd
     CROSS JOIN get_or_create_description gocd
@@ -98,7 +98,7 @@ link_description AS (
 ),
 link_active_flag AS (
     -- Link active flag to new department (set to false for duplicate)
-    INSERT INTO department_flags (department_id, flag_id, value, created_at, updated_at) SELECT nd.id, gaf.flag_id, false, NOW(), NOW()
+    INSERT INTO department_flags_junction (department_id, flag_id, value, created_at, updated_at) SELECT nd.id, gaf.flag_id, false, NOW(), NOW()
     FROM new_dept nd
     CROSS JOIN get_active_flag gaf
 )

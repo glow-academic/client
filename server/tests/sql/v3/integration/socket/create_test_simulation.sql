@@ -22,7 +22,7 @@ sim AS (
     )
     RETURNING id
 )
-INSERT INTO simulation_departments(simulation_id, department_id, active)
+INSERT INTO simulation_departments_junction(simulation_id, department_id, active)
 SELECT s.id, d.id, true
 FROM sim s, dept d
 RETURNING simulation_id;

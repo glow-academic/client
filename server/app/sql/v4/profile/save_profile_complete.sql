@@ -110,7 +110,7 @@ BEGIN
     IF v_role IS NULL AND input_profile_id IS NOT NULL THEN
         SELECT r.role::text
         INTO v_role
-        FROM profile_roles pr
+        FROM profile_roles_junction pr
         JOIN roles_resource r ON pr.role_id = r.id
         WHERE pr.profile_id = input_profile_id
           AND pr.active = true
@@ -186,7 +186,7 @@ BEGIN
     -- Get actor name
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             ''
         ) INTO v_actor_name
     FROM profile_artifact p
@@ -201,7 +201,7 @@ BEGIN
         
         -- Check if primary email already exists (only for create)
         IF EXISTS (
-            SELECT 1 FROM profile_emails pe
+            SELECT 1 FROM profile_emails_junction pe
             JOIN emails_resource e ON pe.email_id = e.id
             WHERE e.email = v_emails[v_primary_email_index + 1]
               AND pe.active = true
@@ -271,14 +271,14 @@ BEGIN
     ),
     -- Delete old name links if updating
     delete_old_names AS (
-        DELETE FROM profile_names
+        DELETE FROM profile_names_junction
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND EXISTS (SELECT 1 FROM name_resource)
     ),
     -- Link profile to name
     link_profile_name AS (
-        INSERT INTO profile_names (profile_id, name_id, created_at, updated_at)
+        INSERT INTO profile_names_junction (profile_id, name_id, created_at, updated_at)
         SELECT 
             x.target_profile_id,
             nr.name_id,
@@ -291,7 +291,7 @@ BEGIN
             name_id = EXCLUDED.name_id,
             updated_at = NOW()
     ),
-    -- Insert/update role via profile_roles junction if provided
+    -- Insert/update role via profile_roles_junction junction if provided
 role_resource AS (
     INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
     SELECT x.role::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
@@ -302,14 +302,14 @@ role_resource AS (
 ),
     profile_type_upsert AS (
         -- Delete old role link if updating
-        DELETE FROM profile_roles 
+        DELETE FROM profile_roles_junction 
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND EXISTS (SELECT 1 FROM role_resource)
         RETURNING profile_id
     ),
     profile_type_insert AS (
-        INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+        INSERT INTO profile_roles_junction (profile_id, role_id, created_at, updated_at, generated, mcp)
         SELECT x.target_profile_id, rr.role_id, NOW(), NOW(), false, false
         FROM params x
         CROSS JOIN role_resource rr
@@ -318,7 +318,7 @@ role_resource AS (
     ),
     -- Link/update profile active flag
     link_profile_active_flag AS (
-        INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at)
+        INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at, updated_at)
         SELECT x.target_profile_id,
             f.id,
             x.active,
@@ -342,7 +342,7 @@ role_resource AS (
     ),
     email_update AS (
         -- Deactivate all existing emails if updating
-        UPDATE profile_emails SET
+        UPDATE profile_emails_junction SET
             active = false,
             is_primary = false,
             updated_at = NOW()
@@ -363,7 +363,7 @@ role_resource AS (
         RETURNING id as email_id, email
     ),
     email_insert AS (
-        INSERT INTO profile_emails (profile_id, email, email_id, is_primary, active)
+        INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
         SELECT 
             x.target_profile_id,
             er.email,
@@ -382,7 +382,7 @@ role_resource AS (
     ),
     -- Handle cohorts if provided
     cohort_deactivate AS (
-        UPDATE profile_cohorts SET
+        UPDATE profile_cohorts_junction SET
             active = false,
             updated_at = NOW()
         WHERE profile_id = (SELECT target_profile_id FROM params)
@@ -394,7 +394,7 @@ role_resource AS (
           )
     ),
     cohort_insert AS (
-        INSERT INTO profile_cohorts (profile_id, cohort_id, active)
+        INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
         SELECT 
             x.target_profile_id,
             cohort_id,
@@ -408,7 +408,7 @@ role_resource AS (
     ),
     -- Handle departments if provided
     department_deactivate AS (
-        UPDATE profile_departments SET
+        UPDATE profile_departments_junction SET
             active = false,
             is_primary = false,
             updated_at = NOW()
@@ -421,7 +421,7 @@ role_resource AS (
           )
     ),
     department_insert AS (
-        INSERT INTO profile_departments (profile_id, department_id, is_primary, active)
+        INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active)
         SELECT 
             x.target_profile_id,
             dept.dept_id,
@@ -436,12 +436,12 @@ role_resource AS (
             updated_at = NOW()
     ),
     route_delete AS (
-        DELETE FROM profile_routes
+        DELETE FROM profile_routes_junction
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create AND route_ids IS NOT NULL)
     ),
     route_insert AS (
-        INSERT INTO profile_routes (profile_id, route_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO profile_routes_junction (profile_id, route_id, active, created_at, updated_at, generated, mcp)
         SELECT 
             x.target_profile_id,
             route_id,
@@ -472,13 +472,13 @@ role_resource AS (
         RETURNING id as request_limit_id, requests_per_day
     ),
     request_limit_delete AS (
-        DELETE FROM profile_request_limits
+        DELETE FROM profile_request_limits_junction
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND EXISTS (SELECT 1 FROM request_limit_resource)
     ),
     request_limit_insert AS (
-        INSERT INTO profile_request_limits (
+        INSERT INTO profile_request_limits_junction (
             profile_id,
             request_limit_id,
             requests_per_day,

@@ -18,7 +18,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO document_departments(document_id, department_id, active, created_at, updated_at)
+    INSERT INTO document_departments_junction(document_id, department_id, active, created_at, updated_at)
     VALUES (
         test_create_document_department_link_v4.document_id,
         test_create_document_department_link_v4.department_id,

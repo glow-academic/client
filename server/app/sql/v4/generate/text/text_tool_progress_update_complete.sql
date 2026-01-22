@@ -41,18 +41,18 @@ AS $$
 WITH params AS (
     SELECT run_id, tool_call_id, call_id, tool_name, arguments_delta, progress_type
 ),
--- Get tool_id AND tool_type from tool_name + agent_tools junction table
+-- Get tool_id AND tool_type from tool_name + agent_tools_junction junction table
 -- Works with any agent (not hardcoded to document)
 get_tool_info AS (
-    SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as tool_name
+    SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as tool_name
     FROM params p
-    JOIN tool_artifact t ON (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name
-    JOIN agent_tools at ON at.tool_id = t.id
+    JOIN tool_artifact t ON (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name
+    JOIN agent_tools_junction at ON at.tool_id = t.id
     JOIN runs_entry r_run ON r_run.id = p.run_id
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = r_run.agent_id
       AND at.active = true
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 -- Get assistant message_id for this run (used when creating call)
@@ -79,7 +79,7 @@ create_tool_call AS (
     SELECT
         COALESCE(p.call_id, 'text_' || p.tool_call_id),
         gt.tool_id,
-        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gt.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gt.tool_id LIMIT 1),
         '',
         false,
         am.message_id,

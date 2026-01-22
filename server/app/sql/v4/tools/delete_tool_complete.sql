@@ -35,7 +35,7 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -45,14 +45,14 @@ usage_check AS (
     WHERE EXISTS (
         SELECT 1 FROM calls_entry c WHERE c.tool_id = x.tool_id
         UNION ALL
-        SELECT 1 FROM agent_tools at WHERE at.tool_id = x.tool_id AND at.active = true
+        SELECT 1 FROM agent_tools_junction at WHERE at.tool_id = x.tool_id AND at.active = true
         UNION ALL
         SELECT 1 FROM resource_tools_relation rt WHERE rt.tool_id = x.tool_id
     )
 ),
 tool_info AS (
     SELECT 
-        (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),

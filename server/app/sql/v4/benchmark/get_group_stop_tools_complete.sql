@@ -19,7 +19,7 @@
 --   - group_runs: links runs_entry to groups_entry with idx (position)
 --   - message_runs: links messages_entry to runs_entry
 --   - calls_entry: contains tool calls_entry with tool_id
---   - tool_names/names_resource: to identify stop tools by name
+--   - tool_names_junction/names_resource: to identify stop tools by name
 --
 -- This allows us to drop the group_stop table while preserving functionality.
 -- ============================================================
@@ -54,11 +54,11 @@ AS $$
         -- Find all "stop" tools (currently just end_conversation, but extensible)
         SELECT t.id as tool_id
         FROM tool_artifact t
-        JOIN tool_names tn ON tn.tool_id = t.id
+        JOIN tool_names_junction tn ON tn.tool_id = t.id
         JOIN names_resource n ON n.id = tn.name_id
         WHERE n.name = 'end_conversation'
           AND EXISTS (
-              SELECT 1 FROM tool_flags tf
+              SELECT 1 FROM tool_flags_junction tf
               JOIN flags_resource f ON tf.flag_id = f.id
               WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
           )

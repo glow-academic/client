@@ -1,4 +1,4 @@
--- Get output schema fields for a tool via tool_args_outputs → args_outputs_resource
+-- Get output schema fields for a tool via tool_args_outputs_junction → args_outputs_resource
 -- Used to map template_values (which use output schema field names) to table column names
 
 -- Drop function if exists (handles signature variations)
@@ -37,7 +37,7 @@ BEGIN
         false as required,  -- args_outputs_resource doesn't have required, default to false
         0 as position,  -- args_outputs_resource doesn't have position, default to 0
         COALESCE(ao.template, '')::text as template
-    FROM tool_args_outputs tao
+    FROM tool_args_outputs_junction tao
     JOIN args_outputs_resource ao ON ao.id = tao.args_outputs_id
     WHERE tao.tool_id = api_get_resource_output_schema_fields_v4.tool_id
       AND ao.active = true

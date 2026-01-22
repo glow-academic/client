@@ -39,18 +39,18 @@ model_exists_check AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_model AS (
     SELECT 
-        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
-        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
-        (SELECT p_prov.id FROM model_providers mp JOIN providers_resource p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
-        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
+        (SELECT p_prov.id FROM model_providers_junction mp JOIN providers_resource p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
+        (SELECT v.value FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
     FROM params x
     JOIN models_resource m ON m.id = x.model_id
 ),
@@ -99,7 +99,7 @@ duplicated_model_value AS (
     RETURNING id as value_id
 ),
 link_duplicated_model_value AS (
-    INSERT INTO model_values (model_id, value_id, created_at, updated_at, generated, mcp)
+    INSERT INTO model_values_junction (model_id, value_id, created_at, updated_at, generated, mcp)
     SELECT 
         dm.id,
         dmv.value_id,
@@ -126,7 +126,7 @@ duplicated_model_resource AS (
 ),
 -- Link model to name
 link_model_name AS (
-    INSERT INTO model_names (model_id, name_id, created_at, updated_at)
+    INSERT INTO model_names_junction (model_id, name_id, created_at, updated_at)
     SELECT 
         dm.id,
         nnr.name_id,
@@ -138,7 +138,7 @@ link_model_name AS (
 ),
 -- Link model to description
 link_model_description AS (
-    INSERT INTO model_descriptions (model_id, description_id, created_at, updated_at)
+    INSERT INTO model_descriptions_junction (model_id, description_id, created_at, updated_at)
     SELECT 
         dm.id,
         ndr.description_id,
@@ -148,9 +148,9 @@ link_model_description AS (
     CROSS JOIN new_description_resource ndr
     ON CONFLICT (model_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- Link model to provider (via model_providers)
+-- Link model to provider (via model_providers_junction)
 link_model_provider AS (
-    INSERT INTO model_providers (model_id, providers_id, created_at, updated_at)
+    INSERT INTO model_providers_junction (model_id, providers_id, created_at, updated_at)
     SELECT 
         dmr.id,  -- Use models.id (resource) from duplicated model resource
         sm.providers_id,
@@ -163,7 +163,7 @@ link_model_provider AS (
 ),
 -- Link model active flag (set to false for duplicate)
 link_model_active_flag AS (
-    INSERT INTO model_flags (model_id, flag_id, value, created_at, updated_at) SELECT dm.id,
+    INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at) SELECT dm.id,
         f.id,
         FALSE,
         NOW(),

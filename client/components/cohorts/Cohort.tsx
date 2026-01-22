@@ -381,11 +381,14 @@ function CohortComponent({
   React.useEffect(() => {
     lastSavedVersionRef.current = lastSavedVersion;
   }, [lastSavedVersion]);
+  // Sync draft_version from server to avoid unintended draft forks.
+  const draftVersion =
+    cohortData && "draft_version" in cohortData
+      ? (cohortData as { draft_version?: number | null }).draft_version
+      : null;
+  // Track if version has been synced from server to prevent patching before sync
+  const versionSyncedRef = React.useRef(false);
   React.useEffect(() => {
-    const draftVersion =
-      cohortData && "draft_version" in cohortData
-        ? (cohortData as { draft_version?: number | null }).draft_version
-        : null;
     if (
       typeof draftVersion === "number" &&
       draftVersion !== lastSavedVersionRef.current
@@ -393,7 +396,8 @@ function CohortComponent({
       setLastSavedVersion(draftVersion);
       lastSavedVersionRef.current = draftVersion;
     }
-  }, [cohortData?.draft_version]);
+    versionSyncedRef.current = true; // Mark as synced
+  }, [draftVersion]);
 
   // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -451,6 +455,9 @@ function CohortComponent({
   // Track last patched payload so we don't repatch identical state
   const lastPatchedKeyRef = React.useRef<string | null>(null);
 
+  // Track if there are pending changes for beforeunload warning
+  const hasPendingChangesRef = React.useRef(false);
+
   // Draft change listener - watches resource IDs and patches draft
   // Only triggers when the payload actually changes, not when version changes
   useEffect(() => {
@@ -461,7 +468,21 @@ function CohortComponent({
       formState.department_ids.length > 0 ||
       formState.simulation_ids.length > 0;
 
+    // Debug logging at effect start
+    console.debug("[Cohort Draft] Effect triggered", {
+      hasResourceIds,
+      draftPatchKey: draftPatchKey.substring(0, 100) + "...",
+      lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
+    });
+
     if (!hasResourceIds || !patchCohortDraftActionRef.current) {
+      return;
+    }
+
+    // Wait for version sync before patching to prevent race conditions
+    // Only block if there's an actual numeric version to sync (not null for new cohorts)
+    if (typeof cohortData?.draft_version === "number" && !versionSyncedRef.current) {
+      console.debug("[Cohort Draft] Waiting for version sync");
       return;
     }
 
@@ -470,9 +491,20 @@ function CohortComponent({
       return;
     }
 
+    // Mark that we have pending changes (for beforeunload warning)
+    hasPendingChangesRef.current = true;
+
     const timer = setTimeout(async () => {
       try {
         if (!patchCohortDraftActionRef.current) return;
+
+        // Debug logging before API call
+        console.debug("[Cohort Draft] Calling patch API", {
+          input_draft_id: draftId,
+          expected_version: lastSavedVersionRef.current,
+          fields: Object.keys(formState).filter(k => formState[k as keyof typeof formState]),
+        });
+
         const result = await patchCohortDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
@@ -497,10 +529,22 @@ function CohortComponent({
         // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
 
-        if (result.draft_id && result.draft_id !== draftId) {
+        if (!draftId && result.draft_id) {
+          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+          toast.success("Draft created", {
+            description: "Your changes are being auto-saved",
+          });
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        } else if (result.draft_id && result.draft_id !== draftId) {
           // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
+
+        // Debug logging after success
+        console.debug("[Cohort Draft] Patch succeeded", {
+          draft_id: result.draft_id,
+          new_version: result.new_version,
+        });
 
         // This can stay as state (for UI), but it won't re-trigger patching
         // because the effect is gated by payload changes.
@@ -508,8 +552,16 @@ function CohortComponent({
           setLastSavedVersion(result.new_version ?? 0);
           lastSavedVersionRef.current = result.new_version ?? 0;
         }
-      } catch {
-        // Failed to save draft - error already logged by API
+
+        // Clear pending changes flag after successful save
+        hasPendingChangesRef.current = false;
+      } catch (error) {
+        // Log error for debugging
+        console.error("[Cohort Draft] Patch failed:", error);
+        // Show user feedback
+        toast.error("Failed to save draft", {
+          description: "Your changes may not have been saved. Please try again.",
+        });
         // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
     }, 1000);
@@ -525,6 +577,18 @@ function CohortComponent({
     draftPatchKey, // ✅ trigger only when payload changes
     // patchCohortDraftAction and setDraftId are accessed via refs
   ]);
+
+  // Warn users about unsaved changes when navigating away
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes.";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
   // Note: Cohort generation events may not exist yet, but structure is ready

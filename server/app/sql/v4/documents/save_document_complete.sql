@@ -77,21 +77,21 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM document_names WHERE document_id = v_document_id;
-        DELETE FROM document_descriptions WHERE document_id = v_document_id;
-        DELETE FROM document_departments WHERE document_id = v_document_id;
-        DELETE FROM document_fields WHERE document_id = v_document_id;
+        DELETE FROM document_names_junction WHERE document_id = v_document_id;
+        DELETE FROM document_descriptions_junction WHERE document_id = v_document_id;
+        DELETE FROM document_departments_junction WHERE document_id = v_document_id;
+        DELETE FROM document_fields_junction WHERE document_id = v_document_id;
         DELETE FROM document_uploads_resource WHERE document_id = v_document_id;
         -- Update existing active flag if it exists
-        UPDATE document_flags SET
-            flag_id = COALESCE(api_save_document_v4.active_flag_id, document_flags.flag_id),
+        UPDATE document_flags_junction SET
+            flag_id = COALESCE(api_save_document_v4.active_flag_id, document_flags_junction.flag_id),
             value = CASE WHEN api_save_document_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE document_id = v_document_id
           ;
         -- Update existing template flag if it exists
-        UPDATE document_flags SET
-            flag_id = COALESCE(api_save_document_v4.template_flag_id, document_flags.flag_id),
+        UPDATE document_flags_junction SET
+            flag_id = COALESCE(api_save_document_v4.template_flag_id, document_flags_junction.flag_id),
             value = CASE WHEN api_save_document_v4.template_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE document_id = v_document_id
@@ -116,24 +116,24 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j 
+            (SELECT r.role FROM profile_roles_junction pr_j 
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM document_departments
-        WHERE document_departments.document_id = (SELECT p.document_id FROM params p LIMIT 1) AND active = true
+        FROM document_departments_junction
+        WHERE document_departments_junction.document_id = (SELECT p.document_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -164,7 +164,7 @@ BEGIN
     ),
     -- Link document to name
     link_document_name AS (
-        INSERT INTO document_names (document_id, name_id, created_at, updated_at)
+        INSERT INTO document_names_junction (document_id, name_id, created_at, updated_at)
         SELECT 
             x.document_id,
             x.name_id,
@@ -176,7 +176,7 @@ BEGIN
     ),
     -- Link document to description
     link_document_description AS (
-        INSERT INTO document_descriptions (document_id, description_id, created_at, updated_at)
+        INSERT INTO document_descriptions_junction (document_id, description_id, created_at, updated_at)
         SELECT 
             x.document_id,
             x.description_id,
@@ -188,7 +188,7 @@ BEGIN
     ),
     -- Insert or UPDATE document_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_document_active_flag AS (
-        INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT x.document_id,
+        INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at) SELECT x.document_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -197,13 +197,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'document_active'
         ON CONFLICT ON CONSTRAINT document_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, document_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, document_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Insert or UPDATE document_artifact template flag
     insert_document_template_flag AS (
-        INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO document_flags_junction (document_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.document_id,
             COALESCE(x.template_flag_id, f.id),
@@ -214,13 +214,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'template'
         ON CONFLICT ON CONSTRAINT document_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, document_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, document_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO document_departments (document_id, department_id, active, created_at, updated_at)
+        INSERT INTO document_departments_junction (document_id, department_id, active, created_at, updated_at)
         SELECT 
             x.document_id,
             dept_id,
@@ -236,7 +236,7 @@ BEGIN
     ),
     -- Link fields (old ones already deleted above if update)
     link_fields AS (
-        INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
+        INSERT INTO document_fields_junction (document_id, field_id, active, created_at, updated_at)
         SELECT 
             x.document_id,
             field_id,

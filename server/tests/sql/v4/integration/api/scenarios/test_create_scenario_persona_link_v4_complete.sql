@@ -18,7 +18,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO scenario_personas(scenario_id, persona_id, active, created_at, updated_at)
+    INSERT INTO scenario_personas_junction(scenario_id, persona_id, active, created_at, updated_at)
     VALUES (
         test_create_scenario_persona_link_v4.input_scenario_id,
         test_create_scenario_persona_link_v4.input_persona_id,

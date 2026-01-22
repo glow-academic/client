@@ -37,28 +37,28 @@ AS $$
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     cohort_name_link AS (
-        INSERT INTO cohort_names(cohort_id, name_id)
+        INSERT INTO cohort_names_junction(cohort_id, name_id)
         SELECT nc.id, nr.id
         FROM new_cohort nc, name_resource nr
         RETURNING cohort_id
     ),
     cohort_description_link AS (
-        INSERT INTO cohort_descriptions(cohort_id, description_id)
+        INSERT INTO cohort_descriptions_junction(cohort_id, description_id)
         SELECT nc.id, dr.id
         FROM new_cohort nc, description_resource dr
         RETURNING cohort_id
     ),
     cohort_flag_link AS (
-        INSERT INTO cohort_flags (cohort_id, flag_id, value)
+        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value)
         SELECT nc.id, af.id, COALESCE(test_create_test_cohort_v4.active, true)
         FROM new_cohort nc, active_flag af
         RETURNING cohort_id
     )
     SELECT 
         nc.id as cohort_id,
-        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = nc.id LIMIT 1) as title,
-        (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = nc.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource fl ON cf.flag_id = fl.id WHERE cf.cohort_id = nc.id AND fl.name = 'active'  AND cf.value = TRUE) as active,
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = nc.id LIMIT 1) as title,
+        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = nc.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource fl ON cf.flag_id = fl.id WHERE cf.cohort_id = nc.id AND fl.name = 'active'  AND cf.value = TRUE) as active,
         nc.created_at
     FROM new_cohort nc;
 $$;

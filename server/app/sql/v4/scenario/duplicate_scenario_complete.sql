@@ -46,22 +46,22 @@ default_call AS (
 actor_profile AS (
     SELECT 
         p.id as resolved_profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_scenario AS (
     SELECT 
         s.id as source_id,
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) as objectives_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) as images_enabled,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'objectives_enabled' AND sf.value = TRUE) as objectives_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE) as images_enabled,
         ps.problem_statement,
         ps.id as problem_statement_id,
         ps.name as problem_statement_name
     FROM params x
     JOIN scenarios_resource s ON s.id = x.scenario_id
-    LEFT JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
+    LEFT JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
 ),
 get_or_create_name AS (
@@ -129,7 +129,7 @@ new_scenario AS (
 ),
 link_name AS (
     -- Link name to new scenario
-    INSERT INTO scenario_names (scenario_id, name_id, created_at, updated_at)
+    INSERT INTO scenario_names_junction (scenario_id, name_id, created_at, updated_at)
     SELECT ns.id, gocn.name_id, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_or_create_name gocn
@@ -137,13 +137,13 @@ link_name AS (
 ),
 link_active_flag AS (
     -- Link active flag to new scenario (set to false for duplicate)
-    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gaf.flag_id, false, NOW(), NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gaf.flag_id, false, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN get_active_flag gaf
 ),
 link_objectives_enabled_flag AS (
     -- Link objectives_enabled flag to new scenario
-    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
     SELECT ns.id, goef.flag_id, ss.objectives_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN source_scenario ss
@@ -152,7 +152,7 @@ link_objectives_enabled_flag AS (
 ),
 link_images_enabled_flag AS (
     -- Link images_enabled flag to new scenario
-    INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
     SELECT ns.id, gief.flag_id, ss.images_enabled, NOW(), NOW()
     FROM new_scenario ns
     CROSS JOIN source_scenario ss
@@ -174,7 +174,7 @@ create_problem_statements AS (
         NOW(),
         dc.call_id
     FROM source_scenario ss
-    JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = ss.source_id
+    JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = ss.source_id
     JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
     CROSS JOIN default_call dc
     CROSS JOIN new_scenario ns
@@ -182,7 +182,7 @@ create_problem_statements AS (
 ),
 link_problem_statements AS (
     -- Link problem statements to new scenario via junction table
-    INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
+    INSERT INTO scenario_problem_statements_junction (scenario_id, problem_statement_id, active, created_at, updated_at)
     SELECT 
         ns.id,
         cps.problem_statement_id,
@@ -190,13 +190,13 @@ link_problem_statements AS (
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = ss.source_id
+    JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = ss.source_id
     JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
     JOIN create_problem_statements cps ON cps.problem_statement = ps.problem_statement
     CROSS JOIN new_scenario ns
 ),
 copy_personas AS (
-    INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
+    INSERT INTO scenario_personas_junction (scenario_id, persona_id, active, created_at, updated_at)
     SELECT 
         ns.id,
         sp.persona_id,
@@ -204,11 +204,11 @@ copy_personas AS (
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_personas sp ON sp.scenario_id = ss.source_id
+    JOIN scenario_personas_junction sp ON sp.scenario_id = ss.source_id
     CROSS JOIN new_scenario ns
 ),
 copy_documents AS (
-    INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
+    INSERT INTO scenario_documents_junction (scenario_id, document_id, active, created_at, updated_at)
     SELECT 
         ns.id,
         sd.document_id,
@@ -216,7 +216,7 @@ copy_documents AS (
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_documents sd ON sd.scenario_id = ss.source_id
+    JOIN scenario_documents_junction sd ON sd.scenario_id = ss.source_id
     CROSS JOIN new_scenario ns
 ),
 source_objectives AS (
@@ -225,7 +225,7 @@ source_objectives AS (
         o.objective,
         so.idx
     FROM source_scenario ss
-    JOIN scenario_objectives so ON so.scenario_id = ss.source_id
+    JOIN scenario_objectives_junction so ON so.scenario_id = ss.source_id
     JOIN objectives_resource o ON o.id = so.objective_id
 ),
 existing_objectives AS (
@@ -257,7 +257,7 @@ all_objectives AS (
 ),
 link_objectives AS (
     -- Link objectives to new scenario via junction table
-    INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
+    INSERT INTO scenario_objectives_junction (scenario_id, objective_id, idx, created_at)
     SELECT 
         ns.id,
         ao.objective_id,
@@ -268,7 +268,7 @@ link_objectives AS (
     CROSS JOIN new_scenario ns
 ),
 copy_parameters AS (
-    INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
+    INSERT INTO scenario_fields_junction (scenario_id, field_id, active, created_at, updated_at)
     SELECT 
         ns.id,
         sf.field_id,
@@ -276,11 +276,11 @@ copy_parameters AS (
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_fields sf ON sf.scenario_id = ss.source_id
+    JOIN scenario_fields_junction sf ON sf.scenario_id = ss.source_id
     CROSS JOIN new_scenario ns
 ),
 copy_departments AS (
-    INSERT INTO scenario_departments (scenario_id, department_id, active, created_at, updated_at)
+    INSERT INTO scenario_departments_junction (scenario_id, department_id, active, created_at, updated_at)
     SELECT 
         ns.id,
         sd.department_id,
@@ -288,7 +288,7 @@ copy_departments AS (
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_departments sd ON sd.scenario_id = ss.source_id AND sd.active = true
+    JOIN scenario_departments_junction sd ON sd.scenario_id = ss.source_id AND sd.active = true
     CROSS JOIN new_scenario ns
 )
 SELECT 

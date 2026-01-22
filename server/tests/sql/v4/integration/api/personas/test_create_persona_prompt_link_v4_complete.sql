@@ -1,5 +1,5 @@
 -- NOTE: This test is disabled - persona_prompts table does not exist
--- Personas link to prompts via agents (agent_prompts table)
+-- Personas link to prompts via agents (agent_prompts_junction table)
 -- This test file is kept for reference but will be skipped during compilation
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_persona_prompt_link_v4(uuid, uuid);

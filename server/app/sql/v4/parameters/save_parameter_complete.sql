@@ -101,21 +101,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM parameter_departments
-        WHERE parameter_departments.parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1) AND active = true
+        FROM parameter_departments_junction
+        WHERE parameter_departments_junction.parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -164,14 +164,14 @@ BEGIN
     ),
     -- Conditional: For update, remove old links first
     remove_old_name AS (
-        DELETE FROM parameter_names
+        DELETE FROM parameter_names_junction
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
           AND name_id NOT IN (SELECT name_id FROM name_resource)
     ),
     -- Link parameter to name
     link_parameter_name AS (
-        INSERT INTO parameter_names (parameter_id, name_id, created_at, updated_at)
+        INSERT INTO parameter_names_junction (parameter_id, name_id, created_at, updated_at)
         SELECT 
             x.parameter_id,
             nr.name_id,
@@ -184,14 +184,14 @@ BEGIN
     ),
     -- Conditional: For update, remove old description links
     remove_old_description AS (
-        DELETE FROM parameter_descriptions
+        DELETE FROM parameter_descriptions_junction
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
           AND description_id NOT IN (SELECT description_id FROM description_resource)
     ),
     -- Link parameter to description
     link_parameter_description AS (
-        INSERT INTO parameter_descriptions (parameter_id, description_id, created_at, updated_at)
+        INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at, updated_at)
         SELECT 
             x.parameter_id,
             dr.description_id,
@@ -204,7 +204,7 @@ BEGIN
     ),
     -- Update or insert parameter active flag
     update_parameter_active_flag AS (
-        UPDATE parameter_flags SET
+        UPDATE parameter_flags_junction SET
             value = (SELECT active FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
@@ -212,7 +212,7 @@ BEGIN
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_active_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at) SELECT x.parameter_id,
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at) SELECT x.parameter_id,
             f.id,
             x.active,
             NOW(),
@@ -220,14 +220,14 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'parameter_active'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'parameter_active')
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'parameter_active')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Update or insert parameter simulation_parameter flag
     update_parameter_simulation_flag AS (
-        UPDATE parameter_flags SET
+        UPDATE parameter_flags_junction SET
             value = (SELECT simulation_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
@@ -235,7 +235,7 @@ BEGIN
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_simulation_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.parameter_id,
             f.id,
@@ -245,14 +245,14 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'simulation_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'simulation_parameter')
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'simulation_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Update or insert parameter document_parameter flag
     update_parameter_document_flag AS (
-        UPDATE parameter_flags SET
+        UPDATE parameter_flags_junction SET
             value = (SELECT document_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
@@ -260,7 +260,7 @@ BEGIN
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_document_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.parameter_id,
             f.id,
@@ -270,14 +270,14 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'document_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'document_parameter')
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'document_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Update or insert parameter persona_parameter flag
     update_parameter_persona_flag AS (
-        UPDATE parameter_flags SET
+        UPDATE parameter_flags_junction SET
             value = (SELECT persona_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
@@ -285,7 +285,7 @@ BEGIN
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_persona_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.parameter_id,
             f.id,
@@ -295,14 +295,14 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'persona_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'persona_parameter')
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'persona_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Update or insert parameter scenario_parameter flag
     update_parameter_scenario_flag AS (
-        UPDATE parameter_flags SET
+        UPDATE parameter_flags_junction SET
             value = (SELECT scenario_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
@@ -310,7 +310,7 @@ BEGIN
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_scenario_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.parameter_id,
             f.id,
@@ -320,14 +320,14 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'scenario_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'scenario_parameter')
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'scenario_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Update or insert parameter video_parameter flag
     update_parameter_video_flag AS (
-        UPDATE parameter_flags SET
+        UPDATE parameter_flags_junction SET
             value = (SELECT video_parameter FROM params LIMIT 1),
             updated_at = NOW()
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
@@ -335,7 +335,7 @@ BEGIN
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     insert_parameter_video_flag AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.parameter_id,
             f.id,
@@ -345,7 +345,7 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'video_parameter'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'video_parameter')
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'video_parameter')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -390,14 +390,14 @@ BEGIN
     ),
     -- Conditional: For update, delete old field links first
     delete_existing_field_links AS (
-        DELETE FROM parameter_fields
+        DELETE FROM parameter_fields_junction
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
           AND field_id NOT IN (SELECT field_id FROM field_connections_fixed WHERE conn_active = true)
     ),
-    -- Link fields to parameter via parameter_fields junction table
+    -- Link fields to parameter via parameter_fields_junction junction table
     link_fields_to_parameter AS (
-        INSERT INTO parameter_fields (parameter_id, field_id, created_at, updated_at)
+        INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at, updated_at)
         SELECT 
             x.parameter_id,
             fcf.field_id,
@@ -405,19 +405,19 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN field_connections_fixed fcf
-        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'field_active' AND fieldsf.value = true)
+        WHERE EXISTS (SELECT 1 FROM field_flags_junction fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'field_active' AND fieldsf.value = true)
           AND fcf.conn_active = true
         ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
     ),
     -- Conditional: For update, delete old department links first
     delete_existing_parameter_departments AS (
-        DELETE FROM parameter_departments 
+        DELETE FROM parameter_departments_junction 
         WHERE parameter_id = (SELECT p.parameter_id FROM params p LIMIT 1)
           AND (SELECT p.is_create FROM params p LIMIT 1) = false
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
+        INSERT INTO parameter_departments_junction (parameter_id, department_id, active, created_at, updated_at)
         SELECT 
             x.parameter_id,
             dept_id,

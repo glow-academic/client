@@ -27,29 +27,29 @@ field_exists_check AS (
     )::boolean as field_exists
 ),
 user_profile AS (
-    SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+    SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_field AS (
     SELECT 
         f.id,
-        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name,
-        (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1) as description
+        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name,
+        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1) as description
     FROM params x
     JOIN fields_resource f ON f.id = x.field_id
 ),
 original_parameters AS (
     SELECT pf.parameter_id
     FROM params x
-    JOIN parameter_fields pf ON pf.field_id = x.field_id
-    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND ff.value = true)
+    JOIN parameter_fields_junction pf ON pf.field_id = x.field_id
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND ff.value = true)
     LIMIT 1
 ),
 original_departments AS (
     SELECT fd.department_id
     FROM params x
-    JOIN field_departments fd ON fd.field_id = x.field_id AND fd.active = true
+    JOIN field_departments_junction fd ON fd.field_id = x.field_id AND fd.active = true
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -78,7 +78,7 @@ new_field AS (
 ),
 -- Link field to name
 link_field_name AS (
-    INSERT INTO field_names (field_id, name_id, created_at, updated_at)
+    INSERT INTO field_names_junction (field_id, name_id, created_at, updated_at)
     SELECT 
         nf.field_id,
         nnr.name_id,
@@ -90,7 +90,7 @@ link_field_name AS (
 ),
 -- Link field to description
 link_field_description AS (
-    INSERT INTO field_descriptions (field_id, description_id, created_at, updated_at)
+    INSERT INTO field_descriptions_junction (field_id, description_id, created_at, updated_at)
     SELECT 
         nf.field_id,
         ndr.description_id,
@@ -100,9 +100,9 @@ link_field_description AS (
     CROSS JOIN new_description_resource ndr
     ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- Link field to parameter via parameter_fields junction table
+-- Link field to parameter via parameter_fields_junction junction table
 link_field_parameter AS (
-    INSERT INTO parameter_fields (parameter_id, field_id, created_at, updated_at)
+    INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at, updated_at)
     SELECT 
         op.parameter_id,
         nf.field_id,
@@ -115,7 +115,7 @@ link_field_parameter AS (
 ),
 -- Link field active flag (set to false for duplicate)
 link_field_active_flag AS (
-    INSERT INTO field_flags (field_id, flag_id, value, created_at, updated_at) SELECT nf.field_id,
+    INSERT INTO field_flags_junction (field_id, flag_id, value, created_at, updated_at) SELECT nf.field_id,
         f.id,
         FALSE,
         NOW(),
@@ -137,7 +137,7 @@ field_with_name AS (
 ),
 link_departments AS (
     -- Link new field to same departments as original
-    INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
+    INSERT INTO field_departments_junction (field_id, department_id, active, created_at, updated_at)
     SELECT 
         nf.field_id,
         od.department_id,

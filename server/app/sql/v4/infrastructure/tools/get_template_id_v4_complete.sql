@@ -25,7 +25,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT tao.args_outputs_id as template_id
-    FROM tool_args_outputs tao
+    FROM tool_args_outputs_junction tao
     WHERE tao.tool_id = $1
     LIMIT 1
 $$;

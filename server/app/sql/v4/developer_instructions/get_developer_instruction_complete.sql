@@ -38,7 +38,7 @@ SELECT
     i.active,
     NULL::uuid
 FROM instructions_resource i
-JOIN agent_instructions ai ON ai.instruction_id = i.id
+JOIN agent_instructions_junction ai ON ai.instruction_id = i.id
 JOIN agents_resource a ON a.id = ai.agent_id
 WHERE i.active = true
 LIMIT 1

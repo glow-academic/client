@@ -37,9 +37,9 @@ AS $$
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     existing_dept AS (
-        SELECT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title
+        SELECT d.id, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title
         FROM departments_resource d
-        WHERE (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) = test_get_or_create_test_department_v4.title
+        WHERE (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) = test_get_or_create_test_department_v4.title
         LIMIT 1
     ),
     new_dept AS (
@@ -51,26 +51,26 @@ AS $$
         WHERE NOT EXISTS (SELECT 1 FROM existing_dept)
     ),
     new_dept_name_link AS (
-        INSERT INTO department_names(department_id, name_id)
+        INSERT INTO department_names_junction(department_id, name_id)
         SELECT ndf.id, COALESCE(nr.id, nl.id)
         FROM new_dept_filtered ndf, name_resource nr FULL OUTER JOIN name_lookup nl ON true
         RETURNING department_id
     ),
     new_dept_description_link AS (
-        INSERT INTO department_descriptions(department_id, description_id)
+        INSERT INTO department_descriptions_junction(department_id, description_id)
         SELECT ndf.id, COALESCE(dr.id, dl.id)
         FROM new_dept_filtered ndf, description_resource dr FULL OUTER JOIN description_lookup dl ON true
         RETURNING department_id
     ),
     new_dept_flag_link AS (
-        INSERT INTO department_flags (department_id, flag_id, value)
+        INSERT INTO department_flags_junction (department_id, flag_id, value)
         SELECT ndf.id, af.id, true
         FROM new_dept_filtered ndf, active_flag af
         RETURNING department_id
     )
     SELECT 
         COALESCE(ed.id, ndf.id) as department_id,
-        COALESCE(ed.title, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ndf.id LIMIT 1)) as title
+        COALESCE(ed.title, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ndf.id LIMIT 1)) as title
     FROM existing_dept ed
     FULL OUTER JOIN new_dept_filtered ndf ON true
     WHERE ed.id IS NOT NULL OR ndf.id IS NOT NULL

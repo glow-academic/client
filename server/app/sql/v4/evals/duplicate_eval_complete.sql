@@ -34,15 +34,15 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_eval AS (
     SELECT 
         e.id,
-        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1),
-        (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1)
+        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1),
+        (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1)
     FROM params x
     JOIN eval_artifact e ON e.id = x.eval_id
 ),
@@ -50,19 +50,19 @@ original_departments AS (
     -- Get department IDs from original eval
     SELECT department_id
     FROM params x
-    JOIN eval_departments ed ON ed.eval_id = x.eval_id AND ed.active = true
+    JOIN eval_departments_junction ed ON ed.eval_id = x.eval_id AND ed.active = true
 ),
 original_agents AS (
     -- Get agent IDs from original eval
     SELECT agent_id
     FROM params x
-    JOIN eval_agents ea ON ea.eval_id = x.eval_id
+    JOIN eval_agents_junction ea ON ea.eval_id = x.eval_id
 ),
 original_flags AS (
     -- Get flag IDs from original eval (excluding active flag which is handled separately)
     SELECT ef.flag_id
     FROM params x
-    JOIN eval_flags ef ON ef.eval_id = x.eval_id
+    JOIN eval_flags_junction ef ON ef.eval_id = x.eval_id
     JOIN flags_resource f ON ef.flag_id = f.id
     WHERE f.name != 'active'
 ),
@@ -97,7 +97,7 @@ new_eval AS (
 ),
 -- Link eval to name
 link_eval_name AS (
-    INSERT INTO eval_names (eval_id, name_id, created_at, updated_at)
+    INSERT INTO eval_names_junction (eval_id, name_id, created_at, updated_at)
     SELECT 
         ne.id,
         nnr.name_id,
@@ -109,7 +109,7 @@ link_eval_name AS (
 ),
 -- Link eval to description
 link_eval_description AS (
-    INSERT INTO eval_descriptions (eval_id, description_id, created_at, updated_at)
+    INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at, updated_at)
     SELECT 
         ne.id,
         ndr.description_id,
@@ -121,7 +121,7 @@ link_eval_description AS (
 ),
 -- Link eval active flag (set to false for duplicate)
 link_eval_active_flag AS (
-    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at) SELECT ne.id,
+    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at, updated_at) SELECT ne.id,
         f.id,
         FALSE,
         NOW(),
@@ -135,7 +135,7 @@ link_eval_active_flag AS (
 ),
 -- Copy other flags from original eval
 copy_eval_flags AS (
-    INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at)
+    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at, updated_at)
     SELECT 
         ne.id,
         of.flag_id,
@@ -150,7 +150,7 @@ copy_eval_flags AS (
 ),
 copy_departments AS (
     -- Copy department links from original eval
-    INSERT INTO eval_departments (eval_id, department_id, active, created_at, updated_at)
+    INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at, updated_at)
     SELECT 
         ne.id,
         od.department_id,
@@ -163,7 +163,7 @@ copy_departments AS (
 ),
 copy_agents AS (
     -- Copy agent links from original eval
-    INSERT INTO eval_agents (eval_id, agent_id, created_at, updated_at)
+    INSERT INTO eval_agents_junction (eval_id, agent_id, created_at, updated_at)
     SELECT 
         ne.id,
         oa.agent_id,

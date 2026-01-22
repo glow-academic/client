@@ -15,7 +15,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT active
-    FROM agent_prompts
+    FROM agent_prompts_junction
     WHERE agent_id = input_agent_id
       AND prompt_id = input_prompt_id;
 $$;

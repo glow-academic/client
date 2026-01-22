@@ -79,7 +79,7 @@ self_emulation_check AS (
         END as is_self_emulation
 ),
 requester_role AS (
-    SELECT (SELECT r.role FROM profile_roles pr_j
+    SELECT (SELECT r.role FROM profile_roles_junction pr_j
             JOIN roles_resource r ON pr_j.role_id = r.id
             WHERE pr_j.profile_id = p.id
             LIMIT 1) as role
@@ -94,8 +94,8 @@ simulatable_profiles AS (
     WHERE p.id != (SELECT requester_profile_id FROM params)
       AND CASE
         WHEN rr.role = 'superadmin'::profile_type THEN true
-        WHEN rr.role = 'admin'::profile_type THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)
-        WHEN rr.role = 'instructional'::profile_type THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)
+        WHEN rr.role = 'admin'::profile_type THEN (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type, 'custom'::profile_type)
+        WHEN rr.role = 'instructional'::profile_type THEN (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_type, 'guest'::profile_type)
         ELSE false
       END
 ),
@@ -128,9 +128,9 @@ reason_computed AS (
 actor_name_computed AS (
     SELECT
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
             || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
+            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
             ''
         ) as actor_name
     FROM profile_artifact p

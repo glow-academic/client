@@ -37,7 +37,7 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -45,8 +45,8 @@ original_cohort AS (
     -- Get original cohort data
     SELECT 
         c.id,
-        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title,
-        (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title,
+        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
@@ -102,7 +102,7 @@ new_cohort AS (
 ),
 -- Link cohort to title
 link_cohort_title AS (
-    INSERT INTO cohort_names (cohort_id, name_id, created_at, updated_at)
+    INSERT INTO cohort_names_junction (cohort_id, name_id, created_at, updated_at)
     SELECT 
         nc.id,
         ntr.name_id,
@@ -114,7 +114,7 @@ link_cohort_title AS (
 ),
 -- Link cohort to description
 link_cohort_description AS (
-    INSERT INTO cohort_descriptions (cohort_id, description_id, created_at, updated_at)
+    INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at, updated_at)
     SELECT 
         nc.id,
         dr.description_id,
@@ -126,7 +126,7 @@ link_cohort_description AS (
 ),
 -- Link cohort active flag (set to false for duplicate)
 link_cohort_active_flag AS (
-    INSERT INTO cohort_flags (cohort_id, flag_id, value, created_at, updated_at) SELECT nc.id,
+    INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at, updated_at) SELECT nc.id,
         f.id,
         FALSE,
         NOW(),
@@ -148,28 +148,28 @@ cohort_with_title AS (
 ),
 copy_profiles AS (
     -- Copy profile relationships
-    INSERT INTO profile_cohorts (profile_id, cohort_id, active)
+    INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
     SELECT 
         cp.profile_id,
         nc.id,
         cp.active
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
-    JOIN profile_cohorts cp ON cp.cohort_id = oc.id
+    JOIN profile_cohorts_junction cp ON cp.cohort_id = oc.id
 ),
 copy_simulations AS (
-    -- Copy simulation relationships (positions linked via cohort_simulation_positions)
-    INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
+    -- Copy simulation relationships (positions linked via cohort_simulation_positions_junction)
+    INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active)
     SELECT 
         nc.id,
         cs.simulation_id,
         cs.active
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
-    JOIN cohort_simulations cs ON cs.cohort_id = oc.id
+    JOIN cohort_simulations_junction cs ON cs.cohort_id = oc.id
 ),
 copy_simulation_positions AS (
-    INSERT INTO cohort_simulation_positions (
+    INSERT INTO cohort_simulation_positions_junction (
         cohort_id,
         simulation_position_id,
         active,
@@ -188,14 +188,14 @@ copy_simulation_positions AS (
         csp.mcp
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
-    JOIN cohort_simulation_positions csp ON csp.cohort_id = oc.id
+    JOIN cohort_simulation_positions_junction csp ON csp.cohort_id = oc.id
     ON CONFLICT (cohort_id, simulation_position_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 ),
 copy_departments AS (
     -- Copy department relationships
-    INSERT INTO cohort_departments (cohort_id, department_id, active, created_at, updated_at)
+    INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at, updated_at)
     SELECT 
         nc.id,
         cd.department_id,
@@ -204,7 +204,7 @@ copy_departments AS (
         NOW()
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
-    JOIN cohort_departments cd ON cd.cohort_id = oc.id AND cd.active = true
+    JOIN cohort_departments_junction cd ON cd.cohort_id = oc.id AND cd.active = true
 )
 -- Return new cohort info
 SELECT 

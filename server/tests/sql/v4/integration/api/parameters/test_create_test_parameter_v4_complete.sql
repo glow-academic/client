@@ -48,32 +48,32 @@ AS $$
         SELECT id FROM flags_resource WHERE name = 'simulation_parameter' LIMIT 1
     ),
     parameter_name_link AS (
-        INSERT INTO parameter_names(parameter_id, name_id)
+        INSERT INTO parameter_names_junction(parameter_id, name_id)
         SELECT np.id, nr.id
         FROM new_parameter np, name_resource nr
         RETURNING parameter_id
     ),
     parameter_description_link AS (
-        INSERT INTO parameter_descriptions(parameter_id, description_id)
+        INSERT INTO parameter_descriptions_junction(parameter_id, description_id)
         SELECT np.id, dr.id
         FROM new_parameter np, description_resource dr
         RETURNING parameter_id
     ),
     parameter_active_flag_link AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, value)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value)
         SELECT np.id, af.id, COALESCE(parameter_active, true)
         FROM new_parameter np, active_flag af
         RETURNING parameter_id
     ),
     parameter_document_flag_link AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, value)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value)
         SELECT np.id, dpf.id, COALESCE(parameter_document_parameter, false)
         FROM new_parameter np, document_parameter_flag dpf
         WHERE COALESCE(parameter_document_parameter, false) = true
         RETURNING parameter_id
     ),
     parameter_simulation_flag_link AS (
-        INSERT INTO parameter_flags (parameter_id, flag_id, value)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value)
         SELECT np.id, spf.id, COALESCE(parameter_simulation_parameter, false)
         FROM new_parameter np, simulation_parameter_flag spf
         WHERE COALESCE(parameter_simulation_parameter, false) = true
@@ -81,11 +81,11 @@ AS $$
     )
     SELECT 
         np.id AS parameter_id,
-        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = np.id LIMIT 1) AS name,
-        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = np.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'document_parameter'  AND pf.value = TRUE) AS document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'simulation_parameter'  AND pf.value = TRUE) AS simulation_parameter,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = np.id LIMIT 1) AS name,
+        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = np.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'document_parameter'  AND pf.value = TRUE) AS document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'simulation_parameter'  AND pf.value = TRUE) AS simulation_parameter,
         np.created_at,
         np.updated_at
     FROM new_parameter np;

@@ -15,12 +15,12 @@ scenario_tree_entry AS (
     FROM scenario s
 ),
 scenario_dept AS (
-    INSERT INTO scenario_departments(scenario_id, department_id, active)
+    INSERT INTO scenario_departments_junction(scenario_id, department_id, active)
     SELECT s.id, d.id, true
     FROM scenario s, dept d
 ),
 scenario_persona AS (
-    INSERT INTO scenario_personas(scenario_id, persona_id, active)
+    INSERT INTO scenario_personas_junction(scenario_id, persona_id, active)
     SELECT s.id, $2::uuid, true
     FROM scenario s
     WHERE $2 IS NOT NULL

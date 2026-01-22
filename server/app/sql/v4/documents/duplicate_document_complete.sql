@@ -34,15 +34,15 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_document AS (
     SELECT 
         d.id,
-        (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+        (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM params x
     JOIN document_artifact d ON d.id = x.document_id
 ),
@@ -50,19 +50,19 @@ original_departments AS (
     -- Get department IDs from original document
     SELECT department_id
     FROM params x
-    JOIN document_departments dd ON dd.document_id = x.document_id AND dd.active = true
+    JOIN document_departments_junction dd ON dd.document_id = x.document_id AND dd.active = true
 ),
 original_fields AS (
     -- Get field IDs from original document
     SELECT field_id
     FROM params x
-    JOIN document_fields df ON df.document_id = x.document_id AND df.active = true
+    JOIN document_fields_junction df ON df.document_id = x.document_id AND df.active = true
 ),
 original_flags AS (
     -- Get flag IDs from original document
     SELECT flag_id
     FROM params x
-    JOIN document_flags df ON df.document_id = x.document_id
+    JOIN document_flags_junction df ON df.document_id = x.document_id
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -95,7 +95,7 @@ new_document AS (
 ),
 -- Link document to name
 link_document_name AS (
-    INSERT INTO document_names (document_id, name_id, created_at, updated_at)
+    INSERT INTO document_names_junction (document_id, name_id, created_at, updated_at)
     SELECT 
         nd.id,
         nnr.name_id,
@@ -107,7 +107,7 @@ link_document_name AS (
 ),
 -- Link document to description
 link_document_description AS (
-    INSERT INTO document_descriptions (document_id, description_id, created_at, updated_at)
+    INSERT INTO document_descriptions_junction (document_id, description_id, created_at, updated_at)
     SELECT 
         nd.id,
         ndr.description_id,
@@ -119,7 +119,7 @@ link_document_description AS (
 ),
 -- Link document active flag (set to false for duplicate)
 link_document_active_flag AS (
-    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at) SELECT nd.id,
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at) SELECT nd.id,
         f.id,
         FALSE,
         NOW(),
@@ -133,7 +133,7 @@ link_document_active_flag AS (
 ),
 -- Copy other flags from original document
 copy_document_flags AS (
-    INSERT INTO document_flags (document_id, flag_id, value, created_at, updated_at)
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at)
     SELECT 
         nd.id,
         of.flag_id,
@@ -148,7 +148,7 @@ copy_document_flags AS (
 ),
 copy_departments AS (
     -- Copy department links from original document
-    INSERT INTO document_departments (document_id, department_id, active, created_at, updated_at)
+    INSERT INTO document_departments_junction (document_id, department_id, active, created_at, updated_at)
     SELECT 
         nd.id,
         od.department_id,
@@ -161,7 +161,7 @@ copy_departments AS (
 ),
 copy_fields AS (
     -- Copy field links from original document
-    INSERT INTO document_fields (document_id, field_id, active, created_at, updated_at)
+    INSERT INTO document_fields_junction (document_id, field_id, active, created_at, updated_at)
     SELECT 
         nd.id,
         of.field_id,

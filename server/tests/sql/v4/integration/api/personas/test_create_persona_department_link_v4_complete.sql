@@ -18,7 +18,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO persona_departments(persona_id, department_id, active, created_at, updated_at)
+    INSERT INTO persona_departments_junction(persona_id, department_id, active, created_at, updated_at)
     VALUES (
         test_create_persona_department_link_v4.input_persona_id,
         test_create_persona_department_link_v4.input_department_id,

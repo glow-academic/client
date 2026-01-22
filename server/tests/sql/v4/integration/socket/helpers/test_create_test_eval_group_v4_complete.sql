@@ -20,7 +20,7 @@ AS $$
         RETURNING id as group_id
     ),
     link_group AS (
-        INSERT INTO eval_groups (eval_id, group_id)
+        INSERT INTO eval_groups_junction (eval_id, group_id)
         SELECT 
             test_create_test_eval_group_v4.eval_id,
             ng.group_id

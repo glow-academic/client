@@ -13,6 +13,6 @@ STABLE
 AS $$
     SELECT s.id 
     FROM simulations_resource s
-    WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active'  AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active'  AND sf.value = TRUE)
     LIMIT 1;
 $$;

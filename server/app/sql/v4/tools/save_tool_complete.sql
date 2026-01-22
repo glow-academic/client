@@ -60,7 +60,7 @@ BEGIN
         END IF;
     END IF;
 
-    -- Handle name (insert/update via tool_names junction)
+    -- Handle name (insert/update via tool_names_junction junction)
     IF name IS NOT NULL AND name != '' THEN
         INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
         VALUES (name, NOW(), NOW(), true, false, false, NULL)
@@ -68,12 +68,12 @@ BEGIN
         RETURNING id INTO v_name_id;
         
         -- Delete existing name links and insert new one
-        DELETE FROM tool_names WHERE tool_id = v_tool_id;
-        INSERT INTO tool_names (tool_id, name_id, created_at, updated_at, generated, mcp)
+        DELETE FROM tool_names_junction WHERE tool_id = v_tool_id;
+        INSERT INTO tool_names_junction (tool_id, name_id, created_at, updated_at, generated, mcp)
         VALUES (v_tool_id, v_name_id, NOW(), NOW(), false, false);
     END IF;
 
-    -- Handle description (insert/update via tool_descriptions junction)
+    -- Handle description (insert/update via tool_descriptions_junction junction)
     IF description IS NOT NULL AND description != '' THEN
         INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
         VALUES (description, NOW(), NOW(), true, false, false, NULL)
@@ -81,14 +81,14 @@ BEGIN
         RETURNING id INTO v_description_id;
         
         -- Delete existing description links and insert new one
-        DELETE FROM tool_descriptions WHERE tool_id = v_tool_id;
-        INSERT INTO tool_descriptions (tool_id, description_id, created_at, updated_at, generated, mcp)
+        DELETE FROM tool_descriptions_junction WHERE tool_id = v_tool_id;
+        INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, updated_at, generated, mcp)
         VALUES (v_tool_id, v_description_id, NOW(), NOW(), false, false);
     END IF;
 
-    -- Handle active flag (insert/update via tool_flags junction)
+    -- Handle active flag (insert/update via tool_flags_junction junction)
     IF active IS NOT NULL THEN
-        INSERT INTO tool_flags (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT v_tool_id,
+        INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT v_tool_id,
             f.id,
             active,
             NOW(),
@@ -122,8 +122,8 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM tool_args WHERE tool_id = v_tool_id;
-        DELETE FROM tool_args_outputs WHERE tool_id = v_tool_id;
+        DELETE FROM tool_args_junction WHERE tool_id = v_tool_id;
+        DELETE FROM tool_args_outputs_junction WHERE tool_id = v_tool_id;
     END IF;
     
     -- Continue with tool save using SQL (tool already created/updated above)
@@ -137,8 +137,8 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
@@ -151,7 +151,7 @@ BEGIN
     ),
     -- Link tool to args (old ones already deleted above if update)
     link_args AS (
-        INSERT INTO tool_args (tool_id, args_id, created_at, updated_at, generated, mcp)
+        INSERT INTO tool_args_junction (tool_id, args_id, created_at, updated_at, generated, mcp)
         SELECT 
             x.tool_id,
             args_id,
@@ -167,7 +167,7 @@ BEGIN
     ),
     -- Link tool to args_outputs (old ones already deleted above if update)
     link_args_outputs AS (
-        INSERT INTO tool_args_outputs (tool_id, args_outputs_id, created_at, updated_at, generated, mcp)
+        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, updated_at, generated, mcp)
         SELECT 
             x.tool_id,
             args_outputs_id,

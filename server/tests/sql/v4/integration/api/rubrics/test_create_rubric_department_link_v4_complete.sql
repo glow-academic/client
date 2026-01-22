@@ -17,7 +17,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO rubric_departments(rubric_id, department_id, active)
+    INSERT INTO rubric_departments_junction(rubric_id, department_id, active)
     VALUES (
         test_create_rubric_department_link_v4.rubric_id,
         test_create_rubric_department_link_v4.department_id,

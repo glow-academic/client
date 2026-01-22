@@ -159,19 +159,19 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM rubric_names WHERE rubric_id = v_rubric_id;
-        DELETE FROM rubric_descriptions WHERE rubric_id = v_rubric_id;
-        DELETE FROM rubric_points WHERE rubric_id = v_rubric_id;
-        DELETE FROM rubric_departments WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_names_junction WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_descriptions_junction WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_points_junction WHERE rubric_id = v_rubric_id;
+        DELETE FROM rubric_departments_junction WHERE rubric_id = v_rubric_id;
         -- Deactivate (don't delete) standard_group links
-        UPDATE rubric_standard_groups SET active = false, updated_at = NOW()
+        UPDATE rubric_standard_groups_junction SET active = false, updated_at = NOW()
         WHERE rubric_id = v_rubric_id AND active = true;
         -- Deactivate (don't delete) standard links
-        UPDATE rubric_standards SET active = false, updated_at = NOW()
+        UPDATE rubric_standards_junction SET active = false, updated_at = NOW()
         WHERE rubric_id = v_rubric_id AND active = true;
         -- Update existing active flag if it exists
-        UPDATE rubric_flags SET
-            flag_id = COALESCE(v_active_flag_id, rubric_flags.flag_id),
+        UPDATE rubric_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, rubric_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE rubric_id = v_rubric_id
@@ -195,21 +195,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM rubric_departments
-        WHERE rubric_departments.rubric_id = (SELECT p.rubric_id FROM params p LIMIT 1) AND active = true
+        FROM rubric_departments_junction
+        WHERE rubric_departments_junction.rubric_id = (SELECT p.rubric_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -240,7 +240,7 @@ BEGIN
     ),
     -- Link rubric to name
     link_rubric_name AS (
-        INSERT INTO rubric_names (rubric_id, name_id, created_at, updated_at)
+        INSERT INTO rubric_names_junction (rubric_id, name_id, created_at, updated_at)
         SELECT 
             x.rubric_id,
             x.name_id,
@@ -252,7 +252,7 @@ BEGIN
     ),
     -- Link rubric to description
     link_rubric_description AS (
-        INSERT INTO rubric_descriptions (rubric_id, description_id, created_at, updated_at)
+        INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at, updated_at)
         SELECT 
             x.rubric_id,
             x.description_id,
@@ -264,7 +264,7 @@ BEGIN
     ),
     -- Insert or UPDATE rubric_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_rubric_active_flag AS (
-        INSERT INTO rubric_flags (rubric_id, flag_id, value, created_at, updated_at) SELECT x.rubric_id,
+        INSERT INTO rubric_flags_junction (rubric_id, flag_id, value, created_at, updated_at) SELECT x.rubric_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -273,13 +273,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'rubric_active'
         ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link total_points
     link_total_points AS (
-        INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
+        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at, updated_at)
         SELECT 
             x.rubric_id,
             x.total_points_id,
@@ -292,7 +292,7 @@ BEGIN
     ),
     -- Link pass_points
     link_pass_points AS (
-        INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
+        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at, updated_at)
         SELECT 
             x.rubric_id,
             x.pass_points_id,
@@ -305,7 +305,7 @@ BEGIN
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO rubric_departments (rubric_id, department_id, active, created_at, updated_at)
+        INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at, updated_at)
         SELECT 
             x.rubric_id,
             dept_id,
@@ -325,7 +325,7 @@ BEGIN
         SELECT 
             sg_id,
             COALESCE(
-                (SELECT rsg.position FROM rubric_standard_groups rsg 
+                (SELECT rsg.position FROM rubric_standard_groups_junction rsg 
                  WHERE rsg.rubric_id = (SELECT rubric_id FROM params LIMIT 1) 
                    AND rsg.standard_group_id = sg_id 
                    AND rsg.active = false
@@ -337,7 +337,7 @@ BEGIN
         WHERE COALESCE(array_length(x.standard_group_ids, 1), 0) > 0
     ),
     link_standard_groups AS (
-        INSERT INTO rubric_standard_groups (rubric_id, standard_group_id, position, active, created_at, updated_at)
+        INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, position, active, created_at, updated_at)
         SELECT 
             x.rubric_id,
             sgwp.sg_id,
@@ -354,7 +354,7 @@ BEGIN
     ),
     -- Link standards (old ones already deactivated above if update)
     link_standards AS (
-        INSERT INTO rubric_standards (rubric_id, standard_id, active, created_at, updated_at)
+        INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at, updated_at)
         SELECT 
             x.rubric_id,
             std_id,

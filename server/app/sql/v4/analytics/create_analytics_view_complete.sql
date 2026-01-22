@@ -69,7 +69,7 @@ latest_grade AS (
 active_sims AS (
   SELECT s.* FROM simulation_artifact s
   WHERE EXISTS (
-    SELECT 1 FROM simulation_flags sf
+    SELECT 1 FROM simulation_flags_junction sf
     JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = s.id
       AND f.name = 'simulation_active'
@@ -80,7 +80,7 @@ active_sims AS (
 active_scenarios AS (
   SELECT s.* FROM scenario_artifact s
   WHERE EXISTS (
-    SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id
+    SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.scenario_id = s.id
       AND f.name = 'scenario_active'
       AND sf.value = TRUE
@@ -89,7 +89,7 @@ active_scenarios AS (
 -- expand cohorts; we'll filter active where needed
 cohorts_expanded AS (
   SELECT c.id, 
-    EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+    EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
         AND f.name = 'cohort_active' AND cf.value = TRUE) AS active
   FROM cohort_artifact c
 ),
@@ -97,8 +97,8 @@ cohorts_expanded AS (
 cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
          ARRAY(SELECT DISTINCT c.id FROM cohort_artifact c
-               JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
-               WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+               JOIN cohort_simulations_junction cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
+               WHERE EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
                    AND f.name = 'cohort_active' AND cf.value = TRUE)) AS cohort_ids
   FROM active_sims s
 ),
@@ -108,9 +108,9 @@ profile_cohorts_for_sim AS (
          ARRAY(
            SELECT c.id
            FROM cohort_artifact c
-           JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
-           JOIN profile_cohorts cp ON cp.cohort_id = c.id AND cp.profile_id = sa.profile_id
-           WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
+           JOIN cohort_simulations_junction cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
+           JOIN profile_cohorts_junction cp ON cp.cohort_id = c.id AND cp.profile_id = sa.profile_id
+           WHERE EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
                AND f.name = 'cohort_active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
   FROM attempts_entry sa
@@ -170,11 +170,11 @@ effective_profile_department AS (
   SELECT pd.profile_id,
          COALESCE(
            (SELECT pd1.department_id
-              FROM profile_departments pd1
+              FROM profile_departments_junction pd1
              WHERE pd1.profile_id = pd.profile_id AND pd1.is_primary
              LIMIT 1),
            (SELECT pd2.department_id
-              FROM profile_departments pd2
+              FROM profile_departments_junction pd2
              WHERE pd2.profile_id = pd.profile_id
              ORDER BY pd2.created_at ASC
              LIMIT 1)
@@ -186,7 +186,7 @@ simulation_first_dept AS (
     SELECT DISTINCT ON (simulation_id) 
         simulation_id, 
         department_id
-    FROM simulation_departments
+    FROM simulation_departments_junction
     WHERE active = true
     ORDER BY simulation_id, created_at
 ),
@@ -194,7 +194,7 @@ rubric_first_dept AS (
     SELECT DISTINCT ON (rubric_id) 
         rubric_id, 
         department_id
-    FROM rubric_departments
+    FROM rubric_departments_junction
     WHERE active = true
     ORDER BY rubric_id, created_at
 ),
@@ -202,7 +202,7 @@ scenario_first_dept AS (
     SELECT DISTINCT ON (scenario_id) 
         scenario_id, 
         department_id
-    FROM scenario_departments
+    FROM scenario_departments_junction
     WHERE active = true
     ORDER BY scenario_id, created_at
 ),
@@ -210,7 +210,7 @@ persona_first_dept AS (
     SELECT DISTINCT ON (persona_id) 
         persona_id, 
         department_id
-    FROM persona_departments
+    FROM persona_departments_junction
     WHERE active = true
     ORDER BY persona_id, created_at
 ),
@@ -221,7 +221,7 @@ scenario_first_persona AS (
     SELECT DISTINCT ON (scenario_id)
         scenario_id,
         persona_id
-    FROM scenario_personas
+    FROM scenario_personas_junction
     WHERE active = TRUE
     ORDER BY scenario_id, persona_id
 )
@@ -236,10 +236,10 @@ SELECT
   rm.leaf_scenario_id           AS leaf_scenario_id,
 
   sfp.persona_id                AS persona_id,
-  (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
+  (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
 
   EXISTS (
-    SELECT 1 FROM simulation_flags sf
+    SELECT 1 FROM simulation_flags_junction sf
     JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
       AND f.name = 'practice'
@@ -247,14 +247,14 @@ SELECT
   ) AS is_practice,
   COALESCE(sa.archived, FALSE)  AS is_archived,
   (NOT EXISTS (
-    SELECT 1 FROM simulation_flags sf
+    SELECT 1 FROM simulation_flags_junction sf
     JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
       AND f.name = 'practice'
       AND sf.value = TRUE
   ) AND NOT COALESCE(sa.archived, FALSE)) AS is_general,
   COALESCE(
-    (SELECT r.role FROM profile_roles pr_j 
+    (SELECT r.role FROM profile_roles_junction pr_j 
      JOIN roles_resource r ON pr_j.role_id = r.id 
      WHERE pr_j.profile_id = pr.id 
      LIMIT 1),
@@ -267,18 +267,18 @@ SELECT
   lg.time_taken_seconds         AS time_taken_seconds,
 
   lg.rubric_id                  AS rubric_id,
-  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points,
-  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points,
+  (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points_junction,
+  (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points,
   CASE
-    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) = 0 THEN NULL
-    ELSE (lg.score / (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
+    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) = 0 THEN NULL
+    ELSE (lg.score / (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
   END                           AS grade_percent,
   CASE
     WHEN lg.score IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) IS NULL THEN NULL
-    ELSE (lg.score >= (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1)::numeric)
+         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) IS NULL THEN NULL
+    ELSE (lg.score >= (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1)::numeric)
   END                           AS passed,
 
   (sc.completed OR lg.simulation_chat_id IS NOT NULL)
@@ -292,7 +292,7 @@ SELECT
   -- *** new trailing columns (safe append) ***
   sa.created_at                 AS attempt_created_at, -- use for date filters like TS did
   pcs.profile_cohort_ids        AS profile_cohort_ids, -- cohortIds "true membership"
-  (SELECT COUNT(*) FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id)::int AS sim_scenario_count, -- simulation's expected scenario count
+  (SELECT COUNT(*) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = sim.id)::int AS sim_scenario_count, -- simulation's expected scenario count
   lg.created_at                 AS grade_created_at, -- grade creation time for stagnation metric
   
   -- Department ID coalesced from all relevant tables (using junction tables)
@@ -399,9 +399,9 @@ CREATE INDEX IF NOT EXISTS standards_group_idx
 
 -- Group ↔ rubric (via junction table)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_idx
-  ON rubric_standard_groups (rubric_id);
+  ON rubric_standard_groups_junction (rubric_id);
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_standard_group_idx
-  ON rubric_standard_groups (standard_group_id);
+  ON rubric_standard_groups_junction (standard_group_id);
 
 -- Analytics 'where' clause helpers
 CREATE INDEX analytics_chat_created_idx
@@ -421,7 +421,7 @@ CREATE INDEX IF NOT EXISTS grades_run_created_idx
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
-  ON rubric_standard_groups (rubric_id, standard_group_id);
+  ON rubric_standard_groups_junction (rubric_id, standard_group_id);
 
 -- Performance optimization indexes for analytics functions
 -- High-impact indexes on analytics matview for fast queries
@@ -465,7 +465,7 @@ CREATE INDEX IF NOT EXISTS personas_id_idx ON personas_resource (id);
 -- Note: attempt_profiles table removed - profile_id now directly on attempts_entry
 
 CREATE INDEX IF NOT EXISTS scenario_personas_scenario_active_idx
-  ON scenario_personas (scenario_id, persona_id) WHERE active = TRUE;
+  ON scenario_personas_junction (scenario_id, persona_id) WHERE active = TRUE;
 
 -- Index for scenario_rubrics_resource lookup
 CREATE INDEX IF NOT EXISTS scenario_rubrics_resource_scenario_id_idx

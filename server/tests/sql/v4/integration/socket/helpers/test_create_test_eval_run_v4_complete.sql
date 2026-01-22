@@ -22,7 +22,7 @@ AS $$
         RETURNING id as run_id
     ),
     link_run AS (
-        INSERT INTO eval_runs (eval_id, run_id, completed)
+        INSERT INTO eval_runs_junction (eval_id, run_id, completed)
         SELECT 
             test_create_test_eval_run_v4.eval_id,
             nr.run_id,

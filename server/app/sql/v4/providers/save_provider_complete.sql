@@ -107,14 +107,14 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM provider_names WHERE provider_names.provider_id = v_provider_id;
-        DELETE FROM provider_descriptions WHERE provider_descriptions.provider_id = v_provider_id;
+        DELETE FROM provider_names_junction WHERE provider_names_junction.provider_id = v_provider_id;
+        DELETE FROM provider_descriptions_junction WHERE provider_descriptions_junction.provider_id = v_provider_id;
         -- Update existing active flag if it exists
-        UPDATE provider_flags SET
-            flag_id = COALESCE(v_active_flag_id, provider_flags.flag_id),
+        UPDATE provider_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, provider_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
-        WHERE provider_flags.provider_id = v_provider_id
+        WHERE provider_flags_junction.provider_id = v_provider_id
           ;
     END IF;
     
@@ -130,8 +130,8 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
@@ -144,7 +144,7 @@ BEGIN
     ),
     -- Link provider to name
     link_provider_name AS (
-        INSERT INTO provider_names (provider_id, name_id, created_at, updated_at)
+        INSERT INTO provider_names_junction (provider_id, name_id, created_at, updated_at)
         SELECT 
             x.p_provider_id,
             x.name_id,
@@ -156,7 +156,7 @@ BEGIN
     ),
     -- Link provider to description
     link_provider_description AS (
-        INSERT INTO provider_descriptions (provider_id, description_id, created_at, updated_at)
+        INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at, updated_at)
         SELECT 
             x.p_provider_id,
             x.description_id,
@@ -168,7 +168,7 @@ BEGIN
     ),
     -- Insert or UPDATE provider_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_provider_active_flag AS (
-        INSERT INTO provider_flags (provider_id, flag_id, value, created_at, updated_at) SELECT x.p_provider_id,
+        INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, updated_at) SELECT x.p_provider_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
@@ -177,7 +177,7 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'provider_active'
         ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, provider_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, provider_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     )

@@ -76,10 +76,10 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -95,8 +95,8 @@ simulation_usage AS (
     FROM (
         SELECT NULL::uuid as agent_id WHERE false
     ) combined_agents
-    JOIN agents_resource a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
-    JOIN agent_models am ON am.agent_id = a.id
+    JOIN agents_resource a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    JOIN agent_models_junction am ON am.agent_id = a.id
     GROUP BY am.model_id
 ),
 -- Pre-aggregate agent usage counts for all models
@@ -105,7 +105,7 @@ agent_usage AS (
         am.model_id,
         COUNT(*) as usage_count
     FROM agent_artifact a
-    JOIN agent_models am ON am.agent_id = a.id
+    JOIN agent_models_junction am ON am.agent_id = a.id
     GROUP BY am.model_id
 ),
 -- Determine if model is an image model (has 'image' output modality)
@@ -113,7 +113,7 @@ image_model_check AS (
     SELECT 
         mm.model_id,
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities mm
+    FROM model_modalities_junction mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     WHERE mr.modality = 'image' AND mm.type = 'output'::direction_type AND mm.active = true
     GROUP BY mm.model_id
@@ -121,15 +121,15 @@ image_model_check AS (
 models_with_usage AS (
     SELECT 
         m.id as model_id,
-        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
-        EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
-        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
-        (SELECT p.id FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_id,
-        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name,
-        COALESCE((SELECT e.base_url FROM model_endpoints me_j JOIN endpoints_resource e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
+        (SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
+        (SELECT p.id FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_id,
+        (SELECT n.name FROM model_providers_junction mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names_junction pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name,
+        COALESCE((SELECT e.base_url FROM model_endpoints_junction me_j JOIN endpoints_resource e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
         COALESCE(su.usage_count, 0) as simulation_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
     FROM model_artifact m
@@ -144,7 +144,7 @@ provider_options_data AS (
         n.name as label
     FROM providers_resource p
     JOIN provider_artifact pr ON pr.id = p.provider_id
-    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
     ORDER BY n.name

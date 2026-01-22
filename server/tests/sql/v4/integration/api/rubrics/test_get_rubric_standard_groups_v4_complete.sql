@@ -22,7 +22,7 @@ LANGUAGE sql
 STABLE
 AS $$
     -- NOTE: standard_groups table doesn't have rubric_id column
-    -- Standard groups_entry are linked to rubrics via rubric_standard_groups table
+    -- Standard groups_entry are linked to rubrics via rubric_standard_groups_junction table
     SELECT 
         sg.id AS standard_group_id,
         rsg.rubric_id,
@@ -34,7 +34,7 @@ AS $$
         sg.created_at,
         sg.created_at AS updated_at
     FROM standard_groups_resource sg
-    JOIN rubric_standard_groups rsg ON rsg.standard_group_id = sg.id
+    JOIN rubric_standard_groups_junction rsg ON rsg.standard_group_id = sg.id
     WHERE rsg.rubric_id = input_rubric_id
     ORDER BY sg.name;
 $$;

@@ -96,23 +96,23 @@ resolve_profile_id AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM resolve_profile_id rpi
     JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 user_departments AS (
     SELECT department_id
-    FROM profile_departments
+    FROM profile_departments_junction
     WHERE profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND active = true
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j 
+        (SELECT r.role FROM profile_roles_junction pr_j 
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
     FROM resolve_profile_id rpi
     JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
@@ -124,30 +124,30 @@ attempts_with_eval AS (
         ea.created_at as attempt_created_at,
         ea.eval_id,
         ea.archived,
-        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
-        (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
+        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
+        (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
         -- Get first rubric from junction table (runs_entry or groups_entry based on use_groups)
         (SELECT combined.rubric_id 
          FROM (
              SELECT err.rubric_id, err.created_at
-             FROM eval_runs_rubrics err
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
+             FROM eval_runs_rubrics_junction err
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
              SELECT egr.rubric_id, egr.created_at
-             FROM eval_groups_rubrics egr
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
+             FROM eval_groups_rubrics_junction egr
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
-        (SELECT (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT err.rubric_id, err.created_at
-             FROM eval_runs_rubrics err
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
+             FROM eval_runs_rubrics_junction err
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
              SELECT egr.rubric_id, egr.created_at
-             FROM eval_groups_rubrics egr
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
+             FROM eval_groups_rubrics_junction egr
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at 
@@ -160,7 +160,7 @@ attempt_eval_departments AS (
     SELECT 
         rd.rubric_id as eval_id,
         ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
-    FROM rubric_departments rd
+    FROM rubric_departments_junction rd
     WHERE rd.active = true
     GROUP BY rd.rubric_id
 ),
@@ -169,7 +169,7 @@ attempt_status_summary AS (
     SELECT 
         aea.attempt_id,
         aea.eval_id,
-        -- Count runs_entry from eval_runs for this eval
+        -- Count runs_entry from eval_runs_junction for this eval
         COUNT(DISTINCT er.run_id) as total_runs,
         -- Count completed runs_entry (where test exists and is completed)
         COUNT(DISTINCT er.run_id) FILTER (
@@ -194,7 +194,7 @@ attempt_status_summary AS (
             )
         ) as pending_runs
     FROM attempts_with_eval aea
-    LEFT JOIN eval_runs er ON er.eval_id = aea.eval_id
+    LEFT JOIN eval_runs_junction er ON er.eval_id = aea.eval_id
     GROUP BY aea.attempt_id, aea.eval_id
 ),
 -- Derive status FROM runs_entry counts

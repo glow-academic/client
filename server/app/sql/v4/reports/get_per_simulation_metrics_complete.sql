@@ -86,15 +86,15 @@ filtered_profiles AS (
         p.id
     FROM profile_artifact p
     WHERE 
-        (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_type[]))
+        (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_type[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
-            SELECT 1 FROM profile_cohorts cp 
+            SELECT 1 FROM profile_cohorts_junction cp 
             WHERE cp.profile_id = p.id 
               AND cp.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[]) 
               AND cp.active = true
         ))
         AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR EXISTS (
-            SELECT 1 FROM profile_departments pd 
+            SELECT 1 FROM profile_departments_junction pd 
             WHERE pd.profile_id = p.id 
               AND pd.department_id = ANY((SELECT department_ids FROM params)::uuid[]) 
               AND pd.active = true
@@ -112,20 +112,20 @@ filt AS (
           a.simulation_id IN (
               SELECT DISTINCT s.id
               FROM simulation_artifact s
-              WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
+              WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
                 AND (
                     EXISTS (
                         SELECT 1 
-                        FROM cohort_simulations cs 
+                        FROM cohort_simulations_junction cs 
                         WHERE cs.simulation_id = s.id 
                           AND cs.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
                           AND cs.active = TRUE
                     )
                     OR
-                    (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
+                    (EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
                      AND NOT EXISTS (
                          SELECT 1 
-                         FROM cohort_simulations cs2 
+                         FROM cohort_simulations_junction cs2 
                          WHERE cs2.simulation_id = s.id 
                            AND cs2.active = TRUE
                      ))
@@ -163,7 +163,7 @@ earliest_attempts_all_time AS (
         a.attempt_created_at,
         a.grade_percent,
         a.rubric_pass_points,
-        a.rubric_points
+        a.rubric_points_junction
     FROM analytics a
     WHERE a.profile_id IN (SELECT id FROM filtered_profiles)
     ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
@@ -179,7 +179,7 @@ first_attempts_per_sim AS (
     SELECT
         ea.profile_id,
         ea.simulation_id,
-        ea.grade_percent >= (ea.rubric_pass_points * 100.0 / NULLIF(ea.rubric_points, 0)) AS passed
+        ea.grade_percent >= (ea.rubric_pass_points * 100.0 / NULLIF(ea.rubric_points_junction, 0)) AS passed
     FROM earliest_attempts_all_time ea
     CROSS JOIN filt_date_range fdr
     WHERE EXISTS (SELECT 1 FROM filt f WHERE f.profile_id = ea.profile_id AND f.simulation_id = ea.simulation_id)

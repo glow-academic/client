@@ -23,7 +23,7 @@ AS $$
         RETURNING id, problem_statement, created_at
     ),
     new_link AS (
-        INSERT INTO scenario_problem_statements(scenario_id, problem_statement_id, active)
+        INSERT INTO scenario_problem_statements_junction(scenario_id, problem_statement_id, active)
         SELECT test_create_scenario_problem_statement_v4.input_scenario_id, nps.id, true
         FROM new_problem_statement nps
         RETURNING scenario_id, problem_statement_id, active, created_at

@@ -13,5 +13,5 @@ STABLE
 AS $$
     SELECT COUNT(*) as count
     FROM models_resource m
-    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active'  AND mf.value = TRUE);
+    WHERE EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active'  AND mf.value = TRUE);
 $$;

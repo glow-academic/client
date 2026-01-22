@@ -33,10 +33,10 @@ BEGIN
     -- Refresh the materialized view
     REFRESH MATERIALIZED VIEW CONCURRENTLY analytics;
     
-    -- Get actor_name FROM profile_artifact using profile_names junction table
+    -- Get actor_name FROM profile_artifact using profile_names_junction junction table
     SELECT COALESCE(
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_analytics_v4.profile_id LIMIT 1),
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_analytics_v4.profile_id LIMIT 1),
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_analytics_v4.profile_id LIMIT 1),
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_analytics_v4.profile_id LIMIT 1),
         'System'
     ) INTO actor_name_val
     FROM profile_artifact

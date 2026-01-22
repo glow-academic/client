@@ -17,7 +17,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO agent_departments(agent_id, department_id, active)
+    INSERT INTO agent_departments_junction(agent_id, department_id, active)
     VALUES (
         test_create_agent_department_link_v4.agent_id,
         test_create_agent_department_link_v4.department_id,

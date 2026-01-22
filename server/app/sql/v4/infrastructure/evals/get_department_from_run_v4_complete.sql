@@ -26,7 +26,7 @@ STABLE
 AS $$
     SELECT d.id::text as department_id
     FROM runs_entry r
-    JOIN profile_departments pd ON pd.profile_id = r.profile_id AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = r.profile_id AND pd.active = true
     JOIN departments_resource d ON d.id = pd.department_id AND d.active = true
     WHERE r.id = $1
     LIMIT 1

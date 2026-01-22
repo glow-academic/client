@@ -31,27 +31,27 @@ AS $$
         RETURNING id AS scenario_id, created_at
     ),
     scenario_name_link AS (
-        INSERT INTO scenario_names(scenario_id, name_id)
+        INSERT INTO scenario_names_junction(scenario_id, name_id)
         SELECT ns.scenario_id, nr.id
         FROM new_scenario ns, name_resource nr
         RETURNING scenario_id
     ),
     scenario_flag_link AS (
-        INSERT INTO scenario_flags (scenario_id, flag_id, value)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value)
         SELECT ns.scenario_id, af.id, true
         FROM new_scenario ns, active_flag af
         RETURNING scenario_id
     ),
     new_link AS (
-        INSERT INTO scenario_parameters(scenario_id, parameter_id, active)
+        INSERT INTO scenario_parameters_junction(scenario_id, parameter_id, active)
         SELECT scenario_id, input_parameter_item_id, true
         FROM new_scenario
         RETURNING scenario_id, parameter_id, active AS link_active
     )
     SELECT 
         ns.scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ns.scenario_id LIMIT 1) as name,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active'  AND sf.value = TRUE) as active,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ns.scenario_id LIMIT 1) as name,
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active'  AND sf.value = TRUE) as active,
         nl.parameter_id AS parameter_item_id,
         nl.link_active,
         ns.created_at

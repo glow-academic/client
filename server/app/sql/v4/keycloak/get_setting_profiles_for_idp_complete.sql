@@ -31,7 +31,7 @@ AS $$
         FROM setting_artifact s
         WHERE EXISTS (
             SELECT 1
-            FROM setting_flags sf
+            FROM setting_flags_junction sf
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.setting_id = s.id
               AND f.name = 'setting_active'
@@ -40,7 +40,7 @@ AS $$
     ),
     dept_settings AS (
         SELECT ds.department_id, ds.settings_id
-        FROM department_settings ds
+        FROM department_settings_junction ds
         JOIN active_settings s ON s.id = ds.settings_id
         WHERE ds.active = true
     ),
@@ -49,14 +49,14 @@ AS $$
         FROM active_settings s
         WHERE NOT EXISTS (
             SELECT 1
-            FROM department_settings ds
+            FROM department_settings_junction ds
             WHERE ds.settings_id = s.id
               AND ds.active = true
         )
     ),
     settings_profiles AS (
         SELECT sp.setting_id, sp.profile_id
-        FROM setting_profiles sp
+        FROM setting_profiles_junction sp
         WHERE sp.active = true
     ),
     profile_details AS (
@@ -64,7 +64,7 @@ AS $$
             pr.profile_id,
             COALESCE(
                 (SELECT n.name
-                 FROM profile_names pn
+                 FROM profile_names_junction pn
                  JOIN names_resource n ON n.id = pn.name_id
                  WHERE pn.profile_id = pr.profile_id
                    AND pn.active = true
@@ -73,7 +73,7 @@ AS $$
             ) as profile_name,
             COALESCE(
                 (SELECT r.role
-                 FROM profile_roles prj
+                 FROM profile_roles_junction prj
                  JOIN roles_resource r ON r.id = prj.role_id
                  WHERE prj.profile_id = pr.profile_id
                    AND prj.active = true

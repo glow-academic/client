@@ -19,7 +19,7 @@ AS $$
         agent_id,
         prompt_id,
         active
-    FROM agent_prompts
+    FROM agent_prompts_junction
     WHERE agent_id = test_get_agent_prompt_link_v4.agent_id
       AND active = true;
 $$;

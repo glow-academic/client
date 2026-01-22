@@ -36,14 +36,14 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 eval_info AS (
     SELECT 
         e.id as eval_id, 
-        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name
+        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name
     FROM params x
     JOIN evals_resource e ON e.id = x.eval_id
 ),

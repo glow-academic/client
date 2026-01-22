@@ -113,11 +113,11 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM department_names WHERE department_id = v_department_id;
-        DELETE FROM department_descriptions WHERE department_id = v_department_id;
+        DELETE FROM department_names_junction WHERE department_id = v_department_id;
+        DELETE FROM department_descriptions_junction WHERE department_id = v_department_id;
         -- Update existing active flag if it exists
-        UPDATE department_flags SET
-            flag_id = COALESCE(v_active_flag_id, department_flags.flag_id),
+        UPDATE department_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, department_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE department_id = v_department_id
@@ -137,13 +137,13 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j 
+            (SELECT r.role FROM profile_roles_junction pr_j 
              JOIN roles_resource r ON pr_j.role_id = r.id 
              WHERE pr_j.profile_id = p.id 
              LIMIT 1) as role,
             COALESCE(
-                (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) || ' ' || 
-                (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1), 
+                (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) || ' ' || 
+                (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1), 
                 'System'
             ) as actor_name
         FROM params x
@@ -158,7 +158,7 @@ BEGIN
     ),
     -- Link department to name
     link_department_name AS (
-        INSERT INTO department_names (department_id, name_id, created_at, updated_at)
+        INSERT INTO department_names_junction (department_id, name_id, created_at, updated_at)
         SELECT 
             x.department_id,
             x.name_id,
@@ -170,7 +170,7 @@ BEGIN
     ),
     -- Link department to description
     link_department_description AS (
-        INSERT INTO department_descriptions (department_id, description_id, created_at, updated_at)
+        INSERT INTO department_descriptions_junction (department_id, description_id, created_at, updated_at)
         SELECT 
             x.department_id,
             x.description_id,
@@ -182,7 +182,7 @@ BEGIN
     ),
     -- Insert or UPDATE department_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_department_active_flag AS (
-        INSERT INTO department_flags (department_id, flag_id, value, created_at, updated_at) SELECT x.department_id,
+        INSERT INTO department_flags_junction (department_id, flag_id, value, created_at, updated_at) SELECT x.department_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_department_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
@@ -192,13 +192,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'department_active'
         ON CONFLICT ON CONSTRAINT department_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, department_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, department_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Remove existing settings link if settings_id is null or different (for update case)
     remove_existing_settings AS (
-        DELETE FROM department_settings ds
+        DELETE FROM department_settings_junction ds
         WHERE ds.department_id = (SELECT x.department_id FROM params x)
           AND (
               (SELECT x2.settings_id FROM params x2) IS NULL 
@@ -207,7 +207,7 @@ BEGIN
     ),
     -- Link settings if provided
     link_settings AS (
-        INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
+        INSERT INTO department_settings_junction (settings_id, department_id, active, created_at, updated_at)
         SELECT 
             x.settings_id,
             x.department_id,

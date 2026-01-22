@@ -32,19 +32,19 @@ AS $$
         RETURNING id, role::text
     ),
     profile_name_link AS (
-        INSERT INTO profile_names(profile_id, name_id)
+        INSERT INTO profile_names_junction(profile_id, name_id)
         SELECT np.id, nr.id
         FROM new_profile np, name_resource nr
         RETURNING profile_id
     ),
     profile_flag_link AS (
-        INSERT INTO profile_flags (profile_id, flag_id, value)
+        INSERT INTO profile_flags_junction (profile_id, flag_id, value)
         SELECT np.id, af.id, true
         FROM new_profile np, active_flag af
         RETURNING profile_id
     ),
     new_email AS (
-        INSERT INTO profile_emails(profile_id, email, is_primary, active)
+        INSERT INTO profile_emails_junction(profile_id, email, is_primary, active)
         SELECT 
             np.id,
             COALESCE(test_create_test_profile_v4.email, 'test_' || np.id::text || '@purdue.edu'),

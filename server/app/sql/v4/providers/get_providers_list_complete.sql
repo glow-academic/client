@@ -75,8 +75,8 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -84,9 +84,9 @@ provider_data AS (
     SELECT 
         pr.id as provider_id,
         n.name as name,
-        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
+        COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
         n.name as value,
-        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND pf.value = TRUE) as active,
         p.created_at,
         p.updated_at,
         ''::text as base_url,
@@ -104,7 +104,7 @@ provider_data AS (
         END as can_duplicate
     FROM providers_resource p
     JOIN provider_artifact pr ON pr.id = p.provider_id
-    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     CROSS JOIN user_profile up
     WHERE p.active = true
@@ -133,7 +133,7 @@ provider_options_agg AS (
         ) as provider_options
     FROM providers_resource p
     JOIN provider_artifact pr ON pr.id = p.provider_id
-    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
 )

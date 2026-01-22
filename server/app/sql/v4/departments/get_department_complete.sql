@@ -183,7 +183,7 @@ RETURNS TABLE (
     valid_department_ids uuid[],
     valid_model_ids uuid[],
     valid_key_ids uuid[],
-    model_keys types.q_get_department_v4_model_key[],
+    model_keys_junction types.q_get_department_v4_model_key[],
     draft_version int
 )
 LANGUAGE sql
@@ -230,13 +230,13 @@ draft_group_data AS (
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j 
+        (SELECT r.role FROM profile_roles_junction pr_j 
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -245,7 +245,7 @@ user_profile AS (
 user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM params x
-    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 -- Conditional: Get department access only if department_id provided
 user_department_access AS (
@@ -253,7 +253,7 @@ user_department_access AS (
         CASE 
             WHEN (SELECT department_id FROM params) IS NULL THEN true::boolean
             ELSE EXISTS(
-                SELECT 1 FROM profile_departments pd
+                SELECT 1 FROM profile_departments_junction pd
                 WHERE pd.profile_id = (SELECT profile_id FROM params) 
                   AND pd.department_id = (SELECT department_id FROM params) 
                   AND pd.active = true
@@ -261,7 +261,7 @@ user_department_access AS (
                 SELECT 1 FROM profile_artifact p 
                 WHERE p.id = (SELECT profile_id FROM params) 
                   AND EXISTS (
-                      SELECT 1 FROM profile_roles pr_j 
+                      SELECT 1 FROM profile_roles_junction pr_j 
                       JOIN roles_resource r ON pr_j.role_id = r.id 
                       WHERE pr_j.profile_id = p.id 
                       AND r.role = 'superadmin'::profile_type
@@ -274,14 +274,14 @@ name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT dn.name_id FROM department_names dn WHERE dn.department_id = (SELECT department_id FROM params) LIMIT 1)
+            (SELECT dn.name_id FROM department_names_junction dn WHERE dn.department_id = (SELECT department_id FROM params) LIMIT 1)
         ) as name_id,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_department_v4_name_resource 
          FROM names_draft dn 
          JOIN names_resource n ON dn.names_id = n.id 
          WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_department_v4_name_resource 
-         FROM department_names dn 
+         FROM department_names_junction dn 
          JOIN names_resource n ON dn.name_id = n.id 
          WHERE dn.department_id = (SELECT department_id FROM params) LIMIT 1) as department_name_resource
     FROM params
@@ -291,14 +291,14 @@ description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT dd.description_id FROM department_descriptions dd WHERE dd.department_id = (SELECT department_id FROM params) LIMIT 1)
+            (SELECT dd.description_id FROM department_descriptions_junction dd WHERE dd.department_id = (SELECT department_id FROM params) LIMIT 1)
         ) as description_id,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_department_v4_description_resource 
          FROM descriptions_draft dd 
          JOIN descriptions_resource d ON dd.descriptions_id = d.id 
          WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_department_v4_description_resource 
-         FROM department_descriptions dd 
+         FROM department_descriptions_junction dd 
          JOIN descriptions_resource d ON dd.description_id = d.id 
          WHERE dd.department_id = (SELECT department_id FROM params) LIMIT 1) as department_description_resource
     FROM params
@@ -308,7 +308,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT df.flag_id FROM department_flags df 
+            (SELECT df.flag_id FROM department_flags_junction df 
              JOIN flags_resource fl ON df.flag_id = fl.id 
              WHERE df.department_id = (SELECT department_id FROM params) 
                AND fl.name = 'active' 
@@ -319,7 +319,7 @@ flag_resource_data AS (
          JOIN flags_resource f ON df.flags_id = f.id 
          WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_department_v4_flag_resource 
-         FROM department_flags df 
+         FROM department_flags_junction df 
          JOIN flags_resource f ON df.flag_id = f.id 
          WHERE df.department_id = (SELECT department_id FROM params) 
            AND f.name = 'department_active' 
@@ -333,7 +333,7 @@ name_suggestions_data AS (
             (SELECT ARRAY_AGG(dn.name_id ORDER BY dn.created_at DESC)
              FROM (
                  SELECT DISTINCT dn.name_id, MAX(dn.created_at) as created_at
-                 FROM department_names dn
+                 FROM department_names_junction dn
                  JOIN names_resource n ON n.id = dn.name_id
                  CROSS JOIN draft_group_data dgd
                  WHERE dn.name_id IS NOT NULL
@@ -390,7 +390,7 @@ description_suggestions_data AS (
             (SELECT ARRAY_AGG(dd.description_id ORDER BY dd.created_at DESC)
              FROM (
                  SELECT DISTINCT dd.description_id, MAX(dd.created_at) as created_at
-                 FROM department_descriptions dd
+                 FROM department_descriptions_junction dd
                  JOIN descriptions_resource d ON d.id = dd.description_id
                  CROSS JOIN draft_group_data dgd
                  WHERE dd.description_id IS NOT NULL
@@ -456,25 +456,25 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'settings'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as settings_has_tools
     FROM params x
 ),
@@ -608,7 +608,7 @@ settings_departments_data AS (
             WHEN COUNT(ds.department_id) > 0 THEN ARRAY_AGG(ds.department_id ORDER BY ds.created_at) FILTER (WHERE ds.department_id IS NOT NULL)
             ELSE ARRAY[]::uuid[]
         END as department_ids
-    FROM department_settings ds
+    FROM department_settings_junction ds
     WHERE ds.active = true
     GROUP BY ds.settings_id
 ),
@@ -616,18 +616,18 @@ settings_data AS (
     SELECT DISTINCT
         s.id as settings_id,
         s.created_at,
-        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) as active,
         COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids,
         false as generated  -- Settings are not AI-generated
     FROM setting_artifact s
     LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
     AND (
         -- Include department-specific settings for this department (if detail mode)
         (SELECT department_id FROM params) IS NULL
         OR
         EXISTS (
-            SELECT 1 FROM department_settings ds 
+            SELECT 1 FROM department_settings_junction ds 
             WHERE ds.settings_id = s.id 
             AND ds.department_id = (SELECT department_id FROM params) 
             AND ds.active = true
@@ -635,7 +635,7 @@ settings_data AS (
         OR
         -- Include default settings (no department links)
         NOT EXISTS (
-            SELECT 1 FROM department_settings ds2 
+            SELECT 1 FROM department_settings_junction ds2 
             WHERE ds2.settings_id = s.id 
             AND ds2.active = true
         )
@@ -646,15 +646,15 @@ department_current_settings AS (
     SELECT COALESCE(
         -- Department-specific settings for this department
         (SELECT ds.settings_id
-         FROM department_settings ds
+         FROM department_settings_junction ds
          WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true
          LIMIT 1),
         -- Fallback to default settings (no department links)
         (SELECT s.id
          FROM setting_artifact s
-         WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
+         WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
          AND NOT EXISTS (
-             SELECT 1 FROM department_settings ds2 
+             SELECT 1 FROM department_settings_junction ds2 
              WHERE ds2.settings_id = s.id 
              AND ds2.active = true
          )
@@ -670,7 +670,7 @@ settings_ids_data AS (
             WHEN (SELECT department_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(ds.settings_id)
-                 FROM department_settings ds
+                 FROM department_settings_junction ds
                  WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true),
                 ARRAY[]::uuid[]
             )
@@ -684,7 +684,7 @@ settings_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at DESC)
              FROM setting_artifact s
-             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
+             WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as settings_suggestions
@@ -694,8 +694,8 @@ settings_suggestions_data AS (
 -- Cohorts data (from detail endpoint)
 user_profile_cohorts AS (
     SELECT 
-        ARRAY_AGG(cp.cohort_id ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
-    FROM profile_cohorts cp
+        ARRAY_AGG(cp.cohort_id ORDER BY (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
+    FROM profile_cohorts_junction cp
     JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE cp.profile_id = (SELECT profile_id FROM params) AND cp.active = true
 ),
@@ -713,8 +713,8 @@ all_cohort_ids AS (
 cohorts_data AS (
     SELECT DISTINCT
         c.id as cohort_id,
-        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
         false as generated  -- Cohorts are not AI-generated
     FROM cohort_artifact c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
@@ -726,7 +726,7 @@ cohort_ids_data AS (
             WHEN (SELECT department_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(cd.cohort_id ORDER BY cd.created_at)
-                 FROM cohort_departments cd
+                 FROM cohort_departments_junction cd
                  WHERE cd.department_id = (SELECT department_id FROM params) AND cd.active = true),
                 ARRAY[]::uuid[]
             )
@@ -750,8 +750,8 @@ cohort_suggestions_data AS (
 -- Departments data (from detail endpoint)
 user_profile_departments AS (
     SELECT 
-        ARRAY_AGG(pd.department_id ORDER BY (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1)) as department_ids
-    FROM profile_departments pd
+        ARRAY_AGG(pd.department_id ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1)) as department_ids
+    FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.department_id
     WHERE pd.profile_id = (SELECT profile_id FROM params) AND pd.active = true
 ),
@@ -769,12 +769,12 @@ all_department_ids AS (
 departments_data AS (
     SELECT DISTINCT
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         false as generated  -- Departments are not AI-generated
     FROM department_artifact d
     WHERE (d.id = (SELECT department_id FROM params) OR EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id))
-    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
+    AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
 -- Department IDs (selected departments - empty for departments, used for valid options)
 department_ids_data AS (
@@ -788,7 +788,7 @@ department_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(d.id ORDER BY d.created_at DESC)
              FROM departments_resource d
-             WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
+             WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
              AND EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id)
              LIMIT 20),
             ARRAY[]::uuid[]
@@ -799,23 +799,23 @@ department_suggestions_data AS (
 -- Models data (from detail endpoint)
 department_settings_for_model_keys AS (
     SELECT DISTINCT ds.settings_id
-    FROM department_settings ds
+    FROM department_settings_junction ds
     WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true
 ),
 department_models AS (
     SELECT DISTINCT
         m.id as model_id,
-        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
         false as generated  -- Models are not AI-generated
     FROM model_artifact m
-    LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
-    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = true)
+    LEFT JOIN model_departments_junction md ON md.model_id = m.id AND md.active = true
+    WHERE EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = true)
     AND (
         (SELECT department_id FROM params) IS NULL
         OR
         md.department_id = (SELECT department_id FROM params)
-        OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
+        OR NOT EXISTS (SELECT 1 FROM model_departments_junction md2 WHERE md2.model_id = m.id AND md2.active = true)
     )
 ),
 -- Model IDs (selected models - empty for departments, used for valid options)
@@ -830,7 +830,7 @@ model_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(m.id ORDER BY m.created_at DESC)
              FROM model_artifact m
-             WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = true)
+             WHERE EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = true)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as model_suggestions
@@ -858,9 +858,9 @@ keys_data AS (
         (SELECT department_id FROM params) IS NULL
         OR
         EXISTS (
-            SELECT 1 FROM setting_provider_keys spk
+            SELECT 1 FROM setting_provider_keys_junction spk
             JOIN setting_artifact s ON s.id = spk.settings_id
-            JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+            JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
             WHERE spk.key_id = kr.id AND spk.active = true
             AND ds.department_id = (SELECT department_id FROM params)
         )
@@ -892,9 +892,9 @@ model_key_associations AS (
         spk.key_id
     FROM department_models dm
     LEFT JOIN department_settings_for_model_keys dsfmk ON true
-    LEFT JOIN model_providers mp ON mp.model_id = dm.model_id
+    LEFT JOIN model_providers_junction mp ON mp.model_id = dm.model_id
     LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
+    LEFT JOIN setting_provider_keys_junction spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = dsfmk.settings_id 
         AND spk.active = true
     WHERE spk.key_id IS NOT NULL
@@ -904,14 +904,14 @@ model_key_associations AS (
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
     FROM runs_entry mr
-    JOIN agent_departments ad ON NULL::uuid = mr.agent_id AND ad.active = true
+    JOIN agent_departments_junction ad ON NULL::uuid = mr.agent_id AND ad.active = true
     WHERE ad.department_id = (SELECT department_id FROM params) AND mr.agent_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
     FROM runs_entry mr
-    JOIN profile_departments pd ON pd.profile_id = mr.profile_id AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = mr.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
@@ -929,8 +929,8 @@ model_run_costs AS (
     FROM run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
     JOIN runs_entry r ON r.id = rpu.run_id
-    JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
-    JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
+    JOIN agent_models_junction am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type
         AND pr.unit_id = rpu.unit_id
@@ -949,19 +949,19 @@ department_staff_count AS (
     SELECT 
         department_id, 
         COUNT(DISTINCT profile_id) as staff_count
-    FROM profile_departments
+    FROM profile_departments_junction
     WHERE department_id = (SELECT department_id FROM params) AND active = true
     GROUP BY department_id
     HAVING (SELECT department_id FROM params) IS NOT NULL
 ),
 department_usage AS (
     SELECT
-        (SELECT COUNT(*) FROM profile_departments WHERE department_id = (SELECT department_id FROM params) AND active = true) +
-        (SELECT COUNT(*) FROM simulation_departments WHERE department_id = (SELECT department_id FROM params) AND active = true) +
-        (SELECT COUNT(*) FROM scenario_departments WHERE department_id = (SELECT department_id FROM params) AND active = true) +
-        (SELECT COUNT(*) FROM persona_departments WHERE department_id = (SELECT department_id FROM params) AND active = true) +
-        (SELECT COUNT(*) FROM document_departments WHERE department_id = (SELECT department_id FROM params) AND active = true) +
-        (SELECT COUNT(*) FROM cohort_departments WHERE department_id = (SELECT department_id FROM params) AND active = true) as total_usage
+        (SELECT COUNT(*) FROM profile_departments_junction WHERE department_id = (SELECT department_id FROM params) AND active = true) +
+        (SELECT COUNT(*) FROM simulation_departments_junction WHERE department_id = (SELECT department_id FROM params) AND active = true) +
+        (SELECT COUNT(*) FROM scenario_departments_junction WHERE department_id = (SELECT department_id FROM params) AND active = true) +
+        (SELECT COUNT(*) FROM persona_departments_junction WHERE department_id = (SELECT department_id FROM params) AND active = true) +
+        (SELECT COUNT(*) FROM document_departments_junction WHERE department_id = (SELECT department_id FROM params) AND active = true) +
+        (SELECT COUNT(*) FROM cohort_departments_junction WHERE department_id = (SELECT department_id FROM params) AND active = true) as total_usage
     WHERE (SELECT department_id FROM params) IS NOT NULL
 )
 SELECT
@@ -1145,7 +1145,7 @@ SELECT
             ORDER BY mka.model_id, mka.key_id
         ) FROM (SELECT DISTINCT model_id, key_id FROM model_key_associations) mka),
         '{}'::types.q_get_department_v4_model_key[]
-    ) as model_keys,
+    ) as model_keys_junction,
     COALESCE(
         (SELECT draft_version FROM draft_payload_data),
         0::int

@@ -22,11 +22,11 @@ STABLE
 AS $$
     SELECT 
         p.id AS parameter_id,
-        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) AS name,
-        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter'  AND pf.value = TRUE) AS document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter'  AND pf.value = TRUE) AS simulation_parameter,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) AS name,
+        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter'  AND pf.value = TRUE) AS document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter'  AND pf.value = TRUE) AS simulation_parameter,
         p.created_at,
         p.updated_at
     FROM parameters_resource p

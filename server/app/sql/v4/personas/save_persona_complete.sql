@@ -159,17 +159,17 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM persona_names WHERE persona_id = v_persona_id;
-        DELETE FROM persona_descriptions WHERE persona_id = v_persona_id;
-        DELETE FROM persona_colors WHERE persona_id = v_persona_id;
-        DELETE FROM persona_icons WHERE persona_id = v_persona_id;
-        DELETE FROM persona_instructions WHERE persona_id = v_persona_id;
-        DELETE FROM persona_departments WHERE persona_id = v_persona_id;
-        DELETE FROM persona_fields WHERE persona_id = v_persona_id;
-        DELETE FROM persona_examples WHERE persona_id = v_persona_id;
+        DELETE FROM persona_names_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_descriptions_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_colors_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_icons_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_instructions_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_departments_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_fields_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_examples_junction WHERE persona_id = v_persona_id;
         -- Update existing active flag if it exists
-        UPDATE persona_flags SET
-            flag_id = COALESCE(v_active_flag_id, persona_flags.flag_id),
+        UPDATE persona_flags_junction SET
+            flag_id = COALESCE(v_active_flag_id, persona_flags_junction.flag_id),
             value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             updated_at = NOW()
         WHERE persona_id = v_persona_id
@@ -194,21 +194,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM persona_departments
-        WHERE persona_departments.persona_id = (SELECT p.persona_id FROM params p LIMIT 1) AND active = true
+        FROM persona_departments_junction
+        WHERE persona_departments_junction.persona_id = (SELECT p.persona_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -239,7 +239,7 @@ BEGIN
     ),
     -- Link persona to name
     link_persona_name AS (
-        INSERT INTO persona_names (persona_id, name_id, created_at, updated_at)
+        INSERT INTO persona_names_junction (persona_id, name_id, created_at, updated_at)
         SELECT 
             x.persona_id,
             x.name_id,
@@ -251,7 +251,7 @@ BEGIN
     ),
     -- Link persona to description
     link_persona_description AS (
-        INSERT INTO persona_descriptions (persona_id, description_id, created_at, updated_at)
+        INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at, updated_at)
         SELECT 
             x.persona_id,
             x.description_id,
@@ -263,7 +263,7 @@ BEGIN
     ),
     -- Link persona to color
     link_persona_color AS (
-        INSERT INTO persona_colors (persona_id, color_id, created_at, updated_at)
+        INSERT INTO persona_colors_junction (persona_id, color_id, created_at, updated_at)
         SELECT 
             x.persona_id,
             x.color_id,
@@ -275,7 +275,7 @@ BEGIN
     ),
     -- Link persona to icon
     link_persona_icon AS (
-        INSERT INTO persona_icons (persona_id, icon_id, created_at, updated_at)
+        INSERT INTO persona_icons_junction (persona_id, icon_id, created_at, updated_at)
         SELECT 
             x.persona_id,
             x.icon_id,
@@ -287,7 +287,7 @@ BEGIN
     ),
     -- Link persona to instructions
     link_persona_instruction AS (
-        INSERT INTO persona_instructions (persona_id, instruction_id, created_at, updated_at)
+        INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at, updated_at)
         SELECT 
             x.persona_id,
             x.instructions_id,
@@ -299,7 +299,7 @@ BEGIN
     ),
     -- Insert or UPDATE persona_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_persona_active_flag AS (
-        INSERT INTO persona_flags (persona_id, flag_id, value, created_at, updated_at) SELECT x.persona_id,
+        INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at, updated_at) SELECT x.persona_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_persona_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
@@ -309,13 +309,13 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'persona_active'
         ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET 
-            flag_id = COALESCE(EXCLUDED.flag_id, persona_flags.flag_id),
+            flag_id = COALESCE(EXCLUDED.flag_id, persona_flags_junction.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
+        INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at, updated_at)
         SELECT 
             x.persona_id,
             dept_id,
@@ -331,7 +331,7 @@ BEGIN
     ),
     -- Link fields (old ones already deleted above if update)
     link_fields AS (
-        INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
+        INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at, updated_at)
         SELECT 
             x.persona_id,
             field_id,
@@ -355,7 +355,7 @@ BEGIN
         WHERE COALESCE(array_length(x.example_ids, 1), 0) > 0
     ),
     link_examples AS (
-        INSERT INTO persona_examples (persona_id, example_id, idx, active, created_at)
+        INSERT INTO persona_examples_junction (persona_id, example_id, idx, active, created_at)
         SELECT 
             x.persona_id,
             ewi.ex_id,

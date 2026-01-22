@@ -124,15 +124,15 @@ profile_type_check AS (
         (SELECT profile_id FROM params) as raw_profile_id,
         CASE 
             WHEN (SELECT profile_id FROM params) IS NULL THEN NULL::uuid
-            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = (SELECT profile_id FROM params) LIMIT 1) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            WHEN (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = (SELECT profile_id FROM params) LIMIT 1) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
             ELSE (SELECT profile_id FROM params)
         END as effective_profile_id
 ),
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -145,11 +145,11 @@ runs_base AS (
         mr.created_at,
         mr.input_tokens,
         mr.output_tokens,
-        (SELECT am.model_id FROM agent_models am WHERE am.agent_id = mr.agent_id AND am.active = true LIMIT 1) as model_id,
+        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = mr.agent_id AND am.active = true LIMIT 1) as model_id,
         mr.profile_id,
         mr.agent_id,
         NULL::uuid as persona_id,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
+        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         sa.archived
     FROM runs_entry mr
     -- Join to simulations via runs_entry.group_id → groups_entry → chats_entry (direct group_id) → attempts_entry → simulations
@@ -162,12 +162,12 @@ runs_base AS (
         -- Date filters (always required)
         mr.created_at >= p.start_date
         AND mr.created_at <= p.end_date
-        -- Department filter (via profile_departments join)
+        -- Department filter (via profile_departments_junction join)
         AND (
             p.department_ids IS NULL
             OR COALESCE(array_length(p.department_ids, 1), 0) = 0
             OR EXISTS (
-                SELECT 1 FROM profile_departments pd
+                SELECT 1 FROM profile_departments_junction pd
                 WHERE pd.profile_id = mr.profile_id
                   AND pd.department_id = ANY(p.department_ids)
             )
@@ -185,17 +185,17 @@ runs_base AS (
             OR mr.profile_id IN (
                 SELECT DISTINCT p.id
                 FROM profile_artifact p
-                LEFT JOIN profile_roles pr_j ON pr_j.profile_id = p.id
+                LEFT JOIN profile_roles_junction pr_j ON pr_j.profile_id = p.id
                 LEFT JOIN roles_resource r ON pr_j.role_id = r.id
                 WHERE COALESCE(r.role, 'member'::profile_type)::text = ANY((SELECT roles FROM params)::text[])
             )
         )
-        -- Cohort filter (via profile_cohorts)
+        -- Cohort filter (via profile_cohorts_junction)
         AND (
             p.cohort_ids IS NULL
             OR COALESCE(array_length(p.cohort_ids, 1), 0) = 0
             OR mr.profile_id IN (
-                SELECT profile_id FROM profile_cohorts
+                SELECT profile_id FROM profile_cohorts_junction
                 WHERE cohort_id = ANY(p.cohort_ids) AND active = true
             )
         )
@@ -207,8 +207,8 @@ runs_base AS (
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
             OR sim.id IS NULL  -- Runs not linked to simulations are always included
             OR (
-                ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
-                ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
                 ('archived' = ANY(p.simulation_filters) AND COALESCE(sa.archived, FALSE) = TRUE)
             )
         )
@@ -229,8 +229,8 @@ run_costs AS (
         ), 0) as run_cost
     FROM run_pricing_entry rpu
     JOIN runs_entry r ON r.id = rpu.run_id
-    JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
-    JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
+    JOIN agent_models_junction am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type
         AND pr.unit_id = rpu.unit_id
@@ -268,7 +268,7 @@ model_pricing_aggregated AS (
         COALESCE(SUM(CASE WHEN pr.pricing_type = 'input'::pricing_type THEN pr.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as input_ppm,
         COALESCE(SUM(CASE WHEN pr.pricing_type = 'output'::pricing_type THEN pr.price * (1000000.0 / u.value) ELSE 0 END), 0.0) as output_ppm
     FROM (SELECT DISTINCT model_id FROM runs_base WHERE model_id IS NOT NULL) mrb
-    LEFT JOIN model_pricing mp ON mp.model_id = mrb.model_id AND mp.active = true
+    LEFT JOIN model_pricing_junction mp ON mp.model_id = mrb.model_id AND mp.active = true
     LEFT JOIN pricing_resource pr ON pr.id = mp.pricing_id AND pr.active = true AND pr.pricing_type IN ('input'::pricing_type, 'output'::pricing_type)
     LEFT JOIN artifact_units_relation u ON u.id = pr.unit_id
     GROUP BY mrb.model_id
@@ -284,25 +284,25 @@ SELECT
     ) as model_runs,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_analytics_v4_model
+            DISTINCT (m.id, (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_analytics_v4_model
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_model[]
     ) as models,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''))::types.q_get_pricing_analytics_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''))::types.q_get_pricing_analytics_v4_profile
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_profile[]
     ) as profiles,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_analytics_v4_agent
+            DISTINCT (a.id, (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_analytics_v4_agent
         ) FILTER (WHERE a.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_agent[]
     ) as agents,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (per.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))::types.q_get_pricing_analytics_v4_persona
+            DISTINCT (per.id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))::types.q_get_pricing_analytics_v4_persona
         ) FILTER (WHERE per.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_persona[]
     ) as personas

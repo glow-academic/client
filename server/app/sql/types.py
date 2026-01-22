@@ -1670,7 +1670,7 @@ class GetSimulationAttemptSqlRow(BaseModel):
     simulation: QGetSimulationAttemptV4Simulation | None = None
     attempt_profiles: list[QGetSimulationAttemptV4AttemptProfile] | None = None
     chats_entry: list[QGetSimulationAttemptV4ChatData] | None = None
-    scenario_documents: list[QGetSimulationAttemptV4ScenarioDocument] | None = None
+    scenario_documents_junction: list[QGetSimulationAttemptV4ScenarioDocument] | None = None
     aggregated_results: QGetSimulationAttemptV4AggregatedResults | None = None
     timer: QGetSimulationAttemptV4Timer | None = None
     current_chat_index: int | None = None
@@ -1700,7 +1700,7 @@ class GetSimulationAttemptApiResponse(BaseModel):
     simulation: QGetSimulationAttemptV4Simulation | None = None
     attempt_profiles: list[QGetSimulationAttemptV4AttemptProfile] | None = None
     chats_entry: list[QGetSimulationAttemptV4ChatData] | None = None
-    scenario_documents: list[QGetSimulationAttemptV4ScenarioDocument] | None = None
+    scenario_documents_junction: list[QGetSimulationAttemptV4ScenarioDocument] | None = None
     aggregated_results: QGetSimulationAttemptV4AggregatedResults | None = None
     timer: QGetSimulationAttemptV4Timer | None = None
     current_chat_index: int | None = None
@@ -2117,7 +2117,7 @@ class GetAuthSqlRow(BaseModel):
     slugs_required: bool | None = None
     slug_suggestions: list[UUID] | None = None
     slugs: list[QGetAuthV4Slug] | None = None
-    auth_items: list[QGetAuthV4AuthItem] | None = None
+    auth_items_junction: list[QGetAuthV4AuthItem] | None = None
     auth_item_ids: Any | None = None
     auth_item_active_states: Any | None = None
     auth_item_encrypted_states: Any | None = None
@@ -2170,7 +2170,7 @@ class GetAuthApiResponse(BaseModel):
     slugs_required: bool | None = None
     slug_suggestions: list[UUID] | None = None
     slugs: list[QGetAuthV4Slug] | None = None
-    auth_items: list[QGetAuthV4AuthItem] | None = None
+    auth_items_junction: list[QGetAuthV4AuthItem] | None = None
     auth_item_ids: Any | None = None
     auth_item_active_states: Any | None = None
     auth_item_encrypted_states: Any | None = None
@@ -2774,7 +2774,7 @@ class GetBenchmarkOverviewSqlRow(BaseModel):
     agents: list[QGetBenchmarkOverviewV4Agent] | None = None
     standard_groups: list[QGetBenchmarkOverviewV4StandardGroup] | None = None
     standards: list[QGetBenchmarkOverviewV4Standard] | None = None
-    rubric_standard_groups: list[QGetBenchmarkOverviewV4RubricStandardGroup] | None = None
+    rubric_standard_groups_junction: list[QGetBenchmarkOverviewV4RubricStandardGroup] | None = None
     rubric_options: list[QGetBenchmarkOverviewV4RubricOption] | None = None
     department_options: list[QGetBenchmarkOverviewV4DepartmentOption] | None = None
     agent_options: list[QGetBenchmarkOverviewV4AgentOption] | None = None
@@ -2793,7 +2793,7 @@ class GetBenchmarkOverviewApiResponse(BaseModel):
     agents: list[QGetBenchmarkOverviewV4Agent] | None = None
     standard_groups: list[QGetBenchmarkOverviewV4StandardGroup] | None = None
     standards: list[QGetBenchmarkOverviewV4Standard] | None = None
-    rubric_standard_groups: list[QGetBenchmarkOverviewV4RubricStandardGroup] | None = None
+    rubric_standard_groups_junction: list[QGetBenchmarkOverviewV4RubricStandardGroup] | None = None
     rubric_options: list[QGetBenchmarkOverviewV4RubricOption] | None = None
     department_options: list[QGetBenchmarkOverviewV4DepartmentOption] | None = None
     agent_options: list[QGetBenchmarkOverviewV4AgentOption] | None = None
@@ -2995,7 +2995,7 @@ class GetEvalsListSqlRow(BaseModel):
     agents: list[QListEvalsV4Agent] | None = None
     standard_groups: list[QListEvalsV4StandardGroup] | None = None
     standards: list[QListEvalsV4Standard] | None = None
-    rubric_standard_groups: list[QListEvalsV4RubricStandardGroup] | None = None
+    rubric_standard_groups_junction: list[QListEvalsV4RubricStandardGroup] | None = None
     rubric_options: list[QListEvalsV4Option] | None = None
     department_options: list[QListEvalsV4Option] | None = None
     agent_options: list[QListEvalsV4Option] | None = None
@@ -3013,7 +3013,7 @@ class GetEvalsListApiResponse(BaseModel):
     agents: list[QListEvalsV4Agent] | None = None
     standard_groups: list[QListEvalsV4StandardGroup] | None = None
     standards: list[QListEvalsV4Standard] | None = None
-    rubric_standard_groups: list[QListEvalsV4RubricStandardGroup] | None = None
+    rubric_standard_groups_junction: list[QListEvalsV4RubricStandardGroup] | None = None
     rubric_options: list[QListEvalsV4Option] | None = None
     department_options: list[QListEvalsV4Option] | None = None
     agent_options: list[QListEvalsV4Option] | None = None
@@ -3975,8 +3975,8 @@ class QGetDashboardBundleV4AttemptHistoryRow(BaseModel):
     num_scenarios_completed: int | None
     infinite_mode: bool | None
     time_limit: int | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
     score: int | None
     score_status: str | None
     simulation_id: UUID | None
@@ -3988,7 +3988,7 @@ class QGetDashboardBundleV4AttemptHistoryRow(BaseModel):
     practice_simulation: bool | None
     pass_pct: int | None
     department_ids: list[str] | None
-    cohort_names: list[str] | None
+    cohort_names_junction: list[str] | None
     practice_scenario_id: UUID | None
 
 
@@ -4291,7 +4291,7 @@ class QGetDashboardBundleV4PersonaPerformanceResponse(BaseModel):
 
     chart_data: list[QGetDashboardBundleV4PersonaPerformanceData] | None
     valid_simulation_ids: list[str] | None
-    persona_colors: list[QGetDashboardBundleV4PersonaColor] | None
+    persona_colors_junction: list[QGetDashboardBundleV4PersonaColor] | None
 
 
 
@@ -4585,8 +4585,8 @@ class QGetDashboardHistoryV4AttemptHistoryRow(BaseModel):
     num_scenarios_completed: int | None
     infinite_mode: bool | None
     time_limit: int | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
     score: int | None
     score_status: str | None
     simulation_id: UUID | None
@@ -4598,7 +4598,7 @@ class QGetDashboardHistoryV4AttemptHistoryRow(BaseModel):
     practice_simulation: bool | None
     pass_pct: int | None
     department_ids: list[str] | None
-    cohort_names: list[str] | None
+    cohort_names_junction: list[str] | None
     practice_scenario_id: UUID | None
 
 
@@ -4636,7 +4636,7 @@ class GetDashboardHistorySqlRow(BaseModel):
     unarchived_count: int | None = None
     profile_options: list[QGetDashboardHistoryV4ProfileOption] | None = None
     simulation_options: list[QGetDashboardHistoryV4SimulationOption] | None = None
-    scenario_options: list[QGetDashboardHistoryV4ScenarioOption] | None = None
+    scenario_options_junction: list[QGetDashboardHistoryV4ScenarioOption] | None = None
 
 class GetDashboardHistoryApiRequest(BaseModel):
 
@@ -4664,7 +4664,7 @@ class GetDashboardHistoryApiResponse(BaseModel):
     unarchived_count: int | None = None
     profile_options: list[QGetDashboardHistoryV4ProfileOption] | None = None
     simulation_options: list[QGetDashboardHistoryV4SimulationOption] | None = None
-    scenario_options: list[QGetDashboardHistoryV4ScenarioOption] | None = None
+    scenario_options_junction: list[QGetDashboardHistoryV4ScenarioOption] | None = None
 
 
 
@@ -4909,7 +4909,7 @@ class GetDepartmentSqlRow(BaseModel):
     valid_department_ids: list[UUID] | None = None
     valid_model_ids: list[UUID] | None = None
     valid_key_ids: list[UUID] | None = None
-    model_keys: list[QGetDepartmentV4ModelKey] | None = None
+    model_keys_junction: list[QGetDepartmentV4ModelKey] | None = None
     draft_version: int | None = None
 
 class GetDepartmentApiRequest(BaseModel):
@@ -4989,7 +4989,7 @@ class GetDepartmentApiResponse(BaseModel):
     valid_department_ids: list[UUID] | None = None
     valid_model_ids: list[UUID] | None = None
     valid_key_ids: list[UUID] | None = None
-    model_keys: list[QGetDepartmentV4ModelKey] | None = None
+    model_keys_junction: list[QGetDepartmentV4ModelKey] | None = None
     draft_version: int | None = None
 
 
@@ -5751,7 +5751,7 @@ class GetDocumentsListSqlRow(BaseModel):
     fields: list[QListDocumentsV4Field] | None = None
     departments: list[QListDocumentsV4Department] | None = None
     parameters: list[QListDocumentsV4Parameter] | None = None
-    scenario_options: list[QListDocumentsV4ScenarioOption] | None = None
+    scenario_options_junction: list[QListDocumentsV4ScenarioOption] | None = None
     department_options: list[QListDocumentsV4DepartmentOption] | None = None
     valid_department_ids: list[str] | None = None
     document_type_options: list[str] | None = None
@@ -5768,7 +5768,7 @@ class GetDocumentsListApiResponse(BaseModel):
     fields: list[QListDocumentsV4Field] | None = None
     departments: list[QListDocumentsV4Department] | None = None
     parameters: list[QListDocumentsV4Parameter] | None = None
-    scenario_options: list[QListDocumentsV4ScenarioOption] | None = None
+    scenario_options_junction: list[QListDocumentsV4ScenarioOption] | None = None
     department_options: list[QListDocumentsV4DepartmentOption] | None = None
     valid_department_ids: list[str] | None = None
     document_type_options: list[str] | None = None
@@ -7210,8 +7210,8 @@ class QGetHomeHistoryV4AttemptHistoryRow(BaseModel):
     num_scenarios_completed: int | None
     infinite_mode: bool | None
     time_limit: int | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
     score: int | None
     score_status: str | None
     simulation_id: UUID | None
@@ -7223,7 +7223,7 @@ class QGetHomeHistoryV4AttemptHistoryRow(BaseModel):
     practice_simulation: bool | None
     pass_pct: int | None
     department_ids: list[str] | None
-    cohort_names: list[str] | None
+    cohort_names_junction: list[str] | None
     practice_scenario_id: UUID | None
 
 
@@ -7245,7 +7245,7 @@ class GetHomeHistorySqlRow(BaseModel):
     total_pages: int | None = None
     profile_options: list[QGetHomeHistoryV4Option] | None = None
     simulation_options: list[QGetHomeHistoryV4Option] | None = None
-    scenario_options: list[QGetHomeHistoryV4Option] | None = None
+    scenario_options_junction: list[QGetHomeHistoryV4Option] | None = None
 
 class GetHomeHistoryApiRequest(BaseModel):
 
@@ -7275,7 +7275,7 @@ class GetHomeHistoryApiResponse(BaseModel):
     total_pages: int | None = None
     profile_options: list[QGetHomeHistoryV4Option] | None = None
     simulation_options: list[QGetHomeHistoryV4Option] | None = None
-    scenario_options: list[QGetHomeHistoryV4Option] | None = None
+    scenario_options_junction: list[QGetHomeHistoryV4Option] | None = None
 
 
 
@@ -7331,7 +7331,7 @@ class QGetHomeOverviewV4SimulationItem(BaseModel):
     not_started_count: int | None
     pass_pct: int | None
     cohort_name: str | None
-    cohort_names: str | None
+    cohort_names_junction: str | None
 
 
 
@@ -10246,7 +10246,7 @@ class GetParametersListSqlRow(BaseModel):
     scenarios: list[QListParametersV4Scenario] | None = None
     departments: list[QListParametersV4Department] | None = None
     documents: list[QListParametersV4Document] | None = None
-    scenario_options: list[QListParametersV4ScenarioOption] | None = None
+    scenario_options_junction: list[QListParametersV4ScenarioOption] | None = None
     document_options: list[QListParametersV4DocumentOption] | None = None
 
 class GetParametersListApiRequest(BaseModel):
@@ -10260,7 +10260,7 @@ class GetParametersListApiResponse(BaseModel):
     scenarios: list[QListParametersV4Scenario] | None = None
     departments: list[QListParametersV4Department] | None = None
     documents: list[QListParametersV4Document] | None = None
-    scenario_options: list[QListParametersV4ScenarioOption] | None = None
+    scenario_options_junction: list[QListParametersV4ScenarioOption] | None = None
     document_options: list[QListParametersV4DocumentOption] | None = None
 
 
@@ -11209,8 +11209,8 @@ class QGetPracticeHistoryV4Attempt(BaseModel):
     num_scenarios_completed: int | None
     infinite_mode: bool | None
     time_limit: int | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
     score: int | None
     score_status: str | None
     simulation_id: UUID | None
@@ -11222,7 +11222,7 @@ class QGetPracticeHistoryV4Attempt(BaseModel):
     practice_simulation: bool | None
     pass_pct: int | None
     department_ids: list[str] | None
-    cohort_names: list[str] | None
+    cohort_names_junction: list[str] | None
     practice_scenario_id: str | None
 
 
@@ -11261,7 +11261,7 @@ class GetPracticeHistorySqlRow(BaseModel):
     total_pages: int | None = None
     profile_options: list[QGetPracticeHistoryV4ProfileOption] | None = None
     simulation_options: list[QGetPracticeHistoryV4SimulationOption] | None = None
-    scenario_options: list[QGetPracticeHistoryV4ScenarioOption] | None = None
+    scenario_options_junction: list[QGetPracticeHistoryV4ScenarioOption] | None = None
 
 class GetPracticeHistoryApiRequest(BaseModel):
 
@@ -11285,7 +11285,7 @@ class GetPracticeHistoryApiResponse(BaseModel):
     total_pages: int | None = None
     profile_options: list[QGetPracticeHistoryV4ProfileOption] | None = None
     simulation_options: list[QGetPracticeHistoryV4SimulationOption] | None = None
-    scenario_options: list[QGetPracticeHistoryV4ScenarioOption] | None = None
+    scenario_options_junction: list[QGetPracticeHistoryV4ScenarioOption] | None = None
 
 
 
@@ -13407,7 +13407,7 @@ class QReportsBundleV4Simulation(BaseModel):
     name: str | None
     description: str | None
     rubric_id: UUID | None
-    rubric_points: int | None
+    rubric_points_junction: int | None
     rubric_pass_points: int | None
 
 class GetReportsBundleSqlRow(BaseModel):
@@ -13420,7 +13420,7 @@ class GetReportsBundleSqlRow(BaseModel):
     total_pages: int | None = None
     profile_options: list[QReportsBundleV4FilterOption] | None = None
     simulation_options: list[QReportsBundleV4FilterOption] | None = None
-    scenario_options: list[QReportsBundleV4FilterOption] | None = None
+    scenario_options_junction: list[QReportsBundleV4FilterOption] | None = None
     scenarios: list[QReportsBundleV4Scenario] | None = None
     simulations: list[QReportsBundleV4Simulation] | None = None
 
@@ -13451,7 +13451,7 @@ class GetReportsBundleApiResponse(BaseModel):
     total_pages: int | None = None
     profile_options: list[QReportsBundleV4FilterOption] | None = None
     simulation_options: list[QReportsBundleV4FilterOption] | None = None
-    scenario_options: list[QReportsBundleV4FilterOption] | None = None
+    scenario_options_junction: list[QReportsBundleV4FilterOption] | None = None
     scenarios: list[QReportsBundleV4Scenario] | None = None
     simulations: list[QReportsBundleV4Simulation] | None = None
 
@@ -13511,8 +13511,8 @@ class QReportsHistoryV4AttemptHistoryRow(BaseModel):
     num_scenarios_completed: int | None
     infinite_mode: bool | None
     time_limit: int | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
     score: int | None
     score_status: str | None
     simulation_id: UUID | None
@@ -13524,7 +13524,7 @@ class QReportsHistoryV4AttemptHistoryRow(BaseModel):
     practice_simulation: bool | None
     pass_pct: int | None
     department_ids: list[str] | None
-    cohort_names: list[str] | None
+    cohort_names_junction: list[str] | None
     practice_scenario_id: UUID | None
 
 
@@ -13548,7 +13548,7 @@ class GetReportsHistorySqlRow(BaseModel):
     total_pages: int | None = None
     profile_options: list[QReportsHistoryV4FilterOption] | None = None
     simulation_options: list[QReportsHistoryV4FilterOption] | None = None
-    scenario_options: list[QReportsHistoryV4FilterOption] | None = None
+    scenario_options_junction: list[QReportsHistoryV4FilterOption] | None = None
 
 class GetReportsHistoryApiRequest(BaseModel):
 
@@ -13582,7 +13582,7 @@ class GetReportsHistoryApiResponse(BaseModel):
     total_pages: int | None = None
     profile_options: list[QReportsHistoryV4FilterOption] | None = None
     simulation_options: list[QReportsHistoryV4FilterOption] | None = None
-    scenario_options: list[QReportsHistoryV4FilterOption] | None = None
+    scenario_options_junction: list[QReportsHistoryV4FilterOption] | None = None
 
 
 
@@ -13622,8 +13622,8 @@ class QReportsOverviewV4AttemptHistoryRow(BaseModel):
     num_scenarios_completed: int | None
     infinite_mode: bool | None
     time_limit: int | None
-    persona_names: list[str] | None
-    persona_colors: list[str] | None
+    persona_names_junction: list[str] | None
+    persona_colors_junction: list[str] | None
     score: int | None
     score_status: str | None
     simulation_id: UUID | None
@@ -13635,7 +13635,7 @@ class QReportsOverviewV4AttemptHistoryRow(BaseModel):
     practice_simulation: bool | None
     pass_pct: int | None
     department_ids: list[str] | None
-    cohort_names: list[str] | None
+    cohort_names_junction: list[str] | None
     practice_scenario_id: UUID | None
 
 
@@ -13938,7 +13938,7 @@ class QReportsOverviewV4PersonaPerformanceResponse(BaseModel):
 
     chart_data: list[QReportsOverviewV4PersonaPerformanceData] | None
     valid_simulation_ids: list[str] | None
-    persona_colors: list[QReportsOverviewV4PersonaColor] | None
+    persona_colors_junction: list[QReportsOverviewV4PersonaColor] | None
 
 
 
@@ -14139,7 +14139,7 @@ class GetReportsOverviewSqlRow(BaseModel):
 
     actor_name: str | None = None
     profile_name: str | None = None
-    profile_emails: list[str] | None = None
+    profile_emails_junction: list[str] | None = None
     profile_primary_email: str | None = None
     profile_type: str | None = None
     profile_id: UUID | None = None
@@ -14170,7 +14170,7 @@ class GetReportsOverviewApiResponse(BaseModel):
 
     actor_name: str | None = None
     profile_name: str | None = None
-    profile_emails: list[str] | None = None
+    profile_emails_junction: list[str] | None = None
     profile_primary_email: str | None = None
     profile_type: str | None = None
     profile_id: UUID | None = None
@@ -18491,7 +18491,7 @@ class QGetSettingV4Auth(BaseModel):
     description: str | None
     slug: str | None
     active: bool | None
-    auth_items: list[QGetSettingV4AuthItem] | None
+    auth_items_junction: list[QGetSettingV4AuthItem] | None
 
 
 

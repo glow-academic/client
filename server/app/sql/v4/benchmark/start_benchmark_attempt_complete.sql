@@ -23,25 +23,25 @@ WITH new_attempt AS (
 eval_data AS (
     SELECT 
         e.id as eval_id,
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = TRUE) as dynamic,
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE) as use_groups
+        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = TRUE) as dynamic,
+        EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE) as use_groups
     FROM eval_artifact e
     WHERE e.id = api_start_benchmark_attempt_v4.eval_id
 ),
 eval_agents_data AS (
     SELECT 
         ARRAY_AGG(ea.agent_id::text ORDER BY ea.created_at) as agent_ids
-    FROM eval_agents ea
+    FROM eval_agents_junction ea
     WHERE ea.eval_id = api_start_benchmark_attempt_v4.eval_id
 ),
 pending_runs AS (
     SELECT ARRAY_AGG(er.run_id::uuid) FILTER (WHERE er.completed = false) as pending_run_ids
-    FROM eval_runs er
+    FROM eval_runs_junction er
     WHERE er.eval_id = api_start_benchmark_attempt_v4.eval_id AND er.completed = false
 ),
 pending_groups AS (
     SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM grades_entry gr WHERE gr.group_id = eg.group_id)) as pending_group_ids
-    FROM eval_groups eg
+    FROM eval_groups_junction eg
     WHERE eg.eval_id = api_start_benchmark_attempt_v4.eval_id
       AND NOT EXISTS (SELECT 1 FROM grades_entry gr WHERE gr.group_id = eg.group_id)
 )

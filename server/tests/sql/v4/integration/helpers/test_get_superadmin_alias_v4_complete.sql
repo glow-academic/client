@@ -19,10 +19,10 @@ AS $$
         pe.profile_id,
         pe.email,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             'System'
         ) as actor_name
-    FROM profile_emails pe
+    FROM profile_emails_junction pe
     JOIN profiles_resource p ON p.id = pe.profile_id
     WHERE pe.email = test_get_superadmin_alias_v4.email
       AND pe.active = true

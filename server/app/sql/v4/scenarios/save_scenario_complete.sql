@@ -268,148 +268,148 @@ BEGIN
 
     -- For update: remove old links first
     IF NOT is_create THEN
-        DELETE FROM scenario_names WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_descriptions WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_flags WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_departments WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_personas WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_documents WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_templates WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_parameters WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_fields WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_images WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_objectives WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_problem_statements WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_videos WHERE scenario_id = v_scenario_id;
-        DELETE FROM scenario_questions WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_names_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_descriptions_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_flags_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_departments_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_personas_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_documents_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_templates_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_parameters_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_fields_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_images_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_objectives_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_problem_statements_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_videos_junction WHERE scenario_id = v_scenario_id;
+        DELETE FROM scenario_questions_junction WHERE scenario_id = v_scenario_id;
     END IF;
 
     -- Link resources
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO scenario_names (scenario_id, name_id, created_at, updated_at)
+        INSERT INTO scenario_names_junction (scenario_id, name_id, created_at, updated_at)
         VALUES (v_scenario_id, v_name_id, NOW(), NOW())
         ON CONFLICT (scenario_id, name_id) DO UPDATE SET updated_at = NOW();
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO scenario_descriptions (scenario_id, description_id, created_at, updated_at)
+        INSERT INTO scenario_descriptions_junction (scenario_id, description_id, created_at, updated_at)
         VALUES (v_scenario_id, v_description_id, NOW(), NOW())
         ON CONFLICT (scenario_id, description_id) DO UPDATE SET updated_at = NOW();
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_active_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_objectives_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_objectives_enabled_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_images_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_images_enabled_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_video_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_video_enabled_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_questions_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_questions_enabled_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_problem_statement_enabled_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_problem_statement_enabled_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_use_templates_flag_id IS NOT NULL THEN
-        INSERT INTO scenario_flags (scenario_id, flag_id, value, created_at, updated_at)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at)
         VALUES (v_scenario_id, v_use_templates_flag_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, flag_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
 
     IF v_department_ids IS NOT NULL THEN
-        INSERT INTO scenario_departments (scenario_id, department_id, active, created_at, updated_at)
+        INSERT INTO scenario_departments_junction (scenario_id, department_id, active, created_at, updated_at)
         SELECT v_scenario_id, dept_id, true, NOW(), NOW()
         FROM UNNEST(v_department_ids) as dept_id
         ON CONFLICT (scenario_id, department_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_persona_ids IS NOT NULL THEN
-        INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
+        INSERT INTO scenario_personas_junction (scenario_id, persona_id, active, created_at, updated_at)
         SELECT v_scenario_id, persona_id, true, NOW(), NOW()
         FROM UNNEST(v_persona_ids) as persona_id
         ON CONFLICT (scenario_id, persona_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_document_ids IS NOT NULL THEN
-        INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
+        INSERT INTO scenario_documents_junction (scenario_id, document_id, active, created_at, updated_at)
         SELECT v_scenario_id, doc_id, true, NOW(), NOW()
         FROM UNNEST(v_document_ids) as doc_id
         ON CONFLICT (scenario_id, document_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_template_document_ids IS NOT NULL THEN
-        INSERT INTO scenario_templates (scenario_id, template_id, active, created_at, updated_at)
+        INSERT INTO scenario_templates_junction (scenario_id, template_id, active, created_at, updated_at)
         SELECT v_scenario_id, template_id, true, NOW(), NOW()
         FROM UNNEST(v_template_document_ids) as template_id
         ON CONFLICT (scenario_id, template_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_parameter_ids IS NOT NULL THEN
-        INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
+        INSERT INTO scenario_parameters_junction (scenario_id, parameter_id, active, created_at, updated_at)
         SELECT v_scenario_id, param_id, true, NOW(), NOW()
         FROM UNNEST(v_parameter_ids) as param_id
         ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_field_ids IS NOT NULL THEN
-        INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
+        INSERT INTO scenario_fields_junction (scenario_id, field_id, active, created_at, updated_at)
         SELECT v_scenario_id, field_id, true, NOW(), NOW()
         FROM UNNEST(v_field_ids) as field_id
         ON CONFLICT (scenario_id, field_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_image_ids IS NOT NULL THEN
-        INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+        INSERT INTO scenario_images_junction (scenario_id, image_id, active, created_at, updated_at)
         SELECT v_scenario_id, image_id, true, NOW(), NOW()
         FROM UNNEST(v_image_ids) as image_id
         ON CONFLICT (scenario_id, image_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_objective_ids IS NOT NULL THEN
-        INSERT INTO scenario_objectives (scenario_id, objective_id, active, created_at, updated_at)
+        INSERT INTO scenario_objectives_junction (scenario_id, objective_id, active, created_at, updated_at)
         SELECT v_scenario_id, objective_id, true, NOW(), NOW()
         FROM UNNEST(v_objective_ids) as objective_id
         ON CONFLICT (scenario_id, objective_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_problem_statement_id IS NOT NULL THEN
-        INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
+        INSERT INTO scenario_problem_statements_junction (scenario_id, problem_statement_id, active, created_at, updated_at)
         VALUES (v_scenario_id, v_problem_statement_id, true, NOW(), NOW())
         ON CONFLICT (scenario_id, problem_statement_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_video_ids IS NOT NULL THEN
-        INSERT INTO scenario_videos (scenario_id, video_id, active, created_at, updated_at)
+        INSERT INTO scenario_videos_junction (scenario_id, video_id, active, created_at, updated_at)
         SELECT v_scenario_id, video_id, true, NOW(), NOW()
         FROM UNNEST(v_video_ids) as video_id
         ON CONFLICT (scenario_id, video_id) DO UPDATE SET active = true, updated_at = NOW();
     END IF;
 
     IF v_question_ids IS NOT NULL THEN
-        INSERT INTO scenario_questions (scenario_id, question_id, active, created_at, updated_at)
+        INSERT INTO scenario_questions_junction (scenario_id, question_id, active, created_at, updated_at)
         SELECT v_scenario_id, question_id, true, NOW(), NOW()
         FROM UNNEST(v_question_ids) as question_id
         ON CONFLICT (scenario_id, question_id) DO UPDATE SET active = true, updated_at = NOW();
@@ -420,7 +420,7 @@ BEGIN
     SELECT 
         v_scenario_id,
         COALESCE(
-            (SELECT (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
+            (SELECT (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
              FROM profile_artifact p
              WHERE p.id = v_profile_id),
             ''

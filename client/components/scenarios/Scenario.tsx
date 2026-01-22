@@ -521,6 +521,8 @@ function ScenarioComponent({
     scenarioData && "draft_version" in scenarioData
       ? (scenarioData as { draft_version?: number | null }).draft_version
       : null;
+  // Track if version has been synced from server to prevent patching before sync
+  const versionSyncedRef = useRef(false);
   useEffect(() => {
     if (
       typeof draftVersion === "number" &&
@@ -529,6 +531,7 @@ function ScenarioComponent({
       setLastSavedVersion(draftVersion);
       lastSavedVersionRef.current = draftVersion;
     }
+    versionSyncedRef.current = true; // Mark as synced
   }, [draftVersion]);
 
   const patchScenarioDraftActionRef = useRef(patchScenarioDraftAction);
@@ -589,6 +592,11 @@ function ScenarioComponent({
 
   const lastPatchedKeyRef = useRef<string | null>(null);
 
+  // Track if there are pending changes for beforeunload warning
+  const hasPendingChangesRef = useRef(false);
+
+  // Draft change listener - watches resource IDs and patches draft
+  // Only triggers when the payload actually changes, not when version changes
   useEffect(() => {
     const hasResourceIds =
       formState.name_id ||
@@ -612,17 +620,43 @@ function ScenarioComponent({
       formState.video_ids.length > 0 ||
       formState.question_ids.length > 0;
 
+    // Debug logging at effect start
+    console.debug("[Scenario Draft] Effect triggered", {
+      hasResourceIds,
+      draftPatchKey: draftPatchKey.substring(0, 100) + "...",
+      lastPatchedKey: lastPatchedKeyRef.current?.substring(0, 50),
+    });
+
     if (!hasResourceIds || !patchScenarioDraftActionRef.current) {
       return;
     }
 
+    // Wait for version sync before patching to prevent race conditions
+    // Only block if there's an actual numeric version to sync (not null for new scenarios)
+    if (typeof scenarioData?.draft_version === "number" && !versionSyncedRef.current) {
+      console.debug("[Scenario Draft] Waiting for version sync");
+      return;
+    }
+
+    // ✅ If nothing changed since the last successful patch, do nothing.
     if (lastPatchedKeyRef.current === draftPatchKey) {
       return;
     }
 
+    // Mark that we have pending changes (for beforeunload warning)
+    hasPendingChangesRef.current = true;
+
     const timer = setTimeout(async () => {
       try {
         if (!patchScenarioDraftActionRef.current) return;
+
+        // Debug logging before API call
+        console.debug("[Scenario Draft] Calling patch API", {
+          input_draft_id: draftId,
+          expected_version: lastSavedVersionRef.current,
+          fields: Object.keys(formState).filter(k => formState[k as keyof typeof formState]),
+        });
+
         const result = await patchScenarioDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
@@ -651,24 +685,61 @@ function ScenarioComponent({
           },
         });
 
+        // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
 
-        if (result.draft_id && result.draft_id !== draftId) {
+        if (!draftId && result.draft_id) {
+          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+          toast.success("Draft created", {
+            description: "Your changes are being auto-saved",
+          });
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        } else if (result.draft_id && result.draft_id !== draftId) {
           // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
+
+        // Debug logging after success
+        console.debug("[Scenario Draft] Patch succeeded", {
+          draft_id: result.draft_id,
+          new_version: result.new_version,
+        });
 
         if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
           setLastSavedVersion(result.new_version ?? 0);
           lastSavedVersionRef.current = result.new_version ?? 0;
         }
-      } catch {
-        // Draft save failed - API logs handle details
+
+        // Clear pending changes flag after successful save
+        hasPendingChangesRef.current = false;
+      } catch (error) {
+        // Log error for debugging
+        console.error("[Scenario Draft] Patch failed:", error);
+        // Show user feedback
+        toast.error("Failed to save draft", {
+          description: "Your changes may not have been saved. Please try again.",
+        });
+        // Don't update lastPatchedKeyRef on failure so we retry on next change
       }
     }, 1000);
 
     return () => clearTimeout(timer);
+    // ✅ Trigger only when payload changes, not when version changes
+    // patchScenarioDraftAction is accessed via ref to prevent effect recreation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftPatchKey, draftId, formState]);
+
+  // Warn users about unsaved changes when navigating away
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes.";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   const stableScenarioDataFields = useMemo(() => {
     if (!scenarioData) return null;

@@ -24,7 +24,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = agents_resource.id LIMIT 1) as name
+    SELECT (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = agents_resource.id LIMIT 1) as name
     FROM agents_resource
     WHERE agents_resource.id = $1
 $$;

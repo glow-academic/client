@@ -30,14 +30,14 @@ member_agent AS (
     FROM agent_artifact a
     
     
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
 -- Get chat context
 chat_context AS (
     SELECT
         c.id as chat_id,
-        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as chat_title,
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as chat_title,
         c.scenario_id,
         g.trace_id,
         sa.id as attempt_id,
@@ -134,7 +134,7 @@ link_profile_to_run AS (
 get_speak_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
-    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'speak' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    WHERE (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'speak' AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 -- Get latest user message for this run (if exists, for upsert)
@@ -160,7 +160,7 @@ user_tool_call AS (
     SELECT 
         'member_progress_user_' || cm.message_id::text, 
         gst.tool_id, 
-        (SELECT tao.args_outputs_id FROM tool_args_outputs tao WHERE tao.tool_id = gst.tool_id LIMIT 1),
+        (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gst.tool_id LIMIT 1),
         '',
         true, 
         cm.created_at, 
@@ -285,10 +285,10 @@ create_branch AS (
 resolved_dept AS (
     SELECT COALESCE(
         (SELECT sd.department_id FROM chat_context cc
-         JOIN scenario_departments sd ON sd.scenario_id = cc.scenario_id AND sd.active = true LIMIT 1),
+         JOIN scenario_departments_junction sd ON sd.scenario_id = cc.scenario_id AND sd.active = true LIMIT 1),
         (SELECT pd.department_id FROM chat_context cc
-         JOIN profile_departments pd ON pd.profile_id = cc.profile_id AND pd.active = true LIMIT 1),
-        (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
+         JOIN profile_departments_junction pd ON pd.profile_id = cc.profile_id AND pd.active = true LIMIT 1),
+        (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
     ) as department_id
 ),
 -- Link system/developer messages_entry to run (reuse logic from link_system_developer_messages_to_run.sql)
@@ -305,7 +305,7 @@ agent_system_prompt AS (
     FROM run_info ri
     JOIN runs_entry r ON r.id = ri.run_id
     JOIN agents_resource a ON a.id = r.agent_id
-    LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+    LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.agent_id IS NOT NULL
     AND pr_default.system_prompt IS NOT NULL
@@ -362,7 +362,7 @@ scenario_developer_content AS (
     JOIN upserted_run ur ON ur.run_id = ri.run_id
     JOIN target_group tg ON true
     JOIN chats_entry c ON c.group_id = tg.group_id
-    JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
+    JOIN scenario_problem_statements_junction sps ON sps.scenario_id = c.scenario_id AND sps.active = true
     JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE ps.problem_statement IS NOT NULL
     AND ps.problem_statement != ''

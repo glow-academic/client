@@ -26,6 +26,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT completed
-    FROM eval_runs
-    WHERE eval_runs.eval_id = $1 AND eval_runs.run_id = $2
+    FROM eval_runs_junction
+    WHERE eval_runs_junction.eval_id = $1 AND eval_runs_junction.run_id = $2
 $$;

@@ -46,18 +46,18 @@ auth_exists_check AS (
 actor_profile AS (
     SELECT 
         x.profile_id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_auth AS (
     SELECT 
         id, 
-        (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
-        (SELECT d.description FROM auth_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
-        EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'auth_active' AND af.value = TRUE) as active, 
-        (SELECT p.value FROM auth_protocols ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
-        (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
+        (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
+        (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
+        EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'auth_active' AND af.value = TRUE) as active, 
+        (SELECT p.value FROM auth_protocols_junction ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
+        (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
     FROM params x
     JOIN auth_artifact ON auth_artifact.id = x.auth_id
 ),
@@ -106,7 +106,7 @@ new_auth AS (
 ),
 -- Link auth to protocol
 link_auth_protocol AS (
-    INSERT INTO auth_protocols (auth_id, protocol_id, created_at, updated_at)
+    INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at, updated_at)
     SELECT 
         na.auth_id,
         pr.protocol_id,
@@ -118,7 +118,7 @@ link_auth_protocol AS (
 ),
 -- Link auth to slug
 link_auth_slug AS (
-    INSERT INTO auth_slugs (auth_id, slug_id, created_at, updated_at)
+    INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at, updated_at)
     SELECT 
         na.auth_id,
         sr.slug_id,
@@ -130,7 +130,7 @@ link_auth_slug AS (
 ),
 -- Link auth to name
 link_auth_name AS (
-    INSERT INTO auth_names (auth_id, name_id, created_at, updated_at)
+    INSERT INTO auth_names_junction (auth_id, name_id, created_at, updated_at)
     SELECT 
         na.auth_id,
         nr.name_id,
@@ -142,7 +142,7 @@ link_auth_name AS (
 ),
 -- Link auth to description
 link_auth_description AS (
-    INSERT INTO auth_descriptions (auth_id, description_id, created_at, updated_at)
+    INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at, updated_at)
     SELECT 
         na.auth_id,
         dr.description_id,
@@ -154,7 +154,7 @@ link_auth_description AS (
 ),
 -- Link auth active flag
 link_auth_active_flag AS (
-    INSERT INTO auth_flags (auth_id, flag_id, value, created_at, updated_at) SELECT na.auth_id,
+    INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at, updated_at) SELECT na.auth_id,
         f.id,
         (SELECT active FROM source_auth LIMIT 1),
         NOW(),
@@ -175,7 +175,7 @@ source_items AS (
         i.position,
         i.active
     FROM source_auth sa
-    JOIN auth_items ai_j ON ai_j.auth_id = sa.id
+    JOIN auth_items_junction ai_j ON ai_j.auth_id = sa.id
     JOIN items_resource i ON i.id = ai_j.item_id
 ),
 new_items AS (
@@ -210,7 +210,7 @@ items_with_idx AS (
 ),
 -- Link auth to items via junction table
 link_auth_items AS (
-    INSERT INTO auth_items (auth_id, item_id, created_at, updated_at)
+    INSERT INTO auth_items_junction (auth_id, item_id, created_at, updated_at)
     SELECT 
         na.auth_id,
         iwi.item_id,

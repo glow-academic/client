@@ -434,13 +434,13 @@ resolve_profile_id AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM profile_artifact p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
         ap.actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
@@ -449,19 +449,19 @@ user_profile AS (
 user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    JOIN profile_departments_junction pd ON pd.profile_id = rpi.resolved_profile_id
     WHERE pd.active = true
 ),
 user_departments_data AS (
     SELECT DISTINCT 
         dr.id, 
-        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, 
-        (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, 
+        (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description
     FROM departments_resource dr
     JOIN department_artifact d ON d.id = dr.department_id
     JOIN resolve_profile_id rpi ON true
-    JOIN profile_departments pd ON dr.id = pd.department_id
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
+    JOIN profile_departments_junction pd ON dr.id = pd.department_id
+    WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
@@ -471,27 +471,27 @@ name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT mn.name_id FROM model_names mn WHERE mn.model_id = (SELECT model_id FROM params) LIMIT 1)
+            (SELECT mn.name_id FROM model_names_junction mn WHERE mn.model_id = (SELECT model_id FROM params) LIMIT 1)
         ) as name_id,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_model_v4_name_resource FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
-        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_model_v4_name_resource FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT model_id FROM params) LIMIT 1) as model_name_resource
+        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_model_v4_name_resource FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT model_id FROM params) LIMIT 1) as model_name_resource
     FROM params
 ),
 description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT md.description_id FROM model_descriptions md WHERE md.model_id = (SELECT model_id FROM params) LIMIT 1)
+            (SELECT md.description_id FROM model_descriptions_junction md WHERE md.model_id = (SELECT model_id FROM params) LIMIT 1)
         ) as description_id,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_model_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_model_v4_description_resource FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = (SELECT model_id FROM params) LIMIT 1) as model_description_resource
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_model_v4_description_resource FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = (SELECT model_id FROM params) LIMIT 1) as model_description_resource
     FROM params
 ),
 flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -506,14 +506,14 @@ flag_resource_data AS (
          WHERE df.draft_id = (SELECT draft_id FROM params)
          AND f.name = 'model_active'
          LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1) as model_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1) as model_flag_resource
     FROM params
 ),
 modalities_enabled_flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -524,7 +524,7 @@ modalities_enabled_flag_resource_data AS (
         END as modalities_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_draft df
@@ -539,7 +539,7 @@ temperature_enabled_flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -550,7 +550,7 @@ temperature_enabled_flag_resource_data AS (
         END as temperature_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_draft df
@@ -565,7 +565,7 @@ pricing_enabled_flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -576,7 +576,7 @@ pricing_enabled_flag_resource_data AS (
         END as pricing_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_draft df
@@ -591,7 +591,7 @@ voices_enabled_flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -602,7 +602,7 @@ voices_enabled_flag_resource_data AS (
         END as voices_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_draft df
@@ -617,7 +617,7 @@ reasoning_levels_enabled_flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -628,7 +628,7 @@ reasoning_levels_enabled_flag_resource_data AS (
         END as reasoning_levels_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_draft df
@@ -643,7 +643,7 @@ qualities_enabled_flag_resource_data AS (
     SELECT 
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT mf.flag_id FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT df.flags_id
                  FROM flags_draft df
@@ -654,7 +654,7 @@ qualities_enabled_flag_resource_data AS (
         END as qualities_enabled_flag_id,
         CASE
             WHEN (SELECT draft_id FROM params) IS NULL THEN
-                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1)
             ELSE
                 (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_model_v4_flag_resource
                  FROM flags_draft df
@@ -669,31 +669,31 @@ value_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dv.values_id FROM values_draft dv WHERE dv.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT mv.value_id FROM model_values mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1)
+            (SELECT mv.value_id FROM model_values_junction mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1)
         ) as value_id,
         (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource
          FROM values_draft dv
          JOIN values_resource v ON dv.values_id = v.id
          WHERE dv.draft_id = (SELECT draft_id FROM params)
          LIMIT 1) as draft_value_resource,
-        (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as model_value_resource
+        (SELECT ROW(v.id, v.value, COALESCE(v.generated, false))::types.q_get_model_v4_value_resource FROM model_values_junction mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as model_value_resource
     FROM params
 ),
 endpoint_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT de.endpoints_id FROM endpoints_draft de WHERE de.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT me.endpoint_id FROM model_endpoints me WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1)
+            (SELECT me.endpoint_id FROM model_endpoints_junction me WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1)
         ) as endpoint_id,
         (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM endpoints_draft de JOIN endpoints_resource e ON de.endpoints_id = e.id WHERE de.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_endpoint_resource,
-        (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM model_endpoints me JOIN endpoints_resource e ON me.endpoint_id = e.id WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1) as model_endpoint_resource
+        (SELECT ROW(e.id, e.base_url, COALESCE(e.generated, false))::types.q_get_model_v4_endpoint_resource FROM model_endpoints_junction me JOIN endpoints_resource e ON me.endpoint_id = e.id WHERE me.model_id = (SELECT model_id FROM params) AND me.active = true LIMIT 1) as model_endpoint_resource
     FROM params
 ),
 model_endpoint_data AS (
     SELECT 
         COALESCE(e.base_url, '') as base_url
     FROM model_artifact m
-    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN model_endpoints_junction me_j ON me_j.model_id = m.id
     LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -703,7 +703,7 @@ model_departments_data AS (
     SELECT 
         md.model_id,
         ARRAY_AGG(md.department_id ORDER BY md.created_at) as department_ids
-    FROM model_departments md
+    FROM model_departments_junction md
     WHERE md.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND md.active = true
@@ -728,7 +728,7 @@ model_temperature_data AS (
         MIN(tl.temperature) FILTER (WHERE tl.is_upper = false) as temperature_lower,
         MAX(tl.temperature) FILTER (WHERE tl.is_upper = true) as temperature_upper,
         ARRAY_AGG(DISTINCT tl.temperature::text ORDER BY tl.temperature::text) FILTER (WHERE tl.is_upper = false) as temperature_values
-    FROM model_temperature_levels mtl
+    FROM model_temperature_levels_junction mtl
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE mtl.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -742,7 +742,7 @@ model_pricing_data AS (
         u.name as unit_name,
         u.unit_category::text as unit_category,
         pr.price
-    FROM model_pricing mp
+    FROM model_pricing_junction mp
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
     JOIN artifact_units_relation u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
@@ -757,7 +757,7 @@ input_modality_ids_data AS (
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE ARRAY_AGG(mr.id ORDER BY mr.modality::text)::uuid[]
         END as input_modality_ids
-    FROM model_modalities mm
+    FROM model_modalities_junction mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     WHERE mm.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -770,7 +770,7 @@ output_modality_ids_data AS (
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE ARRAY_AGG(mr.id ORDER BY mr.modality::text)::uuid[]
         END as output_modality_ids
-    FROM model_modalities mm
+    FROM model_modalities_junction mm
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     WHERE mm.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -794,7 +794,7 @@ temperature_level_ids_data AS (
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE ARRAY_AGG(tl.id ORDER BY tl.temperature, tl.is_upper)::uuid[]
         END as temperature_level_ids
-    FROM model_temperature_levels mtl
+    FROM model_temperature_levels_junction mtl
     JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE mtl.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -825,7 +825,7 @@ reasoning_level_ids_data AS (
                 END
             )::uuid[]
         END as reasoning_level_ids
-    FROM model_reasoning_levels mrl
+    FROM model_reasoning_levels_junction mrl
     JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
     WHERE mrl.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -862,7 +862,7 @@ quality_ids_data AS (
                 END
             )::uuid[]
         END as quality_ids
-    FROM model_qualities mq
+    FROM model_qualities_junction mq
     JOIN qualities_resource qr ON qr.id = mq.quality_id
     WHERE mq.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -891,7 +891,7 @@ pricing_ids_data AS (
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE ARRAY_AGG(pr.id ORDER BY pr.pricing_type, u.name)::uuid[]
         END as pricing_ids
-    FROM model_pricing mp
+    FROM model_pricing_junction mp
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
     JOIN artifact_units_relation u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
@@ -914,7 +914,7 @@ model_voices_data AS (
     SELECT 
         v.id as voice_id,
         v.voice::text as voice
-    FROM model_voices mv
+    FROM model_voices_junction mv
     JOIN voices_resource v ON v.id = mv.voice_id
     WHERE mv.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -937,10 +937,10 @@ providers_data AS (
     SELECT DISTINCT
         p.id as provider_id,
         n.name as name,
-        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description
+        COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description
     FROM providers_resource p
     JOIN provider_artifact pr ON pr.id = p.provider_id
-    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN provider_names_junction pn ON pn.provider_id = pr.id
     JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
     ORDER BY n.name
@@ -954,7 +954,7 @@ provider_resource_data AS (
                 WHEN (SELECT model_id FROM params) IS NULL THEN NULL::uuid
                 ELSE (
                     SELECT p.id 
-                    FROM model_providers mp 
+                    FROM model_providers_junction mp 
                     JOIN providers_resource p ON p.id = mp.providers_id 
                     JOIN models_resource m_res ON m_res.id = mp.model_id 
                     WHERE m_res.model_id = (SELECT model_id FROM params) 
@@ -966,13 +966,13 @@ provider_resource_data AS (
             (SELECT ROW(
                 p.id,
                 n.name,
-                COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
+                COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
                 COALESCE(p.generated, false)
             )::types.q_get_model_v4_provider_resource
             FROM providers_draft dp
             JOIN providers_resource p ON p.id = dp.providers_id
             JOIN provider_artifact pr ON pr.id = p.provider_id
-            JOIN provider_names pn ON pn.provider_id = pr.id
+            JOIN provider_names_junction pn ON pn.provider_id = pr.id
             JOIN names_resource n ON n.id = pn.name_id
             WHERE dp.draft_id = (SELECT draft_id FROM params)
             LIMIT 1),
@@ -982,13 +982,13 @@ provider_resource_data AS (
                     SELECT ROW(
                         p.id,
                         n.name,
-                        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
+                        COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
                         false
                     )::types.q_get_model_v4_provider_resource
-                    FROM model_providers mp 
+                    FROM model_providers_junction mp 
                     JOIN providers_resource p ON p.id = mp.providers_id 
                     JOIN provider_artifact pr ON pr.id = p.provider_id
-                    JOIN provider_names pn ON pn.provider_id = pr.id
+                    JOIN provider_names_junction pn ON pn.provider_id = pr.id
                     JOIN names_resource n ON n.id = pn.name_id
                     JOIN models_resource m_res ON m_res.id = mp.model_id 
                     WHERE m_res.model_id = (SELECT model_id FROM params) 
@@ -1018,15 +1018,15 @@ model_all_keys AS (
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
     FROM model_artifact m
     JOIN models_resource m_res ON m_res.model_id = m.id
-    LEFT JOIN model_providers mp ON mp.model_id = m_res.id
+    LEFT JOIN model_providers_junction mp ON mp.model_id = m_res.id
     LEFT JOIN providers_resource p ON p.id = mp.providers_id
     LEFT JOIN provider_artifact pr ON pr.id = p.provider_id
-    LEFT JOIN provider_names pn ON pn.provider_id = pr.id
+    LEFT JOIN provider_names_junction pn ON pn.provider_id = pr.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
-    JOIN setting_provider_keys spk ON spk.providers_id = p.id AND spk.active = true
+    JOIN setting_provider_keys_junction spk ON spk.providers_id = p.id AND spk.active = true
     JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
-    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
-    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
+    JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND ds.active = true
@@ -1049,33 +1049,33 @@ model_all_keys AS (
     AND (
         (SELECT model_id FROM params) IS NULL
         OR NOT EXISTS (
-            -- Exclude keys already included via setting_provider_keys for this model's provider
+            -- Exclude keys already included via setting_provider_keys_junction for this model's provider
             SELECT 1 FROM model_artifact m2
             JOIN models_resource m_res2 ON m_res2.model_id = m2.id
-            JOIN model_providers mp2 ON mp2.model_id = m_res2.id
+            JOIN model_providers_junction mp2 ON mp2.model_id = m_res2.id
             JOIN providers_resource p2 ON p2.id = mp2.providers_id
-            JOIN setting_provider_keys spk2 ON spk2.providers_id = p2.id AND spk2.key_id = kr.id AND spk2.active = true
+            JOIN setting_provider_keys_junction spk2 ON spk2.providers_id = p2.id AND spk2.key_id = kr.id AND spk2.active = true
             WHERE m2.id = (SELECT model_id FROM params)
         )
     )
     AND (
         -- Include keys with no settings links (general keys)
         NOT EXISTS (
-            SELECT 1 FROM setting_provider_keys spk3
+            SELECT 1 FROM setting_provider_keys_junction spk3
             WHERE spk3.key_id = kr.id AND spk3.active = true
         )
         OR
         -- Include keys with settings links that match user's departments
         EXISTS (
-            SELECT 1 FROM setting_provider_keys spk4
-            JOIN setting_artifact s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s4.id AND f.name = 'setting_active' AND sf.value = TRUE)
-            JOIN department_settings ds4 ON ds4.settings_id = s4.id AND ds4.active = true
+            SELECT 1 FROM setting_provider_keys_junction spk4
+            JOIN setting_artifact s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s4.id AND f.name = 'setting_active' AND sf.value = TRUE)
+            JOIN department_settings_junction ds4 ON ds4.settings_id = s4.id AND ds4.active = true
             JOIN user_departments ud ON ud.department_id = ds4.department_id
             WHERE spk4.key_id = kr.id AND spk4.active = true
         )
         OR
         -- Superadmin can see all keys
-        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile_artifact p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'superadmin'::profile_type))
+        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile_artifact p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND EXISTS (SELECT 1 FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'superadmin'::profile_type))
     )
 ),
 keys_data AS (
@@ -1125,7 +1125,7 @@ voice_resources_data AS (
                     )::types.q_get_model_v4_voice_resource
                     ORDER BY v.voice::text
                 )
-                FROM model_voices mv
+                FROM model_voices_junction mv
                 JOIN voices_resource v ON v.id = mv.voice_id
                 WHERE mv.model_id = (SELECT model_id FROM params)
                 AND (SELECT model_id FROM params) IS NOT NULL
@@ -1154,7 +1154,7 @@ voice_ids_data AS (
                 ELSE ARRAY_AGG(v.id ORDER BY v.voice::text)::uuid[]
             END
         ) as voice_ids
-    FROM model_voices mv
+    FROM model_voices_junction mv
     JOIN voices_resource v ON v.id = mv.voice_id
     WHERE mv.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
@@ -1181,14 +1181,14 @@ name_suggestions_data AS (
             (SELECT ARRAY_AGG(mn.name_id ORDER BY mn.created_at DESC)
              FROM (
                  SELECT DISTINCT mn.name_id, MAX(mn.created_at) as created_at
-                 FROM model_names mn
+                 FROM model_names_junction mn
                  JOIN names_resource n ON n.id = mn.name_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mn.name_id IS NOT NULL
                    AND n.name IS NOT NULL
                    AND n.name != ''
                    AND (
-                       -- Option 1: Linked to models (model_names junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_names_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mn.generated = false
                        OR
@@ -1220,14 +1220,14 @@ description_suggestions_data AS (
             (SELECT ARRAY_AGG(md.description_id ORDER BY md.created_at DESC)
              FROM (
                  SELECT DISTINCT md.description_id, MAX(md.created_at) as created_at
-                 FROM model_descriptions md
+                 FROM model_descriptions_junction md
                  JOIN descriptions_resource d ON d.id = md.description_id
                  CROSS JOIN draft_group_data dgd
                  WHERE md.description_id IS NOT NULL
                    AND d.description IS NOT NULL
                    AND d.description != ''
                    AND (
-                       -- Option 1: Linked to models (model_descriptions junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_descriptions_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        md.generated = false
                        OR
@@ -1259,7 +1259,7 @@ flag_suggestions_data AS (
             (SELECT ARRAY_AGG(mf.flag_id ORDER BY mf.created_at DESC)
              FROM (
                  SELECT DISTINCT mf.flag_id, MAX(mf.created_at) as created_at
-                 FROM model_flags mf
+                 FROM model_flags_junction mf
                  JOIN flags_resource f ON f.id = mf.flag_id
                  WHERE mf.flag_id IS NOT NULL
                    AND f.name = 'model_active'
@@ -1283,14 +1283,14 @@ value_suggestions_data AS (
             (SELECT ARRAY_AGG(mv.value_id ORDER BY mv.created_at DESC)
              FROM (
                  SELECT DISTINCT mv.value_id, MAX(mv.created_at) as created_at
-                 FROM model_values mv
+                 FROM model_values_junction mv
                  JOIN values_resource v ON v.id = mv.value_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mv.value_id IS NOT NULL
                    AND v.value IS NOT NULL
                    AND v.value != ''
                    AND (
-                       -- Option 1: Linked to models (model_values junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_values_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mv.generated = false
                        OR
@@ -1322,14 +1322,14 @@ endpoint_suggestions_data AS (
             (SELECT ARRAY_AGG(me.endpoint_id ORDER BY me.created_at DESC)
              FROM (
                  SELECT DISTINCT me.endpoint_id, MAX(me.created_at) as created_at
-                 FROM model_endpoints me
+                 FROM model_endpoints_junction me
                  JOIN endpoints_resource e ON e.id = me.endpoint_id
                  CROSS JOIN draft_group_data dgd
                  WHERE me.endpoint_id IS NOT NULL
                    AND e.base_url IS NOT NULL
                    AND e.base_url != ''
                    AND (
-                       -- Option 1: Linked to models (model_endpoints junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_endpoints_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        me.generated = false
                        OR
@@ -1361,13 +1361,13 @@ input_modality_suggestions_data AS (
             (SELECT ARRAY_AGG(mm.modality_id ORDER BY mm.created_at DESC)
              FROM (
                  SELECT DISTINCT mm.modality_id, MAX(mm.created_at) as created_at
-                 FROM model_modalities mm
+                 FROM model_modalities_junction mm
                  JOIN modalities_resource mr ON mr.id = mm.modality_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mm.modality_id IS NOT NULL
                    AND mm.type = 'input'::direction_type
                    AND (
-                       -- Option 1: Linked to models (model_modalities junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_modalities_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mm.generated = false
                        OR
@@ -1399,13 +1399,13 @@ output_modality_suggestions_data AS (
             (SELECT ARRAY_AGG(mm.modality_id ORDER BY mm.created_at DESC)
              FROM (
                  SELECT DISTINCT mm.modality_id, MAX(mm.created_at) as created_at
-                 FROM model_modalities mm
+                 FROM model_modalities_junction mm
                  JOIN modalities_resource mr ON mr.id = mm.modality_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mm.modality_id IS NOT NULL
                    AND mm.type = 'output'::direction_type
                    AND (
-                       -- Option 1: Linked to models (model_modalities junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_modalities_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mm.generated = false
                        OR
@@ -1437,12 +1437,12 @@ temperature_level_suggestions_data AS (
             (SELECT ARRAY_AGG(mtl.temperature_level_id ORDER BY mtl.created_at DESC)
              FROM (
                  SELECT DISTINCT mtl.temperature_level_id, MAX(mtl.created_at) as created_at
-                 FROM model_temperature_levels mtl
+                 FROM model_temperature_levels_junction mtl
                  JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mtl.temperature_level_id IS NOT NULL
                    AND (
-                       -- Option 1: Linked to models (model_temperature_levels junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_temperature_levels_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mtl.generated = false
                        OR
@@ -1474,12 +1474,12 @@ reasoning_level_suggestions_data AS (
             (SELECT ARRAY_AGG(mrl.reasoning_level_id ORDER BY mrl.created_at DESC)
              FROM (
                  SELECT DISTINCT mrl.reasoning_level_id, MAX(mrl.created_at) as created_at
-                 FROM model_reasoning_levels mrl
+                 FROM model_reasoning_levels_junction mrl
                  JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mrl.reasoning_level_id IS NOT NULL
                    AND (
-                       -- Option 1: Linked to models (model_reasoning_levels junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_reasoning_levels_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mrl.generated = false
                        OR
@@ -1511,12 +1511,12 @@ quality_suggestions_data AS (
             (SELECT ARRAY_AGG(mq.quality_id ORDER BY mq.created_at DESC)
              FROM (
                  SELECT DISTINCT mq.quality_id, MAX(mq.created_at) as created_at
-                 FROM model_qualities mq
+                 FROM model_qualities_junction mq
                  JOIN qualities_resource qr ON qr.id = mq.quality_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mq.quality_id IS NOT NULL
                    AND (
-                       -- Option 1: Linked to models (model_qualities junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_qualities_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mq.generated = false
                        OR
@@ -1548,12 +1548,12 @@ pricing_suggestions_data AS (
             (SELECT ARRAY_AGG(mp.pricing_id ORDER BY mp.created_at DESC)
              FROM (
                  SELECT DISTINCT mp.pricing_id, MAX(mp.created_at) as created_at
-                 FROM model_pricing mp
+                 FROM model_pricing_junction mp
                  JOIN pricing_resource pr ON pr.id = mp.pricing_id
                  CROSS JOIN draft_group_data dgd
                  WHERE mp.pricing_id IS NOT NULL
                    AND (
-                       -- Option 1: Linked to models (model_pricing junction table means it's validated/used)
+                       -- Option 1: Linked to models (model_pricing_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        mp.generated = false
                        OR
@@ -1585,85 +1585,85 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'values'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as values_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'endpoints'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as endpoints_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'providers'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as providers_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'keys'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as keys_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'modalities'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as modalities_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'temperature_levels'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as temperature_levels_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'reasoning_levels'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as reasoning_levels_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'qualities'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as qualities_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'pricing'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as pricing_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'voices'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as voices_has_tools
     FROM params x
 ),
@@ -1988,13 +1988,13 @@ permissions_data AS (
                 CASE 
                     WHEN up.role = 'superadmin'::profile_type THEN true
                     WHEN EXISTS (
-                        SELECT 1 FROM model_departments md
+                        SELECT 1 FROM model_departments_junction md
                         JOIN user_departments ud ON md.department_id = ud.department_id
                         WHERE md.model_id = (SELECT model_id FROM params)
                         AND md.active = true
                     ) THEN true
                     WHEN NOT EXISTS (
-                        SELECT 1 FROM model_departments md2
+                        SELECT 1 FROM model_departments_junction md2
                         WHERE md2.model_id = (SELECT model_id FROM params)
                         AND md2.active = true
                     ) THEN true
@@ -2010,13 +2010,13 @@ permissions_data AS (
                 CASE 
                     WHEN up.role != 'superadmin'::profile_type 
                     AND NOT EXISTS (
-                        SELECT 1 FROM model_departments md
+                        SELECT 1 FROM model_departments_junction md
                         JOIN user_departments ud ON md.department_id = ud.department_id
                         WHERE md.model_id = (SELECT model_id FROM params)
                         AND md.active = true
                     )
                     AND EXISTS (
-                        SELECT 1 FROM model_departments md2
+                        SELECT 1 FROM model_departments_junction md2
                         WHERE md2.model_id = (SELECT model_id FROM params)
                         AND md2.active = true
                     ) THEN
@@ -2284,7 +2284,7 @@ SELECT
             (mr.id, mr.modality::text, COALESCE(mr.generated, false))::types.q_get_model_v4_modality_resource
             ORDER BY mr.modality::text
         )
-        FROM model_modalities mm
+        FROM model_modalities_junction mm
         JOIN modalities_resource mr ON mr.id = mm.modality_id
         WHERE mm.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
@@ -2321,7 +2321,7 @@ SELECT
             (mr.id, mr.modality::text, COALESCE(mr.generated, false))::types.q_get_model_v4_modality_resource
             ORDER BY mr.modality::text
         )
-        FROM model_modalities mm
+        FROM model_modalities_junction mm
         JOIN modalities_resource mr ON mr.id = mm.modality_id
         WHERE mm.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
@@ -2358,7 +2358,7 @@ SELECT
             (tl.id, tl.temperature, tl.is_upper, COALESCE(tl.generated, false))::types.q_get_model_v4_temperature_level_resource
             ORDER BY tl.temperature, tl.is_upper
         )
-        FROM model_temperature_levels mtl
+        FROM model_temperature_levels_junction mtl
         JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
         WHERE mtl.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
@@ -2408,7 +2408,7 @@ SELECT
                     WHEN 'high' THEN 5
                 END
         )
-        FROM model_reasoning_levels mrl
+        FROM model_reasoning_levels_junction mrl
         JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
         WHERE mrl.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
@@ -2454,7 +2454,7 @@ SELECT
                     WHEN 'high' THEN 3
                 END
         )
-        FROM model_qualities mq
+        FROM model_qualities_junction mq
         JOIN qualities_resource qr ON qr.id = mq.quality_id
         WHERE mq.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
@@ -2491,7 +2491,7 @@ SELECT
             (pr.id, pr.pricing_type::text, u.id, u.name, u.unit_category::text, pr.price, COALESCE(pr.generated, false))::types.q_get_model_v4_pricing_resource
             ORDER BY pr.pricing_type, u.name
         )
-        FROM model_pricing mp
+        FROM model_pricing_junction mp
         JOIN pricing_resource pr ON pr.id = mp.pricing_id
         JOIN artifact_units_relation u ON u.id = pr.unit_id
         WHERE mp.model_id = (SELECT model_id FROM params)

@@ -23,7 +23,7 @@ AS $$
         ss.scenario_id,
         EXISTS (
             SELECT 1 
-            FROM simulation_scenario_flags ssf 
+            FROM simulation_scenario_flags_junction ssf 
             JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flag_id
             WHERE ssf.simulation_id = ss.simulation_id 
               AND sfr.scenario_id = ss.scenario_id
@@ -32,7 +32,7 @@ AS $$
         ) as active,
         COALESCE((
             SELECT spr.value 
-            FROM simulation_scenario_positions ssp
+            FROM simulation_scenario_positions_junction ssp
             JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
             WHERE ssp.simulation_id = ss.simulation_id 
               AND spr.scenario_id = ss.scenario_id
@@ -40,7 +40,7 @@ AS $$
             LIMIT 1
         ), 999999) as "position",
         ss.created_at
-    FROM simulation_scenarios ss
+    FROM simulation_scenarios_junction ss
     WHERE ss.simulation_id = test_get_simulation_scenario_link_v4.input_simulation_id
       AND ss.scenario_id = test_get_simulation_scenario_link_v4.input_scenario_id;
 $$;

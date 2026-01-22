@@ -24,5 +24,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT department_id FROM document_departments WHERE document_departments.document_id = $1 AND document_departments.active = true LIMIT 1
+    SELECT department_id FROM document_departments_junction WHERE document_departments_junction.document_id = $1 AND document_departments_junction.active = true LIMIT 1
 $$;

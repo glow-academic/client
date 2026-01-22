@@ -34,15 +34,15 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_provider AS (
     SELECT 
         pr.id,
-        (SELECT n.name FROM provider_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1),
-        (SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1)
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1),
+        (SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1)
     FROM params x
     JOIN provider_artifact pr ON pr.id = x.provider_id
 ),
@@ -50,7 +50,7 @@ original_flags AS (
     -- Get flag IDs from original provider
     SELECT flag_id
     FROM params x
-    JOIN provider_flags pf ON pf.provider_id = x.provider_id
+    JOIN provider_flags_junction pf ON pf.provider_id = x.provider_id
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -83,7 +83,7 @@ new_provider AS (
 ),
 -- Link provider to name
 link_provider_name AS (
-    INSERT INTO provider_names (provider_id, name_id, created_at, updated_at)
+    INSERT INTO provider_names_junction (provider_id, name_id, created_at, updated_at)
     SELECT 
         np.id,
         nnr.name_id,
@@ -95,7 +95,7 @@ link_provider_name AS (
 ),
 -- Link provider to description
 link_provider_description AS (
-    INSERT INTO provider_descriptions (provider_id, description_id, created_at, updated_at)
+    INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at, updated_at)
     SELECT 
         np.id,
         ndr.description_id,
@@ -107,7 +107,7 @@ link_provider_description AS (
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
-    INSERT INTO provider_flags (provider_id, flag_id, value, created_at, updated_at) SELECT np.id,
+    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, updated_at) SELECT np.id,
         f.id,
         FALSE,
         NOW(),
@@ -121,7 +121,7 @@ link_provider_active_flag AS (
 ),
 -- Copy other flags from original provider
 copy_provider_flags AS (
-    INSERT INTO provider_flags (provider_id, flag_id, value, created_at, updated_at)
+    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.id,
         of.flag_id,

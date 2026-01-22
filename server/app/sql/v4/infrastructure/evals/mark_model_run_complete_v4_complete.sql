@@ -23,7 +23,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE eval_runs 
+    UPDATE eval_runs_junction 
     SET completed = true, updated_at = NOW()
-    WHERE eval_runs.eval_id = $1 AND eval_runs.run_id = $2
+    WHERE eval_runs_junction.eval_id = $1 AND eval_runs_junction.run_id = $2
 $$;

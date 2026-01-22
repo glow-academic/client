@@ -39,7 +39,7 @@ WITH params AS (
 persona_department AS (
     SELECT pd.department_id
     FROM params p
-    JOIN persona_departments pd ON pd.persona_id = p.persona_id AND pd.active = true
+    JOIN persona_departments_junction pd ON pd.persona_id = p.persona_id AND pd.active = true
     WHERE p.persona_id IS NOT NULL
     LIMIT 1
 ),
@@ -47,7 +47,7 @@ persona_department AS (
 profile_primary_department AS (
     SELECT pd.department_id
     FROM params p
-    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
     WHERE p.persona_id IS NULL
     LIMIT 1
 ),

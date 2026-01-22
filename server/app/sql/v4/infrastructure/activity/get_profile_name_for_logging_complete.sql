@@ -26,7 +26,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT COALESCE(
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id 
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id 
          WHERE pn.profile_id = $1 LIMIT 1),
         ''
     ) as actor_name

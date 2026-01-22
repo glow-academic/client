@@ -39,7 +39,7 @@ WITH params AS (
 -- Check if profile already exists by email
 existing_profile AS (
     SELECT pe.profile_id as id
-    FROM profile_emails pe
+    FROM profile_emails_junction pe
     JOIN emails_resource e ON pe.email_id = e.id
     WHERE e.email = (SELECT email FROM params)
       AND pe.active = true
@@ -51,7 +51,7 @@ existing_result AS (
         ep.id as profile_id,
         false as created,
         (SELECT n.name
-         FROM profile_names pn
+         FROM profile_names_junction pn
          JOIN names_resource n ON pn.name_id = n.id
          WHERE pn.profile_id = ep.id
          LIMIT 1) as actor_name
@@ -111,7 +111,7 @@ role_id_lookup AS (
     ) as role_id
 ),
 profile_type_insert AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, updated_at, generated, mcp)
     SELECT pi.id, rl.role_id, NOW(), NOW(), false, false
     FROM profile_insert pi
     CROSS JOIN role_id_lookup rl
@@ -121,7 +121,7 @@ profile_type_insert AS (
 ),
 -- Link profile to name (only if creating)
 link_profile_name AS (
-    INSERT INTO profile_names (profile_id, name_id, created_at, updated_at)
+    INSERT INTO profile_names_junction (profile_id, name_id, created_at, updated_at)
     SELECT pi.id, nl.name_id, NOW(), NOW()
     FROM profile_insert pi
     CROSS JOIN name_id_lookup nl
@@ -130,7 +130,7 @@ link_profile_name AS (
 ),
 -- Set profile active flag (only if creating)
 set_profile_active AS (
-    INSERT INTO profile_flags (profile_id, flag_id, value, created_at, updated_at)
+    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at, updated_at)
     SELECT pi.id, f.id, true, NOW(), NOW()
     FROM profile_insert pi
     CROSS JOIN flags_resource f
@@ -153,7 +153,7 @@ email_id_lookup AS (
 ),
 -- Link email to profile (only if creating)
 email_insert AS (
-    INSERT INTO profile_emails (profile_id, email, email_id, is_primary, active)
+    INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
     SELECT pi.id, (SELECT email FROM params), el.email_id, true, true
     FROM profile_insert pi
     CROSS JOIN email_id_lookup el

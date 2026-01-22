@@ -20,7 +20,7 @@ AS $$
         agent_id,
         department_id,
         active
-    FROM agent_departments
+    FROM agent_departments_junction
     WHERE agent_id = test_get_agent_department_link_v4.agent_id
       AND department_id = test_get_agent_department_link_v4.department_id;
 $$;

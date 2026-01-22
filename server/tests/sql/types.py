@@ -1855,7 +1855,7 @@ class CreateTestRubricSqlParams(BaseModel):
 
     rubric_name: str
     rubric_description: str
-    rubric_points: int
+    rubric_points_junction: int
     rubric_pass_points: int
     rubric_active: bool
 
@@ -1863,7 +1863,7 @@ class CreateTestRubricSqlParams(BaseModel):
         return (
             self.rubric_name,
             self.rubric_description,
-            self.rubric_points,
+            self.rubric_points_junction,
             self.rubric_pass_points,
             self.rubric_active,
         )
@@ -1876,7 +1876,7 @@ class CreateTestRubricApiRequest(BaseModel):
 
     rubric_name: str
     rubric_description: str
-    rubric_points: int
+    rubric_points_junction: int
     rubric_pass_points: int
     rubric_active: bool
 

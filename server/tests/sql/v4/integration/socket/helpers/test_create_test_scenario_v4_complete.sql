@@ -26,13 +26,13 @@ AS $$
         SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     scenario_name_link AS (
-        INSERT INTO scenario_names(scenario_id, name_id)
+        INSERT INTO scenario_names_junction(scenario_id, name_id)
         SELECT ns.id, nr.id
         FROM new_scenario ns, name_resource nr
         RETURNING scenario_id
     ),
     scenario_flag_link AS (
-        INSERT INTO scenario_flags (scenario_id, flag_id, value)
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value)
         SELECT ns.id, af.id, true
         FROM new_scenario ns, active_flag af
         RETURNING scenario_id

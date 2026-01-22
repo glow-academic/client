@@ -25,19 +25,19 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params) as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_parameter AS (
     SELECT 
-        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
-        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'simulation_parameter' LIMIT 1), false) as simulation_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'document_parameter' LIMIT 1), false) as document_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'persona_parameter' LIMIT 1), false) as persona_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'scenario_parameter' LIMIT 1), false) as scenario_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'video_parameter' LIMIT 1), false) as video_parameter
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
+        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
+        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'simulation_parameter' LIMIT 1), false) as simulation_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'document_parameter' LIMIT 1), false) as document_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'persona_parameter' LIMIT 1), false) as persona_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'scenario_parameter' LIMIT 1), false) as scenario_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'video_parameter' LIMIT 1), false) as video_parameter
     FROM params x
     JOIN parameters_resource p ON p.id = x.parameter_id
 ),
@@ -68,7 +68,7 @@ new_parameter AS (
 ),
 -- Link parameter to name
 link_parameter_name AS (
-    INSERT INTO parameter_names (parameter_id, name_id, created_at, updated_at)
+    INSERT INTO parameter_names_junction (parameter_id, name_id, created_at, updated_at)
     SELECT np.parameter_id, nnr.name_id, NOW(), NOW()
     FROM new_parameter np
     CROSS JOIN new_name_resource nnr
@@ -76,7 +76,7 @@ link_parameter_name AS (
 ),
 -- Link parameter to description
 link_parameter_description AS (
-    INSERT INTO parameter_descriptions (parameter_id, description_id, created_at, updated_at)
+    INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at, updated_at)
     SELECT np.parameter_id, ndr.description_id, NOW(), NOW()
     FROM new_parameter np
     CROSS JOIN new_description_resource ndr
@@ -84,7 +84,7 @@ link_parameter_description AS (
 ),
 -- Link parameter active flag (set to false for duplicate)
 link_parameter_active_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at) SELECT np.parameter_id,
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at) SELECT np.parameter_id,
         f.id,
         FALSE,
         NOW(),
@@ -98,7 +98,7 @@ link_parameter_active_flag AS (
 ),
 -- Link parameter type flags (simulation_parameter, document_parameter, etc.)
 link_parameter_type_flags AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
@@ -114,7 +114,7 @@ link_parameter_type_flags AS (
         updated_at = NOW()
 ),
 link_parameter_document_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
@@ -130,7 +130,7 @@ link_parameter_document_flag AS (
         updated_at = NOW()
 ),
 link_parameter_persona_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
@@ -146,7 +146,7 @@ link_parameter_persona_flag AS (
         updated_at = NOW()
 ),
 link_parameter_scenario_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
@@ -162,7 +162,7 @@ link_parameter_scenario_flag AS (
         updated_at = NOW()
 ),
 link_parameter_video_flag AS (
-    INSERT INTO parameter_flags (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
     SELECT 
         np.parameter_id,
         f.id,
@@ -180,17 +180,17 @@ link_parameter_video_flag AS (
 original_fields AS (
     SELECT 
         f.id as original_field_id,
-        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
+        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     FROM params x
-    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true)
+    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = true)
 ),
 original_field_departments AS (
     SELECT 
         of.original_field_id,
         COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), NULL) as department_ids
     FROM original_fields of
-    LEFT JOIN field_departments fd ON fd.field_id = of.original_field_id AND fd.active = true
+    LEFT JOIN field_departments_junction fd ON fd.field_id = of.original_field_id AND fd.active = true
     GROUP BY of.original_field_id
 ),
 -- Insert field names INTO names_resource table
@@ -221,7 +221,7 @@ new_fields AS (
 ),
 -- Link fields to names
 link_field_names AS (
-    INSERT INTO field_names (field_id, name_id, created_at, updated_at)
+    INSERT INTO field_names_junction (field_id, name_id, created_at, updated_at)
     SELECT 
         nf.field_id,
         fnr.name_id,
@@ -234,7 +234,7 @@ link_field_names AS (
 ),
 -- Link fields to descriptions
 link_field_descriptions AS (
-    INSERT INTO field_descriptions (field_id, description_id, created_at, updated_at)
+    INSERT INTO field_descriptions_junction (field_id, description_id, created_at, updated_at)
     SELECT 
         nf.field_id,
         fdr.description_id,
@@ -245,9 +245,9 @@ link_field_descriptions AS (
     JOIN field_descriptions_resources fdr ON fdr.description = of.description
     ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- Link fields to parameter via parameter_fields junction table
+-- Link fields to parameter via parameter_fields_junction junction table
 link_fields_to_parameter AS (
-    INSERT INTO parameter_fields (parameter_id, field_id, created_at, updated_at)
+    INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at, updated_at)
     SELECT 
         np.parameter_id,
         nf.field_id,
@@ -296,7 +296,7 @@ fields_with_depts AS (
 -- Fields are already linked via parameter_id in new_fields CTE above
 link_departments AS (
     -- Link departments to fields if they existed on original (only if dept_ids exist)
-    INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
+    INSERT INTO field_departments_junction (field_id, department_id, active, created_at, updated_at)
     SELECT 
         fwd.field_id,
         dept_id::uuid,

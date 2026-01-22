@@ -22,7 +22,7 @@ AS $$
         profile_id,
         active,
         created_at
-    FROM profile_departments
+    FROM profile_departments_junction
     WHERE department_id = test_get_profile_department_link_v4.input_department_id
       AND profile_id = test_get_profile_department_link_v4.input_profile_id;
 $$;

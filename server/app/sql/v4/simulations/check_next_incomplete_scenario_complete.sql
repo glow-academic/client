@@ -38,16 +38,16 @@ WITH RECURSIVE attempt_base AS (
 simulation_scenarios_list AS (
     SELECT 
         ss.scenario_id,
-        (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) as position
-    FROM simulation_scenarios ss
+        (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) as position
+    FROM simulation_scenarios_junction ss
     CROSS JOIN attempt_base ab
     WHERE ss.simulation_id = ab.simulation_id
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
         WHERE ssf.simulation_id = ss.simulation_id 
           AND sfr.scenario_id = ss.scenario_id 
           AND f.name = 'scenario_active' 
           AND ssf.value = true)
-    ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
+    ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
 existing_chats AS (
     SELECT
@@ -115,7 +115,7 @@ existing_parent_scenario_ids AS (
 -- Get parent scenarios that have graded chats_entry (reuse logic from get_scenarios_with_grades.sql)
 scenarios_with_grades AS (
     SELECT DISTINCT ss.scenario_id as parent_scenario_id
-    FROM simulation_scenarios ss
+    FROM simulation_scenarios_junction ss
     CROSS JOIN attempt_base ab
     JOIN chats_entry sc ON sc.attempt_id = ab.attempt_id
     JOIN grades_entry scg ON EXISTS (
@@ -129,7 +129,7 @@ scenarios_with_grades AS (
     JOIN chats_entry c ON c.group_id = g.id AND c.id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
         WHERE ssf.simulation_id = ss.simulation_id 
           AND sfr.scenario_id = ss.scenario_id 
           AND f.name = 'scenario_active' 

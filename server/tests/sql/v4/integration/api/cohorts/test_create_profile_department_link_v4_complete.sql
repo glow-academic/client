@@ -17,7 +17,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO profile_departments(profile_id, department_id, active)
+    INSERT INTO profile_departments_junction(profile_id, department_id, active)
     VALUES (
         test_create_profile_department_link_v4.profile_id,
         test_create_profile_department_link_v4.department_id,

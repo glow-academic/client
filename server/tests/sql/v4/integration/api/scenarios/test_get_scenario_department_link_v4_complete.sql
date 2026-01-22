@@ -22,7 +22,7 @@ AS $$
         department_id,
         active,
         created_at
-    FROM scenario_departments
+    FROM scenario_departments_junction
     WHERE scenario_id = test_get_scenario_department_link_v4.input_scenario_id
       AND department_id = test_get_scenario_department_link_v4.input_department_id;
 $$;

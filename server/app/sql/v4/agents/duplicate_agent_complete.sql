@@ -20,16 +20,16 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_agent AS (
     SELECT 
         a.id as source_id,
-        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1),
-        (SELECT m.id FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1),
+        (SELECT m.id FROM agent_models_junction am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
         COALESCE(NULL::artifact_type::text, '') as role,  -- Derive FROM agent_artifact's tools via artifact_resources_relation
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
@@ -41,16 +41,16 @@ source_agent AS (
     JOIN agents_resource a ON a.id = x.agent_id
     LEFT JOIN LATERAL (
         SELECT DISTINCT ar.artifact::text
-        FROM agent_tools at
+        FROM agent_tools_junction at
         JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
         JOIN artifact_resources_relation ar ON ar.resource = rt.resource
         WHERE at.agent_id = a.id AND at.active = TRUE
         LIMIT 1
     ) da ON TRUE
-    LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+    LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr ON pr.id = ap.prompt_id
-    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+    LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
 ),
 new_prompt AS (
     INSERT INTO prompts_resource (name, description, system_prompt, created_at, updated_at)
@@ -93,7 +93,7 @@ new_agent AS (
 ),
 -- Link agent to name
 link_agent_name AS (
-    INSERT INTO agent_names (agent_id, name_id, created_at, updated_at)
+    INSERT INTO agent_names_junction (agent_id, name_id, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         nr.name_id,
@@ -105,7 +105,7 @@ link_agent_name AS (
 ),
 -- Link agent to description
 link_agent_description AS (
-    INSERT INTO agent_descriptions (agent_id, description_id, created_at, updated_at)
+    INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         dr.description_id,
@@ -117,7 +117,7 @@ link_agent_description AS (
 ),
 -- Link agent to model
 link_agent_model AS (
-    INSERT INTO agent_models (agent_id, model_id, created_at, updated_at)
+    INSERT INTO agent_models_junction (agent_id, model_id, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         sa.model_id,
@@ -130,7 +130,7 @@ link_agent_model AS (
 ),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (
-    INSERT INTO agent_flags (agent_id, flag_id, value, created_at, updated_at) SELECT na.agent_id::uuid,
+    INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at, updated_at) SELECT na.agent_id::uuid,
         f.id,
         false,
         NOW(),
@@ -143,7 +143,7 @@ link_agent_active_flag AS (
         updated_at = NOW()
 ),
 copy_temperature AS (
-    INSERT INTO agent_temperature_levels (agent_id, temperature_level_id, active, created_at, updated_at)
+    INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         sa.temperature_level_id,
@@ -155,7 +155,7 @@ copy_temperature AS (
     WHERE sa.temperature_level_id IS NOT NULL
 ),
 copy_reasoning AS (
-    INSERT INTO agent_reasoning_levels (agent_id, reasoning_level_id, active, created_at, updated_at)
+    INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         sa.reasoning_level_id,
@@ -167,13 +167,13 @@ copy_reasoning AS (
     WHERE sa.reasoning_level_id IS NOT NULL
 ),
 link_prompt AS (
-    INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
+    INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at, updated_at)
     SELECT na.agent_id::uuid, np.prompt_id, true, NOW(), NOW()
     FROM new_agent na
     CROSS JOIN new_prompt np
 ),
 copy_departments AS (
-    INSERT INTO agent_departments (agent_id, department_id, active, created_at, updated_at)
+    INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         ad.department_id,
@@ -181,7 +181,7 @@ copy_departments AS (
         NOW(),
         NOW()
     FROM source_agent sa
-    JOIN agent_departments ad ON NULL::uuid = sa.source_id AND ad.active = true
+    JOIN agent_departments_junction ad ON NULL::uuid = sa.source_id AND ad.active = true
     CROSS JOIN new_agent na
 )
 SELECT 

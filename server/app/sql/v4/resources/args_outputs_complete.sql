@@ -51,17 +51,17 @@ BEGIN
         RAISE EXCEPTION 'Args resource % does not exist', args_id;
     END IF;
     
-    -- Lookup tool_id from agent_tools + resource_tools_relation
-    -- Note: No longer need template_id or schema_id since we use tool_args directly
+    -- Lookup tool_id from agent_tools_junction + resource_tools_relation
+    -- Note: No longer need template_id or schema_id since we use tool_args_junction directly
     SELECT t.id
     INTO v_tool_id
-    FROM agent_tools at
+    FROM agent_tools_junction at
     JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_args_outputs_v4.agent_id
       AND rt.resource = 'args_outputs'::resource_type
       AND at.active = true
-      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+      AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
@@ -72,7 +72,7 @@ BEGIN
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
-            SELECT 1 FROM agent_flags 
+            SELECT 1 FROM agent_flags_junction 
             WHERE agent_id = api_create_args_outputs_v4.agent_id 
                
               AND value = true
@@ -98,7 +98,7 @@ BEGIN
     v_arguments_raw := v_args_jsonb::text;
     
     -- Create call record
-    -- Note: template_id is no longer needed since we use tool_args_outputs directly
+    -- Note: template_id is no longer needed since we use tool_args_outputs_junction directly
     v_call_id := uuidv7();
     INSERT INTO calls_entry (
         id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at

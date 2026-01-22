@@ -48,7 +48,7 @@ RETURNS TABLE (
     group_id uuid,
     trace_id text,
     message_ids uuid[],  -- Includes new user message ID (if created) + context message IDs
-    output_modalities text[]  -- NEW: from model_modalities
+    output_modalities text[]  -- NEW: from model_modalities_junction
 )
 LANGUAGE sql
 VOLATILE
@@ -70,7 +70,7 @@ selected_agent AS (
     FROM agent_artifact a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+      AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
 -- Get agent model output modalities
@@ -78,8 +78,8 @@ agent_model_modalities AS (
     SELECT 
         array_agg(mr.modality::text ORDER BY mr.modality) as output_modalities
     FROM agent_artifact a
-    JOIN agent_models am ON am.agent_id = a.id
-    JOIN model_modalities mm ON mm.model_id = am.model_id
+    JOIN agent_models_junction am ON am.agent_id = a.id
+    JOIN model_modalities_junction mm ON mm.model_id = am.model_id
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
@@ -92,7 +92,7 @@ profile_rate_limit AS (
     SELECT 
         rl.requests_per_day as req_per_day
     FROM profile_artifact prof
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     WHERE prof.id = (SELECT profile_id FROM params)
 ),

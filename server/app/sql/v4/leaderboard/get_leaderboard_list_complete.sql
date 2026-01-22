@@ -87,7 +87,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
@@ -115,7 +115,7 @@ filt AS (
           SELECT DISTINCT s.id
           FROM simulation_artifact s
           WHERE EXISTS (
-            SELECT 1 FROM simulation_flags sf
+            SELECT 1 FROM simulation_flags_junction sf
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
               AND f.name = 'simulation_active'
@@ -124,16 +124,16 @@ filt AS (
             AND (
                 EXISTS (
                     SELECT 1 
-                    FROM cohort_simulations cs 
+                    FROM cohort_simulations_junction cs 
                     WHERE cs.simulation_id = s.id 
                       AND cs.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
                       AND cs.active = TRUE
                 )
                 OR
-                (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
+                (EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
                  AND NOT EXISTS (
                      SELECT 1 
-                     FROM cohort_simulations cs2 
+                     FROM cohort_simulations_junction cs2 
                      WHERE cs2.simulation_id = s.id 
                        AND cs2.active = TRUE
                  ))
@@ -144,7 +144,7 @@ filt AS (
 profile_stats AS (
     SELECT
         f.profile_id,
-        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id LIMIT 1) AS name,
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id LIMIT 1) AS name,
         COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
         ROUND(MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL))::int AS highest_score,
         ROUND(AVG(f.num_messages_total) FILTER (WHERE f.num_messages_total IS NOT NULL))::int AS avg_messages,

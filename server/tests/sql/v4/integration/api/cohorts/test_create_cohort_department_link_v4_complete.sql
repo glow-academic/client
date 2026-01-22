@@ -17,7 +17,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO cohort_departments(cohort_id, department_id, active)
+    INSERT INTO cohort_departments_junction(cohort_id, department_id, active)
     VALUES (
         test_create_cohort_department_link_v4.input_cohort_id,
         test_create_cohort_department_link_v4.input_department_id,

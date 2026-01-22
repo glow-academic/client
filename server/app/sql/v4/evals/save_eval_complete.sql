@@ -80,14 +80,14 @@ BEGIN
     
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM eval_names WHERE eval_id = v_eval_id;
-        DELETE FROM eval_descriptions WHERE eval_id = v_eval_id;
-        DELETE FROM eval_departments WHERE eval_id = v_eval_id;
-        DELETE FROM eval_agents WHERE eval_id = v_eval_id;
-        DELETE FROM eval_runs_rubrics WHERE eval_id = v_eval_id;
-        DELETE FROM eval_groups_rubrics WHERE eval_id = v_eval_id;
-        DELETE FROM eval_runs WHERE eval_id = v_eval_id;
-        DELETE FROM eval_groups WHERE eval_id = v_eval_id;
+        DELETE FROM eval_names_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_descriptions_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_departments_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_agents_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_runs_rubrics_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_groups_rubrics_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_runs_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_groups_junction WHERE eval_id = v_eval_id;
     END IF;
     
     -- Continue with eval save using SQL (eval already created/updated above)
@@ -128,21 +128,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM eval_departments
-        WHERE eval_departments.eval_id = (SELECT p.eval_id FROM params p LIMIT 1) AND active = true
+        FROM eval_departments_junction
+        WHERE eval_departments_junction.eval_id = (SELECT p.eval_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -173,7 +173,7 @@ BEGIN
     ),
     -- Link eval to name
     link_eval_name AS (
-        INSERT INTO eval_names (eval_id, name_id, created_at, updated_at)
+        INSERT INTO eval_names_junction (eval_id, name_id, created_at, updated_at)
         SELECT 
             x.eval_id,
             nr.name_id,
@@ -186,7 +186,7 @@ BEGIN
     ),
     -- Link eval to description
     link_eval_description AS (
-        INSERT INTO eval_descriptions (eval_id, description_id, created_at, updated_at)
+        INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at, updated_at)
         SELECT 
             x.eval_id,
             dr.description_id,
@@ -199,7 +199,7 @@ BEGIN
     ),
     -- Insert or UPDATE eval_artifact active flag
     insert_eval_active_flag AS (
-        INSERT INTO eval_flags (eval_id, flag_id, value, created_at, updated_at) SELECT x.eval_id,
+        INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at, updated_at) SELECT x.eval_id,
             f.id,
             x.active,
             NOW(),
@@ -213,7 +213,7 @@ BEGIN
     ),
     -- Insert or UPDATE eval_artifact dynamic flag
     insert_eval_dynamic_flag AS (
-        INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.eval_id,
             f.id,
@@ -229,7 +229,7 @@ BEGIN
     ),
     -- Insert or UPDATE eval_artifact groups_entry flag
     insert_eval_groups_flag AS (
-        INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.eval_id,
             f.id,
@@ -245,7 +245,7 @@ BEGIN
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO eval_departments (eval_id, department_id, active, created_at, updated_at)
+        INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at, updated_at)
         SELECT 
             x.eval_id,
             dept_id,
@@ -261,7 +261,7 @@ BEGIN
     ),
     -- Link agents (old ones already deleted above if update)
     link_agents AS (
-        INSERT INTO eval_agents (eval_id, agent_id, created_at, updated_at)
+        INSERT INTO eval_agents_junction (eval_id, agent_id, created_at, updated_at)
         SELECT 
             x.eval_id,
             agent_id,
@@ -275,7 +275,7 @@ BEGIN
     ),
     -- Link model runs_entry (old ones already deleted above if update)
     link_runs AS (
-        INSERT INTO eval_runs (eval_id, run_id, completed, created_at, updated_at)
+        INSERT INTO eval_runs_junction (eval_id, run_id, completed, created_at, updated_at)
         SELECT 
             x.eval_id,
             run_id,
@@ -292,7 +292,7 @@ BEGIN
     ),
     -- Link groups_entry when using groups_entry
     link_groups AS (
-        INSERT INTO eval_groups (eval_id, group_id, created_at, updated_at)
+        INSERT INTO eval_groups_junction (eval_id, group_id, created_at, updated_at)
         SELECT
             x.eval_id,
             group_id,
@@ -307,7 +307,7 @@ BEGIN
     ),
     -- Link rubrics to runs_entry
     link_run_rubrics AS (
-        INSERT INTO eval_runs_rubrics (eval_id, run_id, rubric_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO eval_runs_rubrics_junction (eval_id, run_id, rubric_id, created_at, updated_at, generated, mcp, active)
         SELECT
             x.eval_id,
             rr.run_id,
@@ -328,7 +328,7 @@ BEGIN
     ),
     -- Link rubrics to groups_entry
     link_group_rubrics AS (
-        INSERT INTO eval_groups_rubrics (eval_id, group_id, rubric_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO eval_groups_rubrics_junction (eval_id, group_id, rubric_id, created_at, updated_at, generated, mcp, active)
         SELECT
             x.eval_id,
             gr.group_id,

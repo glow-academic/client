@@ -1,4 +1,4 @@
--- Delete provider (cascade deletes provider_endpoints, setting_provider_keys)
+-- Delete provider (cascade deletes provider_endpoints, setting_provider_keys_junction)
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -34,7 +34,7 @@ VOLATILE
 AS $$
 WITH actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_delete_provider_v4.profile_id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_delete_provider_v4.profile_id LIMIT 1), '') as actor_name
 )
 -- Providers is now an enum, not a table - cannot delete providers
 SELECT 

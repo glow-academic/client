@@ -199,15 +199,15 @@ BEGIN
 
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
-        DELETE FROM simulation_names WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_descriptions WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_departments WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_flags WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_scenarios WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_scenario_flags WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_scenario_positions WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_scenario_rubrics WHERE simulation_id = v_simulation_id;
-        DELETE FROM simulation_scenario_time_limits WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_names_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_descriptions_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_departments_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_flags_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenarios_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_flags_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_positions_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_rubrics_junction WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_scenario_time_limits_junction WHERE simulation_id = v_simulation_id;
     END IF;
 
     -- Continue with simulation save using SQL (simulation already created/updated above)
@@ -229,21 +229,21 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+            (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+            COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM simulation_departments
-        WHERE simulation_departments.simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1) AND active = true
+        FROM simulation_departments_junction
+        WHERE simulation_departments_junction.simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-        FROM profile_departments
-        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
+        FROM profile_departments_junction
+        WHERE profile_departments_junction.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
@@ -279,7 +279,7 @@ BEGIN
     ),
     -- Link simulation name (resource ID already validated)
     link_simulation_name AS (
-        INSERT INTO simulation_names (simulation_id, name_id, created_at, updated_at)
+        INSERT INTO simulation_names_junction (simulation_id, name_id, created_at, updated_at)
         SELECT 
             x.simulation_id,
             x.name_id,
@@ -291,7 +291,7 @@ BEGIN
     ),
     -- Link simulation description (resource ID already validated)
     link_simulation_description AS (
-        INSERT INTO simulation_descriptions (simulation_id, description_id, created_at, updated_at)
+        INSERT INTO simulation_descriptions_junction (simulation_id, description_id, created_at, updated_at)
         SELECT 
             x.simulation_id,
             x.description_id,
@@ -303,7 +303,7 @@ BEGIN
     ),
     -- Link simulation flags (resource ID already validated)
     link_simulation_active_flag AS (
-        INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
+        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
         SELECT 
             x.simulation_id,
             x.active_flag_id,
@@ -317,7 +317,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
     ),
     link_simulation_practice_flag AS (
-        INSERT INTO simulation_flags (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
+        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
         SELECT 
             x.simulation_id,
             x.practice_flag_id,
@@ -331,7 +331,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
     ),
     link_departments AS (
-        INSERT INTO simulation_departments (simulation_id, department_id, active, created_at, updated_at)
+        INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at, updated_at)
         SELECT 
             x.simulation_id,
             dept_id,
@@ -346,7 +346,7 @@ BEGIN
             updated_at = NOW()
     ),
     link_scenarios AS (
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, created_at, updated_at)
+        INSERT INTO simulation_scenarios_junction (simulation_id, scenario_id, active, created_at, updated_at)
         SELECT 
             x.simulation_id,
             scenario_id,
@@ -361,7 +361,7 @@ BEGIN
             updated_at = NOW()
     ),
     link_scenario_flags AS (
-        INSERT INTO simulation_scenario_flags (
+        INSERT INTO simulation_scenario_flags_junction (
             simulation_id,
             scenario_flag_id,
             value,
@@ -388,7 +388,7 @@ BEGIN
             updated_at = NOW()
     ),
     link_scenario_positions AS (
-        INSERT INTO simulation_scenario_positions (
+        INSERT INTO simulation_scenario_positions_junction (
             simulation_id,
             scenario_position_id,
             created_at,
@@ -413,7 +413,7 @@ BEGIN
             updated_at = NOW()
     ),
     link_scenario_rubrics AS (
-        INSERT INTO simulation_scenario_rubrics (simulation_id, scenario_rubric_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, created_at, updated_at, generated, mcp, active)
         SELECT 
             x.simulation_id,
             scenario_rubric_id,
@@ -430,7 +430,7 @@ BEGIN
             updated_at = NOW()
     ),
     link_scenario_time_limits AS (
-        INSERT INTO simulation_scenario_time_limits (
+        INSERT INTO simulation_scenario_time_limits_junction (
             simulation_id,
             scenario_time_limit_id,
             created_at,

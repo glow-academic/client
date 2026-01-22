@@ -50,7 +50,7 @@ WITH descriptions_result AS (
     JOIN tool_artifact t ON t.id = tc.tool_id
     JOIN messages_entry m ON m.id = tc.message_id
     WHERE m.run_id = $1
-      AND (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'standard_description'
+      AND (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'standard_description'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1

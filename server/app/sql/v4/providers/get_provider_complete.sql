@@ -143,8 +143,8 @@ draft_version_data AS (
 ),
 user_profile AS (
     SELECT 
-        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -155,19 +155,19 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools
     FROM params x
 ),
@@ -194,14 +194,14 @@ name_suggestions_data AS (
             (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
              FROM (
                  SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
-                 FROM provider_names pn
+                 FROM provider_names_junction pn
                  JOIN names_resource n ON n.id = pn.name_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pn.name_id IS NOT NULL
                    AND n.name IS NOT NULL
                    AND n.name != ''
                    AND (
-                       -- Option 1: Linked to providers (provider_names junction table means it's validated/used)
+                       -- Option 1: Linked to providers (provider_names_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        pn.generated = false
                        OR
@@ -234,14 +234,14 @@ description_suggestions_data AS (
             (SELECT ARRAY_AGG(pd.description_id ORDER BY pd.created_at DESC)
              FROM (
                  SELECT DISTINCT pd.description_id, MAX(pd.created_at) as created_at
-                 FROM provider_descriptions pd
+                 FROM provider_descriptions_junction pd
                  JOIN descriptions_resource d ON d.id = pd.description_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.description_id IS NOT NULL
                    AND d.description IS NOT NULL
                    AND d.description != ''
                    AND (
-                       -- Option 1: Linked to providers (provider_descriptions junction table means it's validated/used)
+                       -- Option 1: Linked to providers (provider_descriptions_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
                        pd.generated = false
                        OR
@@ -311,7 +311,7 @@ name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT n.id FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pn.name_id FROM provider_names pn WHERE pn.provider_id = (SELECT provider_id FROM params) LIMIT 1)
+            (SELECT pn.name_id FROM provider_names_junction pn WHERE pn.provider_id = (SELECT provider_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_provider_v4_name_resource 
@@ -322,7 +322,7 @@ name_resource_data AS (
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
-                FROM provider_names pn 
+                FROM provider_names_junction pn 
                 JOIN names_resource n ON pn.name_id = n.id 
                 WHERE pn.provider_id = (SELECT provider_id FROM params)
             ) n
@@ -335,7 +335,7 @@ description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT d.id FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pd.description_id FROM provider_descriptions pd WHERE pd.provider_id = (SELECT provider_id FROM params) LIMIT 1)
+            (SELECT pd.description_id FROM provider_descriptions_junction pd WHERE pd.provider_id = (SELECT provider_id FROM params) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_provider_v4_description_resource 
@@ -346,7 +346,7 @@ description_resource_data AS (
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 2 as priority
-                FROM provider_descriptions pd 
+                FROM provider_descriptions_junction pd 
                 JOIN descriptions_resource d ON pd.description_id = d.id 
                 WHERE pd.provider_id = (SELECT provider_id FROM params)
             ) d
@@ -359,7 +359,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT f.id FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = (SELECT provider_id FROM params) AND f.name = 'provider_active' AND pf.value = TRUE LIMIT 1)
+            (SELECT pf.flag_id FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = (SELECT provider_id FROM params) AND f.name = 'provider_active' AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_provider_v4_flag_resource 
@@ -370,7 +370,7 @@ flag_resource_data AS (
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
-                FROM provider_flags pf 
+                FROM provider_flags_junction pf 
                 JOIN flags_resource f ON pf.flag_id = f.id 
                 JOIN flags_resource fl ON pf.flag_id = fl.id 
                 WHERE pf.provider_id = (SELECT provider_id FROM params) 
@@ -413,9 +413,9 @@ descriptions_data AS (
         d.id = (SELECT description_id FROM description_resource_data)
         OR (
             (
-                -- Option 1: Linked to providers (provider_descriptions junction table means it's used)
+                -- Option 1: Linked to providers (provider_descriptions_junction junction table means it's used)
                 EXISTS (
-                    SELECT 1 FROM provider_descriptions pd
+                    SELECT 1 FROM provider_descriptions_junction pd
                     WHERE pd.description_id = d.id
                 )
                 OR
@@ -446,16 +446,16 @@ name_agent_data AS (
         SELECT a.id
         FROM agent_artifact a
         WHERE EXISTS (
-            SELECT 1 FROM agent_tools at
+            SELECT 1 FROM agent_tools_junction at
             JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'names'::resource_type
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
             x.mcp = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+            OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
                   AND f.name = 'mcp'
                   AND af_mcp.value = true
             )
@@ -474,16 +474,16 @@ description_agent_data AS (
         SELECT a.id
         FROM agent_artifact a
         WHERE EXISTS (
-            SELECT 1 FROM agent_tools at
+            SELECT 1 FROM agent_tools_junction at
             JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'descriptions'::resource_type
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
             x.mcp = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+            OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
                   AND f.name = 'mcp'
                   AND af_mcp.value = true
             )
@@ -502,16 +502,16 @@ flag_agent_data AS (
         SELECT a.id
         FROM agent_artifact a
         WHERE EXISTS (
-            SELECT 1 FROM agent_tools at
+            SELECT 1 FROM agent_tools_junction at
             JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'flags'::resource_type
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
             x.mcp = false
-            OR EXISTS (SELECT 1 FROM agent_flags af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
+            OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f ON af_mcp.flag_id = f.id WHERE af_mcp.agent_id = a.id
                   AND f.name = 'mcp'
                   AND af_mcp.value = true
             )

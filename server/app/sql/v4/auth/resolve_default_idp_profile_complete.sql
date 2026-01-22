@@ -29,9 +29,9 @@ AS $$
     profile_with_details AS (
         SELECT
             rp.resolved_profile_id as profile_id,
-            -- Get primary email (must match exactly what's in profile_emails table)
+            -- Get primary email (must match exactly what's in profile_emails_junction table)
             (SELECT e.email
-             FROM profile_emails pe
+             FROM profile_emails_junction pe
              JOIN emails_resource e ON pe.email_id = e.id
              WHERE pe.profile_id = rp.resolved_profile_id
                AND pe.is_primary = true
@@ -39,18 +39,18 @@ AS $$
              LIMIT 1) as primary_email,
             -- Get name
             (SELECT n.name
-             FROM profile_names pn
+             FROM profile_names_junction pn
              JOIN names_resource n ON pn.name_id = n.id
              WHERE pn.profile_id = rp.resolved_profile_id
              LIMIT 1) as name,
             -- Get role
             (SELECT r.role
-             FROM profile_roles pr
+             FROM profile_roles_junction pr
              JOIN roles_resource r ON pr.role_id = r.id
              WHERE pr.profile_id = rp.resolved_profile_id
              LIMIT 1) as role
         FROM resolved_profile rp
-        -- Verify profile exists in profile_artifact (not just setting_profiles)
+        -- Verify profile exists in profile_artifact (not just setting_profiles_junction)
         -- This allows emulation of any profile, not just those linked to settings
         WHERE rp.resolved_profile_id IS NOT NULL
           AND EXISTS (
