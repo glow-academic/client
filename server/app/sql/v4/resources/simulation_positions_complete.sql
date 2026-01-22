@@ -1,5 +1,5 @@
 -- Create simulation_positions resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if simulation_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), simulation_id (uuid, required, third), value (integer, required, fourth), mcp (boolean, optional, fifth)
 -- Returns: id (uuid) - resource row ID
 
@@ -72,6 +72,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if simulation_positions already exists (match on simulation_id)
+    SELECT r.id INTO v_resource_id
+    FROM simulation_positions_resource r
+    WHERE r.simulation_id = api_create_simulation_positions_v4.simulation_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
 
     -- Build arguments_raw directly from params (templates removed)
     v_arguments_raw := v_args_jsonb::text;

@@ -1,5 +1,5 @@
 -- Create scenario_positions resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if simulation_id + scenario_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), simulation_id (uuid, required, third), scenario_id (uuid, required, fourth), value (integer, required, fifth), mcp (boolean, optional, sixth)
 -- Returns: id (uuid) - composite key represented as single id for API compatibility
 -- Note: scenario_positions is a junction table, so we insert directly into it
@@ -94,6 +94,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if scenario_positions already exists (match on simulation_id + scenario_id)
+    SELECT r.id INTO v_resource_id
+    FROM scenario_positions_resource r
+    WHERE r.simulation_id = api_create_scenario_positions_v4.simulation_id
+      AND r.scenario_id = api_create_scenario_positions_v4.scenario_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

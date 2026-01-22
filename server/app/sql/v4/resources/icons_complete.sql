@@ -1,5 +1,5 @@
 -- Create icons resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), name text, description text, value numeric
 -- Returns: icon_id (uuid)
 
@@ -71,7 +71,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
-    
+
+    -- Check if icon already exists (match on name)
+    SELECT ir.id INTO v_icon_id
+    FROM icons_resource ir
+    WHERE ir.name = api_create_icons_v4.name
+    LIMIT 1;
+
+    IF v_icon_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_icon_id;
+        RETURN;
+    END IF;
+
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;

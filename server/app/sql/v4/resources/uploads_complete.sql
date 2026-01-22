@@ -1,5 +1,5 @@
 -- Create uploads resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if upload_id + group_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), upload_id (uuid)
 -- Returns: uploads_id (uuid)
 
@@ -87,6 +87,19 @@ BEGIN
         RETURN QUERY SELECT v_uploads_id;
         RETURN;
     END IF;
+
+    -- Check if uploads already exists (match on upload_id + group_id)
+    SELECT r.id INTO v_uploads_id
+    FROM uploads_resource r
+    WHERE r.upload_id = v_artifact_id
+      AND r.group_id = api_create_uploads_v4.group_id
+    LIMIT 1;
+
+    IF v_uploads_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_uploads_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

@@ -1,5 +1,5 @@
 -- Create problem_statements resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), name text, problem_statement text
 -- Returns: problem_statement_id (uuid)
 
@@ -70,6 +70,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if problem_statements already exists (match on name)
+    SELECT r.id INTO v_problem_statement_id
+    FROM problem_statements_resource r
+    WHERE r.name = api_create_problem_statements_v4.name
+    LIMIT 1;
+
+    IF v_problem_statement_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_problem_statement_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

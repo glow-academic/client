@@ -450,9 +450,9 @@ user_departments_rows AS (
     WHERE pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
 ),
 scenario_departments_data AS (
-    SELECT 
+    SELECT
         sd.scenario_id,
-        COALESCE(ARRAY_AGG(sd.department_id ORDER BY sd.created_at), ARRAY[]::uuid[]) as department_ids
+        COALESCE(ARRAY_AGG(sd.departments_id ORDER BY sd.created_at), ARRAY[]::uuid[]) as department_ids
     FROM params x
     LEFT JOIN scenario_departments sd ON sd.scenario_id = x.scenario_id AND sd.active = true
     WHERE x.scenario_id IS NOT NULL
@@ -2675,8 +2675,8 @@ user_departments_for_agents_scenario AS (
 -- Department mapping data (for departments array) - must be defined before ui_flags
 -- Following personas pattern: Only active departments user is linked to
 department_mapping_data AS (
-    SELECT 
-        d.department_id,
+    SELECT
+        d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated

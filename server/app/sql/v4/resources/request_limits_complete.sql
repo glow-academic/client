@@ -1,5 +1,5 @@
 -- Create request_limits resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if requests_per_day already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), requests_per_day (integer, required, third), mcp (boolean, optional, fourth), and resource-specific fields
 -- Returns: request_limits_id (uuid)
 
@@ -70,6 +70,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if request_limits already exists (match on requests_per_day)
+    SELECT r.id INTO v_request_limits_id
+    FROM request_limits_resource r
+    WHERE r.requests_per_day = api_create_request_limits_v4.requests_per_day
+    LIMIT 1;
+
+    IF v_request_limits_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_request_limits_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

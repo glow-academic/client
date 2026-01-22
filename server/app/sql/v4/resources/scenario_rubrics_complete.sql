@@ -1,5 +1,5 @@
 -- Create scenario_rubrics resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if scenario_id + rubric_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), scenario_id (uuid, required, third), rubric_id (uuid, required, fourth), mcp (boolean, optional, fifth)
 -- Returns: id (uuid) - unique resource id
 
@@ -79,6 +79,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if scenario_rubrics already exists (match on scenario_id + rubric_id)
+    SELECT r.id INTO v_resource_id
+    FROM scenario_rubrics_resource r
+    WHERE r.scenario_id = api_create_scenario_rubrics_v4.scenario_id
+      AND r.rubric_id = api_create_scenario_rubrics_v4.rubric_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

@@ -247,10 +247,10 @@ BEGIN
                 WHEN p.route_ids IS NOT NULL THEN p.route_ids
                 WHEN p.role IS NOT NULL THEN COALESCE(
                     (SELECT ARRAY_AGG(rr_route.id ORDER BY rr_route.route)
-                     FROM role_routes rr
-                     JOIN routes_resource rr_route ON rr_route.route = rr.route
-                     WHERE rr.role = p.role::profile_role
-                       AND rr.active = true),
+                     FROM artifact_roles ar
+                     JOIN artifact_routes art ON art.artifact = ar.artifact
+                     JOIN routes_resource rr_route ON rr_route.route = art.route
+                     WHERE ar.role = p.role::profile_role),
                     ARRAY[]::uuid[]
                 )
                 ELSE ARRAY[]::uuid[]

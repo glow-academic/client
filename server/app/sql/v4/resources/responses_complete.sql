@@ -1,5 +1,5 @@
 -- Create responses resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if option_id + question_id already exists)
 -- Parameters: agent_id (uuid, required, first), option_id (uuid), question_id (uuid)
 -- Returns: response_id (uuid)
 
@@ -70,6 +70,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if responses already exists (match on option_id + question_id)
+    SELECT r.id INTO v_response_id
+    FROM responses_resource r
+    WHERE r.option_id = api_create_responses_v4.option_id
+      AND r.question_id = api_create_responses_v4.question_id
+    LIMIT 1;
+
+    IF v_response_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_response_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

@@ -1,5 +1,5 @@
 -- Create colors resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if hex_code already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), name (text), description (text), hex_code (text)
 -- Returns: color_id (uuid)
 
@@ -71,7 +71,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
-    
+
+    -- Check if color already exists (match on hex_code)
+    SELECT cr.id INTO v_color_id
+    FROM colors_resource cr
+    WHERE cr.hex_code = api_create_colors_v4.hex_code
+    LIMIT 1;
+
+    IF v_color_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_color_id;
+        RETURN;
+    END IF;
+
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;

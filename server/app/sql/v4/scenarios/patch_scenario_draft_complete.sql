@@ -97,7 +97,16 @@ BEGIN
     IF problem_statement_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM problem_statements_resource WHERE id = problem_statement_id) THEN
         RAISE EXCEPTION 'Problem statement resource not found: %', problem_statement_id;
     END IF;
-    
+
+    IF department_ids IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(department_ids) as dept_id
+            WHERE NOT EXISTS (SELECT 1 FROM departments_resource WHERE id = dept_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more department resource IDs not found in departments_resource';
+        END IF;
+    END IF;
+
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
@@ -319,8 +328,8 @@ BEGIN
         RETURNING id INTO v_group_id;
 
         -- Create draft
-        INSERT INTO drafts (profile_id, created_at, updated_at, version, group_id)
-        VALUES (v_profile_id, NOW(), NOW(), 1, v_group_id)
+        INSERT INTO drafts (artifact, profile_id, group_id)
+        VALUES ('scenario'::artifacts, v_profile_id, v_group_id)
         RETURNING id, version INTO v_draft_id, v_new_version;
         
         v_draft_exists := false;

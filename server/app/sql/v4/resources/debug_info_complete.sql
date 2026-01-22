@@ -1,5 +1,5 @@
 -- Create debug_info resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if content already exists)
 -- Parameters: agent_id (uuid, required, first), content text
 -- Returns: debug_info_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if debug_info already exists (match on content)
+    SELECT r.id INTO v_debug_info_id
+    FROM debug_info_resource r
+    WHERE r.content = api_create_debug_info_v4.content
+    LIMIT 1;
+
+    IF v_debug_info_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_debug_info_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

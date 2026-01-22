@@ -1,5 +1,5 @@
 -- Create scenario_time_limits resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if scenario_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), scenario_id (uuid, required, third), time_limit_seconds (integer, required, fourth), mcp (boolean, optional, fifth)
 -- Returns: id (uuid)
 
@@ -76,6 +76,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if scenario_time_limits already exists (match on scenario_id)
+    SELECT r.id INTO v_resource_id
+    FROM scenario_time_limits_resource r
+    WHERE r.scenario_id = api_create_scenario_time_limits_v4.scenario_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

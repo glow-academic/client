@@ -1,5 +1,5 @@
 -- Create feedbacks resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if feedback + standard_id already exists)
 -- Parameters: agent_id (uuid, required, first), total numeric, feedback text, standard_id uuid
 -- Returns: feedback_id (uuid)
 
@@ -71,6 +71,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if feedbacks already exists (match on feedback + standard_id)
+    SELECT r.id INTO v_feedback_id
+    FROM feedbacks_resource r
+    WHERE r.feedback = api_create_feedbacks_v4.feedback
+      AND r.standard_id = api_create_feedbacks_v4.standard_id
+    LIMIT 1;
+
+    IF v_feedback_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_feedback_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

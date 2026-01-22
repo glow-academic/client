@@ -1,5 +1,5 @@
 -- Create images resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), name text, description text
 -- Returns: image_id (uuid)
 
@@ -70,6 +70,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if images already exists (match on name)
+    SELECT r.id INTO v_image_id
+    FROM images_resource r
+    WHERE r.name = api_create_images_v4.name
+    LIMIT 1;
+
+    IF v_image_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_image_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

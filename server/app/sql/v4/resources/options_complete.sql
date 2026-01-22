@@ -1,5 +1,5 @@
 -- Create options resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if option_text + is_correct already exists)
 -- Parameters: agent_id (uuid, required, first), option_text text, is_correct boolean
 -- Returns: option_id (uuid)
 
@@ -70,6 +70,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if options already exists (match on option_text + is_correct)
+    SELECT r.id INTO v_option_id
+    FROM options_resource r
+    WHERE r.option_text = api_create_options_v4.option_text
+      AND r.is_correct = api_create_options_v4.is_correct
+    LIMIT 1;
+
+    IF v_option_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_option_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

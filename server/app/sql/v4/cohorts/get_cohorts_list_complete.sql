@@ -252,11 +252,12 @@ all_department_ids AS (
     SELECT department_id FROM user_departments
 ),
 department_mapping_data AS (
-    SELECT 
-        d.id as department_id,
+    SELECT
+        dr.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM department_artifact d
+    JOIN departments_resource dr ON dr.department_id = d.id
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
 ),
 cohorts_data AS (

@@ -1,5 +1,5 @@
 -- Create hints resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if hint already exists)
 -- Parameters: agent_id (uuid, required, first), hint text
 -- Returns: hint_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if hints already exists (match on hint)
+    SELECT r.id INTO v_hint_id
+    FROM hints_resource r
+    WHERE r.hint = api_create_hints_v4.hint
+    LIMIT 1;
+
+    IF v_hint_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_hint_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

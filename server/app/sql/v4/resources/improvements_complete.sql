@@ -1,5 +1,5 @@
 -- Create improvements resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name + message_id already exists)
 -- Parameters: agent_id (uuid, required, first), name text, description text, message_id uuid
 -- Returns: improvement_id (uuid)
 
@@ -71,6 +71,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if improvements already exists (match on name + message_id)
+    SELECT r.id INTO v_improvement_id
+    FROM improvements_resource r
+    WHERE r.name = api_create_improvements_v4.name
+      AND r.message_id = api_create_improvements_v4.message_id
+    LIMIT 1;
+
+    IF v_improvement_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_improvement_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

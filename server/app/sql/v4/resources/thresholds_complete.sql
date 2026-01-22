@@ -1,5 +1,5 @@
 -- Create thresholds resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if value already exists)
 -- Parameters: agent_id (uuid, required, first), value numeric
 -- Returns: threshold_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if thresholds already exists (match on value)
+    SELECT r.id INTO v_threshold_id
+    FROM thresholds_resource r
+    WHERE r.value = api_create_thresholds_v4.value
+    LIMIT 1;
+
+    IF v_threshold_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_threshold_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

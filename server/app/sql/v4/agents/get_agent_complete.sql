@@ -341,8 +341,8 @@ agent_department_access_check AS (
     WHERE x.agent_id IS NOT NULL
 ),
 department_mapping_data AS (
-    SELECT 
-        d.department_id,
+    SELECT
+        d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
@@ -363,7 +363,7 @@ primary_department_id_data AS (
 ),
 -- Active departments for user (departments with active flag that user is linked to)
 active_departments_data AS (
-    SELECT ARRAY_AGG(DISTINCT d.department_id) as department_ids
+    SELECT ARRAY_AGG(DISTINCT d.id) as department_ids
     FROM params x
     JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
     WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)

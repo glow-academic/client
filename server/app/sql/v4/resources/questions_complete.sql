@@ -1,5 +1,5 @@
 -- Create questions resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if question_text already exists)
 -- Parameters: agent_id (uuid, required, first), question_text text, allow_multiple boolean, time_value integer
 -- Returns: question_id (uuid)
 
@@ -71,6 +71,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if questions already exists (match on question_text)
+    SELECT r.id INTO v_question_id
+    FROM questions_resource r
+    WHERE r.question_text = api_create_questions_v4.question_text
+    LIMIT 1;
+
+    IF v_question_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_question_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

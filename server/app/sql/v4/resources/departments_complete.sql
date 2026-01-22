@@ -1,5 +1,5 @@
 -- Create departments resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if department_id + group_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), department_id (uuid, required, third), mcp (boolean, optional, fourth)
 -- Returns: id (uuid) - unique resource id
 
@@ -78,7 +78,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
-    
+
+    -- Check if department resource already exists (match on department_id + group_id)
+    SELECT dr.id INTO v_resource_id
+    FROM departments_resource dr
+    WHERE dr.department_id = v_artifact_id
+      AND dr.group_id = api_create_departments_v4.group_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
     v_arguments_raw := v_args_jsonb::text;

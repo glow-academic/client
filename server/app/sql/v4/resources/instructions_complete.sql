@@ -1,5 +1,5 @@
 -- Create instructions resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if template already exists)
 -- Parameters: agent_id (uuid, required, first), template text
 -- Returns: instruction_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if instructions already exists (match on template)
+    SELECT r.id INTO v_instruction_id
+    FROM instructions_resource r
+    WHERE r.template = api_create_instructions_v4.template
+    LIMIT 1;
+
+    IF v_instruction_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_instruction_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

@@ -16952,6 +16952,11 @@ export interface components {
             /** Feedback By Standard Id */
             feedback_by_standard_id: components["schemas"]["QGetSimulationAttemptV4StandardFeedback"][] | null;
         };
+        /** QGetSimulationAttemptV4HighlightsEntry */
+        QGetSimulationAttemptV4HighlightsEntry: {
+            /** Section */
+            section: string | null;
+        };
         /** QGetSimulationAttemptV4Hint */
         QGetSimulationAttemptV4Hint: {
             /** Simulation Message Id */
@@ -17000,21 +17005,9 @@ export interface components {
             /** Description */
             description: string | null;
             /** Replaces */
-            replaces: components["schemas"]["QGetSimulationAttemptV4MessageFeedbackReplace"][] | null;
+            replaces: components["schemas"]["QGetSimulationAttemptV4ReplacementsEntry"][] | null;
             /** Highlights */
-            highlights: components["schemas"]["QGetSimulationAttemptV4MessageFeedbackHighlight"][] | null;
-        };
-        /** QGetSimulationAttemptV4MessageFeedbackHighlight */
-        QGetSimulationAttemptV4MessageFeedbackHighlight: {
-            /** Section */
-            section: string | null;
-        };
-        /** QGetSimulationAttemptV4MessageFeedbackReplace */
-        QGetSimulationAttemptV4MessageFeedbackReplace: {
-            /** Section */
-            section: string | null;
-            /** Replace */
-            replace: string | null;
+            highlights: components["schemas"]["QGetSimulationAttemptV4HighlightsEntry"][] | null;
         };
         /** QGetSimulationAttemptV4Option */
         QGetSimulationAttemptV4Option: {
@@ -17093,6 +17086,13 @@ export interface components {
             completed: boolean | null;
             /** Created At */
             created_at: string | null;
+        };
+        /** QGetSimulationAttemptV4ReplacementsEntry */
+        QGetSimulationAttemptV4ReplacementsEntry: {
+            /** Section */
+            section: string | null;
+            /** Replace */
+            replace: string | null;
         };
         /** QGetSimulationAttemptV4RubricStructure */
         QGetSimulationAttemptV4RubricStructure: {

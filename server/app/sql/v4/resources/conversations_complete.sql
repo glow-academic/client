@@ -1,5 +1,5 @@
 -- Create conversations resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if end_reason already exists)
 -- Parameters: agent_id (uuid, required, first), end_reason text
 -- Returns: conversation_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if conversations already exists (match on end_reason)
+    SELECT r.id INTO v_conversation_id
+    FROM conversations_resource r
+    WHERE r.end_reason = api_create_conversations_v4.end_reason
+    LIMIT 1;
+
+    IF v_conversation_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_conversation_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

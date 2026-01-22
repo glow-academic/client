@@ -1,5 +1,5 @@
 -- Create fields resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if field_id + group_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), field_id (uuid, required, third), mcp (boolean, optional, fourth)
 -- Returns: id (uuid) - unique resource id
 
@@ -78,6 +78,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if fields already exists (match on field_id + group_id)
+    SELECT r.id INTO v_resource_id
+    FROM fields_resource r
+    WHERE r.field_id = v_artifact_id
+      AND r.group_id = api_create_fields_v4.group_id
+    LIMIT 1;
+
+    IF v_resource_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_resource_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

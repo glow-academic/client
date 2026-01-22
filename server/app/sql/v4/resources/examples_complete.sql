@@ -1,5 +1,5 @@
 -- Create examples resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if example already exists)
 -- Parameters: agent_id (uuid, required, first), example (text)
 -- Returns: example_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if examples already exists (match on example)
+    SELECT r.id INTO v_example_id
+    FROM examples_resource r
+    WHERE r.example = api_create_examples_v4.example
+    LIMIT 1;
+
+    IF v_example_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_example_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

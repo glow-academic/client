@@ -1,5 +1,5 @@
 -- Create prompts resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), system_prompt text, name text, description text
 -- Returns: prompt_id (uuid)
 
@@ -71,6 +71,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if prompts already exists (match on name)
+    SELECT r.id INTO v_prompt_id
+    FROM prompts_resource r
+    WHERE r.name = api_create_prompts_v4.name
+    LIMIT 1;
+
+    IF v_prompt_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_prompt_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

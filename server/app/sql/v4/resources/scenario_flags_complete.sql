@@ -1,5 +1,5 @@
 -- Create scenario_flags resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if scenario_id + flag_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), scenario_id (uuid, required, third), flag_id (uuid, required, fourth), mcp (boolean, optional, fifth)
 -- Returns: scenario_flags_id (uuid)
 
@@ -85,6 +85,19 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if scenario_flags already exists (match on scenario_id + flag_id)
+    SELECT r.id INTO v_scenario_flags_id
+    FROM scenario_flags_resource r
+    WHERE r.scenario_id = api_create_scenario_flags_v4.scenario_id
+      AND r.flag_id = api_create_scenario_flags_v4.flag_id
+    LIMIT 1;
+
+    IF v_scenario_flags_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_scenario_flags_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

@@ -1,5 +1,5 @@
 -- Create standard_groups resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if name already exists)
 -- Parameters: agent_id (uuid, required, first), name text, short_name text, description text, points numeric, pass_points numeric
 -- Returns: standard_group_id (uuid)
 
@@ -73,6 +73,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if standard_groups already exists (match on name)
+    SELECT r.id INTO v_standard_group_id
+    FROM standard_groups_resource r
+    WHERE r.name = api_create_standard_groups_v4.name
+    LIMIT 1;
+
+    IF v_standard_group_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_standard_group_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

@@ -1001,8 +1001,8 @@ department_cohort_ids AS (
 -- Department mapping data (filtered: active flag AND user linked) - following ARTIFACT.md
 -- Uses department_artifact as base (consistent with user_departments_for_mapping)
 department_mapping_data AS (
-    SELECT 
-        d.id as department_id,
+    SELECT
+        dr.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(dr.generated, false) as generated,
@@ -1013,7 +1013,7 @@ department_mapping_data AS (
             JOIN calls c ON c.id = dr2.call_id
             JOIN message_runs mr ON mr.message_id = c.message_id
             JOIN group_runs gr ON gr.run_id = mr.run_id
-            WHERE dr2.id = d.id
+            WHERE dr2.id = dr.id
             LIMIT 1
         ) as group_id,
         -- Include scenario_ids, rubric_ids, cohort_ids from existing CTEs

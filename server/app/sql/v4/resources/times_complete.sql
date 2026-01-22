@@ -1,5 +1,5 @@
 -- Create times resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if time_taken already exists)
 -- Parameters: agent_id (uuid, required, first), time_taken numeric
 -- Returns: time_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if times already exists (match on time_taken)
+    SELECT r.id INTO v_time_id
+    FROM times_resource r
+    WHERE r.time_taken = api_create_times_v4.time_taken
+    LIMIT 1;
+
+    IF v_time_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_time_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

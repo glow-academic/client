@@ -498,8 +498,8 @@ parameter_data AS (
 ),
 -- Department mapping data (for multi-select resource pattern)
 department_mapping_data AS (
-    SELECT 
-        d.department_id,
+    SELECT
+        d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated

@@ -1,5 +1,5 @@
 -- Create contents resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if content already exists)
 -- Parameters: agent_id (uuid, required, first), content text
 -- Returns: contents_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if contents already exists (match on content)
+    SELECT r.id INTO v_contents_id
+    FROM contents_resource r
+    WHERE r.content = api_create_contents_v4.content
+    LIMIT 1;
+
+    IF v_contents_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_contents_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;

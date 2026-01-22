@@ -1,5 +1,5 @@
 -- Create points resource
--- Always INSERT operation (preserves all information)
+-- Get or create operation (returns existing ID if value already exists)
 -- Parameters: agent_id (uuid, required, first), value numeric
 -- Returns: point_id (uuid)
 
@@ -69,6 +69,18 @@ BEGIN
             RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
         END IF;
     END IF;
+
+    -- Check if points already exists (match on value)
+    SELECT r.id INTO v_point_id
+    FROM points_resource r
+    WHERE r.value = api_create_points_v4.value
+    LIMIT 1;
+
+    IF v_point_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_point_id;
+        RETURN;
+    END IF;
+
     
     -- Build arguments_raw directly from params (templates removed)
     v_args_jsonb := '{}'::jsonb;
