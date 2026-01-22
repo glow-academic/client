@@ -19074,11 +19074,9 @@ class GetSimulationSqlParams(BaseModel):
 class QGetSimulationV4Department(BaseModel):
 
     department_id: UUID | None
-    artifact_id: UUID | None
     name: str | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
     scenario_ids: list[UUID] | None
     rubric_ids: list[UUID] | None
     cohort_ids: list[UUID] | None
@@ -19091,7 +19089,6 @@ class QGetSimulationV4DescriptionOption(BaseModel):
     id: UUID | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19101,7 +19098,6 @@ class QGetSimulationV4DescriptionResource(BaseModel):
     id: UUID | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19113,7 +19109,6 @@ class QGetSimulationV4FlagOption(BaseModel):
     description: str | None
     icon_id: UUID | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19125,7 +19120,6 @@ class QGetSimulationV4FlagResource(BaseModel):
     description: str | None
     icon_id: UUID | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19135,7 +19129,6 @@ class QGetSimulationV4NameOption(BaseModel):
     id: UUID | None
     name: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19145,7 +19138,6 @@ class QGetSimulationV4NameResource(BaseModel):
     id: UUID | None
     name: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19168,7 +19160,6 @@ class QGetSimulationV4ScenarioFlagResource(BaseModel):
     description: str | None
     icon_id: UUID | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19179,7 +19170,6 @@ class QGetSimulationV4ScenarioPositionResource(BaseModel):
     scenario_id: UUID | None
     value: int | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19191,7 +19181,6 @@ class QGetSimulationV4ScenarioResource(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19202,7 +19191,6 @@ class QGetSimulationV4ScenarioRubricResource(BaseModel):
     scenario_id: UUID | None
     rubric_id: UUID | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -19213,7 +19201,6 @@ class QGetSimulationV4ScenarioTimeLimitResource(BaseModel):
     scenario_id: UUID | None
     time_limit_seconds: int | None
     generated: bool | None
-    group_id: UUID | None
 
 class GetSimulationSqlRow(BaseModel):
 

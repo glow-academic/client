@@ -49,15 +49,13 @@ DROP TYPE IF EXISTS types.q_get_simulation_v4_scenario_time_limit_resource;
 CREATE TYPE types.q_get_simulation_v4_name_resource AS (
     id uuid,
     name text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_description_resource AS (
     id uuid,
     description text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_flag_resource AS (
@@ -65,22 +63,19 @@ CREATE TYPE types.q_get_simulation_v4_flag_resource AS (
     name text,
     description text,
     icon_id uuid,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_name_option AS (
     id uuid,
     name text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_description_option AS (
     id uuid,
     description text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_flag_option AS (
@@ -88,8 +83,7 @@ CREATE TYPE types.q_get_simulation_v4_flag_option AS (
     name text,
     description text,
     icon_id uuid,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 -- Scenario resource types
@@ -98,8 +92,7 @@ CREATE TYPE types.q_get_simulation_v4_scenario_resource AS (
     scenario_id uuid,
     name text,
     description text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_scenario_flag_resource AS (
@@ -109,43 +102,36 @@ CREATE TYPE types.q_get_simulation_v4_scenario_flag_resource AS (
     name text,
     description text,
     icon_id uuid,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_scenario_position_resource AS (
     simulation_id uuid,
     scenario_id uuid,
     value integer,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_scenario_rubric_resource AS (
     id uuid,
     scenario_id uuid,
     rubric_id uuid,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_simulation_v4_scenario_time_limit_resource AS (
     id uuid,
     scenario_id uuid,
     time_limit_seconds integer,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
--- UPDATE department_artifact type to include generated and group_id
 DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
 CREATE TYPE types.q_get_simulation_v4_department AS (
-    department_id uuid,      -- departments_resource.id (for departments_draft FK)
-    artifact_id uuid,        -- department_artifact.id (for createDepartmentsAction)
+    department_id uuid,      -- departments_resource.id
     name text,
     description text,
     generated boolean,
-    group_id uuid,
     scenario_ids uuid[],
     rubric_ids uuid[],
     cohort_ids uuid[]
@@ -968,7 +954,7 @@ scenarios_full_data AS (
         )
 ),
 user_departments_for_mapping AS (
-    SELECT DISTINCT dr.id, d.id as artifact_id, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    SELECT DISTINCT dr.id, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
     FROM departments_resource dr
     JOIN department_artifact d ON d.id = dr.department_id
     JOIN params x ON true
@@ -1011,20 +997,9 @@ department_cohort_ids AS (
 department_mapping_data AS (
     SELECT
         dr.id as department_id,  -- Use resource ID (departments_draft FK expects departments_resource.id)
-        d.id as artifact_id,     -- Artifact ID for createDepartmentsAction
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(dr.generated, false) as generated,
-        -- Get group_id from resource.call_id → calls_entry → calls_entry.message_id → message_runs → runs_entry.group_id
-        (
-            SELECT r_lookup.group_id
-            FROM departments_resource dr2
-            JOIN calls_entry c ON c.id = dr2.call_id
-            JOIN messages_entry m ON m.id = c.message_id
-            JOIN runs_entry r_lookup ON r_lookup.id = m.run_id
-            WHERE dr2.id = dr.id
-            LIMIT 1
-        ) as group_id,
         -- Include scenario_ids, rubric_ids, cohort_ids from existing CTEs
         COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(dri.rubric_ids, ARRAY[]::uuid[]) as rubric_ids,
@@ -1045,9 +1020,8 @@ department_mapping_data AS (
 departments_data AS (
     SELECT
         ARRAY_AGG(
-            (ud.id, ud.artifact_id, ud.name, ud.description,
+            (ud.id, ud.name, ud.description,
              COALESCE((SELECT d.generated FROM departments_resource d WHERE d.id = ud.id), false),
-             (SELECT r.group_id FROM departments_resource d JOIN calls_entry c ON c.id = d.call_id JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE d.id = ud.id LIMIT 1),
              COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]),
              COALESCE(dri.rubric_ids, ARRAY[]::uuid[]),
              COALESCE(dci.cohort_ids, ARRAY[]::uuid[])
@@ -1205,8 +1179,7 @@ name_resource_data AS (
             NULL::uuid
         ) as name_id,
         (
-            SELECT ROW(n.id, n.name, COALESCE(n.generated, false), 
-                (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = n.call_id LIMIT 1)
+            SELECT ROW(n.id, n.name, COALESCE(n.generated, false)
             )::types.q_get_simulation_v4_name_resource
             FROM simulation_names_junction sn
             JOIN names_resource n ON sn.name_id = n.id
@@ -1223,8 +1196,7 @@ description_resource_data AS (
             NULL::uuid
         ) as description_id,
         (
-            SELECT ROW(d.id, d.description, COALESCE(d.generated, false),
-                (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = d.call_id LIMIT 1)
+            SELECT ROW(d.id, d.description, COALESCE(d.generated, false)
             )::types.q_get_simulation_v4_description_resource
             FROM simulation_descriptions_junction sd
             JOIN descriptions_resource d ON sd.description_id = d.id
@@ -1241,8 +1213,7 @@ flag_resource_data AS (
             NULL::uuid
         ) as active_flag_id,
         (
-            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-                (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = f.call_id LIMIT 1)
+            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
             )::types.q_get_simulation_v4_flag_resource
             FROM simulation_flags_junction sf
             JOIN flags_resource f ON sf.flag_id = f.id
@@ -1374,8 +1345,7 @@ names_suggestions_objects AS (
         COALESCE(
             (
                 SELECT ARRAY_AGG(
-                    (n.id, n.name, COALESCE(n.generated, false), 
-                     (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = n.call_id LIMIT 1)
+                    (n.id, n.name, COALESCE(n.generated, false)
                     )::types.q_get_simulation_v4_name_option
                     ORDER BY array_position(nsd.name_suggestions, n.id)
                 )
@@ -1394,8 +1364,7 @@ descriptions_suggestions_objects AS (
         COALESCE(
             (
                 SELECT ARRAY_AGG(
-                    (d.id, d.description, COALESCE(d.generated, false),
-                     (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = d.call_id LIMIT 1)
+                    (d.id, d.description, COALESCE(d.generated, false)
                     )::types.q_get_simulation_v4_description_option
                     ORDER BY array_position(dsd.description_suggestions, d.id)
                 )
@@ -2251,8 +2220,7 @@ scenario_flag_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (sfr.id, sfr.scenario_id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = sfr.call_id LIMIT 1)
+                (sfr.id, sfr.scenario_id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
@@ -2275,8 +2243,7 @@ scenario_flags_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (f.id, NULL::uuid, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = f.call_id LIMIT 1)
+                (f.id, NULL::uuid, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
@@ -2306,8 +2273,7 @@ scenario_position_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base)), spr.scenario_id, spr.value, COALESCE(spr.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = spr.call_id LIMIT 1)
+                (COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base)), spr.scenario_id, spr.value, COALESCE(spr.generated, false)
                 )::types.q_get_simulation_v4_scenario_position_resource
                 ORDER BY array_position(spid.scenario_position_ids, spr.id)
             )
@@ -2349,8 +2315,7 @@ scenario_rubric_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = srr.call_id LIMIT 1)
+                (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false)
                 )::types.q_get_simulation_v4_scenario_rubric_resource
                 ORDER BY srr.scenario_id, srr.rubric_id
             )
@@ -2372,8 +2337,7 @@ scenario_rubrics_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = srr.call_id LIMIT 1)
+                (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false)
                 )::types.q_get_simulation_v4_scenario_rubric_resource
                 ORDER BY srr.scenario_id, srr.rubric_id
             )
@@ -2402,8 +2366,7 @@ scenario_time_limit_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = stlr.call_id LIMIT 1)
+                (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false)
                 )::types.q_get_simulation_v4_scenario_time_limit_resource
                 ORDER BY stlr.scenario_id, stlr.time_limit_seconds
             )
@@ -2426,8 +2389,7 @@ scenario_time_limits_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false),
-                 (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = stlr.call_id LIMIT 1)
+                (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false)
                 )::types.q_get_simulation_v4_scenario_time_limit_resource
                 ORDER BY stlr.scenario_id, stlr.time_limit_seconds
             )
@@ -2702,7 +2664,7 @@ SELECT
     -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.artifact_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
@@ -2740,9 +2702,9 @@ SELECT
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.artifact_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
             ORDER BY dmd.name
-        ) FROM (SELECT DISTINCT department_id, artifact_id, name, description, generated, group_id, scenario_ids, rubric_ids, cohort_ids FROM department_mapping_data) dmd),
+        ) FROM (SELECT DISTINCT department_id, name, description, generated, scenario_ids, rubric_ids, cohort_ids FROM department_mapping_data) dmd),
         '{}'::types.q_get_simulation_v4_department[]
     ) as departments,
     -- Single-select resources: flag (active)
@@ -2753,13 +2715,12 @@ SELECT
     false as flag_required,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-             (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = f.call_id LIMIT 1)
+            (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false)
             )::types.q_get_simulation_v4_flag_option
             ORDER BY f.name
-        ) FROM flags_resource f 
+        ) FROM flags_resource f
         WHERE EXISTS (
-            SELECT 1 FROM simulation_flags_junction sf 
+            SELECT 1 FROM simulation_flags_junction sf
             WHERE sf.flag_id = f.id
         )),
         '{}'::types.q_get_simulation_v4_flag_option[]
@@ -2769,11 +2730,10 @@ SELECT
     COALESCE((SELECT scenario_ids FROM scenario_ids_data), ARRAY[]::uuid[]) as scenario_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (s.id, s.scenario_id, 
+            (s.id, s.scenario_id,
              COALESCE((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
-             COALESCE(s.generated, false), 
-             (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
+             COALESCE(s.generated, false))::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
         )
         FROM scenarios_resource s
@@ -2817,8 +2777,7 @@ SELECT
             (s.id, s.scenario_id,
              COALESCE((SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE((SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
-             COALESCE(s.generated, false),
-             (SELECT r.group_id FROM calls_entry c JOIN messages_entry m ON m.id = c.message_id JOIN runs_entry r ON r.id = m.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
+             COALESCE(s.generated, false))::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
         ) FROM scenarios_resource s
         WHERE s.active = true),

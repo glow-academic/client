@@ -40,7 +40,6 @@ export interface DepartmentsProps {
   department_ids?: string[]; // Current department resource IDs (standardized prop name)
   department_resources?: Array<{
     department_id: string | null;
-    artifact_id?: string | null; // department_artifact.id for createDepartmentsAction
     name: string | null;
     description?: string | null;
     generated?: boolean | null;
@@ -49,7 +48,6 @@ export interface DepartmentsProps {
   department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   departments?: Array<{
     department_id: string | null;
-    artifact_id?: string | null; // department_artifact.id for createDepartmentsAction
     name: string | null;
     description?: string | null;
     generated?: boolean | null;
@@ -145,23 +143,12 @@ export function Departments({
         group_id
       ) {
         for (const departmentId of newlySelected) {
-          // Look up the artifact_id for this department (API expects artifact_id, not resource_id)
-          const department = allDepartments.find(
-            (d) => d.department_id === departmentId
-          );
-          if (!department?.artifact_id) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Could not find artifact_id for department ${departmentId}`
-            );
-            continue;
-          }
           try {
             await createDepartmentsAction({
               body: {
                 agent_id: agent_id,
                 group_id: group_id,
-                department_id: department.artifact_id,
+                department_id: departmentId,
                 mcp: false,
               },
             });
@@ -180,7 +167,7 @@ export function Departments({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createDepartmentsAction, agent_id, group_id, allDepartments]
+    [ids, onChange, createDepartmentsAction, agent_id, group_id]
   );
 
   // Check if any department resource is generated (must be before early return)

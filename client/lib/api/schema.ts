@@ -16983,16 +16983,12 @@ export interface components {
         QGetSimulationV4Department: {
             /** Department Id */
             department_id: string | null;
-            /** Artifact Id */
-            artifact_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
             /** Rubric Ids */
@@ -17008,8 +17004,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4DescriptionResource */
         QGetSimulationV4DescriptionResource: {
@@ -17019,8 +17013,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4FlagOption */
         QGetSimulationV4FlagOption: {
@@ -17034,8 +17026,6 @@ export interface components {
             icon_id: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4FlagResource */
         QGetSimulationV4FlagResource: {
@@ -17049,8 +17039,6 @@ export interface components {
             icon_id: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4NameOption */
         QGetSimulationV4NameOption: {
@@ -17060,8 +17048,6 @@ export interface components {
             name: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4NameResource */
         QGetSimulationV4NameResource: {
@@ -17071,8 +17057,6 @@ export interface components {
             name: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4Rubric */
         QGetSimulationV4Rubric: {
@@ -17099,8 +17083,6 @@ export interface components {
             icon_id: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4ScenarioPositionResource */
         QGetSimulationV4ScenarioPositionResource: {
@@ -17112,8 +17094,6 @@ export interface components {
             value: number | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4ScenarioResource */
         QGetSimulationV4ScenarioResource: {
@@ -17127,8 +17107,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4ScenarioRubricResource */
         QGetSimulationV4ScenarioRubricResource: {
@@ -17140,8 +17118,6 @@ export interface components {
             rubric_id: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetSimulationV4ScenarioTimeLimitResource */
         QGetSimulationV4ScenarioTimeLimitResource: {
@@ -17153,8 +17129,6 @@ export interface components {
             time_limit_seconds: number | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetToolV4ArgsFieldDetail */
         QGetToolV4ArgsFieldDetail: {
