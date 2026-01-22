@@ -15,6 +15,7 @@ BEGIN
 END $$;
 
 -- 2) Recreate function
+-- Links a test to a run by setting the test's group_id to the run's group
 CREATE OR REPLACE FUNCTION infrastructure_evals_link_test_run_v4(
     run_id uuid,
     test_id uuid
@@ -23,7 +24,8 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO test_runs (run_id, test_id, created_at, updated_at)
-    VALUES ($1, $2, NOW(), NOW())
-    ON CONFLICT (run_id, test_id) DO NOTHING
+    UPDATE tests
+    SET group_id = (SELECT id FROM groups WHERE run_id = $1 LIMIT 1),
+        updated_at = NOW()
+    WHERE id = $2
 $$;

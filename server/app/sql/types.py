@@ -2488,14 +2488,14 @@ class CreateTestV4SqlParams(BaseModel):
     test_id: UUID
     title: str
     trace_id: str
-    run_id: UUID
+    group_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.test_id,
             self.title,
             self.trace_id,
-            self.run_id,
+            self.group_id,
         )
 
 class CreateTestV4SqlRow(BaseModel):
@@ -2507,7 +2507,7 @@ class CreateTestV4ApiRequest(BaseModel):
     test_id: UUID
     title: str
     trace_id: str
-    run_id: UUID
+    group_id: UUID
 
 class CreateTestV4ApiResponse(BaseModel):
 
@@ -3176,7 +3176,7 @@ class GetTestDetailsV4SqlParams(BaseModel):
 class GetTestDetailsV4SqlRow(BaseModel):
 
     test_id: str | None = None
-    run_id: str | None = None
+    group_id: str | None = None
 
 class GetTestDetailsV4ApiRequest(BaseModel):
 
@@ -3185,7 +3185,7 @@ class GetTestDetailsV4ApiRequest(BaseModel):
 class GetTestDetailsV4ApiResponse(BaseModel):
 
     test_id: str | None = None
-    run_id: str | None = None
+    group_id: str | None = None
 
 
 
@@ -3202,7 +3202,7 @@ class GetTestRunIdV4SqlParams(BaseModel):
 
 class GetTestRunIdV4SqlRow(BaseModel):
 
-    run_id: UUID | None = None
+    group_id: UUID | None = None
 
 class GetTestRunIdV4ApiRequest(BaseModel):
 
@@ -3210,7 +3210,7 @@ class GetTestRunIdV4ApiRequest(BaseModel):
 
 class GetTestRunIdV4ApiResponse(BaseModel):
 
-    run_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 
@@ -7735,13 +7735,13 @@ class InfraDocumentsGetDocumentAgentsApiResponse(BaseModel):
 class InfraEvalsCreateTestV4SqlParams(BaseModel):
 
     title: str
-    run_id: UUID
+    group_id: UUID
     trace_id: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.title,
-            self.run_id,
+            self.group_id,
             self.trace_id,
         )
 
@@ -7752,7 +7752,7 @@ class InfraEvalsCreateTestV4SqlRow(BaseModel):
 class InfraEvalsCreateTestV4ApiRequest(BaseModel):
 
     title: str
-    run_id: UUID
+    group_id: UUID
     trace_id: str
 
 class InfraEvalsCreateTestV4ApiResponse(BaseModel):

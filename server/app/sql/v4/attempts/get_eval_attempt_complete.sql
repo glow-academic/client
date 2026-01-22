@@ -215,7 +215,7 @@ attempt_tests_data AS (
     SELECT
         t.id as test_id,
         t.attempt_id,
-        t.run_id as test_run_id,
+        t.group_id as test_group_id,
         t.completed as test_completed,
         t.title as test_title,
         t.created_at as test_created_at,
@@ -281,7 +281,7 @@ runs_with_status AS (
 ),
 -- Get run details (model, agent, persona, profile, grade)
 runs_with_details AS (
-    SELECT 
+    SELECT
         rws.run_id,
         rws.status,
         rws.test_id,
@@ -290,50 +290,49 @@ runs_with_details AS (
         rws.eval_run_updated_at,
         -- Run details
         r.created_at as run_created_at,
-        -- Model info
-        rm.model_id,
-        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        -- Model info (via agent_models)
+        (SELECT am.model_id FROM agent_models am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) as model_id,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT am.model_id FROM agent_models am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) LIMIT 1) as model_name,
         -- Agent/persona info
         r.agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        rper.persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
+        NULL::uuid as persona_id,
+        NULL::text as persona_name,
         -- Profile info
         r.profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as profile_name,
         -- Grade info (from eval_agent's run, not original run)
-        -- Grade is on the eval_agent run (test.run_id), not original run
+        -- Grade is on the eval_agent run via tests.group_id -> runs.group_id -> grades.run_id
         (
             SELECT g.score
             FROM grades g
-            JOIN test_runs tr ON tr.run_id = g.run_id
-            JOIN tests t ON t.id = tr.test_id
+            JOIN runs gr ON gr.id = g.run_id
+            JOIN groups grp ON grp.id = gr.group_id
+            JOIN tests t ON t.group_id = grp.id
             WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_score,
         (
             SELECT g.passed
             FROM grades g
-            JOIN test_runs tr ON tr.run_id = g.run_id
-            JOIN tests t ON t.id = tr.test_id
+            JOIN runs gr ON gr.id = g.run_id
+            JOIN groups grp ON grp.id = gr.group_id
+            JOIN tests t ON t.group_id = grp.id
             WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_passed,
         (
             SELECT g.created_at
             FROM grades g
-            JOIN test_runs tr ON tr.run_id = g.run_id
-            JOIN tests t ON t.id = tr.test_id
+            JOIN runs gr ON gr.id = g.run_id
+            JOIN groups grp ON grp.id = gr.group_id
+            JOIN tests t ON t.group_id = grp.id
             WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_created_at
     FROM runs_with_status rws
     JOIN runs r ON r.id = rws.run_id
-    LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
-    LEFT JOIN models_resource m ON m.id = rm.model_id
     LEFT JOIN agents_resource a ON a.id = r.agent_id
-    LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
-    LEFT JOIN personas_resource per ON per.id = rper.persona_id
     LEFT JOIN profile_artifact p ON p.id = r.profile_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),

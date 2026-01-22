@@ -33,10 +33,10 @@ WITH params AS (
            NULLIF(api_log_run_v4.assistant_output, '') AS assistant_output
 ),
 run_info AS (
-    SELECT 
+    SELECT
         r.id as run_id,
         r.agent_id,
-        (SELECT rp.persona_id FROM run_personas rp WHERE rp.run_id = r.id AND rp.active = true LIMIT 1) as persona_id,
+        NULL::uuid as persona_id,
         COALESCE(
             x.department_id,
             -- Try to get department FROM chats (chats now have direct group_id column)
@@ -224,16 +224,15 @@ upsert_cached_audio_usage AS (
 ),
 -- Get system prompt for persona runs
 persona_system_prompt AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN pi_inst.template IS NOT NULL AND pi_inst.template != '' THEN
                 pr_default.system_prompt || E'\n\n' || pi_inst.template
             ELSE
                 pr_default.system_prompt
         END as system_prompt
     FROM run_info ri
-    JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
-    JOIN personas_resource p ON p.id = rp.persona_id
+    JOIN personas_resource p ON p.id = ri.persona_id
     LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
     LEFT JOIN instructions_resource pi_inst ON pi_inst.id = pi.instruction_id
     JOIN agents_resource a ON a.id = ri.agent_id

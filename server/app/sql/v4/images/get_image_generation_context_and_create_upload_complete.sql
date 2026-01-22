@@ -221,14 +221,6 @@ create_run AS (
     SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
     FROM context_data cd
     RETURNING id
-),
-link_model AS (
-    -- Link model to run
-    INSERT INTO run_models (run_id, model_id, active)
-    SELECT cr.id, cd.model_id::uuid, true
-    FROM create_run cr
-    CROSS JOIN context_data cd
-    RETURNING run_id
 )
 SELECT
     -- Context data
@@ -248,8 +240,7 @@ SELECT
     cd.earliest_run_created_at,
     cd.department_id,
     -- Run ID (created in same transaction)
-    lm.run_id::text as run_id
+    cr.id::text as run_id
 FROM context_data cd
 CROSS JOIN create_run cr
-CROSS JOIN link_model lm
 $$;

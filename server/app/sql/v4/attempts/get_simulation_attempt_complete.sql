@@ -1052,14 +1052,13 @@ messages_with_tree AS (
             m.created_at, 
             m.completed, 
             m.updated_at,
-            mp_persona.persona_id,
+            NULL::uuid AS persona_id,
             0 as depth,
             m.id as path_root_id
         FROM chats c
         JOIN runs r ON r.group_id = c.group_id
         JOIN messages m ON m.run_id = r.id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-        LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
           AND m.role IN ('user'::message_role, 'assistant'::message_role)
@@ -1078,7 +1077,7 @@ messages_with_tree AS (
             m.created_at,
             m.completed,
             m.updated_at,
-            mp_persona.persona_id,
+            NULL::uuid AS persona_id,
             mp.depth + 1 as depth,
             mp.path_root_id
         FROM messages m
@@ -1087,7 +1086,6 @@ messages_with_tree AS (
         JOIN message_path mp ON mp.id = mt.child_id
         JOIN runs r ON r.id = m.run_id
         JOIN chats c ON c.group_id = r.group_id
-        LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE mp.depth < 1000
           AND m.role IN ('user'::message_role, 'assistant'::message_role)
@@ -1103,14 +1101,13 @@ messages_with_tree AS (
             m.created_at,
             m.completed,
             m.updated_at,
-            mp_persona.persona_id,
+            NULL::uuid AS persona_id,
             -1 as depth,
             m.id as path_root_id
         FROM chats c
         JOIN runs r ON r.group_id = c.group_id
         JOIN messages m ON m.run_id = r.id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-        LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
           AND m.role IN ('user'::message_role, 'assistant'::message_role)

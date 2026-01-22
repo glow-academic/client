@@ -1,12 +1,12 @@
--- Get test details (id and run_id) by attempt_id
+-- Get test details (id and group_id) by attempt_id
 -- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'socket_get_test_details_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -20,12 +20,12 @@ CREATE OR REPLACE FUNCTION socket_get_test_details_v4(
 )
 RETURNS TABLE (
     test_id text,
-    run_id text
+    group_id text
 )
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT t.id::text as test_id, t.run_id::text as run_id
+    SELECT t.id::text as test_id, t.group_id::text as group_id
     FROM tests t
     WHERE t.attempt_id = $1
       AND t.completed = false

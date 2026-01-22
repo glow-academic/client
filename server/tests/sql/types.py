@@ -3432,12 +3432,12 @@ class TestCreateTestScenarioV4CompleteApiResponse(BaseModel):
 class TestCreateTestTestV4CompleteSqlParams(BaseModel):
 
     title: str | None = None
-    run_id: UUID | None = None
+    group_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.title,
-            self.run_id,
+            self.group_id,
         )
 
 class TestCreateTestTestV4CompleteSqlRow(BaseModel):
@@ -3447,7 +3447,7 @@ class TestCreateTestTestV4CompleteSqlRow(BaseModel):
 class TestCreateTestTestV4CompleteApiRequest(BaseModel):
 
     title: str | None = None
-    run_id: UUID | None = None
+    group_id: UUID | None = None
 
 class TestCreateTestTestV4CompleteApiResponse(BaseModel):
 

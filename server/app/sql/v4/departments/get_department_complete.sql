@@ -908,14 +908,6 @@ runs_for_department_via_agents AS (
     WHERE ad.department_id = (SELECT department_id FROM params) AND mr.agent_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
-runs_for_department_via_personas AS (
-    SELECT DISTINCT mr.id as run_id
-    FROM runs mr
-    JOIN run_personas mrp ON mrp.run_id = mr.id AND mrp.active = true
-    JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
-    WHERE pd.department_id = (SELECT department_id FROM params)
-    AND (SELECT department_id FROM params) IS NOT NULL
-),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
     FROM runs mr
@@ -926,22 +918,21 @@ runs_for_department_via_profiles AS (
 runs_for_department AS (
     SELECT run_id FROM runs_for_department_via_agents
     UNION
-    SELECT run_id FROM runs_for_department_via_personas
-    UNION
     SELECT run_id FROM runs_for_department_via_profiles
 ),
 model_run_costs AS (
-    SELECT 
+    SELECT
         rpu.run_id,
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as cost
     FROM run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
-    JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
-    JOIN model_pricing mp ON mp.model_id = rm.model_id AND mp.active = true
+    JOIN runs r ON r.id = rpu.run_id
+    JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
-        AND pr.pricing_type = rpu.pricing_type 
+        AND pr.pricing_type = rpu.pricing_type
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
     JOIN artifact_units_relation u ON u.id = rpu.unit_id

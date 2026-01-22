@@ -293,36 +293,14 @@ resolved_dept AS (
 ),
 -- Link system/developer messages to run (reuse logic from link_system_developer_messages_to_run.sql)
 run_info AS (
-    SELECT 
+    SELECT
         ur.run_id,
         ur.run_id as agent_id,  -- Will be resolved FROM runs.agent_id below
-        (SELECT rp.persona_id FROM run_personas rp WHERE rp.run_id = ur.run_id AND rp.active = true LIMIT 1) as persona_id,
         (SELECT department_id FROM resolved_dept) as department_id
     FROM upserted_run ur
 ),
-persona_system_prompt AS (
-    SELECT 
-        CASE 
-            WHEN pi_inst.template IS NOT NULL AND pi_inst.template != '' THEN
-                pr_default.system_prompt || E'\n\n' || pi_inst.template
-            ELSE
-                pr_default.system_prompt
-        END as system_prompt
-    FROM run_info ri
-    JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
-    JOIN personas_resource p ON p.id = rp.persona_id
-    LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
-    LEFT JOIN instructions_resource pi_inst ON pi_inst.id = pi.instruction_id
-    JOIN runs r ON r.id = ri.run_id
-    JOIN agents_resource a ON a.id = r.agent_id
-    LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
-    WHERE ri.persona_id IS NOT NULL
-    AND pr_default.system_prompt IS NOT NULL
-    AND pr_default.system_prompt != ''
-),
 agent_system_prompt AS (
-    SELECT 
+    SELECT
         pr_default.system_prompt as system_prompt
     FROM run_info ri
     JOIN runs r ON r.id = ri.run_id
@@ -330,13 +308,10 @@ agent_system_prompt AS (
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.agent_id IS NOT NULL
-    AND ri.persona_id IS NULL
     AND pr_default.system_prompt IS NOT NULL
     AND pr_default.system_prompt != ''
 ),
 system_message_content AS (
-    SELECT system_prompt as content FROM persona_system_prompt
-    UNION ALL
     SELECT system_prompt as content FROM agent_system_prompt
 ),
 system_message_hash AS (

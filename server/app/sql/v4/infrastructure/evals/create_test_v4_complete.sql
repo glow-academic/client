@@ -17,7 +17,7 @@ END $$;
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION infrastructure_evals_create_test_v4(
     title text,
-    run_id uuid,
+    group_id uuid,
     trace_id text
 )
 RETURNS TABLE (
@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO tests (title, run_id, completed, trace_id, created_at, updated_at)
+    INSERT INTO tests (title, group_id, completed, trace_id, created_at, updated_at)
     VALUES ($1, $2, false, $3, NOW(), NOW())
     RETURNING id::text as test_id
 $$;

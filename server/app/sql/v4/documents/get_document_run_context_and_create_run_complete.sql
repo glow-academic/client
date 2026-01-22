@@ -451,14 +451,6 @@ create_run AS (
     CROSS JOIN group_data gd
     RETURNING id
 ),
-link_model AS (
-    -- Link model to run
-    INSERT INTO run_models (run_id, model_id, active)
-    SELECT cr.id, cd.model_id::uuid, true
-    FROM create_run cr
-    CROSS JOIN context_data cd
-    RETURNING run_id
-),
 link_group AS (
     -- Dummy CTE to maintain compatibility (runs now have group_id directly)
     SELECT cr.id as run_id

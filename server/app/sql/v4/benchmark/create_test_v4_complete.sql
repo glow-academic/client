@@ -19,12 +19,12 @@ CREATE OR REPLACE FUNCTION socket_create_test_v4(
     test_id uuid,
     title text,
     trace_id text,
-    run_id uuid
+    group_id uuid
 )
 RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO tests (id, title, completed, trace_id, run_id, created_at, updated_at)
+    INSERT INTO tests (id, title, completed, trace_id, group_id, created_at, updated_at)
     VALUES ($1, $2, false, $3, $4, NOW(), NOW())
 $$;

@@ -49,22 +49,9 @@ create_run AS (
     FROM params p
     RETURNING id
 ),
-link_model AS (
-    -- 2. Link model to run
-    INSERT INTO run_models (run_id, model_id, active)
-    SELECT cr.id, p.model_id, true
-    FROM create_run cr
-    CROSS JOIN params p
-    RETURNING run_id
-),
-link_persona AS (
-    -- 3. Link persona to run (only if entity_type is 'persona')
-    INSERT INTO run_personas (run_id, persona_id, active)
-    SELECT lm.run_id, p.entity_id, true
-    FROM link_model lm
-    CROSS JOIN params p
-    WHERE p.entity_type = 'persona'
-    RETURNING run_id
+-- Persona linking removed (run_personas table dropped)
+dummy_for_persona AS (
+    SELECT 1 WHERE false
 )
 SELECT id::text as run_id
 FROM create_run

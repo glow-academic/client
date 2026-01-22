@@ -145,15 +145,13 @@ runs_base AS (
         mr.created_at,
         mr.input_tokens,
         mr.output_tokens,
-        mrm.model_id,
+        (SELECT am.model_id FROM agent_models am WHERE am.agent_id = mr.agent_id AND am.active = true LIMIT 1) as model_id,
         mr.profile_id,
         mr.agent_id,
-        mrper.persona_id,
+        NULL::uuid as persona_id,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         sa.archived
     FROM runs mr
-    LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
-    LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
     -- Join to simulations via runs.group_id → groups → chats (direct group_id) → attempts_entry → simulations
     LEFT JOIN groups g ON g.id = mr.group_id
     LEFT JOIN chats c ON c.group_id = g.id
@@ -224,16 +222,17 @@ runs_base AS (
 ),
 -- Calculate run costs using run_pricing_entry (source of truth for pricing)
 run_costs AS (
-    SELECT 
+    SELECT
         rpu.run_id,
         COALESCE(SUM(
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
     FROM run_pricing_entry rpu
-    JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
-    JOIN model_pricing mp ON mp.model_id = rm.model_id AND mp.active = true
+    JOIN runs r ON r.id = rpu.run_id
+    JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
-        AND pr.pricing_type = rpu.pricing_type 
+        AND pr.pricing_type = rpu.pricing_type
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
     JOIN artifact_units_relation u ON u.id = rpu.unit_id

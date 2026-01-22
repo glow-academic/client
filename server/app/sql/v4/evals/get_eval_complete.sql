@@ -1380,13 +1380,11 @@ runs_base AS (
     SELECT
         r.id as run_id,
         r.created_at,
-        rm.model_id,
+        NULL::uuid as model_id,
         r.profile_id,
         r.agent_id,
-        rper.persona_id
+        NULL::uuid as persona_id
     FROM runs r
-    LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
-    LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
     WHERE
         (SELECT effective_profile_id FROM profile_role_check) IS NULL
         OR r.profile_id = (SELECT effective_profile_id FROM profile_role_check)
