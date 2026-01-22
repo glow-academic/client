@@ -25,7 +25,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO service_health (ts, service, ok, latency_ms, error)
+    INSERT INTO health (ts, service, ok, latency_ms, error)
     VALUES (ts::timestamptz, service, ok, latency_ms, error)
     ON CONFLICT (ts, service) DO UPDATE
     SET ok = EXCLUDED.ok,

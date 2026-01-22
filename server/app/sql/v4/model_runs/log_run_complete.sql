@@ -90,17 +90,17 @@ update_run AS (
 ),
 -- Get unit IDs for pricing
 million_text_unit AS (
-    SELECT id FROM units 
+    SELECT id FROM artifact_units 
     WHERE name = 'million_text' AND unit_category = 'tokens' AND active = true 
     LIMIT 1
 ),
 million_audio_unit AS (
-    SELECT id FROM units 
+    SELECT id FROM artifact_units 
     WHERE name = 'million_audio' AND unit_category = 'tokens' AND active = true 
     LIMIT 1
 ),
 million_image_unit AS (
-    SELECT id FROM units 
+    SELECT id FROM artifact_units 
     WHERE name = 'million_image' AND unit_category = 'tokens' AND active = true 
     LIMIT 1
 ),

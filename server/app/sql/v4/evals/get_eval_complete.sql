@@ -575,7 +575,7 @@ flags_data AS (
         f.icon_id,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
-    JOIN artifact_flag_types aft ON f.type = aft.flag_type
+    JOIN artifact_flags aft ON f.type = aft.flag_type
     CROSS JOIN params p
     WHERE 
         aft.artifact = 'eval'::artifacts

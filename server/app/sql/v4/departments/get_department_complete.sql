@@ -945,7 +945,7 @@ model_run_costs AS (
         AND pr.pricing_type = rpu.pricing_type 
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
-    JOIN units u ON u.id = rpu.unit_id
+    JOIN artifact_units u ON u.id = rpu.unit_id
     GROUP BY rpu.run_id
 ),
 department_price_spent AS (

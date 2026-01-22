@@ -79,7 +79,7 @@ current_health AS (
         latency_ms,
         error,
         ts
-    FROM service_health
+    FROM health
     WHERE service IN ('websocket', 'redis', 'tus', 'database', 'keycloak')
     ORDER BY service, ts DESC
 ),
@@ -92,7 +92,7 @@ health_trends AS (
         COUNT(*) FILTER (WHERE ok = true)::float / NULLIF(COUNT(*), 0) * 100.0 as uptime_percent,
         AVG(latency_ms) as avg_latency_ms,
         COUNT(*) as check_count
-    FROM service_health
+    FROM health
     WHERE service IN ('websocket', 'redis', 'tus', 'database', 'keycloak')
       AND ts >= NOW() - INTERVAL '7 days'
     GROUP BY service, date_hour
@@ -236,7 +236,7 @@ metrics_trend AS (
         MAX(requests_total) as max_requests_total,
         MAX(errors_total) as max_errors_total,
         COUNT(*) as sample_count
-    FROM app_metrics
+    FROM metrics
     WHERE ts >= NOW() - INTERVAL '7 days'
     GROUP BY date_hour
     ORDER BY date_hour

@@ -744,7 +744,7 @@ model_pricing_data AS (
         pr.price
     FROM model_pricing mp
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
-    JOIN units u ON u.id = pr.unit_id
+    JOIN artifact_units u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mp.active = true AND pr.active = true AND u.active = true
@@ -893,7 +893,7 @@ pricing_ids_data AS (
         END as pricing_ids
     FROM model_pricing mp
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
-    JOIN units u ON u.id = pr.unit_id
+    JOIN artifact_units u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mp.active = true AND pr.active = true AND u.active = true
@@ -906,7 +906,7 @@ pricing_draft_ids_data AS (
         END as pricing_ids
     FROM pricing_draft dp
     JOIN pricing_resource pr ON pr.id = dp.pricing_id
-    JOIN units u ON u.id = pr.unit_id
+    JOIN artifact_units u ON u.id = pr.unit_id
     WHERE dp.draft_id = (SELECT draft_id FROM params)
     AND pr.active = true AND u.active = true
 ),
@@ -1679,7 +1679,7 @@ ui_flags AS (
             ELSE false
         END as show_description,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM flags_resource f JOIN artifact_flag_types aft ON f.type = aft.flag_type WHERE aft.artifact = 'model'::artifacts) THEN true
+            WHEN EXISTS (SELECT 1 FROM flags_resource f JOIN artifact_flags aft ON f.type = aft.flag_type WHERE aft.artifact = 'model'::artifacts) THEN true
             ELSE false
         END as show_flag,
         CASE 
@@ -1780,7 +1780,7 @@ flags_data AS (
         f.icon_id,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
-    JOIN artifact_flag_types aft ON f.type = aft.flag_type
+    JOIN artifact_flags aft ON f.type = aft.flag_type
     CROSS JOIN params p
     WHERE 
         aft.artifact = 'model'::artifacts
@@ -1961,7 +1961,7 @@ all_pricing_data AS (
         pr.price,
         COALESCE(pr.generated, false) as generated
     FROM pricing_resource pr
-    JOIN units u ON u.id = pr.unit_id
+    JOIN artifact_units u ON u.id = pr.unit_id
     WHERE pr.active = true AND u.active = true
     ORDER BY pr.pricing_type, u.name
 ),
@@ -2484,7 +2484,7 @@ SELECT
         END
         FROM pricing_draft dp
         JOIN pricing_resource pr ON pr.id = dp.pricing_id
-        JOIN units u ON u.id = pr.unit_id
+        JOIN artifact_units u ON u.id = pr.unit_id
         WHERE dp.draft_id = (SELECT draft_id FROM params)
         AND pr.active = true AND u.active = true),
         (SELECT ARRAY_AGG(
@@ -2493,7 +2493,7 @@ SELECT
         )
         FROM model_pricing mp
         JOIN pricing_resource pr ON pr.id = mp.pricing_id
-        JOIN units u ON u.id = pr.unit_id
+        JOIN artifact_units u ON u.id = pr.unit_id
         WHERE mp.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
         AND mp.active = true AND pr.active = true AND u.active = true),

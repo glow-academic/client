@@ -72,7 +72,7 @@ BEGIN
 
     -- Check if debug_info already exists (match on content)
     SELECT r.id INTO v_debug_info_id
-    FROM debug_info_resource r
+    FROM debug_info r
     WHERE r.content = api_create_debug_info_v4.content
     LIMIT 1;
 
@@ -102,8 +102,8 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO debug_info_resource table (always insert, never update)
-    INSERT INTO debug_info_resource(content, active, call_id, mcp)
+    -- INSERT INTO debug_info table (always insert, never update)
+    INSERT INTO debug_info(content, active, call_id, mcp)
     VALUES (content, true, v_call_id, mcp)
     RETURNING id INTO v_debug_info_id;
 

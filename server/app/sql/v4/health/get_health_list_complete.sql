@@ -87,7 +87,7 @@ metrics_trend AS (
         MAX(requests_total) as max_requests_total,
         MAX(errors_total) as max_errors_total,
         COUNT(*) as sample_count
-    FROM app_metrics
+    FROM metrics
     WHERE ts >= NOW() - INTERVAL '7 days'
     GROUP BY date_hour
     ORDER BY date_hour DESC

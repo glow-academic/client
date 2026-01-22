@@ -2285,7 +2285,7 @@ scenario_flags_data AS (
                 ORDER BY f.name
             )
             FROM flags_resource f
-            JOIN artifact_flag_types aft ON f.type = aft.flag_type
+            JOIN artifact_flags aft ON f.type = aft.flag_type
             WHERE f.active = true
               AND aft.artifact = 'scenario'::artifacts),
             '{}'::types.q_get_simulation_v4_scenario_flag_resource[]

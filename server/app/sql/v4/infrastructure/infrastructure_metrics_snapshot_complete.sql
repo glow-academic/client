@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO app_metrics (ts, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes)
+    INSERT INTO metrics (ts, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes)
     VALUES (ts::timestamptz, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes)
     ON CONFLICT (ts) DO UPDATE
     SET requests_total = EXCLUDED.requests_total,

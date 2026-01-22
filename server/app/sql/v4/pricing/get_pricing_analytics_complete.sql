@@ -249,7 +249,7 @@ run_costs AS (
         AND pr.pricing_type = rpu.pricing_type 
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
-    JOIN units u ON u.id = rpu.unit_id
+    JOIN artifact_units u ON u.id = rpu.unit_id
     GROUP BY rpu.run_id
 ),
 runs_with_debug AS (
@@ -273,7 +273,7 @@ runs_with_debug AS (
     FROM runs_base mrb
     LEFT JOIN run_costs rc ON rc.run_id = mrb.run_id
     LEFT JOIN run_debug_info rdi ON rdi.run_id = mrb.run_id
-    LEFT JOIN debug_info_resource di ON di.id = rdi.debug_info_id
+    LEFT JOIN debug_info di ON di.id = rdi.debug_info_id
     GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, rc.run_cost
 ),
 model_pricing_aggregated AS (
@@ -285,7 +285,7 @@ model_pricing_aggregated AS (
     FROM (SELECT DISTINCT model_id FROM runs_base WHERE model_id IS NOT NULL) mrb
     LEFT JOIN model_pricing mp ON mp.model_id = mrb.model_id AND mp.active = true
     LEFT JOIN pricing_resource pr ON pr.id = mp.pricing_id AND pr.active = true AND pr.pricing_type IN ('input'::pricing_type, 'output'::pricing_type)
-    LEFT JOIN units u ON u.id = pr.unit_id
+    LEFT JOIN artifact_units u ON u.id = pr.unit_id
     GROUP BY mrb.model_id
 )
 SELECT 
