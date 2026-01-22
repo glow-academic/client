@@ -127,8 +127,8 @@ WITH params AS (
         end_date::timestamptz AS end_date,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-        COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
-        COALESCE(simulation_filters, ARRAY[]::text[])::text[] AS simulation_filters,
+        COALESCE(NULLIF(roles, ARRAY[]::profile_role[]), ARRAY[]::profile_role[]) AS roles,
+        COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[])::text[] AS simulation_filters,
         COALESCE(NULLIF(search, ''), NULL) AS search,
         COALESCE(profile_ids, ARRAY[]::uuid[]) AS profile_ids,
         COALESCE(simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
@@ -175,13 +175,13 @@ history_attempts AS (
     WHERE sa.created_at >= (SELECT start_date FROM params)
       AND sa.created_at <= (SELECT end_date FROM params)
       -- Dashboard never filters by profile - always filter by roles
-      AND COALESCE(
-            (SELECT r.role FROM profile_roles pr_j 
-             JOIN roles_resource r ON pr_j.role_id = r.id 
-             WHERE pr_j.profile_id = p_attempt.id 
+      AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR COALESCE(
+            (SELECT r.role FROM profile_roles pr_j
+             JOIN roles_resource r ON pr_j.role_id = r.id
+             WHERE pr_j.profile_id = p_attempt.id
              LIMIT 1),
             'member'::profile_role
-          ) = ANY((SELECT roles FROM params)::profile_role[])
+          ) = ANY((SELECT roles FROM params)::profile_role[]))
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (

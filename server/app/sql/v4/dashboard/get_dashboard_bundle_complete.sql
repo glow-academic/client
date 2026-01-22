@@ -577,8 +577,8 @@ WITH params AS (
         start_date::timestamptz AS start_date,
         end_date::timestamptz AS end_date,
         COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
-        COALESCE(roles, ARRAY[]::profile_role[]) AS roles,
-        COALESCE(simulation_filters, ARRAY[]::text[]) AS simulation_filters,
+        COALESCE(NULLIF(roles, ARRAY[]::profile_role[]), ARRAY[]::profile_role[]) AS roles,
+        COALESCE(NULLIF(simulation_filters, ARRAY[]::text[]), ARRAY['general']::text[]) AS simulation_filters,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(profile_id, NULL::uuid) AS profile_id
 ),
@@ -652,7 +652,7 @@ filt AS (
     SELECT * FROM analytics a
     WHERE a.attempt_created_at >= (SELECT start_date FROM params)
         AND a.attempt_created_at < (SELECT end_date FROM params)
-                    AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
+                    AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
                     AND (
                         (SELECT simulation_filters FROM params)::text[] IS NULL OR (
                             ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general = TRUE) OR
@@ -665,7 +665,7 @@ filt AS (
                         'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
         )
         -- Dashboard never filters by profile - always filter by roles
-                    AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
+                    AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
         -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
@@ -739,7 +739,7 @@ filt AS (
                     'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
                 )
                 -- Dashboard never filters by profile - always filter by roles
-                AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
+                AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
                 -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                 AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)
@@ -1325,10 +1325,10 @@ filt AS (
                   AND EXISTS (
                       SELECT 1 FROM analytics a
                       WHERE a.chat_id = c.id
-                        AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
+                        AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
                         AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
                         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                        AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
+                        AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
                         AND (
                             (SELECT simulation_filters FROM params)::text[] IS NULL OR (
                                 ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general) OR
@@ -2403,9 +2403,9 @@ filt AS (
                 WHERE a.attempt_created_at >= (SELECT start_date FROM params)
                     AND a.attempt_created_at < (SELECT end_date FROM params)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                    AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
+                    AND (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_role[]))
                     AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
-                    AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
+                    AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
                     AND (
                         (SELECT simulation_filters FROM params)::text[] IS NULL OR (
                             ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general) OR

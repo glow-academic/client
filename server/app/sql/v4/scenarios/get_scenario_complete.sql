@@ -452,7 +452,7 @@ user_departments_rows AS (
 scenario_departments_data AS (
     SELECT
         sd.scenario_id,
-        COALESCE(ARRAY_AGG(sd.departments_id ORDER BY sd.created_at), ARRAY[]::uuid[]) as department_ids
+        COALESCE(ARRAY_AGG(sd.department_id ORDER BY sd.created_at), ARRAY[]::uuid[]) as department_ids
     FROM params x
     LEFT JOIN scenario_departments sd ON sd.scenario_id = x.scenario_id AND sd.active = true
     WHERE x.scenario_id IS NOT NULL
