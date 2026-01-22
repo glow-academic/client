@@ -311,24 +311,20 @@ system_tool_call AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_system_tool_call AS (
-    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
-    SELECT 
-        nsm.system_message_id,
-        stc.tool_call_id,
-        NOW(),
-        NOW()
+    UPDATE calls
+    SET message_id = nsm.system_message_id
     FROM new_system_message nsm
     CROSS JOIN system_tool_call stc
-    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    ON CONFLICT (message_id, call_id) DO NOTHING
+    WHERE calls.id = stc.tool_call_id
+      AND NOT EXISTS (SELECT 1 FROM existing_system_message)
+    RETURNING calls.id as call_id
 ),
 existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
     JOIN message_contents mc ON mc.message_id = esm.system_message_id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = esm.system_message_id
-    JOIN message_calls mcc ON mcc.message_id = esm.system_message_id
-    JOIN calls tc ON tc.id = mcc.call_id
+    JOIN calls tc ON tc.message_id = esm.system_message_id
     LIMIT 1
 ),
 system_tool_call_id AS (
@@ -449,15 +445,12 @@ developer_calls_with_rn AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_developer_tool_calls AS (
-    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
-    SELECT 
-        ndm.message_id,
-        dtc.tool_call_id,
-        NOW(),
-        NOW()
+    UPDATE calls
+    SET message_id = ndm.message_id
     FROM new_developer_messages ndm
     CROSS JOIN developer_calls_with_rn dtc
-    ON CONFLICT (message_id, call_id) DO NOTHING
+    WHERE calls.id = dtc.tool_call_id
+    RETURNING calls.id as call_id
 ),
 developer_calls_ordered AS (
     SELECT 
@@ -488,8 +481,7 @@ existing_developer_calls AS (
     FROM existing_developer_messages edm
     JOIN message_contents mc ON mc.message_id = edm.message_id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = edm.message_id
-    JOIN message_calls mcc2 ON mcc2.message_id = edm.message_id
-    JOIN calls tc ON tc.id = mcc2.call_id
+    JOIN calls tc ON tc.message_id = edm.message_id
 ),
 all_developer_calls AS (
     SELECT message_id, tool_call_id FROM developer_message_with_tool_call
@@ -625,15 +617,12 @@ assistant_tool_call AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_assistant_tool_call AS (
-    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
-    SELECT 
-        am.assistant_message_id,
-        atc.tool_call_id,
-        NOW(),
-        NOW()
+    UPDATE calls
+    SET message_id = am.assistant_message_id
     FROM assistant_message am
     CROSS JOIN assistant_tool_call atc
-    ON CONFLICT (message_id, call_id) DO NOTHING
+    WHERE calls.id = atc.tool_call_id
+    RETURNING calls.id as call_id
 ),
 existing_assistant_content AS (
     SELECT mc.content_id

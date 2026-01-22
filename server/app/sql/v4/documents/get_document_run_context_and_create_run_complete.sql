@@ -324,13 +324,12 @@ developer_instruction_data AS (
     SELECT 
         ba.agent_id,
         i.template as developer_instruction_template,
-        ins.schema_id as developer_instruction_schema_id
+        NULL::uuid as developer_instruction_schema_id
     FROM best_agent ba
     INNER JOIN agents_resource a ON a.id = ba.agent_id
     -- JOIN instructions_resource via agent_instructions (following {strong}_{weak} pattern)
     LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
     LEFT JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
-    LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
     LIMIT 1
 ),
 -- Get department name

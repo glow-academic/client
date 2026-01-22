@@ -515,8 +515,8 @@ upload_info AS (
         u.mime_type
     FROM params p
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN message_audios ma ON ma.message_id = mr.message_id
-    JOIN audios_resource ar ON ar.id = ma.audio_id AND ar.active = true
+    JOIN calls c_audio ON c_audio.message_id = mr.message_id
+    JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     JOIN uploads u ON u.id = ar.upload_id
     LIMIT 1
 ),

@@ -188,25 +188,21 @@ user_tool_call AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_user_tool_call_to_message AS (
-    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
-    SELECT 
-        cm.message_id,
-        utc.tool_call_id,
-        NOW(),
-        NOW()
+    UPDATE calls
+    SET message_id = cm.message_id
     FROM create_message_if_needed cm
     CROSS JOIN user_tool_call utc
-    WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
-    ON CONFLICT (message_id, call_id) DO NOTHING
+    WHERE calls.id = utc.tool_call_id
+      AND NOT EXISTS (SELECT 1 FROM latest_user_message)
+    RETURNING calls.id as call_id
 ),
--- Get existing tool_call_id for existing user messages (via message_runs -> calls)
+-- Get existing tool_call_id for existing user messages (via calls.message_id)
 existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
     JOIN message_contents mc ON mc.message_id = lum.message_id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = lum.message_id
-    JOIN message_calls mcc ON mcc.message_id = lum.message_id
-    JOIN calls tc ON tc.id = mcc.call_id
+    JOIN calls tc ON tc.message_id = lum.message_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls
@@ -270,19 +266,15 @@ link_message_to_run AS (
 -- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
     INSERT INTO audios_resource (created_at, updated_at, active, generated, call_id, upload_id)
-    SELECT NOW(), NOW(), true, false, NULL, p.upload_id
+    SELECT NOW(), NOW(), true, false, utc.tool_call_id, p.upload_id
     FROM params p
+    CROSS JOIN user_tool_call_id utc
     WHERE p.upload_id IS NOT NULL
     RETURNING id as audio_id
 ),
-link_audio_to_message_if_provided AS (
-    INSERT INTO message_audios (message_id, audio_id, created_at, updated_at)
-    SELECT um.message_id, ca.audio_id, NOW(), NOW()
-    FROM upserted_message um
-    CROSS JOIN create_audio_if_provided ca
-    CROSS JOIN params p
-    WHERE p.upload_id IS NOT NULL
-    ON CONFLICT (message_id, upload_id) DO UPDATE SET updated_at = NOW()
+-- Audio is now linked via audios_resource.call_id -> calls.message_id (no junction table needed)
+link_audio_placeholder AS (
+    SELECT 1 WHERE false  -- Placeholder CTE to maintain structure
 ),
 -- Create branch from latest message (if exists)
 latest_message_for_branch AS (

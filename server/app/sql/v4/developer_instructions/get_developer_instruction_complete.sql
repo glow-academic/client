@@ -36,13 +36,10 @@ SELECT
     instruction_type as type,  -- Return the passed parameter since i.type no longer exists
     i.template,
     i.active,
-    ins.schema_id
+    NULL::uuid
 FROM instructions_resource i
 JOIN agent_instructions ai ON ai.instruction_id = i.id
 JOIN agents_resource a ON a.id = ai.agent_id
-
-
-LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
 WHERE i.active = true
 LIMIT 1
 $$;

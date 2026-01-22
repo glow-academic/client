@@ -1,6 +1,6 @@
 -- Get group_ids for persona resources by resource IDs directly
 -- Returns group_id for each resource ID by following the chain:
--- Resource → call_id → calls.id → message_calls.call_id → message_calls.message_id → message_runs.message_id → message_runs.run_id → group_runs.run_id → group_runs.group_id
+-- Resource → call_id → calls.id → calls.message_id → message_runs.message_id → message_runs.run_id → group_runs.run_id → group_runs.group_id
 -- Uses safe drop/recreate pattern
 -- 1) Drop function first (breaks dependency on types)
 DO $$
@@ -46,8 +46,7 @@ WITH names_group_ids AS (
         gr.group_id
     FROM names_resource n
     LEFT JOIN calls c ON c.id = n.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE name_id IS NOT NULL AND n.id = name_id
 ),
@@ -59,8 +58,7 @@ descriptions_group_ids AS (
         gr.group_id
     FROM descriptions_resource d
     LEFT JOIN calls c ON c.id = d.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE description_id IS NOT NULL AND d.id = description_id
 ),
@@ -72,8 +70,7 @@ colors_group_ids AS (
         gr.group_id
     FROM colors_resource c
     LEFT JOIN calls cl ON cl.id = c.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = cl.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = cl.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE color_id IS NOT NULL AND c.id = color_id
 ),
@@ -85,8 +82,7 @@ icons_group_ids AS (
         gr.group_id
     FROM icons_resource i
     LEFT JOIN calls c ON c.id = i.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE icon_id IS NOT NULL AND i.id = icon_id
 ),
@@ -98,8 +94,7 @@ instructions_group_ids AS (
         gr.group_id
     FROM instructions_resource inst
     LEFT JOIN calls c ON c.id = inst.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE instructions_id IS NOT NULL AND inst.id = instructions_id
 ),
@@ -111,8 +106,7 @@ flags_group_ids AS (
         gr.group_id
     FROM flags_resource f
     LEFT JOIN calls c ON c.id = f.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE active_flag_id IS NOT NULL AND f.id = active_flag_id
 ),
@@ -124,8 +118,7 @@ departments_group_ids AS (
         gr.group_id
     FROM departments_resource d
     LEFT JOIN calls c ON c.id = d.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE department_ids IS NOT NULL AND d.id = ANY(department_ids)
 ),
@@ -137,8 +130,7 @@ fields_group_ids AS (
         gr.group_id
     FROM fields_resource f
     LEFT JOIN calls c ON c.id = f.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE field_ids IS NOT NULL AND f.id = ANY(field_ids)
 ),
@@ -150,8 +142,7 @@ examples_group_ids AS (
         gr.group_id
     FROM examples_resource e
     LEFT JOIN calls c ON c.id = e.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE example_ids IS NOT NULL AND e.id = ANY(example_ids)
 )

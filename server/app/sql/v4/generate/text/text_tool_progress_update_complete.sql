@@ -85,22 +85,24 @@ selected_tool_call AS (
     UNION ALL
     SELECT tool_call_id::text, external_call_id FROM create_tool_call
 ),
--- Link call to message via message_calls (run_id removed from calls table)
+-- Link call to message via calls.message_id
 link_call_to_message AS (
-    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
-    SELECT 
-        m.id as message_id,
-        uuid(stc.tool_call_id) as call_id,
-        NOW(),
-        NOW()
-    FROM params p
-    CROSS JOIN selected_tool_call stc
-    JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
-    WHERE m.role = 'assistant'
-    ORDER BY m.created_at
-    LIMIT 1
-    ON CONFLICT (message_id, call_id) DO NOTHING
+    UPDATE calls
+    SET message_id = subq.message_id
+    FROM (
+        SELECT
+            m.id as message_id,
+            uuid(stc.tool_call_id) as call_id
+        FROM params p
+        CROSS JOIN selected_tool_call stc
+        JOIN message_runs mr ON mr.run_id = p.run_id
+        JOIN messages m ON m.id = mr.message_id
+        WHERE m.role = 'assistant'
+        ORDER BY m.created_at
+        LIMIT 1
+    ) subq
+    WHERE calls.id = subq.call_id
+    RETURNING calls.id as call_id
 ),
 -- Accumulate arguments_raw (SQL accumulates!)
 accumulate_arguments AS (

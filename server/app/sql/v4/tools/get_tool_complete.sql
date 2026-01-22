@@ -247,8 +247,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN message_runs mr ON mr.message_id = c.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
                                WHERE c.id = n.call_id
                                  AND gr.group_id = dgd.group_id
@@ -334,8 +333,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN message_runs mr ON mr.message_id = c.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
                                WHERE c.id = d.call_id
                                  AND gr.group_id = dgd.group_id
@@ -459,8 +457,7 @@ args_suggestions_data AS (
                            AND a.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN message_runs mr ON mr.message_id = c.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
                                WHERE c.id = a.call_id
                                  AND gr.group_id = dgd.group_id
@@ -494,8 +491,7 @@ args_mapping_data AS (
     JOIN args_resource a ON a.active = true
     LEFT JOIN tool_args ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
     LEFT JOIN calls c ON c.id = a.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
@@ -543,8 +539,7 @@ args_outputs_suggestions_data AS (
                            AND ao.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN message_runs mr ON mr.message_id = c.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
                                WHERE c.id = ao.call_id
                                  AND gr.group_id = dgd.group_id
@@ -575,8 +570,7 @@ args_outputs_mapping_data AS (
     JOIN args_outputs_resource ao ON ao.active = true
     LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
     LEFT JOIN calls c ON c.id = ao.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
+    LEFT JOIN message_runs mr ON mr.message_id = c.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),

@@ -127,8 +127,7 @@ BEGIN
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
 
     -- Link message to call
-    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
-    VALUES (v_message_id, v_call_id, NOW(), NOW());
+    UPDATE calls SET message_id = v_message_id WHERE id = v_call_id;
 
     -- Create run record
     v_run_id := uuidv7();

@@ -58,8 +58,8 @@ messages_data AS (
     JOIN messages m ON m.id = msg_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     LEFT JOIN contents cnt ON cnt.id = mc.content_id
-    LEFT JOIN message_audios ma ON ma.message_id = m.id
-    LEFT JOIN audios_resource ar ON ar.id = ma.audio_id AND ar.active = true
+    LEFT JOIN calls c_audio ON c_audio.message_id = m.id
+    LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     WHERE p.message_ids IS NOT NULL
       AND array_length(p.message_ids, 1) > 0
 )
