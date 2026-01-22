@@ -55,49 +55,49 @@ BEGIN
 
     SELECT dn.names_id
     INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id
     INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dp.points_id
     INTO v_total_points_id
-    FROM draft_points dp
+    FROM points_draft dp
     WHERE dp.draft_id = v_draft_id
     ORDER BY dp.created_at
     LIMIT 1;
 
     SELECT dp.points_id
     INTO v_pass_points_id
-    FROM draft_points dp
+    FROM points_draft dp
     WHERE dp.draft_id = v_draft_id
     ORDER BY dp.created_at
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM draft_departments dd
+    FROM departments_draft dd
     WHERE dd.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsg.standard_groups_id ORDER BY dsg.created_at), ARRAY[]::uuid[])
     INTO v_standard_group_ids
-    FROM draft_standard_groups dsg
+    FROM standard_groups_draft dsg
     WHERE dsg.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.standards_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_standard_ids
-    FROM draft_standards ds
+    FROM standards_draft ds
     WHERE ds.draft_id = v_draft_id;
 
     -- Determine if create or update

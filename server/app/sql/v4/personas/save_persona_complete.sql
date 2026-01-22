@@ -55,48 +55,48 @@ BEGIN
 
     -- Load draft resources
     SELECT dn.names_id INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dc.colors_id INTO v_color_id
-    FROM draft_colors dc
+    FROM colors_draft dc
     WHERE dc.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT di.icons_id INTO v_icon_id
-    FROM draft_icons di
+    FROM icons_draft di
     WHERE di.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT din.instructions_id INTO v_instructions_id
-    FROM draft_instructions din
+    FROM instructions_draft din
     WHERE din.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM draft_departments ddp
+    FROM departments_draft ddp
     WHERE ddp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(de.examples_id ORDER BY de.created_at), ARRAY[]::uuid[])
     INTO v_example_ids
-    FROM draft_examples de
+    FROM examples_draft de
     WHERE de.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dfld.fields_id ORDER BY dfld.created_at), ARRAY[]::uuid[])
     INTO v_field_ids
-    FROM draft_fields dfld
+    FROM fields_draft dfld
     WHERE dfld.draft_id = v_draft_id;
 
     -- Determine if create or update

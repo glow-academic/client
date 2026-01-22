@@ -182,7 +182,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -201,14 +201,14 @@ user_profile AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT an.name_id FROM auth_names an WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_auth_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM draft_names dn 
+                FROM names_draft dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -225,14 +225,14 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ad.description_id FROM auth_descriptions ad WHERE ad.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_auth_v4_description_resource 
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
-                FROM draft_descriptions dd 
+                FROM descriptions_draft dd 
                 JOIN descriptions_resource d ON dd.descriptions_id = d.id 
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -249,14 +249,14 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT af.flag_id FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'auth_active' AND af.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_auth_v4_flag_resource 
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM draft_flags df 
+                FROM flags_draft df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -1225,7 +1225,7 @@ SELECT
         (SELECT COALESCE(jsonb_object_agg(aid.auth_item_id::text, aid.encrypted), '{}'::jsonb) FROM auth_items_data aid),
         '{}'::jsonb
     ) as auth_item_encrypted_states,
-    COALESCE((SELECT d.version FROM drafts d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
+    COALESCE((SELECT d.version FROM resource_drafts d WHERE d.id = (SELECT draft_id FROM params) LIMIT 1), 0) as draft_version
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf

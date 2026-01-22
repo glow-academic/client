@@ -69,7 +69,7 @@ BEGIN
 
     SELECT d.profile_id, d.group_id
     INTO v_draft_profile_id, v_group_id
-    FROM drafts d
+    FROM resource_drafts d
     WHERE d.id = v_draft_id;
 
     IF v_draft_profile_id IS NULL THEN
@@ -87,21 +87,21 @@ BEGIN
     -- Load draft resources
     SELECT n.name
     INTO v_name
-    FROM draft_names dn
+    FROM names_draft dn
     JOIN names_resource n ON n.id = dn.names_id
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(e.email ORDER BY de.created_at), ARRAY[]::text[])
     INTO v_emails
-    FROM draft_emails de
+    FROM emails_draft de
     JOIN emails_resource e ON e.id = de.emails_id
     WHERE de.draft_id = v_draft_id
       AND de.active = true;
 
     SELECT r.role::text
     INTO v_role
-    FROM draft_roles dr
+    FROM roles_draft dr
     JOIN roles_resource r ON r.id = dr.roles_id
     WHERE dr.draft_id = v_draft_id
       AND dr.active = true
@@ -123,7 +123,7 @@ BEGIN
 
     SELECT df.flags_id
     INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
@@ -131,7 +131,7 @@ BEGIN
 
     SELECT drl.request_limits_id
     INTO v_request_limit_id
-    FROM draft_request_limits drl
+    FROM request_limits_draft drl
     WHERE drl.draft_id = v_draft_id
     LIMIT 1;
 
@@ -145,19 +145,19 @@ BEGIN
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM draft_departments dd
+    FROM departments_draft dd
     WHERE dd.draft_id = v_draft_id
       AND dd.active = true;
 
     SELECT COALESCE(ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at), ARRAY[]::uuid[])
     INTO v_cohort_ids
-    FROM draft_cohorts dc
+    FROM cohorts_draft dc
     WHERE dc.draft_id = v_draft_id
       AND dc.active = true;
 
     SELECT COALESCE(ARRAY_AGG(dr.routes_id ORDER BY dr.created_at), ARRAY[]::uuid[])
     INTO v_route_ids
-    FROM draft_routes dr
+    FROM routes_draft dr
     WHERE dr.draft_id = v_draft_id
       AND dr.active = true;
 

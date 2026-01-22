@@ -161,7 +161,7 @@ draft_payload_data AS (
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
+    JOIN resource_drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
     

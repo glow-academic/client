@@ -94,7 +94,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM drafts WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM resource_drafts WHERE id = input_draft_id;
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
@@ -103,7 +103,7 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
         
-        UPDATE drafts
+        UPDATE resource_drafts
         SET version = drafts.version + 1,
             updated_at = now(),
             group_id = COALESCE(group_id, v_group_id)
@@ -116,98 +116,98 @@ BEGIN
             v_draft_exists := true;
             
             -- Delete old resource links
-            DELETE FROM draft_names WHERE draft_names.draft_id = v_draft_id;
-            DELETE FROM draft_descriptions WHERE draft_descriptions.draft_id = v_draft_id;
-            DELETE FROM draft_flags WHERE draft_flags.draft_id = v_draft_id;
-            DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
-            DELETE FROM draft_scenarios WHERE draft_scenarios.draft_id = v_draft_id;
-            DELETE FROM draft_scenario_flags WHERE draft_scenario_flags.draft_id = v_draft_id;
-            DELETE FROM draft_scenario_positions WHERE draft_scenario_positions.draft_id = v_draft_id;
-            DELETE FROM draft_scenario_rubrics WHERE draft_scenario_rubrics.draft_id = v_draft_id;
-            DELETE FROM draft_scenario_time_limits WHERE draft_scenario_time_limits.draft_id = v_draft_id;
+            DELETE FROM names_draft WHERE names_draft.draft_id = v_draft_id;
+            DELETE FROM descriptions_draft WHERE descriptions_draft.draft_id = v_draft_id;
+            DELETE FROM flags_draft WHERE flags_draft.draft_id = v_draft_id;
+            DELETE FROM departments_draft WHERE departments_draft.draft_id = v_draft_id;
+            DELETE FROM scenarios_draft WHERE scenarios_draft.draft_id = v_draft_id;
+            DELETE FROM scenario_flags_draft WHERE scenario_flags_draft.draft_id = v_draft_id;
+            DELETE FROM scenario_positions_draft WHERE scenario_positions_draft.draft_id = v_draft_id;
+            DELETE FROM scenario_rubrics_draft WHERE scenario_rubrics_draft.draft_id = v_draft_id;
+            DELETE FROM scenario_time_limits_draft WHERE scenario_time_limits_draft.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
-                INSERT INTO draft_names (draft_id, names_id, version)
+                INSERT INTO names_draft (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT draft_names_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF description_id IS NOT NULL THEN
-                INSERT INTO draft_descriptions (draft_id, descriptions_id, version)
+                INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT draft_descriptions_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
-                INSERT INTO draft_flags (draft_id, flags_id, version)
+                INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             -- Handle array resources
             IF department_ids IS NOT NULL THEN
-                DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
-                INSERT INTO draft_departments (draft_id, departments_id, version)
+                DELETE FROM departments_draft WHERE departments_draft.draft_id = v_draft_id;
+                INSERT INTO departments_draft (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
-                ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF scenario_ids IS NOT NULL THEN
-                DELETE FROM draft_scenarios WHERE draft_scenarios.draft_id = v_draft_id;
-                INSERT INTO draft_scenarios (draft_id, scenarios_id, version)
+                DELETE FROM scenarios_draft WHERE scenarios_draft.draft_id = v_draft_id;
+                INSERT INTO scenarios_draft (draft_id, scenarios_id, version)
                 SELECT v_draft_id, scenario_id, v_new_version
                 FROM UNNEST(scenario_ids) as scenario_id
-                ON CONFLICT ON CONSTRAINT draft_scenarios_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
 
             IF scenario_flag_ids IS NOT NULL THEN
-                DELETE FROM draft_scenario_flags WHERE draft_scenario_flags.draft_id = v_draft_id;
-                INSERT INTO draft_scenario_flags (draft_id, scenario_flags_id, version)
+                DELETE FROM scenario_flags_draft WHERE scenario_flags_draft.draft_id = v_draft_id;
+                INSERT INTO scenario_flags_draft (draft_id, scenario_flags_id, version)
                 SELECT v_draft_id, scenario_flag_id, v_new_version
                 FROM UNNEST(scenario_flag_ids) as scenario_flag_id
-                ON CONFLICT ON CONSTRAINT draft_scenario_flags_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
 
             IF scenario_position_ids IS NOT NULL THEN
-                DELETE FROM draft_scenario_positions WHERE draft_scenario_positions.draft_id = v_draft_id;
-                INSERT INTO draft_scenario_positions (draft_id, scenario_position_id, version)
+                DELETE FROM scenario_positions_draft WHERE scenario_positions_draft.draft_id = v_draft_id;
+                INSERT INTO scenario_positions_draft (draft_id, scenario_position_id, version)
                 SELECT v_draft_id, scenario_position_id, v_new_version
                 FROM UNNEST(scenario_position_ids) as scenario_position_id
-                ON CONFLICT ON CONSTRAINT draft_scenario_positions_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
 
             IF scenario_rubric_ids IS NOT NULL THEN
-                DELETE FROM draft_scenario_rubrics WHERE draft_scenario_rubrics.draft_id = v_draft_id;
-                INSERT INTO draft_scenario_rubrics (draft_id, scenario_rubric_id, version)
+                DELETE FROM scenario_rubrics_draft WHERE scenario_rubrics_draft.draft_id = v_draft_id;
+                INSERT INTO scenario_rubrics_draft (draft_id, scenario_rubric_id, version)
                 SELECT v_draft_id, scenario_rubric_id, v_new_version
                 FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
-                ON CONFLICT ON CONSTRAINT draft_scenario_rubrics_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
 
             IF scenario_time_limit_ids IS NOT NULL THEN
-                DELETE FROM draft_scenario_time_limits WHERE draft_scenario_time_limits.draft_id = v_draft_id;
-                INSERT INTO draft_scenario_time_limits (draft_id, scenario_time_limit_id, version)
+                DELETE FROM scenario_time_limits_draft WHERE scenario_time_limits_draft.draft_id = v_draft_id;
+                INSERT INTO scenario_time_limits_draft (draft_id, scenario_time_limit_id, version)
                 SELECT v_draft_id, scenario_time_limit_id, v_new_version
                 FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
-                ON CONFLICT ON CONSTRAINT draft_scenario_time_limits_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -224,86 +224,86 @@ BEGIN
     RETURNING id INTO v_group_id;
     
     -- Create new draft with group_id
-    INSERT INTO drafts (artifact, profile_id, group_id)
+    INSERT INTO resource_drafts (artifact, profile_id, group_id)
     VALUES ('simulation'::artifacts, v_profile_id, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
     
     -- Link resources to draft
     IF name_id IS NOT NULL THEN
-        INSERT INTO draft_names (draft_id, names_id, version)
+        INSERT INTO names_draft (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT draft_names_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF description_id IS NOT NULL THEN
-        INSERT INTO draft_descriptions (draft_id, descriptions_id, version)
+        INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT draft_descriptions_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF active_flag_id IS NOT NULL THEN
-        INSERT INTO draft_flags (draft_id, flags_id, version)
+        INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     -- Handle array resources
     IF department_ids IS NOT NULL THEN
-        INSERT INTO draft_departments (draft_id, departments_id, version)
+        INSERT INTO departments_draft (draft_id, departments_id, version)
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
-        ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF scenario_ids IS NOT NULL THEN
-        INSERT INTO draft_scenarios (draft_id, scenarios_id, version)
+        INSERT INTO scenarios_draft (draft_id, scenarios_id, version)
         SELECT v_draft_id, scenario_id, v_new_version
         FROM UNNEST(scenario_ids) as scenario_id
-        ON CONFLICT ON CONSTRAINT draft_scenarios_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
 
     IF scenario_flag_ids IS NOT NULL THEN
-        INSERT INTO draft_scenario_flags (draft_id, scenario_flags_id, version)
+        INSERT INTO scenario_flags_draft (draft_id, scenario_flags_id, version)
         SELECT v_draft_id, scenario_flag_id, v_new_version
         FROM UNNEST(scenario_flag_ids) as scenario_flag_id
-        ON CONFLICT ON CONSTRAINT draft_scenario_flags_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
 
     IF scenario_position_ids IS NOT NULL THEN
-        INSERT INTO draft_scenario_positions (draft_id, scenario_position_id, version)
+        INSERT INTO scenario_positions_draft (draft_id, scenario_position_id, version)
         SELECT v_draft_id, scenario_position_id, v_new_version
         FROM UNNEST(scenario_position_ids) as scenario_position_id
-        ON CONFLICT ON CONSTRAINT draft_scenario_positions_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
 
     IF scenario_rubric_ids IS NOT NULL THEN
-        INSERT INTO draft_scenario_rubrics (draft_id, scenario_rubric_id, version)
+        INSERT INTO scenario_rubrics_draft (draft_id, scenario_rubric_id, version)
         SELECT v_draft_id, scenario_rubric_id, v_new_version
         FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
-        ON CONFLICT ON CONSTRAINT draft_scenario_rubrics_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
 
     IF scenario_time_limit_ids IS NOT NULL THEN
-        INSERT INTO draft_scenario_time_limits (draft_id, scenario_time_limit_id, version)
+        INSERT INTO scenario_time_limits_draft (draft_id, scenario_time_limit_id, version)
         SELECT v_draft_id, scenario_time_limit_id, v_new_version
         FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
-        ON CONFLICT ON CONSTRAINT draft_scenario_time_limits_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

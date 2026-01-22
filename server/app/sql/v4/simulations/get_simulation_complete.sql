@@ -140,7 +140,7 @@ CREATE TYPE types.q_get_simulation_v4_scenario_time_limit_resource AS (
 -- UPDATE department_artifact type to include generated and group_id
 DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
 CREATE TYPE types.q_get_simulation_v4_department AS (
-    department_id uuid,      -- departments_resource.id (for draft_departments FK)
+    department_id uuid,      -- departments_resource.id (for departments_draft FK)
     artifact_id uuid,        -- department_artifact.id (for createDepartmentsAction)
     name text,
     description text,
@@ -367,7 +367,7 @@ draft_scenario_ids_data AS (
     SELECT 
         COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[]) as scenario_ids
     FROM params x
-    LEFT JOIN draft_scenarios ds ON ds.draft_id = x.draft_id
+    LEFT JOIN scenarios_draft ds ON ds.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
@@ -377,7 +377,7 @@ draft_payload_data AS (
         d.version as draft_version,
         (SELECT scenario_ids FROM draft_scenario_ids_data) as draft_scenario_ids
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
+    JOIN resource_drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
     LIMIT 1
@@ -392,7 +392,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -401,7 +401,7 @@ draft_group_data AS (
 draft_version_data AS (
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -1014,7 +1014,7 @@ department_cohort_ids AS (
 -- Uses department_artifact as base (consistent with user_departments_for_mapping)
 department_mapping_data AS (
     SELECT
-        dr.id as department_id,  -- Use resource ID (draft_departments FK expects departments_resource.id)
+        dr.id as department_id,  -- Use resource ID (departments_draft FK expects departments_resource.id)
         d.id as artifact_id,     -- Artifact ID for createDepartmentsAction
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
@@ -2192,28 +2192,28 @@ draft_scenario_flag_ids_data AS (
     SELECT 
         ARRAY_AGG(dsf.scenario_flags_id) as scenario_flag_ids
     FROM params x
-    JOIN draft_scenario_flags dsf ON dsf.draft_id = x.draft_id
+    JOIN scenario_flags_draft dsf ON dsf.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_position_ids_data AS (
     SELECT 
         ARRAY_AGG(dsp.scenario_position_id) as scenario_position_ids
     FROM params x
-    JOIN draft_scenario_positions dsp ON dsp.draft_id = x.draft_id
+    JOIN scenario_positions_draft dsp ON dsp.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_rubric_ids_data AS (
     SELECT 
         ARRAY_AGG(dsr.scenario_rubric_id) as scenario_rubric_ids
     FROM params x
-    JOIN draft_scenario_rubrics dsr ON dsr.draft_id = x.draft_id
+    JOIN scenario_rubrics_draft dsr ON dsr.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 draft_scenario_time_limit_ids_data AS (
     SELECT 
         ARRAY_AGG(dstl.scenario_time_limit_id) as scenario_time_limit_ids
     FROM params x
-    JOIN draft_scenario_time_limits dstl ON dstl.draft_id = x.draft_id
+    JOIN scenario_time_limits_draft dstl ON dstl.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
 ),
 scenario_ids_data AS (

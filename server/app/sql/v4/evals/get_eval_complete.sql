@@ -240,7 +240,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -249,7 +249,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -330,14 +330,14 @@ active_departments_data AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT en.name_id FROM eval_names en WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_eval_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM draft_names dn 
+                FROM names_draft dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -354,14 +354,14 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ed.description_id FROM eval_descriptions ed WHERE ed.eval_id = (SELECT eval_id FROM params) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_eval_v4_description_resource 
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
-                FROM draft_descriptions dd 
+                FROM descriptions_draft dd 
                 JOIN descriptions_resource d ON dd.descriptions_id = d.id 
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -495,14 +495,14 @@ descriptions_suggestions_objects AS (
 active_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'active' LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'active' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND ef.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM draft_flags df 
+                FROM flags_draft df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'active'
                 UNION ALL
@@ -520,14 +520,14 @@ active_flag_resource_data AS (
 dynamic_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'dynamic' LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'dynamic' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND ef.value = TRUE LIMIT 1)
         ) as dynamic_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM draft_flags df 
+                FROM flags_draft df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'dynamic'
                 UNION ALL
@@ -545,14 +545,14 @@ dynamic_flag_resource_data AS (
 groups_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'groups' LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'groups' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'groups' AND ef.value = TRUE LIMIT 1)
         ) as groups_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
-                FROM draft_flags df 
+                FROM flags_draft df 
                 JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'groups'
                 UNION ALL
@@ -1132,13 +1132,13 @@ draft_run_ids_data AS (
     SELECT
         COALESCE(ARRAY_AGG(dr.runs_id ORDER BY dr.created_at), ARRAY[]::uuid[]) as run_ids
     FROM params x
-    LEFT JOIN draft_runs dr ON dr.draft_id = x.draft_id
+    LEFT JOIN runs_draft dr ON dr.draft_id = x.draft_id
 ),
 draft_group_ids_data AS (
     SELECT
         COALESCE(ARRAY_AGG(dg.groups_id ORDER BY dg.created_at), ARRAY[]::uuid[]) as group_ids
     FROM params x
-    LEFT JOIN draft_groups dg ON dg.draft_id = x.draft_id
+    LEFT JOIN groups_draft dg ON dg.draft_id = x.draft_id
 ),
 -- Eval run/group selections
 eval_run_ids_data AS (

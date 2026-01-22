@@ -180,7 +180,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -189,7 +189,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -419,7 +419,7 @@ args_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(da.args_id ORDER BY da.created_at)
-                 FROM draft_args da
+                 FROM args_draft da
                  WHERE da.draft_id = (SELECT draft_id FROM params)),
                 ARRAY[]::uuid[]
             )
@@ -501,7 +501,7 @@ args_outputs_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(dao.args_outputs_id ORDER BY dao.created_at)
-                 FROM draft_args_outputs dao
+                 FROM args_outputs_draft dao
                  WHERE dao.draft_id = (SELECT draft_id FROM params)),
                 ARRAY[]::uuid[]
             )

@@ -62,7 +62,7 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
-        SELECT group_id INTO v_group_id FROM drafts WHERE id = input_draft_id;
+        SELECT group_id INTO v_group_id FROM resource_drafts WHERE id = input_draft_id;
 
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
@@ -71,7 +71,7 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE drafts
+        UPDATE resource_drafts
         SET version = drafts.version + 1,
             updated_at = now(),
             group_id = COALESCE(group_id, v_group_id)
@@ -84,24 +84,24 @@ BEGIN
             v_draft_exists := true;
 
             -- Delete old resource links
-            DELETE FROM draft_args WHERE draft_args.draft_id = v_draft_id;
-            DELETE FROM draft_args_outputs WHERE draft_args_outputs.draft_id = v_draft_id;
+            DELETE FROM args_draft WHERE args_draft.draft_id = v_draft_id;
+            DELETE FROM args_outputs_draft WHERE args_outputs_draft.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF args_ids IS NOT NULL AND COALESCE(array_length(args_ids, 1), 0) > 0 THEN
-                INSERT INTO draft_args (draft_id, args_id, version, generated, mcp)
+                INSERT INTO args_draft (draft_id, args_id, version, generated, mcp)
                 SELECT v_draft_id, args_id, v_new_version, false, false
                 FROM UNNEST(args_ids) as args_id
-                ON CONFLICT ON CONSTRAINT draft_args_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
 
             IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
-                INSERT INTO draft_args_outputs (draft_id, args_outputs_id, version, generated, mcp)
+                INSERT INTO args_outputs_draft (draft_id, args_outputs_id, version, generated, mcp)
                 SELECT v_draft_id, args_outputs_id, v_new_version, false, false
                 FROM UNNEST(args_outputs_ids) as args_outputs_id
-                ON CONFLICT ON CONSTRAINT draft_args_outputs_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -118,25 +118,25 @@ BEGIN
     RETURNING id INTO v_group_id;
 
     -- Create new draft with group_id
-    INSERT INTO drafts (artifact, profile_id, group_id)
+    INSERT INTO resource_drafts (artifact, profile_id, group_id)
     VALUES ('tool'::artifacts, v_profile_id, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
 
     -- Link resources to draft
     IF args_ids IS NOT NULL AND COALESCE(array_length(args_ids, 1), 0) > 0 THEN
-        INSERT INTO draft_args (draft_id, args_id, version, generated, mcp)
+        INSERT INTO args_draft (draft_id, args_id, version, generated, mcp)
         SELECT v_draft_id, args_id, v_new_version, false, false
         FROM UNNEST(args_ids) as args_id
-        ON CONFLICT ON CONSTRAINT draft_args_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
 
     IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
-        INSERT INTO draft_args_outputs (draft_id, args_outputs_id, version, generated, mcp)
+        INSERT INTO args_outputs_draft (draft_id, args_outputs_id, version, generated, mcp)
         SELECT v_draft_id, args_outputs_id, v_new_version, false, false
         FROM UNNEST(args_outputs_ids) as args_outputs_id
-        ON CONFLICT ON CONSTRAINT draft_args_outputs_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

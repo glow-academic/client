@@ -49,7 +49,7 @@ BEGIN
     END IF;
 
     SELECT d.group_id INTO v_group_id
-    FROM drafts d
+    FROM resource_drafts d
     WHERE d.id = v_draft_id;
 
     IF v_group_id IS NULL THEN
@@ -57,17 +57,17 @@ BEGIN
     END IF;
 
     SELECT dn.names_id INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
     -- Determine if create or update

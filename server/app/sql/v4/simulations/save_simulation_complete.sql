@@ -57,19 +57,19 @@ BEGIN
 
     SELECT dn.names_id
     INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id
     INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id
       AND f.name = 'active'
@@ -77,7 +77,7 @@ BEGIN
 
     SELECT df.flags_id
     INTO v_practice_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id
       AND f.name = 'practice'
@@ -85,32 +85,32 @@ BEGIN
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM draft_departments dd
+    FROM departments_draft dd
     WHERE dd.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.scenarios_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_scenario_ids
-    FROM draft_scenarios ds
+    FROM scenarios_draft ds
     WHERE ds.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsf.scenario_flags_id ORDER BY dsf.created_at), ARRAY[]::uuid[])
     INTO v_scenario_flag_ids
-    FROM draft_scenario_flags dsf
+    FROM scenario_flags_draft dsf
     WHERE dsf.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsp.scenario_position_id ORDER BY dsp.created_at), ARRAY[]::uuid[])
     INTO v_scenario_position_ids
-    FROM draft_scenario_positions dsp
+    FROM scenario_positions_draft dsp
     WHERE dsp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dsr.scenario_rubric_id ORDER BY dsr.created_at), ARRAY[]::uuid[])
     INTO v_scenario_rubric_ids
-    FROM draft_scenario_rubrics dsr
+    FROM scenario_rubrics_draft dsr
     WHERE dsr.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dstl.scenario_time_limit_id ORDER BY dstl.created_at), ARRAY[]::uuid[])
     INTO v_scenario_time_limit_ids
-    FROM draft_scenario_time_limits dstl
+    FROM scenario_time_limits_draft dstl
     WHERE dstl.draft_id = v_draft_id;
 
     -- Determine if create or update

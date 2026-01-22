@@ -182,7 +182,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -190,7 +190,7 @@ draft_group_data AS (
 draft_version_data AS (
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -257,14 +257,14 @@ cohort_department_access_check AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT n.id FROM draft_names dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cn.name_id FROM cohort_names cn WHERE cn.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_cohort_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM draft_names dn 
+                FROM names_draft dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -283,10 +283,10 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cd.description_id FROM cohort_descriptions cd WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM draft_descriptions dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1) as cohort_description_resource
     FROM params
     -- Always return at least one row
@@ -295,10 +295,10 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cf.flag_id FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.name = 'cohort_active' AND cf.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.name = 'cohort_active' AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
     FROM params
     -- Always return at least one row
@@ -561,7 +561,7 @@ draft_simulation_ids_data AS (
     SELECT 
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
     FROM params x
-    LEFT JOIN draft_simulations ds ON ds.draft_id = x.draft_id
+    LEFT JOIN simulations_draft ds ON ds.draft_id = x.draft_id
     LIMIT 1
 ),
 cohort_simulation_ids_data AS (
@@ -593,7 +593,7 @@ simulation_ids_data AS (
     FROM params
     LIMIT 1
 ),
-draft_simulation_positions_data AS (
+simulation_positions_draft_data AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
@@ -603,7 +603,7 @@ draft_simulation_positions_data AS (
             '{}'::types.q_get_cohort_v4_simulation_position[]
         ) as simulation_positions
     FROM params x
-    LEFT JOIN draft_simulation_positions dsp ON dsp.draft_id = x.draft_id
+    LEFT JOIN simulation_positions_draft dsp ON dsp.draft_id = x.draft_id
     LIMIT 1
 ),
 cohort_simulation_positions_data AS (
@@ -629,8 +629,8 @@ simulation_positions_data AS (
     SELECT
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL
-                AND COALESCE(array_length((SELECT simulation_positions FROM draft_simulation_positions_data), 1), 0) > 0
-                THEN (SELECT simulation_positions FROM draft_simulation_positions_data)
+                AND COALESCE(array_length((SELECT simulation_positions FROM simulation_positions_draft_data), 1), 0) > 0
+                THEN (SELECT simulation_positions FROM simulation_positions_draft_data)
             WHEN COALESCE(array_length((SELECT simulation_positions FROM cohort_simulation_positions_data), 1), 0) > 0
                 THEN (SELECT simulation_positions FROM cohort_simulation_positions_data)
             ELSE '{}'::types.q_get_cohort_v4_simulation_position[]

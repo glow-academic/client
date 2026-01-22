@@ -279,7 +279,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -288,7 +288,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -504,40 +504,40 @@ ui_flags AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT an.name_id FROM agent_names an WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1)
         ) as name_id,
-        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_agent_v4_name_resource FROM draft_names dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
+        (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_agent_v4_name_resource FROM names_draft dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_agent_v4_name_resource FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_name_resource
     FROM params
 ),
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ad.description_id FROM agent_descriptions ad WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM draft_descriptions dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM descriptions_draft dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_description_resource
     FROM params
 ),
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT af.flag_id FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = (SELECT agent_id FROM params) AND f.name = 'agent_active' AND af.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_agent_v4_flag_resource FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_agent_v4_flag_resource FROM flags_draft df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_agent_v4_flag_resource FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = (SELECT agent_id FROM params) AND f.name = 'agent_active' AND af.value = TRUE LIMIT 1) as agent_flag_resource
     FROM params
 ),
 instructions_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dinst.instructions_id FROM draft_instructions dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dinst.instructions_id FROM instructions_draft dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT ai.instruction_id FROM agent_instructions ai WHERE ai.agent_id = (SELECT agent_id FROM params) LIMIT 1)
         ) as instructions_id,
-        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_agent_v4_instructions_resource FROM draft_instructions dinst JOIN instructions_resource inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
+        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_agent_v4_instructions_resource FROM instructions_draft dinst JOIN instructions_resource inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as instructions_draft_resource,
         (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_agent_v4_instructions_resource FROM agent_instructions ai JOIN instructions_resource inst ON ai.instruction_id = inst.id WHERE ai.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_instructions_resource
     FROM params
 ),
@@ -2509,7 +2509,7 @@ SELECT
     COALESCE((SELECT prompts_array FROM prompt_mapping_data_safe LIMIT 1), ARRAY[]::types.q_get_agent_v4_prompt[]) as prompts,
     -- Single-select resources: instructions
     COALESCE(instrd.instructions_id, NULL)::uuid as instructions_id,
-    COALESCE(instrd.agent_instructions_resource, instrd.draft_instructions_resource, NULL)::types.q_get_agent_v4_instructions_resource as instructions_resource,
+    COALESCE(instrd.agent_instructions_resource, instrd.instructions_draft_resource, NULL)::types.q_get_agent_v4_instructions_resource as instructions_resource,
     CASE 
         WHEN NOT tec.instructions_has_tools THEN false
         ELSE uf.show_instructions

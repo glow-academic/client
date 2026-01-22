@@ -83,126 +83,126 @@ BEGIN
         RAISE EXCEPTION 'draft_id is required';
     END IF;
 
-    SELECT group_id INTO v_group_id FROM drafts WHERE id = v_draft_id;
+    SELECT group_id INTO v_group_id FROM resource_drafts WHERE id = v_draft_id;
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
     END IF;
 
     SELECT dn.names_id
     INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id
     INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dps.problem_statements_id
     INTO v_problem_statement_id
-    FROM draft_problem_statements dps
+    FROM problem_statements_draft dps
     WHERE dps.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'active'
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_objectives_enabled_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'objectives_enabled'
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_images_enabled_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'images_enabled'
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_video_enabled_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'video_enabled'
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_questions_enabled_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'questions_enabled'
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_problem_statement_enabled_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'problem_statement_enabled'
     LIMIT 1;
 
     SELECT df.flags_id
     INTO v_use_templates_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     JOIN flags_resource f ON f.id = df.flags_id
     WHERE df.draft_id = v_draft_id AND f.name = 'use_templates'
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM draft_departments dd
+    FROM departments_draft dd
     WHERE dd.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dp.personas_id ORDER BY dp.created_at), ARRAY[]::uuid[])
     INTO v_persona_ids
-    FROM draft_personas dp
+    FROM personas_draft dp
     WHERE dp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dd.documents_id ORDER BY dd.created_at), ARRAY[]::uuid[])
     INTO v_document_ids
-    FROM draft_documents dd
+    FROM documents_draft dd
     WHERE dd.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dt.templates_id ORDER BY dt.created_at), ARRAY[]::uuid[])
     INTO v_template_document_ids
-    FROM draft_templates dt
+    FROM templates_draft dt
     WHERE dt.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), ARRAY[]::uuid[])
     INTO v_parameter_ids
-    FROM draft_parameters dp
+    FROM parameters_draft dp
     WHERE dp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(df.fields_id ORDER BY df.created_at), ARRAY[]::uuid[])
     INTO v_field_ids
-    FROM draft_fields df
+    FROM fields_draft df
     WHERE df.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(di.images_id ORDER BY di.created_at), ARRAY[]::uuid[])
     INTO v_image_ids
-    FROM draft_images di
+    FROM images_draft di
     WHERE di.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(doj.objectives_id ORDER BY doj.created_at), ARRAY[]::uuid[])
     INTO v_objective_ids
-    FROM draft_objectives doj
+    FROM objectives_draft doj
     WHERE doj.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dv.videos_id ORDER BY dv.created_at), ARRAY[]::uuid[])
     INTO v_video_ids
-    FROM draft_videos dv
+    FROM videos_draft dv
     WHERE dv.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(dq.questions_id ORDER BY dq.created_at), ARRAY[]::uuid[])
     INTO v_question_ids
-    FROM draft_questions dq
+    FROM questions_draft dq
     WHERE dq.draft_id = v_draft_id;
 
     -- Determine if create or update

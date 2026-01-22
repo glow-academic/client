@@ -388,7 +388,7 @@ draft_payload_data AS (
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
+    JOIN resource_drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
     
@@ -410,7 +410,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -547,7 +547,7 @@ scenario_core AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'active'
@@ -568,7 +568,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'objectives_enabled'
@@ -587,7 +587,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'images_enabled'
@@ -606,7 +606,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'video_enabled'
@@ -625,7 +625,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'questions_enabled'
@@ -644,7 +644,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'problem_statement_enabled'
@@ -663,7 +663,7 @@ scenario_core AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'use_templates'
@@ -693,14 +693,14 @@ scenario_core AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sn.name_id FROM scenario_names sn WHERE sn.scenario_id = (SELECT scenario_id FROM params) LIMIT 1)
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_scenario_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
-                FROM draft_names dn 
+                FROM names_draft dn 
                 JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -718,14 +718,14 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT sd.description_id FROM scenario_descriptions sd WHERE sd.scenario_id = (SELECT scenario_id FROM params) LIMIT 1)
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_scenario_v4_description_resource 
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
-                FROM draft_descriptions dd 
+                FROM descriptions_draft dd 
                 JOIN descriptions_resource d ON dd.descriptions_id = d.id 
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
@@ -760,7 +760,7 @@ active_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'active'
@@ -779,7 +779,7 @@ active_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -809,7 +809,7 @@ objectives_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'objectives_enabled'
@@ -828,7 +828,7 @@ objectives_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -858,7 +858,7 @@ images_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'images_enabled'
@@ -877,7 +877,7 @@ images_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -907,7 +907,7 @@ video_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'video_enabled'
@@ -926,7 +926,7 @@ video_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -956,7 +956,7 @@ questions_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'questions_enabled'
@@ -975,7 +975,7 @@ questions_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1005,7 +1005,7 @@ problem_statement_enabled_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'problem_statement_enabled'
@@ -1024,7 +1024,7 @@ problem_statement_enabled_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
@@ -1054,7 +1054,7 @@ use_templates_flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id
-             FROM draft_flags df
+             FROM flags_draft df
              JOIN flags_resource f ON df.flags_id = f.id
              WHERE df.draft_id = (SELECT draft_id FROM params)
                AND f.name = 'use_templates'
@@ -1073,7 +1073,7 @@ use_templates_flag_resource_data AS (
             SELECT ROW(fd.id, fd.name, COALESCE(fd.description, ''), fd.icon_id, fd.icon_name, COALESCE(fd.generated, false))::types.q_get_scenario_v4_flag_resource
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, i.name as icon_name, df.generated, 1 as priority
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON df.flags_id = f.id
                 LEFT JOIN icons_resource i ON i.id = f.icon_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)

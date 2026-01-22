@@ -210,7 +210,7 @@ draft_payload_data AS (
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
+    JOIN resource_drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
     LIMIT 1
@@ -223,7 +223,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row
     WHERE TRUE
     LIMIT 1
@@ -273,11 +273,11 @@ user_department_access AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dn.names_id FROM names_draft dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT dn.name_id FROM department_names dn WHERE dn.department_id = (SELECT department_id FROM params) LIMIT 1)
         ) as name_id,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_department_v4_name_resource 
-         FROM draft_names dn 
+         FROM names_draft dn 
          JOIN names_resource n ON dn.names_id = n.id 
          WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_name_resource,
         (SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_department_v4_name_resource 
@@ -290,11 +290,11 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT dd.descriptions_id FROM descriptions_draft dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT dd.description_id FROM department_descriptions dd WHERE dd.department_id = (SELECT department_id FROM params) LIMIT 1)
         ) as description_id,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_department_v4_description_resource 
-         FROM draft_descriptions dd 
+         FROM descriptions_draft dd 
          JOIN descriptions_resource d ON dd.descriptions_id = d.id 
          WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_department_v4_description_resource 
@@ -307,7 +307,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flags_id FROM flags_draft df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT df.flag_id FROM department_flags df 
              JOIN flags_resource fl ON df.flag_id = fl.id 
              WHERE df.department_id = (SELECT department_id FROM params) 
@@ -315,7 +315,7 @@ flag_resource_data AS (
                AND df.value = true LIMIT 1)
         ) as active_flag_id,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_department_v4_flag_resource 
-         FROM draft_flags df 
+         FROM flags_draft df 
          JOIN flags_resource f ON df.flags_id = f.id 
          WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_department_v4_flag_resource 

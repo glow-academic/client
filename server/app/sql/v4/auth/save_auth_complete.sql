@@ -69,7 +69,6 @@ DECLARE
     v_active_flag_id uuid;
     v_protocol_ids uuid[];
     v_slug_ids uuid[];
-    v_auth_items types.i_save_auth_v4_auth_item[];
 BEGIN
     v_draft_id := draft_id;
     v_profile_id := profile_id;
@@ -80,7 +79,7 @@ BEGIN
     END IF;
 
     SELECT d.group_id INTO v_group_id
-    FROM drafts d
+    FROM resource_drafts d
     WHERE d.id = v_draft_id;
 
     IF v_group_id IS NULL THEN
@@ -88,40 +87,29 @@ BEGIN
     END IF;
 
     SELECT dn.names_id INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(dp.protocols_id ORDER BY dp.created_at), ARRAY[]::uuid[])
     INTO v_protocol_ids
-    FROM draft_protocols dp
+    FROM protocols_draft dp
     WHERE dp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.slugs_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_slug_ids
-    FROM draft_slugs ds
+    FROM slugs_draft ds
     WHERE ds.draft_id = v_draft_id;
-
-    SELECT COALESCE(
-        ARRAY_AGG(
-            (dai.name, dai.description, dai.encrypted, dai.position, dai.active, dai.key_id)::types.i_save_auth_v4_auth_item
-            ORDER BY dai.position
-        ),
-        ARRAY[]::types.i_save_auth_v4_auth_item[]
-    )
-    INTO v_auth_items
-    FROM draft_auth_items dai
-    WHERE dai.draft_id = v_draft_id;
 
     -- Determine if create or update
     is_create := (v_input_auth_id IS NULL);
@@ -198,7 +186,7 @@ BEGIN
             v_active_flag_id AS active_flag_id,
             COALESCE(v_protocol_ids, ARRAY[]::uuid[]) AS protocol_ids,
             COALESCE(v_slug_ids, ARRAY[]::uuid[]) AS slug_ids,
-            COALESCE(v_auth_items, ARRAY[]::types.i_save_auth_v4_auth_item[]) AS auth_items,
+            ARRAY[]::types.i_save_auth_v4_auth_item[] AS auth_items,
             v_profile_id AS profile_id
     ),
     user_profile AS (

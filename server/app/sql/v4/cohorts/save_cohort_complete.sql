@@ -53,7 +53,7 @@ BEGIN
 
     SELECT d.profile_id, d.group_id
     INTO v_draft_profile_id, v_group_id
-    FROM drafts d
+    FROM resource_drafts d
     WHERE d.id = v_draft_id;
 
     IF v_draft_profile_id IS NULL THEN
@@ -70,28 +70,28 @@ BEGIN
 
     -- Load draft resources (single-select + arrays)
     SELECT dn.names_id INTO v_name_id
-    FROM draft_names dn
+    FROM names_draft dn
     WHERE dn.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT dd.descriptions_id INTO v_description_id
-    FROM draft_descriptions dd
+    FROM descriptions_draft dd
     WHERE dd.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT df.flags_id INTO v_active_flag_id
-    FROM draft_flags df
+    FROM flags_draft df
     WHERE df.draft_id = v_draft_id
     LIMIT 1;
 
     SELECT COALESCE(ARRAY_AGG(ddp.departments_id ORDER BY ddp.created_at), ARRAY[]::uuid[])
     INTO v_department_ids
-    FROM draft_departments ddp
+    FROM departments_draft ddp
     WHERE ddp.draft_id = v_draft_id;
 
     SELECT COALESCE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), ARRAY[]::uuid[])
     INTO v_simulation_ids
-    FROM draft_simulations ds
+    FROM simulations_draft ds
     WHERE ds.draft_id = v_draft_id;
 
     -- Validate required resource IDs exist
@@ -305,26 +305,26 @@ BEGIN
             active = true,
             updated_at = NOW()
     ),
-    draft_simulation_positions_data AS (
+    simulation_positions_draft_data AS (
         SELECT
             dsp.simulation_id,
             dsp.value
         FROM params_with_departments x
-        JOIN draft_simulation_positions dsp ON dsp.draft_id = x.draft_id
+        JOIN simulation_positions_draft dsp ON dsp.draft_id = x.draft_id
     ),
     -- Simulations with implicit ordering (positions stored separately)
     simulations_with_order AS (
         SELECT 
             dsp.simulation_id as sim_id,
             dsp.value as position
-        FROM draft_simulation_positions_data dsp
+        FROM simulation_positions_draft_data dsp
         UNION ALL
         SELECT 
             sim_list.sim_id,
             sim_list.ordinality as position
         FROM params_with_departments x
         CROSS JOIN UNNEST(x.simulation_ids) WITH ORDINALITY AS sim_list(sim_id, ordinality)
-        WHERE NOT EXISTS (SELECT 1 FROM draft_simulation_positions_data)
+        WHERE NOT EXISTS (SELECT 1 FROM simulation_positions_draft_data)
           AND COALESCE(array_length(x.simulation_ids, 1), 0) > 0
     ),
     link_simulations AS (

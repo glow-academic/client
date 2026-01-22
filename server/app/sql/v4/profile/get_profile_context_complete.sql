@@ -764,7 +764,7 @@ drafts_data AS (
         NULL::jsonb as payload,
         d.version,
         d.updated_at
-    FROM drafts d
+    FROM resource_drafts d
     WHERE d.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
 ),
 drafts_aggregated AS (

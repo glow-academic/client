@@ -171,7 +171,7 @@ draft_group_data AS (
             (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
     WHERE TRUE
     LIMIT 1
@@ -180,7 +180,7 @@ draft_version_data AS (
     -- Keep draft_version for client-side expected_version sync to avoid unintended draft forks.
     SELECT d.version as draft_version
     FROM params x
-    LEFT JOIN drafts d ON d.id = x.draft_id
+    LEFT JOIN resource_drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -211,7 +211,7 @@ name_id_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id
-             FROM draft_names dn
+             FROM names_draft dn
              WHERE dn.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
             CASE 
@@ -233,7 +233,7 @@ description_id_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id
-             FROM draft_descriptions dd
+             FROM descriptions_draft dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
             CASE 
@@ -364,7 +364,7 @@ active_flag_id_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN (
                 SELECT df.flags_id
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource f ON f.id = df.flags_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND f.name = 'parameter_active'
@@ -424,7 +424,7 @@ parameter_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource fl ON df.flags_id = fl.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND fl.name = 'active'
@@ -436,7 +436,7 @@ parameter_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource fl ON df.flags_id = fl.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND fl.name = 'simulation_parameter'
@@ -448,7 +448,7 @@ parameter_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource fl ON df.flags_id = fl.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND fl.name = 'document_parameter'
@@ -460,7 +460,7 @@ parameter_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource fl ON df.flags_id = fl.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND fl.name = 'persona_parameter'
@@ -472,7 +472,7 @@ parameter_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource fl ON df.flags_id = fl.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND fl.name = 'scenario_parameter'
@@ -484,7 +484,7 @@ parameter_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
                 SELECT 1
-                FROM draft_flags df
+                FROM flags_draft df
                 JOIN flags_resource fl ON df.flags_id = fl.id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                   AND fl.name = 'video_parameter'
@@ -723,7 +723,7 @@ department_ids_data AS (
         CASE
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
-                 FROM draft_departments dd
+                 FROM departments_draft dd
                  WHERE dd.draft_id = (SELECT draft_id FROM params)
                    AND dd.active = true),
                 ARRAY[]::uuid[]
@@ -745,7 +745,7 @@ field_ids_data AS (
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN COALESCE(
                 (SELECT ARRAY_AGG(df.fields_id ORDER BY df.created_at)
-                 FROM draft_fields df
+                 FROM fields_draft df
                  WHERE df.draft_id = (SELECT draft_id FROM params)
                    AND df.active = true
                    AND EXISTS (
