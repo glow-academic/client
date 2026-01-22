@@ -244,7 +244,7 @@ link_profile_active_flags AS (
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'profile_active'
     ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
         value = EXCLUDED.value,
         updated_at = NOW()

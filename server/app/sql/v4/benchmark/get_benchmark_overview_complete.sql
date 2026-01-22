@@ -356,7 +356,7 @@ departments_array AS (
     ) as departments
     FROM all_department_ids adi
     LEFT JOIN departments_resource d ON d.id::text = adi.department_id
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) AND d.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) AND d.id IS NOT NULL
 ),
 -- Build composite type arrays for agents
 agents_array AS (
@@ -370,7 +370,7 @@ agents_array AS (
     ) as agents
     FROM all_agent_ids aai
     LEFT JOIN agents_resource a ON a.id = aai.agent_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) AND a.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true) AND a.id IS NOT NULL
 ),
 -- Build composite type arrays for standard groups
 standard_groups_array AS (
@@ -463,7 +463,7 @@ department_options_array AS (
     ) as department_options
     FROM assigned_department_ids adi
     LEFT JOIN departments_resource d ON d.id::text = adi.department_id
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) AND d.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) AND d.id IS NOT NULL
 ),
 -- Collect all agent IDs actually assigned to evals
 assigned_agent_ids AS (
@@ -482,7 +482,7 @@ agent_options_array AS (
     ) as agent_options
     FROM assigned_agent_ids aai
     LEFT JOIN agents_resource a ON a.id = aai.agent_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true) AND a.id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true) AND a.id IS NOT NULL
 )
 SELECT 
     (SELECT actor_name FROM actor_profile LIMIT 1)::text as actor_name,

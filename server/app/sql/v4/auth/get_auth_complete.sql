@@ -250,7 +250,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT af.flag_id FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'active' AND af.value = TRUE LIMIT 1)
+            (SELECT af.flag_id FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'auth_active' AND af.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_auth_v4_flag_resource 
@@ -264,7 +264,7 @@ flag_resource_data AS (
                 FROM auth_flags af 
                 JOIN flags_resource f ON af.flag_id = f.id 
                 JOIN flags_resource fl ON af.flag_id = fl.id 
-                WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND fl.name = 'active' AND f.name = 'active' AND af.value = TRUE
+                WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND fl.name = 'active' AND f.name = 'auth_active' AND af.value = TRUE
             ) f
             ORDER BY priority
             LIMIT 1
@@ -498,7 +498,7 @@ flag_suggestions_data AS (
                  CROSS JOIN draft_group_data dgd
                  WHERE af.flag_id IS NOT NULL
                    AND fl.name = 'active'
-                   AND f.name = 'active'
+                   AND f.name = 'auth_active'
                    AND (
                        -- Option 1: Linked to auths (auth_flags junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
@@ -631,7 +631,7 @@ agent_artifact_tool_counts AS (
     LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (
         SELECT 1 FROM tool_flags tf
         JOIN flags_resource f ON tf.flag_id = f.id
-        WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true
+        WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN artifact_resources ar ON ar.resource = rt.resource AND ar.artifact = 'auth'::artifacts
@@ -645,7 +645,7 @@ name_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND af.value = true
         )
         AND (
@@ -661,7 +661,7 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
@@ -717,7 +717,7 @@ description_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND af.value = true
         )
         AND (
@@ -733,7 +733,7 @@ description_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
@@ -789,7 +789,7 @@ flag_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND af.value = true
         )
         AND (
@@ -805,7 +805,7 @@ flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resources
@@ -861,7 +861,7 @@ protocols_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND af.value = true
         )
         AND (
@@ -877,7 +877,7 @@ protocols_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'protocols'::resources
@@ -933,7 +933,7 @@ slugs_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND af.value = true
         )
         AND (
@@ -949,7 +949,7 @@ slugs_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'slugs'::resources
@@ -1026,19 +1026,19 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'protocols'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as protocols_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'slugs'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as slugs_has_tools
     FROM params x
 ),

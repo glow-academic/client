@@ -43,7 +43,7 @@ original_parameters AS (
     SELECT pf.parameter_id
     FROM params x
     JOIN parameter_fields pf ON pf.field_id = x.field_id
-    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'active' AND ff.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND ff.value = true)
     LIMIT 1
 ),
 original_departments AS (
@@ -122,7 +122,7 @@ link_field_active_flag AS (
         NOW()
     FROM new_field nf
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'field_active'
     ON CONFLICT (field_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

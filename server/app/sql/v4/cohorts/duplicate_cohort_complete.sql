@@ -133,7 +133,7 @@ link_cohort_active_flag AS (
         NOW()
     FROM new_cohort nc
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'cohort_active'
     ON CONFLICT (cohort_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

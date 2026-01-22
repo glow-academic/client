@@ -70,7 +70,7 @@ selected_agent AS (
     FROM agent_artifact a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
 -- Get agent model output modalities

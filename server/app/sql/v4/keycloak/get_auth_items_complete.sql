@@ -17,13 +17,13 @@ WITH dept_settings AS (
     FROM setting_artifact s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE (api_get_auth_items_v4.department_id IS NOT NULL AND ds.department_id = api_get_auth_items_v4.department_id)
-      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
+      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
 ),
 default_settings AS (
     -- Get default settings (no department links)
     SELECT s.id as settings_id
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true

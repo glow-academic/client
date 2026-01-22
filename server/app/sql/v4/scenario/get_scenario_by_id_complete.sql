@@ -42,7 +42,7 @@ SELECT
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = s.id AND st.parent_id != s.id LIMIT 1) as parent_scenario_id,
     s.created_at,
     s.updated_at,
-    EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE),
+    EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
     NULL::uuid as profile_id,
     (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
 FROM scenario_artifact s

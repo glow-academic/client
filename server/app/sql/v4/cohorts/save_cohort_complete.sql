@@ -283,7 +283,7 @@ BEGIN
             NOW()
         FROM params_with_departments x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'cohort_active'
         ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags.flag_id),
             value = EXCLUDED.value,

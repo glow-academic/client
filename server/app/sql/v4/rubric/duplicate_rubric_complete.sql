@@ -168,7 +168,7 @@ link_rubric_active_flag AS (
         NOW()
     FROM new_rubric nr
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'rubric_active'
     ON CONFLICT (rubric_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

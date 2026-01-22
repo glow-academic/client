@@ -219,8 +219,8 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
-          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'active')
+        WHERE f.name = 'parameter_active'
+          AND NOT EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = x.parameter_id AND f.name = 'parameter_active')
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -405,7 +405,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN field_connections_fixed fcf
-        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'active' AND fieldsf.value = true)
+        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags_resource fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'field_active' AND fieldsf.value = true)
           AND fcf.conn_active = true
         ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
     ),

@@ -99,7 +99,7 @@ key_departments_data AS (
         spk.key_id,
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM setting_provider_keys spk
-    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
+    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE spk.active = true
     GROUP BY spk.key_id
@@ -130,7 +130,7 @@ settings_keys_data AS (
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk
-            JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
+            JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
             WHERE spk.key_id = kr.id AND spk.active = true
@@ -142,7 +142,7 @@ SELECT
     ap.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (s.id, s.created_at, EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE), (SELECT n.name FROM setting_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1), (SELECT d.description FROM setting_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
+            (s.id, s.created_at, EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE), (SELECT n.name FROM setting_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1), (SELECT d.description FROM setting_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
              COALESCE(sdd.department_ids, ARRAY[]::text[])
             )::types.q_get_settings_list_v4_setting
             ORDER BY s.created_at DESC
@@ -154,6 +154,6 @@ FROM setting_artifact s
 CROSS JOIN actor_profile ap
 LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
 LEFT JOIN settings_keys_data skd ON true
-WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)  -- Only return active settings
+WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)  -- Only return active settings
 GROUP BY ap.actor_name, skd.keys
 $$;

@@ -116,7 +116,7 @@ link_setting_active_flag AS (
         NOW()
     FROM new_setting ns
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'setting_active'
     ON CONFLICT (setting_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

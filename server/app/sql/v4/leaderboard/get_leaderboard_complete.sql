@@ -135,7 +135,7 @@ settings_colors AS (
         SELECT 1 FROM setting_flags sf
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.setting_id = s.id
-          AND f.name = 'active'
+          AND f.name = 'setting_active'
           AND sf.value = TRUE
     )
     LIMIT 1
@@ -181,7 +181,7 @@ filt AS (
             SELECT 1 FROM simulation_flags sf
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
-              AND f.name = 'active'
+              AND f.name = 'simulation_active'
               AND sf.value = TRUE
           )
             AND (
@@ -316,7 +316,7 @@ simulation_data AS (
              FROM simulation_scenario_time_limits sstl
              JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
              JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)),
             0
         )::int as time_limit,
         COALESCE(
@@ -331,7 +331,7 @@ simulation_data AS (
         SELECT 1 FROM simulation_flags sf
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
-          AND f.name = 'active'
+          AND f.name = 'simulation_active'
           AND sf.value = TRUE
     )
 ),
@@ -356,7 +356,7 @@ scenario_data AS (
         ) as description
     FROM all_scenario_ids asci
     LEFT JOIN scenarios_resource sc ON sc.id = asci.scenario_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = sc.id AND f.name = 'active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = sc.id AND f.name = 'scenario_active' AND sf.value = true)
 ),
 -- Get top 25% of profiles by highest score
 ranked_stats AS (

@@ -625,7 +625,7 @@ settings_thresholds AS (
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning' LIMIT 1), 80) AS warning_threshold,
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger' LIMIT 1), 70) AS danger_threshold
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = true)
     LIMIT 1
 ),
 -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
@@ -633,7 +633,7 @@ settings_thresholds AS (
 filtered_simulation_ids AS (
     SELECT DISTINCT s.id AS simulation_id
     FROM simulation_artifact s
-    WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
       AND (
           -- If cohort_ids provided, get simulations linked to those cohorts
                       (cardinality((SELECT cohort_ids FROM params)::uuid[]) > 0 AND EXISTS (
@@ -834,7 +834,7 @@ filt AS (
                 LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
                 LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
                   AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_stagnation)
                 ORDER BY ss.simulation_id, (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
             ),
@@ -1376,7 +1376,7 @@ filt AS (
                 FROM simulation_scenarios ss
                 LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
                   AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_overview)
                 ORDER BY ss.simulation_id, (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
             ),
@@ -1597,7 +1597,7 @@ filt AS (
                          FROM simulation_scenario_time_limits sstl
                          JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limit_id
                          JOIN simulation_scenarios ss ON ss.simulation_id = sstl.simulation_id AND ss.scenario_id = stlr.scenario_id
-                         WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)),
+                         WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)),
                         0
                     ) AS time_limit,
                     COALESCE(
@@ -1607,7 +1607,7 @@ filt AS (
                 FROM simulation_artifact s
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
-                  AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'active' AND sf.value = true)
+                  AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)::uuid[]) = 0 
                       OR sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
@@ -1638,7 +1638,7 @@ filt AS (
                 ) AS rubrics_array
                 FROM rubric_artifact r
                 WHERE r.id IN (SELECT rubric_id FROM rubric_ids)
-                  AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r.id AND f.name = 'active' AND rf.value = true)
+                  AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = r.id AND f.name = 'rubric_active' AND rf.value = true)
             ),
             parameters_converted AS (
                 SELECT COALESCE(
@@ -1653,7 +1653,7 @@ filt AS (
                     '{}'::types.q_reports_overview_v4_parameter[]
                 ) AS parameters_array
                 FROM parameter_artifact p
-                WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
+                WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)) = 0 
                       OR EXISTS (
@@ -1683,7 +1683,7 @@ filt AS (
                 FROM field_artifact f
                 JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-                WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
+                WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)::uuid[]) = 0 
                       OR fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])

@@ -34,7 +34,7 @@ AS $$
             FROM setting_flags sf
             JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.setting_id = s.id
-              AND f.name = 'active'
+              AND f.name = 'setting_active'
               AND sf.value = true
         )
     ),

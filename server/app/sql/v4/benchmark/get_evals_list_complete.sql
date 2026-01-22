@@ -313,7 +313,7 @@ SELECT
         (SELECT ARRAY_AGG((d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), ''))::types.q_list_evals_v4_department)
          FROM all_department_ids adi
          JOIN departments_resource d ON d.id::text = adi.department_id
-         WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)),
+         WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)),
         '{}'::types.q_list_evals_v4_department[]
     ) as departments,
     -- Agents array
@@ -321,7 +321,7 @@ SELECT
         (SELECT ARRAY_AGG((a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), ''))::types.q_list_evals_v4_agent)
          FROM all_agent_ids aai
          JOIN agents_resource a ON a.id = aai.agent_id
-         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)),
+         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)),
         '{}'::types.q_list_evals_v4_agent[]
     ) as agents,
     -- Standard groups array
@@ -366,7 +366,7 @@ SELECT
         (SELECT ARRAY_AGG((d.id::text, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1))::types.q_list_evals_v4_option)
          FROM all_department_ids adi
          JOIN departments_resource d ON d.id::text = adi.department_id
-         WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)),
+         WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)),
         '{}'::types.q_list_evals_v4_option[]
     ) as department_options,
     -- Agent options array (only agents assigned to evals)
@@ -374,7 +374,7 @@ SELECT
         (SELECT ARRAY_AGG((a.id::text, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_list_evals_v4_option)
          FROM all_agent_ids aai
          JOIN agents_resource a ON a.id = aai.agent_id
-         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)),
+         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)),
         '{}'::types.q_list_evals_v4_option[]
     ) as agent_options
 FROM user_profile up

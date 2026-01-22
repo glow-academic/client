@@ -90,14 +90,14 @@ profile_dept AS (
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
     WHERE ac.chat_id = chat_id 
       AND ap.active = true 
-      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     LIMIT 1
 ),
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT id as department_id
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     LIMIT 1
 ),
 resolved_dept AS (
@@ -145,7 +145,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -167,7 +167,7 @@ dept_specific_settings AS (
     FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) 
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -185,7 +185,7 @@ dept_specific_settings_with_keys AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) AND sd.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -193,7 +193,7 @@ default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -210,7 +210,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
             (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
             (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) LIMIT 1)  -- Last resort
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) LIMIT 1)  -- Last resort
         ) as settings_id
 )
 SELECT 
@@ -302,13 +302,13 @@ LEFT JOIN (
         sp.persona_id,
         (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1) as persona_name
     FROM scenario_personas sp
-        WHERE sp.active = true AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = sp.persona_id AND f.name = 'active' AND pf.value = true)
+        WHERE sp.active = true AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = sp.persona_id AND f.name = 'persona_active' AND pf.value = true)
     ORDER BY sp.scenario_id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1)
 ) first_persona ON first_persona.scenario_id = s.id
 
 -- Text agent joins (use simulation agent instead of persona agent)
 
-LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
 LEFT JOIN agent_models am ON am.agent_id = a.id
 LEFT JOIN models_resource m ON m.id = am.model_id
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
@@ -335,7 +335,7 @@ LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND kr.active
 
 -- Voice agent joins (use simulation agent instead of persona agent)
 
-LEFT JOIN agents_resource a_voice ON a_voice.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a_voice.id AND f.name = 'active' AND af.value = TRUE)
+LEFT JOIN agents_resource a_voice ON a_voice.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a_voice.id AND f.name = 'agent_active' AND af.value = TRUE)
 LEFT JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
 LEFT JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
 LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true

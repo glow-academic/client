@@ -86,7 +86,7 @@ profile_cohorts AS (
         SELECT 1 FROM cohort_flags cf
         JOIN flags_resource f ON cf.flag_id = f.id
         WHERE cf.cohort_id = c.id
-          AND f.name = 'active'
+          AND f.name = 'cohort_active'
           AND cf.value = TRUE
       )
 ),
@@ -101,7 +101,7 @@ cohort_sims AS (
          JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
          JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
          WHERE ss.simulation_id = s.id 
-           AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+           AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
          ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as rubric_id
     FROM profile_cohorts pc
@@ -112,7 +112,7 @@ cohort_sims AS (
         SELECT 1 FROM simulation_flags sf
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
-          AND f.name = 'active'
+          AND f.name = 'simulation_active'
           AND sf.value = TRUE
       )
       AND NOT EXISTS (
@@ -175,7 +175,7 @@ user_sim_status AS (
             (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
              FROM simulation_artifact s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id 
-               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'active' AND ssf.value = true)
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id AND sfr.scenario_id = ss_rubric.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
              LEFT JOIN simulation_scenario_rubrics ssr_rubric ON ssr_rubric.simulation_id = ss_rubric.simulation_id
              LEFT JOIN scenario_rubrics_resource srr_rubric ON srr_rubric.id = ssr_rubric.scenario_rubric_id AND srr_rubric.scenario_id = ss_rubric.scenario_id
              WHERE s.id = aa.simulation_id

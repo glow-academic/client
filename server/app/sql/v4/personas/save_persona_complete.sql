@@ -307,7 +307,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'persona_active'
         ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, persona_flags.flag_id),
             value = EXCLUDED.value,

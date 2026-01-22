@@ -112,7 +112,7 @@ filt AS (
           a.simulation_id IN (
               SELECT DISTINCT s.id
               FROM simulation_artifact s
-              WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+              WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
                 AND (
                     EXISTS (
                         SELECT 1 

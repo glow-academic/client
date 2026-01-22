@@ -187,10 +187,10 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'field_active'
           AND (
               (SELECT is_create FROM params)
-              OR NOT EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'active')
+              OR NOT EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active')
           )
         ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,

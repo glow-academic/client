@@ -34,7 +34,7 @@ WITH stop_tool_ids AS (
       AND EXISTS (
           SELECT 1 FROM tool_flags tf
           JOIN flags_resource f ON tf.flag_id = f.id
-          WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true
+          WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
       )
 ),
 ordered_tool_calls AS (

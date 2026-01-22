@@ -184,7 +184,7 @@ link_persona_active_flag AS (
         NOW()
     FROM new_persona np
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'persona_active'
     ON CONFLICT (persona_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

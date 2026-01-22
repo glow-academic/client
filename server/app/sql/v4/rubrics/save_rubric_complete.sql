@@ -271,7 +271,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'rubric_active'
         ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags.flag_id),
             value = EXCLUDED.value,

@@ -137,7 +137,7 @@ link_agent_active_flag AS (
         NOW()
     FROM new_agent na
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'agent_active'
     ON CONFLICT (agent_id, flag_id) DO UPDATE SET 
         value = false,
         updated_at = NOW()

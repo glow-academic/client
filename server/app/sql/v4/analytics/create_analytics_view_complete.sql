@@ -76,7 +76,7 @@ active_sims AS (
     SELECT 1 FROM simulation_flags sf
     JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.simulation_id = s.id
-      AND f.name = 'active'
+      AND f.name = 'simulation_active'
       AND sf.value = TRUE
   )
 ),
@@ -86,7 +86,7 @@ active_scenarios AS (
   WHERE EXISTS (
     SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id
     WHERE sf.scenario_id = s.id
-      AND f.name = 'active'
+      AND f.name = 'scenario_active'
       AND sf.value = TRUE
   )
 ),
@@ -94,7 +94,7 @@ active_scenarios AS (
 cohorts_expanded AS (
   SELECT c.id, 
     EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
-        AND f.name = 'active' AND cf.value = TRUE) AS active
+        AND f.name = 'cohort_active' AND cf.value = TRUE) AS active
   FROM cohort_artifact c
 ),
 -- sims -> active cohorts using junction table
@@ -103,7 +103,7 @@ cohorts_by_sim AS (
          ARRAY(SELECT DISTINCT c.id FROM cohort_artifact c
                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
                WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
-                   AND f.name = 'active' AND cf.value = TRUE)) AS cohort_ids
+                   AND f.name = 'cohort_active' AND cf.value = TRUE)) AS cohort_ids
   FROM active_sims s
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
@@ -115,7 +115,7 @@ profile_cohorts_for_sim AS (
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
            JOIN profile_cohorts cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
            WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
-               AND f.name = 'active' AND cf.value = TRUE)
+               AND f.name = 'cohort_active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
   FROM attempts_entry sa
   LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE

@@ -8,9 +8,7 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 from app.api.v4.resources.agents.create import router as agents_router
 
 router.include_router(agents_router)
-from app.api.v4.resources.analyses.create import router as analyses_router
-
-router.include_router(analyses_router)
+# NOTE: analyses removed - converted to entry table (migration 305)
 from app.api.v4.resources.args.create import router as args_router
 
 router.include_router(args_router)
@@ -34,13 +32,8 @@ from app.api.v4.resources.conditional_parameters.create import \
     router as conditional_parameters_router
 
 router.include_router(conditional_parameters_router)
-from app.api.v4.resources.contents.create import router as contents_router
-
-router.include_router(contents_router)
-from app.api.v4.resources.conversations.create import \
-    router as conversations_router
-
-router.include_router(conversations_router)
+# NOTE: contents removed - converted to entry table (migration 305)
+# NOTE: conversations removed - converted to entry table (migration 305)
 from app.api.v4.resources.debug_info.create import router as debug_info_router
 
 router.include_router(debug_info_router)
@@ -67,9 +60,7 @@ router.include_router(evals_router)
 from app.api.v4.resources.examples.create import router as examples_router
 
 router.include_router(examples_router)
-from app.api.v4.resources.feedbacks.create import router as feedbacks_router
-
-router.include_router(feedbacks_router)
+# NOTE: feedbacks removed - converted to entry table (migration 305)
 from app.api.v4.resources.fields.create import router as fields_router
 
 router.include_router(fields_router)
@@ -83,10 +74,7 @@ router.include_router(group_positions_router)
 from app.api.v4.resources.groups.create import router as groups_router
 
 router.include_router(groups_router)
-
-from app.api.v4.resources.hints.create import router as hints_router
-
-router.include_router(hints_router)
+# NOTE: hints removed - converted to entry table (migration 305)
 from app.api.v4.resources.html.create import router as html_router
 
 router.include_router(html_router)
@@ -96,10 +84,7 @@ router.include_router(icons_router)
 from app.api.v4.resources.images.create import router as images_router
 
 router.include_router(images_router)
-from app.api.v4.resources.improvements.create import \
-    router as improvements_router
-
-router.include_router(improvements_router)
+# NOTE: improvements removed - converted to entry table (migration 305)
 from app.api.v4.resources.instructions.create import \
     router as instructions_router
 
@@ -167,9 +152,7 @@ from app.api.v4.resources.request_limits.create import \
     router as request_limits_router
 
 router.include_router(request_limits_router)
-from app.api.v4.resources.responses.create import router as responses_router
-
-router.include_router(responses_router)
+# NOTE: responses removed - converted to entry table (migration 305)
 from app.api.v4.resources.rubrics.create import router as rubrics_router
 
 router.include_router(rubrics_router)
@@ -225,9 +208,7 @@ router.include_router(standard_groups_router)
 from app.api.v4.resources.standards.create import router as standards_router
 
 router.include_router(standards_router)
-from app.api.v4.resources.strengths.create import router as strengths_router
-
-router.include_router(strengths_router)
+# NOTE: strengths removed - converted to entry table (migration 305)
 from app.api.v4.resources.temperature_levels.create import \
     router as temperature_levels_router
 
@@ -243,9 +224,7 @@ router.include_router(texts_router)
 from app.api.v4.resources.thresholds.create import router as thresholds_router
 
 router.include_router(thresholds_router)
-from app.api.v4.resources.times.create import router as times_router
-
-router.include_router(times_router)
+# NOTE: times removed - converted to entry table (migration 305)
 from app.api.v4.resources.tools.create import router as tools_router
 
 router.include_router(tools_router)

@@ -48,7 +48,7 @@ rubric_info AS (
         (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios ss 
          JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
          JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-         WHERE srr.rubric_id = r.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)) as usage_count
+         WHERE srr.rubric_id = r.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)) as usage_count
     FROM rubric_artifact r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),

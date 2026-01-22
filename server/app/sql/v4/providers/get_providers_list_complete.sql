@@ -86,7 +86,7 @@ provider_data AS (
         n.name as name,
         COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
         n.name as value,
-        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND pf.value = TRUE) as active,
         p.created_at,
         p.updated_at,
         ''::text as base_url,

@@ -43,7 +43,7 @@ original_tool AS (
         t.id,
         (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         (SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true) as active
+        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true) as active
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),
@@ -139,7 +139,7 @@ new_tool_active_flag AS (
     FROM new_tool nt
     CROSS JOIN original_tool ot
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'tool_active'
     RETURNING tool_id
 ),
 -- Copy args links from original tool

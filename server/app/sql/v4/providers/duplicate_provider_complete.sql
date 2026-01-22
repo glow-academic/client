@@ -114,7 +114,7 @@ link_provider_active_flag AS (
         NOW()
     FROM new_provider np
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'provider_active'
     ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

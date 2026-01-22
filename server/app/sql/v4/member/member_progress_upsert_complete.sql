@@ -30,7 +30,7 @@ member_agent AS (
     FROM agent_artifact a
     
     
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'active' AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
 -- Get chat context
@@ -148,7 +148,7 @@ link_profile_to_run AS (
 get_speak_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
-    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'speak' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'speak' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 -- Get latest user message for this run (if exists, for upsert)
@@ -306,7 +306,7 @@ resolved_dept AS (
          JOIN scenario_departments sd ON sd.scenario_id = cc.scenario_id AND sd.active = true LIMIT 1),
         (SELECT pd.department_id FROM chat_context cc
          JOIN profile_departments pd ON pd.profile_id = cc.profile_id AND pd.active = true LIMIT 1),
-        (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true) LIMIT 1)
+        (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
     ) as department_id
 ),
 -- Link system/developer messages to run (reuse logic from link_system_developer_messages_to_run.sql)

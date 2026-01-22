@@ -326,7 +326,7 @@ role_resource AS (
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'profile_active'
           AND x.active IS NOT NULL
         ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET 
             value = EXCLUDED.value,

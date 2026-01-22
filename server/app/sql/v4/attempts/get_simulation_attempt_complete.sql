@@ -508,7 +508,7 @@ attempt_base AS (
         (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as sim_title,
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1) as sim_description,
         (SELECT department_id FROM simulation_departments sd WHERE sd.simulation_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1) as sim_department_id,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE) as sim_active,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE) as sim_active,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE) as sim_practice_simulation,
         COALESCE(
             (SELECT SUM(stlr.time_limit_seconds)::int
@@ -520,7 +520,7 @@ attempt_base AS (
                AND stlr.active = true
                AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
                    AND sfr.scenario_id = ss.scenario_id 
-                   AND f.name = 'active' 
+                   AND f.name = 'simulation_active' 
                    AND ssf.value = true)),
             0
         )::int as sim_time_limit,
@@ -530,7 +530,7 @@ attempt_base AS (
          WHERE ss.simulation_id = s.id 
            AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
                AND sfr.scenario_id = ss.scenario_id 
-               AND f.name = 'active' 
+               AND f.name = 'simulation_active' 
                AND ssf.value = true) 
          ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as sim_rubric_id,
@@ -600,7 +600,7 @@ simulation_scenarios_list AS (
     JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
     ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
@@ -691,7 +691,7 @@ simulation_root_scenarios_list AS (
     JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
     ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
@@ -903,7 +903,7 @@ previous_attempt_rubric_points AS (
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_rubric.simulation_id 
           AND sfr.scenario_id = ss_rubric.scenario_id 
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
     LEFT JOIN simulation_scenario_rubrics ssr_rubric ON ssr_rubric.simulation_id = ss_rubric.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_rubric ON srr_rubric.id = ssr_rubric.scenario_rubric_id AND srr_rubric.scenario_id = ss_rubric.scenario_id
@@ -942,7 +942,7 @@ scenario_background_images_for_simulation AS (
           AND ss.scenario_id = si.scenario_id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-              AND f.name = 'active' 
+              AND f.name = 'scenario_active' 
               AND ssf.value = true)
     )
     JOIN images_resource i ON i.id = si.image_id AND i.active = true
@@ -956,7 +956,7 @@ all_simulation_scenarios_with_previous_chats AS (
         ssl.position,
         (s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE(ps.problem_statement, ''),
          COALESCE((SELECT department_id FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), NULL::uuid),
-         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE),
+         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
          sp.persona_id,
          (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
          (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
@@ -1021,7 +1021,7 @@ scenarios_data AS (
         s.id,
         (s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE(ps.problem_statement, ''),
          COALESCE((SELECT department_id FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), NULL::uuid),
-         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = TRUE),
+         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = TRUE),
          sp.persona_id,
          (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
          (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
@@ -1229,7 +1229,7 @@ grades_data AS (
         JOIN simulation_scenario_rubrics ssr_fallback2 ON ssr_fallback2.simulation_id = ss_fallback.simulation_id
         JOIN scenario_rubrics_resource srr_fallback2 ON srr_fallback2.id = ssr_fallback2.scenario_rubric_id AND srr_fallback2.scenario_id = ss_fallback.scenario_id
         WHERE ss_fallback.simulation_id = sa_sim.simulation_id
-          AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_fallback.simulation_id AND sfr.scenario_id = ss_fallback.scenario_id AND f.name = 'active' AND ssf.value = true)
+          AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss_fallback.simulation_id AND sfr.scenario_id = ss_fallback.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
         ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss_fallback.simulation_id AND spr.scenario_id = ss_fallback.scenario_id LIMIT 1)
         LIMIT 1
     ) sfsr ON srr.rubric_id IS NULL AND srr_fallback.rubric_id IS NULL
@@ -1314,7 +1314,7 @@ personas_per_chat AS (
         ) as personas
     FROM chats_base cb
     LEFT JOIN scenario_personas sp ON sp.scenario_id = cb.scenario_id AND sp.active = true
-    LEFT JOIN personas_resource p ON p.id = sp.persona_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'active' AND pf.value = true)
+    LEFT JOIN personas_resource p ON p.id = sp.persona_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = true)
     GROUP BY cb.id
 ),
 hints_data AS (
@@ -1445,7 +1445,7 @@ scenario_documents_data AS (
              ),
              false,
              false,
-             EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = TRUE),
+             EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
              COALESCE(
                  (SELECT array_agg(dd.department_id::text ORDER BY dd.created_at)
                   FROM document_departments dd 
@@ -1472,7 +1472,7 @@ scenario_documents_data AS (
     LEFT JOIN uploads u ON u.id = ur.upload_id
     JOIN scenario_documents sd ON sd.document_id = dr.id
     CROSS JOIN scenario_ids_list sil
-    WHERE sd.scenario_id = ANY(sil.scenario_ids) AND EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE sd.scenario_id = ANY(sil.scenario_ids) AND EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)
 ),
 skill_scores_per_chat AS (
     SELECT 
@@ -1760,7 +1760,7 @@ simulation_scenario_count AS (
     JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
 ),
 scenarios_with_completed_chats AS (
@@ -1770,7 +1770,7 @@ scenarios_with_completed_chats AS (
     JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
     JOIN attempt_chats ac ON ac.attempt_id = ab.id
     JOIN chats sc ON sc.id = ac.chat_id
@@ -1880,7 +1880,7 @@ available_continuation_options AS (
                AND ss.scenario_id = (uc.chat_data).scenario.id
              WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
               AND sfr.scenario_id = ss.scenario_id 
-              AND f.name = 'active' 
+              AND f.name = 'scenario_active' 
               AND ssf.value = true)
                AND uc.completed = false
              ORDER BY uc.position, uc.created_at

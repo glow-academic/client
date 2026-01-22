@@ -69,7 +69,7 @@ target_profile AS (
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         rl.requests_per_day as req_per_day,
         (SELECT le.last_login FROM logins_entry le WHERE le.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
         pa.last_active,
@@ -91,7 +91,7 @@ target_profile AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE), 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
              rl.requests_per_day, (SELECT le.last_login FROM logins_entry le WHERE le.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
 )

@@ -95,7 +95,7 @@ link_document_active_flag AS (
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'document_active'
     ON CONFLICT (document_id, flag_id) DO UPDATE SET 
         value = true,
         updated_at = NOW()

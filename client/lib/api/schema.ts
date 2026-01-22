@@ -2118,26 +2118,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/analyses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Analyses
-         * @description Create analyses resource (always INSERT).
-         */
-        post: operations["create_analyses_api_v4_resources_analyses_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/args": {
         parameters: {
             query?: never;
@@ -2272,46 +2252,6 @@ export interface paths {
          * @description Create conditional_parameters resource (always INSERT).
          */
         post: operations["create_conditional_parameters_api_v4_resources_conditional_parameters_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/contents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Contents
-         * @description Create contents resource (always INSERT).
-         */
-        post: operations["create_contents_api_v4_resources_contents_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Conversations
-         * @description Create conversations resource (always INSERT).
-         */
-        post: operations["create_conversations_api_v4_resources_conversations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2478,26 +2418,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/feedbacks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Feedbacks
-         * @description Create feedbacks resource (always INSERT).
-         */
-        post: operations["create_feedbacks_api_v4_resources_feedbacks_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/fields": {
         parameters: {
             query?: never;
@@ -2578,26 +2498,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/hints": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Hints
-         * @description Create hints resource (always INSERT).
-         */
-        post: operations["create_hints_api_v4_resources_hints_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/html": {
         parameters: {
             query?: never;
@@ -2652,26 +2552,6 @@ export interface paths {
          * @description Create images resource (always INSERT).
          */
         post: operations["create_images_api_v4_resources_images_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/improvements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Improvements
-         * @description Create improvements resource (always INSERT).
-         */
-        post: operations["create_improvements_api_v4_resources_improvements_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3098,26 +2978,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/responses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Responses
-         * @description Create responses resource (always INSERT).
-         */
-        post: operations["create_responses_api_v4_resources_responses_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/rubrics": {
         parameters: {
             query?: never;
@@ -3418,26 +3278,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/strengths": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Strengths
-         * @description Create strengths resource (always INSERT).
-         */
-        post: operations["create_strengths_api_v4_resources_strengths_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/temperature_levels": {
         parameters: {
             query?: never;
@@ -3532,26 +3372,6 @@ export interface paths {
          * @description Create thresholds resource (always INSERT).
          */
         post: operations["create_thresholds_api_v4_resources_thresholds_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/times": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Times
-         * @description Create times resource (always INSERT).
-         */
-        post: operations["create_times_api_v4_resources_times_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6072,31 +5892,6 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** AnalysesApiRequest */
-        AnalysesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Content */
-            content: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** AnalysesApiResponse */
-        AnalysesApiResponse: {
-            /** Analyse Id */
-            analyse_id?: string | null;
-        };
         /** ArgsApiRequest */
         ArgsApiRequest: {
             /**
@@ -6638,56 +6433,6 @@ export interface components {
             guest_id: string | null;
             /** Server Time */
             server_time: number;
-        };
-        /** ContentsApiRequest */
-        ContentsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Content */
-            content: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** ContentsApiResponse */
-        ContentsApiResponse: {
-            /** Contents Id */
-            contents_id?: string | null;
-        };
-        /** ConversationsApiRequest */
-        ConversationsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** End Reason */
-            end_reason: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** ConversationsApiResponse */
-        ConversationsApiResponse: {
-            /** Conversation Id */
-            conversation_id?: string | null;
         };
         /** CreateEmulationGrantApiRequest */
         CreateEmulationGrantApiRequest: {
@@ -7722,38 +7467,6 @@ export interface components {
              * @default false
              */
             brightspace_format: boolean;
-        };
-        /** FeedbacksApiRequest */
-        FeedbacksApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Total */
-            total: number;
-            /** Feedback */
-            feedback: string;
-            /**
-             * Standard Id
-             * Format: uuid
-             */
-            standard_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** FeedbacksApiResponse */
-        FeedbacksApiResponse: {
-            /** Feedback Id */
-            feedback_id?: string | null;
         };
         /** FieldsApiRequest */
         FieldsApiRequest: {
@@ -11701,31 +11414,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** HintsApiRequest */
-        HintsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Hint */
-            hint: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** HintsApiResponse */
-        HintsApiResponse: {
-            /** Hint Id */
-            hint_id?: string | null;
-        };
         /** HtmlApiRequest */
         HtmlApiRequest: {
             /**
@@ -11848,38 +11536,6 @@ export interface components {
         ImagesApiResponse: {
             /** Image Id */
             image_id?: string | null;
-        };
-        /** ImprovementsApiRequest */
-        ImprovementsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** ImprovementsApiResponse */
-        ImprovementsApiResponse: {
-            /** Improvement Id */
-            improvement_id?: string | null;
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
@@ -19658,39 +19314,6 @@ export interface components {
             /** Request Limits Id */
             request_limits_id?: string | null;
         };
-        /** ResponsesApiRequest */
-        ResponsesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Option Id
-             * Format: uuid
-             */
-            option_id: string;
-            /**
-             * Question Id
-             * Format: uuid
-             */
-            question_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** ResponsesApiResponse */
-        ResponsesApiResponse: {
-            /** Response Id */
-            response_id?: string | null;
-        };
         /** RubricsApiRequest */
         RubricsApiRequest: {
             /**
@@ -20888,38 +20511,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** StrengthsApiRequest */
-        StrengthsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** StrengthsApiResponse */
-        StrengthsApiResponse: {
-            /** Strength Id */
-            strength_id?: string | null;
-        };
         /** TemperatureLevelsApiRequest */
         TemperatureLevelsApiRequest: {
             /**
@@ -21015,31 +20606,6 @@ export interface components {
         ThresholdsApiResponse: {
             /** Threshold Id */
             threshold_id?: string | null;
-        };
-        /** TimesApiRequest */
-        TimesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Time Taken */
-            time_taken: number;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** TimesApiResponse */
-        TimesApiResponse: {
-            /** Time Id */
-            time_id?: string | null;
         };
         /** ToolsApiRequest */
         ToolsApiRequest: {
@@ -24999,43 +24565,6 @@ export interface operations {
             };
         };
     };
-    create_analyses_api_v4_resources_analyses_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalysesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalysesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_args_api_v4_resources_args_post: {
         parameters: {
             query?: never;
@@ -25282,80 +24811,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConditionalParametersApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_contents_api_v4_resources_contents_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContentsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ContentsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_conversations_api_v4_resources_conversations_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConversationsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25665,43 +25120,6 @@ export interface operations {
             };
         };
     };
-    create_feedbacks_api_v4_resources_feedbacks_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FeedbacksApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeedbacksApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_fields_api_v4_resources_fields_post: {
         parameters: {
             query?: never;
@@ -25850,43 +25268,6 @@ export interface operations {
             };
         };
     };
-    create_hints_api_v4_resources_hints_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HintsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HintsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_html_api_v4_resources_html_post: {
         parameters: {
             query?: never;
@@ -25985,43 +25366,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImagesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_improvements_api_v4_resources_improvements_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImprovementsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImprovementsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26812,43 +26156,6 @@ export interface operations {
             };
         };
     };
-    create_responses_api_v4_resources_responses_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResponsesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponsesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_rubrics_api_v4_resources_rubrics_post: {
         parameters: {
             query?: never;
@@ -27404,43 +26711,6 @@ export interface operations {
             };
         };
     };
-    create_strengths_api_v4_resources_strengths_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StrengthsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StrengthsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_temperature_levels_api_v4_resources_temperature_levels_post: {
         parameters: {
             query?: never;
@@ -27613,43 +26883,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThresholdsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_times_api_v4_resources_times_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TimesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TimesApiResponse"];
                 };
             };
             /** @description Validation Error */

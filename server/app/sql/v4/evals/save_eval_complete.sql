@@ -206,7 +206,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'eval_active'
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()

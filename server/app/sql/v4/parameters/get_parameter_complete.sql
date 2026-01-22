@@ -367,7 +367,7 @@ active_flag_id_data AS (
                 FROM draft_flags df
                 JOIN flags_resource f ON f.id = df.flags_id
                 WHERE df.draft_id = (SELECT draft_id FROM params)
-                  AND f.name = 'active'
+                  AND f.name = 'parameter_active'
                   AND df.active = true
                 LIMIT 1
             )
@@ -377,7 +377,7 @@ active_flag_id_data AS (
                 FROM parameter_flags pf
                 JOIN flags_resource f ON f.id = pf.flag_id
                 WHERE pf.parameter_id = (SELECT parameter_id FROM params)
-                  AND f.name = 'active'
+                  AND f.name = 'parameter_active'
                   AND pf.value = true
                   AND pf.active = true
                 LIMIT 1
@@ -431,7 +431,7 @@ parameter_data AS (
                   AND df.active = true
             )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN false
-            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'active' AND paf.value = TRUE AND paf.active = true)
+            ELSE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags_resource fl ON paf.flag_id = fl.id WHERE paf.parameter_id = (SELECT parameter_id FROM params) AND fl.name = 'parameter_active' AND paf.value = TRUE AND paf.active = true)
         END as active,
         CASE 
             WHEN (SELECT draft_id FROM params) IS NOT NULL THEN EXISTS (
@@ -507,7 +507,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -519,7 +519,7 @@ all_fields_data AS (
         COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM fields_resource f
     LEFT JOIN field_departments fd ON fd.field_id = f.field_id AND fd.active = true
-    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'field_active' AND ff.value = true)
     GROUP BY f.field_id
 ),
 all_fields_with_usage AS (
@@ -533,7 +533,7 @@ all_fields_with_usage AS (
     FROM fields_resource f 
     LEFT JOIN all_fields_data afd ON afd.field_id = f.field_id
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
-    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'field_active' AND ff.value = true)
     GROUP BY f.id, f.field_id, (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), afd.department_ids, f.generated
 ),
 -- Tool existence checks
@@ -543,13 +543,13 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'fields'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as fields_has_tools
     FROM params x
 ),
@@ -656,7 +656,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = pd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.department_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
                    AND (
                        pd.active = true
                        OR
@@ -692,7 +692,7 @@ field_suggestions_data AS (
                  JOIN fields_resource f2 ON f2.field_id = pf.field_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pf.field_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f2.field_id AND fl.name = 'active' AND ff.value = true)
+                   AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f2.field_id AND fl.name = 'field_active' AND ff.value = true)
                    AND (
                        pf.active = true
                        OR
@@ -764,7 +764,7 @@ field_ids_data AS (
                  FROM parameter_fields pf
                  WHERE pf.parameter_id = (SELECT parameter_id FROM params)
                    AND pf.active = true
-                   AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = pf.field_id AND fl.name = 'active' AND ff.value = true)),
+                   AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = pf.field_id AND fl.name = 'field_active' AND ff.value = true)),
                 ARRAY[]::uuid[]
             )
         END as field_ids

@@ -96,7 +96,7 @@ BEGIN
             false,
             false
         FROM flags_resource f
-        WHERE f.name = 'active'
+        WHERE f.name = 'tool_active'
         ON CONFLICT (tool_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
     

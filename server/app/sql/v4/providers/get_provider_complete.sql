@@ -155,19 +155,19 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools
     FROM params x
 ),
@@ -359,7 +359,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT f.id FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = (SELECT provider_id FROM params) AND f.name = 'active' AND pf.value = TRUE LIMIT 1)
+            (SELECT pf.flag_id FROM provider_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = (SELECT provider_id FROM params) AND f.name = 'provider_active' AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_provider_v4_flag_resource 
@@ -375,7 +375,7 @@ flag_resource_data AS (
                 JOIN flags_resource fl ON pf.flag_id = fl.id 
                 WHERE pf.provider_id = (SELECT provider_id FROM params) 
                   AND fl.name = 'active' 
-                  AND f.name = 'active' 
+                  AND f.name = 'provider_active' 
                   AND pf.value = TRUE
             ) f
             ORDER BY priority
@@ -451,7 +451,7 @@ name_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'names'::resources
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
             x.mcp = false
@@ -479,7 +479,7 @@ description_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'descriptions'::resources
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
             x.mcp = false
@@ -507,7 +507,7 @@ flag_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'flags'::resources
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         )
         AND (
             x.mcp = false

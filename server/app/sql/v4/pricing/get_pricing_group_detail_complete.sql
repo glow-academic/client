@@ -178,7 +178,7 @@ runs_departments AS (
     FROM runs_metadata rm
     LEFT JOIN agents_resource a ON a.id = rm.agent_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     WHERE d.id IS NOT NULL
 ),
 -- Check department access

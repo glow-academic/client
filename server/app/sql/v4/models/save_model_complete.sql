@@ -159,7 +159,7 @@ BEGIN
         -- Remove active flag if active_flag_id is NULL
         DELETE FROM model_flags mf
         WHERE mf.model_id = v_model_id
-        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.name = 'active');
+        AND EXISTS (SELECT 1 FROM flags_resource f WHERE f.id = mf.flag_id AND f.name = 'model_active');
     END IF;
 
     -- Handle modalities_enabled flag

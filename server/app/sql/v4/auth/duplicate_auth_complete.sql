@@ -55,7 +55,7 @@ source_auth AS (
         id, 
         (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
         (SELECT d.description FROM auth_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
-        EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'active' AND af.value = TRUE) as active, 
+        EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'auth_active' AND af.value = TRUE) as active, 
         (SELECT p.value FROM auth_protocols ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
         (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
     FROM params x
@@ -161,7 +161,7 @@ link_auth_active_flag AS (
         NOW()
     FROM new_auth na
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'auth_active'
     ON CONFLICT (auth_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM source_auth LIMIT 1),
         updated_at = NOW()

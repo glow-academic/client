@@ -128,7 +128,7 @@ link_eval_active_flag AS (
         NOW()
     FROM new_eval ne
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'eval_active'
     ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
         value = FALSE,
         updated_at = NOW()

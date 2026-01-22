@@ -234,7 +234,7 @@ settings_thresholds AS (
         SELECT 1 FROM setting_flags sf
         JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.setting_id = s.id
-          AND f.name = 'active'
+          AND f.name = 'setting_active'
           AND sf.value = TRUE
     )
     LIMIT 1
@@ -293,7 +293,7 @@ filt AS (
           a.simulation_id IN (
               SELECT DISTINCT s.id
               FROM simulation_artifact s
-              WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+              WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
                 AND (
                     EXISTS (
                         SELECT 1 
@@ -451,7 +451,7 @@ sim_first_scenario_rubric_bundle AS (
     LEFT JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
     LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_bundle)
     ORDER BY ss.simulation_id, (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
@@ -826,7 +826,7 @@ simulation_options_cte AS (
     FROM all_metrics am
     CROSS JOIN LATERAL UNNEST(am.simulation_ids) AS sim_id
     JOIN simulation_artifact sim ON sim.id::text = sim_id
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags_resource f ON simf.flag_id = f.id WHERE simf.simulation_id = sim.id AND f.name = 'active' AND simf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags_resource f ON simf.flag_id = f.id WHERE simf.simulation_id = sim.id AND f.name = 'simulation_active' AND simf.value = true)
     GROUP BY sim.id, (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1)
     ORDER BY simulation_name
 ),
@@ -838,7 +838,7 @@ scenario_options_cte AS (
     FROM all_metrics am
     CROSS JOIN LATERAL UNNEST(am.scenario_ids) AS scen_id
     JOIN scenarios_resource s ON s.id::text = scen_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
     GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
     ORDER BY scenario_title
 ),
@@ -1379,7 +1379,7 @@ scenarios_final AS (
         ) AS scenarios_array
     FROM scenario_artifact s
     JOIN scenario_tree st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
       AND EXISTS (
           SELECT 1 FROM filt f
           WHERE f.scenario_id IS NOT NULL
@@ -1403,7 +1403,7 @@ simulations_final AS (
                  (SELECT srr.rubric_id FROM simulation_scenarios ss 
                   JOIN simulation_scenario_rubrics ssr ON ssr.simulation_id = ss.simulation_id
                   JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-                  WHERE ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+                  WHERE ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
                   ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) 
                   LIMIT 1),
                  (SELECT p.value FROM simulation_scenarios ss 
@@ -1412,7 +1412,7 @@ simulations_final AS (
                   JOIN rubrics_resource r ON r.id = srr.rubric_id
                   JOIN rubric_points rp ON rp.rubric_id = r.id AND rp.type = 'total'
                   JOIN points_resource p ON p.id = rp.point_id
-                  WHERE ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+                  WHERE ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
                   ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
                   LIMIT 1),
                  (SELECT p.value FROM simulation_scenarios ss 
@@ -1421,7 +1421,7 @@ simulations_final AS (
                   JOIN rubrics_resource r ON r.id = srr.rubric_id
                   JOIN rubric_points rp ON rp.rubric_id = r.id AND rp.type = 'pass'
                   JOIN points_resource p ON p.id = rp.point_id
-                  WHERE ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'active' AND ssf.value = true)
+                  WHERE ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
                   ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1) 
                   LIMIT 1)
                 )::types.q_reports_bundle_v4_simulation
@@ -1430,7 +1430,7 @@ simulations_final AS (
             ARRAY[]::types.q_reports_bundle_v4_simulation[]
         ) AS simulations_array
     FROM simulation_artifact sim
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags_resource f ON simf.flag_id = f.id WHERE simf.simulation_id = sim.id AND f.name = 'active' AND simf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags_resource f ON simf.flag_id = f.id WHERE simf.simulation_id = sim.id AND f.name = 'simulation_active' AND simf.value = true)
       AND sim.id IN (SELECT DISTINCT simulation_id FROM filt WHERE simulation_id IS NOT NULL)
 ),
 total_count_cte AS (

@@ -144,7 +144,7 @@ profile_primary_department AS (
 valid_department_ids_data AS (
     SELECT array_agg(d.id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as valid_department_ids
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
 recent_runs AS (
     SELECT 
@@ -199,7 +199,7 @@ active_users_count AS (
     FROM profile_artifact p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-    AND EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = true)
+    AND EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = true)
 ),
 admin_users_by_date AS (
     SELECT 
@@ -302,7 +302,7 @@ staff_rows AS (
          LIMIT 1) as role,
         COALESCE(SUBSTRING((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) FROM 1 FOR 1), '') ||
         COALESCE(NULLIF(SUBSTRING(SPLIT_PART((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ' ', 2) FROM 1 FOR 1), ''), '') as initials,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         pa.last_active,
         rl.requests_per_day,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
@@ -350,7 +350,7 @@ staff_rows AS (
         (up.role = 'member'::profile_role AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)) OR
         (up.role = 'guest' AND EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role = 'guest'::profile_role))
     )
-    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'active' AND pf.value = TRUE), 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
              pa.last_active, rl.requests_per_day,
              pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
              pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count, up.role

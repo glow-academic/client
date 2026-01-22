@@ -322,8 +322,8 @@ flag_resource_data AS (
          FROM department_flags df 
          JOIN flags_resource f ON df.flag_id = f.id 
          WHERE df.department_id = (SELECT department_id FROM params) 
-           AND f.name = 'active' 
-           AND f.name = 'active' AND df.value = true LIMIT 1) as department_flag_resource
+           AND f.name = 'department_active' 
+           AND f.name = 'department_active' AND df.value = true LIMIT 1) as department_flag_resource
     FROM params
 ),
 -- Name suggestions
@@ -447,7 +447,7 @@ flags_data AS (
         f.icon_id,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'department_active'
 ),
 -- Tool existence checks
 tools_existence_check AS (
@@ -456,25 +456,25 @@ tools_existence_check AS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'settings'::resources 
-              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND f.name = 'active' AND tf.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as settings_has_tools
     FROM params x
 ),
@@ -616,12 +616,12 @@ settings_data AS (
     SELECT DISTINCT
         s.id as settings_id,
         s.created_at,
-        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE) as active,
         COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids,
         false as generated  -- Settings are not AI-generated
     FROM setting_artifact s
     LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
     AND (
         -- Include department-specific settings for this department (if detail mode)
         (SELECT department_id FROM params) IS NULL
@@ -652,7 +652,7 @@ department_current_settings AS (
         -- Fallback to default settings (no department links)
         (SELECT s.id
          FROM setting_artifact s
-         WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+         WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
          AND NOT EXISTS (
              SELECT 1 FROM department_settings ds2 
              WHERE ds2.settings_id = s.id 
@@ -684,7 +684,7 @@ settings_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at DESC)
              FROM setting_artifact s
-             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'active' AND sf.value = TRUE)
+             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as settings_suggestions
@@ -774,7 +774,7 @@ departments_data AS (
         false as generated  -- Departments are not AI-generated
     FROM department_artifact d
     WHERE (d.id = (SELECT department_id FROM params) OR EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id))
-    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
 -- Department IDs (selected departments - empty for departments, used for valid options)
 department_ids_data AS (
@@ -788,7 +788,7 @@ department_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(d.id ORDER BY d.created_at DESC)
              FROM departments_resource d
-             WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'active' AND df.value = true)
+             WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.department_id AND f.name = 'department_active' AND df.value = true)
              AND EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id)
              LIMIT 20),
             ARRAY[]::uuid[]
@@ -810,7 +810,7 @@ department_models AS (
         false as generated  -- Models are not AI-generated
     FROM model_artifact m
     LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
-    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'active' AND mf.value = true)
+    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = true)
     AND (
         (SELECT department_id FROM params) IS NULL
         OR
@@ -830,7 +830,7 @@ model_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(m.id ORDER BY m.created_at DESC)
              FROM model_artifact m
-             WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'active' AND mf.value = true)
+             WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = true)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as model_suggestions

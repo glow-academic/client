@@ -45,7 +45,7 @@ simulation_scenarios_list AS (
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
         WHERE ssf.simulation_id = ss.simulation_id 
           AND sfr.scenario_id = ss.scenario_id 
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
     ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
@@ -138,7 +138,7 @@ scenarios_with_grades AS (
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
         WHERE ssf.simulation_id = ss.simulation_id 
           AND sfr.scenario_id = ss.scenario_id 
-          AND f.name = 'active' 
+          AND f.name = 'scenario_active' 
           AND ssf.value = true)
       AND (
         COALESCE(rs.root_scenario_id, sc.scenario_id) = ss.scenario_id

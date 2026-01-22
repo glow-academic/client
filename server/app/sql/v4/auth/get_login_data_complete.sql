@@ -74,7 +74,7 @@ default_department_from_settings AS (
     SELECT sdd.department_id
     FROM setting_artifact s
     JOIN settings_default_department sdd ON sdd.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true) AND sdd.active = true
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) AND sdd.active = true
     LIMIT 1
 ),
 -- Get settings for the department (if department_id provided)
@@ -90,7 +90,7 @@ dept_settings AS (
 default_settings AS (
     SELECT s.id as settings_id, EXISTS (SELECT 1 FROM setting_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings ds 
           WHERE ds.settings_id = s.id AND ds.active = true
@@ -114,7 +114,7 @@ dept_auths AS (
     FROM auths_resource a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN dept_settings ds ON ds.settings_id = sa.settings_id
-    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true)
 ),
 -- Get auths linked to default settings
 default_auths AS (
@@ -122,7 +122,7 @@ default_auths AS (
     FROM auths_resource a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN default_settings ds ON ds.settings_id = sa.settings_id
-    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true)
 ),
 -- Providers query (always returns at least one row)
 providers_data AS (
@@ -136,7 +136,7 @@ providers_data AS (
         ) as providers
     FROM auths_resource a
     CROSS JOIN (SELECT guest_login_enabled FROM active_settings LIMIT 1) s
-    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'active' AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND af.value = true)
       AND (
           -- Include if department_id not provided (show all auths from all settings)
           (SELECT department_id FROM params) IS NULL
@@ -170,7 +170,7 @@ departments_data AS (
             '{}'::types.q_get_login_data_v4_department[]
         ) as departments
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'active' AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
 -- Ensure departments_data always returns a row
 departments_with_default AS (

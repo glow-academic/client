@@ -181,7 +181,7 @@ update_profile_active_flag AS (
         NOW()
     FROM profile_upsert pu
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'profile_active'
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
         value = (SELECT active FROM params),

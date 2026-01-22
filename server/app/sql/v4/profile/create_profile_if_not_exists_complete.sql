@@ -134,7 +134,7 @@ set_profile_active AS (
     SELECT pi.id, f.id, true, NOW(), NOW()
     FROM profile_insert pi
     CROSS JOIN flags_resource f
-    WHERE f.name = 'active'
+    WHERE f.name = 'profile_active'
     ON CONFLICT (profile_id, flag_id) DO NOTHING
 ),
 -- Insert email resource (only if creating)
