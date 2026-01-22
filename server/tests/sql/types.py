@@ -1761,35 +1761,6 @@ class CreateProfileEmailApiResponse(BaseModel):
 # Generated from: create_test_profile
 
 
-# Generated from: get_profile_activity_latest
-
-class GetProfileActivityLatestSqlParams(BaseModel):
-
-    input_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_profile_id,
-        )
-
-class GetProfileActivityLatestSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    last_active: str | None = None
-    created_at: str | None = None
-
-class GetProfileActivityLatestApiRequest(BaseModel):
-
-    input_profile_id: UUID
-
-class GetProfileActivityLatestApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    last_active: str | None = None
-    created_at: str | None = None
-
-
-
 # Generated from: get_profile_by_id
 
 class GetProfileByIdSqlParams(BaseModel):
@@ -3058,79 +3029,6 @@ class GetSuperadminAliasApiResponse(BaseModel):
 
 
 
-# Generated from: test_get_activity_by_message_and_endpoint_v4_complete
-
-class TestGetActivityByMessageAndEndpointV4CompleteSqlParams(BaseModel):
-
-    p_message: str
-    p_endpoint: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_message,
-            self.p_endpoint,
-        )
-
-class TestGetActivityByMessageAndEndpointV4CompleteSqlRow(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: str | None = None
-
-class TestGetActivityByMessageAndEndpointV4CompleteApiRequest(BaseModel):
-
-    p_message: str
-    p_endpoint: str
-
-class TestGetActivityByMessageAndEndpointV4CompleteApiResponse(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: str | None = None
-
-
-
-# Generated from: test_get_activity_by_message_v4_complete
-
-class TestGetActivityByMessageV4CompleteSqlParams(BaseModel):
-
-    p_message: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_message,
-        )
-
-class TestGetActivityByMessageV4CompleteSqlRow(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: str | None = None
-
-class TestGetActivityByMessageV4CompleteApiRequest(BaseModel):
-
-    p_message: str
-
-class TestGetActivityByMessageV4CompleteApiResponse(BaseModel):
-
-    id: UUID | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    profile_id: UUID | None = None
-    error: bool | None = None
-    created_at: str | None = None
-
-
-
 # Generated from: test_create_test_attempt_v4_complete
 
 class TestCreateTestAttemptV4CompleteSqlParams(BaseModel):
@@ -3593,31 +3491,6 @@ class TestGetOrCreateTestAgentV4CompleteApiResponse(BaseModel):
 
 
 
-# Generated from: test_get_profile_activity_v4_complete
-
-class TestGetProfileActivityV4CompleteSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class TestGetProfileActivityV4CompleteSqlRow(BaseModel):
-
-    last_active: str | None = None
-
-class TestGetProfileActivityV4CompleteApiRequest(BaseModel):
-
-    pass
-
-class TestGetProfileActivityV4CompleteApiResponse(BaseModel):
-
-    last_active: str | None = None
-
-
-
 # Generated from: test_get_profile_by_id_v4_complete
 
 class TestGetProfileByIdV4CompleteSqlParams(BaseModel):
@@ -4032,12 +3905,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateTestProfileApiRequest",
         "CreateTestProfileApiResponse",
     ),
-    "tests/sql/v4/integration/api/profile/test_get_profile_activity_latest_v4_complete.sql": (
-        "GetProfileActivityLatestSqlParams",
-        "GetProfileActivityLatestSqlRow",
-        "GetProfileActivityLatestApiRequest",
-        "GetProfileActivityLatestApiResponse",
-    ),
     "tests/sql/v4/integration/api/profile/test_get_profile_by_id_v4_complete.sql": (
         "GetProfileByIdSqlParams",
         "GetProfileByIdSqlRow",
@@ -4272,18 +4139,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSuperadminAliasApiRequest",
         "GetSuperadminAliasApiResponse",
     ),
-    "tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql": (
-        "TestGetActivityByMessageAndEndpointV4CompleteSqlParams",
-        "TestGetActivityByMessageAndEndpointV4CompleteSqlRow",
-        "TestGetActivityByMessageAndEndpointV4CompleteApiRequest",
-        "TestGetActivityByMessageAndEndpointV4CompleteApiResponse",
-    ),
-    "tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql": (
-        "TestGetActivityByMessageV4CompleteSqlParams",
-        "TestGetActivityByMessageV4CompleteSqlRow",
-        "TestGetActivityByMessageV4CompleteApiRequest",
-        "TestGetActivityByMessageV4CompleteApiResponse",
-    ),
     "tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql": (
         "TestCreateTestAttemptV4CompleteSqlParams",
         "TestCreateTestAttemptV4CompleteSqlRow",
@@ -4379,12 +4234,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TestGetOrCreateTestAgentV4CompleteSqlRow",
         "TestGetOrCreateTestAgentV4CompleteApiRequest",
         "TestGetOrCreateTestAgentV4CompleteApiResponse",
-    ),
-    "tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql": (
-        "TestGetProfileActivityV4CompleteSqlParams",
-        "TestGetProfileActivityV4CompleteSqlRow",
-        "TestGetProfileActivityV4CompleteApiRequest",
-        "TestGetProfileActivityV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql": (
         "TestGetProfileByIdV4CompleteSqlParams",
@@ -4729,11 +4578,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/profile/test_get_profile_activity_latest_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/profile/test_get_profile_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4929,16 +4773,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -5015,11 +4849,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_or_create_test_agent_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

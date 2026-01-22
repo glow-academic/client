@@ -6,9 +6,9 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'socket_create_model_run_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -33,7 +33,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
-    SELECT 
+    SELECT
         department_id AS department_id,
         model_id AS model_id,
         entity_id AS entity_id,
@@ -43,9 +43,9 @@ WITH params AS (
         agent_id AS agent_id
 ),
 create_run AS (
-    -- 1. Create run record with key_id and agent_id if provided
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
-    SELECT 0, 0, p.key_id, p.agent_id
+    -- 1. Create run record with key_id, agent_id, and profile_id directly
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
+    SELECT 0, 0, p.key_id, p.agent_id, p.profile_id
     FROM params p
     RETURNING id
 ),
@@ -64,15 +64,6 @@ link_persona AS (
     FROM link_model lm
     CROSS JOIN params p
     WHERE p.entity_type = 'persona'
-    RETURNING run_id
-),
-link_profile AS (
-    -- 4. Link profile to run if provided (conditional)
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, p.profile_id, true
-    FROM link_model lm
-    CROSS JOIN params p
-    WHERE p.profile_id IS NOT NULL
     RETURNING run_id
 )
 SELECT id::text as run_id

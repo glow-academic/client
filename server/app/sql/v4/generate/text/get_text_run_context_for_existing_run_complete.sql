@@ -113,11 +113,10 @@ selected_agent AS (
 ),
 -- Get profile FROM runs
 run_profile AS (
-    SELECT rp.profile_id
-    FROM run_profiles rp
+    SELECT r.profile_id
+    FROM runs r
     CROSS JOIN params p
-    WHERE rp.run_id = p.run_id
-      AND rp.active = true
+    WHERE r.id = p.run_id
     LIMIT 1
 ),
 -- Get rate limit info (for display, not validation)
@@ -129,14 +128,12 @@ profile_rate_limit AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
 ),
 runs_today AS (
-    SELECT 
+    SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN run_profile rp
-    WHERE mrp.profile_id = rp.profile_id
-      AND mrp.active = true
+    WHERE mr.profile_id = rp.profile_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)

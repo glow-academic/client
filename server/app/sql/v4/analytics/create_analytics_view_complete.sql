@@ -55,11 +55,10 @@ latest_grade AS (
   SELECT DISTINCT ON (c.id)
          c.id AS simulation_chat_id,
          g.score::numeric AS score,
-         COALESCE(te.time_taken, 0)::numeric AS time_taken_seconds,
+         COALESCE(g.time_taken, 0)::numeric AS time_taken_seconds,
          srr.rubric_id,
          g.created_at
   FROM grades g
-  LEFT JOIN times_entry te ON te.grade_id = g.id AND te.active = TRUE
   JOIN runs r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
@@ -108,17 +107,16 @@ cohorts_by_sim AS (
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
 profile_cohorts_for_sim AS (
-  SELECT sa.id AS attempt_id, ap.profile_id, sa.simulation_id,
+  SELECT sa.id AS attempt_id, sa.profile_id, sa.simulation_id,
          ARRAY(
            SELECT c.id
            FROM cohort_artifact c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
-           JOIN profile_cohorts cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
+           JOIN profile_cohorts cp ON cp.cohort_id = c.id AND cp.profile_id = sa.profile_id
            WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id
                AND f.name = 'cohort_active' AND cf.value = TRUE)
          ) AS profile_cohort_ids
   FROM attempts_entry sa
-  LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 ),
 -- Pick one attempt per chat to avoid duplicate chat_id rows
 -- Prefer attempts with active profiles, then most recent
@@ -128,9 +126,8 @@ chat_first_attempt AS (
     ac.attempt_id
   FROM attempt_chats ac
   JOIN attempts_entry sa ON sa.id = ac.attempt_id
-  LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
-  ORDER BY ac.chat_id, 
-    CASE WHEN ap.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
+  ORDER BY ac.chat_id,
+    CASE WHEN sa.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
     sa.created_at DESC -- then most recent
 ),
 -- Message counts per chat (total + by type)
@@ -192,8 +189,7 @@ effective_profile_department AS (
              ORDER BY pd2.created_at ASC
              LIMIT 1)
          ) AS department_id
-  FROM (SELECT DISTINCT ap.profile_id FROM attempts_entry sa
-        JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE) pd
+  FROM (SELECT DISTINCT sa.profile_id FROM attempts_entry sa WHERE sa.profile_id IS NOT NULL) pd
 ),
 -- Get first department_id for each entity from junction tables
 simulation_first_dept AS (
@@ -243,7 +239,7 @@ SELECT
   -- *** original columns kept in the same order as your "Old def" ***
   sc.id                         AS chat_id,
   sa.id                         AS attempt_id,
-  ap.profile_id                 AS profile_id,
+  sa.profile_id                 AS profile_id,
   sa.simulation_id              AS simulation_id,
 
   rm.root_scenario_id           AS scenario_id,
@@ -320,9 +316,8 @@ SELECT
 FROM chats sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN attempts_entry sa ON sa.id = cfa.attempt_id
-LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
-LEFT JOIN profile_artifact pr ON pr.id = ap.profile_id
+LEFT JOIN profile_artifact pr ON pr.id = sa.profile_id
 JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
 JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
@@ -334,7 +329,7 @@ LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
-LEFT JOIN effective_profile_department epd ON epd.profile_id = ap.profile_id
+LEFT JOIN effective_profile_department epd ON epd.profile_id = sa.profile_id
 LEFT JOIN simulation_first_dept sfd ON sfd.simulation_id = sim.id
 LEFT JOIN rubric_first_dept rfd ON rfd.rubric_id = r.id
 LEFT JOIN scenario_first_dept scfd ON scfd.scenario_id = s.id
@@ -483,11 +478,7 @@ CREATE INDEX IF NOT EXISTS scenarios_id_idx ON scenarios_resource (id);
 CREATE INDEX IF NOT EXISTS personas_id_idx ON personas_resource (id);
 
 -- Junction table indexes for analytics performance
-CREATE INDEX IF NOT EXISTS attempt_profiles_attempt_active_idx
-  ON attempt_profiles (attempt_id, profile_id) WHERE active = TRUE;
-
-CREATE INDEX IF NOT EXISTS attempt_profiles_profile_active_idx
-  ON attempt_profiles (profile_id, attempt_id) WHERE active = TRUE;
+-- Note: attempt_profiles table removed - profile_id now directly on attempts_entry
 
 CREATE INDEX IF NOT EXISTS scenario_personas_scenario_active_idx
   ON scenario_personas (scenario_id, persona_id) WHERE active = TRUE;

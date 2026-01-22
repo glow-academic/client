@@ -86,10 +86,10 @@ profile_dept AS (
     FROM departments_resource dr
     JOIN department_artifact d ON d.id = dr.department_id
     JOIN profile_departments pd ON pd.department_id = dr.id
-    JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
-    JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
-    WHERE ac.chat_id = chat_id 
-      AND ap.active = true 
+    JOIN attempts_entry sa ON sa.profile_id = pd.profile_id
+    JOIN attempt_chats ac ON ac.attempt_id = sa.id
+    WHERE ac.chat_id = chat_id
+      AND sa.profile_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     LIMIT 1
 ),
@@ -109,35 +109,33 @@ resolved_dept AS (
     ) as department_id
 ),
 profile_rate_limit AS (
-    -- Get rate limit for the profile (via attempt_profiles)
-    SELECT 
+    -- Get rate limit for the profile (via attempts_entry)
+    SELECT
         rl.requests_per_day as req_per_day
-    FROM attempt_profiles ap 
-    JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = ap.profile_id AND prl.active = true
+    FROM attempts_entry sa
+    JOIN attempt_chats ac ON ac.attempt_id = sa.id
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = sa.profile_id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    WHERE ac.chat_id = chat_id AND ap.active = true
+    WHERE ac.chat_id = chat_id AND sa.profile_id IS NOT NULL
     LIMIT 1
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day
-    SELECT 
+    SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
-                            JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
-                            WHERE ac.chat_id = chat_id AND ap.active = true LIMIT 1)
-      AND mrp.active = true
+    WHERE mr.profile_id = (SELECT sa.profile_id FROM attempts_entry sa
+                            JOIN attempt_chats ac ON ac.attempt_id = sa.id
+                            WHERE ac.chat_id = chat_id AND sa.profile_id IS NOT NULL LIMIT 1)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 profile_from_attempt AS (
-    -- Get profile_id from attempt_profiles for settings resolution
-    SELECT ap.profile_id
-    FROM attempt_profiles ap 
-    JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
-    WHERE ac.chat_id = chat_id AND ap.active = true
+    -- Get profile_id from attempts_entry for settings resolution
+    SELECT sa.profile_id
+    FROM attempts_entry sa
+    JOIN attempt_chats ac ON ac.attempt_id = sa.id
+    WHERE ac.chat_id = chat_id AND sa.profile_id IS NOT NULL
     LIMIT 1
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)
@@ -261,12 +259,12 @@ SELECT
     
     -- Scenario settings (flags moved FROM scenario_artifact to simulation_scenarios)
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), false) as image_input_enabled,
-    COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-        AND sfr.scenario_id = ss.scenario_id 
+    COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
+        AND sfr.scenario_id = ss.scenario_id
         AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
-    
-    -- Profile data (via attempt_profiles junction)
-    ap.profile_id::text as profile_id,
+
+    -- Profile data (via attempts_entry)
+    sa.profile_id::text as profile_id,
     
     -- Rate limit data
     prl.req_per_day,
@@ -355,11 +353,10 @@ LEFT JOIN provider_artifact pr_voice_prov ON pr_voice_prov.id = p_voice_prov.pro
 LEFT JOIN provider_names pn_voice_prov ON pn_voice_prov.provider_id = pr_voice_prov.id
 LEFT JOIN names_resource n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
 CROSS JOIN active_settings act_s_voice
-LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
-    AND spk_voice.settings_id = act_s_voice.settings_id 
+LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id
+    AND spk_voice.settings_id = act_s_voice.settings_id
     AND spk_voice.active = true
 LEFT JOIN keys_resource kr_voice ON kr_voice.id = spk_voice.key_id AND kr_voice.active
-LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id
 LEFT JOIN document_uploads_resource dur ON dur.document_id = doc.id AND dur.active = true
@@ -382,9 +379,9 @@ GROUP BY sc.id, sc.title,
          m_voice.id, m_voice.value, n_voice_prov.name, kr_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
          -- Other fields
          EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'images_enabled' AND sf.value = TRUE), 
-         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-             AND sfr.scenario_id = ss.scenario_id 
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
+             AND sfr.scenario_id = ss.scenario_id
              AND f.name = 'copy_paste_allowed'), false),
-         ap.profile_id,
+         sa.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 $$;

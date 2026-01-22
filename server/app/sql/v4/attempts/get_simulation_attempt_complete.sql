@@ -543,18 +543,17 @@ attempt_base AS (
 attempt_profiles_data AS (
     SELECT COALESCE(
         ARRAY_AGG(
-            (ap.profile_id, ap.attempt_id, ap.active)::types.q_get_simulation_attempt_v4_attempt_profile
-            ORDER BY ap.created_at
+            (sa.profile_id, sa.id, true)::types.q_get_simulation_attempt_v4_attempt_profile
         ),
         '{}'::types.q_get_simulation_attempt_v4_attempt_profile[]
     ) as attempt_profiles
     FROM params x
-    JOIN attempt_profiles ap ON ap.attempt_id = x.attempt_id
+    JOIN attempts_entry sa ON sa.id = x.attempt_id
 ),
 current_attempt_profile AS (
-    SELECT ap.profile_id
+    SELECT sa.profile_id
     FROM params x
-    JOIN attempt_profiles ap ON ap.attempt_id = x.attempt_id AND ap.active = true
+    JOIN attempts_entry sa ON sa.id = x.attempt_id
     LIMIT 1
 ),
 -- Role-based access control: check if viewing profile's role is higher than current user's role
@@ -750,9 +749,8 @@ previous_chat_scenario_root_mapping AS (
         JOIN chats sc ON EXISTS (
             SELECT 1 FROM attempt_chats ac2
             JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
-            JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
             WHERE ac2.chat_id = sc.id
-              AND ap2.profile_id = cap.profile_id
+              AND sa2.profile_id = cap.profile_id
               AND sc.completed = true
               AND EXISTS (
                   SELECT 1 FROM grades scg 
@@ -822,7 +820,7 @@ previous_chats_with_grades AS (
         sc.created_at,
         scg.score,
         scg.passed,
-        COALESCE(te.time_taken, 0) as time_taken
+        COALESCE(scg.time_taken, 0) as time_taken
     FROM params x
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN simulation_scenarios_list ssl
@@ -830,12 +828,11 @@ previous_chats_with_grades AS (
     JOIN chats sc ON EXISTS (
         SELECT 1 FROM attempt_chats ac2
         JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
-        JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
         WHERE ac2.chat_id = sc.id
-          AND ap2.profile_id = cap.profile_id
+          AND sa2.profile_id = cap.profile_id
           AND sc.completed = true
           AND EXISTS (
-              SELECT 1 FROM grades scg 
+              SELECT 1 FROM grades scg
               JOIN runs r ON r.id = scg.run_id
               JOIN group_runs gr ON gr.run_id = r.id
               JOIN groups g ON g.id = gr.group_id
@@ -852,7 +849,6 @@ previous_chats_with_grades AS (
         SELECT 1 FROM attempts_entry sa_check WHERE sa_check.id = ac2.attempt_id
     )
     JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
-    JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
     LEFT JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
@@ -861,8 +857,7 @@ previous_chats_with_grades AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
-    WHERE ap2.profile_id = cap.profile_id
+    WHERE sa2.profile_id = cap.profile_id
       AND sc.completed = true
       AND COALESCE(
             (SELECT pcsrm.root_scenario_id 
@@ -875,9 +870,9 @@ previous_chats_with_grades AS (
     ORDER BY sc.id, scg.created_at DESC NULLS LAST
 ),
 previous_attempt_time_aggregation AS (
-    SELECT 
+    SELECT
         ac.attempt_id,
-        COALESCE(SUM(COALESCE(te.time_taken, 0)), 0)::integer as total_time_taken
+        COALESCE(SUM(COALESCE(scg.time_taken, 0)), 0)::integer as total_time_taken
     FROM previous_chats_with_grades pwg
     JOIN attempt_chats ac ON ac.attempt_id = pwg.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
@@ -889,7 +884,6 @@ previous_attempt_time_aggregation AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
     WHERE sc.completed = true
     GROUP BY ac.attempt_id
 ),
@@ -1203,7 +1197,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(te.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
+        (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(scg.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     JOIN chats c ON EXISTS (
         SELECT 1 FROM chat_groups cg2
@@ -1233,7 +1227,6 @@ grades_data AS (
         ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss_fallback.simulation_id AND spr.scenario_id = ss_fallback.scenario_id LIMIT 1)
         LIMIT 1
     ) sfsr ON srr.rubric_id IS NULL AND srr_fallback.rubric_id IS NULL
-    LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id

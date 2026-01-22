@@ -156,13 +156,11 @@ profile_rate_limit AS (
 ),
 runs_today AS (
     -- Count model runs for the profile since start of day
-    SELECT 
+    SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT profile_id FROM params)
-      AND mrp.active = true
+    WHERE mr.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)
@@ -446,9 +444,9 @@ context_data AS (
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
 create_run AS (
-    -- Create run record with all junction records (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
-    SELECT 0, 0, NULL, cd.agent_id::uuid
+    -- Create run record with profile_id directly
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
+    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
     FROM context_data cd
     RETURNING id
 ),
@@ -460,19 +458,11 @@ link_model AS (
     CROSS JOIN context_data cd
     RETURNING run_id
 ),
-link_profile AS (
-    -- Link profile to run
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, cd.profile_id::uuid, true
-    FROM link_model lm
-    CROSS JOIN context_data cd
-    RETURNING run_id
-),
 link_group AS (
     -- Link group to run
     INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT gd.group_id, lp.run_id, 0, NOW(), NOW()
-    FROM link_profile lp
+    SELECT gd.group_id, cr.id, 0, NOW(), NOW()
+    FROM create_run cr
     CROSS JOIN group_data gd
     RETURNING run_id
 ),

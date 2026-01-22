@@ -130,8 +130,8 @@ model_run_departments_via_profiles AS (
         mrc.run_id,
         pd.department_id
     FROM model_run_costs mrc
-    JOIN run_profiles mrp ON mrp.run_id = mrc.run_id AND mrp.active = true
-    JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
+    JOIN runs r ON r.id = mrc.run_id
+    JOIN profile_departments pd ON pd.profile_id = r.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ),
 model_run_departments AS (

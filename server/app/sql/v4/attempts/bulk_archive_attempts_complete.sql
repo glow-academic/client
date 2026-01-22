@@ -76,12 +76,11 @@ BEGIN
 
         -- Get profile IDs to invalidate from attempt_ids
         SELECT COALESCE(
-            ARRAY_AGG(DISTINCT ap.profile_id::text) FILTER (WHERE ap.profile_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT sa.profile_id::text) FILTER (WHERE sa.profile_id IS NOT NULL),
             ARRAY[]::text[]
         ) INTO v_profile_ids
-        FROM attempt_profiles ap
-        WHERE ap.attempt_id = ANY(attempt_ids)
-          AND ap.active = true;
+        FROM attempts_entry
+        WHERE id = ANY(attempt_ids);
     ELSE
         -- filter mode: Use the existing filter-based logic from bulk_archive_attempts_by_filters.sql
         -- This is a complex query, so we'll execute it as a subquery
@@ -121,14 +120,13 @@ BEGIN
                 sa.created_at AS attempt_date,
                 sa.archived AS is_archived,
                 sa.infinite_mode,
-                ap.profile_id,
+                sa.profile_id,
                 (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
                 sim.practice_simulation,
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM attempts_entry sa
-            JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
             JOIN simulation_artifact sim ON sim.id = sa.simulation_id
-            JOIN profile_artifact p_attempt ON p_attempt.id = ap.profile_id
+            JOIN profile_artifact p_attempt ON p_attempt.id = sa.profile_id
             CROSS JOIN history_viewer_role hvr
             LEFT JOIN (
                 SELECT 
@@ -152,7 +150,7 @@ BEGIN
               AND (
                 cardinality(simulation_filters) = 0 OR 'archived' = ANY(simulation_filters) OR sa.archived = FALSE
               )
-              AND ((profile_id::text IS NULL OR profile_id::text = '') OR ap.profile_id = profile_id)
+              AND ((profile_id::text IS NULL OR profile_id::text = '') OR sa.profile_id = profile_id)
               AND (cardinality(department_ids) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && department_ids::text[])
               AND (
                 hvr.role = 'superadmin'::profile_role OR

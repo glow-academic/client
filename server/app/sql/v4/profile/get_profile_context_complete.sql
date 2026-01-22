@@ -326,7 +326,7 @@ actual_profile_data AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
-        FROM profile_activity 
+        FROM activity 
         WHERE profile_id = p.id 
         ORDER BY created_at DESC 
         LIMIT 1
@@ -379,7 +379,7 @@ effective_profile_data AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
-        FROM profile_activity 
+        FROM activity 
         WHERE profile_id = p.id 
         ORDER BY created_at DESC 
         LIMIT 1
@@ -516,10 +516,8 @@ earliest_attempt AS (
     -- Get all profiles in those departments
     JOIN profile_departments pd_all ON pd_all.department_id = pd_effective.department_id
         AND pd_all.active = true
-    -- Get attempts for those profiles
-    JOIN attempt_profiles ap ON ap.profile_id = pd_all.profile_id
-        AND ap.active = true
-    JOIN attempts_entry sa ON sa.id = ap.attempt_id
+    -- Get attempts for those profiles (using attempts_entry.profile_id directly)
+    JOIN attempts_entry sa ON sa.profile_id = pd_all.profile_id
     WHERE pd_effective.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd_effective.active = true
 ),

@@ -103,14 +103,12 @@ profile_rate_limit AS (
 ),
 runs_today AS (
     -- Count model runs for the profile since start of day (or 0 if profile_id is NULL)
-    SELECT 
+    SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM params p
-    LEFT JOIN runs mr ON TRUE
-    LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.profile_id = p.profile_id
+    LEFT JOIN runs mr ON mr.profile_id = p.profile_id
     WHERE p.profile_id IS NOT NULL
-      AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)
@@ -255,9 +253,9 @@ context_data AS (
     WHERE (p.profile_id IS NULL OR validate_rate_limit(COALESCE(prl.req_per_day, 0), COALESCE(rt.runs_today_count, 0)) = TRUE)
 ),
 create_run AS (
-    -- Create run record with all junction records (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
-    SELECT 0, 0, NULL, cd.agent_id::uuid
+    -- Create run record with profile_id (atomic with context query)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
+    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
     FROM context_data cd
     RETURNING id
 ),
@@ -268,17 +266,8 @@ link_model AS (
     FROM create_run cr
     CROSS JOIN context_data cd
     RETURNING run_id
-),
-link_profile AS (
-    -- Link profile to run (only if profile_id is not NULL)
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, cd.profile_id::uuid, true
-    FROM link_model lm
-    CROSS JOIN context_data cd
-    WHERE cd.profile_id IS NOT NULL
-    RETURNING run_id
 )
-SELECT 
+SELECT
     -- Context data
     cd.agent_id,
     cd.agent_name,
@@ -303,8 +292,9 @@ SELECT
     ui.file_path,
     ui.mime_type,
     -- Run ID (created in same transaction)
-    cr.id::text as run_id
+    lm.run_id::text as run_id
 FROM context_data cd
 CROSS JOIN create_run cr
+CROSS JOIN link_model lm
 CROSS JOIN upload_info ui
 $$;

@@ -1381,16 +1381,15 @@ runs_base AS (
         r.id as run_id,
         r.created_at,
         rm.model_id,
-        rp.profile_id,
+        r.profile_id,
         r.agent_id,
         rper.persona_id
     FROM runs r
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
-    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
-    WHERE 
+    WHERE
         (SELECT effective_profile_id FROM profile_role_check) IS NULL
-        OR rp.profile_id = (SELECT effective_profile_id FROM profile_role_check)
+        OR r.profile_id = (SELECT effective_profile_id FROM profile_role_check)
 ),
 runs_with_names AS (
     SELECT

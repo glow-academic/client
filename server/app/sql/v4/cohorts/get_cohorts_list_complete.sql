@@ -155,9 +155,9 @@ cohort_simulations_agg AS (
     GROUP BY cs.cohort_id
 ),
 cohort_usage AS (
-    SELECT DISTINCT cp.cohort_id, COUNT(DISTINCT ap.attempt_id) as usage_count
+    SELECT DISTINCT cp.cohort_id, COUNT(DISTINCT sa.id) as usage_count
     FROM profile_cohorts cp
-    JOIN attempt_profiles ap ON ap.profile_id = cp.profile_id
+    JOIN attempts_entry sa ON sa.profile_id = cp.profile_id
     WHERE cp.active = true
     GROUP BY cp.cohort_id
 ),

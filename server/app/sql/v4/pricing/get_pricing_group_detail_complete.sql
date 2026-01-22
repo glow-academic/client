@@ -154,7 +154,7 @@ group_runs_list AS (
     WHERE gr.group_id = (SELECT group_id FROM params)
 ),
 runs_metadata AS (
-    SELECT 
+    SELECT
         r.id as run_id,
         r.created_at,
         r.input_tokens,
@@ -163,12 +163,11 @@ runs_metadata AS (
         r.key_id,
         r.agent_id,
         rm.model_id,
-        rp.profile_id,
+        r.profile_id,
         rper.persona_id
     FROM group_runs_list grl
     JOIN runs r ON r.id = grl.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
-    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
 ),
 -- Get department IDs FROM runs (via agent or profile)

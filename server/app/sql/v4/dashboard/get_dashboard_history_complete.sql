@@ -156,14 +156,13 @@ history_attempts AS (
         sa.created_at AS attempt_date,
         sa.archived AS is_archived,
         sa.infinite_mode,
-        ap.profile_id,
+        sa.profile_id,
         (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         COALESCE(sdd.department_ids, NULL) as department_ids
     FROM attempts_entry sa
-    JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
     JOIN simulation_artifact sim ON sim.id = sa.simulation_id
-    JOIN profile_artifact p_attempt ON p_attempt.id = ap.profile_id
+    JOIN profile_artifact p_attempt ON p_attempt.id = sa.profile_id
     LEFT JOIN (
         SELECT 
             sd.simulation_id,
@@ -396,8 +395,7 @@ history_elapsed_time AS (
             SUM(
                 CASE 
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
-                        (SELECT COALESCE(te.time_taken, 0) FROM grades scg
-                         LEFT JOIN times_entry te ON te.grade_id = scg.id AND te.active = TRUE
+                        (SELECT COALESCE(scg.time_taken, 0) FROM grades scg
                          JOIN runs r ON r.id = scg.run_id
                          JOIN group_runs gr ON gr.run_id = r.id
                          JOIN grade_groups gg ON gg.group_id = gr.group_id

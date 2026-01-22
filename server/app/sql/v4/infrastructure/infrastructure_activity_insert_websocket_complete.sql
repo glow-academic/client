@@ -1,8 +1,8 @@
--- Insert activity record for WebSocket events (profile_id can be NULL)
+-- Insert audit record for WebSocket events (profile_id can be NULL)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Drop function if exists (handle signature changes)
-DO $$ 
+DO $$
 BEGIN
     DROP FUNCTION IF EXISTS infra_insert_activity_websocket_v4(text, text, uuid, boolean);
 EXCEPTION WHEN OTHERS THEN NULL;
@@ -21,7 +21,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO activity (message, endpoint, profile_id, error, created_at)
+    INSERT INTO audits (message, endpoint, profile_id, error, created_at)
     VALUES (message, endpoint, profile_id, error, now());
     SELECT true as success;
 $$;

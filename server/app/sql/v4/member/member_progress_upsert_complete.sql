@@ -35,20 +35,19 @@ member_agent AS (
 ),
 -- Get chat context
 chat_context AS (
-    SELECT 
+    SELECT
         c.id as chat_id,
         (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as chat_title,
         c.scenario_id,
         g.trace_id,
         sa.id as attempt_id,
         sa.simulation_id,
-        ap.profile_id
+        sa.profile_id
     FROM params p
     JOIN chats c ON c.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = c.id
     JOIN attempts_entry sa ON sa.id = ac.attempt_id
     LEFT JOIN groups g ON g.id = (SELECT cg.group_id FROM chat_groups cg WHERE cg.chat_id = c.id LIMIT 1)
-    LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LIMIT 1
 ),
 -- Get or create group for chat
@@ -93,8 +92,7 @@ latest_run AS (
     JOIN target_group tg ON true
     JOIN group_runs gr ON gr.group_id = tg.group_id
     JOIN runs r ON r.id = gr.run_id
-    JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-    JOIN chat_context cc ON cc.profile_id = rp.profile_id
+    JOIN chat_context cc ON cc.profile_id = r.profile_id
     WHERE r.agent_id = (SELECT agent_id FROM member_agent)
     ORDER BY r.created_at DESC
     LIMIT 1
@@ -129,20 +127,16 @@ link_run_to_group AS (
     ON CONFLICT (group_id, run_id) DO NOTHING
     RETURNING run_id
 ),
--- Link profile to run (if not already linked)
+-- Update run with profile_id (if not already set)
 link_profile_to_run AS (
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT ur.run_id, cc.profile_id, true
+    UPDATE runs r
+    SET profile_id = cc.profile_id
     FROM upserted_run ur
     CROSS JOIN chat_context cc
-    WHERE cc.profile_id IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM run_profiles rp 
-          WHERE rp.run_id = ur.run_id 
-          AND rp.profile_id = cc.profile_id 
-          AND rp.active = true
-      )
-    RETURNING run_id
+    WHERE r.id = ur.run_id
+      AND cc.profile_id IS NOT NULL
+      AND r.profile_id IS NULL
+    RETURNING r.id as run_id
 ),
 -- Get speak tool_id for member agent (find by name only since 'contents' is now an entry type)
 get_speak_tool_id AS (

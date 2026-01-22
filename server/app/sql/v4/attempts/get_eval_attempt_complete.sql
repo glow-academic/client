@@ -300,7 +300,7 @@ runs_with_details AS (
         rper.persona_id,
         (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
         -- Profile info
-        rp.profile_id,
+        r.profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as profile_name,
         -- Grade info (from eval_agent's run, not original run)
         -- Grade is on the eval_agent run (test.run_id), not original run
@@ -335,8 +335,7 @@ runs_with_details AS (
     LEFT JOIN agents_resource a ON a.id = r.agent_id
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
     LEFT JOIN personas_resource per ON per.id = rper.persona_id
-    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-    LEFT JOIN profile_artifact p ON p.id = rp.profile_id
+    LEFT JOIN profile_artifact p ON p.id = r.profile_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),
 -- Calculate status summary

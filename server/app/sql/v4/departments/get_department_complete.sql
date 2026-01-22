@@ -919,8 +919,7 @@ runs_for_department_via_personas AS (
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
-    JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
+    JOIN profile_departments pd ON pd.profile_id = mr.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
 ),

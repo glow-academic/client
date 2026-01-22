@@ -108,21 +108,12 @@ WITH params AS (
         profile_id::uuid as profile_id,
         scenario_id_override::uuid as scenario_id_override
 ),
--- Create the attempt first
+-- Create the attempt first with profile_id directly
 new_attempt AS (
-    INSERT INTO attempts_entry (simulation_id, infinite_mode, created_at)
-    SELECT p.simulation_id, p.infinite_mode, now()
+    INSERT INTO attempts_entry (simulation_id, infinite_mode, profile_id, created_at)
+    SELECT p.simulation_id, p.infinite_mode, p.profile_id, now()
     FROM params p
     RETURNING id as attempt_id
-),
--- Create attempt_profiles junction if profile exists
-attempt_profile_link AS (
-    INSERT INTO attempt_profiles (attempt_id, profile_id, active, created_at, updated_at)
-    SELECT na.attempt_id, p.profile_id, true, now(), now()
-    FROM new_attempt na
-    CROSS JOIN params p
-    WHERE p.profile_id IS NOT NULL
-    RETURNING attempt_id
 ),
 -- Get simulation data
 simulation_data AS (

@@ -77,14 +77,14 @@ user_profile AS (
     JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 filtered_activities AS (
-    SELECT 
+    SELECT
         a.id as activity_id,
         a.created_at,
         a.message,
         a.error,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'Anonymous') as profile_name,
         p.id as profile_id
-    FROM activity a
+    FROM audits a
     LEFT JOIN profile_artifact p ON p.id = a.profile_id
     CROSS JOIN params x
     WHERE (x.search IS NULL OR x.search = '' OR a.message ILIKE '%' || x.search || '%' OR COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'Anonymous') ILIKE '%' || x.search || '%')

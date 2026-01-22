@@ -2443,8 +2443,7 @@ debug_data AS (
         ) as debug_info
     FROM params x
     LEFT JOIN runs mr ON mr.agent_id = x.agent_id
-    LEFT JOIN run_debug_info rdi ON rdi.run_id = mr.id
-    LEFT JOIN debug_info di ON di.id = rdi.debug_info_id
+    LEFT JOIN debug_info di ON di.run_id = mr.id
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     WHERE x.agent_id IS NOT NULL
     LIMIT 1

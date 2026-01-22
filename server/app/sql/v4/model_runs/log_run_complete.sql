@@ -48,9 +48,9 @@ run_info AS (
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
-            (SELECT pd.department_id FROM run_profiles rpf
-             JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
-             WHERE rpf.run_id = x.run_id AND rpf.active = true LIMIT 1),
+            (SELECT pd.department_id FROM runs r2_prof
+             JOIN profile_departments pd ON pd.profile_id = r2_prof.profile_id AND pd.active = true
+             WHERE r2_prof.id = x.run_id LIMIT 1),
             -- Fallback to any active department
             (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
         ) as department_id

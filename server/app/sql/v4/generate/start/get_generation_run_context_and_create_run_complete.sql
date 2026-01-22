@@ -98,13 +98,11 @@ profile_rate_limit AS (
 ),
 -- Count runs today for rate limiting
 runs_today AS (
-    SELECT 
+    SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT profile_id FROM params)
-      AND mrp.active = true
+    WHERE mr.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get or create group (for trace_id and group_id)
@@ -149,34 +147,26 @@ rate_limit_check AS (
 ),
 -- Create run
 create_run AS (
-    INSERT INTO runs (input_tokens, output_tokens, agent_id)
-    SELECT 0, 0, sa.agent_id
+    INSERT INTO runs (input_tokens, output_tokens, agent_id, profile_id)
+    SELECT 0, 0, sa.agent_id, p.profile_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
-    RETURNING id as run_id
-),
--- Link agent to run (via agent_id in runs table - already done)
--- Link profile to run
-link_profile AS (
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT cr.run_id, p.profile_id, true
-    FROM create_run cr
     CROSS JOIN params p
-    RETURNING run_id
+    RETURNING id as run_id
 ),
 -- Link group to run
 link_group AS (
     INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT 
+    SELECT
         gd.group_id,
-        lp.run_id,
+        cr.run_id,
         COALESCE(
             (SELECT MAX(idx) FROM group_runs WHERE group_id = gd.group_id),
             -1
         ) + 1 as idx,
         NOW(),
         NOW()
-    FROM link_profile lp
+    FROM create_run cr
     CROSS JOIN group_data gd
     RETURNING run_id
 ),

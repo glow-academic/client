@@ -66,11 +66,11 @@ user_profile AS (
     JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 daily_activity AS (
-    SELECT 
+    SELECT
         DATE(created_at) as date,
         COUNT(*) as activity_count,
         COUNT(*) FILTER (WHERE error = true) as error_count
-    FROM activity
+    FROM audits
     WHERE created_at >= NOW() - INTERVAL '90 days'
     GROUP BY DATE(created_at)
 ),
@@ -83,10 +83,10 @@ daily_feedback AS (
     GROUP BY DATE(created_at)
 ),
 daily_active_profiles AS (
-    SELECT 
+    SELECT
         DATE(last_active) as date,
         COUNT(DISTINCT profile_id) as active_profiles_count
-    FROM profile_activity
+    FROM activity
     WHERE last_active >= NOW() - INTERVAL '90 days'
     GROUP BY DATE(last_active)
 ),
@@ -110,12 +110,12 @@ combined_daily AS (
     LEFT JOIN daily_active_profiles dap ON ds.date = dap.date
     ORDER BY ds.date
 )
-SELECT 
+SELECT
     up.actor_name::text as actor_name,
-    (SELECT COUNT(DISTINCT profile_id) FROM profile_activity)::bigint as active_profiles_count,
+    (SELECT COUNT(DISTINCT profile_id) FROM activity)::bigint as active_profiles_count,
     (SELECT COUNT(*) FROM problems_entry)::bigint as total_feedback_count,
-    (SELECT COUNT(*) FROM activity)::bigint as total_activity_entries,
-    (SELECT COUNT(*) FROM activity WHERE error = true)::bigint as total_errors_count,
+    (SELECT COUNT(*) FROM audits)::bigint as total_activity_entries,
+    (SELECT COUNT(*) FROM audits WHERE error = true)::bigint as total_errors_count,
     COALESCE(
         ARRAY_AGG(
             (cd.date, cd.active_profiles_count::integer, cd.feedback_count::integer, cd.activity_count::integer, cd.error_count::integer)::types.q_get_activity_bundle_v4_chart_data_point

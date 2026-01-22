@@ -147,20 +147,21 @@ valid_department_ids_data AS (
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
 recent_runs AS (
-    SELECT 
-        mrp.profile_id,
+    SELECT
+        mr.profile_id,
         COUNT(*) as run_count
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
-    GROUP BY mrp.profile_id
+      AND mr.profile_id IS NOT NULL
+    GROUP BY mr.profile_id
 ),
 profile_total_runs AS (
-    SELECT 
-        mrp.profile_id,
+    SELECT
+        mr.profile_id,
         COUNT(*) as total_requests
-    FROM run_profiles mrp
-    GROUP BY mrp.profile_id
+    FROM runs mr
+    WHERE mr.profile_id IS NOT NULL
+    GROUP BY mr.profile_id
 ),
 user_profile AS (
     SELECT 
@@ -253,13 +254,13 @@ member_users_cumulative AS (
     FROM member_users_by_date
 ),
 total_requests_by_date AS (
-    SELECT 
+    SELECT
         DATE(mr.created_at) as date,
         COUNT(*) as count
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
-    JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
+    JOIN profile_departments pd ON pd.profile_id = mr.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
+      AND mr.profile_id IS NOT NULL
     GROUP BY DATE(mr.created_at)
 ),
 total_requests_cumulative AS (
@@ -331,7 +332,7 @@ staff_rows AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
-        FROM profile_activity 
+        FROM activity 
         WHERE profile_id = p.id 
         ORDER BY created_at DESC 
         LIMIT 1

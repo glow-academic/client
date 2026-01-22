@@ -78,11 +78,9 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
-    JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN params p
-    WHERE mrp.profile_id = p.profile_id
+    WHERE mr.profile_id = p.profile_id
       AND p.profile_id IS NOT NULL
-      AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 profile_primary_department AS (
@@ -218,9 +216,9 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     WHERE (p.profile_id IS NULL OR validate_rate_limit(COALESCE(prl.req_per_day, 0), COALESCE(rt.runs_today_count, 0)) = TRUE)
 ),
 create_run AS (
-    -- Create run record with all junction records (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
-    SELECT 0, 0, NULL, cd.agent_id::uuid
+    -- Create run record with profile_id (atomic with context query)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
+    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
     FROM context_data cd
     RETURNING id
 ),
@@ -230,15 +228,6 @@ link_model AS (
     SELECT cr.id, cd.model_id::uuid, true
     FROM create_run cr
     CROSS JOIN context_data cd
-    RETURNING run_id
-),
-link_profile AS (
-    -- Link profile to run (only if profile_id is not NULL)
-    INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, cd.profile_id::uuid, true
-    FROM link_model lm
-    CROSS JOIN context_data cd
-    WHERE cd.profile_id IS NOT NULL
     RETURNING run_id
 )
 SELECT
@@ -259,7 +248,8 @@ SELECT
     cd.earliest_run_created_at,
     cd.department_id,
     -- Run ID (created in same transaction)
-    cr.id::text as run_id
+    lm.run_id::text as run_id
 FROM context_data cd
 CROSS JOIN create_run cr
+CROSS JOIN link_model lm
 $$;

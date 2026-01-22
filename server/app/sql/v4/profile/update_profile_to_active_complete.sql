@@ -55,7 +55,7 @@ update_profile AS (
 ),
 insert_activity AS (
     -- Insert activity record
-    INSERT INTO profile_activity (profile_id, last_active)
+    INSERT INTO activity (profile_id, last_active)
     SELECT 
         up.profile_id,
         last_active

@@ -201,7 +201,7 @@ runs_base AS (
         mr.input_tokens,
         mr.output_tokens,
         mrm.model_id,
-        mrp.profile_id,
+        mr.profile_id,
         mr.agent_id,
         mrper.persona_id,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
@@ -209,7 +209,6 @@ runs_base AS (
         gr.group_id
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
-    LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
     -- Join to groups via group_runs
     LEFT JOIN group_runs gr ON gr.run_id = mr.id
@@ -238,24 +237,22 @@ runs_base AS (
             p.department_ids IS NULL
             OR COALESCE(array_length(p.department_ids, 1), 0) = 0
             OR EXISTS (
-                SELECT 1 FROM run_profiles mrp2
-                JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
-                WHERE mrp2.run_id = mr.id
-                  AND mrp2.active = true
+                SELECT 1 FROM profile_departments pd
+                WHERE pd.profile_id = mr.profile_id
                   AND pd.department_id = ANY(p.department_ids)
             )
         )
         -- Profile filter (specific user) - only if role is not admin/superadmin/instructional
         AND (
             (SELECT effective_profile_id FROM profile_role_check) IS NULL
-            OR mrp.profile_id = (SELECT effective_profile_id FROM profile_role_check)
+            OR mr.profile_id = (SELECT effective_profile_id FROM profile_role_check)
         )
         -- Role filter (only if no effective profile_id)
         AND (
             (SELECT effective_profile_id FROM profile_role_check) IS NOT NULL
             OR (SELECT roles FROM params) IS NULL
             OR COALESCE(array_length((SELECT roles FROM params), 1), 0) = 0
-            OR mrp.profile_id IN (
+            OR mr.profile_id IN (
                 SELECT DISTINCT p.id
                 FROM profile_artifact p
                 LEFT JOIN profile_roles pr_j ON pr_j.profile_id = p.id
@@ -267,7 +264,7 @@ runs_base AS (
         AND (
             p.cohort_ids IS NULL
             OR COALESCE(array_length(p.cohort_ids, 1), 0) = 0
-            OR mrp.profile_id IN (
+            OR mr.profile_id IN (
                 SELECT cp.profile_id FROM profile_cohorts cp
                 WHERE cp.cohort_id = ANY(p.cohort_ids) AND cp.active = true
             )
@@ -314,8 +311,7 @@ runs_with_debug AS (
             '{}'::types.q_get_pricing_runs_v4_debug_info[]
         ) as debug_info
     FROM runs_base mrb
-    LEFT JOIN run_debug_info rdi ON rdi.run_id = mrb.run_id
-    LEFT JOIN debug_info di ON di.id = rdi.debug_info_id
+    LEFT JOIN debug_info di ON di.run_id = mrb.run_id
     GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.practice_simulation, mrb.archived, mrb.group_id
 ),
 -- Calculate run costs using run_pricing_entry and model_pricing
