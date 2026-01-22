@@ -129,21 +129,12 @@ BEGIN
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO runs_entry (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
-    VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
+    INSERT INTO runs_entry (id, agent_id, input_tokens, output_tokens, cached_input_tokens, group_id, created_at, updated_at)
+    VALUES (v_run_id, agent_id, 0, 0, 0, api_create_settings_v4.group_id, NOW(), NOW());
     
-    -- Link run to message
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    VALUES (v_message_id, v_run_id, NOW(), NOW());
+    -- Link message to run
+    UPDATE messages_entry SET run_id = v_run_id WHERE id = v_message_id;
     
-    -- Link run to group (calculate idx)
-    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT 
-        api_create_settings_v4.group_id,
-        v_run_id,
-        COALESCE((SELECT MAX(gr.idx) FROM group_runs gr WHERE gr.group_id = api_create_settings_v4.group_id), -1) + 1,
-        NOW(),
-        NOW();
     
     RETURN QUERY SELECT v_resource_id;
 END;

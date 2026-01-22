@@ -1,60 +1,33 @@
 -- Create a test chat with system/user/assistant messages_entry
 -- Parameters: $1 = scenario_id (UUID), $2 = run_id (UUID), $3 = attempt_id (UUID, optional)
 -- Returns: chat_id (UUID), system_message_id (UUID), user_message_id (UUID), assistant_message_id (UUID)
-WITH new_chat AS (
-    INSERT INTO chats_entry(title, scenario_id, completed)
-    VALUES ('Test Chat', $1::uuid, false)
-    RETURNING id as chat_id
-),
-create_group AS (
+WITH create_group AS (
     INSERT INTO groups_entry (created_at, updated_at, trace_id)
     VALUES (NOW(), NOW(), 'test-trace-id')
     RETURNING id as group_id
 ),
-link_chat_group AS (
-    INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
-    SELECT nc.chat_id, cg.group_id, NOW(), NOW()
-    FROM new_chat nc
-    CROSS JOIN create_group cg
-    RETURNING chat_id
+new_chat AS (
+    INSERT INTO chats_entry(title, scenario_id, completed, group_id, attempt_id)
+    SELECT 'Test Chat', $1::uuid, false, cg.group_id, $3::uuid
+    FROM create_group cg
+    RETURNING id as chat_id
 ),
 system_msg AS (
-    INSERT INTO messages_entry(role, content, created_at)
-    VALUES ('system', 'You are a helpful assistant.', NOW())
+    INSERT INTO messages_entry(role, content, run_id, created_at)
+    VALUES ('system', 'You are a helpful assistant.', $2::uuid, NOW())
     RETURNING id as message_id
 ),
 user_msg AS (
-    INSERT INTO messages_entry(role, content, created_at)
-    VALUES ('user', 'Hello, how are you?', NOW())
+    INSERT INTO messages_entry(role, content, run_id, created_at)
+    VALUES ('user', 'Hello, how are you?', $2::uuid, NOW())
     RETURNING id as message_id
 ),
 assistant_msg AS (
-    INSERT INTO messages_entry(role, content, created_at)
-    VALUES ('assistant', 'I am doing well, thank you!', NOW())
+    INSERT INTO messages_entry(role, content, run_id, created_at)
+    VALUES ('assistant', 'I am doing well, thank you!', $2::uuid, NOW())
     RETURNING id as message_id
-),
-link_system AS (
-    INSERT INTO message_runs(message_id, run_id)
-    SELECT sm.message_id, $2::uuid
-    FROM system_msg sm
-),
-link_user AS (
-    INSERT INTO message_runs(message_id, run_id)
-    SELECT um.message_id, $2::uuid
-    FROM user_msg um
-),
-link_assistant AS (
-    INSERT INTO message_runs(message_id, run_id)
-    SELECT am.message_id, $2::uuid
-    FROM assistant_msg am
-),
-link_chat AS (
-    INSERT INTO attempt_chats(attempt_id, chat_id)
-    SELECT $3::uuid, nc.chat_id
-    FROM new_chat nc
-    WHERE $3 IS NOT NULL
 )
-SELECT 
+SELECT
     nc.chat_id::text as chat_id,
     (SELECT message_id::text FROM system_msg) as system_message_id,
     (SELECT message_id::text FROM user_msg) as user_message_id,

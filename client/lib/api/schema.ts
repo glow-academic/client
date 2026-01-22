@@ -7854,8 +7854,8 @@ export interface components {
             slug_suggestions?: string[] | null;
             /** Slugs */
             slugs?: components["schemas"]["QGetAuthV4Slug"][] | null;
-            /** Auth Items */
-            auth_items?: components["schemas"]["QGetAuthV4AuthItem"][] | null;
+            /** Auth Items Junction */
+            auth_items_junction?: components["schemas"]["QGetAuthV4AuthItem"][] | null;
             /** Auth Item Ids */
             auth_item_ids?: unknown | null;
             /** Auth Item Active States */
@@ -7939,8 +7939,8 @@ export interface components {
             standard_groups?: components["schemas"]["QGetBenchmarkOverviewV4StandardGroup"][] | null;
             /** Standards */
             standards?: components["schemas"]["QGetBenchmarkOverviewV4Standard"][] | null;
-            /** Rubric Standard Groups */
-            rubric_standard_groups?: components["schemas"]["QGetBenchmarkOverviewV4RubricStandardGroup"][] | null;
+            /** Rubric Standard Groups Junction */
+            rubric_standard_groups_junction?: components["schemas"]["QGetBenchmarkOverviewV4RubricStandardGroup"][] | null;
             /** Rubric Options */
             rubric_options?: components["schemas"]["QGetBenchmarkOverviewV4RubricOption"][] | null;
             /** Department Options */
@@ -8165,8 +8165,8 @@ export interface components {
             profile_options?: components["schemas"]["QGetDashboardHistoryV4ProfileOption"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QGetDashboardHistoryV4SimulationOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetDashboardHistoryV4ScenarioOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QGetDashboardHistoryV4ScenarioOption"][] | null;
         };
         /** GetDepartmentApiRequest */
         GetDepartmentApiRequest: {
@@ -8317,8 +8317,8 @@ export interface components {
             valid_model_ids?: string[] | null;
             /** Valid Key Ids */
             valid_key_ids?: string[] | null;
-            /** Model Keys */
-            model_keys?: components["schemas"]["QGetDepartmentV4ModelKey"][] | null;
+            /** Model Keys Junction */
+            model_keys_junction?: components["schemas"]["QGetDepartmentV4ModelKey"][] | null;
             /** Draft Version */
             draft_version?: number | null;
         };
@@ -8427,8 +8427,8 @@ export interface components {
             uploads_required?: boolean | null;
             /** Upload Suggestions */
             upload_suggestions?: string[] | null;
-            /** Uploads */
-            uploads?: components["schemas"]["QGetDocumentV4Upload"][] | null;
+            /** Uploads Entry */
+            uploads_entry?: components["schemas"]["QGetDocumentV4Upload"][] | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             flag_resource?: components["schemas"]["QGetDocumentV4FlagResource"] | null;
@@ -8457,8 +8457,8 @@ export interface components {
             departments?: components["schemas"]["QListDocumentsV4Department"][] | null;
             /** Parameters */
             parameters?: components["schemas"]["QListDocumentsV4Parameter"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QListDocumentsV4ScenarioOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QListDocumentsV4ScenarioOption"][] | null;
             /** Department Options */
             department_options?: components["schemas"]["QListDocumentsV4DepartmentOption"][] | null;
             /** Valid Department Ids */
@@ -8642,8 +8642,8 @@ export interface components {
             actor_name?: string | null;
             attempt?: components["schemas"]["QGetEvalAttemptV4Attempt"] | null;
             eval?: components["schemas"]["QGetEvalAttemptV4Eval"] | null;
-            /** Runs */
-            runs?: components["schemas"]["QGetEvalAttemptV4Run"][] | null;
+            /** Runs Entry */
+            runs_entry?: components["schemas"]["QGetEvalAttemptV4Run"][] | null;
             status_summary?: components["schemas"]["QGetEvalAttemptV4StatusSummary"] | null;
         };
         /** GetEvalsListApiRequest */
@@ -8664,8 +8664,8 @@ export interface components {
             standard_groups?: components["schemas"]["QListEvalsV4StandardGroup"][] | null;
             /** Standards */
             standards?: components["schemas"]["QListEvalsV4Standard"][] | null;
-            /** Rubric Standard Groups */
-            rubric_standard_groups?: components["schemas"]["QListEvalsV4RubricStandardGroup"][] | null;
+            /** Rubric Standard Groups Junction */
+            rubric_standard_groups_junction?: components["schemas"]["QListEvalsV4RubricStandardGroup"][] | null;
             /** Rubric Options */
             rubric_options?: components["schemas"]["QListEvalsV4Option"][] | null;
             /** Department Options */
@@ -8793,8 +8793,8 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
             health_kpis?: components["schemas"]["QGetHealthBundleV4HealthKpis"] | null;
-            /** Metrics */
-            metrics?: components["schemas"]["QGetHealthBundleV4MetricsDataPoint"][] | null;
+            /** Metrics Entry */
+            metrics_entry?: components["schemas"]["QGetHealthBundleV4MetricsDataPoint"][] | null;
         };
         /** GetHealthListApiRequest */
         GetHealthListApiRequest: {
@@ -8813,8 +8813,8 @@ export interface components {
         GetHealthListApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            /** Metrics */
-            metrics?: components["schemas"]["QGetHealthListV4Metric"][] | null;
+            /** Metrics Entry */
+            metrics_entry?: components["schemas"]["QGetHealthListV4Metric"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -8881,8 +8881,8 @@ export interface components {
             profile_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QGetHomeHistoryV4Option"][] | null;
         };
         /** GetHomeOverviewApiRequest */
         GetHomeOverviewApiRequest: {
@@ -9416,8 +9416,8 @@ export interface components {
             departments?: components["schemas"]["QListParametersV4Department"][] | null;
             /** Documents */
             documents?: components["schemas"]["QListParametersV4Document"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QListParametersV4ScenarioOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QListParametersV4ScenarioOption"][] | null;
             /** Document Options */
             document_options?: components["schemas"]["QListParametersV4DocumentOption"][] | null;
         };
@@ -9648,8 +9648,8 @@ export interface components {
             profile_options?: components["schemas"]["QGetPracticeHistoryV4ProfileOption"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QGetPracticeHistoryV4SimulationOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QGetPracticeHistoryV4ScenarioOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QGetPracticeHistoryV4ScenarioOption"][] | null;
         };
         /** GetPracticeOverviewApiRequest */
         GetPracticeOverviewApiRequest: {
@@ -9741,8 +9741,8 @@ export interface components {
             group_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-            /** Runs */
-            runs?: components["schemas"]["QGetPricingGroupDetailV4RunWithMessages"][] | null;
+            /** Runs Entry */
+            runs_entry?: components["schemas"]["QGetPricingGroupDetailV4RunWithMessages"][] | null;
             /** Models */
             models?: components["schemas"]["QGetPricingGroupDetailV4Model"][] | null;
             /** Agents */
@@ -10244,8 +10244,8 @@ export interface components {
             profile_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
-            /** Scenario Options */
-            scenario_options?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
+            /** Scenario Options Junction */
+            scenario_options_junction?: components["schemas"]["QReportsBundleV4FilterOption"][] | null;
             /** Scenarios */
             scenarios?: components["schemas"]["QReportsBundleV4Scenario"][] | null;
             /** Simulations */
@@ -10282,12 +10282,12 @@ export interface components {
             actor_name?: string | null;
             /** Profile Name */
             profile_name?: string | null;
-            /** Profile Emails */
-            profile_emails?: string[] | null;
+            /** Profile Emails Junction */
+            profile_emails_junction?: string[] | null;
             /** Profile Primary Email */
             profile_primary_email?: string | null;
-            /** Profile Role */
-            profile_role?: string | null;
+            /** Profile Type */
+            profile_type?: string | null;
             /** Profile Id */
             profile_id?: string | null;
             header_metrics?: components["schemas"]["QReportsOverviewV4HeaderMetrics"] | null;
@@ -11141,10 +11141,10 @@ export interface components {
             simulation?: components["schemas"]["QGetSimulationAttemptV4Simulation"] | null;
             /** Attempt Profiles */
             attempt_profiles?: components["schemas"]["QGetSimulationAttemptV4AttemptProfile"][] | null;
-            /** Chats */
-            chats?: components["schemas"]["QGetSimulationAttemptV4ChatData"][] | null;
-            /** Scenario Documents */
-            scenario_documents?: components["schemas"]["QGetSimulationAttemptV4ScenarioDocument"][] | null;
+            /** Chats Entry */
+            chats_entry?: components["schemas"]["QGetSimulationAttemptV4ChatData"][] | null;
+            /** Scenario Documents Junction */
+            scenario_documents_junction?: components["schemas"]["QGetSimulationAttemptV4ScenarioDocument"][] | null;
             aggregated_results?: components["schemas"]["QGetSimulationAttemptV4AggregatedResults"] | null;
             timer?: components["schemas"]["QGetSimulationAttemptV4Timer"] | null;
             /** Current Chat Index */
@@ -13153,10 +13153,10 @@ export interface components {
             infinite_mode: boolean | null;
             /** Time Limit */
             time_limit: number | null;
-            /** Persona Names */
-            persona_names: string[] | null;
-            /** Persona Colors */
-            persona_colors: string[] | null;
+            /** Persona Names Junction */
+            persona_names_junction: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: string[] | null;
             /** Score */
             score: number | null;
             /** Score Status */
@@ -13179,8 +13179,8 @@ export interface components {
             pass_pct: number | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Names */
-            cohort_names: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string[] | null;
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
@@ -13520,8 +13520,8 @@ export interface components {
             chart_data: components["schemas"]["QGetDashboardBundleV4PersonaPerformanceData"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
-            /** Persona Colors */
-            persona_colors: components["schemas"]["QGetDashboardBundleV4PersonaColor"][] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: components["schemas"]["QGetDashboardBundleV4PersonaColor"][] | null;
         };
         /** QGetDashboardBundleV4PersonaTrendData */
         QGetDashboardBundleV4PersonaTrendData: {
@@ -13833,10 +13833,10 @@ export interface components {
             infinite_mode: boolean | null;
             /** Time Limit */
             time_limit: number | null;
-            /** Persona Names */
-            persona_names: string[] | null;
-            /** Persona Colors */
-            persona_colors: string[] | null;
+            /** Persona Names Junction */
+            persona_names_junction: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: string[] | null;
             /** Score */
             score: number | null;
             /** Score Status */
@@ -13859,8 +13859,8 @@ export interface components {
             pass_pct: number | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Names */
-            cohort_names: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string[] | null;
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
@@ -14401,10 +14401,10 @@ export interface components {
             infinite_mode: boolean | null;
             /** Time Limit */
             time_limit: number | null;
-            /** Persona Names */
-            persona_names: string[] | null;
-            /** Persona Colors */
-            persona_colors: string[] | null;
+            /** Persona Names Junction */
+            persona_names_junction: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: string[] | null;
             /** Score */
             score: number | null;
             /** Score Status */
@@ -14427,8 +14427,8 @@ export interface components {
             pass_pct: number | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Names */
-            cohort_names: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string[] | null;
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
@@ -14496,8 +14496,8 @@ export interface components {
             pass_pct: number | null;
             /** Cohort Name */
             cohort_name: string | null;
-            /** Cohort Names */
-            cohort_names: string | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string | null;
         };
         /** QGetHomeOverviewV4Standard */
         QGetHomeOverviewV4Standard: {
@@ -14563,7 +14563,7 @@ export interface components {
             simulation_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            metrics: components["schemas"]["QGetLeaderboardBundleV4Metrics"] | null;
+            metrics_entry: components["schemas"]["QGetLeaderboardBundleV4Metrics"] | null;
         };
         /** QGetLeaderboardBundleV4Scenario */
         QGetLeaderboardBundleV4Scenario: {
@@ -15122,10 +15122,10 @@ export interface components {
             infinite_mode: boolean | null;
             /** Time Limit */
             time_limit: number | null;
-            /** Persona Names */
-            persona_names: string[] | null;
-            /** Persona Colors */
-            persona_colors: string[] | null;
+            /** Persona Names Junction */
+            persona_names_junction: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: string[] | null;
             /** Score */
             score: number | null;
             /** Score Status */
@@ -15148,8 +15148,8 @@ export interface components {
             pass_pct: number | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Names */
-            cohort_names: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string[] | null;
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
@@ -15376,8 +15376,8 @@ export interface components {
             persona_id: string | null;
             /** Run Cost */
             run_cost: number | null;
-            /** Debug Info */
-            debug_info: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
+            /** Debug Info Entry */
+            debug_info_entry: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
         };
         /** QGetPricingAnalyticsV4Persona */
         QGetPricingAnalyticsV4Persona: {
@@ -15472,8 +15472,8 @@ export interface components {
         /** QGetPricingGroupDetailV4RunWithMessages */
         QGetPricingGroupDetailV4RunWithMessages: {
             run: components["schemas"]["QGetPricingGroupDetailV4RunMetadata"] | null;
-            /** Messages */
-            messages: components["schemas"]["QGetPricingGroupDetailV4Message"][] | null;
+            /** Messages Entry */
+            messages_entry: components["schemas"]["QGetPricingGroupDetailV4Message"][] | null;
             /** Previous Context Start Index */
             previous_context_start_index: number | null;
         };
@@ -15516,8 +15516,8 @@ export interface components {
             total_output_tokens: number | null;
             /** Total Cost */
             total_cost: number | null;
-            /** Runs */
-            runs: components["schemas"]["QGetPricingRunsV4RunSummary"][] | null;
+            /** Runs Entry */
+            runs_entry: components["schemas"]["QGetPricingRunsV4RunSummary"][] | null;
         };
         /** QGetPricingRunsV4Model */
         QGetPricingRunsV4Model: {
@@ -15566,8 +15566,8 @@ export interface components {
             agent_id: string | null;
             /** Persona Id */
             persona_id: string | null;
-            /** Debug Info */
-            debug_info: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
+            /** Debug Info Entry */
+            debug_info_entry: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
         };
         /** QGetProfileContextV4Auth */
         QGetProfileContextV4Auth: {
@@ -16249,8 +16249,8 @@ export interface components {
             slug: string | null;
             /** Active */
             active: boolean | null;
-            /** Auth Items */
-            auth_items: components["schemas"]["QGetSettingV4AuthItem"][] | null;
+            /** Auth Items Junction */
+            auth_items_junction: components["schemas"]["QGetSettingV4AuthItem"][] | null;
         };
         /** QGetSettingV4AuthItem */
         QGetSettingV4AuthItem: {
@@ -16522,8 +16522,8 @@ export interface components {
         QGetSimulationAttemptV4ChatData: {
             chat: components["schemas"]["QGetSimulationAttemptV4Chat"] | null;
             scenario: components["schemas"]["QGetSimulationAttemptV4Scenario"] | null;
-            /** Messages */
-            messages: components["schemas"]["QGetSimulationAttemptV4Message"][] | null;
+            /** Messages Entry */
+            messages_entry: components["schemas"]["QGetSimulationAttemptV4Message"][] | null;
             /** Hints */
             hints: components["schemas"]["QGetSimulationAttemptV4HintsByMessage"][] | null;
             grade: components["schemas"]["QGetSimulationAttemptV4Grade"] | null;
@@ -18391,7 +18391,7 @@ export interface components {
             simulation_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
-            metrics: components["schemas"]["QReportsBundleV4ProfileMetrics"] | null;
+            metrics_entry: components["schemas"]["QReportsBundleV4ProfileMetrics"] | null;
         };
         /** QReportsBundleV4ProfileMetrics */
         QReportsBundleV4ProfileMetrics: {
@@ -18425,8 +18425,8 @@ export interface components {
             description: string | null;
             /** Rubric Id */
             rubric_id: string | null;
-            /** Rubric Points */
-            rubric_points: number | null;
+            /** Rubric Points Junction */
+            rubric_points_junction: number | null;
             /** Rubric Pass Points */
             rubric_pass_points: number | null;
         };
@@ -18450,10 +18450,10 @@ export interface components {
             infinite_mode: boolean | null;
             /** Time Limit */
             time_limit: number | null;
-            /** Persona Names */
-            persona_names: string[] | null;
-            /** Persona Colors */
-            persona_colors: string[] | null;
+            /** Persona Names Junction */
+            persona_names_junction: string[] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: string[] | null;
             /** Score */
             score: number | null;
             /** Score Status */
@@ -18476,8 +18476,8 @@ export interface components {
             pass_pct: number | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Names */
-            cohort_names: string[] | null;
+            /** Cohort Names Junction */
+            cohort_names_junction: string[] | null;
             /** Practice Scenario Id */
             practice_scenario_id: string | null;
         };
@@ -18817,8 +18817,8 @@ export interface components {
             chart_data: components["schemas"]["QReportsOverviewV4PersonaPerformanceData"][] | null;
             /** Valid Simulation Ids */
             valid_simulation_ids: string[] | null;
-            /** Persona Colors */
-            persona_colors: components["schemas"]["QReportsOverviewV4PersonaColor"][] | null;
+            /** Persona Colors Junction */
+            persona_colors_junction: components["schemas"]["QReportsOverviewV4PersonaColor"][] | null;
         };
         /** QReportsOverviewV4PersonaTrendData */
         QReportsOverviewV4PersonaTrendData: {

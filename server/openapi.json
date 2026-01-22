@@ -31621,7 +31621,7 @@
             ],
             "title": "Slugs"
           },
-          "auth_items": {
+          "auth_items_junction": {
             "anyOf": [
               {
                 "items": {
@@ -31633,7 +31633,7 @@
                 "type": "null"
               }
             ],
-            "title": "Auth Items"
+            "title": "Auth Items Junction"
           },
           "auth_item_ids": {
             "anyOf": [
@@ -32036,7 +32036,7 @@
             ],
             "title": "Standards"
           },
-          "rubric_standard_groups": {
+          "rubric_standard_groups_junction": {
             "anyOf": [
               {
                 "items": {
@@ -32048,7 +32048,7 @@
                 "type": "null"
               }
             ],
-            "title": "Rubric Standard Groups"
+            "title": "Rubric Standard Groups Junction"
           },
           "rubric_options": {
             "anyOf": [
@@ -33319,7 +33319,7 @@
             ],
             "title": "Simulation Options"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -33331,7 +33331,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           }
         },
         "type": "object",
@@ -34249,7 +34249,7 @@
             ],
             "title": "Valid Key Ids"
           },
-          "model_keys": {
+          "model_keys_junction": {
             "anyOf": [
               {
                 "items": {
@@ -34261,7 +34261,7 @@
                 "type": "null"
               }
             ],
-            "title": "Model Keys"
+            "title": "Model Keys Junction"
           },
           "draft_version": {
             "anyOf": [
@@ -34885,7 +34885,7 @@
             ],
             "title": "Upload Suggestions"
           },
-          "uploads": {
+          "uploads_entry": {
             "anyOf": [
               {
                 "items": {
@@ -34897,7 +34897,7 @@
                 "type": "null"
               }
             ],
-            "title": "Uploads"
+            "title": "Uploads Entry"
           },
           "active_flag_id": {
             "anyOf": [
@@ -35059,7 +35059,7 @@
             ],
             "title": "Parameters"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -35071,7 +35071,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           },
           "department_options": {
             "anyOf": [
@@ -36108,7 +36108,7 @@
               }
             ]
           },
-          "runs": {
+          "runs_entry": {
             "anyOf": [
               {
                 "items": {
@@ -36120,7 +36120,7 @@
                 "type": "null"
               }
             ],
-            "title": "Runs"
+            "title": "Runs Entry"
           },
           "status_summary": {
             "anyOf": [
@@ -36238,7 +36238,7 @@
             ],
             "title": "Standards"
           },
-          "rubric_standard_groups": {
+          "rubric_standard_groups_junction": {
             "anyOf": [
               {
                 "items": {
@@ -36250,7 +36250,7 @@
                 "type": "null"
               }
             ],
-            "title": "Rubric Standard Groups"
+            "title": "Rubric Standard Groups Junction"
           },
           "rubric_options": {
             "anyOf": [
@@ -36976,7 +36976,7 @@
               }
             ]
           },
-          "metrics": {
+          "metrics_entry": {
             "anyOf": [
               {
                 "items": {
@@ -36988,7 +36988,7 @@
                 "type": "null"
               }
             ],
-            "title": "Metrics"
+            "title": "Metrics Entry"
           }
         },
         "type": "object",
@@ -37037,7 +37037,7 @@
             ],
             "title": "Actor Name"
           },
-          "metrics": {
+          "metrics_entry": {
             "anyOf": [
               {
                 "items": {
@@ -37049,7 +37049,7 @@
                 "type": "null"
               }
             ],
-            "title": "Metrics"
+            "title": "Metrics Entry"
           },
           "total_count": {
             "anyOf": [
@@ -37382,7 +37382,7 @@
             ],
             "title": "Simulation Options"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -37394,7 +37394,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           }
         },
         "type": "object",
@@ -40457,7 +40457,7 @@
             ],
             "title": "Documents"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -40469,7 +40469,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           },
           "document_options": {
             "anyOf": [
@@ -41799,7 +41799,7 @@
             ],
             "title": "Simulation Options"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -41811,7 +41811,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           }
         },
         "type": "object",
@@ -42256,7 +42256,7 @@
             ],
             "title": "Actor Name"
           },
-          "runs": {
+          "runs_entry": {
             "anyOf": [
               {
                 "items": {
@@ -42268,7 +42268,7 @@
                 "type": "null"
               }
             ],
-            "title": "Runs"
+            "title": "Runs Entry"
           },
           "models": {
             "anyOf": [
@@ -45052,7 +45052,7 @@
             ],
             "title": "Simulation Options"
           },
-          "scenario_options": {
+          "scenario_options_junction": {
             "anyOf": [
               {
                 "items": {
@@ -45064,7 +45064,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Options"
+            "title": "Scenario Options Junction"
           },
           "scenarios": {
             "anyOf": [
@@ -45205,7 +45205,7 @@
             ],
             "title": "Profile Name"
           },
-          "profile_emails": {
+          "profile_emails_junction": {
             "anyOf": [
               {
                 "items": {
@@ -45217,7 +45217,7 @@
                 "type": "null"
               }
             ],
-            "title": "Profile Emails"
+            "title": "Profile Emails Junction"
           },
           "profile_primary_email": {
             "anyOf": [
@@ -45230,7 +45230,7 @@
             ],
             "title": "Profile Primary Email"
           },
-          "profile_role": {
+          "profile_type": {
             "anyOf": [
               {
                 "type": "string"
@@ -45239,7 +45239,7 @@
                 "type": "null"
               }
             ],
-            "title": "Profile Role"
+            "title": "Profile Type"
           },
           "profile_id": {
             "anyOf": [
@@ -50461,7 +50461,7 @@
             ],
             "title": "Attempt Profiles"
           },
-          "chats": {
+          "chats_entry": {
             "anyOf": [
               {
                 "items": {
@@ -50473,9 +50473,9 @@
                 "type": "null"
               }
             ],
-            "title": "Chats"
+            "title": "Chats Entry"
           },
-          "scenario_documents": {
+          "scenario_documents_junction": {
             "anyOf": [
               {
                 "items": {
@@ -50487,7 +50487,7 @@
                 "type": "null"
               }
             ],
-            "title": "Scenario Documents"
+            "title": "Scenario Documents Junction"
           },
           "aggregated_results": {
             "anyOf": [
@@ -59138,7 +59138,7 @@
             ],
             "title": "Time Limit"
           },
-          "persona_names": {
+          "persona_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -59150,9 +59150,9 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Names"
+            "title": "Persona Names Junction"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -59164,7 +59164,7 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           },
           "score": {
             "anyOf": [
@@ -59297,7 +59297,7 @@
             ],
             "title": "Department Ids"
           },
-          "cohort_names": {
+          "cohort_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -59309,7 +59309,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Names"
+            "title": "Cohort Names Junction"
           },
           "practice_scenario_id": {
             "anyOf": [
@@ -59335,8 +59335,8 @@
           "num_scenarios_completed",
           "infinite_mode",
           "time_limit",
-          "persona_names",
-          "persona_colors",
+          "persona_names_junction",
+          "persona_colors_junction",
           "score",
           "score_status",
           "simulation_id",
@@ -59348,7 +59348,7 @@
           "practice_simulation",
           "pass_pct",
           "department_ids",
-          "cohort_names",
+          "cohort_names_junction",
           "practice_scenario_id"
         ],
         "title": "QGetDashboardBundleV4AttemptHistoryRow"
@@ -61231,7 +61231,7 @@
             ],
             "title": "Valid Simulation Ids"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -61243,14 +61243,14 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           }
         },
         "type": "object",
         "required": [
           "chart_data",
           "valid_simulation_ids",
-          "persona_colors"
+          "persona_colors_junction"
         ],
         "title": "QGetDashboardBundleV4PersonaPerformanceResponse"
       },
@@ -62933,7 +62933,7 @@
             ],
             "title": "Time Limit"
           },
-          "persona_names": {
+          "persona_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -62945,9 +62945,9 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Names"
+            "title": "Persona Names Junction"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -62959,7 +62959,7 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           },
           "score": {
             "anyOf": [
@@ -63092,7 +63092,7 @@
             ],
             "title": "Department Ids"
           },
-          "cohort_names": {
+          "cohort_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -63104,7 +63104,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Names"
+            "title": "Cohort Names Junction"
           },
           "practice_scenario_id": {
             "anyOf": [
@@ -63130,8 +63130,8 @@
           "num_scenarios_completed",
           "infinite_mode",
           "time_limit",
-          "persona_names",
-          "persona_colors",
+          "persona_names_junction",
+          "persona_colors_junction",
           "score",
           "score_status",
           "simulation_id",
@@ -63143,7 +63143,7 @@
           "practice_simulation",
           "pass_pct",
           "department_ids",
-          "cohort_names",
+          "cohort_names_junction",
           "practice_scenario_id"
         ],
         "title": "QGetDashboardHistoryV4AttemptHistoryRow"
@@ -66031,7 +66031,7 @@
             ],
             "title": "Time Limit"
           },
-          "persona_names": {
+          "persona_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -66043,9 +66043,9 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Names"
+            "title": "Persona Names Junction"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -66057,7 +66057,7 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           },
           "score": {
             "anyOf": [
@@ -66191,7 +66191,7 @@
             ],
             "title": "Department Ids"
           },
-          "cohort_names": {
+          "cohort_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -66203,7 +66203,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Names"
+            "title": "Cohort Names Junction"
           },
           "practice_scenario_id": {
             "anyOf": [
@@ -66229,8 +66229,8 @@
           "num_scenarios_completed",
           "infinite_mode",
           "time_limit",
-          "persona_names",
-          "persona_colors",
+          "persona_names_junction",
+          "persona_colors_junction",
           "score",
           "score_status",
           "simulation_id",
@@ -66242,7 +66242,7 @@
           "practice_simulation",
           "pass_pct",
           "department_ids",
-          "cohort_names",
+          "cohort_names_junction",
           "practice_scenario_id"
         ],
         "title": "QGetHomeHistoryV4AttemptHistoryRow"
@@ -66589,7 +66589,7 @@
             ],
             "title": "Cohort Name"
           },
-          "cohort_names": {
+          "cohort_names_junction": {
             "anyOf": [
               {
                 "type": "string"
@@ -66598,7 +66598,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Names"
+            "title": "Cohort Names Junction"
           }
         },
         "type": "object",
@@ -66623,7 +66623,7 @@
           "not_started_count",
           "pass_pct",
           "cohort_name",
-          "cohort_names"
+          "cohort_names_junction"
         ],
         "title": "QGetHomeOverviewV4SimulationItem"
       },
@@ -67015,7 +67015,7 @@
             ],
             "title": "Scenario Ids"
           },
-          "metrics": {
+          "metrics_entry": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/QGetLeaderboardBundleV4Metrics"
@@ -67032,7 +67032,7 @@
           "name",
           "simulation_ids",
           "scenario_ids",
-          "metrics"
+          "metrics_entry"
         ],
         "title": "QGetLeaderboardBundleV4Row"
       },
@@ -69964,7 +69964,7 @@
             ],
             "title": "Time Limit"
           },
-          "persona_names": {
+          "persona_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -69976,9 +69976,9 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Names"
+            "title": "Persona Names Junction"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -69990,7 +69990,7 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           },
           "score": {
             "anyOf": [
@@ -70123,7 +70123,7 @@
             ],
             "title": "Department Ids"
           },
-          "cohort_names": {
+          "cohort_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -70135,7 +70135,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Names"
+            "title": "Cohort Names Junction"
           },
           "practice_scenario_id": {
             "anyOf": [
@@ -70160,8 +70160,8 @@
           "num_scenarios_completed",
           "infinite_mode",
           "time_limit",
-          "persona_names",
-          "persona_colors",
+          "persona_names_junction",
+          "persona_colors_junction",
           "score",
           "score_status",
           "simulation_id",
@@ -70173,7 +70173,7 @@
           "practice_simulation",
           "pass_pct",
           "department_ids",
-          "cohort_names",
+          "cohort_names_junction",
           "practice_scenario_id"
         ],
         "title": "QGetPracticeHistoryV4Attempt"
@@ -71375,7 +71375,7 @@
             ],
             "title": "Run Cost"
           },
-          "debug_info": {
+          "debug_info_entry": {
             "anyOf": [
               {
                 "items": {
@@ -71387,7 +71387,7 @@
                 "type": "null"
               }
             ],
-            "title": "Debug Info"
+            "title": "Debug Info Entry"
           }
         },
         "type": "object",
@@ -71401,7 +71401,7 @@
           "agent_id",
           "persona_id",
           "run_cost",
-          "debug_info"
+          "debug_info_entry"
         ],
         "title": "QGetPricingAnalyticsV4ModelRun"
       },
@@ -71891,7 +71891,7 @@
               }
             ]
           },
-          "messages": {
+          "messages_entry": {
             "anyOf": [
               {
                 "items": {
@@ -71903,7 +71903,7 @@
                 "type": "null"
               }
             ],
-            "title": "Messages"
+            "title": "Messages Entry"
           },
           "previous_context_start_index": {
             "anyOf": [
@@ -71920,7 +71920,7 @@
         "type": "object",
         "required": [
           "run",
-          "messages",
+          "messages_entry",
           "previous_context_start_index"
         ],
         "title": "QGetPricingGroupDetailV4RunWithMessages"
@@ -72116,7 +72116,7 @@
             ],
             "title": "Total Cost"
           },
-          "runs": {
+          "runs_entry": {
             "anyOf": [
               {
                 "items": {
@@ -72128,7 +72128,7 @@
                 "type": "null"
               }
             ],
-            "title": "Runs"
+            "title": "Runs Entry"
           }
         },
         "type": "object",
@@ -72139,7 +72139,7 @@
           "total_input_tokens",
           "total_output_tokens",
           "total_cost",
-          "runs"
+          "runs_entry"
         ],
         "title": "QGetPricingRunsV4GroupRun"
       },
@@ -72384,7 +72384,7 @@
             ],
             "title": "Persona Id"
           },
-          "debug_info": {
+          "debug_info_entry": {
             "anyOf": [
               {
                 "items": {
@@ -72396,7 +72396,7 @@
                 "type": "null"
               }
             ],
-            "title": "Debug Info"
+            "title": "Debug Info Entry"
           }
         },
         "type": "object",
@@ -72410,7 +72410,7 @@
           "profile_id",
           "agent_id",
           "persona_id",
-          "debug_info"
+          "debug_info_entry"
         ],
         "title": "QGetPricingRunsV4RunSummary"
       },
@@ -76093,7 +76093,7 @@
             ],
             "title": "Active"
           },
-          "auth_items": {
+          "auth_items_junction": {
             "anyOf": [
               {
                 "items": {
@@ -76105,7 +76105,7 @@
                 "type": "null"
               }
             ],
-            "title": "Auth Items"
+            "title": "Auth Items Junction"
           }
         },
         "type": "object",
@@ -76115,7 +76115,7 @@
           "description",
           "slug",
           "active",
-          "auth_items"
+          "auth_items_junction"
         ],
         "title": "QGetSettingV4Auth"
       },
@@ -77604,7 +77604,7 @@
               }
             ]
           },
-          "messages": {
+          "messages_entry": {
             "anyOf": [
               {
                 "items": {
@@ -77616,7 +77616,7 @@
                 "type": "null"
               }
             ],
-            "title": "Messages"
+            "title": "Messages Entry"
           },
           "hints": {
             "anyOf": [
@@ -77726,7 +77726,7 @@
         "required": [
           "chat",
           "scenario",
-          "messages",
+          "messages_entry",
           "hints",
           "grade",
           "grading_state",
@@ -88006,7 +88006,7 @@
             ],
             "title": "Scenario Ids"
           },
-          "metrics": {
+          "metrics_entry": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/QReportsBundleV4ProfileMetrics"
@@ -88026,7 +88026,7 @@
           "role",
           "simulation_ids",
           "scenario_ids",
-          "metrics"
+          "metrics_entry"
         ],
         "title": "QReportsBundleV4Profile"
       },
@@ -88241,7 +88241,7 @@
             ],
             "title": "Rubric Id"
           },
-          "rubric_points": {
+          "rubric_points_junction": {
             "anyOf": [
               {
                 "type": "integer"
@@ -88250,7 +88250,7 @@
                 "type": "null"
               }
             ],
-            "title": "Rubric Points"
+            "title": "Rubric Points Junction"
           },
           "rubric_pass_points": {
             "anyOf": [
@@ -88270,7 +88270,7 @@
           "name",
           "description",
           "rubric_id",
-          "rubric_points",
+          "rubric_points_junction",
           "rubric_pass_points"
         ],
         "title": "QReportsBundleV4Simulation"
@@ -88378,7 +88378,7 @@
             ],
             "title": "Time Limit"
           },
-          "persona_names": {
+          "persona_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -88390,9 +88390,9 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Names"
+            "title": "Persona Names Junction"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -88404,7 +88404,7 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           },
           "score": {
             "anyOf": [
@@ -88537,7 +88537,7 @@
             ],
             "title": "Department Ids"
           },
-          "cohort_names": {
+          "cohort_names_junction": {
             "anyOf": [
               {
                 "items": {
@@ -88549,7 +88549,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cohort Names"
+            "title": "Cohort Names Junction"
           },
           "practice_scenario_id": {
             "anyOf": [
@@ -88575,8 +88575,8 @@
           "num_scenarios_completed",
           "infinite_mode",
           "time_limit",
-          "persona_names",
-          "persona_colors",
+          "persona_names_junction",
+          "persona_colors_junction",
           "score",
           "score_status",
           "simulation_id",
@@ -88588,7 +88588,7 @@
           "practice_simulation",
           "pass_pct",
           "department_ids",
-          "cohort_names",
+          "cohort_names_junction",
           "practice_scenario_id"
         ],
         "title": "QReportsOverviewV4AttemptHistoryRow"
@@ -90471,7 +90471,7 @@
             ],
             "title": "Valid Simulation Ids"
           },
-          "persona_colors": {
+          "persona_colors_junction": {
             "anyOf": [
               {
                 "items": {
@@ -90483,14 +90483,14 @@
                 "type": "null"
               }
             ],
-            "title": "Persona Colors"
+            "title": "Persona Colors Junction"
           }
         },
         "type": "object",
         "required": [
           "chart_data",
           "valid_simulation_ids",
-          "persona_colors"
+          "persona_colors_junction"
         ],
         "title": "QReportsOverviewV4PersonaPerformanceResponse"
       },
