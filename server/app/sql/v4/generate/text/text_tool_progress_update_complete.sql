@@ -59,8 +59,7 @@ get_tool_info AS (
 assistant_message AS (
     SELECT m.id as message_id
     FROM params p
-    JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN messages m ON m.run_id = p.run_id
     WHERE m.role = 'assistant'
     ORDER BY m.created_at
     LIMIT 1

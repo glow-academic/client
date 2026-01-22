@@ -59,12 +59,9 @@ latest_grade AS (
          srr.rubric_id,
          g.created_at
   FROM grades g
-  JOIN runs r ON r.id = g.run_id
-  JOIN group_runs gr ON gr.run_id = r.id
-  JOIN grade_groups gg ON gg.group_id = gr.group_id
-  JOIN chats c ON c.id = gg.chat_id
+  JOIN chats c ON c.group_id = g.group_id
   LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-  -- Simulation grades only (derive from relationship via grade_groups → groups → group_runs → runs)
+  -- Simulation grades only (derive from relationship via grades.group_id = chats.group_id)
   -- Get rubric_id from scenario_rubrics_resource based on chat's scenario_id
   ORDER BY c.id, g.created_at DESC
 ),
@@ -121,12 +118,13 @@ profile_cohorts_for_sim AS (
 -- Pick one attempt per chat to avoid duplicate chat_id rows
 -- Prefer attempts with active profiles, then most recent
 chat_first_attempt AS (
-  SELECT DISTINCT ON (ac.chat_id)
-    ac.chat_id,
-    ac.attempt_id
-  FROM attempt_chats ac
-  JOIN attempts_entry sa ON sa.id = ac.attempt_id
-  ORDER BY ac.chat_id,
+  SELECT DISTINCT ON (c.id)
+    c.id AS chat_id,
+    c.attempt_id
+  FROM chats c
+  JOIN attempts_entry sa ON sa.id = c.attempt_id
+  WHERE c.attempt_id IS NOT NULL
+  ORDER BY c.id,
     CASE WHEN sa.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
     sa.created_at DESC -- then most recent
 ),
@@ -138,12 +136,8 @@ message_counts AS (
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
   FROM chats c
-  JOIN chat_groups cg ON cg.chat_id = c.id
-  JOIN groups g ON g.id = cg.group_id
-  JOIN group_runs gr ON gr.group_id = g.id
-  JOIN runs r ON r.id = gr.run_id
-  JOIN message_runs mr ON mr.run_id = r.id
-  JOIN messages m ON m.id = mr.message_id
+  JOIN runs r ON r.group_id = c.group_id
+  JOIN messages m ON m.run_id = r.id
   GROUP BY c.id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
@@ -162,12 +156,8 @@ message_deltas AS (
     END AS delta_seconds,
     m.created_at
   FROM chats c
-  JOIN chat_groups cg ON cg.chat_id = c.id
-  JOIN groups g ON g.id = cg.group_id
-  JOIN group_runs gr ON gr.group_id = g.id
-  JOIN runs r ON r.id = gr.run_id
-  JOIN message_runs mr ON mr.run_id = r.id
-  JOIN messages m ON m.id = mr.message_id
+  JOIN runs r ON r.group_id = c.group_id
+  JOIN messages m ON m.run_id = r.id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -448,18 +438,12 @@ CREATE INDEX analytics_is_practice_true_idx
 CREATE INDEX analytics_is_archived_true_idx
   ON analytics (attempt_created_at) WHERE is_archived = true;
 
--- Index for message_runs (replaces old message.run_id index)
-CREATE INDEX IF NOT EXISTS message_runs_run_created_idx
-  ON message_runs (run_id, created_at);
+-- Index for messages.run_id (replaces old message_runs junction table)
+CREATE INDEX IF NOT EXISTS messages_run_id_created_idx
+  ON messages (run_id, created_at);
 
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
   ON chats (id, created_at);
-
-CREATE INDEX IF NOT EXISTS group_runs_group_id_idx
-  ON group_runs (group_id);
-
-CREATE INDEX IF NOT EXISTS group_runs_run_id_idx
-  ON group_runs (run_id);
 
 CREATE INDEX IF NOT EXISTS attempts_entry_archived_idx
   ON attempts_entry (archived);

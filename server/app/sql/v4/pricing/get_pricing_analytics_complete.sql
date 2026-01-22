@@ -154,20 +154,10 @@ runs_base AS (
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
-    -- Join to simulations via group_runs → groups → chats → attempt_chats → attempts_entry → simulations
-    LEFT JOIN group_runs gr ON gr.run_id = mr.id
-    LEFT JOIN groups g ON g.id = gr.group_id
-    LEFT JOIN LATERAL (
-        SELECT DISTINCT c.id AS chat_id
-        FROM groups g2
-        JOIN chat_groups cg ON cg.group_id = g2.id
-        JOIN chats c ON c.id = cg.chat_id
-        WHERE g2.id = g.id
-        LIMIT 1
-    ) chat_lookup ON true
-    LEFT JOIN chats c ON c.id = chat_lookup.chat_id
-    LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
-    LEFT JOIN attempts_entry sa ON sa.id = ac.attempt_id
+    -- Join to simulations via runs.group_id → groups → chats (direct group_id) → attempts_entry → simulations
+    LEFT JOIN groups g ON g.id = mr.group_id
+    LEFT JOIN chats c ON c.group_id = g.id
+    LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
     LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
     WHERE 

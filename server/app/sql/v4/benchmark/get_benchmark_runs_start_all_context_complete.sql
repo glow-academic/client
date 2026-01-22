@@ -46,14 +46,14 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT 
+    SELECT
         e.id::text as eval_id,
         EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE),
-        CASE 
+        CASE
             WHEN EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE) THEN
                 ARRAY_AGG(eg.group_id::text) FILTER (
                     WHERE NOT EXISTS (
-                        SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id
+                        SELECT 1 FROM grades gr WHERE gr.group_id = eg.group_id
                     )
                 )
             ELSE
@@ -64,7 +64,7 @@ AS $$
     LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.completed = false
     LEFT JOIN eval_groups eg ON eg.eval_id = e.id
         AND NOT EXISTS (
-            SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id
+            SELECT 1 FROM grades gr WHERE gr.group_id = eg.group_id
         )
     WHERE ea.id = socket_get_benchmark_runs_start_all_context_v4.attempt_id
     GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE);

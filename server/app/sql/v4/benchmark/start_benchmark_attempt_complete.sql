@@ -40,10 +40,10 @@ pending_runs AS (
     WHERE er.eval_id = api_start_benchmark_attempt_v4.eval_id AND er.completed = false
 ),
 pending_groups AS (
-    SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id)) as pending_group_ids
+    SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM grades gr WHERE gr.group_id = eg.group_id)) as pending_group_ids
     FROM eval_groups eg
     WHERE eg.eval_id = api_start_benchmark_attempt_v4.eval_id
-      AND NOT EXISTS (SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id)
+      AND NOT EXISTS (SELECT 1 FROM grades gr WHERE gr.group_id = eg.group_id)
 )
 SELECT 
     na.attempt_id::text,

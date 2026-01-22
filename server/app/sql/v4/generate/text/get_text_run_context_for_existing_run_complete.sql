@@ -78,18 +78,17 @@ WITH params AS (
 ),
 -- Validate run exists
 existing_run AS (
-    SELECT 
+    SELECT
         r.id as run_id,
         r.agent_id,
         gd.group_id,
         gd.trace_id
     FROM runs r
     CROSS JOIN params p
-    LEFT JOIN group_runs gr ON gr.run_id = r.id
-    LEFT JOIN groups g ON g.id = gr.group_id
+    LEFT JOIN groups g ON g.id = r.group_id
     LEFT JOIN LATERAL (
-        SELECT 
-            COALESCE(gr.group_id, p.group_id) as group_id,
+        SELECT
+            COALESCE(r.group_id, p.group_id) as group_id,
             COALESCE(g.trace_id, gen_random_uuid()::text) as trace_id
     ) gd ON true
     WHERE r.id = p.run_id
@@ -511,8 +510,8 @@ upload_info AS (
         u.file_path,
         u.mime_type
     FROM params p
-    JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN calls c_audio ON c_audio.message_id = mr.message_id
+    JOIN messages m ON m.run_id = p.run_id
+    JOIN calls c_audio ON c_audio.message_id = m.id
     JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     JOIN uploads u ON u.id = ar.upload_id
     LIMIT 1

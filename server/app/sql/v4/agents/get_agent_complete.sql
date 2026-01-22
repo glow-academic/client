@@ -623,10 +623,10 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = n.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -663,10 +663,10 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = d.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -704,10 +704,10 @@ instructions_suggestions_data AS (
                            AND i.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = i.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -745,10 +745,10 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = d.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -925,10 +925,10 @@ names_data AS (
                     n.generated = true
                     AND EXISTS (
                         SELECT 1 FROM calls c
-                        JOIN message_runs mr ON mr.message_id = c.message_id
-                        JOIN group_runs gr ON gr.run_id = mr.run_id
+                        JOIN messages m ON m.id = c.message_id
+                        JOIN runs r ON r.id = m.run_id
                         WHERE c.id = n.call_id
-                          AND gr.group_id = dgd.group_id
+                          AND r.group_id = dgd.group_id
                     )
                 )
             )
@@ -962,10 +962,10 @@ descriptions_data AS (
                     d.generated = true
                     AND EXISTS (
                         SELECT 1 FROM calls c
-                        JOIN message_runs mr ON mr.message_id = c.message_id
-                        JOIN group_runs gr ON gr.run_id = mr.run_id
+                        JOIN messages m ON m.id = c.message_id
+                        JOIN runs r ON r.id = m.run_id
                         WHERE c.id = d.call_id
-                          AND gr.group_id = dgd.group_id
+                          AND r.group_id = dgd.group_id
                     )
                 )
             )
@@ -1004,10 +1004,10 @@ instructions_data AS (
                         i.generated = true
                         AND EXISTS (
                             SELECT 1 FROM calls c
-                            JOIN message_runs mr ON mr.message_id = c.message_id
-                            JOIN group_runs gr ON gr.run_id = mr.run_id
+                            JOIN messages m ON m.id = c.message_id
+                            JOIN runs r ON r.id = m.run_id
                             WHERE c.id = i.call_id
-                              AND gr.group_id = dgd.group_id
+                              AND r.group_id = dgd.group_id
                         )
                     )
                 )
@@ -2150,10 +2150,10 @@ reasoning_level_suggestions_data AS (
                            AND rl.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = rl.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -2190,10 +2190,10 @@ temperature_level_suggestions_data AS (
                            AND tl.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = tl.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -2231,10 +2231,10 @@ voice_suggestions_data AS (
                            AND v.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = v.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )

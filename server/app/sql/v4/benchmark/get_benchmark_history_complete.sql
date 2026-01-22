@@ -175,9 +175,8 @@ attempt_status_summary AS (
         COUNT(DISTINCT er.run_id) FILTER (
             WHERE EXISTS (
                 SELECT 1
-                FROM attempt_tests at
-                JOIN tests t ON t.id = at.test_id
-                WHERE at.attempt_id = aea.attempt_id
+                FROM tests t
+                WHERE t.attempt_id = aea.attempt_id
                   AND t.trace_id LIKE 'eval_' || aea.attempt_id::text || '_%'
                   AND SPLIT_PART(t.trace_id, '_', 3) = er.run_id::text
                   AND t.completed = true
@@ -187,9 +186,8 @@ attempt_status_summary AS (
         COUNT(DISTINCT er.run_id) FILTER (
             WHERE NOT EXISTS (
                 SELECT 1
-                FROM attempt_tests at
-                JOIN tests t ON t.id = at.test_id
-                WHERE at.attempt_id = aea.attempt_id
+                FROM tests t
+                WHERE t.attempt_id = aea.attempt_id
                   AND t.trace_id LIKE 'eval_' || aea.attempt_id::text || '_%'
                   AND SPLIT_PART(t.trace_id, '_', 3) = er.run_id::text
                   AND t.completed = true

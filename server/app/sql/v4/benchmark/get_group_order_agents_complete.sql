@@ -47,13 +47,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT DISTINCT
+    SELECT DISTINCT ON (r.agent_id)
         r.agent_id::uuid,
-        gr.idx as position_idx
-    FROM group_runs gr
-    JOIN runs r ON r.id = gr.run_id
-    WHERE gr.group_id = $1
+        (ROW_NUMBER() OVER (ORDER BY r.created_at ASC))::integer as position_idx
+    FROM runs r
+    WHERE r.group_id = $1
       AND r.agent_id IS NOT NULL
-      AND gr.active = true
-    ORDER BY gr.idx ASC
+    ORDER BY r.agent_id, r.created_at ASC
 $$;

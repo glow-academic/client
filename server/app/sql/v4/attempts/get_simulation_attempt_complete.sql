@@ -608,8 +608,7 @@ chat_ids_list AS (
     FROM (
         SELECT sc.id
         FROM params x
-        JOIN attempt_chats ac ON ac.attempt_id = x.attempt_id
-        JOIN chats sc ON sc.id = ac.chat_id
+        JOIN chats sc ON sc.attempt_id = x.attempt_id
         ORDER BY sc.created_at
     ) chats_base
 ),
@@ -618,18 +617,17 @@ scenario_ids_list AS (
     FROM (
         SELECT sc.scenario_id
         FROM params x
-        JOIN attempt_chats ac ON ac.attempt_id = x.attempt_id
-        JOIN chats sc ON sc.id = ac.chat_id
+        JOIN chats sc ON sc.attempt_id = x.attempt_id
     ) chats_base
 ),
 chats_base AS (
-    SELECT 
+    SELECT
         sc.id,
         sc.created_at,
         sc.updated_at,
         sc.title,
         sc.scenario_id,
-        ac.attempt_id,
+        sc.attempt_id,
         sc.completed,
         g.trace_id,
         COALESCE(
@@ -639,10 +637,8 @@ chats_base AS (
             ARRAY[]::text[]
         ) as document_ids
     FROM params x
-    JOIN attempt_chats ac ON ac.attempt_id = x.attempt_id
-    JOIN chats sc ON sc.id = ac.chat_id
-    LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
-    LEFT JOIN groups g ON g.id = cg.group_id
+    JOIN chats sc ON sc.attempt_id = x.attempt_id
+    LEFT JOIN groups g ON g.id = sc.group_id
     ORDER BY sc.created_at
 ),
 -- Get scenario videos and questions (videos now accessed through scenarios)
@@ -702,10 +698,8 @@ scenario_root_mapping AS (
             sc.scenario_id as ancestor_id,
             0 as depth
         FROM params x
-        JOIN chats sc ON EXISTS (
-            SELECT 1 FROM attempt_chats ac WHERE ac.chat_id = sc.id AND ac.attempt_id = x.attempt_id
-        )
-        
+        JOIN chats sc ON sc.attempt_id = x.attempt_id
+
         UNION ALL
         
         SELECT 
@@ -747,40 +741,28 @@ previous_chat_scenario_root_mapping AS (
         FROM params x
         CROSS JOIN current_attempt_profile cap
         JOIN chats sc ON EXISTS (
-            SELECT 1 FROM attempt_chats ac2
-            JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
-            WHERE ac2.chat_id = sc.id
+            SELECT 1 FROM attempts_entry sa2
+            WHERE sa2.id = sc.attempt_id
               AND sa2.profile_id = cap.profile_id
               AND sc.completed = true
               AND EXISTS (
-                  SELECT 1 FROM grades scg 
+                  SELECT 1 FROM grades scg
                   JOIN runs r ON r.id = scg.run_id
-                  JOIN group_runs gr ON gr.run_id = r.id
-                  JOIN groups g ON g.id = gr.group_id
-                  JOIN chat_groups cg ON cg.group_id = g.id
-                  JOIN chats c ON c.id = cg.chat_id
-                  WHERE c.id = sc.id 
-                    AND EXISTS (
-                        SELECT 1 FROM runs r_check
-                        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-                        JOIN groups g_check ON g_check.id = gr_check.group_id
-                        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                        JOIN chats c_check ON c_check.id = cg_check.chat_id
-                        WHERE r_check.id = scg.run_id
-                    )
+                  JOIN chats c ON c.group_id = r.group_id
+                  WHERE c.id = sc.id
               )
-              AND ac2.attempt_id != x.attempt_id
+              AND sc.attempt_id != x.attempt_id
         )
-        
+
         UNION ALL
-        
-        SELECT 
+
+        SELECT
             sa.child_scenario_id,
             COALESCE(
-                (SELECT st.parent_id 
-                 FROM scenario_tree st 
-                 WHERE st.child_id = sa.ancestor_id 
-                   AND st.parent_id != st.child_id 
+                (SELECT st.parent_id
+                 FROM scenario_tree st
+                 WHERE st.child_id = sa.ancestor_id
+                   AND st.parent_id != st.child_id
                  LIMIT 1),
                 sa.ancestor_id
             ) as ancestor_id,
@@ -788,8 +770,8 @@ previous_chat_scenario_root_mapping AS (
         FROM scenario_ancestors sa
         WHERE sa.depth < 100
           AND EXISTS (
-              SELECT 1 FROM scenario_tree st 
-              WHERE st.child_id = sa.ancestor_id 
+              SELECT 1 FROM scenario_tree st
+              WHERE st.child_id = sa.ancestor_id
                 AND st.parent_id != st.child_id
           )
     )
@@ -798,8 +780,8 @@ previous_chat_scenario_root_mapping AS (
         ancestor_id as root_scenario_id
     FROM scenario_ancestors
     WHERE depth = (
-        SELECT MAX(depth) 
-        FROM scenario_ancestors sa2 
+        SELECT MAX(depth)
+        FROM scenario_ancestors sa2
         WHERE sa2.child_scenario_id = scenario_ancestors.child_scenario_id
     )
 ),
@@ -809,12 +791,12 @@ previous_chats_with_grades AS (
         sc.id as chat_id,
         sc.scenario_id as child_scenario_id,
         COALESCE(
-            (SELECT pcsrm.root_scenario_id 
-             FROM previous_chat_scenario_root_mapping pcsrm 
+            (SELECT pcsrm.root_scenario_id
+             FROM previous_chat_scenario_root_mapping pcsrm
              WHERE pcsrm.child_scenario_id = sc.scenario_id),
             sc.scenario_id
         ) as parent_scenario_id,
-        ac2.attempt_id,
+        sc.attempt_id,
         sa2.simulation_id,
         sc.title,
         sc.created_at,
@@ -825,67 +807,43 @@ previous_chats_with_grades AS (
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN simulation_scenarios_list ssl
     CROSS JOIN attempt_base ab
-    JOIN chats sc ON EXISTS (
-        SELECT 1 FROM attempt_chats ac2
-        JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
-        WHERE ac2.chat_id = sc.id
-          AND sa2.profile_id = cap.profile_id
-          AND sc.completed = true
-          AND EXISTS (
-              SELECT 1 FROM grades scg
-              JOIN runs r ON r.id = scg.run_id
-              JOIN group_runs gr ON gr.run_id = r.id
-              JOIN groups g ON g.id = gr.group_id
-              JOIN chat_groups cg ON cg.group_id = g.id
-              JOIN chats c ON c.id = cg.chat_id
-              WHERE c.id = sc.id
-          )
-          AND ac2.attempt_id != x.attempt_id
-          AND ab.sim_practice_simulation = false
-    )
-    JOIN attempt_chats ac2 ON EXISTS (
-        SELECT 1 FROM chats c_check WHERE c_check.id = sc.id
-    ) AND EXISTS (
-        SELECT 1 FROM attempts_entry sa_check WHERE sa_check.id = ac2.attempt_id
-    )
-    JOIN attempts_entry sa2 ON sa2.id = ac2.attempt_id
+    JOIN attempts_entry sa2 ON sa2.profile_id = cap.profile_id
+    JOIN chats sc ON sc.attempt_id = sa2.id
+      AND sc.completed = true
+      AND EXISTS (
+          SELECT 1 FROM grades scg
+          JOIN runs r ON r.id = scg.run_id
+          JOIN chats c ON c.group_id = r.group_id
+          WHERE c.id = sc.id
+      )
+      AND sc.attempt_id != x.attempt_id
+      AND ab.sim_practice_simulation = false
     LEFT JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN chats c_check ON c_check.group_id = r_check.group_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    WHERE sa2.profile_id = cap.profile_id
-      AND sc.completed = true
-      AND COALESCE(
-            (SELECT pcsrm.root_scenario_id 
-             FROM previous_chat_scenario_root_mapping pcsrm 
+    WHERE COALESCE(
+            (SELECT pcsrm.root_scenario_id
+             FROM previous_chat_scenario_root_mapping pcsrm
              WHERE pcsrm.child_scenario_id = sc.scenario_id),
             sc.scenario_id
         ) = ssl.scenario_id
-      AND ac2.attempt_id != x.attempt_id
-      AND ab.sim_practice_simulation = false
     ORDER BY sc.id, scg.created_at DESC NULLS LAST
 ),
 previous_attempt_time_aggregation AS (
     SELECT
-        ac.attempt_id,
+        sc.attempt_id,
         COALESCE(SUM(COALESCE(scg.time_taken, 0)), 0)::integer as total_time_taken
     FROM previous_chats_with_grades pwg
-    JOIN attempt_chats ac ON ac.attempt_id = pwg.attempt_id
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.attempt_id = pwg.attempt_id
     JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN chats c_check ON c_check.group_id = r_check.group_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
     WHERE sc.completed = true
-    GROUP BY ac.attempt_id
+    GROUP BY sc.attempt_id
 ),
 previous_attempt_rubric_points AS (
     SELECT DISTINCT ON (sa.simulation_id)
@@ -1098,31 +1056,27 @@ messages_with_tree AS (
             0 as depth,
             m.id as path_root_id
         FROM chats c
-        JOIN chat_groups cg ON cg.chat_id = c.id
-        JOIN groups g ON g.id = cg.group_id
-        JOIN group_runs gr ON gr.group_id = g.id
-        JOIN runs r ON r.id = gr.run_id
-        JOIN message_runs mr ON mr.run_id = r.id
-        JOIN messages m ON m.id = mr.message_id
+        JOIN runs r ON r.group_id = c.group_id
+        JOIN messages m ON m.run_id = r.id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
           AND m.role IN ('user'::message_role, 'assistant'::message_role)
           AND NOT EXISTS (
-              SELECT 1 FROM message_tree mt 
+              SELECT 1 FROM message_tree mt
               WHERE mt.parent_id = m.id AND mt.active = true
           )
-        
+
         UNION ALL
-        
-        SELECT 
-            m.id, 
-            mp.chat_id, 
-            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
-            ce.content, 
-            m.created_at, 
-            m.completed, 
+
+        SELECT
+            m.id,
+            mp.chat_id,
+            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type,
+            ce.content,
+            m.created_at,
+            m.completed,
             m.updated_at,
             mp_persona.persona_id,
             mp.depth + 1 as depth,
@@ -1131,12 +1085,8 @@ messages_with_tree AS (
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
-        JOIN message_runs mr ON mr.message_id = m.id
-        JOIN runs r ON r.id = mr.run_id
-        JOIN group_runs gr ON gr.run_id = r.id
-        JOIN groups g ON g.id = gr.group_id
-        JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chats c ON c.id = cg.chat_id
+        JOIN runs r ON r.id = m.run_id
+        JOIN chats c ON c.group_id = r.group_id
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE mp.depth < 1000
@@ -1145,35 +1095,31 @@ messages_with_tree AS (
           AND c.id = ANY(cil.chat_ids)
     ),
     messages_without_parents AS (
-        SELECT 
-            m.id, 
-            c.id AS chat_id, 
-            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type, 
-            ce.content, 
-            m.created_at, 
-            m.completed, 
+        SELECT
+            m.id,
+            c.id AS chat_id,
+            CASE WHEN m.role = 'user'::message_role THEN 'query' ELSE 'response' END as type,
+            ce.content,
+            m.created_at,
+            m.completed,
             m.updated_at,
             mp_persona.persona_id,
             -1 as depth,
             m.id as path_root_id
         FROM chats c
-        JOIN chat_groups cg ON cg.chat_id = c.id
-        JOIN groups g ON g.id = cg.group_id
-        JOIN group_runs gr ON gr.group_id = g.id
-        JOIN runs r ON r.id = gr.run_id
-        JOIN message_runs mr ON mr.run_id = r.id
-        JOIN messages m ON m.id = mr.message_id
+        JOIN runs r ON r.group_id = c.group_id
+        JOIN messages m ON m.run_id = r.id
         LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
           AND m.role IN ('user'::message_role, 'assistant'::message_role)
           AND NOT EXISTS (
-              SELECT 1 FROM message_tree mt 
+              SELECT 1 FROM message_tree mt
               WHERE mt.child_id = m.id AND mt.active = true
           )
           AND NOT EXISTS (
-              SELECT 1 FROM message_path mp 
+              SELECT 1 FROM message_path mp
               WHERE mp.id = m.id
           )
     ),
@@ -1200,21 +1146,14 @@ grades_data AS (
         (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(scg.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     JOIN chats c ON EXISTS (
-        SELECT 1 FROM chat_groups cg2
-        JOIN groups g2 ON g2.id = cg2.group_id
-        JOIN group_runs gr2 ON gr2.group_id = g2.id
-        JOIN runs r2 ON r2.id = gr2.run_id
-        WHERE cg2.chat_id = c.id
+        SELECT 1 FROM runs r2
+        WHERE c.group_id = r2.group_id
     )
     CROSS JOIN chat_ids_list cil
-    JOIN chat_groups cg ON cg.chat_id = c.id
-    JOIN groups g ON g.id = cg.group_id
-    JOIN group_runs gr ON gr.group_id = g.id
-    JOIN runs r ON r.id = gr.run_id
+    JOIN runs r ON r.group_id = c.group_id
     JOIN grades scg ON scg.run_id = r.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-    LEFT JOIN attempt_chats ac_sim ON ac_sim.chat_id = c.id
-    LEFT JOIN attempts_entry sa_sim ON sa_sim.id = ac_sim.attempt_id
+    LEFT JOIN attempts_entry sa_sim ON sa_sim.id = c.attempt_id
     LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id = sa_sim.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
     LEFT JOIN LATERAL (
@@ -1229,10 +1168,7 @@ grades_data AS (
     ) sfsr ON srr.rubric_id IS NULL AND srr_fallback.rubric_id IS NULL
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN chats c_check ON c_check.group_id = r_check.group_id
         WHERE r_check.id = scg.run_id AND c_check.id = c.id
     )
       AND c.id = ANY(cil.chat_ids)
@@ -1332,19 +1268,12 @@ hints_data AS (
     FROM params x
     CROSS JOIN attempt_base ab
     JOIN chats c ON EXISTS (
-        SELECT 1 FROM chat_groups cg
-        JOIN groups g ON g.id = cg.group_id
-        JOIN group_runs gr ON gr.group_id = g.id
-        JOIN runs r ON r.id = gr.run_id
-        JOIN message_runs mr ON mr.run_id = r.id
-        WHERE cg.chat_id = c.id
+        SELECT 1 FROM runs r
+        JOIN messages m ON m.run_id = r.id
+        WHERE c.group_id = r.group_id
     )
-    JOIN chat_groups cg ON cg.chat_id = c.id
-    JOIN groups g ON g.id = cg.group_id
-    JOIN group_runs gr ON gr.group_id = g.id
-    JOIN runs r ON r.id = gr.run_id
-    JOIN message_runs mr ON mr.run_id = r.id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN runs r ON r.group_id = c.group_id
+    JOIN messages m ON m.run_id = r.id
     CROSS JOIN chat_ids_list cil
     WHERE c.id = ANY(cil.chat_ids)
       AND m.role IN ('user'::message_role, 'assistant'::message_role)
@@ -1760,19 +1689,15 @@ scenarios_with_completed_chats AS (
     SELECT DISTINCT ss.scenario_id as parent_scenario_id
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
-    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
+    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
           AND sfr.scenario_id = ss.scenario_id
-          AND f.name = 'scenario_active' 
+          AND f.name = 'scenario_active'
           AND ssf.value = true)
-    JOIN attempt_chats ac ON ac.attempt_id = ab.id
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.attempt_id = ab.id
     JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN chats c_check ON c_check.group_id = r_check.group_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
     WHERE COALESCE(

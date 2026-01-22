@@ -148,10 +148,10 @@ user_profile AS (
     WHERE x.profile_id IS NOT NULL
 ),
 group_runs_list AS (
-    SELECT 
-        gr.run_id
-    FROM group_runs gr
-    WHERE gr.group_id = (SELECT group_id FROM params)
+    SELECT
+        r.id as run_id
+    FROM runs r
+    WHERE r.group_id = (SELECT group_id FROM params)
 ),
 runs_metadata AS (
     SELECT
@@ -220,73 +220,82 @@ run_groups_map AS (
     -- Map each run to its group
     SELECT DISTINCT
         rm.run_id,
-        gr.group_id
+        r.group_id
     FROM runs_metadata rm
-    JOIN group_runs gr ON gr.run_id = rm.run_id
+    JOIN runs r ON r.id = rm.run_id
+),
+run_idx_map AS (
+    -- Compute idx for each run using ROW_NUMBER (replaces dropped group_runs.idx)
+    SELECT
+        id as run_id,
+        group_id,
+        ROW_NUMBER() OVER (PARTITION BY group_id ORDER BY created_at) - 1 as idx
+    FROM runs
+    WHERE group_id = (SELECT group_id FROM params)
 ),
 run_chats_map AS (
-    -- Map each run to all chats in its group
+    -- Map each run to all chats in its group (chats now have direct group_id column)
     SELECT DISTINCT
         rg.run_id,
         c.id as chat_id
     FROM run_groups_map rg
-    JOIN chat_groups cg ON cg.group_id = rg.group_id
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chats c ON c.group_id = rg.group_id
 ),
 -- Find first run (idx = 0) for each group
 first_runs_map AS (
     SELECT DISTINCT
-        gr.group_id,
-        gr.run_id as first_run_id
-    FROM group_runs gr
-    WHERE gr.idx = 0 AND gr.group_id = (SELECT group_id FROM params)
+        rim.group_id,
+        r.id as first_run_id
+    FROM runs r
+    JOIN run_idx_map rim ON rim.run_id = r.id
+    WHERE rim.idx = 0 AND r.group_id = (SELECT group_id FROM params)
 ),
 -- Map each run to its previous run (idx - 1) in the same group
 previous_runs_map AS (
-    SELECT 
-        gr_current.group_id,
-        gr_current.run_id as current_run_id,
-        gr_previous.run_id as previous_run_id
-    FROM group_runs gr_current
-    JOIN group_runs gr_previous ON gr_previous.group_id = gr_current.group_id
-        AND gr_previous.idx = gr_current.idx - 1
-    WHERE gr_current.idx > 0 AND gr_current.group_id = (SELECT group_id FROM params)
+    SELECT
+        r_current.group_id,
+        r_current.id as current_run_id,
+        r_previous.id as previous_run_id
+    FROM runs r_current
+    JOIN run_idx_map rim_current ON rim_current.run_id = r_current.id
+    JOIN run_idx_map rim_previous ON rim_previous.group_id = r_current.group_id
+        AND rim_previous.idx = rim_current.idx - 1
+    JOIN runs r_previous ON r_previous.id = rim_previous.run_id
+    WHERE rim_current.idx > 0 AND r_current.group_id = (SELECT group_id FROM params)
 ),
 -- Tree traversal for messages: get all messages following conversation flow per run
 messages_with_tree AS (
     WITH RECURSIVE message_path AS (
         -- Base case: Include ALL messages from current run
-        SELECT 
-            m.id, 
+        SELECT
+            m.id,
             rcm.run_id,
             rcm.chat_id,
-            m.role, 
-            m.created_at, 
-            m.completed, 
+            m.role,
+            m.created_at,
+            m.completed,
             m.updated_at,
             0 as depth,
             m.id as path_root_id,
-            gr.idx as run_idx
+            rim.idx as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
-        JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
-        JOIN runs r ON r.id = gr.run_id
-        JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
-        JOIN messages m ON m.id = mr.message_id
-        JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
-        
+        JOIN runs r ON r.group_id = g.id AND r.id = rcm.run_id
+        JOIN run_idx_map rim ON rim.run_id = r.id
+        JOIN messages m ON m.run_id = r.id
+        JOIN chats c ON c.group_id = g.id AND c.id = rcm.chat_id
+
         UNION ALL
-        
+
         -- Recursive case: Traverse up the tree following parent links
-        SELECT 
-            m.id, 
+        SELECT
+            m.id,
             mp.run_id,
             mp.chat_id,
-            m.role, 
-            m.created_at, 
-            m.completed, 
+            m.role,
+            m.created_at,
+            m.completed,
             m.updated_at,
             mp.depth + 1 as depth,
             mp.path_root_id,
@@ -296,56 +305,55 @@ messages_with_tree AS (
         JOIN message_path mp ON mp.id = mt.child_id
         WHERE mp.depth < 50
         AND EXISTS (
-            SELECT 1 
-            FROM message_runs mr_parent
-            JOIN group_runs gr_parent ON gr_parent.run_id = mr_parent.run_id
-            JOIN message_runs mr_child ON mr_child.message_id = mt.child_id
-            JOIN group_runs gr_child ON gr_child.run_id = mr_child.run_id
-            WHERE mr_parent.message_id = m.id
-            AND gr_parent.group_id = gr_child.group_id
-            AND gr_child.run_id = mp.run_id
-            AND (m.role IN ('user'::message_role, 'assistant'::message_role) OR gr_parent.idx = 0)
+            SELECT 1
+            FROM messages m_parent
+            JOIN runs r_parent ON r_parent.id = m_parent.run_id
+            JOIN run_idx_map rim_parent ON rim_parent.run_id = r_parent.id
+            JOIN messages m_child ON m_child.id = mt.child_id
+            JOIN runs r_child ON r_child.id = m_child.run_id
+            WHERE m_parent.id = m.id
+            AND r_parent.group_id = r_child.group_id
+            AND r_child.id = mp.run_id
+            AND (m.role IN ('user'::message_role, 'assistant'::message_role) OR rim_parent.idx = 0)
         )
     ),
     messages_without_parents AS (
-        SELECT 
-            m.id, 
+        SELECT
+            m.id,
             rcm.run_id,
             rcm.chat_id,
-            m.role, 
-            m.created_at, 
-            m.completed, 
+            m.role,
+            m.created_at,
+            m.completed,
             m.updated_at,
             0 as depth,
             m.id as path_root_id,
-            gr.idx as run_idx
+            rim.idx as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
-        JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
-        JOIN runs r ON r.id = gr.run_id
-        JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
-        JOIN messages m ON m.id = mr.message_id
-        JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN runs r ON r.group_id = g.id AND r.id = rcm.run_id
+        JOIN run_idx_map rim ON rim.run_id = r.id
+        JOIN messages m ON m.run_id = r.id
+        JOIN chats c ON c.group_id = g.id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
-            SELECT 1 FROM message_tree mt 
+            SELECT 1 FROM message_tree mt
             WHERE mt.child_id = m.id AND mt.active = true
         )
         AND NOT EXISTS (
-            SELECT 1 FROM message_path mp 
+            SELECT 1 FROM message_path mp
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
         )
-        
+
         UNION
-        
-        SELECT 
-            m.id, 
+
+        SELECT
+            m.id,
             rcm.run_id,
             rcm.chat_id,
-            m.role, 
-            m.created_at, 
-            m.completed, 
+            m.role,
+            m.created_at,
+            m.completed,
             m.updated_at,
             0 as depth,
             m.id as path_root_id,
@@ -353,19 +361,17 @@ messages_with_tree AS (
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
-        JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
+        JOIN runs r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
-        JOIN message_runs mr ON mr.run_id = frm.first_run_id
-        JOIN messages m ON m.id = mr.message_id AND m.role IN ('system'::message_role, 'developer'::message_role)
-        JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN messages m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_role, 'developer'::message_role)
+        JOIN chats c ON c.group_id = g.id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
-            SELECT 1 FROM message_path mp 
+            SELECT 1 FROM message_path mp
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
         )
         AND NOT EXISTS (
-            SELECT 1 FROM message_runs mr2
-            WHERE mr2.message_id = m.id AND mr2.run_id = rcm.run_id
+            SELECT 1 FROM messages m2
+            WHERE m2.id = m.id AND m2.run_id = rcm.run_id
         )
     ),
     all_messages AS (
@@ -384,16 +390,16 @@ messages_with_tree AS (
             am.updated_at,
             am.depth,
             COALESCE(
-                (SELECT gr.idx FROM message_runs mr2 
-                 JOIN group_runs gr ON gr.run_id = mr2.run_id 
-                 WHERE mr2.message_id = am.id 
-                 ORDER BY gr.idx LIMIT 1),
+                (SELECT rim2.idx FROM messages m2
+                 JOIN run_idx_map rim2 ON rim2.run_id = m2.run_id
+                 WHERE m2.id = am.id
+                 ORDER BY rim2.idx LIMIT 1),
                 am.run_idx
             ) as run_idx
         FROM all_messages am
         ORDER BY am.id, am.run_id, am.run_idx, am.depth ASC
     )
-    SELECT 
+    SELECT
         mri.id,
         mri.run_id,
         mri.chat_id,
@@ -429,16 +435,17 @@ messages_with_content AS (
 ),
 -- Get run idx for each run
 runs_with_idx AS (
-    SELECT 
+    SELECT
         rm.run_id,
-        gr.idx as run_idx,
-        gr.group_id
+        rim.idx as run_idx,
+        r.group_id
     FROM runs_metadata rm
-    JOIN group_runs gr ON gr.run_id = rm.run_id
+    JOIN runs r ON r.id = rm.run_id
+    JOIN run_idx_map rim ON rim.run_id = r.id
 ),
 -- For each run, find the latest message and traverse up message_tree to get all ancestors
 runs_with_messages AS (
-    SELECT 
+    SELECT
         current_run.run_id,
         current_run.run_idx as current_run_idx,
         COALESCE(
@@ -451,18 +458,17 @@ runs_with_messages AS (
     FROM runs_with_idx current_run
     LEFT JOIN LATERAL (
         SELECT m.id, m.created_at
-        FROM message_runs mr
-        JOIN messages m ON m.id = mr.message_id
-        WHERE mr.run_id = current_run.run_id
+        FROM messages m
+        WHERE m.run_id = current_run.run_id
         AND m.role IN ('user'::message_role, 'assistant'::message_role)
-        ORDER BY 
+        ORDER BY
             CASE WHEN m.role = 'assistant'::message_role THEN 0 ELSE 1 END,
             m.created_at DESC
         LIMIT 1
     ) latest_msg ON true
     LEFT JOIN LATERAL (
         WITH RECURSIVE ancestor_path AS (
-            SELECT 
+            SELECT
                 m.id,
                 m.role,
                 mwc.contents,
@@ -474,10 +480,10 @@ runs_with_messages AS (
             FROM messages m
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE m.id = latest_msg.id
-            
+
             UNION ALL
-            
-            SELECT 
+
+            SELECT
                 m.id,
                 m.role,
                 mwc.contents,
@@ -485,11 +491,12 @@ runs_with_messages AS (
                 m.updated_at,
                 m.completed,
                 COALESCE(
-                    (SELECT gr.idx FROM message_runs mr2 
-                     JOIN group_runs gr ON gr.run_id = mr2.run_id 
-                     WHERE mr2.message_id = m.id 
-                     AND gr.group_id = current_run.group_id
-                     ORDER BY gr.idx LIMIT 1),
+                    (SELECT rim2.idx FROM messages m2
+                     JOIN runs r ON r.id = m2.run_id
+                     JOIN run_idx_map rim2 ON rim2.run_id = r.id
+                     WHERE m2.id = m.id
+                     AND r.group_id = current_run.group_id
+                     ORDER BY rim2.idx LIMIT 1),
                     ap.run_idx
                 ) as run_idx,
                 ap.depth_from_latest + 1 as depth_from_latest
@@ -499,14 +506,14 @@ runs_with_messages AS (
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE ap.depth_from_latest < 50
             AND EXISTS (
-                SELECT 1 
-                FROM message_runs mr_parent
-                JOIN group_runs gr_parent ON gr_parent.run_id = mr_parent.run_id
-                WHERE mr_parent.message_id = m.id
-                AND gr_parent.group_id = current_run.group_id
+                SELECT 1
+                FROM messages m_parent
+                JOIN runs r_parent ON r_parent.id = m_parent.run_id
+                WHERE m_parent.id = m.id
+                AND r_parent.group_id = current_run.group_id
             )
         )
-        SELECT 
+        SELECT
             ap.id,
             ap.role,
             ap.contents,

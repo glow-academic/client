@@ -28,8 +28,7 @@ STABLE
 AS $$
     SELECT t.id::text as test_id, t.completed
     FROM tests t
-    JOIN attempt_tests at ON at.test_id = t.id
-    WHERE at.attempt_id = $1
+    WHERE t.attempt_id = $1
       AND t.trace_id = $2
     LIMIT 1
 $$;

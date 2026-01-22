@@ -31,7 +31,7 @@ WITH params AS (
 ),
 -- Get all messages linked to the run (includes system/developer from previous runs)
 messages_data AS (
-    SELECT 
+    SELECT
         m.id,
         m.role::text,
         ce.content,
@@ -40,8 +40,7 @@ messages_data AS (
         m.audio,
         ar.upload_id
     FROM params p
-    JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN messages m ON m.run_id = p.run_id
     LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     LEFT JOIN calls c_audio ON c_audio.message_id = m.id
     LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true

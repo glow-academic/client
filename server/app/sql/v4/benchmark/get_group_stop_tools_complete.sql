@@ -65,15 +65,14 @@ AS $$
     ),
     ordered_tool_calls AS (
         SELECT
-            gr.group_id,
+            r.group_id,
             c.tool_id,
-            ROW_NUMBER() OVER (PARTITION BY gr.group_id ORDER BY gr.idx, c.created_at) as position_idx
-        FROM group_runs gr
-        JOIN message_runs mr ON mr.run_id = gr.run_id
-        JOIN calls c ON c.message_id = mr.message_id
+            ROW_NUMBER() OVER (PARTITION BY r.group_id ORDER BY r.created_at, c.created_at) as position_idx
+        FROM runs r
+        JOIN messages m ON m.run_id = r.id
+        JOIN calls c ON c.message_id = m.id
         JOIN stop_tool_ids sti ON sti.tool_id = c.tool_id
-        WHERE gr.group_id = $1
-          AND gr.active = true
+        WHERE r.group_id = $1
     )
     SELECT
         tool_id::uuid,

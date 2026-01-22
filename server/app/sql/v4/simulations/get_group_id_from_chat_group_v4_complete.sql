@@ -24,9 +24,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT g.id
-    FROM groups g
-    JOIN chat_groups cg ON cg.group_id = g.id
-    WHERE cg.chat_id = $1
+    SELECT c.group_id
+    FROM chats c
+    WHERE c.id = $1
     LIMIT 1
 $$;

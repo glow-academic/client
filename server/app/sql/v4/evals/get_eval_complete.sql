@@ -397,10 +397,10 @@ name_suggestions_data AS (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = n.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -455,10 +455,10 @@ description_suggestions_data AS (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = d.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -614,10 +614,10 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = d.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -1474,9 +1474,9 @@ groups_base AS (
     SELECT
         g.id as group_id,
         g.created_at,
-        COUNT(gr.run_id) as member_count
+        COUNT(r.id) as member_count
     FROM groups g
-    LEFT JOIN group_runs gr ON gr.group_id = g.id
+    LEFT JOIN runs r ON r.group_id = g.id
     GROUP BY g.id, g.created_at
 ),
 groups_filtered AS (

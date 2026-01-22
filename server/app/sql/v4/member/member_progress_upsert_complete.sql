@@ -45,16 +45,16 @@ chat_context AS (
         sa.profile_id
     FROM params p
     JOIN chats c ON c.id = p.chat_id
-    JOIN attempt_chats ac ON ac.chat_id = c.id
-    JOIN attempts_entry sa ON sa.id = ac.attempt_id
-    LEFT JOIN groups g ON g.id = (SELECT cg.group_id FROM chat_groups cg WHERE cg.chat_id = c.id LIMIT 1)
+    JOIN attempts_entry sa ON sa.id = c.attempt_id
+    LEFT JOIN groups g ON g.id = c.group_id
     LIMIT 1
 ),
--- Get or create group for chat
+-- Get or create group for chat (chats now have direct group_id column)
 chat_group AS (
-    SELECT cg.group_id
+    SELECT c.group_id
     FROM params p
-    JOIN chat_groups cg ON cg.chat_id = p.chat_id
+    JOIN chats c ON c.id = p.chat_id
+    WHERE c.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
@@ -64,21 +64,21 @@ create_group_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM chat_group)
     RETURNING id AS group_id
 ),
-create_chat_group_if_needed AS (
-    INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
-    SELECT p.chat_id, cg.group_id, NOW(), NOW()
+update_chat_group_if_needed AS (
+    UPDATE chats
+    SET group_id = cg.group_id, updated_at = NOW()
     FROM params p
     CROSS JOIN create_group_if_needed cg
-    WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-    ON CONFLICT (chat_id, group_id) DO NOTHING
-    RETURNING group_id
+    WHERE chats.id = p.chat_id
+      AND chats.group_id IS NULL
+    RETURNING chats.group_id
 ),
 selected_group AS (
     SELECT group_id FROM chat_group
     UNION ALL
     SELECT group_id FROM create_group_if_needed
     UNION ALL
-    SELECT group_id FROM create_chat_group_if_needed
+    SELECT group_id FROM update_chat_group_if_needed
 ),
 target_group AS (
     SELECT group_id
@@ -90,8 +90,7 @@ latest_run AS (
     SELECT r.id as run_id
     FROM params p
     JOIN target_group tg ON true
-    JOIN group_runs gr ON gr.group_id = tg.group_id
-    JOIN runs r ON r.id = gr.run_id
+    JOIN runs r ON r.group_id = tg.group_id
     JOIN chat_context cc ON cc.profile_id = r.profile_id
     WHERE r.agent_id = (SELECT agent_id FROM member_agent)
     ORDER BY r.created_at DESC
@@ -110,22 +109,15 @@ upserted_run AS (
     UNION ALL
     SELECT run_id FROM create_run_if_needed
 ),
--- Link run to group (atomic)
+-- Link run to group by updating run's group_id
 link_run_to_group AS (
-    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT
-        tg.group_id,
-        ur.run_id,
-        COALESCE(
-            (SELECT MAX(idx) FROM group_runs WHERE group_id = tg.group_id),
-            -1
-        ) + 1,
-        NOW(),
-        NOW()
+    UPDATE runs
+    SET group_id = tg.group_id, updated_at = NOW()
     FROM target_group tg
     CROSS JOIN upserted_run ur
-    ON CONFLICT (group_id, run_id) DO NOTHING
-    RETURNING run_id
+    WHERE runs.id = ur.run_id
+      AND runs.group_id IS NULL
+    RETURNING runs.id as run_id
 ),
 -- Update run with profile_id (if not already set)
 link_profile_to_run AS (
@@ -149,8 +141,7 @@ get_speak_tool_id AS (
 latest_user_message AS (
     SELECT m.id as message_id
     FROM upserted_run ur
-    JOIN message_runs mr ON mr.run_id = ur.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN messages m ON m.run_id = ur.run_id
     WHERE m.role = 'user'::message_role
     ORDER BY m.created_at DESC
     LIMIT 1
@@ -194,7 +185,6 @@ existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
     JOIN contents_entry ce ON ce.message_id = lum.message_id AND ce.idx = 0
-    JOIN message_runs mr ON mr.message_id = lum.message_id
     JOIN calls tc ON tc.message_id = lum.message_id
     LIMIT 1
 ),
@@ -235,14 +225,15 @@ upserted_message AS (
     UNION ALL
     SELECT message_id FROM update_existing_message
 ),
--- Link message to run
+-- Link message to run (set run_id directly on message)
 link_message_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT um.message_id, ur.run_id, NOW(), NOW()
+    UPDATE messages
+    SET run_id = ur.run_id, updated_at = NOW()
     FROM upserted_message um
     CROSS JOIN upserted_run ur
-    ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
+    WHERE messages.id = um.message_id
+      AND (messages.run_id IS NULL OR messages.run_id = ur.run_id)
+    RETURNING messages.id as message_id, ur.run_id
 ),
 -- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
@@ -261,12 +252,9 @@ link_audio_placeholder AS (
 latest_message_for_branch AS (
     SELECT m.id as parent_id
     FROM params p
-    JOIN chat_groups cg ON cg.chat_id = p.chat_id
-    JOIN groups g ON g.id = cg.group_id
-    JOIN group_runs gr ON gr.group_id = g.id
-    JOIN runs r ON r.id = gr.run_id
-    JOIN message_runs mr ON mr.run_id = r.id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN chats c ON c.id = p.chat_id
+    JOIN runs r ON r.group_id = c.group_id
+    JOIN messages m ON m.run_id = r.id
     WHERE m.role IN ('user'::message_role, 'assistant'::message_role, 'system'::message_role, 'developer'::message_role)
     ORDER BY m.created_at DESC
     LIMIT 1
@@ -384,12 +372,13 @@ system_message AS (
     SELECT system_message_id FROM new_system_message
 ),
 link_system AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT sm.system_message_id, ur.run_id, NOW(), NOW()
+    UPDATE messages
+    SET run_id = ur.run_id, updated_at = NOW()
     FROM system_message sm
     CROSS JOIN upserted_run ur
-    ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
-    RETURNING message_id as system_message_id
+    WHERE messages.id = sm.system_message_id
+      AND (messages.run_id IS NULL OR messages.run_id = ur.run_id)
+    RETURNING messages.id as system_message_id
 ),
 scenario_developer_content AS (
     SELECT DISTINCT
@@ -397,11 +386,10 @@ scenario_developer_content AS (
     FROM run_info ri
     JOIN upserted_run ur ON ur.run_id = ri.run_id
     JOIN target_group tg ON true
-    JOIN chat_groups cg ON cg.group_id = tg.group_id
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chats c ON c.group_id = tg.group_id
     JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
     JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-    WHERE ps.problem_statement IS NOT NULL 
+    WHERE ps.problem_statement IS NOT NULL
     AND ps.problem_statement != ''
 ),
 scenario_developer_hash AS (
@@ -437,12 +425,13 @@ scenario_developer_message AS (
     SELECT developer_message_id FROM new_scenario_developer_message
 ),
 link_developer AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT sdm.developer_message_id, ur.run_id, NOW(), NOW()
+    UPDATE messages
+    SET run_id = ur.run_id, updated_at = NOW()
     FROM scenario_developer_message sdm
     CROSS JOIN upserted_run ur
-    ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
-    RETURNING message_id as developer_message_id
+    WHERE messages.id = sdm.developer_message_id
+      AND (messages.run_id IS NULL OR messages.run_id = ur.run_id)
+    RETURNING messages.id as developer_message_id
 ),
 link_system_to_developer AS (
     INSERT INTO message_tree (parent_id, child_id, active, created_at, updated_at)

@@ -17,12 +17,9 @@ latest_message AS (
         m.id,
         COALESCE(ce.content, '') as content
     FROM chats c
-    JOIN chat_groups cg ON cg.chat_id = c.id
-    JOIN groups g ON g.id = cg.group_id
-    JOIN group_runs gr ON gr.group_id = g.id
-    JOIN runs r ON r.id = gr.run_id
-    JOIN message_runs mr ON mr.run_id = r.id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN groups g ON g.id = c.group_id
+    JOIN runs r ON r.group_id = g.id
+    JOIN messages m ON m.run_id = r.id
     LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     WHERE c.id = (SELECT chat_id FROM params)
       AND NOT EXISTS (

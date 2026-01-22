@@ -210,24 +210,23 @@ eval_runs_data AS (
     FROM attempt_data ad
     JOIN eval_runs er ON er.eval_id = ad.eval_id
 ),
--- Get tests linked to this attempt via attempt_tests
+-- Get tests linked to this attempt via tests.attempt_id
 attempt_tests_data AS (
-    SELECT 
-        at.test_id,
-        at.attempt_id,
+    SELECT
+        t.id as test_id,
+        t.attempt_id,
         t.run_id as test_run_id,
         t.completed as test_completed,
         t.title as test_title,
         t.created_at as test_created_at,
         t.updated_at as test_updated_at
     FROM attempt_data ad
-    JOIN attempt_tests at ON at.attempt_id = ad.id
-    JOIN tests t ON t.id = at.test_id
+    JOIN tests t ON t.attempt_id = ad.id
 ),
 -- Map tests to original runs using trace_id
 -- trace_id format: "eval_{attempt_id}_{original_run_id}"
 tests_to_runs AS (
-    SELECT 
+    SELECT
         atd.test_id,
         atd.test_completed,
         atd.test_title,
@@ -235,7 +234,7 @@ tests_to_runs AS (
         atd.test_updated_at,
         -- Extract original run_id from trace_id (format: eval_{attempt_id}_{run_id})
         -- Keep as text for comparison, cast to uuid only when valid
-        CASE 
+        CASE
             WHEN t.trace_id LIKE 'eval_%_%' AND SPLIT_PART(t.trace_id, '_', 3) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
                 SPLIT_PART(t.trace_id, '_', 3)::uuid
             ELSE NULL::uuid

@@ -16,6 +16,5 @@ AS $$
     SELECT COUNT(*)::bigint as message_count
     FROM messages m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-    JOIN message_runs mr ON mr.message_id = m.id
-    WHERE m.role = 'developer' AND mr.run_id = test_get_developer_messages_count_by_run_v4.run_id;
+    WHERE m.role = 'developer' AND m.run_id = test_get_developer_messages_count_by_run_v4.run_id;
 $$;

@@ -444,10 +444,11 @@ context_data AS (
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
 create_run AS (
-    -- Create run record with profile_id directly
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
-    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
+    -- Create run record with profile_id and group_id directly
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id, group_id)
+    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid, gd.group_id
     FROM context_data cd
+    CROSS JOIN group_data gd
     RETURNING id
 ),
 link_model AS (
@@ -459,12 +460,9 @@ link_model AS (
     RETURNING run_id
 ),
 link_group AS (
-    -- Link group to run
-    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT gd.group_id, cr.id, 0, NOW(), NOW()
+    -- Dummy CTE to maintain compatibility (runs now have group_id directly)
+    SELECT cr.id as run_id
     FROM create_run cr
-    CROSS JOIN group_data gd
-    RETURNING run_id
 ),
 -- Create and link developer message if template exists
 developer_message_content AS (
@@ -495,8 +493,8 @@ existing_developer_message AS (
     LIMIT 1
 ),
 new_developer_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, (SELECT run_id FROM developer_message_hash LIMIT 1), NOW(), NOW()
     FROM developer_message_hash dmh
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
     RETURNING id, created_at, updated_at
@@ -515,18 +513,24 @@ insert_developer_content AS (
 developer_message_final AS (
     SELECT id, run_id FROM existing_developer_message
     UNION ALL
-    SELECT 
-        nm.id, 
+    SELECT
+        nm.id,
         (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
     FROM new_developer_message nm
 ),
+update_existing_developer_message_run AS (
+    UPDATE messages m
+    SET run_id = edm.run_id, updated_at = NOW()
+    FROM existing_developer_message edm
+    WHERE m.id = edm.id AND edm.run_id IS NOT NULL
+    RETURNING m.id as message_id, m.run_id
+),
 link_developer_message_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT dmf.id, dmf.run_id, NOW(), NOW()
-    FROM developer_message_final dmf
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
+    -- Combine existing (updated) and new developer messages
+    SELECT message_id, run_id FROM update_existing_developer_message_run
+    UNION ALL
+    SELECT nm.id as message_id, (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
+    FROM new_developer_message nm
 )
 SELECT 
     -- Context data

@@ -23,7 +23,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO attempt_tests (attempt_id, test_id)
-    VALUES ($1, $2)
-    ON CONFLICT DO NOTHING
+    UPDATE tests
+    SET attempt_id = $1
+    WHERE id = $2
 $$;

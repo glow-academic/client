@@ -820,8 +820,7 @@ filt AS (
                     c.scenario_id,
                     sa.simulation_id
                 FROM chats c
-                JOIN attempt_chats ac ON ac.chat_id = c.id
-                JOIN attempts_entry sa ON sa.id = ac.attempt_id
+                JOIN attempts_entry sa ON sa.id = c.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats_for_stagnation)
             ),
             -- Get first scenario's rubric per simulation for stagnation (fallback)
@@ -845,10 +844,7 @@ filt AS (
                     sg.created_at,
                     (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0), 0)) * 100.0 AS norm
                 FROM grades sg
-                JOIN runs r_stag ON r_stag.id = sg.run_id
-                JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
-                JOIN grade_groups gg_stag ON gg_stag.group_id = gr_stag.group_id
-                JOIN chats c_stag ON c_stag.id = gg_stag.chat_id
+                JOIN chats c_stag ON c_stag.group_id = sg.group_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
                 LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
@@ -862,13 +858,7 @@ filt AS (
                 LEFT JOIN rubrics_resource r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
                 LEFT JOIN rubric_points rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'
                 LEFT JOIN points_resource p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
-                WHERE EXISTS (
-                    SELECT 1 FROM runs r_check
-                    JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-                    JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chats c_check ON c_check.id = gg_check.chat_id
-                    WHERE r_check.id = sg.run_id
-                )
+                WHERE sg.group_id IS NOT NULL
                   AND COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0) > 0
             ),
             ordered_grades AS (
@@ -1364,8 +1354,7 @@ filt AS (
                     c.scenario_id,
                     sa.simulation_id
                 FROM chats c
-                JOIN attempt_chats ac ON ac.chat_id = c.id
-                JOIN attempts_entry sa ON sa.id = ac.attempt_id
+                JOIN attempts_entry sa ON sa.id = c.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
             ),
             -- Get first scenario's rubric per simulation (fallback)
@@ -1390,10 +1379,7 @@ filt AS (
                         sfsr.rubric_id
                     ) AS rubric_id
                 FROM grades scg
-                JOIN runs r ON r.id = scg.run_id
-                JOIN group_runs gr ON gr.run_id = r.id
-                JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chats c ON c.id = gg.chat_id
+                JOIN chats c ON c.group_id = scg.group_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
                 LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
@@ -1402,13 +1388,7 @@ filt AS (
                 LEFT JOIN sim_first_scenario_rubric_overview sfsr ON sfsr.simulation_id = csi.simulation_id
                   AND srr.rubric_id IS NULL
                   AND srr_fallback.rubric_id IS NULL
-                WHERE EXISTS (
-                    SELECT 1 FROM runs r_check
-                    JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-                    JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chats c_check ON c_check.id = gg_check.chat_id
-                    WHERE r_check.id = scg.run_id
-                )
+                WHERE scg.group_id IS NOT NULL
                   AND COALESCE(
                       srr.rubric_id,
                       srr_fallback.rubric_id,

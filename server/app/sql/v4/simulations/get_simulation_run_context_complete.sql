@@ -70,13 +70,12 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH scenario_dept AS (
-    SELECT 
+    SELECT
         s.id as scenario_id,
-        (SELECT sd.department_id FROM scenario_departments sd 
+        (SELECT sd.department_id FROM scenario_departments sd
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
     FROM chats sc
-    JOIN attempt_chats ac ON ac.chat_id = sc.id
-    INNER JOIN attempts_entry sa ON sa.id = ac.attempt_id
+    INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     WHERE sc.id = chat_id
 ),
@@ -86,10 +85,9 @@ profile_dept AS (
     FROM departments_resource dr
     JOIN department_artifact d ON d.id = dr.department_id
     JOIN profile_departments pd ON pd.department_id = dr.id
-    JOIN attempts_entry sa ON sa.profile_id = pd.profile_id
-    JOIN attempt_chats ac ON ac.attempt_id = sa.id
-    WHERE ac.chat_id = chat_id
-      AND sa.profile_id IS NOT NULL
+    JOIN chats sc ON sc.id = chat_id
+    JOIN attempts_entry sa ON sa.id = sc.attempt_id AND sa.profile_id = pd.profile_id
+    WHERE sa.profile_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     LIMIT 1
 ),
@@ -112,11 +110,11 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempts_entry)
     SELECT
         rl.requests_per_day as req_per_day
-    FROM attempts_entry sa
-    JOIN attempt_chats ac ON ac.attempt_id = sa.id
+    FROM chats sc
+    JOIN attempts_entry sa ON sa.id = sc.attempt_id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = sa.profile_id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    WHERE ac.chat_id = chat_id AND sa.profile_id IS NOT NULL
+    WHERE sc.id = chat_id AND sa.profile_id IS NOT NULL
     LIMIT 1
 ),
 runs_today AS (
@@ -125,17 +123,17 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
-    WHERE mr.profile_id = (SELECT sa.profile_id FROM attempts_entry sa
-                            JOIN attempt_chats ac ON ac.attempt_id = sa.id
-                            WHERE ac.chat_id = chat_id AND sa.profile_id IS NOT NULL LIMIT 1)
+    WHERE mr.profile_id = (SELECT sa.profile_id FROM chats sc
+                            JOIN attempts_entry sa ON sa.id = sc.attempt_id
+                            WHERE sc.id = chat_id AND sa.profile_id IS NOT NULL LIMIT 1)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 profile_from_attempt AS (
     -- Get profile_id from attempts_entry for settings resolution
     SELECT sa.profile_id
-    FROM attempts_entry sa
-    JOIN attempt_chats ac ON ac.attempt_id = sa.id
-    WHERE ac.chat_id = chat_id AND sa.profile_id IS NOT NULL
+    FROM chats sc
+    JOIN attempts_entry sa ON sa.id = sc.attempt_id
+    WHERE sc.id = chat_id AND sa.profile_id IS NOT NULL
     LIMIT 1
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)
@@ -215,7 +213,7 @@ SELECT
     -- Chat data
     sc.id::text as chat_id,
     sc.title as chat_title,
-    (SELECT g.trace_id FROM groups g JOIN chat_groups cg ON cg.group_id = g.id WHERE cg.chat_id = sc.id LIMIT 1) as trace_id,
+    (SELECT g.trace_id FROM groups g JOIN chats c ON c.group_id = g.id WHERE c.id = sc.id LIMIT 1) as trace_id,
     
     -- Attempt data
     sa.id::text as attempt_id,
@@ -286,8 +284,7 @@ SELECT
     ) as documents
 
 FROM chats sc
-JOIN attempt_chats ac ON ac.chat_id = sc.id
-INNER JOIN attempts_entry sa ON sa.id = ac.attempt_id
+INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
 INNER JOIN scenarios_resource s ON s.scenario_id = sc.scenario_id
 LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true

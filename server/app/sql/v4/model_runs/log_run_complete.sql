@@ -39,12 +39,10 @@ run_info AS (
         (SELECT rp.persona_id FROM run_personas rp WHERE rp.run_id = r.id AND rp.active = true LIMIT 1) as persona_id,
         COALESCE(
             x.department_id,
-            -- Try to get department FROM chats
+            -- Try to get department FROM chats (chats now have direct group_id column)
             (SELECT sd.department_id FROM runs r2
-             JOIN group_runs gr ON gr.run_id = r2.id
-             JOIN groups g ON g.id = gr.group_id
-             JOIN chat_groups cg ON cg.group_id = g.id
-             JOIN chats c ON c.id = cg.chat_id
+             JOIN groups g ON g.id = r2.group_id
+             JOIN chats c ON c.group_id = g.id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
@@ -322,7 +320,6 @@ existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
     JOIN contents_entry ce ON ce.message_id = esm.system_message_id AND ce.idx = 0
-    JOIN message_runs mr ON mr.message_id = esm.system_message_id
     JOIN calls tc ON tc.message_id = esm.system_message_id
     LIMIT 1
 ),
@@ -344,14 +341,15 @@ system_message AS (
     UNION ALL
     SELECT system_message_id FROM new_system_message
 ),
--- Link system message to run
+-- Link system message to run (set run_id directly on message)
 link_system AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT sm.system_message_id, x.run_id, NOW(), NOW()
+    UPDATE messages
+    SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN system_message sm
-    ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
-    RETURNING message_id as system_message_id
+    WHERE messages.id = sm.system_message_id
+      AND (messages.run_id IS NULL OR messages.run_id = x.run_id)
+    RETURNING messages.id as system_message_id
 ),
 -- Process developer messages from array (preserve order for parent selection)
 developer_contents_array AS (
@@ -468,7 +466,6 @@ existing_developer_calls AS (
     SELECT edm.message_id, tc.id as tool_call_id
     FROM existing_developer_messages edm
     JOIN contents_entry ce ON ce.message_id = edm.message_id AND ce.idx = 0
-    JOIN message_runs mr ON mr.message_id = edm.message_id
     JOIN calls tc ON tc.message_id = edm.message_id
 ),
 all_developer_calls AS (
@@ -506,16 +503,15 @@ all_developer_messages AS (
         WHERE edm.content = dmp.content
     )
 ),
--- Link developer messages to run (preserve order for parent selection)
+-- Link developer messages to run (set run_id directly on message)
 link_developers AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT adm.message_id, x.run_id, NOW(), NOW()
+    UPDATE messages
+    SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN all_developer_messages adm
-    ORDER BY adm.first_idx
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id as developer_message_id
+    WHERE messages.id = adm.message_id
+      AND (messages.run_id IS NULL OR messages.run_id = x.run_id)
+    RETURNING messages.id as developer_message_id
 ),
 -- Link system → developer in message_tree (if both exist)
 link_system_to_developer AS (
@@ -539,8 +535,7 @@ link_system_to_developer AS (
 existing_assistant_message AS (
     SELECT m.id as assistant_message_id, m.created_at, m.updated_at
     FROM params x
-    JOIN message_runs mr ON mr.run_id = x.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN messages m ON m.run_id = x.run_id
     WHERE m.role = 'assistant'::message_role
       AND x.assistant_output IS NOT NULL
       AND trim(x.assistant_output) != ''
@@ -614,12 +609,12 @@ insert_assistant_content AS (
       AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
 ),
 link_assistant AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT am.assistant_message_id, x.run_id, NOW(), NOW()
+    UPDATE messages
+    SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN assistant_message am
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
+    WHERE messages.id = am.assistant_message_id
+      AND (messages.run_id IS NULL OR messages.run_id = x.run_id)
 ),
 -- Determine parent for assistant message (last developer if exists, otherwise system)
 -- Note: link_developers returns rows in insertion order, so last row is the last developer message

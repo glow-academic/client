@@ -17,25 +17,17 @@ WITH params AS (
 existing_assistant_message AS (
     SELECT m.id as assistant_message_id
     FROM params p
-    JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN messages m ON m.run_id = p.run_id
     WHERE m.role = 'assistant'::message_role
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
 new_assistant_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'assistant'::message_role, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    SELECT 'assistant'::message_role, false, false, p.run_id, NOW(), NOW()
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)
     RETURNING id as assistant_message_id, created_at, updated_at
-),
-link_assistant_message AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT nam.assistant_message_id, p.run_id, NOW(), NOW()
-    FROM new_assistant_message nam
-    CROSS JOIN params p
-    ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
 )
 SELECT COALESCE(
     (SELECT assistant_message_id FROM existing_assistant_message),

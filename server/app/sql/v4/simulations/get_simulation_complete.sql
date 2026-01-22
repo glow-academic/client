@@ -623,20 +623,16 @@ scenario_statistics AS (
     )
     LEFT JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN groups g_check ON g_check.id = r_check.group_id
+        JOIN chats c_check ON c_check.group_id = g_check.id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
     LEFT JOIN runs r_detail ON r_detail.id = scg.run_id
     LEFT JOIN LATERAL (
         SELECT DISTINCT c.id AS chat_id
         FROM runs r
-        JOIN group_runs gr ON gr.run_id = r.id
-        JOIN groups g ON g.id = gr.group_id
-        JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chats c ON c.id = cg.chat_id
+        JOIN groups g ON g.id = r.group_id
+        JOIN chats c ON c.group_id = g.id
         WHERE r.id = r_detail.id AND c.id = sc.id
         LIMIT 1
     ) chat_lookup_detail ON true
@@ -1019,13 +1015,13 @@ department_mapping_data AS (
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(dr.generated, false) as generated,
-        -- Get group_id from resource.call_id → calls → calls.message_id → message_runs → group_runs
+        -- Get group_id from resource.call_id → calls → calls.message_id → message_runs → runs.group_id
         (
-            SELECT gr.group_id
+            SELECT r_lookup.group_id
             FROM departments_resource dr2
             JOIN calls c ON c.id = dr2.call_id
-            JOIN message_runs mr ON mr.message_id = c.message_id
-            JOIN group_runs gr ON gr.run_id = mr.run_id
+            JOIN messages m ON m.id = c.message_id
+            JOIN runs r_lookup ON r_lookup.id = m.run_id
             WHERE dr2.id = dr.id
             LIMIT 1
         ) as group_id,
@@ -1051,7 +1047,7 @@ departments_data AS (
         ARRAY_AGG(
             (ud.id, ud.artifact_id, ud.name, ud.description,
              COALESCE((SELECT d.generated FROM departments_resource d WHERE d.id = ud.id), false),
-             (SELECT gr.group_id FROM departments_resource d JOIN calls c ON c.id = d.call_id JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE d.id = ud.id LIMIT 1),
+             (SELECT r.group_id FROM departments_resource d JOIN calls c ON c.id = d.call_id JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE d.id = ud.id LIMIT 1),
              COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]),
              COALESCE(dri.rubric_ids, ARRAY[]::uuid[]),
              COALESCE(dci.cohort_ids, ARRAY[]::uuid[])
@@ -1210,7 +1206,7 @@ name_resource_data AS (
         ) as name_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false), 
-                (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = n.call_id LIMIT 1)
+                (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = n.call_id LIMIT 1)
             )::types.q_get_simulation_v4_name_resource
             FROM simulation_names sn
             JOIN names_resource n ON sn.name_id = n.id
@@ -1228,7 +1224,7 @@ description_resource_data AS (
         ) as description_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false),
-                (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = d.call_id LIMIT 1)
+                (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = d.call_id LIMIT 1)
             )::types.q_get_simulation_v4_description_resource
             FROM simulation_descriptions sd
             JOIN descriptions_resource d ON sd.description_id = d.id
@@ -1246,7 +1242,7 @@ flag_resource_data AS (
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-                (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+                (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = f.call_id LIMIT 1)
             )::types.q_get_simulation_v4_flag_resource
             FROM simulation_flags sf
             JOIN flags_resource f ON sf.flag_id = f.id
@@ -1279,10 +1275,10 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = n.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -1318,10 +1314,10 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = d.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -1356,10 +1352,10 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = d.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -1379,7 +1375,7 @@ names_suggestions_objects AS (
             (
                 SELECT ARRAY_AGG(
                     (n.id, n.name, COALESCE(n.generated, false), 
-                     (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = n.call_id LIMIT 1)
+                     (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = n.call_id LIMIT 1)
                     )::types.q_get_simulation_v4_name_option
                     ORDER BY array_position(nsd.name_suggestions, n.id)
                 )
@@ -1399,7 +1395,7 @@ descriptions_suggestions_objects AS (
             (
                 SELECT ARRAY_AGG(
                     (d.id, d.description, COALESCE(d.generated, false),
-                     (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = d.call_id LIMIT 1)
+                     (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = d.call_id LIMIT 1)
                     )::types.q_get_simulation_v4_description_option
                     ORDER BY array_position(dsd.description_suggestions, d.id)
                 )
@@ -2172,10 +2168,10 @@ scenario_suggestions_data AS (
                            s.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls c
-                               JOIN message_runs mr ON mr.message_id = c.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               JOIN messages m ON m.id = c.message_id
+                               JOIN runs r ON r.id = m.run_id
                                WHERE c.id = s.call_id
-                                 AND gr.group_id = dgd.group_id
+                                 AND r.group_id = dgd.group_id
                            )
                        )
                    )
@@ -2256,7 +2252,7 @@ scenario_flag_resources_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (sfr.id, sfr.scenario_id, sfr.flag_id, f.name, f.description, f.icon_id, COALESCE(sfr.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = sfr.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = sfr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
@@ -2280,7 +2276,7 @@ scenario_flags_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (f.id, NULL::uuid, f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = f.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_flag_resource
                 ORDER BY f.name
             )
@@ -2311,7 +2307,7 @@ scenario_position_resources_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base)), spr.scenario_id, spr.value, COALESCE(spr.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = spr.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = spr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_position_resource
                 ORDER BY array_position(spid.scenario_position_ids, spr.id)
             )
@@ -2354,7 +2350,7 @@ scenario_rubric_resources_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = srr.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = srr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_rubric_resource
                 ORDER BY srr.scenario_id, srr.rubric_id
             )
@@ -2377,7 +2373,7 @@ scenario_rubrics_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (srr.id, srr.scenario_id, srr.rubric_id, COALESCE(srr.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = srr.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = srr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_rubric_resource
                 ORDER BY srr.scenario_id, srr.rubric_id
             )
@@ -2407,7 +2403,7 @@ scenario_time_limit_resources_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = stlr.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = stlr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_time_limit_resource
                 ORDER BY stlr.scenario_id, stlr.time_limit_seconds
             )
@@ -2431,7 +2427,7 @@ scenario_time_limits_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false),
-                 (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = stlr.call_id LIMIT 1)
+                 (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = stlr.call_id LIMIT 1)
                 )::types.q_get_simulation_v4_scenario_time_limit_resource
                 ORDER BY stlr.scenario_id, stlr.time_limit_seconds
             )
@@ -2758,7 +2754,7 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
-             (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+             (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = f.call_id LIMIT 1)
             )::types.q_get_simulation_v4_flag_option
             ORDER BY f.name
         ) FROM flags_resource f 
@@ -2777,7 +2773,7 @@ SELECT
              COALESCE((SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE(s.generated, false), 
-             (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
+             (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
         )
         FROM scenarios_resource s
@@ -2822,7 +2818,7 @@ SELECT
              COALESCE((SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE(s.generated, false),
-             (SELECT gr.group_id FROM calls c JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
+             (SELECT r.group_id FROM calls c JOIN messages m ON m.id = c.message_id JOIN runs r ON r.id = m.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
             ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
         ) FROM scenarios_resource s
         WHERE s.active = true),

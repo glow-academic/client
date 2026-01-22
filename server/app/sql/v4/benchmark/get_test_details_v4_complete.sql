@@ -27,8 +27,7 @@ STABLE
 AS $$
     SELECT t.id::text as test_id, t.run_id::text as run_id
     FROM tests t
-    JOIN attempt_tests at ON at.test_id = t.id
-    WHERE at.attempt_id = $1
+    WHERE t.attempt_id = $1
       AND t.completed = false
     ORDER BY t.created_at DESC
     LIMIT 1

@@ -206,26 +206,15 @@ runs_base AS (
         mrper.persona_id,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         sa.archived,
-        gr.group_id
+        mr.group_id
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
-    -- Join to groups via group_runs
-    LEFT JOIN group_runs gr ON gr.run_id = mr.id
-    LEFT JOIN groups g ON g.id = gr.group_id
-    -- Join to simulations via chat_groups → groups → group_runs → runs → chats → attempt_chats → attempts_entry → simulations
-    -- Get chat_id from any chat in this run's group
-    LEFT JOIN LATERAL (
-        SELECT DISTINCT c.id AS chat_id
-        FROM groups g2
-        JOIN chat_groups cg ON cg.group_id = g2.id
-        JOIN chats c ON c.id = cg.chat_id
-        WHERE g2.id = g.id
-        LIMIT 1
-    ) chat_lookup ON true
-    LEFT JOIN chats c ON c.id = chat_lookup.chat_id
-    LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
-    LEFT JOIN attempts_entry sa ON sa.id = ac.attempt_id
+    -- Join to groups via runs.group_id
+    LEFT JOIN groups g ON g.id = mr.group_id
+    -- Join to simulations via chats (direct group_id) → attempts_entry → simulations
+    LEFT JOIN chats c ON c.group_id = g.id
+    LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
     LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
     WHERE 

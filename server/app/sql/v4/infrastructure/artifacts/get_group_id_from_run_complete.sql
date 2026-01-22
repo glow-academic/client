@@ -1,13 +1,13 @@
--- Get group_id from run_id via group_runs
+-- Get group_id from run_id via runs.group_id
 -- Used by artifacts generate.py and progress.py
 -- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'infrastructure_artifacts_get_group_id_from_run_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -25,5 +25,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT group_id FROM group_runs WHERE group_runs.run_id = $1 LIMIT 1
+    SELECT group_id FROM runs WHERE runs.id = $1 LIMIT 1
 $$;

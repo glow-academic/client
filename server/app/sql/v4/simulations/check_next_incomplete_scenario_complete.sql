@@ -50,14 +50,13 @@ simulation_scenarios_list AS (
     ORDER BY (SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
 ),
 existing_chats AS (
-    SELECT 
+    SELECT
         sc.id as chat_id,
         sc.scenario_id as child_scenario_id,
         sc.completed
-    FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    FROM chats sc
     CROSS JOIN attempt_base ab
-    WHERE ac.attempt_id = ab.attempt_id
+    WHERE sc.attempt_id = ab.attempt_id
 ),
 -- Recursively map child scenario IDs to root parent IDs  
 scenario_ancestors AS (
@@ -118,21 +117,16 @@ scenarios_with_grades AS (
     SELECT DISTINCT ss.scenario_id as parent_scenario_id
     FROM simulation_scenarios ss
     CROSS JOIN attempt_base ab
-    JOIN attempt_chats ac ON ac.attempt_id = ab.attempt_id
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.attempt_id = ab.attempt_id
     JOIN grades scg ON EXISTS (
         SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id AND c_check.id = sc.id
+        JOIN groups g_check ON g_check.id = r_check.group_id
+        JOIN chats c_check ON c_check.group_id = g_check.id AND c_check.id = sc.id
         WHERE r_check.id = scg.run_id
     )
     JOIN runs r ON r.id = scg.run_id
-    JOIN group_runs gr ON gr.run_id = r.id
-    JOIN groups g ON g.id = gr.group_id
-    JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chats c ON c.id = cg.chat_id AND c.id = sc.id
+    JOIN groups g ON g.id = r.group_id
+    JOIN chats c ON c.group_id = g.id AND c.id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 

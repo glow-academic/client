@@ -145,30 +145,20 @@ rate_limit_check AS (
     CROSS JOIN params p
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
--- Create run
+-- Create run with group_id directly
 create_run AS (
-    INSERT INTO runs (input_tokens, output_tokens, agent_id, profile_id)
-    SELECT 0, 0, sa.agent_id, p.profile_id
+    INSERT INTO runs (input_tokens, output_tokens, agent_id, profile_id, group_id)
+    SELECT 0, 0, sa.agent_id, p.profile_id, gd.group_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
     CROSS JOIN params p
+    CROSS JOIN group_data gd
     RETURNING id as run_id
 ),
--- Link group to run
+-- Dummy CTE to maintain compatibility (runs now have group_id directly)
 link_group AS (
-    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    SELECT
-        gd.group_id,
-        cr.run_id,
-        COALESCE(
-            (SELECT MAX(idx) FROM group_runs WHERE group_id = gd.group_id),
-            -1
-        ) + 1 as idx,
-        NOW(),
-        NOW()
+    SELECT cr.run_id
     FROM create_run cr
-    CROSS JOIN group_data gd
-    RETURNING run_id
 ),
 -- Create developer messages from developer_instructions array
 developer_message_content_array AS (
@@ -211,14 +201,15 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
-    FROM new_developer_messages_data
-    RETURNING id, created_at, updated_at
+    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, nd.run_id, NOW(), NOW()
+    FROM new_developer_messages_data nd
+    RETURNING id, run_id, created_at, updated_at
 ),
 new_developer_messages_numbered AS (
-    SELECT 
+    SELECT
         id as message_id,
+        run_id,
         created_at,
         updated_at,
         ROW_NUMBER() OVER (ORDER BY created_at) as rn
@@ -234,10 +225,10 @@ new_developer_messages_data_numbered AS (
     FROM new_developer_messages_data
 ),
 new_developer_messages_matched AS (
-    SELECT 
+    SELECT
         n.message_id,
         nd.content,
-        nd.run_id,
+        n.run_id,
         nd.hash,
         n.created_at,
         n.updated_at
@@ -254,18 +245,18 @@ insert_developer_contents AS (
         nd.updated_at
     FROM new_developer_messages_matched nd
 ),
-developer_message_final AS (
-    SELECT message_id, run_id FROM existing_developer_messages
-    UNION ALL
-    SELECT message_id, run_id FROM new_developer_messages_matched
+update_existing_developer_messages_run AS (
+    UPDATE messages m
+    SET run_id = edm.run_id, updated_at = NOW()
+    FROM existing_developer_messages edm
+    WHERE m.id = edm.message_id AND edm.run_id IS NOT NULL
+    RETURNING m.id as message_id, m.run_id
 ),
 link_developer_messages_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT dmf.message_id, dmf.run_id, NOW(), NOW()
-    FROM developer_message_final dmf
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
+    -- Combine existing (updated) and new developer messages
+    SELECT message_id, run_id FROM update_existing_developer_messages_run
+    UNION ALL
+    SELECT message_id, run_id FROM new_developer_messages_matched
 ),
 -- Create user messages from user_instructions array
 user_message_content_array AS (
@@ -308,14 +299,15 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'user'::message_role, false, false, NOW(), NOW()
-    FROM new_user_messages_data
-    RETURNING id, created_at, updated_at
+    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    SELECT 'user'::message_role, false, false, nd.run_id, NOW(), NOW()
+    FROM new_user_messages_data nd
+    RETURNING id, run_id, created_at, updated_at
 ),
 new_user_messages_numbered AS (
-    SELECT 
+    SELECT
         id as message_id,
+        run_id,
         created_at,
         updated_at,
         ROW_NUMBER() OVER (ORDER BY created_at) as rn
@@ -331,10 +323,10 @@ new_user_messages_data_numbered AS (
     FROM new_user_messages_data
 ),
 new_user_messages_matched AS (
-    SELECT 
+    SELECT
         n.message_id,
         nd.content,
-        nd.run_id,
+        n.run_id,
         nd.hash,
         n.created_at,
         n.updated_at
@@ -351,37 +343,32 @@ insert_user_contents AS (
         nd.updated_at
     FROM new_user_messages_matched nd
 ),
-user_message_final AS (
-    SELECT message_id, run_id FROM existing_user_messages
+update_existing_user_messages_run AS (
+    UPDATE messages m
+    SET run_id = eum.run_id, updated_at = NOW()
+    FROM existing_user_messages eum
+    WHERE m.id = eum.message_id AND eum.run_id IS NOT NULL
+    RETURNING m.id as message_id, m.run_id
+),
+link_user_messages_to_run AS (
+    -- Combine existing (updated) and new user messages
+    SELECT message_id, run_id FROM update_existing_user_messages_run
     UNION ALL
     SELECT message_id, run_id FROM new_user_messages_matched
 ),
-link_user_messages_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT umf.message_id, umf.run_id, NOW(), NOW()
-    FROM user_message_final umf
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
-),
 -- Link existing system/developer messages from previous runs (if group_id provided for regeneration)
+-- Note: Messages now have direct run_id. For regeneration we copy messages from previous runs in group
 previous_runs_in_group AS (
-    SELECT DISTINCT gr.run_id
-    FROM group_runs gr
+    SELECT DISTINCT r.id as run_id
+    FROM runs r
     CROSS JOIN params p
-    WHERE gr.group_id = p.group_id
+    WHERE r.group_id = p.group_id
       AND p.group_id IS NOT NULL
 ),
+-- Messages are linked via run_id; we don't need to copy them for regeneration
+-- The messages from previous runs remain linked to their original runs
 link_existing_messages AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT DISTINCT mr.message_id, cr.run_id, NOW(), NOW()
-    FROM previous_runs_in_group prig
-    CROSS JOIN create_run cr
-    JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN messages m ON m.id = mr.message_id
-    WHERE m.role IN ('system'::message_role, 'developer'::message_role)
-    ON CONFLICT (message_id, run_id)
-    DO UPDATE SET updated_at = NOW()
+    SELECT NULL::uuid as message_id WHERE false -- no-op placeholder to maintain CTE chain
 ),
 -- Build message_ids array: includes all developer messages + all user messages + context message_ids
 final_message_ids AS (

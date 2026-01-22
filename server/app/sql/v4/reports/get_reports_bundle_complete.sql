@@ -437,8 +437,7 @@ chat_scenario_info_bundle AS (
         c.scenario_id,
         sa.simulation_id
     FROM chats c
-    JOIN attempt_chats ac ON ac.chat_id = c.id
-    JOIN attempts_entry sa ON sa.id = ac.attempt_id
+    JOIN attempts_entry sa ON sa.id = c.attempt_id
     WHERE c.id IN (SELECT chat_id FROM profile_chats)
 ),
 -- Get first scenario's rubric per simulation for bundle (fallback)
@@ -463,10 +462,7 @@ grade_stream_per_profile AS (
         sg.created_at,
         (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_first.id AND rp.type = 'total' LIMIT 1), 0), 0)) * 100.0 AS norm
     FROM grades sg
-    JOIN runs r_bundle ON r_bundle.id = sg.run_id
-    JOIN group_runs gr_bundle ON gr_bundle.run_id = r_bundle.id
-    JOIN grade_groups gg_bundle ON gg_bundle.group_id = gr_bundle.group_id
-    JOIN chats c_bundle ON c_bundle.id = gg_bundle.chat_id
+    JOIN chats c_bundle ON c_bundle.group_id = sg.group_id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_bundle.scenario_id
     LEFT JOIN chat_scenario_info_bundle csi ON csi.chat_id = c_bundle.id
@@ -478,13 +474,7 @@ grade_stream_per_profile AS (
       AND srr.rubric_id IS NULL
       AND (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1) IS NULL
     LEFT JOIN rubrics_resource r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
-    WHERE EXISTS (
-        SELECT 1 FROM runs r_check
-        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-        JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-        JOIN chats c_check ON c_check.id = gg_check.chat_id
-        WHERE r_check.id = sg.run_id
-    )
+    WHERE sg.group_id IS NOT NULL
       AND COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_first.id AND rp.type = 'total' LIMIT 1), 0) > 0
 ),
 ordered_grades_per_profile AS (
