@@ -3020,6 +3020,60 @@ class GetEvalsListApiResponse(BaseModel):
 
 
 
+# Generated from: get_group_order_agents
+
+class GetGroupOrderAgentsSqlParams(BaseModel):
+
+    group_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.group_id,
+        )
+
+class GetGroupOrderAgentsSqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+    position_idx: int | None = None
+
+class GetGroupOrderAgentsApiRequest(BaseModel):
+
+    group_id: UUID
+
+class GetGroupOrderAgentsApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+    position_idx: int | None = None
+
+
+
+# Generated from: get_group_stop_tools
+
+class GetGroupStopToolsSqlParams(BaseModel):
+
+    group_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.group_id,
+        )
+
+class GetGroupStopToolsSqlRow(BaseModel):
+
+    tool_id: UUID | None = None
+    position_idx: int | None = None
+
+class GetGroupStopToolsApiRequest(BaseModel):
+
+    group_id: UUID
+
+class GetGroupStopToolsApiResponse(BaseModel):
+
+    tool_id: UUID | None = None
+    position_idx: int | None = None
+
+
+
 # Generated from: get_rubric_grade_agent_v4
 
 class GetRubricGradeAgentV4SqlParams(BaseModel):
@@ -21378,6 +21432,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetEvalsListApiRequest",
         "GetEvalsListApiResponse",
     ),
+    "app/sql/v4/benchmark/get_group_order_agents_complete.sql": (
+        "GetGroupOrderAgentsSqlParams",
+        "GetGroupOrderAgentsSqlRow",
+        "GetGroupOrderAgentsApiRequest",
+        "GetGroupOrderAgentsApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_group_stop_tools_complete.sql": (
+        "GetGroupStopToolsSqlParams",
+        "GetGroupStopToolsSqlRow",
+        "GetGroupStopToolsApiRequest",
+        "GetGroupStopToolsApiResponse",
+    ),
     "app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql": (
         "GetRubricGradeAgentV4SqlParams",
         "GetRubricGradeAgentV4SqlRow",
@@ -23463,6 +23529,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/get_evals_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_group_order_agents_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_group_stop_tools_complete.sql"]
     ) -> SqlString: ...
 
     @overload

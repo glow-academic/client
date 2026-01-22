@@ -12,9 +12,9 @@ from app.sql.types import (CreateTestV4SqlParams, GetAgentNameV4SqlParams,
                            GetTestByTraceIdV4SqlParams,
                            GetTestByTraceIdV4SqlRow, GetToolNameV4SqlParams,
                            GetToolNameV4SqlRow, LinkAttemptTestV4SqlParams)
+from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from app.utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
@@ -134,9 +134,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             if use_groups and group_id:
                 group_id_uuid = uuid.UUID(group_id)
 
-                # Get group_stop tools
-                sql = load_sql("app/sql/v4/benchmark/get_group_stop_tools.sql")
-                group_stop_rows = await conn.fetch(sql, group_id_uuid)
+                # Get group_stop tools (function returns multiple rows)
+                group_stop_sql = 'SELECT * FROM "public"."socket_get_group_stop_tools_v4"($1::uuid)'
+                group_stop_rows = await conn.fetch(group_stop_sql, group_id_uuid)
                 group_stop_tools = [
                     {
                         "tool_id": str(row["tool_id"]),
@@ -145,9 +145,9 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                     for row in group_stop_rows
                 ]
 
-                # Get group_order agents
-                sql = load_sql("app/sql/v4/benchmark/get_group_order_agents.sql")
-                group_order_rows = await conn.fetch(sql, group_id_uuid)
+                # Get group_order agents (function returns multiple rows)
+                group_order_sql = 'SELECT * FROM "public"."socket_get_group_order_agents_v4"($1::uuid)'
+                group_order_rows = await conn.fetch(group_order_sql, group_id_uuid)
                 group_order_agents = [
                     {
                         "agent_id": str(row["agent_id"]),
@@ -167,7 +167,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 ):
                     tool_id = tool_info["tool_id"]
                     # Get tool name from tool_id to determine which eval handler to call
-                    tool_name_params = SocketGetToolNameSqlParams(
+                    tool_name_params = GetToolNameV4SqlParams(
                         tool_id=uuid.UUID(tool_id)
                     )
                     tool_name_result = cast(
