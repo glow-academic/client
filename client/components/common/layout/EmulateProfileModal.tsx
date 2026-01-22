@@ -223,18 +223,13 @@ export function EmulateProfileModal({
       );
 
       onOpenChange(false);
-      if (result.redirectUrl) {
-        window.location.assign(result.redirectUrl);
-        return;
-      }
-      await signIn(
-        "keycloak",
-        { callbackUrl },
-        {
-          kc_idp_hint: `default-idp-profile-${selectedProfileId}`,
-          login_hint: result.grantId,
-        }
-      );
+
+      // Redirect to emulate page which handles signOut then signIn properly
+      // This approach ensures NextAuth's PKCE flow works correctly
+      // (Direct Keycloak logout breaks PKCE because cookies are cleared)
+      // Pass the current URL as returnUrl so user returns to the same page after emulation
+      const returnUrl = encodeURIComponent(window.location.href);
+      window.location.href = `${window.location.origin}${normalizedPrefix}/emulate?grant=${result.grantId}&returnUrl=${returnUrl}`;
     } catch {
       toast.error("Failed to emulate profile");
     } finally {
@@ -247,6 +242,7 @@ export function EmulateProfileModal({
     isSuperadmin,
     switchEffectiveProfile,
     onOpenChange,
+    callbackUrl,
   ]);
 
   return (

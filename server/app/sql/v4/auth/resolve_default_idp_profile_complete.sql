@@ -27,44 +27,35 @@ AS $$
         WHERE profile_id IS NOT NULL
     ),
     profile_with_details AS (
-        SELECT 
+        SELECT
             rp.resolved_profile_id as profile_id,
             -- Get primary email (must match exactly what's in profile_emails table)
-            (SELECT e.email 
-             FROM profile_emails pe 
-             JOIN emails_resource e ON pe.email_id = e.id 
-             WHERE pe.profile_id = rp.resolved_profile_id 
-               AND pe.is_primary = true 
-               AND pe.active = true 
+            (SELECT e.email
+             FROM profile_emails pe
+             JOIN emails_resource e ON pe.email_id = e.id
+             WHERE pe.profile_id = rp.resolved_profile_id
+               AND pe.is_primary = true
+               AND pe.active = true
              LIMIT 1) as primary_email,
             -- Get name
-            (SELECT n.name 
-             FROM profile_names pn 
-             JOIN names_resource n ON pn.name_id = n.id 
-             WHERE pn.profile_id = rp.resolved_profile_id 
+            (SELECT n.name
+             FROM profile_names pn
+             JOIN names_resource n ON pn.name_id = n.id
+             WHERE pn.profile_id = rp.resolved_profile_id
              LIMIT 1) as name,
             -- Get role
-            (SELECT r.role 
-             FROM profile_roles pr 
-             JOIN roles_resource r ON pr.role_id = r.id 
-             WHERE pr.profile_id = rp.resolved_profile_id 
+            (SELECT r.role
+             FROM profile_roles pr
+             JOIN roles_resource r ON pr.role_id = r.id
+             WHERE pr.profile_id = rp.resolved_profile_id
              LIMIT 1) as role
         FROM resolved_profile rp
+        -- Verify profile exists in profile_artifact (not just setting_profiles)
+        -- This allows emulation of any profile, not just those linked to settings
         WHERE rp.resolved_profile_id IS NOT NULL
           AND EXISTS (
-              SELECT 1
-              FROM setting_profiles sp
-              JOIN setting_artifact s ON s.id = sp.setting_id
-              WHERE sp.profile_id = rp.resolved_profile_id
-                AND sp.active = true
-                AND EXISTS (
-                    SELECT 1
-                    FROM setting_flags sf
-                    JOIN flags_resource f ON sf.flag_id = f.id
-                    WHERE sf.setting_id = s.id
-                      AND f.name = 'setting_active'
-                      AND sf.value = true
-                )
+              SELECT 1 FROM profile_artifact pa
+              WHERE pa.id = rp.resolved_profile_id
           )
     )
     SELECT 

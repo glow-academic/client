@@ -24807,10 +24807,17 @@
         "parameters": [
           {
             "name": "authorization",
-            "in": "query",
+            "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Authorization"
             }
           }

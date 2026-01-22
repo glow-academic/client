@@ -284,12 +284,16 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
             None,
         )
 
+        # Post-logout redirect URIs for emulation flow (logout then re-auth as different user)
+        emulate_redirect_uri = f"{base_url}{app_prefix}/api/auth/emulate-redirect*"
+        post_logout_uris = f"{base_url}{app_prefix}/*"
+
         client_payload: dict[str, Any] = {
             "clientId": target_client_id,
             "name": "Glow App",
             "rootUrl": base_url,
             "baseUrl": base_url,
-            "redirectUris": redirect_uris,
+            "redirectUris": redirect_uris + [emulate_redirect_uri],
             "webOrigins": ["+"],
             "enabled": True,
             "publicClient": False,
@@ -300,6 +304,10 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
             "clientAuthenticatorType": "client-secret",
             "secret": target_secret,
             "consentRequired": False,
+            # Post-logout redirect URIs - required for emulation flow
+            "attributes": {
+                "post.logout.redirect.uris": post_logout_uris,
+            },
         }
 
         if existing_client:
@@ -1379,6 +1387,57 @@ async def sync_default_idp_for_profile(
         return alias if "alias" in locals() else f"default-idp-profile-{profile_id}"
 
 
+def ensure_emulation_first_login_flow(kc_admin: Any) -> str:
+    """Ensure the emulation-first-login flow exists.
+
+    This is a copy of 'first broker login' with 'Review Profile' disabled
+    so users aren't prompted for profile info during emulation.
+
+    Returns:
+        The flow alias: "emulation-first-login"
+    """
+    flow_alias = "emulation-first-login"
+
+    try:
+        # Check if flow already exists
+        flows = kc_admin.get_authentication_flows()
+        flow_exists = any(f.get('alias') == flow_alias for f in flows)
+
+        if not flow_exists:
+            # Copy the 'first broker login' flow
+            kc_admin.copy_authentication_flow(
+                payload={'newName': flow_alias},
+                flow_alias='first broker login'
+            )
+            logger.info(f"✅ Created {flow_alias} authentication flow")
+
+        # Get executions for the flow and configure them
+        executions = kc_admin.get_authentication_flow_executions(flow_alias)
+        for ex in executions:
+            # Disable 'Review Profile' step - critical for seamless emulation
+            if ex.get('displayName') == 'Review Profile':
+                if ex.get('requirement') != 'DISABLED':
+                    ex['requirement'] = 'DISABLED'
+                    kc_admin.update_authentication_flow_executions(
+                        payload=ex, flow_alias=flow_alias
+                    )
+                    logger.info(f"✅ Disabled Review Profile step in {flow_alias}")
+            # Make Create User If Unique REQUIRED for auto-creation
+            if ex.get('displayName') == 'Create User If Unique':
+                if ex.get('requirement') != 'REQUIRED':
+                    ex['requirement'] = 'REQUIRED'
+                    kc_admin.update_authentication_flow_executions(
+                        payload=ex, flow_alias=flow_alias
+                    )
+                    logger.info(f"✅ Made Create User If Unique REQUIRED in {flow_alias}")
+
+        return flow_alias
+    except Exception as e:
+        logger.warning(f"Failed to configure {flow_alias}: {e}")
+        # Fall back to default flow
+        return "first broker login"
+
+
 async def sync_emulation_default_idp(kc_admin: Any) -> str:
     """Sync a single default-idp for all emulation flows.
 
@@ -1407,6 +1466,9 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
         # Authorization URL without hardcoded profile_id - uses login_hint for emulation grants
         auth_url = f"{idp_public_url}/authorize"
 
+        # Ensure our custom authentication flow exists (skips profile review)
+        first_login_flow = ensure_emulation_first_login_flow(kc_admin)
+
         payload = {
             "alias": alias,
             "providerId": "oidc",
@@ -1415,6 +1477,8 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
             "trustEmail": True,
             # Hidden from login page - only used for emulation via redirect
             "hideOnLogin": True,
+            # Use our custom flow that skips profile review
+            "firstBrokerLoginFlowAlias": first_login_flow,
             "config": {
                 "authorizationUrl": auth_url,
                 "tokenUrl": f"{idp_internal_url}/token",
@@ -1427,6 +1491,8 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
                 "syncMode": "FORCE",
                 # Forward login_hint to our IdP
                 "loginHint": "true",
+                # Skip profile review page - critical for seamless emulation
+                "updateProfileFirstLoginMode": "off",
             }
         }
 

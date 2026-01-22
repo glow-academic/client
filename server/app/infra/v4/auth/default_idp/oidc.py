@@ -17,7 +17,7 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from jose import jwt
 
@@ -268,10 +268,10 @@ async def token(
         given_name = name_parts[0] if name_parts else ""
         family_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
         
-        # Build stable sub claim: default:<department_id>:<mode>:<profile_id>
-        # Note: We don't have department_id in code_data, so we'll use a simpler format
+        # Build stable sub claim using underscore (colon is invalid in Keycloak usernames)
+        # Format: default_<profile_id>
         # Keycloak will handle user linking based on email
-        sub = f"default:{code_data['profile_id']}"
+        sub = f"default_{code_data['profile_id']}"
         
         # Create ID token with emulation context
         id_token_payload = {
@@ -301,7 +301,7 @@ async def token(
             headers={"kid": key_id},
         )
         
-        # Create access token (simplified - Keycloak will issue its own)
+        # Create access token with user claims (needed for userinfo endpoint)
         access_token_payload = {
             "iss": base_url,
             "aud": client_id,
@@ -309,6 +309,11 @@ async def token(
             "exp": now + 3600,
             "iat": now,
             "scope": "openid profile email",
+            # Include user claims so userinfo can return them
+            "email": code_data["email"],
+            "name": name,
+            "given_name": given_name,
+            "family_name": family_name,
         }
         
         access_token = jwt.encode(
@@ -341,11 +346,11 @@ async def token(
 @router.get("/userinfo")
 async def userinfo(
     request: Request,
-    authorization: str = Query(None),
+    authorization: str | None = Header(None),
 ) -> dict[str, Any]:
     """UserInfo endpoint - returns user claims from access token."""
     try:
-        # Extract Bearer token
+        # Extract Bearer token from Authorization header
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
         
@@ -356,8 +361,12 @@ async def userinfo(
         # For now, we'll decode without verification (Keycloak will verify)
         try:
             # Decode without verification for UserInfo (Keycloak validates tokens)
-            # In production, verify signature using JWKS
-            payload = jwt.decode(token, options={"verify_signature": False})
+            # python-jose requires a key even with verify_signature=False
+            payload = jwt.decode(
+                token,
+                key="",  # Empty key since we're not verifying
+                options={"verify_signature": False, "verify_aud": False}
+            )
         except jwt.JWTError as e:
             raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
         

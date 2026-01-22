@@ -119,6 +119,9 @@ export const {
         const loginHint = params["login_hint"];
         if (loginHint) {
           authorizationUrl.searchParams.set("login_hint", loginHint);
+          // Force re-authentication when emulating (login_hint indicates emulation grant)
+          // Without this, Keycloak reuses existing session and skips IdP flow
+          authorizationUrl.searchParams.set("prompt", "login");
         }
 
         return authorizationUrl.toString();

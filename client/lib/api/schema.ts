@@ -31088,10 +31088,10 @@ export interface operations {
     };
     userinfo_default_idp_userinfo_get: {
         parameters: {
-            query?: {
-                authorization?: string;
+            query?: never;
+            header?: {
+                authorization?: string | null;
             };
-            header?: never;
             path?: never;
             cookie?: never;
         };
