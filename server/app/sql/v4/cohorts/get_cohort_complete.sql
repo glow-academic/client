@@ -700,31 +700,31 @@ ui_flags AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'simulations'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -772,8 +772,8 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -792,7 +792,7 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
         )
@@ -823,7 +823,7 @@ name_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -831,7 +831,7 @@ name_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names']::text[])
@@ -839,7 +839,7 @@ name_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -848,7 +848,7 @@ name_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -883,8 +883,8 @@ description_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -903,7 +903,7 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
         )
@@ -934,7 +934,7 @@ description_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -942,7 +942,7 @@ description_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['descriptions']::text[])
@@ -950,7 +950,7 @@ description_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -959,7 +959,7 @@ description_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -994,8 +994,8 @@ flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -1014,7 +1014,7 @@ flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resources
         )
@@ -1045,7 +1045,7 @@ flag_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1053,7 +1053,7 @@ flag_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['flags']::text[])
@@ -1061,7 +1061,7 @@ flag_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1070,7 +1070,7 @@ flag_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1105,8 +1105,8 @@ departments_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -1125,7 +1125,7 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'departments'::resources
         )
@@ -1156,7 +1156,7 @@ departments_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1164,7 +1164,7 @@ departments_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['departments']::text[])
@@ -1172,7 +1172,7 @@ departments_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1181,7 +1181,7 @@ departments_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1216,8 +1216,8 @@ simulations_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -1236,7 +1236,7 @@ simulations_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'simulations'::resources
         )
@@ -1267,7 +1267,7 @@ simulations_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1275,7 +1275,7 @@ simulations_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['simulations']::text[])
@@ -1283,7 +1283,7 @@ simulations_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1292,7 +1292,7 @@ simulations_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1327,8 +1327,8 @@ simulation_positions_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -1347,7 +1347,7 @@ simulation_positions_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'simulation_positions'::resources
         )
@@ -1378,7 +1378,7 @@ simulation_positions_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1386,7 +1386,7 @@ simulation_positions_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['simulation_positions']::text[])
@@ -1394,7 +1394,7 @@ simulation_positions_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1403,7 +1403,7 @@ simulation_positions_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1438,8 +1438,8 @@ basic_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -1462,7 +1462,7 @@ basic_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments']::text[])
@@ -1470,7 +1470,7 @@ basic_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1478,7 +1478,7 @@ basic_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1537,8 +1537,8 @@ general_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN resource_tools rt ON rt.tool_id = at.tool_id
-            JOIN artifact_resources ar ON ar.resource = rt.resource
+            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND ar.artifact = 'cohort'::artifacts
@@ -1561,7 +1561,7 @@ general_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations']::text[])
@@ -1569,7 +1569,7 @@ general_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text = ANY(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])
@@ -1577,7 +1577,7 @@ general_agent_data AS (
             (
                 SELECT COUNT(DISTINCT rt2.resource::text)
                 FROM agent_tools at2
-                JOIN resource_tools rt2 ON rt2.tool_id = at2.tool_id
+                JOIN resource_tools_relation rt2 ON rt2.tool_id = at2.tool_id
                 WHERE at2.agent_id = ea.agent_id
                   AND at2.active = true
                   AND rt2.resource::text <> ALL(ARRAY['names', 'descriptions', 'flags', 'departments', 'simulations', 'simulation_positions']::text[])

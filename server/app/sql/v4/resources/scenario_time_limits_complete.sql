@@ -48,12 +48,12 @@ BEGIN
         RAISE EXCEPTION 'Scenario % does not exist', api_create_scenario_time_limits_v4.scenario_id;
     END IF;
 
-    -- Lookup tool_id from agent_tools + resource_tools
+    -- Lookup tool_id from agent_tools + resource_tools_relation
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
-    JOIN resource_tools rt ON rt.tool_id = t.id
+    JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_scenario_time_limits_v4.agent_id
       AND rt.resource = 'scenario_time_limits'::resources
       AND at.active = true

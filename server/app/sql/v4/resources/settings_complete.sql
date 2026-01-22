@@ -50,12 +50,12 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM setting_artifact WHERE id = v_artifact_id) THEN
         RAISE EXCEPTION 'Setting artifact % does not exist', v_artifact_id;
     END IF;
-    -- Lookup tool_id from agent_tools + resource_tools
+    -- Lookup tool_id from agent_tools + resource_tools_relation
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
-    JOIN resource_tools rt ON rt.tool_id = t.id
+    JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_settings_v4.agent_id
       AND rt.resource = 'settings'::resources
       AND at.active = true

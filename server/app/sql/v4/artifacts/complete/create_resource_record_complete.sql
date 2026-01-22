@@ -44,7 +44,7 @@ DECLARE
 BEGIN
     -- Validate resource_type exists in resources enum
     IF NOT EXISTS (
-        SELECT 1 FROM resource_tools
+        SELECT 1 FROM resource_tools_relation
         WHERE resource = resource_type::resources
     ) THEN
         RAISE EXCEPTION 'Invalid resource type: %', resource_type;

@@ -744,7 +744,7 @@ model_pricing_data AS (
         pr.price
     FROM model_pricing mp
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
-    JOIN artifact_units u ON u.id = pr.unit_id
+    JOIN artifact_units_relation u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mp.active = true AND pr.active = true AND u.active = true
@@ -893,7 +893,7 @@ pricing_ids_data AS (
         END as pricing_ids
     FROM model_pricing mp
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
-    JOIN artifact_units u ON u.id = pr.unit_id
+    JOIN artifact_units_relation u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND mp.active = true AND pr.active = true AND u.active = true
@@ -906,7 +906,7 @@ pricing_draft_ids_data AS (
         END as pricing_ids
     FROM pricing_draft dp
     JOIN pricing_resource pr ON pr.id = dp.pricing_id
-    JOIN artifact_units u ON u.id = pr.unit_id
+    JOIN artifact_units_relation u ON u.id = pr.unit_id
     WHERE dp.draft_id = (SELECT draft_id FROM params)
     AND pr.active = true AND u.active = true
 ),
@@ -1582,85 +1582,85 @@ pricing_suggestions_data AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'values'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as values_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'endpoints'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as endpoints_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'providers'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as providers_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'keys'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as keys_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'modalities'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as modalities_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'temperature_levels'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as temperature_levels_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'reasoning_levels'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as reasoning_levels_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'qualities'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as qualities_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'pricing'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as pricing_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'voices'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -1679,7 +1679,7 @@ ui_flags AS (
             ELSE false
         END as show_description,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM flags_resource f JOIN artifact_flags aft ON f.type = aft.flag_type WHERE aft.artifact = 'model'::artifacts) THEN true
+            WHEN EXISTS (SELECT 1 FROM flags_resource f JOIN artifact_flags_relation aft ON f.type = aft.flag_type WHERE aft.artifact = 'model'::artifacts) THEN true
             ELSE false
         END as show_flag,
         CASE 
@@ -1780,7 +1780,7 @@ flags_data AS (
         f.icon_id,
         COALESCE(f.generated, false) as generated
     FROM flags_resource f
-    JOIN artifact_flags aft ON f.type = aft.flag_type
+    JOIN artifact_flags_relation aft ON f.type = aft.flag_type
     CROSS JOIN params p
     WHERE 
         aft.artifact = 'model'::artifacts
@@ -1961,7 +1961,7 @@ all_pricing_data AS (
         pr.price,
         COALESCE(pr.generated, false) as generated
     FROM pricing_resource pr
-    JOIN artifact_units u ON u.id = pr.unit_id
+    JOIN artifact_units_relation u ON u.id = pr.unit_id
     WHERE pr.active = true AND u.active = true
     ORDER BY pr.pricing_type, u.name
 ),
@@ -2484,7 +2484,7 @@ SELECT
         END
         FROM pricing_draft dp
         JOIN pricing_resource pr ON pr.id = dp.pricing_id
-        JOIN artifact_units u ON u.id = pr.unit_id
+        JOIN artifact_units_relation u ON u.id = pr.unit_id
         WHERE dp.draft_id = (SELECT draft_id FROM params)
         AND pr.active = true AND u.active = true),
         (SELECT ARRAY_AGG(
@@ -2493,7 +2493,7 @@ SELECT
         )
         FROM model_pricing mp
         JOIN pricing_resource pr ON pr.id = mp.pricing_id
-        JOIN artifact_units u ON u.id = pr.unit_id
+        JOIN artifact_units_relation u ON u.id = pr.unit_id
         WHERE mp.model_id = (SELECT model_id FROM params)
         AND (SELECT model_id FROM params) IS NOT NULL
         AND mp.active = true AND pr.active = true AND u.active = true),

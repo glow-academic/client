@@ -49,7 +49,7 @@ get_tool_info AS (
     JOIN tool_artifact t ON (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name
     JOIN agent_tools at ON at.tool_id = t.id
     JOIN runs r_run ON r_run.id = p.run_id
-    LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+    LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = r_run.agent_id
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)

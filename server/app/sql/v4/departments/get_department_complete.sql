@@ -453,25 +453,25 @@ flags_data AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'settings'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -945,7 +945,7 @@ model_run_costs AS (
         AND pr.pricing_type = rpu.pricing_type 
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
-    JOIN artifact_units u ON u.id = rpu.unit_id
+    JOIN artifact_units_relation u ON u.id = rpu.unit_id
     GROUP BY rpu.run_id
 ),
 department_price_spent AS (

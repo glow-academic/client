@@ -123,7 +123,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             rt.resource::text,
             COUNT(DISTINCT rt.tool_id) as tool_count,
             string_agg(DISTINCT tool_n.name, ', ' ORDER BY tool_n.name) as tool_names
-        FROM resource_tools rt
+        FROM resource_tools_relation rt
         JOIN tool_artifact t ON t.id = rt.tool_id
         JOIN tool_flags tf ON tf.tool_id = t.id
         JOIN flags_resource f ON tf.flag_id = f.id
@@ -150,7 +150,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = 'resources')
         AND enumlabel::text NOT IN (
             SELECT DISTINCT resource::text 
-            FROM resource_tools
+            FROM resource_tools_relation
         )
         ORDER BY enumlabel
     """)
@@ -177,7 +177,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         JOIN flags_resource f ON tf.flag_id = f.id
         LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
         LEFT JOIN names_resource tool_n ON tool_n.id = tn.name_id
-        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
         LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
         LEFT JOIN tool_templates tt ON tt.tool_id = t.id AND tt.type = 'output'::type_tool_templates
         LEFT JOIN schema_templates st ON st.template_id = tt.template_id
@@ -195,7 +195,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             tt.template_id,
             rt.resource::text as resource
         FROM tool_artifact t
-        JOIN resource_tools rt ON rt.tool_id = t.id
+        JOIN resource_tools_relation rt ON rt.tool_id = t.id
         JOIN tool_flags tf ON tf.tool_id = t.id
         JOIN flags_resource f ON tf.flag_id = f.id
         LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -216,7 +216,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             tool_n.name as tool_name,
             rt.resource::text as resource
         FROM tool_artifact t
-        JOIN resource_tools rt ON rt.tool_id = t.id
+        JOIN resource_tools_relation rt ON rt.tool_id = t.id
         JOIN tool_flags tf ON tf.tool_id = t.id
         JOIN flags_resource f ON tf.flag_id = f.id
         LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -240,7 +240,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             sf.description as argument_description,
             sf.position
         FROM tool_artifact t
-        JOIN resource_tools rt ON rt.tool_id = t.id
+        JOIN resource_tools_relation rt ON rt.tool_id = t.id
         JOIN tool_flags tf ON tf.tool_id = t.id
         JOIN flags_resource f ON tf.flag_id = f.id
         LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -271,7 +271,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             sf.template as jinja_template,
             sf.position
         FROM tool_artifact t
-        JOIN resource_tools rt ON rt.tool_id = t.id
+        JOIN resource_tools_relation rt ON rt.tool_id = t.id
         JOIN tool_flags tf ON tf.tool_id = t.id
         JOIN flags_resource f ON tf.flag_id = f.id
         LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -352,7 +352,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
                 ELSE false
             END as table_exists
         FROM tool_artifact t
-        JOIN resource_tools rt ON rt.tool_id = t.id
+        JOIN resource_tools_relation rt ON rt.tool_id = t.id
         JOIN tool_flags tf ON tf.tool_id = t.id
         JOIN flags_resource f ON tf.flag_id = f.id
         LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -425,7 +425,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
                 rt.resource::text as resource,
                 sf.name as output_field
             FROM tool_artifact t
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             JOIN tool_flags tf ON tf.tool_id = t.id
             JOIN flags_resource f ON tf.flag_id = f.id
             JOIN tool_templates tt ON tt.tool_id = t.id AND tt.type = 'output'::type_tool_templates
@@ -463,7 +463,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
                 sf.template as schema_template,
                 sf.position as schema_position
             FROM tool_artifact t
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             JOIN tool_flags tf ON tf.tool_id = t.id
             JOIN flags_resource f ON tf.flag_id = f.id
             LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -554,7 +554,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
                 tool_n.name as tool_name,
                 sf.name as schema_field_name
             FROM tool_artifact t
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             JOIN tool_flags tf ON tf.tool_id = t.id
             JOIN flags_resource f ON tf.flag_id = f.id
             LEFT JOIN tool_names tn ON tn.tool_id = t.id AND tn.active = true
@@ -603,8 +603,8 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         ) a
         WHERE NOT EXISTS (
             SELECT 1
-            FROM artifact_resources ar
-            JOIN resource_tools rt ON rt.resource = ar.resource AND rt.active = true
+            FROM artifact_resources_relation ar
+            JOIN resource_tools_relation rt ON rt.resource = ar.resource AND rt.active = true
             JOIN agent_tools at ON at.tool_id = rt.tool_id AND at.active = true
             JOIN agent_artifact ag ON ag.id = at.agent_id
             WHERE ar.artifact::text = a.artifact
@@ -656,7 +656,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
     stats = await conn.fetchrow("""
         SELECT 
             (SELECT COUNT(*) FROM pg_enum WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = 'resources')) as total_resources,
-            (SELECT COUNT(DISTINCT resource) FROM resource_tools rt 
+            (SELECT COUNT(DISTINCT resource) FROM resource_tools_relation rt 
              JOIN tool_artifact t ON t.id = rt.tool_id
              JOIN tool_flags tf ON tf.tool_id = t.id
              JOIN flags_resource f ON tf.flag_id = f.id
@@ -666,7 +666,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
              JOIN flags_resource f ON tf.flag_id = f.id
              WHERE f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true) as total_active_tools,
             (SELECT COUNT(*) FROM tool_artifact t 
-             JOIN resource_tools rt ON rt.tool_id = t.id
+             JOIN resource_tools_relation rt ON rt.tool_id = t.id
              JOIN tool_flags tf ON tf.tool_id = t.id
              JOIN flags_resource f ON tf.flag_id = f.id
              LEFT JOIN tool_templates tt ON tt.tool_id = t.id AND tt.type = 'output'::type_tool_templates
@@ -674,7 +674,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
              WHERE f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true
              AND rt.active = true AND st.schema_id IS NULL) as tools_missing_output_schema,
             (SELECT COUNT(*) FROM tool_artifact t
-             JOIN resource_tools rt ON rt.tool_id = t.id
+             JOIN resource_tools_relation rt ON rt.tool_id = t.id
              JOIN tool_flags tf ON tf.tool_id = t.id
              JOIN flags_resource f ON tf.flag_id = f.id
              LEFT JOIN tool_schemas ts ON ts.tool_id = t.id

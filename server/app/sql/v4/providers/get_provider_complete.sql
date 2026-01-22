@@ -152,19 +152,19 @@ user_profile AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as descriptions_has_tools,
         EXISTS (
-            SELECT 1 FROM resource_tools rt
+            SELECT 1 FROM resource_tools_relation rt
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -448,7 +448,7 @@ name_agent_data AS (
         WHERE EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'names'::resources
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -476,7 +476,7 @@ description_agent_data AS (
         WHERE EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'descriptions'::resources
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -504,7 +504,7 @@ flag_agent_data AS (
         WHERE EXISTS (
             SELECT 1 FROM agent_tools at
             JOIN tool_artifact t ON t.id = at.tool_id
-            JOIN resource_tools rt ON rt.tool_id = t.id
+            JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'flags'::resources
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)

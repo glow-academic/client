@@ -29,9 +29,9 @@ AS $$
 DECLARE
     v_function_name text;
 BEGIN
-    -- First check if resource exists in resource_tools
+    -- First check if resource exists in resource_tools_relation
     IF NOT EXISTS (
-        SELECT 1 FROM resource_tools
+        SELECT 1 FROM resource_tools_relation
         WHERE resource = resource_type::resources
     ) THEN
         RETURN;  -- Return empty (no rows)

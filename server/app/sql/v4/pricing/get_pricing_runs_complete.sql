@@ -332,7 +332,7 @@ run_costs AS (
         AND pr.pricing_type = rpu.pricing_type 
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
-    JOIN artifact_units u ON u.id = rpu.unit_id
+    JOIN artifact_units_relation u ON u.id = rpu.unit_id
     GROUP BY rpu.run_id
 ),
 -- Join with mappings for search and display
@@ -543,7 +543,7 @@ model_pricing_aggregated AS (
     FROM (SELECT DISTINCT model_id FROM runs_filtered WHERE model_id IS NOT NULL) mrf
     LEFT JOIN model_pricing mp ON mp.model_id = mrf.model_id AND mp.active = true
     LEFT JOIN pricing_resource pr ON pr.id = mp.pricing_id AND pr.active = true AND pr.pricing_type IN ('input'::pricing_type, 'output'::pricing_type)
-    LEFT JOIN artifact_units u ON u.id = pr.unit_id
+    LEFT JOIN artifact_units_relation u ON u.id = pr.unit_id
     GROUP BY mrf.model_id
 )
 SELECT 

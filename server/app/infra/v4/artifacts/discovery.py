@@ -26,7 +26,7 @@ async def get_resource_sql_function_name(
     - api_create_{resource_type}_v4
     - api_create_{resource_type}s_v4 (pluralized)
     
-    Also validates that the resource exists in resource_tools table.
+    Also validates that the resource exists in resource_tools_relation table.
     
     Args:
         conn: Database connection
@@ -101,7 +101,7 @@ async def get_resource_schema_fields(
 ) -> list[dict[str, Any]]:
     """Discover schema fields for a resource type.
     
-    Queries resource_outputs → outputs to get the output schema fields for a resource.
+    Queries resource_outputs_relation → outputs to get the output schema fields for a resource.
     These fields define what output fields the resource has.
     
     Args:

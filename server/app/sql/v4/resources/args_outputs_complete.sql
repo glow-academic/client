@@ -51,13 +51,13 @@ BEGIN
         RAISE EXCEPTION 'Args resource % does not exist', args_id;
     END IF;
     
-    -- Lookup tool_id from agent_tools + resource_tools
+    -- Lookup tool_id from agent_tools + resource_tools_relation
     -- Note: No longer need template_id or schema_id since we use tool_args directly
     SELECT t.id
     INTO v_tool_id
     FROM agent_tools at
     JOIN tool_artifact t ON t.id = at.tool_id
-    JOIN resource_tools rt ON rt.tool_id = t.id
+    JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_args_outputs_v4.agent_id
       AND rt.resource = 'args_outputs'::resources
       AND at.active = true

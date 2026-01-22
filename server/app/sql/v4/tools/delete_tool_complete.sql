@@ -47,7 +47,7 @@ usage_check AS (
         UNION ALL
         SELECT 1 FROM agent_tools at WHERE at.tool_id = x.tool_id AND at.active = true
         UNION ALL
-        SELECT 1 FROM resource_tools rt WHERE rt.tool_id = x.tool_id
+        SELECT 1 FROM resource_tools_relation rt WHERE rt.tool_id = x.tool_id
     )
 ),
 tool_info AS (
