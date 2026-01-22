@@ -154,20 +154,20 @@ eval_data AS (
         e.id as eval_id,
         (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1),
         (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1),
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE) as use_groups,
+        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE) as use_groups,
         EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'dynamic' AND ef.value = TRUE),
         e.created_at,
         e.updated_at,
-        -- Get first rubric from direct rubric links (FROM runs or groups based on use_groups)
+        -- Get first rubric from direct rubric links (FROM runs_entry or groups_entry based on use_groups)
         (SELECT combined.rubric_id 
          FROM (
              SELECT err.rubric_id, err.created_at
              FROM eval_runs_rubrics err
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
              SELECT egr.rubric_id, egr.created_at
              FROM eval_groups_rubrics egr
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
@@ -175,11 +175,11 @@ eval_data AS (
          FROM (
              SELECT err.rubric_id, err.created_at
              FROM eval_runs_rubrics err
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
              SELECT egr.rubric_id, egr.created_at
              FROM eval_groups_rubrics egr
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at 
@@ -188,11 +188,11 @@ eval_data AS (
          FROM (
              SELECT err.rubric_id, err.created_at
              FROM eval_runs_rubrics err
-             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = false)
+             WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
              SELECT egr.rubric_id, egr.created_at
              FROM eval_groups_rubrics egr
-             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = true)
+             WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
          ORDER BY combined.created_at 
@@ -324,7 +324,7 @@ SELECT
          WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)),
         '{}'::types.q_list_evals_v4_agent[]
     ) as agents,
-    -- Standard groups array
+    -- Standard groups_entry array
     COALESCE(
         (SELECT ARRAY_AGG((sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_list_evals_v4_standard_group)
          FROM all_standard_group_ids asgi
@@ -338,7 +338,7 @@ SELECT
          JOIN standards_resource st ON st.id = asi.standard_id),
         '{}'::types.q_list_evals_v4_standard[]
     ) as standards,
-    -- Rubric standard groups array (mapping structure)
+    -- Rubric standard groups_entry array (mapping structure)
     COALESCE(
         (SELECT ARRAY_AGG(
             (rsg.rubric_id, rsg.standard_group_id,

@@ -86,7 +86,7 @@ target_profile AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
-        FROM activity 
+        FROM activity_entry 
         WHERE profile_id = p.id 
         ORDER BY created_at DESC 
         LIMIT 1

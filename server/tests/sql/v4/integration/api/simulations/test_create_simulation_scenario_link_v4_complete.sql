@@ -38,7 +38,7 @@ AS $$
             false,
             false,
             true,
-            (SELECT id FROM calls LIMIT 1)
+            (SELECT id FROM calls_entry LIMIT 1)
         FROM inserted_link il
         CROSS JOIN flags_resource sf
         WHERE sf.name = 'active'
@@ -70,7 +70,7 @@ AS $$
             NOW(),
             false,
             false,
-            (SELECT id FROM calls LIMIT 1)
+            (SELECT id FROM calls_entry LIMIT 1)
         FROM inserted_link il
         ON CONFLICT (scenario_id, value) DO NOTHING
         RETURNING id, scenario_id, value

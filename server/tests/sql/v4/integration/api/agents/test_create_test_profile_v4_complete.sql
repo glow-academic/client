@@ -1,5 +1,5 @@
 -- Create a test profile for test setup
--- Returns profile_id and email for use in tests
+-- Returns profile_id and email for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_profile_v4(text, text, text, text);
 

@@ -150,7 +150,7 @@ recent_runs AS (
     SELECT
         mr.profile_id,
         COUNT(*) as run_count
-    FROM runs mr
+    FROM runs_entry mr
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
       AND mr.profile_id IS NOT NULL
     GROUP BY mr.profile_id
@@ -159,7 +159,7 @@ profile_total_runs AS (
     SELECT
         mr.profile_id,
         COUNT(*) as total_requests
-    FROM runs mr
+    FROM runs_entry mr
     WHERE mr.profile_id IS NOT NULL
     GROUP BY mr.profile_id
 ),
@@ -257,7 +257,7 @@ total_requests_by_date AS (
     SELECT
         DATE(mr.created_at) as date,
         COUNT(*) as count
-    FROM runs mr
+    FROM runs_entry mr
     JOIN profile_departments pd ON pd.profile_id = mr.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
       AND mr.profile_id IS NOT NULL
@@ -332,7 +332,7 @@ staff_rows AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
-        FROM activity 
+        FROM activity_entry 
         WHERE profile_id = p.id 
         ORDER BY created_at DESC 
         LIMIT 1

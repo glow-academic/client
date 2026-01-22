@@ -257,11 +257,11 @@ scenario_data AS (
         END as can_delete,
         true as can_duplicate
     FROM scenario_artifact s
-    -- Only include root scenarios (parent_id = child_id in scenario_tree)
-    JOIN scenario_tree root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
+    -- Only include root scenarios (parent_id = child_id in scenario_tree_entry)
+    JOIN scenario_tree_entry root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
-    LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
+    LEFT JOIN scenario_tree_entry st ON st.child_id = s.id AND st.parent_id != st.child_id
     LEFT JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
     LEFT JOIN scenario_objectives so ON so.scenario_id = s.id

@@ -27,8 +27,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
     -- NOTE: standard_groups table doesn't have rubric_id column
-    -- Standard groups are linked to rubrics via rubric_standard_groups table
-    -- This function creates a standard group without rubric link - tests using this may need updating
+    -- Standard groups_entry are linked to rubrics via rubric_standard_groups table
+    -- This function creates a standard group without rubric link - tests_entry using this may need updating
     WITH new_group AS (
         INSERT INTO standard_groups_resource(name, short_name, description, points, pass_points)
         SELECT 

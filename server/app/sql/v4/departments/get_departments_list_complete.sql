@@ -97,7 +97,7 @@ model_run_costs AS (
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as cost
     FROM run_pricing_entry rpu
-    JOIN runs r ON r.id = rpu.run_id
+    JOIN runs_entry r ON r.id = rpu.run_id
     JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
     JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
@@ -112,7 +112,7 @@ model_run_departments_via_agents AS (
         mrc.run_id,
         ad.department_id
     FROM model_run_costs mrc
-    JOIN runs mr ON mr.id = mrc.run_id
+    JOIN runs_entry mr ON mr.id = mrc.run_id
     JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
     WHERE mr.agent_id IS NOT NULL
     AND ad.department_id IN (SELECT department_id FROM user_departments)
@@ -122,7 +122,7 @@ model_run_departments_via_profiles AS (
         mrc.run_id,
         pd.department_id
     FROM model_run_costs mrc
-    JOIN runs r ON r.id = mrc.run_id
+    JOIN runs_entry r ON r.id = mrc.run_id
     JOIN profile_departments pd ON pd.profile_id = r.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ),

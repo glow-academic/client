@@ -1,4 +1,4 @@
--- Get activity bundle with header metrics and chart data
+-- Get activity_entry bundle with header metrics_entry and chart data
 -- Converted to function with composite types (no JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -70,7 +70,7 @@ daily_activity AS (
         DATE(created_at) as date,
         COUNT(*) as activity_count,
         COUNT(*) FILTER (WHERE error = true) as error_count
-    FROM audits
+    FROM audits_entry
     WHERE created_at >= NOW() - INTERVAL '90 days'
     GROUP BY DATE(created_at)
 ),
@@ -86,7 +86,7 @@ daily_active_profiles AS (
     SELECT
         DATE(last_active) as date,
         COUNT(DISTINCT profile_id) as active_profiles_count
-    FROM activity
+    FROM activity_entry
     WHERE last_active >= NOW() - INTERVAL '90 days'
     GROUP BY DATE(last_active)
 ),
@@ -112,10 +112,10 @@ combined_daily AS (
 )
 SELECT
     up.actor_name::text as actor_name,
-    (SELECT COUNT(DISTINCT profile_id) FROM activity)::bigint as active_profiles_count,
+    (SELECT COUNT(DISTINCT profile_id) FROM activity_entry)::bigint as active_profiles_count,
     (SELECT COUNT(*) FROM problems_entry)::bigint as total_feedback_count,
-    (SELECT COUNT(*) FROM audits)::bigint as total_activity_entries,
-    (SELECT COUNT(*) FROM audits WHERE error = true)::bigint as total_errors_count,
+    (SELECT COUNT(*) FROM audits_entry)::bigint as total_activity_entries,
+    (SELECT COUNT(*) FROM audits_entry WHERE error = true)::bigint as total_errors_count,
     COALESCE(
         ARRAY_AGG(
             (cd.date, cd.active_profiles_count::integer, cd.feedback_count::integer, cd.activity_count::integer, cd.error_count::integer)::types.q_get_activity_bundle_v4_chart_data_point

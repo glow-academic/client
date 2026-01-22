@@ -88,7 +88,7 @@ tool_usage_counts AS (
     SELECT 
         t.id as tool_id,
         COALESCE(
-            (SELECT COUNT(*) FROM calls c WHERE c.tool_id = t.id),
+            (SELECT COUNT(*) FROM calls_entry c WHERE c.tool_id = t.id),
             0
         ) as usage_count
     FROM tool_artifact t

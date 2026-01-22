@@ -1,5 +1,5 @@
--- Get messages by message_ids array
--- Returns messages in order of message_ids array
+-- Get messages_entry by message_ids array
+-- Returns messages_entry in order of message_ids array
 -- Uses safe drop/recreate pattern
 DO $$
 DECLARE
@@ -34,7 +34,7 @@ CREATE OR REPLACE FUNCTION socket_get_messages_by_ids_v4(
     message_ids uuid[]
 )
 RETURNS TABLE (
-    messages types.i_get_messages_by_ids_v4_message[]
+    messages_entry types.i_get_messages_by_ids_v4_message[]
 )
 LANGUAGE sql
 STABLE
@@ -42,7 +42,7 @@ AS $$
 WITH params AS (
     SELECT message_ids AS message_ids
 ),
--- Get messages in order of message_ids array
+-- Get messages_entry in order of message_ids array
 messages_data AS (
     SELECT 
         m.id,
@@ -55,9 +55,9 @@ messages_data AS (
         array_position(p.message_ids, m.id) as pos
     FROM params p
     CROSS JOIN unnest(p.message_ids) AS msg_id
-    JOIN messages m ON m.id = msg_id
+    JOIN messages_entry m ON m.id = msg_id
     LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-    LEFT JOIN calls c_audio ON c_audio.message_id = m.id
+    LEFT JOIN calls_entry c_audio ON c_audio.message_id = m.id
     LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     WHERE p.message_ids IS NOT NULL
       AND array_length(p.message_ids, 1) > 0
@@ -69,7 +69,7 @@ SELECT
             ORDER BY md.pos
         ),
         '{}'::types.i_get_messages_by_ids_v4_message[]
-    ) as messages
+    ) as messages_entry
 FROM messages_data md
 $$;
 

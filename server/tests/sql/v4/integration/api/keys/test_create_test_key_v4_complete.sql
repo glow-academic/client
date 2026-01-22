@@ -23,7 +23,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH call_record AS (
-        INSERT INTO calls(id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+        INSERT INTO calls_entry(id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
         VALUES (
             uuidv7(),
             'test_create_key_' || uuidv7()::text,

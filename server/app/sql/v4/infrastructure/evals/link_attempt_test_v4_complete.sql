@@ -23,7 +23,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE tests
+    UPDATE tests_entry
     SET attempt_id = $1, updated_at = NOW()
     WHERE id = $2
 $$;

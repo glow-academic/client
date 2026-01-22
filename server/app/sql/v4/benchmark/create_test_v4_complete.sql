@@ -25,6 +25,6 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO tests (id, title, completed, trace_id, group_id, created_at, updated_at)
+    INSERT INTO tests_entry (id, title, completed, trace_id, group_id, created_at, updated_at)
     VALUES ($1, $2, false, $3, $4, NOW(), NOW())
 $$;

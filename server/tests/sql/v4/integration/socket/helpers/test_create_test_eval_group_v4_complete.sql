@@ -15,7 +15,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_group AS (
-        INSERT INTO groups (trace_id)
+        INSERT INTO groups_entry (trace_id)
         VALUES (gen_trace_id())
         RETURNING id as group_id
     ),

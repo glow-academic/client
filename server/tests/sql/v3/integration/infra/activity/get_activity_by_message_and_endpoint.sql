@@ -1,2 +1,2 @@
-SELECT * FROM activity WHERE message = $1 AND endpoint = $2
+SELECT * FROM activity_entry WHERE message = $1 AND endpoint = $2
 

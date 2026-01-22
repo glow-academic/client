@@ -1,4 +1,4 @@
--- Get activity list with pagination
+-- Get activity_entry list with pagination
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -84,7 +84,7 @@ filtered_activities AS (
         a.error,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'Anonymous') as profile_name,
         p.id as profile_id
-    FROM audits a
+    FROM audits_entry a
     LEFT JOIN profile_artifact p ON p.id = a.profile_id
     CROSS JOIN params x
     WHERE (x.search IS NULL OR x.search = '' OR a.message ILIKE '%' || x.search || '%' OR COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'Anonymous') ILIKE '%' || x.search || '%')

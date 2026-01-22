@@ -416,7 +416,7 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id,
         COALESCE(d.version, 0) as draft_version
     FROM params x
@@ -1196,9 +1196,9 @@ name_suggestions_data AS (
                            mn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1235,9 +1235,9 @@ description_suggestions_data AS (
                            md.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1298,9 +1298,9 @@ value_suggestions_data AS (
                            mv.generated = true
                            AND v.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = v.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1337,9 +1337,9 @@ endpoint_suggestions_data AS (
                            me.generated = true
                            AND e.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = e.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1375,9 +1375,9 @@ input_modality_suggestions_data AS (
                            mm.generated = true
                            AND mr.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages msg ON msg.id = c.message_id
-                               JOIN runs r ON r.id = msg.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry msg ON msg.id = c.message_id
+                               JOIN runs_entry r ON r.id = msg.run_id
                                WHERE c.id = mr.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1413,9 +1413,9 @@ output_modality_suggestions_data AS (
                            mm.generated = true
                            AND mr.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages msg ON msg.id = c.message_id
-                               JOIN runs r ON r.id = msg.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry msg ON msg.id = c.message_id
+                               JOIN runs_entry r ON r.id = msg.run_id
                                WHERE c.id = mr.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1450,9 +1450,9 @@ temperature_level_suggestions_data AS (
                            mtl.generated = true
                            AND tl.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = tl.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1487,9 +1487,9 @@ reasoning_level_suggestions_data AS (
                            mrl.generated = true
                            AND rl.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = rl.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1524,9 +1524,9 @@ quality_suggestions_data AS (
                            mq.generated = true
                            AND qr.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = qr.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1561,9 +1561,9 @@ pricing_suggestions_data AS (
                            mp.generated = true
                            AND pr.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = pr.call_id
                                  AND r.group_id = dgd.group_id
                            )

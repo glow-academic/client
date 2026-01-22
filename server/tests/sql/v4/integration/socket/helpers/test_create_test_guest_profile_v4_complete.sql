@@ -1,4 +1,4 @@
--- Create a test guest profile for socket tests
+-- Create a test guest profile for socket tests_entry
 -- Returns guest_id and email
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_guest_profile_v4(text);

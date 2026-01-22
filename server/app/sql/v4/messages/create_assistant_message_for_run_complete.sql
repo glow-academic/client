@@ -17,13 +17,13 @@ WITH params AS (
 existing_assistant_message AS (
     SELECT m.id as assistant_message_id
     FROM params p
-    JOIN messages m ON m.run_id = p.run_id
+    JOIN messages_entry m ON m.run_id = p.run_id
     WHERE m.role = 'assistant'::message_role
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
 new_assistant_message AS (
-    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'assistant'::message_role, false, false, p.run_id, NOW(), NOW()
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM existing_assistant_message)

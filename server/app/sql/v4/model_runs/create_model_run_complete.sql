@@ -44,7 +44,7 @@ WITH params AS (
 ),
 create_run AS (
     -- 1. Create run record with key_id, agent_id, and profile_id directly
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id, profile_id)
     SELECT 0, 0, p.key_id, p.agent_id, p.profile_id
     FROM params p
     RETURNING id

@@ -40,7 +40,7 @@ WITH params AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM calls
+    FROM calls_entry
     LIMIT 1
 ),
 actor_profile AS (
@@ -96,15 +96,15 @@ get_images_enabled_flag AS (
     LIMIT 1
 ),
 ensure_group AS (
-    INSERT INTO groups (id, created_at, updated_at)
+    INSERT INTO groups_entry (id, created_at, updated_at)
     SELECT p.group_id, NOW(), NOW()
     FROM params p
     WHERE p.group_id IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM groups g WHERE g.id = p.group_id)
+      AND NOT EXISTS (SELECT 1 FROM groups_entry g WHERE g.id = p.group_id)
     RETURNING id
 ),
 new_group AS (
-    INSERT INTO groups (created_at, updated_at)
+    INSERT INTO groups_entry (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM params p
     WHERE p.group_id IS NULL
@@ -160,7 +160,7 @@ link_images_enabled_flag AS (
     WHERE ss.images_enabled = true
 ),
 insert_tree_edge AS (
-    INSERT INTO scenario_tree (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO scenario_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT ns.id, ns.id, true, NOW(), NOW()
     FROM new_scenario ns
 ),

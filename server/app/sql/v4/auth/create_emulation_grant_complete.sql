@@ -137,7 +137,7 @@ actor_name_computed AS (
     WHERE p.id = (SELECT requester_profile_id FROM params)
 ),
 grant_insert AS (
-    INSERT INTO grants (
+    INSERT INTO grants_entry (
         id,
         actor_profile_id,
         target_profile_id,

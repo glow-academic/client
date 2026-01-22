@@ -24,5 +24,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT group_id FROM tests WHERE tests.id = $1
+    SELECT group_id FROM tests_entry WHERE tests_entry.id = $1
 $$;

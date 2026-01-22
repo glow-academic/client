@@ -26,7 +26,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT t.id::text as test_id
-    FROM tests t
+    FROM tests_entry t
     WHERE t.attempt_id = $1
       AND t.trace_id = $2
     LIMIT 1

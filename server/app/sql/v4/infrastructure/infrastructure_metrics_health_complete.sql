@@ -1,4 +1,4 @@
--- Insert or update service health check
+-- Insert or update service health_entry check
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Drop function if exists (handle signature changes)
@@ -25,7 +25,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO health (ts, service, ok, latency_ms, error)
+    INSERT INTO health_entry (ts, service, ok, latency_ms, error)
     VALUES (ts::timestamptz, service, ok, latency_ms, error)
     ON CONFLICT (ts, service) DO UPDATE
     SET ok = EXCLUDED.ok,

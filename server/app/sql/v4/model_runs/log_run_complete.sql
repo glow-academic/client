@@ -39,21 +39,21 @@ run_info AS (
         NULL::uuid as persona_id,
         COALESCE(
             x.department_id,
-            -- Try to get department FROM chats (chats now have direct group_id column)
-            (SELECT sd.department_id FROM runs r2
-             JOIN groups g ON g.id = r2.group_id
-             JOIN chats c ON c.group_id = g.id
+            -- Try to get department FROM chats_entry (chats_entry now have direct group_id column)
+            (SELECT sd.department_id FROM runs_entry r2
+             JOIN groups_entry g ON g.id = r2.group_id
+             JOIN chats_entry c ON c.group_id = g.id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
-            (SELECT pd.department_id FROM runs r2_prof
+            (SELECT pd.department_id FROM runs_entry r2_prof
              JOIN profile_departments pd ON pd.profile_id = r2_prof.profile_id AND pd.active = true
              WHERE r2_prof.id = x.run_id LIMIT 1),
             -- Fallback to any active department
             (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
         ) as department_id
     FROM params x
-    JOIN runs r ON r.id = x.run_id
+    JOIN runs_entry r ON r.id = x.run_id
 ),
 -- Token update: handle both text-only and audio/image/text scenarios
 has_audio_or_image AS (
@@ -62,7 +62,7 @@ has_audio_or_image AS (
     FROM params x
 ),
 update_run AS (
-    UPDATE runs 
+    UPDATE runs_entry 
     SET 
         input_tokens = CASE 
             WHEN (SELECT has_audio_image FROM has_audio_or_image) THEN
@@ -83,7 +83,7 @@ update_run AS (
                 COALESCE(x.cached_text_tokens, 0)
         END
     FROM params x
-    WHERE runs.id = x.run_id
+    WHERE runs_entry.id = x.run_id
     RETURNING id, input_tokens, output_tokens, cached_input_tokens
 ),
 -- Get unit IDs for pricing
@@ -222,7 +222,7 @@ upsert_cached_audio_usage AS (
         count = EXCLUDED.count,
         updated_at = now()
 ),
--- Get system prompt for persona runs
+-- Get system prompt for persona runs_entry
 persona_system_prompt AS (
     SELECT
         CASE
@@ -242,7 +242,7 @@ persona_system_prompt AS (
     AND pr_default.system_prompt IS NOT NULL
     AND pr_default.system_prompt != ''
 ),
--- Get system prompt for agent runs
+-- Get system prompt for agent runs_entry
 agent_system_prompt AS (
     SELECT 
         pr_default.system_prompt as system_prompt
@@ -267,14 +267,14 @@ system_message_hash AS (
 ),
 existing_system_message AS (
     SELECT m.id as system_message_id
-    FROM messages m
+    FROM messages_entry m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN system_message_hash smh ON message_content_hash(ce.content, 'system') = smh.hash
     WHERE m.role = 'system'
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_role, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -285,14 +285,14 @@ get_prompt_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
     INNER JOIN resource_tools_relation rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
-    INNER JOIN runs r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
+    INNER JOIN runs_entry r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
     
     
     WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'prompt' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 system_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'log_run_system_' || nsm.system_message_id::text, 
         gpt.tool_id, 
@@ -307,19 +307,19 @@ system_tool_call AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_system_tool_call AS (
-    UPDATE calls
+    UPDATE calls_entry
     SET message_id = nsm.system_message_id
     FROM new_system_message nsm
     CROSS JOIN system_tool_call stc
-    WHERE calls.id = stc.tool_call_id
+    WHERE calls_entry.id = stc.tool_call_id
       AND NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING calls.id as call_id
+    RETURNING calls_entry.id as call_id
 ),
 existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
     JOIN contents_entry ce ON ce.message_id = esm.system_message_id AND ce.idx = 0
-    JOIN calls tc ON tc.message_id = esm.system_message_id
+    JOIN calls_entry tc ON tc.message_id = esm.system_message_id
     LIMIT 1
 ),
 system_tool_call_id AS (
@@ -342,15 +342,15 @@ system_message AS (
 ),
 -- Link system message to run (set run_id directly on message)
 link_system AS (
-    UPDATE messages
+    UPDATE messages_entry
     SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN system_message sm
-    WHERE messages.id = sm.system_message_id
-      AND (messages.run_id IS NULL OR messages.run_id = x.run_id)
-    RETURNING messages.id as system_message_id
+    WHERE messages_entry.id = sm.system_message_id
+      AND (messages_entry.run_id IS NULL OR messages_entry.run_id = x.run_id)
+    RETURNING messages_entry.id as system_message_id
 ),
--- Process developer messages from array (preserve order for parent selection)
+-- Process developer messages_entry from array (preserve order for parent selection)
 developer_contents_array AS (
     SELECT 
         t.content,
@@ -367,7 +367,7 @@ developer_contents_filtered AS (
     WHERE trim(t.content) != ''
     GROUP BY trim(t.content)
 ),
--- Get or create developer messages with MD5 deduplication
+-- Get or create developer messages_entry with MD5 deduplication
 developer_messages_processed AS (
     SELECT 
         dcf.content,
@@ -382,7 +382,7 @@ existing_developer_messages_with_rn AS (
         m.id as message_id,
         ROW_NUMBER() OVER (PARTITION BY dmp.content ORDER BY m.created_at ASC) as rn
     FROM developer_messages_processed dmp
-    JOIN messages m ON m.role = 'developer'
+    JOIN messages_entry m ON m.role = 'developer'
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
         AND message_content_hash(ce.content, 'developer') = dmp.hash
 ),
@@ -395,7 +395,7 @@ existing_developer_messages AS (
     WHERE rn = 1
 ),
 new_developer_messages AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM developer_messages_processed dmp
     WHERE NOT EXISTS (
@@ -409,14 +409,14 @@ get_instruct_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
     INNER JOIN resource_tools_relation rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
-    INNER JOIN runs r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
+    INNER JOIN runs_entry r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
     
     
     WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'instruct' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LIMIT 1
 ),
 developer_calls_with_rn AS (
-    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'log_run_developer_' || ndm.message_id::text, 
         git.tool_id, 
@@ -430,12 +430,12 @@ developer_calls_with_rn AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_developer_tool_calls AS (
-    UPDATE calls
+    UPDATE calls_entry
     SET message_id = ndm.message_id
     FROM new_developer_messages ndm
     CROSS JOIN developer_calls_with_rn dtc
-    WHERE calls.id = dtc.tool_call_id
-    RETURNING calls.id as call_id
+    WHERE calls_entry.id = dtc.tool_call_id
+    RETURNING calls_entry.id as call_id
 ),
 developer_calls_ordered AS (
     SELECT 
@@ -465,7 +465,7 @@ existing_developer_calls AS (
     SELECT edm.message_id, tc.id as tool_call_id
     FROM existing_developer_messages edm
     JOIN contents_entry ce ON ce.message_id = edm.message_id AND ce.idx = 0
-    JOIN calls tc ON tc.message_id = edm.message_id
+    JOIN calls_entry tc ON tc.message_id = edm.message_id
 ),
 all_developer_calls AS (
     SELECT message_id, tool_call_id FROM developer_message_with_tool_call
@@ -502,19 +502,19 @@ all_developer_messages AS (
         WHERE edm.content = dmp.content
     )
 ),
--- Link developer messages to run (set run_id directly on message)
+-- Link developer messages_entry to run (set run_id directly on message)
 link_developers AS (
-    UPDATE messages
+    UPDATE messages_entry
     SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN all_developer_messages adm
-    WHERE messages.id = adm.message_id
-      AND (messages.run_id IS NULL OR messages.run_id = x.run_id)
-    RETURNING messages.id as developer_message_id
+    WHERE messages_entry.id = adm.message_id
+      AND (messages_entry.run_id IS NULL OR messages_entry.run_id = x.run_id)
+    RETURNING messages_entry.id as developer_message_id
 ),
--- Link system → developer in message_tree (if both exist)
+-- Link system → developer in message_tree_entry (if both exist)
 link_system_to_developer AS (
-    INSERT INTO message_tree (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT DISTINCT
         ls.system_message_id as parent_id,
         ld.developer_message_id as child_id,
@@ -524,7 +524,7 @@ link_system_to_developer AS (
     FROM link_system ls
     CROSS JOIN link_developers ld
     WHERE NOT EXISTS (
-        SELECT 1 FROM message_tree mt 
+        SELECT 1 FROM message_tree_entry mt 
         WHERE mt.parent_id = ls.system_message_id 
         AND mt.child_id = ld.developer_message_id 
         AND mt.active = true
@@ -534,7 +534,7 @@ link_system_to_developer AS (
 existing_assistant_message AS (
     SELECT m.id as assistant_message_id, m.created_at, m.updated_at
     FROM params x
-    JOIN messages m ON m.run_id = x.run_id
+    JOIN messages_entry m ON m.run_id = x.run_id
     WHERE m.role = 'assistant'::message_role
       AND x.assistant_output IS NOT NULL
       AND trim(x.assistant_output) != ''
@@ -542,14 +542,14 @@ existing_assistant_message AS (
     LIMIT 1
 ),
 update_existing_assistant_message AS (
-    UPDATE messages
+    UPDATE messages_entry
     SET completed = true,
         updated_at = NOW()
     WHERE id = (SELECT assistant_message_id FROM existing_assistant_message)
     RETURNING id as assistant_message_id, created_at, updated_at
 ),
 new_assistant_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, true, false, NOW(), NOW()
     FROM params x
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
@@ -562,7 +562,7 @@ assistant_message AS (
     SELECT assistant_message_id, created_at, updated_at FROM new_assistant_message
 ),
 assistant_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'log_run_assistant_' || am.assistant_message_id::text, 
         NULL, 
@@ -577,12 +577,12 @@ assistant_tool_call AS (
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 link_assistant_tool_call AS (
-    UPDATE calls
+    UPDATE calls_entry
     SET message_id = am.assistant_message_id
     FROM assistant_message am
     CROSS JOIN assistant_tool_call atc
-    WHERE calls.id = atc.tool_call_id
-    RETURNING calls.id as call_id
+    WHERE calls_entry.id = atc.tool_call_id
+    RETURNING calls_entry.id as call_id
 ),
 existing_assistant_content AS (
     SELECT ce.id as content_id
@@ -608,12 +608,12 @@ insert_assistant_content AS (
       AND NOT EXISTS (SELECT 1 FROM existing_assistant_content)
 ),
 link_assistant AS (
-    UPDATE messages
+    UPDATE messages_entry
     SET run_id = x.run_id, updated_at = NOW()
     FROM params x
     CROSS JOIN assistant_message am
-    WHERE messages.id = am.assistant_message_id
-      AND (messages.run_id IS NULL OR messages.run_id = x.run_id)
+    WHERE messages_entry.id = am.assistant_message_id
+      AND (messages_entry.run_id IS NULL OR messages_entry.run_id = x.run_id)
 ),
 -- Determine parent for assistant message (last developer if exists, otherwise system)
 -- Note: link_developers returns rows in insertion order, so last row is the last developer message
@@ -624,9 +624,9 @@ assistant_parent AS (
             (SELECT system_message_id FROM link_system LIMIT 1)
         ) as parent_message_id
 ),
--- Create message_tree branch for assistant
+-- Create message_tree_entry branch for assistant
 create_assistant_branch AS (
-    INSERT INTO message_tree (parent_id, child_id, active, created_at, updated_at)
+    INSERT INTO message_tree_entry (parent_id, child_id, active, created_at, updated_at)
     SELECT 
         ap.parent_message_id,
         am.assistant_message_id,
@@ -637,7 +637,7 @@ create_assistant_branch AS (
     CROSS JOIN assistant_parent ap
     WHERE ap.parent_message_id IS NOT NULL
     AND NOT EXISTS (
-        SELECT 1 FROM message_tree mt 
+        SELECT 1 FROM message_tree_entry mt 
         WHERE mt.parent_id = ap.parent_message_id 
         AND mt.child_id = am.assistant_message_id 
         AND mt.active = true

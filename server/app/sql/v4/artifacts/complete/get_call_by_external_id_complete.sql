@@ -33,7 +33,7 @@ AS $$
         c.tool_id,
         c.template_id,
         c.arguments_raw
-    FROM calls c
+    FROM calls_entry c
     WHERE c.external_call_id = external_call_id
     LIMIT 1;
 $$;

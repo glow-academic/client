@@ -1,5 +1,5 @@
 -- Get profile name for logging purposes
--- Returns actor_name for activity logging
+-- Returns actor_name for activity_entry logging
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE

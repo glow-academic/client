@@ -1,5 +1,5 @@
--- Get activity by message and endpoint for test assertions
--- Returns activity data for assertions
+-- Get activity_entry by message and endpoint for test assertions
+-- Returns activity_entry data for assertions
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_activity_by_message_and_endpoint_v4(text, text);
 
@@ -20,7 +20,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, message, endpoint, profile_id, error, created_at
-    FROM audits
+    FROM audits_entry
     WHERE message = p_message AND endpoint = p_endpoint
     ORDER BY created_at DESC
     LIMIT 1;

@@ -424,9 +424,9 @@ name_suggestions_data AS (
                            pn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = gid.group_id
                            )
@@ -514,9 +514,9 @@ email_suggestions_data AS (
                            pe.generated = true
                            AND e.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = e.call_id
                                  AND r.group_id = gid.group_id
                            )
@@ -610,9 +610,9 @@ request_limit_suggestions_data AS (
                  (
                      rl.generated = true
                      AND EXISTS (
-                         SELECT 1 FROM calls c
-                         JOIN messages m ON m.id = c.message_id
-                         JOIN runs r ON r.id = m.run_id
+                         SELECT 1 FROM calls_entry c
+                         JOIN messages_entry m ON m.id = c.message_id
+                         JOIN runs_entry r ON r.id = m.run_id
                          WHERE c.id = rl.call_id
                            AND r.group_id = gid.group_id
                      )
@@ -748,9 +748,9 @@ department_suggestions_data AS (
                    (
                        d.generated = true
                        AND EXISTS (
-                           SELECT 1 FROM calls c
-                           JOIN messages m ON m.id = c.message_id
-                           JOIN runs r ON r.id = m.run_id
+                           SELECT 1 FROM calls_entry c
+                           JOIN messages_entry m ON m.id = c.message_id
+                           JOIN runs_entry r ON r.id = m.run_id
                            WHERE c.id = d.call_id
                              AND r.group_id = gid.group_id
                        )

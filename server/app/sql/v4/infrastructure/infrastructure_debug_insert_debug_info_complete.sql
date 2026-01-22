@@ -9,7 +9,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 -- Create function
--- Creates debug_info record with run_id directly (no junction table)
+-- Creates debug_info_entry record with run_id directly (no junction table)
 CREATE OR REPLACE FUNCTION infra_insert_debug_info_v4(
     run_id uuid,
     content text
@@ -20,7 +20,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO debug_info (content, run_id, created_at)
+    INSERT INTO debug_info_entry (content, run_id, created_at)
     VALUES (content, run_id, NOW());
     SELECT true as success;
 $$;

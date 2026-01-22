@@ -128,7 +128,7 @@ recent_runs AS (
     SELECT
         r.profile_id,
         COUNT(*) as run_count
-    FROM runs r
+    FROM runs_entry r
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
       AND r.profile_id IS NOT NULL
     GROUP BY r.profile_id
@@ -137,7 +137,7 @@ profile_total_runs AS (
     SELECT
         r.profile_id,
         COUNT(*) as total_requests
-    FROM runs r
+    FROM runs_entry r
     WHERE r.profile_id IS NOT NULL
     GROUP BY r.profile_id
 ),
@@ -215,7 +215,7 @@ staff_rows AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active
-        FROM activity
+        FROM activity_entry
         WHERE profile_id = p.id
         ORDER BY created_at DESC
         LIMIT 1

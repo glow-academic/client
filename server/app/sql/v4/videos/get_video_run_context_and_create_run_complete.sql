@@ -88,12 +88,12 @@ profile_rate_limit AS (
     WHERE p.profile_id IS NOT NULL
 ),
 runs_today AS (
-    -- Count model runs for the profile since start of day (or 0 if profile_id is NULL)
+    -- Count model runs_entry for the profile since start of day (or 0 if profile_id is NULL)
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM params p
-    LEFT JOIN runs mr ON mr.profile_id = p.profile_id
+    LEFT JOIN runs_entry mr ON mr.profile_id = p.profile_id
     WHERE p.profile_id IS NOT NULL
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -239,7 +239,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
 ),
 create_run AS (
     -- Create run record with profile_id (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id)
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id, profile_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
     FROM context_data cd
     RETURNING id

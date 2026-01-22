@@ -21,7 +21,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO audits (message, endpoint, profile_id, error, created_at)
+    INSERT INTO audits_entry (message, endpoint, profile_id, error, created_at)
     VALUES (message, endpoint, profile_id, error, now());
     SELECT true as success;
 $$;

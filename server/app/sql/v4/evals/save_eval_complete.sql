@@ -227,7 +227,7 @@ BEGIN
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
-    -- Insert or UPDATE eval_artifact groups flag
+    -- Insert or UPDATE eval_artifact groups_entry flag
     insert_eval_groups_flag AS (
         INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
         SELECT 
@@ -238,7 +238,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
-        WHERE f.name = 'groups'
+        WHERE f.name = 'groups_entry'
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -273,7 +273,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT eval_agents_pkey DO UPDATE SET
             updated_at = NOW()
     ),
-    -- Link model runs (old ones already deleted above if update)
+    -- Link model runs_entry (old ones already deleted above if update)
     link_runs AS (
         INSERT INTO eval_runs (eval_id, run_id, completed, created_at, updated_at)
         SELECT 
@@ -290,7 +290,7 @@ BEGIN
             completed = false,
             updated_at = NOW()
     ),
-    -- Link groups when using groups
+    -- Link groups_entry when using groups_entry
     link_groups AS (
         INSERT INTO eval_groups (eval_id, group_id, created_at, updated_at)
         SELECT
@@ -305,7 +305,7 @@ BEGIN
         ON CONFLICT ON CONSTRAINT eval_groups_pkey DO UPDATE SET
             updated_at = NOW()
     ),
-    -- Link rubrics to runs
+    -- Link rubrics to runs_entry
     link_run_rubrics AS (
         INSERT INTO eval_runs_rubrics (eval_id, run_id, rubric_id, created_at, updated_at, generated, mcp, active)
         SELECT
@@ -326,7 +326,7 @@ BEGIN
             active = true,
             updated_at = NOW()
     ),
-    -- Link rubrics to groups
+    -- Link rubrics to groups_entry
     link_group_rubrics AS (
         INSERT INTO eval_groups_rubrics (eval_id, group_id, rubric_id, created_at, updated_at, generated, mcp, active)
         SELECT

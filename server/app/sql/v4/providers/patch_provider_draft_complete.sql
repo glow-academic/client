@@ -60,7 +60,7 @@ BEGIN
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
-            INSERT INTO groups (created_at, updated_at)
+            INSERT INTO groups_entry (created_at, updated_at)
             VALUES (NOW(), NOW())
             RETURNING id INTO v_group_id;
         END IF;
@@ -112,7 +112,7 @@ BEGIN
     -- Create new draft if update failed or input_draft_id is NULL
     IF v_draft_id IS NULL THEN
         -- Create group first
-        INSERT INTO groups (created_at, updated_at)
+        INSERT INTO groups_entry (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_group_id;
         

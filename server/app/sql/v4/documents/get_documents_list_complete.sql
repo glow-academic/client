@@ -178,7 +178,7 @@ document_data AS (
     FROM document_artifact d
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads u ON u.id = ur.upload_id
+    LEFT JOIN uploads_entry u ON u.id = ur.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     LEFT JOIN document_departments_data ddd ON ddd.document_id = d.id
     LEFT JOIN document_scenarios ds ON ds.document_id = d.id
@@ -219,7 +219,7 @@ scenario_data AS (
     JOIN scenario_artifact sa ON sa.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sa.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN scenario_tree st ON st.parent_id = sa.id AND st.child_id = sa.id
+    LEFT JOIN scenario_tree_entry st ON st.parent_id = sa.id AND st.child_id = sa.id
     WHERE st.parent_id IS NOT NULL
 ),
 field_data AS (

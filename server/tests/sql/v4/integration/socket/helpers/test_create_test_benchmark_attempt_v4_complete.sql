@@ -1,4 +1,4 @@
--- Create a test benchmark attempt for socket tests
+-- Create a test benchmark attempt for socket tests_entry
 -- Returns attempt_id
 -- Note: Uses eval_attempts table (not benchmark_attempts)
 -- Drop function if exists

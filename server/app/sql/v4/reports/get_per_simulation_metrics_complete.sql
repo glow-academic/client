@@ -1,10 +1,10 @@
--- Get per-simulation metrics for each profile
+-- Get per-simulation metrics_entry for each profile
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Parameters: start_date, end_date, profile_id, cohort_ids, department_ids, roles, simulation_filters,
 --             profile_ids, simulation_ids, scenario_ids
--- Returns: Array of per-simulation metrics per profile
+-- Returns: Array of per-simulation metrics_entry per profile
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE
@@ -63,7 +63,7 @@ CREATE OR REPLACE FUNCTION api_get_per_simulation_metrics_v4(
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
-    metrics types.q_per_simulation_metrics_v4_metric[]
+    metrics_entry types.q_per_simulation_metrics_v4_metric[]
 )
 LANGUAGE sql
 STABLE
@@ -211,7 +211,7 @@ SELECT
             ORDER BY sm.profile_id, sm.simulation_id
         ),
         ARRAY[]::types.q_per_simulation_metrics_v4_metric[]
-    ) AS metrics
+    ) AS metrics_entry
 FROM simulation_metrics_per_profile sm
 LEFT JOIN first_attempt_per_sim_profile fasp 
     ON fasp.profile_id = sm.profile_id 

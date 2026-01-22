@@ -25,7 +25,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT c.group_id
-    FROM chats c
+    FROM chats_entry c
     WHERE c.id = $1
     LIMIT 1
 $$;

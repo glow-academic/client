@@ -309,7 +309,7 @@ scenario_base_data AS (
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
-    LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
+    LEFT JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
     WHERE st.parent_id IS NOT NULL
 ),
 scenario_persona_mapping AS (

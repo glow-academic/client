@@ -1,4 +1,4 @@
--- Get pricing group detail with all runs, messages, and pricing information
+-- Get pricing group detail with all runs_entry, messages_entry, and pricing information
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -87,7 +87,7 @@ CREATE TYPE types.q_get_pricing_group_detail_v4_run_metadata AS (
 
 CREATE TYPE types.q_get_pricing_group_detail_v4_run_with_messages AS (
     run types.q_get_pricing_group_detail_v4_run_metadata,
-    messages types.q_get_pricing_group_detail_v4_message[],
+    messages_entry types.q_get_pricing_group_detail_v4_message[],
     previous_context_start_index int
 );
 
@@ -116,7 +116,7 @@ RETURNS TABLE (
     group_exists boolean,
     group_id uuid,
     actor_name text,
-    runs types.q_get_pricing_group_detail_v4_run_with_messages[],
+    runs_entry types.q_get_pricing_group_detail_v4_run_with_messages[],
     models types.q_get_pricing_group_detail_v4_model[],
     agents types.q_get_pricing_group_detail_v4_agent[],
     profiles types.q_get_pricing_group_detail_v4_profile[]
@@ -130,7 +130,7 @@ WITH params AS (
         profile_id AS profile_id
 ),
 group_exists_check AS (
-    SELECT EXISTS(SELECT 1 FROM groups WHERE id = (SELECT group_id FROM params)) as group_exists
+    SELECT EXISTS(SELECT 1 FROM groups_entry WHERE id = (SELECT group_id FROM params)) as group_exists
 ),
 resolve_profile_id AS (
     SELECT 
@@ -150,7 +150,7 @@ user_profile AS (
 group_runs_list AS (
     SELECT
         r.id as run_id
-    FROM runs r
+    FROM runs_entry r
     WHERE r.group_id = (SELECT group_id FROM params)
 ),
 runs_metadata AS (
@@ -166,9 +166,9 @@ runs_metadata AS (
         r.profile_id,
         NULL::uuid as persona_id
     FROM group_runs_list grl
-    JOIN runs r ON r.id = grl.run_id
+    JOIN runs_entry r ON r.id = grl.run_id
 ),
--- Get department IDs FROM runs (via agent or profile)
+-- Get department IDs FROM runs_entry (via agent or profile)
 runs_departments AS (
     SELECT DISTINCT
         d.id as department_id
@@ -202,7 +202,7 @@ run_costs AS (
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
     FROM run_pricing_entry rpu
-    JOIN runs r ON r.id = rpu.run_id
+    JOIN runs_entry r ON r.id = rpu.run_id
     JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
     JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
@@ -213,15 +213,15 @@ run_costs AS (
     JOIN group_runs_list grl ON grl.run_id = rpu.run_id
     GROUP BY rpu.run_id
 ),
--- Get all messages for each run using message_tree ordering (source of truth)
--- For each run, traverse message_tree to get messages in conversation flow order
+-- Get all messages_entry for each run using message_tree_entry ordering (source of truth)
+-- For each run, traverse message_tree_entry to get messages_entry in conversation flow order
 run_groups_map AS (
     -- Map each run to its group
     SELECT DISTINCT
         rm.run_id,
         r.group_id
     FROM runs_metadata rm
-    JOIN runs r ON r.id = rm.run_id
+    JOIN runs_entry r ON r.id = rm.run_id
 ),
 run_idx_map AS (
     -- Compute idx for each run using ROW_NUMBER (replaces dropped group_runs.idx)
@@ -229,23 +229,23 @@ run_idx_map AS (
         id as run_id,
         group_id,
         ROW_NUMBER() OVER (PARTITION BY group_id ORDER BY created_at) - 1 as idx
-    FROM runs
+    FROM runs_entry
     WHERE group_id = (SELECT group_id FROM params)
 ),
 run_chats_map AS (
-    -- Map each run to all chats in its group (chats now have direct group_id column)
+    -- Map each run to all chats_entry in its group (chats_entry now have direct group_id column)
     SELECT DISTINCT
         rg.run_id,
         c.id as chat_id
     FROM run_groups_map rg
-    JOIN chats c ON c.group_id = rg.group_id
+    JOIN chats_entry c ON c.group_id = rg.group_id
 ),
 -- Find first run (idx = 0) for each group
 first_runs_map AS (
     SELECT DISTINCT
         rim.group_id,
         r.id as first_run_id
-    FROM runs r
+    FROM runs_entry r
     JOIN run_idx_map rim ON rim.run_id = r.id
     WHERE rim.idx = 0 AND r.group_id = (SELECT group_id FROM params)
 ),
@@ -255,17 +255,17 @@ previous_runs_map AS (
         r_current.group_id,
         r_current.id as current_run_id,
         r_previous.id as previous_run_id
-    FROM runs r_current
+    FROM runs_entry r_current
     JOIN run_idx_map rim_current ON rim_current.run_id = r_current.id
     JOIN run_idx_map rim_previous ON rim_previous.group_id = r_current.group_id
         AND rim_previous.idx = rim_current.idx - 1
-    JOIN runs r_previous ON r_previous.id = rim_previous.run_id
+    JOIN runs_entry r_previous ON r_previous.id = rim_previous.run_id
     WHERE rim_current.idx > 0 AND r_current.group_id = (SELECT group_id FROM params)
 ),
--- Tree traversal for messages: get all messages following conversation flow per run
+-- Tree traversal for messages_entry: get all messages_entry following conversation flow per run
 messages_with_tree AS (
     WITH RECURSIVE message_path AS (
-        -- Base case: Include ALL messages from current run
+        -- Base case: Include ALL messages_entry from current run
         SELECT
             m.id,
             rcm.run_id,
@@ -279,11 +279,11 @@ messages_with_tree AS (
             rim.idx as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
-        JOIN groups g ON g.id = rgm.group_id
-        JOIN runs r ON r.group_id = g.id AND r.id = rcm.run_id
+        JOIN groups_entry g ON g.id = rgm.group_id
+        JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN run_idx_map rim ON rim.run_id = r.id
-        JOIN messages m ON m.run_id = r.id
-        JOIN chats c ON c.group_id = g.id AND c.id = rcm.chat_id
+        JOIN messages_entry m ON m.run_id = r.id
+        JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
 
         UNION ALL
 
@@ -299,17 +299,17 @@ messages_with_tree AS (
             mp.depth + 1 as depth,
             mp.path_root_id,
             mp.run_idx
-        FROM messages m
-        JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
+        FROM messages_entry m
+        JOIN message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
         WHERE mp.depth < 50
         AND EXISTS (
             SELECT 1
-            FROM messages m_parent
-            JOIN runs r_parent ON r_parent.id = m_parent.run_id
+            FROM messages_entry m_parent
+            JOIN runs_entry r_parent ON r_parent.id = m_parent.run_id
             JOIN run_idx_map rim_parent ON rim_parent.run_id = r_parent.id
-            JOIN messages m_child ON m_child.id = mt.child_id
-            JOIN runs r_child ON r_child.id = m_child.run_id
+            JOIN messages_entry m_child ON m_child.id = mt.child_id
+            JOIN runs_entry r_child ON r_child.id = m_child.run_id
             WHERE m_parent.id = m.id
             AND r_parent.group_id = r_child.group_id
             AND r_child.id = mp.run_id
@@ -330,13 +330,13 @@ messages_with_tree AS (
             rim.idx as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
-        JOIN groups g ON g.id = rgm.group_id
-        JOIN runs r ON r.group_id = g.id AND r.id = rcm.run_id
+        JOIN groups_entry g ON g.id = rgm.group_id
+        JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN run_idx_map rim ON rim.run_id = r.id
-        JOIN messages m ON m.run_id = r.id
-        JOIN chats c ON c.group_id = g.id AND c.id = rcm.chat_id
+        JOIN messages_entry m ON m.run_id = r.id
+        JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
-            SELECT 1 FROM message_tree mt
+            SELECT 1 FROM message_tree_entry mt
             WHERE mt.child_id = m.id AND mt.active = true
         )
         AND NOT EXISTS (
@@ -359,17 +359,17 @@ messages_with_tree AS (
             0 as run_idx
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
-        JOIN groups g ON g.id = rgm.group_id
-        JOIN runs r ON r.group_id = g.id AND r.id = rcm.run_id
+        JOIN groups_entry g ON g.id = rgm.group_id
+        JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
-        JOIN messages m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_role, 'developer'::message_role)
-        JOIN chats c ON c.group_id = g.id AND c.id = rcm.chat_id
+        JOIN messages_entry m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_role, 'developer'::message_role)
+        JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_path mp
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
         )
         AND NOT EXISTS (
-            SELECT 1 FROM messages m2
+            SELECT 1 FROM messages_entry m2
             WHERE m2.id = m.id AND m2.run_id = rcm.run_id
         )
     ),
@@ -389,7 +389,7 @@ messages_with_tree AS (
             am.updated_at,
             am.depth,
             COALESCE(
-                (SELECT rim2.idx FROM messages m2
+                (SELECT rim2.idx FROM messages_entry m2
                  JOIN run_idx_map rim2 ON rim2.run_id = m2.run_id
                  WHERE m2.id = am.id
                  ORDER BY rim2.idx LIMIT 1),
@@ -439,10 +439,10 @@ runs_with_idx AS (
         rim.idx as run_idx,
         r.group_id
     FROM runs_metadata rm
-    JOIN runs r ON r.id = rm.run_id
+    JOIN runs_entry r ON r.id = rm.run_id
     JOIN run_idx_map rim ON rim.run_id = r.id
 ),
--- For each run, find the latest message and traverse up message_tree to get all ancestors
+-- For each run, find the latest message and traverse up message_tree_entry to get all ancestors
 runs_with_messages AS (
     SELECT
         current_run.run_id,
@@ -453,11 +453,11 @@ runs_with_messages AS (
                 ORDER BY ancestor_msg.depth ASC
             ) FILTER (WHERE ancestor_msg.id IS NOT NULL),
             '{}'::types.q_get_pricing_group_detail_v4_message[]
-        ) as messages
+        ) as messages_entry
     FROM runs_with_idx current_run
     LEFT JOIN LATERAL (
         SELECT m.id, m.created_at
-        FROM messages m
+        FROM messages_entry m
         WHERE m.run_id = current_run.run_id
         AND m.role IN ('user'::message_role, 'assistant'::message_role)
         ORDER BY
@@ -476,7 +476,7 @@ runs_with_messages AS (
                 m.completed,
                 current_run.run_idx as run_idx,
                 0 as depth_from_latest
-            FROM messages m
+            FROM messages_entry m
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE m.id = latest_msg.id
 
@@ -490,8 +490,8 @@ runs_with_messages AS (
                 m.updated_at,
                 m.completed,
                 COALESCE(
-                    (SELECT rim2.idx FROM messages m2
-                     JOIN runs r ON r.id = m2.run_id
+                    (SELECT rim2.idx FROM messages_entry m2
+                     JOIN runs_entry r ON r.id = m2.run_id
                      JOIN run_idx_map rim2 ON rim2.run_id = r.id
                      WHERE m2.id = m.id
                      AND r.group_id = current_run.group_id
@@ -499,15 +499,15 @@ runs_with_messages AS (
                     ap.run_idx
                 ) as run_idx,
                 ap.depth_from_latest + 1 as depth_from_latest
-            FROM messages m
-            JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
+            FROM messages_entry m
+            JOIN message_tree_entry mt ON mt.parent_id = m.id AND mt.active = true
             JOIN ancestor_path ap ON ap.id = mt.child_id
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE ap.depth_from_latest < 50
             AND EXISTS (
                 SELECT 1
-                FROM messages m_parent
-                JOIN runs r_parent ON r_parent.id = m_parent.run_id
+                FROM messages_entry m_parent
+                JOIN runs_entry r_parent ON r_parent.id = m_parent.run_id
                 WHERE m_parent.id = m.id
                 AND r_parent.group_id = current_run.group_id
             )
@@ -531,7 +531,7 @@ runs_with_context_index AS (
     SELECT 
         rwm.run_id,
         rwm.current_run_idx,
-        rwm.messages,
+        rwm.messages_entry,
         CASE 
             WHEN rwm.current_run_idx = 0 THEN NULL::integer
             ELSE (
@@ -551,14 +551,14 @@ runs_with_context_index AS (
                             m.created_at
                         ) as msg_idx,
                         m.run_idx
-                    FROM unnest(rwm.messages) m
+                    FROM unnest(rwm.messages_entry) m
                 ) indexed_msgs
                 WHERE indexed_msgs.run_idx = rwm.current_run_idx
             )
         END as previous_context_start_index
     FROM runs_with_messages rwm
 ),
--- Build run details with messages
+-- Build run details with messages_entry
 runs_detail AS (
     SELECT 
         rm.run_id,
@@ -571,7 +571,7 @@ runs_detail AS (
         rm.profile_id,
         rm.persona_id,
         COALESCE(rc.run_cost, 0) as cost,
-        COALESCE(rwci.messages, '{}'::types.q_get_pricing_group_detail_v4_message[]) as messages,
+        COALESCE(rwci.messages_entry, '{}'::types.q_get_pricing_group_detail_v4_message[]) as messages_entry,
         rwci.previous_context_start_index
     FROM runs_metadata rm
     LEFT JOIN run_costs rc ON rc.run_id = rm.run_id
@@ -589,14 +589,14 @@ SELECT
                 ARRAY_AGG(
                     (
                         (rd.run_id, rd.created_at, rd.input_tokens, rd.output_tokens, rd.cached_input_tokens, rd.cost, rd.model_id, rd.agent_id, rd.profile_id, rd.persona_id)::types.q_get_pricing_group_detail_v4_run_metadata,
-                        rd.messages,
+                        rd.messages_entry,
                         rd.previous_context_start_index
                     )::types.q_get_pricing_group_detail_v4_run_with_messages
                     ORDER BY rd.created_at
                 ),
                 '{}'::types.q_get_pricing_group_detail_v4_run_with_messages[]
             )
-    END as runs,
+    END as runs_entry,
     COALESCE(
         ARRAY_AGG(
             DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_model

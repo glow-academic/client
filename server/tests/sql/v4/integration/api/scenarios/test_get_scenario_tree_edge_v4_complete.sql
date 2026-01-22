@@ -21,7 +21,7 @@ AS $$
         child_id,
         active,
         created_at
-    FROM scenario_tree
+    FROM scenario_tree_entry
     WHERE parent_id = test_get_scenario_tree_edge_v4.input_scenario_id
       AND child_id = test_get_scenario_tree_edge_v4.input_scenario_id;
 $$;

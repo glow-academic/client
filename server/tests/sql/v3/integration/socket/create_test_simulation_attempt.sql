@@ -46,8 +46,8 @@ scenario AS (
     VALUES ('Test Scenario', true)
     RETURNING id
 ),
-scenario_tree AS (
-    INSERT INTO scenario_tree(parent_id, child_id, active)
+scenario_tree_entry AS (
+    INSERT INTO scenario_tree_entry(parent_id, child_id, active)
     SELECT s.id, s.id, true
     FROM scenario s
 ),
@@ -68,13 +68,13 @@ attempt_profile AS (
     FROM attempt a
 ),
 chat AS (
-    INSERT INTO chats(title, scenario_id, completed)
+    INSERT INTO chats_entry(title, scenario_id, completed)
     SELECT 'Test Chat', s.id, false
     FROM scenario s
     RETURNING id
 ),
 create_group AS (
-    INSERT INTO groups (created_at, updated_at, trace_id)
+    INSERT INTO groups_entry (created_at, updated_at, trace_id)
     VALUES (NOW(), NOW(), 'test-trace-id')
     RETURNING id as group_id
 ),

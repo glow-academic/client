@@ -1,4 +1,4 @@
--- Get group_id from run_id via runs.group_id
+-- Get group_id from run_id via runs_entry.group_id
 -- Used by artifacts generate.py and progress.py
 -- 1) Drop function first
 DO $$
@@ -25,5 +25,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT group_id FROM runs WHERE runs.id = $1 LIMIT 1
+    SELECT group_id FROM runs_entry WHERE runs_entry.id = $1 LIMIT 1
 $$;

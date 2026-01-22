@@ -63,7 +63,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 -- No-op: Just returns completion info (no database operations)
--- trace_id comes from groups table, not parameter
+-- trace_id comes from groups_entry table, not parameter
 SELECT 
     test_id::text as test_id,
     attempt_id::text as attempt_id,
@@ -74,5 +74,5 @@ SELECT
     tool_id::text as tool_id,
     success,
     message,
-    (SELECT trace_id FROM groups WHERE id = group_id LIMIT 1) as trace_id
+    (SELECT trace_id FROM groups_entry WHERE id = group_id LIMIT 1) as trace_id
 $$;

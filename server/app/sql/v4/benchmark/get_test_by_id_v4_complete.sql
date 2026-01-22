@@ -26,5 +26,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id, title, completed FROM tests WHERE tests.id = $1
+    SELECT id, title, completed FROM tests_entry WHERE tests_entry.id = $1
 $$;

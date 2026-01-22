@@ -131,7 +131,7 @@ BEGIN
 
         -- Create group if draft doesn't have one (safety check)
         IF v_group_id IS NULL THEN
-            INSERT INTO groups (created_at, updated_at)
+            INSERT INTO groups_entry (created_at, updated_at)
             VALUES (NOW(), NOW())
             RETURNING id INTO v_group_id;
         END IF;
@@ -233,7 +233,7 @@ BEGIN
     END IF;
 
     -- Create new draft with group
-    INSERT INTO groups (created_at, updated_at)
+    INSERT INTO groups_entry (created_at, updated_at)
     VALUES (NOW(), NOW())
     RETURNING id INTO v_group_id;
 

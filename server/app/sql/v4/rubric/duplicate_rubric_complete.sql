@@ -1,4 +1,4 @@
--- Duplicate rubric with departments, standard groups, and standards in a single transaction
+-- Duplicate rubric with departments, standard groups_entry, and standards in a single transaction
 -- Converted to function
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first
@@ -267,19 +267,19 @@ groups_mapping AS (
 ),
 standard_call_context AS (
     SELECT c.tool_id, c.template_id, 1 as priority
-    FROM calls c
+    FROM calls_entry c
     JOIN tool_names tn ON tn.tool_id = c.tool_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_standard_group'
     UNION ALL
     SELECT c.tool_id, c.template_id, 2 as priority
-    FROM calls c
+    FROM calls_entry c
     JOIN tool_names tn ON tn.tool_id = c.tool_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_rubrics'
     UNION ALL
     SELECT c.tool_id, c.template_id, 3 as priority
-    FROM calls c
+    FROM calls_entry c
 ),
 standard_call_params AS (
     SELECT tool_id, template_id
@@ -297,7 +297,7 @@ standard_calls AS (
     CROSS JOIN standard_call_params scp
 ),
 insert_standard_calls AS (
-    INSERT INTO calls (
+    INSERT INTO calls_entry (
         id,
         external_call_id,
         tool_id,

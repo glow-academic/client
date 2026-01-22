@@ -32,7 +32,7 @@ WITH params AS (
 ),
 grant_row AS (
     SELECT *
-    FROM grants eg
+    FROM grants_entry eg
     WHERE eg.id = (SELECT grant_id FROM params)
 ),
 validity AS (
@@ -56,7 +56,7 @@ reason_computed AS (
         END as reason
 ),
 grant_consumed AS (
-    UPDATE grants
+    UPDATE grants_entry
     SET used_at = NOW(),
         updated_at = NOW()
     WHERE id = (SELECT grant_id FROM params)

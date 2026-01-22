@@ -1,5 +1,5 @@
--- Get benchmark runs start all context
--- Gets eval_id, use_groups, and all pending runs/groups
+-- Get benchmark runs_entry start all context
+-- Gets eval_id, use_groups, and all pending runs_entry/groups_entry
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -48,12 +48,12 @@ STABLE
 AS $$
     SELECT
         e.id::text as eval_id,
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE),
+        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE),
         CASE
-            WHEN EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE) THEN
+            WHEN EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE) THEN
                 ARRAY_AGG(eg.group_id::text) FILTER (
                     WHERE NOT EXISTS (
-                        SELECT 1 FROM grades gr WHERE gr.group_id = eg.group_id
+                        SELECT 1 FROM grades_entry gr WHERE gr.group_id = eg.group_id
                     )
                 )
             ELSE
@@ -64,8 +64,8 @@ AS $$
     LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.completed = false
     LEFT JOIN eval_groups eg ON eg.eval_id = e.id
         AND NOT EXISTS (
-            SELECT 1 FROM grades gr WHERE gr.group_id = eg.group_id
+            SELECT 1 FROM grades_entry gr WHERE gr.group_id = eg.group_id
         )
     WHERE ea.id = socket_get_benchmark_runs_start_all_context_v4.attempt_id
-    GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups' AND ef.value = TRUE);
+    GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = TRUE);
 $$;

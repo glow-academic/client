@@ -250,7 +250,7 @@ BEGIN
             active = true,
             updated_at = NOW()
     ),
-    -- Link uploads (old ones already deleted above if update)
+    -- Link uploads_entry (old ones already deleted above if update)
     link_uploads AS (
         INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
         SELECT 

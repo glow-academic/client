@@ -1,4 +1,4 @@
--- Get leaderboard bundle with all metrics and profile data
+-- Get leaderboard bundle with all metrics_entry and profile data
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -19,12 +19,12 @@ END $$;
 
 -- 2) Drop types WITHOUT CASCADE
 -- Drop all types matching prefix pattern to handle type additions/removals
--- Drop in reverse dependency order: metrics (depends on metric) first, then metric, then others
+-- Drop in reverse dependency order: metrics_entry (depends on metric) first, then metric, then others
 DO $$
 DECLARE
     r RECORD;
     type_names text[] := ARRAY[
-        'q_get_leaderboard_bundle_v4_row',  -- Depends on metrics
+        'q_get_leaderboard_bundle_v4_row',  -- Depends on metrics_entry
         'q_get_leaderboard_bundle_v4_metrics',  -- Depends on metric
         'q_get_leaderboard_bundle_v4_metric',
         'q_get_leaderboard_bundle_v4_simulation',
@@ -75,7 +75,7 @@ CREATE TYPE types.q_get_leaderboard_bundle_v4_row AS (
     name text,
     simulation_ids uuid[],
     scenario_ids uuid[],
-    metrics types.q_get_leaderboard_bundle_v4_metrics
+    metrics_entry types.q_get_leaderboard_bundle_v4_metrics
 );
 
 CREATE TYPE types.q_get_leaderboard_bundle_v4_simulation AS (
@@ -286,7 +286,7 @@ quickest_per_profile AS (
     WHERE passed = TRUE AND time_taken_seconds IS NOT NULL
     GROUP BY profile_id
 ),
--- Join all metrics together
+-- Join all metrics_entry together
 all_stats AS (
     SELECT
         ps.*,

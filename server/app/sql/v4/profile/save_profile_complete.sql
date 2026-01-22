@@ -258,7 +258,7 @@ BEGIN
         FROM params p
     ),
     placeholder_call_id AS (
-        SELECT id FROM calls LIMIT 1
+        SELECT id FROM calls_entry LIMIT 1
     ),
     -- Insert/update name in names table if provided
     name_resource AS (

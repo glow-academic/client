@@ -1,4 +1,4 @@
--- Create a test attempt for socket tests
+-- Create a test attempt for socket tests_entry
 -- Returns attempt_id
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_attempt_v4(uuid);

@@ -60,13 +60,13 @@ existing_result AS (
 ),
 -- Only proceed with creation if profile doesn't exist
 new_group AS (
-    INSERT INTO groups (id, created_at, updated_at)
+    INSERT INTO groups_entry (id, created_at, updated_at)
     SELECT uuidv7(), NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
     RETURNING id
 ),
 placeholder_call_id AS (
-    SELECT id FROM calls LIMIT 1
+    SELECT id FROM calls_entry LIMIT 1
 ),
 -- Insert name in names table (only if creating)
 name_resource AS (

@@ -177,7 +177,7 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts_entry d ON d.id = x.draft_id
@@ -246,9 +246,9 @@ name_suggestions_data AS (
                            tn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -332,9 +332,9 @@ description_suggestions_data AS (
                            td.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -456,9 +456,9 @@ args_suggestions_data AS (
                            ta.generated = true
                            AND a.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = a.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -490,9 +490,9 @@ args_mapping_data AS (
     CROSS JOIN draft_group_data dgd
     JOIN args_resource a ON a.active = true
     LEFT JOIN tool_args ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
-    LEFT JOIN calls c ON c.id = a.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = a.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
 -- Args outputs IDs (selected args_outputs IDs for tool)
@@ -538,9 +538,9 @@ args_outputs_suggestions_data AS (
                            tao.generated = true
                            AND ao.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = ao.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -569,9 +569,9 @@ args_outputs_mapping_data AS (
     CROSS JOIN draft_group_data dgd
     JOIN args_outputs_resource ao ON ao.active = true
     LEFT JOIN tool_args_outputs tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
-    LEFT JOIN calls c ON c.id = ao.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = ao.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),
 -- Input args fields detail (for Args component - fields from selected args_ids)

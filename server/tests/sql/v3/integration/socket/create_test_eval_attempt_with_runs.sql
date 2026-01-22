@@ -1,4 +1,4 @@
--- Create a test eval attempt with pending runs
+-- Create a test eval attempt with pending runs_entry
 -- Parameters: $1 = eval_id (UUID), $2 = run_id_1 (UUID), $3 = run_id_2 (UUID, optional), $4 = conversation_mode (bool, optional)
 -- Returns: attempt_id (UUID)
 -- Note: eval_runs must already exist for the eval_id

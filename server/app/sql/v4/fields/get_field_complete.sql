@@ -158,7 +158,7 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts_entry d ON d.id = x.draft_id
@@ -331,9 +331,9 @@ name_suggestions_data AS (
                        (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -389,9 +389,9 @@ description_suggestions_data AS (
                        (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -453,9 +453,9 @@ department_suggestions_data AS (
                            fd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -493,9 +493,9 @@ parameter_suggestions_data AS (
                            pf.generated = true
                            AND COALESCE(pr.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = pr.call_id
                                  AND r.group_id = dgd.group_id
                            )

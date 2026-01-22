@@ -15,7 +15,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH groups_flag AS (
-        SELECT id FROM flags_resource WHERE name = 'groups' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'groups_entry' LIMIT 1
     )
     UPDATE eval_flags ef
     SET value = test_update_eval_use_groups_v4.use_groups

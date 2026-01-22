@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     message_ids uuid[] DEFAULT NULL,  -- Context message IDs (e.g., hint agent needs message_id)
     department_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    developer_instructions text[] DEFAULT NULL,  -- Optional: array of developer instruction messages
+    developer_instructions text[] DEFAULT NULL,  -- Optional: array of developer instruction messages_entry
     user_instructions text[] DEFAULT NULL,  -- Optional: array of user instructions for regeneration
     resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: array of (resource_type, resource_ids) for fetching whitelisted resources
 )
@@ -96,12 +96,12 @@ profile_rate_limit AS (
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
--- Count runs today for rate limiting
+-- Count runs_entry today for rate limiting
 runs_today AS (
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM runs_entry mr
     WHERE mr.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -109,13 +109,13 @@ runs_today AS (
 existing_group_from_param AS (
     SELECT g.id as group_id, g.trace_id
     FROM params p
-    JOIN groups g ON g.id = p.group_id
+    JOIN groups_entry g ON g.id = p.group_id
     WHERE p.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
     -- Create new group if needed (only if group_id not provided)
-    INSERT INTO groups (created_at, updated_at)
+    INSERT INTO groups_entry (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM params p
     WHERE p.group_id IS NULL
@@ -147,7 +147,7 @@ rate_limit_check AS (
 ),
 -- Create run with group_id directly
 create_run AS (
-    INSERT INTO runs (input_tokens, output_tokens, agent_id, profile_id, group_id)
+    INSERT INTO runs_entry (input_tokens, output_tokens, agent_id, profile_id, group_id)
     SELECT 0, 0, sa.agent_id, p.profile_id, gd.group_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
@@ -155,12 +155,12 @@ create_run AS (
     CROSS JOIN group_data gd
     RETURNING id as run_id
 ),
--- Dummy CTE to maintain compatibility (runs now have group_id directly)
+-- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)
 link_group AS (
     SELECT cr.run_id
     FROM create_run cr
 ),
--- Create developer messages from developer_instructions array
+-- Create developer messages_entry from developer_instructions array
 developer_message_content_array AS (
     SELECT 
         t.content,
@@ -185,7 +185,7 @@ existing_developer_messages AS (
         m.id as message_id,
         dmh.run_id,
         dmh.hash
-    FROM messages m
+    FROM messages_entry m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN developer_message_hash_array dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
@@ -201,7 +201,7 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, nd.run_id, NOW(), NOW()
     FROM new_developer_messages_data nd
     RETURNING id, run_id, created_at, updated_at
@@ -246,19 +246,19 @@ insert_developer_contents AS (
     FROM new_developer_messages_matched nd
 ),
 update_existing_developer_messages_run AS (
-    UPDATE messages m
+    UPDATE messages_entry m
     SET run_id = edm.run_id, updated_at = NOW()
     FROM existing_developer_messages edm
     WHERE m.id = edm.message_id AND edm.run_id IS NOT NULL
     RETURNING m.id as message_id, m.run_id
 ),
 link_developer_messages_to_run AS (
-    -- Combine existing (updated) and new developer messages
+    -- Combine existing (updated) and new developer messages_entry
     SELECT message_id, run_id FROM update_existing_developer_messages_run
     UNION ALL
     SELECT message_id, run_id FROM new_developer_messages_matched
 ),
--- Create user messages from user_instructions array
+-- Create user messages_entry from user_instructions array
 user_message_content_array AS (
     SELECT 
         t.content,
@@ -283,7 +283,7 @@ existing_user_messages AS (
         m.id as message_id,
         umh.run_id,
         umh.hash
-    FROM messages m
+    FROM messages_entry m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN user_message_hash_array umh ON message_content_hash(ce.content, 'user') = umh.hash
     WHERE m.role = 'user'
@@ -299,7 +299,7 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'user'::message_role, false, false, nd.run_id, NOW(), NOW()
     FROM new_user_messages_data nd
     RETURNING id, run_id, created_at, updated_at
@@ -344,33 +344,33 @@ insert_user_contents AS (
     FROM new_user_messages_matched nd
 ),
 update_existing_user_messages_run AS (
-    UPDATE messages m
+    UPDATE messages_entry m
     SET run_id = eum.run_id, updated_at = NOW()
     FROM existing_user_messages eum
     WHERE m.id = eum.message_id AND eum.run_id IS NOT NULL
     RETURNING m.id as message_id, m.run_id
 ),
 link_user_messages_to_run AS (
-    -- Combine existing (updated) and new user messages
+    -- Combine existing (updated) and new user messages_entry
     SELECT message_id, run_id FROM update_existing_user_messages_run
     UNION ALL
     SELECT message_id, run_id FROM new_user_messages_matched
 ),
--- Link existing system/developer messages from previous runs (if group_id provided for regeneration)
--- Note: Messages now have direct run_id. For regeneration we copy messages from previous runs in group
+-- Link existing system/developer messages_entry from previous runs_entry (if group_id provided for regeneration)
+-- Note: Messages now have direct run_id. For regeneration we copy messages_entry from previous runs_entry in group
 previous_runs_in_group AS (
     SELECT DISTINCT r.id as run_id
-    FROM runs r
+    FROM runs_entry r
     CROSS JOIN params p
     WHERE r.group_id = p.group_id
       AND p.group_id IS NOT NULL
 ),
 -- Messages are linked via run_id; we don't need to copy them for regeneration
--- The messages from previous runs remain linked to their original runs
+-- The messages_entry from previous runs_entry remain linked to their original runs_entry
 link_existing_messages AS (
     SELECT NULL::uuid as message_id WHERE false -- no-op placeholder to maintain CTE chain
 ),
--- Build message_ids array: includes all developer messages + all user messages + context message_ids
+-- Build message_ids array: includes all developer messages_entry + all user messages_entry + context message_ids
 final_message_ids AS (
     SELECT 
         COALESCE(
@@ -378,12 +378,12 @@ final_message_ids AS (
             ARRAY[]::uuid[]
         ) as message_ids
     FROM (
-        -- Developer messages (if created)
+        -- Developer messages_entry (if created)
         SELECT ldmm.message_id as msg_id
         FROM link_developer_messages_to_run ldmm
         WHERE ldmm.message_id IS NOT NULL
         UNION ALL
-        -- User messages (if created)
+        -- User messages_entry (if created)
         SELECT lumm.message_id as msg_id
         FROM link_user_messages_to_run lumm
         WHERE lumm.message_id IS NOT NULL

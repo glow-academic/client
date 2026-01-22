@@ -249,7 +249,7 @@ attempt_avg AS (
              ELSE 0 END AS avg_pct_over_expected
     FROM attempt_scores
 ),
--- Completed attempts count (includes attempts with or without grades)
+-- Completed attempts count (includes attempts with or without grades_entry)
 completed_attempts_count AS (
     SELECT
         a.profile_id,
@@ -356,7 +356,7 @@ sim_persona_meta AS (
     LEFT JOIN personas_resource p ON p.id = sm.persona_id
     GROUP BY sm.simulation_id
 ),
--- Standard groups per simulation (for items) - get from first scenario's rubric
+-- Standard groups_entry per simulation (for items) - get from first scenario's rubric
 sim_standard_groups AS (
     SELECT DISTINCT ON (ss.simulation_id)
         ss.simulation_id,
@@ -549,7 +549,7 @@ inst_rows AS (
 all_rubric_ids AS (
     SELECT DISTINCT rubric_id FROM sim_meta
 ),
--- Standard groups mapping (as array)
+-- Standard groups_entry mapping (as array)
 standard_groups_array AS (
     SELECT 
         (sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_get_home_overview_v4_standard_group AS standard_group

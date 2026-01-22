@@ -1,5 +1,5 @@
 -- Get existing profile by email or create a new one
--- Returns profile_id for use in tests
+-- Returns profile_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_test_profile_v4(text, text, text, text);
 

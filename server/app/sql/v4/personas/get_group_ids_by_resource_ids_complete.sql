@@ -1,6 +1,6 @@
 -- Get group_ids for persona resources by resource IDs directly
 -- Returns group_id for each resource ID by following the chain:
--- Resource → call_id → calls.id → calls.message_id → messages.run_id → runs.group_id
+-- Resource → call_id → calls_entry.id → calls_entry.message_id → messages_entry.run_id → runs_entry.group_id
 -- Uses safe drop/recreate pattern
 -- 1) Drop function first (breaks dependency on types)
 DO $$
@@ -45,9 +45,9 @@ WITH names_group_ids AS (
         n.id as resource_id,
         r.group_id
     FROM names_resource n
-    LEFT JOIN calls c ON c.id = n.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = n.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE name_id IS NOT NULL AND n.id = name_id
 ),
 -- Descriptions group_id lookup
@@ -57,9 +57,9 @@ descriptions_group_ids AS (
         d.id as resource_id,
         r.group_id
     FROM descriptions_resource d
-    LEFT JOIN calls c ON c.id = d.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = d.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE description_id IS NOT NULL AND d.id = description_id
 ),
 -- Colors group_id lookup
@@ -69,9 +69,9 @@ colors_group_ids AS (
         c.id as resource_id,
         r.group_id
     FROM colors_resource c
-    LEFT JOIN calls cl ON cl.id = c.call_id
-    LEFT JOIN messages m ON m.id = cl.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry cl ON cl.id = c.call_id
+    LEFT JOIN messages_entry m ON m.id = cl.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE color_id IS NOT NULL AND c.id = color_id
 ),
 -- Icons group_id lookup
@@ -81,9 +81,9 @@ icons_group_ids AS (
         i.id as resource_id,
         r.group_id
     FROM icons_resource i
-    LEFT JOIN calls c ON c.id = i.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = i.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE icon_id IS NOT NULL AND i.id = icon_id
 ),
 -- Instructions group_id lookup
@@ -93,9 +93,9 @@ instructions_group_ids AS (
         inst.id as resource_id,
         r.group_id
     FROM instructions_resource inst
-    LEFT JOIN calls c ON c.id = inst.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = inst.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE instructions_id IS NOT NULL AND inst.id = instructions_id
 ),
 -- Flags group_id lookup
@@ -105,9 +105,9 @@ flags_group_ids AS (
         f.id as resource_id,
         r.group_id
     FROM flags_resource f
-    LEFT JOIN calls c ON c.id = f.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = f.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE active_flag_id IS NOT NULL AND f.id = active_flag_id
 ),
 -- Departments group_id lookup (for each selected department)
@@ -117,9 +117,9 @@ departments_group_ids AS (
         d.id as resource_id,
         r.group_id
     FROM departments_resource d
-    LEFT JOIN calls c ON c.id = d.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = d.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE department_ids IS NOT NULL AND d.id = ANY(department_ids)
 ),
 -- Fields group_id lookup (for each selected field)
@@ -129,9 +129,9 @@ fields_group_ids AS (
         f.id as resource_id,
         r.group_id
     FROM fields_resource f
-    LEFT JOIN calls c ON c.id = f.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = f.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE field_ids IS NOT NULL AND f.id = ANY(field_ids)
 ),
 -- Examples group_id lookup (for each selected example)
@@ -141,9 +141,9 @@ examples_group_ids AS (
         e.id as resource_id,
         r.group_id
     FROM examples_resource e
-    LEFT JOIN calls c ON c.id = e.call_id
-    LEFT JOIN messages m ON m.id = c.message_id
-    LEFT JOIN runs r ON r.id = m.run_id
+    LEFT JOIN calls_entry c ON c.id = e.call_id
+    LEFT JOIN messages_entry m ON m.id = c.message_id
+    LEFT JOIN runs_entry r ON r.id = m.run_id
     WHERE example_ids IS NOT NULL AND e.id = ANY(example_ids)
 )
 SELECT resource_type, resource_id, group_id FROM names_group_ids WHERE resource_id IS NOT NULL

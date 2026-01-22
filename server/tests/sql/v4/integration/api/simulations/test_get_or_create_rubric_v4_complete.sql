@@ -1,5 +1,5 @@
 -- Get or create a test rubric for test setup
--- Returns rubric_id for use in tests
+-- Returns rubric_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_rubric_v4();
 

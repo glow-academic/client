@@ -1,5 +1,5 @@
 -- Get superadmin profile ID by email (for test setup)
--- Returns profile_id and email for use in tests
+-- Returns profile_id and email for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_superadmin_alias_v4(text);
 

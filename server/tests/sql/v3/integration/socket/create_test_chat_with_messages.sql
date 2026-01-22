@@ -1,13 +1,13 @@
--- Create a test chat with system/user/assistant messages
+-- Create a test chat with system/user/assistant messages_entry
 -- Parameters: $1 = scenario_id (UUID), $2 = run_id (UUID), $3 = attempt_id (UUID, optional)
 -- Returns: chat_id (UUID), system_message_id (UUID), user_message_id (UUID), assistant_message_id (UUID)
 WITH new_chat AS (
-    INSERT INTO chats(title, scenario_id, completed)
+    INSERT INTO chats_entry(title, scenario_id, completed)
     VALUES ('Test Chat', $1::uuid, false)
     RETURNING id as chat_id
 ),
 create_group AS (
-    INSERT INTO groups (created_at, updated_at, trace_id)
+    INSERT INTO groups_entry (created_at, updated_at, trace_id)
     VALUES (NOW(), NOW(), 'test-trace-id')
     RETURNING id as group_id
 ),
@@ -19,17 +19,17 @@ link_chat_group AS (
     RETURNING chat_id
 ),
 system_msg AS (
-    INSERT INTO messages(role, content, created_at)
+    INSERT INTO messages_entry(role, content, created_at)
     VALUES ('system', 'You are a helpful assistant.', NOW())
     RETURNING id as message_id
 ),
 user_msg AS (
-    INSERT INTO messages(role, content, created_at)
+    INSERT INTO messages_entry(role, content, created_at)
     VALUES ('user', 'Hello, how are you?', NOW())
     RETURNING id as message_id
 ),
 assistant_msg AS (
-    INSERT INTO messages(role, content, created_at)
+    INSERT INTO messages_entry(role, content, created_at)
     VALUES ('assistant', 'I am doing well, thank you!', NOW())
     RETURNING id as message_id
 ),

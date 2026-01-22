@@ -250,7 +250,7 @@ scenario_options_cte AS (
         (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1) AS scenario_title,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
-    JOIN chats sc ON sc.attempt_id = haf.attempt_id
+    JOIN chats_entry sc ON sc.attempt_id = haf.attempt_id
     JOIN scenarios_resource s ON s.id = sc.scenario_id
     WHERE sc.scenario_id IS NOT NULL
     GROUP BY sc.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
@@ -274,7 +274,7 @@ attempt_scenario_ids AS (
     SELECT DISTINCT
         sc.attempt_id,
         ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
-    FROM chats sc
+    FROM chats_entry sc
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
     GROUP BY sc.attempt_id
 ),
@@ -288,7 +288,7 @@ history_attempts_final AS (
         -- Scenario filter (if any scenario matches, include the attempt)
         (cardinality(p.scenario_ids) = 0 OR asi.scenario_ids IS NULL OR asi.scenario_ids && p.scenario_ids)
 ),
--- Aggregate chats per attempt
+-- Aggregate chats_entry per attempt
 history_chat_rollup AS (
     SELECT
         sc.attempt_id,
@@ -297,7 +297,7 @@ history_chat_rollup AS (
         MIN(sc.created_at) AS first_chat_at,
         MAX(sc.created_at) AS last_activity_at,
         array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
-    FROM chats sc
+    FROM chats_entry sc
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY sc.attempt_id
 ),
@@ -307,14 +307,14 @@ history_chat_grades AS (
         c.id AS chat_id,
         scg.score,
         COALESCE(srr.rubric_id, srr_fallback.rubric_id) as rubric_id
-    FROM grades scg
-    JOIN chats c ON c.group_id = scg.group_id
+    FROM grades_entry scg
+    JOIN chats_entry c ON c.group_id = scg.group_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
     LEFT JOIN attempts_entry sa_fallback ON sa_fallback.id = c.attempt_id
     LEFT JOIN simulation_scenario_rubrics ssr_fallback ON ssr_fallback.simulation_id = sa_fallback.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
     WHERE c.id IN (
-        SELECT sc.id FROM chats sc
+        SELECT sc.id FROM chats_entry sc
         WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
     ORDER BY c.id, scg.created_at DESC
@@ -335,7 +335,7 @@ sim_first_scenario_rubric AS (
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
          ORDER BY ss.simulation_id, COALESCE((SELECT spr.value FROM simulation_scenario_positions ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1), 999999)
 ),
--- Aggregate grades per attempt
+-- Aggregate grades_entry per attempt
 history_grade_rollup AS (
     SELECT
         sc.attempt_id,
@@ -343,7 +343,7 @@ history_grade_rollup AS (
         SUM(CASE WHEN hcg.score IS NOT NULL AND COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 0) > 0
             THEN (hcg.score / COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 1)::numeric * 100.0)
             ELSE 0 END) AS sum_grade_percent
-    FROM chats sc
+    FROM chats_entry sc
     JOIN attempts_entry sa ON sa.id = sc.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     LEFT JOIN simulation_scenario_rubrics ssr_fallback_scenario ON ssr_fallback_scenario.simulation_id = sa.simulation_id
@@ -374,14 +374,14 @@ history_elapsed_time AS (
             SUM(
                 CASE
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
-                        (SELECT COALESCE(scg.time_taken, 0) FROM grades scg
-                         JOIN chats c ON c.group_id = scg.group_id
+                        (SELECT COALESCE(scg.time_taken, 0) FROM grades_entry scg
+                         JOIN chats_entry c ON c.group_id = scg.group_id
                          WHERE c.id = sc.id
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
-                            (SELECT scg.created_at FROM grades scg
-                             JOIN chats c ON c.group_id = scg.group_id
+                            (SELECT scg.created_at FROM grades_entry scg
+                             JOIN chats_entry c ON c.group_id = scg.group_id
                              WHERE c.id = sc.id
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
@@ -391,7 +391,7 @@ history_elapsed_time AS (
             ),
             0
         ) AS elapsed_seconds
-    FROM chats sc
+    FROM chats_entry sc
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY sc.attempt_id
@@ -401,7 +401,7 @@ history_personas AS (
     SELECT
         sc.attempt_id,
         array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
-    FROM chats sc
+    FROM chats_entry sc
     JOIN scenarios_resource scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
@@ -432,7 +432,7 @@ history_first_scenario AS (
     SELECT DISTINCT ON (sc.attempt_id)
         sc.attempt_id,
         sc.scenario_id AS practice_scenario_id
-    FROM chats sc
+    FROM chats_entry sc
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     ORDER BY sc.attempt_id, sc.created_at ASC
 ),
@@ -589,7 +589,7 @@ final_rows AS (
                 AND (
                     -- No time limit OR time limit not exceeded
                     (aj.time_limit_seconds IS NULL OR aj.elapsed_seconds < aj.time_limit_seconds)
-                    -- AND there are incomplete chats (pending work)
+                    -- AND there are incomplete chats_entry (pending work)
                     AND aj.incomplete_chats > 0
                 ))
             OR

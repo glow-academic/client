@@ -1,5 +1,5 @@
 -- Create a test scenario for test setup
--- Returns scenario_id for use in tests
+-- Returns scenario_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_scenario_v4(text, text);
 
@@ -30,7 +30,7 @@ BEGIN
     RETURNING id INTO v_scenario_id;
 
     -- Insert self-referencing tree edge
-    INSERT INTO scenario_tree(parent_id, child_id, active)
+    INSERT INTO scenario_tree_entry(parent_id, child_id, active)
     VALUES (v_scenario_id, v_scenario_id, true);
 
     -- Insert problem statement

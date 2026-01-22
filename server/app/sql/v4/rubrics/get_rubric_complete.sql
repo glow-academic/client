@@ -201,7 +201,7 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts_entry d ON d.id = x.draft_id
@@ -421,7 +421,7 @@ pass_points_resource_data AS (
         ) as pass_points_resource
     FROM params
 ),
--- Standard groups resource data (draft-first)
+-- Standard groups_entry resource data (draft-first)
 standard_group_links_data AS (
     SELECT 
         dsg.standard_groups_id as standard_group_id,
@@ -495,9 +495,9 @@ name_suggestions_data AS (
                            rn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -539,9 +539,9 @@ description_suggestions_data AS (
                            rd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -578,9 +578,9 @@ department_suggestions_data AS (
                            rd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -616,9 +616,9 @@ points_suggestions_data AS (
                            rp.generated = true
                            AND p.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = p.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -659,9 +659,9 @@ standard_group_suggestions_data AS (
                            rsg.generated = true
                            AND sg.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = sg.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -699,9 +699,9 @@ standard_suggestions_data AS (
                            rs.generated = true
                            AND s.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = s.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1368,7 +1368,7 @@ ui_flags AS (
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
         END as show_departments,
-        true as show_standard_groups,  -- Always show standard groups picker
+        true as show_standard_groups,  -- Always show standard groups_entry picker
         CASE 
             WHEN COALESCE(array_length((SELECT standard_group_ids FROM standard_group_ids_data), 1), 0) > 0 THEN true
             ELSE false
@@ -1622,7 +1622,7 @@ points_agg AS (
     CROSS JOIN params
     LIMIT 1
 ),
--- Standard groups data (for selected standard groups - only when rubric_id provided)
+-- Standard groups_entry data (for selected standard groups_entry - only when rubric_id provided)
 standard_groups_selected_data AS (
     SELECT 
         sg.id as standard_group_id,
@@ -1639,7 +1639,7 @@ standard_groups_selected_data AS (
     LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sgld.generated
 ),
--- Standard groups data (all available standard groups for options array)
+-- Standard groups_entry data (all available standard groups_entry for options array)
 standard_groups_all_data AS (
     SELECT 
         sg.id as standard_group_id,
@@ -1663,7 +1663,7 @@ standard_groups_all_data AS (
       )
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sg.generated
 ),
--- Standard groups aggregated (selected groups for standard_group_resources)
+-- Standard groups_entry aggregated (selected groups_entry for standard_group_resources)
 standard_groups_selected_aggregated AS (
     SELECT 
         COALESCE(
@@ -1677,7 +1677,7 @@ standard_groups_selected_aggregated AS (
     CROSS JOIN params
     LIMIT 1
 ),
--- Standard groups aggregated (all available groups for standard_groups array)
+-- Standard groups_entry aggregated (all available groups_entry for standard_groups array)
 standard_groups_all_aggregated AS (
     SELECT 
         COALESCE(
@@ -1707,7 +1707,7 @@ standards_selected_data AS (
     LEFT JOIN standard_groups_draft dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
     LEFT JOIN rubric_standards rs ON rs.rubric_id = x.rubric_id AND rs.standard_id = s.id AND rs.active = true
 ),
--- Standards data (all available standards for selected groups)
+-- Standards data (all available standards for selected groups_entry)
 standards_all_data AS (
     SELECT 
         s.id as standard_id,
@@ -1852,7 +1852,7 @@ SELECT
     (SELECT points FROM points_agg) as pass_points,
     -- Multi-select resources: standard_groups
     COALESCE((SELECT standard_group_ids FROM standard_group_ids_data), ARRAY[]::uuid[]) as standard_group_ids,
-    -- Standard group resources (selected standard groups filtered by standard_group_ids)
+    -- Standard group resources (selected standard groups_entry filtered by standard_group_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
             (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
@@ -1872,7 +1872,7 @@ SELECT
         ELSE false
     END as standard_groups_required,
     COALESCE((SELECT standard_group_suggestions FROM standard_group_suggestions_data), ARRAY[]::uuid[]) as standard_group_suggestions,
-    -- Standard groups array (all available standard groups)
+    -- Standard groups_entry array (all available standard groups_entry)
     (SELECT standard_groups FROM standard_groups_all_aggregated) as standard_groups,
     -- Multi-select resources: standards
     COALESCE((SELECT standard_ids FROM standard_ids_data), ARRAY[]::uuid[]) as standard_ids,

@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO tests (title, group_id, completed, trace_id, created_at, updated_at)
+    INSERT INTO tests_entry (title, group_id, completed, trace_id, created_at, updated_at)
     VALUES ($1, $2, false, $3, NOW(), NOW())
     RETURNING id::text as test_id
 $$;

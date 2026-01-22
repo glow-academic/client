@@ -1,4 +1,4 @@
--- Delete eval (cascades to junction table and grades via FK)
+-- Delete eval (cascades to junction table and grades_entry via FK)
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)

@@ -9,8 +9,8 @@ scenario AS (
     VALUES (COALESCE($3, 'Test Scenario'), true)
     RETURNING id
 ),
-scenario_tree AS (
-    INSERT INTO scenario_tree(parent_id, child_id, active)
+scenario_tree_entry AS (
+    INSERT INTO scenario_tree_entry(parent_id, child_id, active)
     SELECT s.id, s.id, true
     FROM scenario s
 ),

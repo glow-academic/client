@@ -1,5 +1,5 @@
--- Get all messages linked to a run (includes system/developer messages from previous runs)
--- Returns messages ordered by created_at
+-- Get all messages_entry linked to a run (includes system/developer messages_entry from previous runs_entry)
+-- Returns messages_entry ordered by created_at
 -- Uses safe drop/recreate pattern
 DO $$
 DECLARE
@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION socket_get_messages_by_run_id_v4(
     run_id uuid
 )
 RETURNS TABLE (
-    messages types.i_get_messages_by_ids_v4_message[]
+    messages_entry types.i_get_messages_by_ids_v4_message[]
 )
 LANGUAGE sql
 STABLE
@@ -29,7 +29,7 @@ AS $$
 WITH params AS (
     SELECT run_id AS run_id
 ),
--- Get all messages linked to the run (includes system/developer from previous runs)
+-- Get all messages_entry linked to the run (includes system/developer from previous runs_entry)
 messages_data AS (
     SELECT
         m.id,
@@ -40,9 +40,9 @@ messages_data AS (
         m.audio,
         ar.upload_id
     FROM params p
-    JOIN messages m ON m.run_id = p.run_id
+    JOIN messages_entry m ON m.run_id = p.run_id
     LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-    LEFT JOIN calls c_audio ON c_audio.message_id = m.id
+    LEFT JOIN calls_entry c_audio ON c_audio.message_id = m.id
     LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time
@@ -54,7 +54,7 @@ SELECT
             ORDER BY md.created_at
         ),
         '{}'::types.i_get_messages_by_ids_v4_message[]
-    ) as messages
+    ) as messages_entry
 FROM messages_data md
 $$;
 

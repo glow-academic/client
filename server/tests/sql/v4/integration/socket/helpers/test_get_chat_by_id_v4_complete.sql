@@ -16,6 +16,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, completed, created_at 
-    FROM chats 
+    FROM chats_entry 
     WHERE id = test_get_chat_by_id_v4.chat_id;
 $$;

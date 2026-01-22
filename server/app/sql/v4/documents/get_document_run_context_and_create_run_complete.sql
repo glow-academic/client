@@ -113,7 +113,7 @@ WITH params AS (
 ),
 create_group_if_needed AS (
     -- Create new group if group_id is NULL (always NULL for first generation)
-    INSERT INTO groups (created_at, updated_at)
+    INSERT INTO groups_entry (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM params p
     WHERE p.department_id IS NOT NULL  -- Always create group for document generation
@@ -155,11 +155,11 @@ profile_rate_limit AS (
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
-    -- Count model runs for the profile since start of day
+    -- Count model runs_entry for the profile since start of day
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM runs_entry mr
     WHERE mr.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -445,14 +445,14 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record with profile_id and group_id directly
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id, profile_id, group_id)
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id, profile_id, group_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid, gd.group_id
     FROM context_data cd
     CROSS JOIN group_data gd
     RETURNING id
 ),
 link_group AS (
-    -- Dummy CTE to maintain compatibility (runs now have group_id directly)
+    -- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)
     SELECT cr.id as run_id
     FROM create_run cr
 ),
@@ -478,14 +478,14 @@ existing_developer_message AS (
         m.id,
         m.created_at,
         dmh.run_id
-    FROM messages m
+    FROM messages_entry m
     JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
     JOIN developer_message_hash dmh ON message_content_hash(ce.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     LIMIT 1
 ),
 new_developer_message AS (
-    INSERT INTO messages (role, completed, audio, run_id, created_at, updated_at)
+    INSERT INTO messages_entry (role, completed, audio, run_id, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, (SELECT run_id FROM developer_message_hash LIMIT 1), NOW(), NOW()
     FROM developer_message_hash dmh
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
@@ -511,14 +511,14 @@ developer_message_final AS (
     FROM new_developer_message nm
 ),
 update_existing_developer_message_run AS (
-    UPDATE messages m
+    UPDATE messages_entry m
     SET run_id = edm.run_id, updated_at = NOW()
     FROM existing_developer_message edm
     WHERE m.id = edm.id AND edm.run_id IS NOT NULL
     RETURNING m.id as message_id, m.run_id
 ),
 link_developer_message_to_run AS (
-    -- Combine existing (updated) and new developer messages
+    -- Combine existing (updated) and new developer messages_entry
     SELECT message_id, run_id FROM update_existing_developer_message_run
     UNION ALL
     SELECT nm.id as message_id, (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
@@ -543,7 +543,7 @@ SELECT
     cd.earliest_run_created_at,
     -- Run ID (created in same transaction)
     cr.id::text as run_id,
-    -- Group ID and trace_id (from groups table)
+    -- Group ID and trace_id (from groups_entry table)
     gd.group_id,
     gd.trace_id::text as trace_id,
     -- Tools array

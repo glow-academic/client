@@ -22,5 +22,5 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE tests SET completed = true, updated_at = NOW() WHERE tests.id = $1
+    UPDATE tests_entry SET completed = true, updated_at = NOW() WHERE tests_entry.id = $1
 $$;

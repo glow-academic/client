@@ -18,13 +18,13 @@ BEGIN
 END $$;
 
 -- 2) Drop types WITHOUT CASCADE
--- Drop types in dependency order: drop dependent types first (model_run depends on debug_info)
+-- Drop types in dependency order: drop dependent types first (model_run depends on debug_info_entry)
 -- Use prefix pattern to find all types, but drop in correct order
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    -- Drop model_run first (depends on debug_info)
+    -- Drop model_run first (depends on debug_info_entry)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
@@ -61,7 +61,7 @@ CREATE TYPE types.q_get_pricing_analytics_v4_model_run AS (
     agent_id uuid,
     persona_id uuid,
     run_cost numeric,
-    debug_info types.q_get_pricing_analytics_v4_debug_info[]
+    debug_info_entry types.q_get_pricing_analytics_v4_debug_info[]
 );
 
 CREATE TYPE types.q_get_pricing_analytics_v4_model AS (
@@ -151,10 +151,10 @@ runs_base AS (
         NULL::uuid as persona_id,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         sa.archived
-    FROM runs mr
-    -- Join to simulations via runs.group_id → groups → chats (direct group_id) → attempts_entry → simulations
-    LEFT JOIN groups g ON g.id = mr.group_id
-    LEFT JOIN chats c ON c.group_id = g.id
+    FROM runs_entry mr
+    -- Join to simulations via runs_entry.group_id → groups_entry → chats_entry (direct group_id) → attempts_entry → simulations
+    LEFT JOIN groups_entry g ON g.id = mr.group_id
+    LEFT JOIN chats_entry c ON c.group_id = g.id
     LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
     LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
@@ -200,8 +200,8 @@ runs_base AS (
             )
         )
         -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
-        -- If no filters provided (NULL or empty), include all runs (runs not linked to simulations are included)
-        -- If filters provided, only include runs that match the filter OR runs not linked to simulations (treat as "general")
+        -- If no filters provided (NULL or empty), include all runs_entry (runs_entry not linked to simulations are included)
+        -- If filters provided, only include runs_entry that match the filter OR runs_entry not linked to simulations (treat as "general")
         AND (
             p.simulation_filters IS NULL
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
@@ -228,7 +228,7 @@ run_costs AS (
             (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
     FROM run_pricing_entry rpu
-    JOIN runs r ON r.id = rpu.run_id
+    JOIN runs_entry r ON r.id = rpu.run_id
     JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
     JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
@@ -255,10 +255,10 @@ runs_with_debug AS (
                 ORDER BY di.created_at
             ) FILTER (WHERE di.id IS NOT NULL),
             '{}'::types.q_get_pricing_analytics_v4_debug_info[]
-        ) as debug_info
+        ) as debug_info_entry
     FROM runs_base mrb
     LEFT JOIN run_costs rc ON rc.run_id = mrb.run_id
-    LEFT JOIN debug_info di ON di.run_id = mrb.run_id
+    LEFT JOIN debug_info_entry di ON di.run_id = mrb.run_id
     GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, rc.run_cost
 ),
 model_pricing_aggregated AS (
@@ -277,7 +277,7 @@ SELECT
     COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.run_cost, mrb.debug_info)::types.q_get_pricing_analytics_v4_model_run
+            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.run_cost, mrb.debug_info_entry)::types.q_get_pricing_analytics_v4_model_run
             ORDER BY mrb.created_at DESC
         ),
         '{}'::types.q_get_pricing_analytics_v4_model_run[]

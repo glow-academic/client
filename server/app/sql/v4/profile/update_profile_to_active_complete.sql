@@ -1,4 +1,4 @@
--- UPDATE profile_artifact to active and insert activity in a single transaction
+-- UPDATE profile_artifact to active and insert activity_entry in a single transaction
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -54,8 +54,8 @@ update_profile AS (
     SELECT profile_id FROM insert_or_update_flag
 ),
 insert_activity AS (
-    -- Insert activity record
-    INSERT INTO activity (profile_id, last_active)
+    -- Insert activity_entry record
+    INSERT INTO activity_entry (profile_id, last_active)
     SELECT 
         up.profile_id,
         last_active

@@ -220,7 +220,7 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts_entry d ON d.id = x.draft_id
@@ -347,9 +347,9 @@ name_suggestions_data AS (
                        (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -402,9 +402,9 @@ description_suggestions_data AS (
                        (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -903,14 +903,14 @@ model_key_associations AS (
 -- Additional detail endpoint CTEs
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs mr
+    FROM runs_entry mr
     JOIN agent_departments ad ON NULL::uuid = mr.agent_id AND ad.active = true
     WHERE ad.department_id = (SELECT department_id FROM params) AND mr.agent_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs mr
+    FROM runs_entry mr
     JOIN profile_departments pd ON pd.profile_id = mr.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
@@ -928,7 +928,7 @@ model_run_costs AS (
         ), 0) as cost
     FROM run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
-    JOIN runs r ON r.id = rpu.run_id
+    JOIN runs_entry r ON r.id = rpu.run_id
     JOIN agent_models am ON am.agent_id = r.agent_id AND am.active = true
     JOIN model_pricing mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id

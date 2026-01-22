@@ -1,5 +1,5 @@
--- Create a test run for socket tests
--- Returns run_id for use in tests
+-- Create a test run for socket tests_entry
+-- Returns run_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_run_v4(uuid, uuid, uuid, text, uuid, uuid);
 
@@ -21,7 +21,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO runs (input_tokens, output_tokens, agent_id)
+    INSERT INTO runs_entry (input_tokens, output_tokens, agent_id)
     VALUES (0, 0, test_create_test_run_v4.agent_id)
     RETURNING id, test_create_test_run_v4.department_id, test_create_test_run_v4.model_id, test_create_test_run_v4.agent_id;
 $$;

@@ -1,4 +1,4 @@
--- Get health list with pagination
+-- Get health_entry list with pagination
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION api_get_health_list_v4(
 )
 RETURNS TABLE (
     actor_name text,
-    metrics types.q_get_health_list_v4_metric[],
+    metrics_entry types.q_get_health_list_v4_metric[],
     total_count bigint,
     page integer,
     page_size integer,
@@ -77,7 +77,7 @@ user_profile AS (
     LEFT JOIN profile_artifact ON profile_artifact.id = x.profile_id
     LIMIT 1
 ),
--- App metrics time series (last 7 days, aggregated by hour)
+-- App metrics_entry time series (last 7 days, aggregated by hour)
 metrics_trend AS (
     SELECT 
         date_trunc('hour', ts) as date_hour,
@@ -87,7 +87,7 @@ metrics_trend AS (
         MAX(requests_total) as max_requests_total,
         MAX(errors_total) as max_errors_total,
         COUNT(*) as sample_count
-    FROM metrics
+    FROM metrics_entry
     WHERE ts >= NOW() - INTERVAL '7 days'
     GROUP BY date_hour
     ORDER BY date_hour DESC
@@ -118,7 +118,7 @@ SELECT
             ORDER BY pm.date DESC
         ),
         '{}'::types.q_get_health_list_v4_metric[]
-    ) as metrics,
+    ) as metrics_entry,
     COALESCE((SELECT total_count FROM metric_count), 0)::bigint as total_count,
     (SELECT page FROM params)::integer as page,
     (SELECT page_size FROM params)::integer as page_size,

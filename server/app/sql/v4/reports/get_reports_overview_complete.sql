@@ -1,12 +1,12 @@
--- Reports overview query - profile-specific metrics
+-- Reports overview query - profile-specific metrics_entry
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 --
 -- Parameters: start_date, end_date, actor_profile_id (required), target_profile_id (required),
 --            cohort_ids, roles (kept for compatibility, not used),
 --            simulation_filters, department_ids
--- Returns: Complete dashboard bundle with header metrics, primary metrics, secondary metrics, 
---          footer metrics, history, insights, thresholds, and entity mappings (as arrays)
+-- Returns: Complete dashboard bundle with header metrics_entry, primary metrics_entry, secondary metrics_entry, 
+--          footer metrics_entry, history, insights, thresholds, and entity mappings (as arrays)
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
 DO $$
@@ -61,14 +61,14 @@ END $$;
 -- Note: Using native PostgreSQL types (uuid, timestamptz) instead of text where appropriate
 -- Arrays of IDs use text[] for frontend compatibility
 
--- Trend data point (used in header metrics)
+-- Trend data point (used in header metrics_entry)
 CREATE TYPE types.q_reports_overview_v4_trend_data AS (
     date text,
     value float,
     count int
 );
 
--- Data point (used in header metrics)
+-- Data point (used in header metrics_entry)
 CREATE TYPE types.q_reports_overview_v4_data_point AS (
     profile_id text,
     date text,
@@ -79,7 +79,7 @@ CREATE TYPE types.q_reports_overview_v4_data_point AS (
     count int
 );
 
--- Metric response (for header metrics)
+-- Metric response (for header metrics_entry)
 CREATE TYPE types.q_reports_overview_v4_metric_response AS (
     has_data boolean,
     method text,
@@ -92,7 +92,7 @@ CREATE TYPE types.q_reports_overview_v4_metric_response AS (
     data_points types.q_reports_overview_v4_data_point[]
 );
 
--- Header metrics (10 metrics)
+-- Header metrics_entry (10 metrics_entry)
 CREATE TYPE types.q_reports_overview_v4_header_metrics AS (
     average_score types.q_reports_overview_v4_metric_response,
     completion_percentage types.q_reports_overview_v4_metric_response,
@@ -212,7 +212,7 @@ CREATE TYPE types.q_reports_overview_v4_rubric_heatmap_response AS (
     status text
 );
 
--- Primary metrics
+-- Primary metrics_entry
 CREATE TYPE types.q_reports_overview_v4_primary_metrics AS (
     growth_data types.q_reports_overview_v4_growth_data_response,
     persona_performance types.q_reports_overview_v4_persona_performance_response,
@@ -325,7 +325,7 @@ CREATE TYPE types.q_reports_overview_v4_skill_performance_response AS (
     status text
 );
 
--- Secondary metrics
+-- Secondary metrics_entry
 CREATE TYPE types.q_reports_overview_v4_secondary_metrics AS (
     attempt_improvement types.q_reports_overview_v4_attempt_improvement_response,
     cohort_performance types.q_reports_overview_v4_cohort_performance_response,
@@ -438,7 +438,7 @@ CREATE TYPE types.q_reports_overview_v4_simulation_performance_response AS (
     status text
 );
 
--- Footer metrics
+-- Footer metrics_entry
 CREATE TYPE types.q_reports_overview_v4_footer_metrics AS (
     scenario_performance types.q_reports_overview_v4_scenario_performance_response,
     scenario_stats types.q_reports_overview_v4_scenario_stats_response,
@@ -682,7 +682,7 @@ filt AS (
             ),
             
             -- =====================================================
-            -- HEADER METRICS (10 metrics)
+            -- HEADER METRICS (10 metrics_entry)
             -- =====================================================
             
             -- Attempt normalization for average_score
@@ -819,7 +819,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chats c
+                FROM chats_entry c
                 JOIN attempts_entry sa ON sa.id = c.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats_for_stagnation)
             ),
@@ -843,8 +843,8 @@ filt AS (
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0), 0)) * 100.0 AS norm
-                FROM grades sg
-                JOIN chats c_stag ON c_stag.group_id = sg.group_id
+                FROM grades_entry sg
+                JOIN chats_entry c_stag ON c_stag.group_id = sg.group_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
                 LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
@@ -1353,7 +1353,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chats c
+                FROM chats_entry c
                 JOIN attempts_entry sa ON sa.id = c.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
             ),
@@ -1378,8 +1378,8 @@ filt AS (
                         srr_fallback.rubric_id,
                         sfsr.rubric_id
                     ) AS rubric_id
-                FROM grades scg
-                JOIN chats c ON c.group_id = scg.group_id
+                FROM grades_entry scg
+                JOIN chats_entry c ON c.group_id = scg.group_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
                 LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
@@ -1670,7 +1670,7 @@ filt AS (
                       OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
                   )
             ),
-            -- Helper CTEs for header metrics - convert to composite types
+            -- Helper CTEs for header metrics_entry - convert to composite types
             header_avg_score_trend_agg AS (
                 SELECT COALESCE(
                     ARRAY_AGG((date, value, count)::types.q_reports_overview_v4_trend_data ORDER BY date),
@@ -1995,7 +1995,7 @@ filt AS (
                     (SELECT (has_data, method, current_value, status, trend_analysis, value_field, key_field, trend_data, data_points)::types.q_reports_overview_v4_metric_response FROM header_attempts_metric LIMIT 1)
                 )::types.q_reports_overview_v4_header_metrics as header_metrics
             ),
-            -- Primary metrics helper CTEs
+            -- Primary metrics_entry helper CTEs
             growth_chart_data_agg AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
@@ -2080,11 +2080,11 @@ filt AS (
                     (SELECT rubric_heatmap FROM rubric_heatmap_combined LIMIT 1)
                 )::types.q_reports_overview_v4_primary_metrics as primary_metrics
             ),
-            -- Secondary metrics - placeholder for now (needs full conversion)
+            -- Secondary metrics_entry - placeholder for now (needs full conversion)
             secondary_metrics_combined AS (
                 SELECT NULL::types.q_reports_overview_v4_secondary_metrics as secondary_metrics
             ),
-            -- Footer metrics - placeholder for now (needs full conversion)
+            -- Footer metrics_entry - placeholder for now (needs full conversion)
             footer_metrics_combined AS (
                 SELECT NULL::types.q_reports_overview_v4_footer_metrics as footer_metrics
             ),

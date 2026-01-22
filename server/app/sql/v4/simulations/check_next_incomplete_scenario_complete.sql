@@ -54,7 +54,7 @@ existing_chats AS (
         sc.id as chat_id,
         sc.scenario_id as child_scenario_id,
         sc.completed
-    FROM chats sc
+    FROM chats_entry sc
     CROSS JOIN attempt_base ab
     WHERE sc.attempt_id = ab.attempt_id
 ),
@@ -72,7 +72,7 @@ scenario_ancestors AS (
         sa.child_scenario_id,
         COALESCE(
             (SELECT st.parent_id 
-             FROM scenario_tree st 
+             FROM scenario_tree_entry st 
              WHERE st.child_id = sa.ancestor_id 
                AND st.parent_id != st.child_id 
              LIMIT 1),
@@ -82,7 +82,7 @@ scenario_ancestors AS (
     FROM scenario_ancestors sa
     WHERE sa.depth < 100
       AND EXISTS (
-          SELECT 1 FROM scenario_tree st 
+          SELECT 1 FROM scenario_tree_entry st 
           WHERE st.child_id = sa.ancestor_id 
             AND st.parent_id != st.child_id
       )
@@ -106,27 +106,27 @@ child_to_parent_mapping AS (
     FROM existing_chats ec
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = ec.child_scenario_id
 ),
--- Get scenarios that already have chats (even without grades) to avoid duplicates
+-- Get scenarios that already have chats_entry (even without grades_entry) to avoid duplicates
 existing_parent_scenario_ids AS (
     SELECT DISTINCT ctp.parent_scenario_id
     FROM child_to_parent_mapping ctp
     JOIN simulation_scenarios_list ssl ON ssl.scenario_id = ctp.parent_scenario_id
 ),
--- Get parent scenarios that have graded chats (reuse logic from get_scenarios_with_grades.sql)
+-- Get parent scenarios that have graded chats_entry (reuse logic from get_scenarios_with_grades.sql)
 scenarios_with_grades AS (
     SELECT DISTINCT ss.scenario_id as parent_scenario_id
     FROM simulation_scenarios ss
     CROSS JOIN attempt_base ab
-    JOIN chats sc ON sc.attempt_id = ab.attempt_id
-    JOIN grades scg ON EXISTS (
-        SELECT 1 FROM runs r_check
-        JOIN groups g_check ON g_check.id = r_check.group_id
-        JOIN chats c_check ON c_check.group_id = g_check.id AND c_check.id = sc.id
+    JOIN chats_entry sc ON sc.attempt_id = ab.attempt_id
+    JOIN grades_entry scg ON EXISTS (
+        SELECT 1 FROM runs_entry r_check
+        JOIN groups_entry g_check ON g_check.id = r_check.group_id
+        JOIN chats_entry c_check ON c_check.group_id = g_check.id AND c_check.id = sc.id
         WHERE r_check.id = scg.run_id
     )
-    JOIN runs r ON r.id = scg.run_id
-    JOIN groups g ON g.id = r.group_id
-    JOIN chats c ON c.group_id = g.id AND c.id = sc.id
+    JOIN runs_entry r ON r.id = scg.run_id
+    JOIN groups_entry g ON g.id = r.group_id
+    JOIN chats_entry c ON c.group_id = g.id AND c.id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 

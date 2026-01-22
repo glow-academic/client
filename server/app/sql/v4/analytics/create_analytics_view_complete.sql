@@ -2,7 +2,7 @@
 -- This SQL file creates the analytics materialized view with all necessary indexes.
 -- Follows idempotent drop/recreate pattern - safe to run multiple times.
 --
--- This view aggregates simulation attempts, chats, grades, and related data
+-- This view aggregates simulation attempts, chats_entry, grades_entry, and related data
 -- for efficient analytics queries.
 -- ============================================================================
 -- Step 1: Drop all indexes on analytics materialized view (if it exists)
@@ -35,14 +35,14 @@ DROP MATERIALIZED VIEW IF EXISTS analytics CASCADE;
 
 CREATE MATERIALIZED VIEW analytics AS
 WITH RECURSIVE scenario_roots AS (
-  -- Map every scenario.id to its root_id using scenario_tree (self-edge = root)
+  -- Map every scenario.id to its root_id using scenario_tree_entry (self-edge = root)
   SELECT s.id, st.parent_id, s.id AS root_id
   FROM scenario_artifact s
-  JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id = s.id -- self-edge = root
+  JOIN scenario_tree_entry st ON st.child_id = s.id AND st.parent_id = s.id -- self-edge = root
   UNION ALL
   SELECT s1.id, st.parent_id, sr.root_id
   FROM scenario_artifact s1
-  JOIN scenario_tree st ON st.child_id = s1.id AND st.parent_id <> s1.id
+  JOIN scenario_tree_entry st ON st.child_id = s1.id AND st.parent_id <> s1.id
   JOIN scenario_roots sr ON st.parent_id = sr.id
 ),
 root_map AS (
@@ -58,10 +58,10 @@ latest_grade AS (
          COALESCE(g.time_taken, 0)::numeric AS time_taken_seconds,
          srr.rubric_id,
          g.created_at
-  FROM grades g
-  JOIN chats c ON c.group_id = g.group_id
+  FROM grades_entry g
+  JOIN chats_entry c ON c.group_id = g.group_id
   LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-  -- Simulation grades only (derive from relationship via grades.group_id = chats.group_id)
+  -- Simulation grades_entry only (derive from relationship via grades_entry.group_id = chats_entry.group_id)
   -- Get rubric_id from scenario_rubrics_resource based on chat's scenario_id
   ORDER BY c.id, g.created_at DESC
 ),
@@ -121,7 +121,7 @@ chat_first_attempt AS (
   SELECT DISTINCT ON (c.id)
     c.id AS chat_id,
     c.attempt_id
-  FROM chats c
+  FROM chats_entry c
   JOIN attempts_entry sa ON sa.id = c.attempt_id
   WHERE c.attempt_id IS NOT NULL
   ORDER BY c.id,
@@ -135,9 +135,9 @@ message_counts AS (
     COUNT(*)::int                                AS num_messages_total,
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-  FROM chats c
-  JOIN runs r ON r.group_id = c.group_id
-  JOIN messages m ON m.run_id = r.id
+  FROM chats_entry c
+  JOIN runs_entry r ON r.group_id = c.group_id
+  JOIN messages_entry m ON m.run_id = r.id
   GROUP BY c.id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
@@ -155,9 +155,9 @@ message_deltas AS (
       ELSE NULL
     END AS delta_seconds,
     m.created_at
-  FROM chats c
-  JOIN runs r ON r.group_id = c.group_id
-  JOIN messages m ON m.run_id = r.id
+  FROM chats_entry c
+  JOIN runs_entry r ON r.group_id = c.group_id
+  JOIN messages_entry m ON m.run_id = r.id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -303,7 +303,7 @@ SELECT
     scfd.department_id,
     pfd.department_id
   ) AS department_id
-FROM chats sc
+FROM chats_entry sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN attempts_entry sa ON sa.id = cfa.attempt_id
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
@@ -386,9 +386,9 @@ CREATE INDEX analytics_attempt_created_at_idx
 -- Step 6: Create Performance Indexes for Analytics Functions
 -- ============================================================================
 
--- Latest grade per chat fast path (via grade_groups → groups → group_runs → runs)
+-- Latest grade per chat fast path (via grade_groups → groups_entry → group_runs → runs_entry)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grades (run_id, created_at DESC);
+  ON grades_entry (run_id, created_at DESC);
 
 -- Feedback lookup by grade (via feedbacks_entry junction table)
 -- Note: grade_id column removed FROM feedbacks_resource table, use feedbacks_entry junction table instead
@@ -417,7 +417,7 @@ CREATE INDEX analytics_simulation_idx
 -- Additional indexes for skill performance optimization
 -- Latest grade per run fast path (rubric_grade_agent_id removed)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grades (run_id, created_at DESC);
+  ON grades_entry (run_id, created_at DESC);
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
@@ -438,12 +438,12 @@ CREATE INDEX analytics_is_practice_true_idx
 CREATE INDEX analytics_is_archived_true_idx
   ON analytics (attempt_created_at) WHERE is_archived = true;
 
--- Index for messages.run_id (replaces old message_runs junction table)
+-- Index for messages_entry.run_id (replaces old message_runs junction table)
 CREATE INDEX IF NOT EXISTS messages_run_id_created_idx
-  ON messages (run_id, created_at);
+  ON messages_entry (run_id, created_at);
 
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
-  ON chats (id, created_at);
+  ON chats_entry (id, created_at);
 
 CREATE INDEX IF NOT EXISTS attempts_entry_archived_idx
   ON attempts_entry (archived);

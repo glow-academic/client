@@ -1,5 +1,5 @@
 -- Get existing agent or create a new one
--- Returns agent_id for use in tests
+-- Returns agent_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_test_agent_v4(text, text, uuid);
 

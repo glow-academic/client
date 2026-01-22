@@ -1,4 +1,4 @@
--- Insert or update app metrics snapshot
+-- Insert or update app metrics_entry snapshot
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- Drop function if exists (handle signature changes)
@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO metrics (ts, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes)
+    INSERT INTO metrics_entry (ts, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes)
     VALUES (ts::timestamptz, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes)
     ON CONFLICT (ts) DO UPDATE
     SET requests_total = EXCLUDED.requests_total,

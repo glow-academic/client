@@ -52,7 +52,7 @@ original_cohort AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM calls
+    FROM calls_entry
     LIMIT 1
 ),
 -- Insert title INTO names_resource table
@@ -89,7 +89,7 @@ description_resource AS (
     LIMIT 1
 ),
 new_group AS (
-    INSERT INTO groups (created_at, updated_at)
+    INSERT INTO groups_entry (created_at, updated_at)
     VALUES (NOW(), NOW())
     RETURNING id
 ),

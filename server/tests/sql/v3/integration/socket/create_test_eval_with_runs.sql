@@ -1,7 +1,7 @@
--- Create a test eval with runs for testing
+-- Create a test eval with runs_entry for testing
 -- Parameters: $1 = agent_id (UUID, optional), $2 = eval_agent_id (UUID, optional), $3 = rubric_id (UUID, optional)
 -- Returns: eval_id (UUID), run_id_1 (UUID), run_id_2 (UUID)
--- Creates eval, creates 2 runs, and links them via eval_runs
+-- Creates eval, creates 2 runs_entry, and links them via eval_runs
 WITH new_eval AS (
     INSERT INTO evals(name, description, active, agent_id, eval_agent_id, rubric_id)
     VALUES (
@@ -15,12 +15,12 @@ WITH new_eval AS (
     RETURNING id as eval_id
 ),
 run1 AS (
-    INSERT INTO runs(input_tokens, output_tokens)
+    INSERT INTO runs_entry(input_tokens, output_tokens)
     VALUES (0, 0)
     RETURNING id as run_id
 ),
 run2 AS (
-    INSERT INTO runs(input_tokens, output_tokens)
+    INSERT INTO runs_entry(input_tokens, output_tokens)
     VALUES (0, 0)
     RETURNING id as run_id
 ),

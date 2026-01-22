@@ -51,7 +51,7 @@ WITH params AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM calls
+    FROM calls_entry
     LIMIT 1
 ),
 get_or_create_name AS (
@@ -70,7 +70,7 @@ get_flag_ids AS (
         (SELECT id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id
 ),
 new_group AS (
-    INSERT INTO groups (created_at, updated_at)
+    INSERT INTO groups_entry (created_at, updated_at)
     VALUES (NOW(), NOW())
     RETURNING id
 ),
@@ -118,8 +118,8 @@ SELECT
     p.objectives_enabled,
     p.images_enabled,
     ''::text as description,
-    (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as root_scenario_id,
-    (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as parent_scenario_id,
+    (SELECT st.parent_id FROM scenario_tree_entry st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as root_scenario_id,
+    (SELECT st.parent_id FROM scenario_tree_entry st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as parent_scenario_id,
     (SELECT created_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as created_at,
     (SELECT updated_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as updated_at,
     NULL::uuid as profile_id,

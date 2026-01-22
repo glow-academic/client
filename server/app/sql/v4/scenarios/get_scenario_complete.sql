@@ -407,7 +407,7 @@ draft_group_data AS (
     SELECT 
         COALESCE(
             d.group_id,
-            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+            (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts_entry d ON d.id = x.draft_id
@@ -681,7 +681,7 @@ scenario_core AS (
         END as use_templates
     FROM params x
     LEFT JOIN scenario_artifact s ON s.id = x.scenario_id
-    LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
+    LEFT JOIN scenario_tree_entry st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     LEFT JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id
@@ -1122,9 +1122,9 @@ name_suggestions_data AS (
                            sn.generated = true
                            AND n.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1165,9 +1165,9 @@ description_suggestions_data AS (
                            sd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1209,9 +1209,9 @@ problem_statement_suggestions_data AS (
                            sps.generated = true
                            AND ps.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = ps.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1329,7 +1329,7 @@ scenario_videos_array AS (
         CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order,
         v.created_at
     FROM videos_resource v
-    LEFT JOIN uploads u ON u.id = v.upload_id
+    LEFT JOIN uploads_entry u ON u.id = v.upload_id
     LEFT JOIN scenario_videos sv ON sv.video_id = v.id AND sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true
     WHERE v.active = true
 ),
@@ -1376,7 +1376,7 @@ scenario_images_array AS (
         i.updated_at,
         CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order
     FROM images_resource i
-    LEFT JOIN uploads u ON u.id = i.upload_id
+    LEFT JOIN uploads_entry u ON u.id = i.upload_id
     LEFT JOIN scenario_images si ON si.image_id = i.id AND si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true
     WHERE i.active = true
 ),
@@ -1753,7 +1753,7 @@ valid_documents_filtered AS (
     FROM document_artifact d
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads u ON u.id = ur.upload_id
+    LEFT JOIN uploads_entry u ON u.id = ur.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_departments ud
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)
@@ -1892,7 +1892,7 @@ document_data_base AS (
     JOIN document_artifact d2 ON d2.id = doc_id::uuid
     LEFT JOIN document_uploads_resource dur2 ON dur2.document_id = d2.id AND dur2.active = true
     LEFT JOIN uploads_resource ur2 ON ur2.id = dur2.uploads_id
-    LEFT JOIN uploads u2 ON u2.id = ur2.upload_id
+    LEFT JOIN uploads_entry u2 ON u2.id = ur2.upload_id
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d2.id AND f.name = 'document_active' AND df.value = TRUE)
     UNION
     SELECT DISTINCT
@@ -1904,7 +1904,7 @@ document_data_base AS (
     FROM document_artifact d3
     LEFT JOIN document_uploads_resource dur3 ON dur3.document_id = d3.id AND dur3.active = true
     LEFT JOIN uploads_resource ur3 ON ur3.id = dur3.uploads_id
-    LEFT JOIN uploads u3 ON u3.id = ur3.upload_id
+    LEFT JOIN uploads_entry u3 ON u3.id = ur3.upload_id
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d3.id AND f.name = 'document_active' AND df.value = TRUE)
     AND (SELECT document_ids FROM params LIMIT 1) IS NOT NULL
     AND array_length((SELECT document_ids FROM params LIMIT 1), 1) > 0
@@ -2105,7 +2105,7 @@ scenario_documents_array AS (
     JOIN documents_resource d ON d.id = sd.document_id
     LEFT JOIN document_uploads_resource dur ON dur.document_id = d.id AND dur.active = true
     LEFT JOIN uploads_resource ur ON ur.id = dur.uploads_id
-    LEFT JOIN uploads u ON u.id = ur.upload_id
+    LEFT JOIN uploads_entry u ON u.id = ur.upload_id
     WHERE sd.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)
 ),
 all_documents_array AS (
@@ -2784,7 +2784,7 @@ image_mapping_data AS (
         COALESCE(i.upload_id, i.id) as upload_id,
         COALESCE(i.generated, false) as generated
     FROM images_resource i
-    LEFT JOIN uploads u ON u.id = i.upload_id
+    LEFT JOIN uploads_entry u ON u.id = i.upload_id
     WHERE i.active = true
 ),
 -- Video mapping data (for videos array)
@@ -2799,7 +2799,7 @@ video_mapping_data AS (
         COALESCE(v.upload_id, v.id) as upload_id,
         false as generated  -- Videos are not generated resources
     FROM videos_resource v
-    LEFT JOIN uploads u ON u.id = v.upload_id
+    LEFT JOIN uploads_entry u ON u.id = v.upload_id
     WHERE v.active = true
 ),
 -- Question mapping data (for questions array)
@@ -2894,9 +2894,9 @@ department_suggestions_data AS (
                            sd.generated = true
                            AND d.generated = true
                            AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN messages m ON m.id = c.message_id
-                               JOIN runs r ON r.id = m.run_id
+                               SELECT 1 FROM calls_entry c
+                               JOIN messages_entry m ON m.id = c.message_id
+                               JOIN runs_entry r ON r.id = m.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -3858,7 +3858,7 @@ SELECT
             SELECT ARRAY_AGG((si.image_id, i.name, u.file_path, u.mime_type, COALESCE(i.upload_id, si.image_id), false)::types.q_get_scenario_v4_image_resource ORDER BY si.created_at)
             FROM scenario_images si
             JOIN images_resource i ON i.id = si.image_id
-            LEFT JOIN uploads u ON u.id = i.upload_id
+            LEFT JOIN uploads_entry u ON u.id = i.upload_id
             WHERE si.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND si.active = true
         ), '{}'::types.q_get_scenario_v4_image_resource[])
         ELSE '{}'::types.q_get_scenario_v4_image_resource[]
@@ -3904,7 +3904,7 @@ SELECT
             SELECT ARRAY_AGG((sv.video_id, v.name, v.length_seconds, COALESCE(v.completed, false), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), COALESCE(v.upload_id, sv.video_id), false)::types.q_get_scenario_v4_video_resource ORDER BY sv.created_at)
             FROM scenario_videos sv
             JOIN videos_resource v ON v.id = sv.video_id
-            LEFT JOIN uploads u ON u.id = v.upload_id
+            LEFT JOIN uploads_entry u ON u.id = v.upload_id
             WHERE sv.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sv.active = true
         ), '{}'::types.q_get_scenario_v4_video_resource[])
         ELSE '{}'::types.q_get_scenario_v4_video_resource[]

@@ -1,5 +1,5 @@
 -- Get existing model or create a new one with provider
--- Returns model_id for use in tests
+-- Returns model_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_or_create_test_model_v4(text);
 

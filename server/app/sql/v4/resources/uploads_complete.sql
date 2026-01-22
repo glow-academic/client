@@ -1,4 +1,4 @@
--- Create uploads resource
+-- Create uploads_entry resource
 -- Get or create operation (returns existing ID if upload_id + group_id already exists)
 -- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), upload_id (uuid)
 -- Returns: uploads_id (uuid)
@@ -56,7 +56,7 @@ BEGIN
     
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
-        RAISE EXCEPTION 'Agent % does not have tool for resource uploads', agent_id;
+        RAISE EXCEPTION 'Agent % does not have tool for resource uploads_entry', agent_id;
     END IF;
     
     -- Validate agent has mcp flag when mcp=true
@@ -72,7 +72,7 @@ BEGIN
     END IF;
     
     -- Validate upload_id exists
-    IF NOT EXISTS (SELECT 1 FROM uploads WHERE id = upload_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM uploads_entry WHERE id = upload_id) THEN
         RAISE EXCEPTION 'Upload % does not exist', upload_id;
     END IF;
     
@@ -88,7 +88,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Check if uploads already exists (match on upload_id + group_id)
+    -- Check if uploads_entry already exists (match on upload_id + group_id)
     SELECT r.id INTO v_uploads_id
     FROM uploads_resource r
     WHERE r.upload_id = v_artifact_id
@@ -107,7 +107,7 @@ BEGIN
     
     -- Create call record
     v_call_id := uuidv7();
-    INSERT INTO calls (
+    INSERT INTO calls_entry (
         id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at
     )
     VALUES (
@@ -128,15 +128,15 @@ BEGIN
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
-    INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
+    INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
     
     -- Link message to call
-    UPDATE calls SET message_id = v_message_id WHERE id = v_call_id;
+    UPDATE calls_entry SET message_id = v_message_id WHERE id = v_call_id;
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO runs (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    INSERT INTO runs_entry (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
     
     -- Link run to message

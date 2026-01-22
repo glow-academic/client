@@ -1,4 +1,4 @@
--- Create a test chat for socket tests
+-- Create a test chat for socket tests_entry
 -- Returns chat_id
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_chat_v4(uuid, text);
@@ -15,8 +15,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
     -- NOTE: chat table doesn't have trace_id column
-    -- trace_id is stored in groups table, not chat
-    INSERT INTO chats(title, scenario_id, completed) 
+    -- trace_id is stored in groups_entry table, not chat
+    INSERT INTO chats_entry(title, scenario_id, completed) 
     VALUES ('Test Chat', test_create_test_chat_v4.scenario_id, false) 
     RETURNING id as chat_id;
 $$;

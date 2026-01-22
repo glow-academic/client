@@ -1,5 +1,5 @@
 -- Create a test simulation with rubric for test setup
--- Returns simulation_id for use in tests
+-- Returns simulation_id for use in tests_entry
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_simulation_with_rubric_v4(uuid, text, text, boolean, boolean, integer);
 

@@ -103,14 +103,14 @@ existing_profile AS (
     LIMIT 1
 ),
 new_group AS (
-    INSERT INTO groups (id, created_at, updated_at)
+    INSERT INTO groups_entry (id, created_at, updated_at)
     SELECT uuidv7(), NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     RETURNING id
 ),
 placeholder_call_id AS (
-    SELECT id FROM calls LIMIT 1
+    SELECT id FROM calls_entry LIMIT 1
 ),
 -- Insert/update name in names table
 name_resource AS (
@@ -207,7 +207,7 @@ email_resources AS (
     INSERT INTO emails_resource (email, call_id, created_at, updated_at)
     SELECT DISTINCT
         aed.email,
-        (SELECT id FROM calls LIMIT 1),
+        (SELECT id FROM calls_entry LIMIT 1),
         NOW(),
         NOW()
     FROM all_emails_data aed

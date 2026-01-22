@@ -123,7 +123,7 @@ BEGIN
         RAISE EXCEPTION 'Department resource not found for provided IDs';
     END IF;
 
-    SELECT id INTO v_default_call_id FROM calls LIMIT 1;
+    SELECT id INTO v_default_call_id FROM calls_entry LIMIT 1;
     IF v_default_call_id IS NULL THEN
         RAISE EXCEPTION 'No call_id found for simulation_positions_resource inserts';
     END IF;

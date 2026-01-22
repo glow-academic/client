@@ -24,8 +24,8 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE tests
-    SET group_id = (SELECT id FROM groups WHERE run_id = $1 LIMIT 1),
+    UPDATE tests_entry
+    SET group_id = (SELECT id FROM groups_entry WHERE run_id = $1 LIMIT 1),
         updated_at = NOW()
     WHERE id = $2
 $$;

@@ -92,7 +92,7 @@ BEGIN
     
     -- Create call record
     v_call_id := uuidv7();
-    INSERT INTO calls (
+    INSERT INTO calls_entry (
         id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at
     )
     VALUES (
@@ -114,15 +114,15 @@ BEGIN
         
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
-    INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
+    INSERT INTO messages_entry (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
     
     -- Link message to call
-    UPDATE calls SET message_id = v_message_id WHERE id = v_call_id;
+    UPDATE calls_entry SET message_id = v_message_id WHERE id = v_call_id;
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO runs (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    INSERT INTO runs_entry (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
     
     -- Link run to message
