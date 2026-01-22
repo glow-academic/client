@@ -21249,103 +21249,6 @@
         ]
       }
     },
-    "/api/v4/auth/emulate/stop": {
-      "post": {
-        "tags": [
-          "v4",
-          "auth"
-        ],
-        "summary": "Stop Emulation",
-        "description": "Revoke emulation grants for the current profile.",
-        "operationId": "stop_emulation_api_v4_auth_emulate_stop_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StopEmulationApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StopEmulationApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
-      }
-    },
     "/api/v4/debug/debug": {
       "post": {
         "tags": [
@@ -26439,6 +26342,61 @@
               }
             ],
             "title": "Idp Alias"
+          },
+          "return_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Url"
+          },
+          "keycloak_public_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keycloak Public Url"
+          },
+          "keycloak_client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keycloak Client Id"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prefix"
           }
         },
         "type": "object",
@@ -26528,6 +26486,28 @@
               }
             ],
             "title": "Redirect Url"
+          },
+          "logout_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logout Url"
+          },
+          "emulate_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emulate Page Url"
           }
         },
         "type": "object",
@@ -49552,6 +49532,17 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           },
           "group_id": {
             "anyOf": [
@@ -96119,28 +96110,6 @@
         "type": "object",
         "title": "StartSimulationPayload",
         "description": "Request to start a simulation attempt."
-      },
-      "StopEmulationApiRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "StopEmulationApiRequest"
-      },
-      "StopEmulationApiResponse": {
-        "properties": {
-          "revoked_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Revoked Count"
-          }
-        },
-        "type": "object",
-        "title": "StopEmulationApiResponse"
       },
       "StopSimulationErrorPayload": {
         "properties": {

@@ -4404,26 +4404,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/emulate/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Emulation
-         * @description Revoke emulation grants for the current profile.
-         */
-        post: operations["stop_emulation_api_v4_auth_emulate_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/debug/debug": {
         parameters: {
             query?: never;
@@ -6462,6 +6442,16 @@ export interface components {
             callback_url?: string | null;
             /** Idp Alias */
             idp_alias?: string | null;
+            /** Return Url */
+            return_url?: string | null;
+            /** Keycloak Public Url */
+            keycloak_public_url?: string | null;
+            /** Keycloak Client Id */
+            keycloak_client_id?: string | null;
+            /** Origin */
+            origin?: string | null;
+            /** Prefix */
+            prefix?: string | null;
         };
         /** CreateEmulationGrantApiResponse */
         CreateEmulationGrantApiResponse: {
@@ -6479,6 +6469,10 @@ export interface components {
             target_profile_id?: string | null;
             /** Redirect Url */
             redirect_url?: string | null;
+            /** Logout Url */
+            logout_url?: string | null;
+            /** Emulate Page Url */
+            emulate_page_url?: string | null;
         };
         /** CreateFeedbackRequest */
         CreateFeedbackRequest: {
@@ -10997,6 +10991,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Draft Version */
+            draft_version?: number | null;
             /** Group Id */
             group_id?: string | null;
             /** Name Id */
@@ -20458,13 +20454,6 @@ export interface components {
             /** Practice Department Id */
             practice_department_id?: string | null;
         };
-        /** StopEmulationApiRequest */
-        StopEmulationApiRequest: Record<string, never>;
-        /** StopEmulationApiResponse */
-        StopEmulationApiResponse: {
-            /** Revoked Count */
-            revoked_count?: number | null;
-        };
         /**
          * StopSimulationErrorPayload
          * @description Response indicating an error occurred while stopping simulation.
@@ -28829,43 +28818,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateEmulationGrantApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stop_emulation_api_v4_auth_emulate_stop_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StopEmulationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StopEmulationApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -651,7 +651,8 @@ function SimulationComponent({
     }
 
     // Wait for version sync before patching to prevent race conditions
-    if (simulationData?.draft_version !== undefined && !versionSyncedRef.current) {
+    // Only block if there's an actual numeric version to sync (not null for new simulations)
+    if (typeof simulationData?.draft_version === "number" && !versionSyncedRef.current) {
       console.debug("[Simulation Draft] Waiting for version sync");
       return;
     }

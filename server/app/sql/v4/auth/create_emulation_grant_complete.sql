@@ -21,7 +21,13 @@ CREATE OR REPLACE FUNCTION api_create_emulation_grant_v4(
     ttl_minutes integer DEFAULT 120,
     signin_base_url text DEFAULT NULL,
     callback_url text DEFAULT NULL,
-    idp_alias text DEFAULT NULL
+    idp_alias text DEFAULT NULL,
+    -- New parameters for URL construction
+    return_url text DEFAULT NULL,
+    keycloak_public_url text DEFAULT NULL,
+    keycloak_client_id text DEFAULT NULL,
+    origin text DEFAULT NULL,
+    prefix text DEFAULT NULL
 )
 RETURNS TABLE (
     allowed boolean,
@@ -30,7 +36,10 @@ RETURNS TABLE (
     grant_id uuid,
     expires_at timestamptz,
     target_profile_id uuid,
-    redirect_url text
+    redirect_url text,
+    -- New output fields for server-constructed URLs
+    logout_url text,
+    emulate_page_url text
 )
 LANGUAGE sql
 VOLATILE
@@ -43,7 +52,12 @@ WITH params AS (
         COALESCE(ttl_minutes, 120) AS ttl_minutes,
         signin_base_url AS signin_base_url,
         callback_url AS callback_url,
-        idp_alias AS idp_alias
+        idp_alias AS idp_alias,
+        return_url AS return_url,
+        keycloak_public_url AS keycloak_public_url,
+        keycloak_client_id AS keycloak_client_id,
+        origin AS origin,
+        prefix AS prefix
 ),
 requester_exists AS (
     SELECT EXISTS(
@@ -157,5 +171,17 @@ SELECT
             || '&kc_idp_hint=' || (SELECT idp_alias FROM params)
             || '&login_hint=' || (SELECT id FROM grant_insert)::text
         ELSE NULL::text
-    END as redirect_url
+    END as redirect_url,
+    -- logout_url is constructed in Python for proper URL encoding
+    NULL::text as logout_url,
+    -- Construct emulate_page_url: Direct URL to emulate page with grant
+    -- Note: return_url should be pre-encoded by the caller
+    CASE
+        WHEN (SELECT allowed FROM allowed_check) = true THEN
+            COALESCE((SELECT origin FROM params), '')
+            || COALESCE((SELECT prefix FROM params), '')
+            || '/emulate?grant=' || (SELECT id FROM grant_insert)::text
+            || '&returnUrl=' || COALESCE((SELECT return_url FROM params), (SELECT callback_url FROM params))
+        ELSE NULL::text
+    END as emulate_page_url
 $$;

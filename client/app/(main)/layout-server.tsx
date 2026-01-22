@@ -309,6 +309,7 @@ export async function getLayoutContextData(session?: Session | null) {
 type SwitchEffectiveProfileParams = {
   targetProfileId: string;
   fullEmulation?: boolean;
+  returnUrl?: string;
 };
 
 type SwitchEffectiveProfileResult = {
@@ -316,10 +317,9 @@ type SwitchEffectiveProfileResult = {
   reason?: string;
   grantId?: string;
   redirectUrl?: string;
+  logoutUrl?: string;
+  emulatePageUrl?: string;
 };
-
-type StopEmulationIn = InputOf<"/api/v4/auth/emulate/stop", "post">;
-type StopEmulationOut = OutputOf<"/api/v4/auth/emulate/stop", "post">;
 
 async function createEmulationGrant(
   input: CreateEmulationGrantIn
@@ -350,6 +350,8 @@ export async function switchEffectiveProfile(
         requester_profile_id: session.user.profileId,
         target_profile_id: input.targetProfileId,
         full_emulation: !!input.fullEmulation,
+        ttl_minutes: null, // Use server default (120 minutes)
+        return_url: input.returnUrl ?? null,
       },
     });
 
@@ -360,18 +362,20 @@ export async function switchEffectiveProfile(
       return { ok: false, reason: "Missing emulation grant" };
     }
 
-    return { ok: true, grantId: res.grant_id, redirectUrl: res.redirect_url };
+    const result: SwitchEffectiveProfileResult = {
+      ok: true,
+      grantId: res.grant_id,
+    };
+    if (res.redirect_url) result.redirectUrl = res.redirect_url;
+    if (res.logout_url) result.logoutUrl = res.logout_url;
+    if (res.emulate_page_url) result.emulatePageUrl = res.emulate_page_url;
+
+    return result;
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return { ok: false, reason: errorMessage };
   }
-}
-
-export async function stopEmulation(
-  input: StopEmulationIn
-): Promise<StopEmulationOut> {
-  return api.post("/auth/emulate/stop", input);
 }
 
 /** Server action to clear session cookies. */

@@ -1866,6 +1866,11 @@ class CreateEmulationGrantSqlParams(BaseModel):
     signin_base_url: str | None = None
     callback_url: str | None = None
     idp_alias: str | None = None
+    return_url: str | None = None
+    keycloak_public_url: str | None = None
+    keycloak_client_id: str | None = None
+    origin: str | None = None
+    prefix: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -1876,6 +1881,11 @@ class CreateEmulationGrantSqlParams(BaseModel):
             self.signin_base_url,
             self.callback_url,
             self.idp_alias,
+            self.return_url,
+            self.keycloak_public_url,
+            self.keycloak_client_id,
+            self.origin,
+            self.prefix,
         )
 
 class CreateEmulationGrantSqlRow(BaseModel):
@@ -1887,6 +1897,8 @@ class CreateEmulationGrantSqlRow(BaseModel):
     expires_at: str | None = None
     target_profile_id: UUID | None = None
     redirect_url: str | None = None
+    logout_url: str | None = None
+    emulate_page_url: str | None = None
 
 class CreateEmulationGrantApiRequest(BaseModel):
 
@@ -1897,6 +1909,11 @@ class CreateEmulationGrantApiRequest(BaseModel):
     signin_base_url: str | None = None
     callback_url: str | None = None
     idp_alias: str | None = None
+    return_url: str | None = None
+    keycloak_public_url: str | None = None
+    keycloak_client_id: str | None = None
+    origin: str | None = None
+    prefix: str | None = None
 
 class CreateEmulationGrantApiResponse(BaseModel):
 
@@ -1907,6 +1924,8 @@ class CreateEmulationGrantApiResponse(BaseModel):
     expires_at: str | None = None
     target_profile_id: UUID | None = None
     redirect_url: str | None = None
+    logout_url: str | None = None
+    emulate_page_url: str | None = None
 
 
 
@@ -2390,31 +2409,6 @@ class SaveAuthApiResponse(BaseModel):
 
     auth_id: UUID | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: stop_emulation
-
-class StopEmulationSqlParams(BaseModel):
-
-    profile_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class StopEmulationSqlRow(BaseModel):
-
-    revoked_count: int | None = None
-
-class StopEmulationApiRequest(BaseModel):
-
-    pass
-
-class StopEmulationApiResponse(BaseModel):
-
-    revoked_count: int | None = None
 
 
 
@@ -19172,6 +19166,7 @@ class GetSimulationSqlRow(BaseModel):
     simulation_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetSimulationV4NameResource | None = None
@@ -19253,6 +19248,7 @@ class GetSimulationApiResponse(BaseModel):
     simulation_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    draft_version: int | None = None
     group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetSimulationV4NameResource | None = None
@@ -21320,12 +21316,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveAuthSqlRow",
         "SaveAuthApiRequest",
         "SaveAuthApiResponse",
-    ),
-    "app/sql/v4/auth/stop_emulation_complete.sql": (
-        "StopEmulationSqlParams",
-        "StopEmulationSqlRow",
-        "StopEmulationApiRequest",
-        "StopEmulationApiResponse",
     ),
     "app/sql/v4/benchmark/benchmark_eval_complete_complete.sql": (
         "BenchmarkEvalCompleteSqlParams",
@@ -23422,11 +23412,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/save_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/stop_emulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

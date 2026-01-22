@@ -264,6 +264,7 @@ RETURNS TABLE (
     simulation_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    draft_version int,
     group_id uuid,
     -- Single-select resources: name
     name_id uuid,
@@ -381,15 +382,25 @@ draft_payload_data AS (
     LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
+-- For new simulations without a draft, create a temporary group for resource creation
 draft_group_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             d.group_id,
-            NULL::uuid
+            -- Fallback to most recent group for new simulations (same pattern as Cohort)
+            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id case)
+    WHERE TRUE
+    LIMIT 1
+),
+-- Get draft_version for optimistic concurrency control
+draft_version_data AS (
+    SELECT d.version as draft_version
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE TRUE
     LIMIT 1
 ),
@@ -1438,8 +1449,12 @@ name_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1448,7 +1463,7 @@ name_agent_data AS (
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
-                SELECT 1 FROM agent_departments ad2 
+                SELECT 1 FROM agent_departments ad2
                 WHERE ad2.agent_id = a.id AND ad2.active = true
             )
         )
@@ -1513,8 +1528,12 @@ description_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1588,8 +1607,12 @@ departments_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1663,8 +1686,12 @@ flag_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1738,8 +1765,12 @@ scenarios_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1813,8 +1844,12 @@ scenario_flags_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1888,8 +1923,12 @@ scenario_rubrics_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -1963,8 +2002,12 @@ scenario_time_limits_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -2038,8 +2081,12 @@ scenario_positions_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -2404,8 +2451,12 @@ general_agent_data AS (
               AND af.value = true
         )
         AND EXISTS (
-            SELECT false WHERE false
-            -- Placeholder condition removed - always false
+            SELECT 1 FROM agent_tools at
+            JOIN resource_tools rt ON rt.tool_id = at.tool_id
+            JOIN artifact_resources ar ON ar.resource = rt.resource
+            WHERE at.agent_id = a.id
+              AND at.active = TRUE
+              AND ar.artifact = 'simulation'::artifacts
         )
         AND (
             EXISTS (
@@ -2611,6 +2662,7 @@ SELECT
     (SELECT simulation_exists FROM simulation_exists_check) as simulation_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
+    (SELECT draft_version FROM draft_version_data) as draft_version,
     dgd.group_id,
     -- Single-select resources: name
     nrd.name_id,
@@ -2832,6 +2884,7 @@ CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 CROSS JOIN simulation_exists_check sec
 CROSS JOIN draft_group_data dgd
+CROSS JOIN draft_version_data dvd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN flag_resource_data frd

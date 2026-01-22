@@ -1,7 +1,6 @@
 "use client";
 
-import { Loader2, Search } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { Loader2, Search, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,7 +57,6 @@ export function EmulateProfileModal({
   const normalizedPrefix = appPrefix
     ? `/${appPrefix.replace(/^\/+|\/+$/g, "")}`
     : "";
-  const callbackUrl = normalizedPrefix ? `${normalizedPrefix}/` : "/";
   const { activeProfile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
@@ -206,9 +204,11 @@ export function EmulateProfileModal({
 
     setIsEmulating(true);
     try {
+      // Pass current URL as returnUrl so server can construct proper redirect URLs
       const result = await switchEffectiveProfile({
         targetProfileId: selectedProfileId,
         fullEmulation: fullEmulation && isSuperadmin,
+        returnUrl: window.location.href,
       });
 
       if (!result.ok || !result.grantId) {
@@ -224,12 +224,18 @@ export function EmulateProfileModal({
 
       onOpenChange(false);
 
-      // Redirect to emulate page which handles signOut then signIn properly
-      // This approach ensures NextAuth's PKCE flow works correctly
-      // (Direct Keycloak logout breaks PKCE because cookies are cleared)
-      // Pass the current URL as returnUrl so user returns to the same page after emulation
-      const returnUrl = encodeURIComponent(window.location.href);
-      window.location.href = `${window.location.origin}${normalizedPrefix}/emulate?grant=${result.grantId}&returnUrl=${returnUrl}`;
+      // Redirect to server-provided logout URL which handles the full flow:
+      // 1. Keycloak logout (clears session)
+      // 2. Redirect to emulate page (via post_logout_redirect_uri)
+      // 3. Emulate page calls signIn with grant ID
+      if (result.logoutUrl) {
+        window.location.href = result.logoutUrl;
+      } else {
+        // Fallback to emulate page URL if logout URL not available
+        window.location.href =
+          result.emulatePageUrl ||
+          `${window.location.origin}${normalizedPrefix}/emulate?grant=${result.grantId}&returnUrl=${encodeURIComponent(window.location.href)}`;
+      }
     } catch {
       toast.error("Failed to emulate profile");
     } finally {
@@ -242,7 +248,7 @@ export function EmulateProfileModal({
     isSuperadmin,
     switchEffectiveProfile,
     onOpenChange,
-    callbackUrl,
+    normalizedPrefix,
   ]);
 
   return (

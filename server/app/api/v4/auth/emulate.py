@@ -58,6 +58,14 @@ async def authorize_emulation(
         # The grant ID passed via login_hint contains target_profile_id
         idp_alias = "default-idp"
 
+        # Get Keycloak config for URL construction
+        # Default includes /auth for legacy Keycloak (pre-17) compatibility
+        keycloak_public_url = os.getenv("KEYCLOAK_PUBLIC_URL", "http://localhost:8080/auth")
+        keycloak_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
+
+        # URL-encode return_url if provided (for use in query string)
+        return_url_encoded = quote(request.return_url, safe="") if request.return_url else None
+
         # Convert API request to SQL params using double star pattern
         params = CreateEmulationGrantSqlParams(
             requester_profile_id=requester_profile_id,
@@ -67,6 +75,12 @@ async def authorize_emulation(
             signin_base_url=signin_base_url,
             callback_url=callback_url,
             idp_alias=idp_alias,
+            # New params for URL construction
+            return_url=return_url_encoded,
+            keycloak_public_url=keycloak_public_url,
+            keycloak_client_id=keycloak_client_id,
+            origin=origin,
+            prefix=prefix,
         )
         sql_params = params.to_tuple()
 
@@ -90,10 +104,19 @@ async def authorize_emulation(
                 actor={"name": result.actor_name, "id": requester_profile_id},
             )
 
-        # Convert SQL result to API response
-        api_response = CreateEmulationGrantApiResponse.model_validate(
-            result.model_dump()
-        )
+        # Construct logout_url from emulate_page_url (Python handles URL encoding properly)
+        logout_url = None
+        if result.emulate_page_url:
+            logout_url = (
+                f"{keycloak_public_url}/realms/master/protocol/openid-connect/logout"
+                f"?client_id={quote(keycloak_client_id, safe='')}"
+                f"&post_logout_redirect_uri={quote(result.emulate_page_url, safe='')}"
+            )
+
+        # Convert SQL result to API response, adding the computed logout_url
+        response_data = result.model_dump()
+        response_data["logout_url"] = logout_url
+        api_response = CreateEmulationGrantApiResponse.model_validate(response_data)
 
         # Invalidate cache after authorization check (may affect profile context)
         tags = ["profile"]  # From router tags
