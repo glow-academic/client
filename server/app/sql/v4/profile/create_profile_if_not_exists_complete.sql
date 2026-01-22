@@ -110,7 +110,7 @@ role_id_lookup AS (
         (SELECT id FROM roles_resource WHERE role = (SELECT role FROM params)::profile_type)
     ) as role_id
 ),
-profile_role_insert AS (
+profile_type_insert AS (
     INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
     SELECT pi.id, rl.role_id, NOW(), NOW(), false, false
     FROM profile_insert pi

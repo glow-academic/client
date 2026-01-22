@@ -19,7 +19,7 @@ CREATE OR REPLACE FUNCTION infra_get_setting_profiles_for_idp_v4()
 RETURNS TABLE (
     profile_id uuid,
     profile_name text,
-    role profile_role,
+    role profile_type,
     setting_id uuid,
     department_id uuid
 )

@@ -443,7 +443,7 @@ CREATE TYPE types.q_get_simulation_attempt_v4_standard AS (
 -- Role-based access control: check if viewing profile's role is higher than current user's role
 CREATE TYPE types.q_get_simulation_attempt_v4_role_check AS (
     access_denied boolean,
-    attempt_profile_role text,
+    attempt_profile_type text,
     current_user_role text
 );
 
@@ -567,7 +567,7 @@ role_check AS (
                 END
             ELSE false
         END as access_denied,
-        attempt_role::text as attempt_profile_role,
+        attempt_role::text as attempt_profile_type,
         current_role::text as current_user_role
     FROM params x
     CROSS JOIN current_attempt_profile cap
@@ -580,7 +580,7 @@ role_check AS (
                 WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = cap.profile_id LIMIT 1)::text = 'member' THEN 2
                 ELSE 1
             END as attempt_role_level
-    ) attempt_profile_role_info
+    ) attempt_profile_type_info
     CROSS JOIN LATERAL (
         SELECT (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = x.profile_id LIMIT 1)::text as current_role,
             CASE 

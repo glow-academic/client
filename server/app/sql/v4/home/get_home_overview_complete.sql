@@ -161,7 +161,7 @@ filtered_simulation_ids AS (
       )
 ),
 -- Look up profile role if profileId provided and compute role hierarchy
-profile_role_lookup AS (
+profile_type_lookup AS (
     SELECT 
         CASE 
             WHEN rpi.resolved_profile_id IS NULL THEN 'instructional'
@@ -189,7 +189,7 @@ profile_role_lookup AS (
 filt AS (
     SELECT a.* 
     FROM params p
-    CROSS JOIN profile_role_lookup prl
+    CROSS JOIN profile_type_lookup prl
     CROSS JOIN resolve_profile_id rpi
     CROSS JOIN analytics a
     WHERE a.attempt_created_at >= p.start_date 
@@ -294,11 +294,11 @@ cohort_membership AS (
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN profile_artifact prof ON prof.id = cp.profile_id
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
-    CROSS JOIN profile_role_lookup prl
+    CROSS JOIN profile_type_lookup prl
     CROSS JOIN resolve_profile_id rpi
     WHERE cp.active = true  -- Only active cohort memberships for non-history queries
       AND (cardinality(p.cohort_ids) = 0 OR c.id = ANY(p.cohort_ids))
-      AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = prof.id LIMIT 1) = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_role_lookup
+      AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = prof.id LIMIT 1) = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_type_lookup
       -- When member mode, only include the current member's profile_id
       AND (NOT prl.is_member_mode OR cp.profile_id = rpi.resolved_profile_id)
     GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = prof.id LIMIT 1), c.id, p.department_ids
@@ -466,7 +466,7 @@ ta_rows AS (
     FROM sim_meta s
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
     LEFT JOIN sim_standard_groups ssg ON ssg.simulation_id = s.simulation_id
-    WHERE EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_member_mode)
+    WHERE EXISTS (SELECT 1 FROM profile_type_lookup prl WHERE prl.is_member_mode)
       AND EXISTS (SELECT 1 FROM ta_sim_space t WHERE t.simulation_id = s.simulation_id)
 ),
 -- INSTRUCTIONAL VIEW: counts across all cohort members
@@ -544,7 +544,7 @@ inst_rows AS (
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
     LEFT JOIN inst_cohort_names icn ON icn.simulation_id = s.simulation_id
     LEFT JOIN sim_standard_groups ssg ON ssg.simulation_id = s.simulation_id
-    WHERE NOT EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_member_mode)
+    WHERE NOT EXISTS (SELECT 1 FROM profile_type_lookup prl WHERE prl.is_member_mode)
 ),
 all_rubric_ids AS (
     SELECT DISTINCT rubric_id FROM sim_meta
@@ -626,13 +626,13 @@ simulations_agg AS (
 )
 SELECT 
     up.actor_name::text as actor_name,
-    (SELECT mode FROM profile_role_lookup)::text as mode,
+    (SELECT mode FROM profile_type_lookup)::text as mode,
     CASE 
-        WHEN (SELECT is_member_mode FROM profile_role_lookup) THEN EXISTS(SELECT 1 FROM ta_rows)
+        WHEN (SELECT is_member_mode FROM profile_type_lookup) THEN EXISTS(SELECT 1 FROM ta_rows)
         ELSE EXISTS(SELECT 1 FROM inst_rows)
     END::boolean as has_data,
     CASE
-        WHEN (SELECT is_member_mode FROM profile_role_lookup) THEN COALESCE((SELECT items FROM ta_items_agg), '{}'::types.q_get_home_overview_v4_simulation_item[])
+        WHEN (SELECT is_member_mode FROM profile_type_lookup) THEN COALESCE((SELECT items FROM ta_items_agg), '{}'::types.q_get_home_overview_v4_simulation_item[])
         ELSE COALESCE((SELECT items FROM inst_items_agg), '{}'::types.q_get_home_overview_v4_simulation_item[])
     END as items,
     COALESCE((SELECT standard_groups FROM standard_groups_agg), '{}'::types.q_get_home_overview_v4_standard_group[]) as standard_groups,

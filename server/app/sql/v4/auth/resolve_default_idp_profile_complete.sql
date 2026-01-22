@@ -16,7 +16,7 @@ RETURNS TABLE (
     profile_id uuid,
     primary_email text,
     name text,
-    role profile_role
+    role profile_type
 )
 LANGUAGE sql
 STABLE

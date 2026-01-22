@@ -23,7 +23,7 @@ RETURNS TABLE (
     schema_id uuid,
     field_id uuid,
     field_name text,
-    field_type schema_field_type,
+    field_type schema_type,
     required boolean,
     "position" integer,
     item_schema_id uuid

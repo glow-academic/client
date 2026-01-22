@@ -77,7 +77,7 @@ CREATE OR REPLACE FUNCTION api_get_home_history_v4(
     profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
+    roles profile_type[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     search text DEFAULT NULL,
     profile_ids uuid[] DEFAULT ARRAY[]::uuid[],

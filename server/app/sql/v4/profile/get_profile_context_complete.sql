@@ -266,7 +266,7 @@ emulation_validation AS (
             )
         END as is_authorized
 ),
-actual_profile_role AS (
+actual_profile_type AS (
     -- Use actual (logged-in) user's role for emulation permissions
     SELECT (SELECT r.role FROM profile_roles pr_j 
             JOIN roles_resource r ON pr_j.role_id = r.id 
@@ -274,7 +274,7 @@ actual_profile_role AS (
             LIMIT 1) as role 
     FROM profile_artifact p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
 ),
-effective_profile_role AS (
+effective_profile_type AS (
     -- Use effective profile's role for UI permissions filtering
     -- Return NULL role when profile ID is NULL (for settings-only requests)
     SELECT 
@@ -297,7 +297,7 @@ scoped_roles_computed AS (
             WHEN epr.role = 'member'::profile_type THEN ARRAY['member']::text[]
             ELSE ARRAY['guest']::text[]
         END as scoped_roles
-    FROM effective_profile_role epr
+    FROM effective_profile_type epr
 ),
 actual_profile_data AS (
     -- Fetch the logged-in user's profile
@@ -724,7 +724,7 @@ redirect_path_computed AS (
                 '/home'::text
             )
         END as redirect_path
-    FROM effective_profile_role epr
+    FROM effective_profile_type epr
 ),
 department_ids_computed AS (
     -- Extract department IDs from dept_data

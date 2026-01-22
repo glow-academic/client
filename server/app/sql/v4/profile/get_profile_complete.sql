@@ -220,7 +220,7 @@ user_departments AS (
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
-target_profile_role_data AS (
+target_profile_type_data AS (
     SELECT 
         COALESCE(
             (
@@ -344,7 +344,7 @@ route_suggestions_data AS (
              JOIN artifact_routes_relation art ON art.artifact = ar.artifact
              JOIN routes_resource rr_route ON rr_route.route = art.route
              WHERE ar.role = COALESCE(
-                 (SELECT role::profile_type FROM target_profile_role_data),
+                 (SELECT role::profile_type FROM target_profile_type_data),
                  NULL::profile_type
              )),
             ARRAY[]::uuid[]
@@ -1597,7 +1597,7 @@ SELECT
     -- Profile ID (for audit logging)
     (SELECT resolved_target_profile_id FROM resolve_target_profile_id) as profile_id,
     -- Role
-    (SELECT role FROM target_profile_role_data) as role,
+    (SELECT role FROM target_profile_type_data) as role,
     COALESCE((SELECT role_options FROM role_options_data), ARRAY[]::text[]) as role_options,
     COALESCE((SELECT roles FROM roles_data), ARRAY[]::types.q_get_profile_v4_role_resource[]) as roles,
     COALESCE((SELECT role_routes FROM role_routes_data), ARRAY[]::types.q_get_profile_v4_role_route[]) as role_routes,
@@ -1672,7 +1672,7 @@ SELECT
     (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
-CROSS JOIN target_profile_role_data tprd
+CROSS JOIN target_profile_type_data tprd
 CROSS JOIN role_options_data rod
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec

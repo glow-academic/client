@@ -110,7 +110,7 @@ filt AS (
               ))
           )
       )
-      AND (cardinality((SELECT roles FROM params)::text[]) = 0 OR a.profile_role::text = ANY((SELECT roles FROM params)::text[]))
+      AND (cardinality((SELECT roles FROM params)::text[]) = 0 OR a.profile_type::text = ANY((SELECT roles FROM params)::text[]))
       AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (
           SELECT DISTINCT s.id
           FROM simulation_artifact s

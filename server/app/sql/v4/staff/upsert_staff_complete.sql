@@ -99,7 +99,7 @@ role_validation AS (
     -- Validate role hierarchy for each profile
     SELECT 
         pe.profile_idx,
-        pe.role as profile_role,
+        pe.role as profile_type,
         CASE 
             WHEN cur.role = 'superadmin'::profile_type AND pe.role::profile_type IN ('superadmin'::profile_type, 'admin'::profile_type, 'instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type) THEN true
             WHEN cur.role = 'admin'::profile_type AND pe.role::profile_type IN ('instructional'::profile_type, 'member'::profile_type, 'guest'::profile_type) THEN true
@@ -200,11 +200,11 @@ role_resource_upsert AS (
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
     RETURNING id as role_id, role
 ),
-profile_role_delete_upsert AS (
+profile_type_delete_upsert AS (
     DELETE FROM profile_roles WHERE profile_id IN (SELECT id FROM profile_upsert)
     RETURNING profile_id
 ),
-profile_role_insert_upsert AS (
+profile_type_insert_upsert AS (
     INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
     SELECT pu.id, rru.role_id, NOW(), NOW(), false, false
     FROM profile_upsert pu

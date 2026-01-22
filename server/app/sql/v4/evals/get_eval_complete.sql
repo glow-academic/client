@@ -1367,7 +1367,7 @@ available_model_runs_params AS (
         available_model_runs_page_size
     FROM params
 ),
-profile_role_check AS (
+profile_type_check AS (
     SELECT 
         (SELECT profile_id FROM params) as raw_profile_id,
         CASE 
@@ -1386,8 +1386,8 @@ runs_base AS (
         NULL::uuid as persona_id
     FROM runs_entry r
     WHERE
-        (SELECT effective_profile_id FROM profile_role_check) IS NULL
-        OR r.profile_id = (SELECT effective_profile_id FROM profile_role_check)
+        (SELECT effective_profile_id FROM profile_type_check) IS NULL
+        OR r.profile_id = (SELECT effective_profile_id FROM profile_type_check)
 ),
 runs_with_names AS (
     SELECT

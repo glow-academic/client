@@ -151,8 +151,8 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
    ```sql
    -- ✅ Good: Strong comparison using explicit cast (preferred)
    WHERE a.role = 'grade'::agent_role
-   WHERE p.role = 'superadmin'::profile_role
-   WHERE m.role = 'user'::message_role
+   WHERE p.role = 'superadmin'::profile_type
+   WHERE m.role = 'user'::message_type
    ```
 
 2. **Alternative: Shorthand syntax**
@@ -174,7 +174,7 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 4. **IN clauses with enum columns**
    ```sql
    -- ✅ Good: Strong comparison with explicit casts
-   WHERE role IN ('admin'::profile_role, 'superadmin'::profile_role)
+   WHERE role IN ('admin'::profile_type, 'superadmin'::profile_type)
    WHERE agent_role IN ('hint'::agent_role, 'grade'::agent_role, 'simulation'::agent_role)
    
    -- ❌ Bad: Weak comparison (no cast)
@@ -188,9 +188,9 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 5. **ANY clauses with text arrays**
    ```sql
    -- ✅ Good: Cast text array to enum array
-   WHERE role = ANY($5::profile_role[])
+   WHERE role = ANY($5::profile_type[])
    -- Or cast individual elements
-   WHERE role = ANY(SELECT unnest($5::text[])::profile_role)
+   WHERE role = ANY(SELECT unnest($5::text[])::profile_type)
    
    -- ❌ Bad: Comparing enum column to text array
    WHERE role = ANY($5::text[])
@@ -199,7 +199,7 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
 6. **CASE statements**
    ```sql
    -- ✅ Good: Strong comparison with explicit cast
-   CASE WHEN role = 'superadmin'::profile_role THEN ...
+   CASE WHEN role = 'superadmin'::profile_type THEN ...
    
    -- ❌ Bad: Weak comparison (no cast)
    CASE WHEN role = 'superadmin' THEN ...
@@ -212,8 +212,8 @@ PostgreSQL enums provide strong type safety, but only when comparisons are done 
    When function accepts `text[]` but compares to enum column, cast before comparison:
    ```sql
    -- ✅ Good: Cast text parameter to enum before comparison
-   WHERE role = ANY(SELECT unnest($5::text[])::profile_role)
-   WHERE role_value::profile_role IN ('admin'::profile_role, 'superadmin'::profile_role)
+   WHERE role = ANY(SELECT unnest($5::text[])::profile_type)
+   WHERE role_value::profile_type IN ('admin'::profile_type, 'superadmin'::profile_type)
    ```
 
 8. **Old enum value references**

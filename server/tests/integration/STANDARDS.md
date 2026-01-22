@@ -102,7 +102,7 @@ AS $$
         p.id as profile_id,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
     FROM profiles p
-    WHERE p.role = 'superadmin'::profile_role
+    WHERE p.role = 'superadmin'::profile_type
     LIMIT 1;
 $$;
 ```
@@ -399,7 +399,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     INSERT INTO profiles (first_name, last_name, role)
-    SELECT 'Test', 'User', 'member'::profile_role
+    SELECT 'Test', 'User', 'member'::profile_type
     WHERE NOT EXISTS (
         SELECT 1 FROM profile_emails pe
         JOIN profiles p ON p.id = pe.profile_id

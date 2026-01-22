@@ -143,11 +143,11 @@ role_resource AS (
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
     RETURNING id as role_id
 ),
-profile_role_upsert AS (
+profile_type_upsert AS (
     DELETE FROM profile_roles WHERE profile_id IN (SELECT id FROM profile_upsert)
     RETURNING profile_id
 ),
-profile_role_insert AS (
+profile_type_insert AS (
     INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
     SELECT pu.id, rr.role_id, NOW(), NOW(), false, false
     FROM profile_upsert pu

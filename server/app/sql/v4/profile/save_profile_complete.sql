@@ -300,7 +300,7 @@ role_resource AS (
     ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
     RETURNING id as role_id
 ),
-    profile_role_upsert AS (
+    profile_type_upsert AS (
         -- Delete old role link if updating
         DELETE FROM profile_roles 
         WHERE profile_id = (SELECT target_profile_id FROM params)
@@ -308,7 +308,7 @@ role_resource AS (
           AND EXISTS (SELECT 1 FROM role_resource)
         RETURNING profile_id
     ),
-    profile_role_insert AS (
+    profile_type_insert AS (
         INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
         SELECT x.target_profile_id, rr.role_id, NOW(), NOW(), false, false
         FROM params x

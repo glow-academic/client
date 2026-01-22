@@ -118,7 +118,7 @@ WITH params AS (
         cohort_ids AS cohort_ids,
         simulation_filters AS simulation_filters
 ),
-profile_role_check AS (
+profile_type_check AS (
     -- Resolve profile_id and check role to determine effective filtering
     SELECT 
         (SELECT profile_id FROM params) as raw_profile_id,
@@ -174,12 +174,12 @@ runs_base AS (
         )
         -- Profile filter (specific user) - only if role is not admin/superadmin/instructional
         AND (
-            (SELECT effective_profile_id FROM profile_role_check) IS NULL
-            OR mr.profile_id = (SELECT effective_profile_id FROM profile_role_check)
+            (SELECT effective_profile_id FROM profile_type_check) IS NULL
+            OR mr.profile_id = (SELECT effective_profile_id FROM profile_type_check)
         )
         -- Role filter (only if no effective profile_id)
         AND (
-            (SELECT effective_profile_id FROM profile_role_check) IS NOT NULL
+            (SELECT effective_profile_id FROM profile_type_check) IS NOT NULL
             OR (SELECT roles FROM params) IS NULL
             OR COALESCE(array_length((SELECT roles FROM params), 1), 0) = 0
             OR mr.profile_id IN (

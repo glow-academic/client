@@ -550,7 +550,7 @@ CREATE OR REPLACE FUNCTION api_get_dashboard_bundle_v4(
     start_date text,
     end_date text,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
+    roles profile_type[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     profile_id uuid DEFAULT NULL
@@ -665,7 +665,7 @@ filt AS (
                         'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
         )
         -- Dashboard never filters by profile - always filter by roles
-                    AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
+                    AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_type = ANY((SELECT roles FROM params)::profile_type[]))
         -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
@@ -739,7 +739,7 @@ filt AS (
                     'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
                 )
                 -- Dashboard never filters by profile - always filter by roles
-                AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
+                AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_type = ANY((SELECT roles FROM params)::profile_type[]))
                 -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                 AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)
@@ -1317,7 +1317,7 @@ filt AS (
                   AND EXISTS (
                       SELECT 1 FROM analytics a
                       WHERE a.chat_id = c.id
-                        AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
+                        AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_type = ANY((SELECT roles FROM params)::profile_type[]))
                         AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
                         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                         AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
@@ -2378,13 +2378,13 @@ filt AS (
             
             -- Skill Performance (FULL IMPLEMENTATION with radar charts)
             filt_for_skills AS (
-                SELECT chat_id, simulation_id, cohort_ids, profile_cohort_ids, profile_role,
+                SELECT chat_id, simulation_id, cohort_ids, profile_cohort_ids, profile_type,
                        is_general, is_practice, is_archived, profile_id, attempt_created_at
                 FROM analytics a
                 WHERE a.attempt_created_at >= (SELECT start_date FROM params)
                     AND a.attempt_created_at < (SELECT end_date FROM params)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                    AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_role = ANY((SELECT roles FROM params)::profile_type[]))
+                    AND (cardinality((SELECT roles FROM params)::profile_type[]) = 0 OR a.profile_type = ANY((SELECT roles FROM params)::profile_type[]))
                     AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
                     AND (cardinality((SELECT simulation_filters FROM params)::text[]) = 0 OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
                     AND (

@@ -259,7 +259,7 @@ SELECT
      WHERE pr_j.profile_id = pr.id 
      LIMIT 1),
     'member'::profile_type
-  ) AS profile_role,
+  ) AS profile_type,
   cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
   -- chat_completed_at removed (use grade_created_at or time_taken_seconds as source of truth)
@@ -361,8 +361,8 @@ CREATE INDEX analytics_is_archived_idx
 CREATE INDEX analytics_is_general_idx
   ON analytics (is_general);
 
-CREATE INDEX analytics_profile_role_idx
-  ON analytics (profile_role);
+CREATE INDEX analytics_profile_type_idx
+  ON analytics (profile_type);
 
 -- GIN for array membership filtering on cohort_ids
 CREATE INDEX analytics_cohort_ids_gin
@@ -426,7 +426,7 @@ CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
 -- Performance optimization indexes for analytics functions
 -- High-impact indexes on analytics matview for fast queries
 CREATE INDEX analytics_role_time_idx
-  ON analytics (profile_role, attempt_created_at);
+  ON analytics (profile_type, attempt_created_at);
 
 -- Partial indexes for common filter patterns
 CREATE INDEX analytics_is_general_true_idx

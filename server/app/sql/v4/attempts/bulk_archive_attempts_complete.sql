@@ -31,7 +31,7 @@ CREATE OR REPLACE FUNCTION api_bulk_archive_attempts_v4(
     end_date text DEFAULT NULL,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
+    roles profile_type[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     search text DEFAULT NULL,
     profile_ids_filter uuid[] DEFAULT ARRAY[]::uuid[],

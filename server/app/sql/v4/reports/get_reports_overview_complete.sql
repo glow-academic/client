@@ -549,7 +549,7 @@ CREATE OR REPLACE FUNCTION api_get_reports_overview_v4(
     actor_profile_id uuid,
     target_profile_id uuid,
     cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    roles profile_role[] DEFAULT ARRAY[]::profile_type[],
+    roles profile_type[] DEFAULT ARRAY[]::profile_type[],
     simulation_filters text[] DEFAULT ARRAY[]::text[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -558,7 +558,7 @@ RETURNS TABLE (
     profile_name text,
     profile_emails text[],
     profile_primary_email text,
-    profile_role profile_role,
+    profile_type profile_type,
     profile_id uuid,
     header_metrics types.q_reports_overview_v4_header_metrics,
     primary_metrics types.q_reports_overview_v4_primary_metrics,
@@ -611,7 +611,7 @@ profile_data AS (
         (SELECT r.role FROM profile_roles pr_j 
          JOIN roles_resource r ON pr_j.role_id = r.id 
          WHERE pr_j.profile_id = pa.id 
-         LIMIT 1) as profile_role
+         LIMIT 1) as profile_type
     FROM params x
     JOIN profile_artifact pa ON pa.id = x.target_profile_id
     LEFT JOIN profile_emails pe ON pe.profile_id = pa.id AND pe.active = true
@@ -2119,7 +2119,7 @@ SELECT
     (SELECT profile_name FROM profile_data LIMIT 1)::text as profile_name,
     (SELECT profile_emails FROM profile_data LIMIT 1)::text[] as profile_emails,
     (SELECT profile_primary_email FROM profile_data LIMIT 1)::text as profile_primary_email,
-    (SELECT profile_role FROM profile_data LIMIT 1)::profile_type as profile_role,
+    (SELECT profile_type FROM profile_data LIMIT 1)::profile_type as profile_type,
     (SELECT profile_id FROM profile_data LIMIT 1)::uuid as profile_id,
     (SELECT header_metrics FROM header_metrics_combined LIMIT 1) as header_metrics,
     (SELECT primary_metrics FROM primary_metrics_combined LIMIT 1) as primary_metrics,
