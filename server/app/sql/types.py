@@ -19020,6 +19020,7 @@ class GetSimulationSqlParams(BaseModel):
 class QGetSimulationV4Department(BaseModel):
 
     department_id: UUID | None
+    artifact_id: UUID | None
     name: str | None
     description: str | None
     generated: bool | None

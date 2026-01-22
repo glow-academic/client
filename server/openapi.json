@@ -80194,6 +80194,18 @@
             ],
             "title": "Department Id"
           },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
           "name": {
             "anyOf": [
               {
@@ -80288,6 +80300,7 @@
         "type": "object",
         "required": [
           "department_id",
+          "artifact_id",
           "name",
           "description",
           "generated",

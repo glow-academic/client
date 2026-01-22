@@ -79,11 +79,10 @@ BEGIN
         END IF;
     END IF;
 
-    -- Check if department resource already exists (match on department_id + group_id)
+    -- Check if department resource already exists (match on department_id only)
     SELECT dr.id INTO v_resource_id
     FROM departments_resource dr
     WHERE dr.department_id = v_artifact_id
-      AND dr.group_id = api_create_departments_v4.group_id
     LIMIT 1;
 
     IF v_resource_id IS NOT NULL THEN
@@ -112,10 +111,9 @@ BEGIN
     );
     
     -- INSERT INTO departments_resource table (always insert, never update)
-    -- INSERT INTO departments_resource table (always insert, never update)
     -- Create resource with new unique id and department_id FK
-    INSERT INTO departments_resource(id, department_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
-    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_departments_v4.group_id, NOW(), NOW())
+    INSERT INTO departments_resource(id, department_id, active, generated, mcp, call_id, created_at, updated_at)
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, NOW(), NOW())
     RETURNING departments_resource.id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)

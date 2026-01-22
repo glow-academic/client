@@ -140,7 +140,8 @@ CREATE TYPE types.q_get_simulation_v4_scenario_time_limit_resource AS (
 -- UPDATE department_artifact type to include generated and group_id
 DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
 CREATE TYPE types.q_get_simulation_v4_department AS (
-    department_id uuid,
+    department_id uuid,      -- departments_resource.id (for draft_departments FK)
+    artifact_id uuid,        -- department_artifact.id (for createDepartmentsAction)
     name text,
     description text,
     generated boolean,
@@ -971,7 +972,7 @@ scenarios_full_data AS (
         )
 ),
 user_departments_for_mapping AS (
-    SELECT DISTINCT dr.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    SELECT DISTINCT dr.id, d.id as artifact_id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
     FROM departments_resource dr
     JOIN department_artifact d ON d.id = dr.department_id
     JOIN params x ON true
@@ -1013,7 +1014,8 @@ department_cohort_ids AS (
 -- Uses department_artifact as base (consistent with user_departments_for_mapping)
 department_mapping_data AS (
     SELECT
-        dr.id as department_id,
+        dr.id as department_id,  -- Use resource ID (draft_departments FK expects departments_resource.id)
+        d.id as artifact_id,     -- Artifact ID for createDepartmentsAction
         (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(dr.generated, false) as generated,
@@ -1045,9 +1047,9 @@ department_mapping_data AS (
     LEFT JOIN department_cohort_ids dci ON dci.department_id = d.id
 ),
 departments_data AS (
-    SELECT 
+    SELECT
         ARRAY_AGG(
-            (ud.id, ud.name, ud.description,
+            (ud.id, ud.artifact_id, ud.name, ud.description,
              COALESCE((SELECT d.generated FROM departments_resource d WHERE d.id = ud.id), false),
              (SELECT gr.group_id FROM departments_resource d JOIN calls c ON c.id = d.call_id JOIN message_runs mr ON mr.message_id = c.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE d.id = ud.id LIMIT 1),
              COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]),
@@ -2704,7 +2706,7 @@ SELECT
     -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
+            (dmd.department_id, dmd.artifact_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
@@ -2742,9 +2744,9 @@ SELECT
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
+            (dmd.department_id, dmd.artifact_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
             ORDER BY dmd.name
-        ) FROM (SELECT DISTINCT department_id, name, description, generated, group_id, scenario_ids, rubric_ids, cohort_ids FROM department_mapping_data) dmd),
+        ) FROM (SELECT DISTINCT department_id, artifact_id, name, description, generated, group_id, scenario_ids, rubric_ids, cohort_ids FROM department_mapping_data) dmd),
         '{}'::types.q_get_simulation_v4_department[]
     ) as departments,
     -- Single-select resources: flag (active)

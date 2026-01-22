@@ -16983,6 +16983,8 @@ export interface components {
         QGetSimulationV4Department: {
             /** Department Id */
             department_id: string | null;
+            /** Artifact Id */
+            artifact_id: string | null;
             /** Name */
             name: string | null;
             /** Description */

@@ -47,7 +47,7 @@ BEGIN
     v_artifact_id := api_create_scenarios_v4.scenario_id;
     
     -- Validate that scenario artifact exists
-    IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE id = v_artifact_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM scenario_artifact WHERE scenario_artifact.id = v_artifact_id) THEN
         RAISE EXCEPTION 'Scenario artifact % does not exist', v_artifact_id;
     END IF;
     -- Lookup tool_id from agent_tools + resource_tools
@@ -79,11 +79,10 @@ BEGIN
         END IF;
     END IF;
 
-    -- Check if scenarios already exists (match on scenario_id + group_id)
+    -- Check if scenarios already exists (match on scenario_id only)
     SELECT r.id INTO v_resource_id
     FROM scenarios_resource r
     WHERE r.scenario_id = v_artifact_id
-      AND r.group_id = api_create_scenarios_v4.group_id
     LIMIT 1;
 
     IF v_resource_id IS NOT NULL THEN
@@ -114,9 +113,9 @@ BEGIN
     
     -- INSERT INTO scenarios_resource table (always insert, never update)
     -- Create resource with new unique id and scenario_id FK
-    INSERT INTO scenarios_resource(id, scenario_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
-    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_scenarios_v4.group_id, NOW(), NOW())
-    RETURNING id INTO v_resource_id;
+    INSERT INTO scenarios_resource(id, scenario_id, active, generated, mcp, call_id, created_at, updated_at)
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, NOW(), NOW())
+    RETURNING scenarios_resource.id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
