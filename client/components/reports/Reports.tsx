@@ -96,7 +96,7 @@ export default function Reports({
           const emails = rowObj["emails"] as string[] | undefined;
           
           // Transform metrics from snake_case to camelCase
-          const metrics = rowObj["metrics"] as Record<string, unknown> | undefined;
+          const metrics = rowObj["metrics_entry"] as Record<string, unknown> | undefined;
           const transformedMetrics: Record<string, {
             hasData: boolean;
             method: string;
