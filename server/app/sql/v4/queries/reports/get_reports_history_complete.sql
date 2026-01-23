@@ -307,67 +307,25 @@ history_chat_rollup AS (
 history_chat_grades AS (
     SELECT DISTINCT ON (scg.chat_id)
         scg.chat_id AS chat_id,
-        scg.score,
-        COALESCE(srr.rubric_id, srr_fallback.rubric_id) as rubric_id
+        scg.score
     FROM grades_entry scg
-    JOIN chats_entry c ON c.id = scg.chat_id
-    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-    LEFT JOIN attempts_entry sa_fallback ON sa_fallback.id = c.attempt_id
-    LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = sa_fallback.simulation_id
-    LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
     WHERE scg.chat_id IN (
         SELECT sc.id FROM chats_entry sc
         WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
     ORDER BY scg.chat_id, scg.created_at DESC
 ),
--- Get first scenario's rubric per simulation (fallback when chat scenario doesn't match)
-sim_first_scenario_rubric AS (
-    SELECT DISTINCT ON (ss.simulation_id)
-        ss.simulation_id,
-        srr.rubric_id,
-        p_total.value AS points
-    FROM simulation_scenarios_junction ss
-    LEFT JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-    LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-    LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-    LEFT JOIN rubric_points_junction rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::point_type
-    LEFT JOIN points_resource p_total ON p_total.id = rp_total.point_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-        AND sfr.scenario_id = ss.scenario_id 
-        AND f.name = 'scenario_active' 
-        AND ssf.value = true)
-      AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
-    ORDER BY ss.simulation_id, COALESCE((SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1), 999999)
-),
 -- Aggregate grades_entry per attempt
+-- Score formula: grade.score / rubric total points * 100
 history_grade_rollup AS (
     SELECT
         sc.attempt_id,
         COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
-        SUM(CASE WHEN hcg.score IS NOT NULL AND COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 0) > 0
-            THEN (hcg.score / COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 1)::numeric * 100.0)
+        SUM(CASE WHEN hcg.score IS NOT NULL AND (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1) > 0
+            THEN (hcg.score / (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1)::numeric * 100.0)
             ELSE 0 END) AS sum_grade_percent
     FROM chats_entry sc
-    JOIN attempts_entry sa ON sa.id = sc.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
-    LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback_scenario ON ssr_fallback_scenario.simulation_id = sa.simulation_id
-    LEFT JOIN scenario_rubrics_resource srr_fallback_scenario ON srr_fallback_scenario.id = ssr_fallback_scenario.scenario_rubric_id AND srr_fallback_scenario.scenario_id = sc.scenario_id
-      AND hcg.chat_id IS NOT NULL
-      AND hcg.rubric_id IS NULL
-    LEFT JOIN rubrics_resource r ON r.id = hcg.rubric_id
-    LEFT JOIN rubric_points_junction rp_r ON rp_r.rubric_id = r.id AND rp_r.type = 'total'::point_type
-    LEFT JOIN points_resource p_r ON p_r.id = rp_r.point_id
-    LEFT JOIN rubrics_resource r_fallback_scenario ON r_fallback_scenario.id = srr_fallback_scenario.rubric_id
-    LEFT JOIN rubric_points_junction rp_fallback_scenario ON rp_fallback_scenario.rubric_id = r_fallback_scenario.id AND rp_fallback_scenario.type = 'total'::point_type
-    LEFT JOIN points_resource p_fallback_scenario ON p_fallback_scenario.id = rp_fallback_scenario.point_id
-    LEFT JOIN sim_first_scenario_rubric sfsr ON sfsr.simulation_id = sa.simulation_id
-      AND hcg.chat_id IS NOT NULL
-      AND hcg.rubric_id IS NULL
-      AND p_fallback_scenario.value IS NULL
-    LEFT JOIN rubrics_resource r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
-    LEFT JOIN rubric_points_junction rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'::point_type
-    LEFT JOIN points_resource p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
     WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY sc.attempt_id
 ),
@@ -480,20 +438,15 @@ attempt_cohort_ids AS (
 simulation_rubrics AS (
     SELECT DISTINCT ON (ss.simulation_id)
         ss.simulation_id,
-        r.id AS rubric_id,
-        p_total.value AS rubric_points_junction,
-        p_pass.value AS rubric_pass_points
+        srr.rubric_id,
+        (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points_junction,
+        (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = srr.rubric_id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points
     FROM simulation_scenarios_junction ss
     LEFT JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-    LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-    LEFT JOIN rubric_points_junction rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::point_type
-    LEFT JOIN points_resource p_total ON p_total.id = rp_total.point_id
-    LEFT JOIN rubric_points_junction rp_pass ON rp_pass.rubric_id = r.id AND rp_pass.type = 'pass'::point_type
-    LEFT JOIN points_resource p_pass ON p_pass.id = rp_pass.point_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
-        AND sfr.scenario_id = ss.scenario_id 
-        AND f.name = 'scenario_active' 
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
+        AND sfr.scenario_id = ss.scenario_id
+        AND f.name = 'scenario_active'
         AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)
     ORDER BY ss.simulation_id, COALESCE((SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1), 999999)

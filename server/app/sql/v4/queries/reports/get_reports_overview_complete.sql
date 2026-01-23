@@ -818,43 +818,16 @@ filt AS (
                 JOIN attempts_entry sa ON sa.id = c.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats_for_stagnation)
             ),
-            -- Get first scenario's rubric per simulation for stagnation (fallback)
-            sim_first_scenario_rubric_stagnation AS (
-                SELECT DISTINCT ON (ss.simulation_id)
-                    ss.simulation_id,
-                    srr.rubric_id,
-                    (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) as points
-                FROM simulation_scenarios_junction ss
-                LEFT JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-                LEFT JOIN rubrics_resource r ON r.id = srr.rubric_id
-                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
-                  AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_stagnation)
-                ORDER BY ss.simulation_id, (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
-            ),
+            -- Score normalization: each grade has 5 feedbacks scored 1-5, max = 25
             grade_stream AS (
                 SELECT
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0), 0)) * 100.0 AS norm
+                    (sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_stag.scenario_id LIMIT 1), 0)) * 100.0 AS norm
                 FROM grades_entry sg
                 JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
-                LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
-                LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id
-                LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = csi.scenario_id AND srr.rubric_id IS NULL
-                LEFT JOIN rubrics_resource r ON r.id = COALESCE(srr.rubric_id, srr_fallback.rubric_id)
-                LEFT JOIN rubrics_resource r_fallback_scenario ON r_fallback_scenario.id = srr_fallback.rubric_id
-                LEFT JOIN sim_first_scenario_rubric_stagnation sfsr ON sfsr.simulation_id = csi.simulation_id
-                  AND srr.rubric_id IS NULL
-                  AND (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL
-                LEFT JOIN rubrics_resource r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
-                LEFT JOIN rubric_points_junction rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'
-                LEFT JOIN points_resource p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
-                WHERE sg.group_id IS NOT NULL
-                  AND COALESCE((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0) > 0
             ),
             ordered_grades AS (
                 SELECT *,

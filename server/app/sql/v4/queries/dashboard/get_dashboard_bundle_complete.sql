@@ -801,20 +801,16 @@ filt AS (
             filtered_chats_for_stagnation AS (
                 SELECT DISTINCT chat_id FROM filt WHERE chat_id IS NOT NULL
             ),
+            -- Score normalization: each grade has 5 feedbacks scored 1-5, max = 25
             grade_stream AS (
                 SELECT
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = COALESCE(srr.rubric_id, srr_fallback.rubric_id) AND rp.type = 'total'::point_type LIMIT 1), 0)) * 100.0 AS norm
+                    (sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_stag.scenario_id LIMIT 1), 0)) * 100.0 AS norm
                 FROM grades_entry sg
                 JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
-                LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id IN (SELECT sa.simulation_id FROM attempts_entry sa WHERE sa.id = c_stag.attempt_id LIMIT 1)
-                LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c_stag.scenario_id
-                LEFT JOIN rubrics_resource r ON r.id = COALESCE(srr.rubric_id, srr_fallback.rubric_id)
-                WHERE sg.chat_id IS NOT NULL
             ),
             ordered_grades AS (
                 SELECT *,

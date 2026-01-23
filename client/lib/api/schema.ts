@@ -11580,18 +11580,12 @@ export interface components {
         };
         /** NamesApiRequest */
         NamesApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
+            /** Agent Id */
             agent_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Name */
-            name: string;
+            name?: string | null;
             /**
              * Mcp
              * @default false

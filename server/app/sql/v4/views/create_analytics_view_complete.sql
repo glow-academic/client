@@ -267,18 +267,18 @@ SELECT
   lg.time_taken_seconds         AS time_taken_seconds,
 
   lg.rubric_id                  AS rubric_id,
-  (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points_junction,
-  (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points,
+  (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1) AS rubric_points_junction,
+  (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'pass'::point_type LIMIT 1) AS rubric_pass_points,
   CASE
-    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) = 0 THEN NULL
-    ELSE (lg.score / (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
+    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1) IS NULL
+         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1) = 0 THEN NULL
+    ELSE (lg.score / (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
   END                           AS grade_percent,
   CASE
-    WHEN lg.score IS NULL 
-         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1) IS NULL THEN NULL
-    ELSE (lg.score >= (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1)::numeric)
+    WHEN lg.score IS NULL
+         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1) IS NULL
+         OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'pass'::point_type LIMIT 1) IS NULL THEN NULL
+    ELSE (lg.score >= (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'pass'::point_type LIMIT 1)::numeric)
   END                           AS passed,
 
   (sc.completed OR lg.simulation_chat_id IS NOT NULL)
@@ -314,14 +314,14 @@ LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
 LEFT JOIN personas_resource p          ON p.id = sfp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
 LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.scenario_id = s.id AND lg.rubric_id IS NULL
-LEFT JOIN rubrics_resource r           ON r.id = COALESCE(lg.rubric_id, srr_fallback.rubric_id)
+LEFT JOIN rubrics_resource r           ON r.rubric_id = COALESCE(lg.rubric_id, srr_fallback.rubric_id)
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
 LEFT JOIN effective_profile_department epd ON epd.profile_id = sa.profile_id
 LEFT JOIN simulation_first_dept sfd ON sfd.simulation_id = sim.id
-LEFT JOIN rubric_first_dept rfd ON rfd.rubric_id = r.id
+LEFT JOIN rubric_first_dept rfd ON rfd.rubric_id = r.rubric_id
 LEFT JOIN scenario_first_dept scfd ON scfd.scenario_id = s.id
 LEFT JOIN persona_first_dept pfd ON pfd.persona_id = p.id
 WITH NO DATA;

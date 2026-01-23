@@ -15104,8 +15104,8 @@ class ModelsApiResponse(BaseModel):
 class NamesSqlParams(BaseModel):
 
     agent_id: UUID | None = None
-    group_id: UUID
-    name: str
+    group_id: UUID | None = None
+    name: str | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -15123,8 +15123,8 @@ class NamesSqlRow(BaseModel):
 class NamesApiRequest(BaseModel):
 
     agent_id: UUID | None = None
-    group_id: UUID
-    name: str
+    group_id: UUID | None = None
+    name: str | None = None
     mcp: bool | None = False
 
 class NamesApiResponse(BaseModel):
