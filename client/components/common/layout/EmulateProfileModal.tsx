@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Search, User } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -57,6 +58,7 @@ export function EmulateProfileModal({
   const normalizedPrefix = appPrefix
     ? `/${appPrefix.replace(/^\/+|\/+$/g, "")}`
     : "";
+  const { data: session } = useSession();
   const { activeProfile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
@@ -229,7 +231,11 @@ export function EmulateProfileModal({
       // 2. Redirect to emulate page (via post_logout_redirect_uri)
       // 3. Emulate page calls signIn with grant ID
       if (result.logoutUrl) {
-        window.location.href = result.logoutUrl;
+        // Append id_token_hint so Keycloak skips the "Do you want to log out?" confirmation
+        const logoutUrl = session?.id_token
+          ? `${result.logoutUrl}&id_token_hint=${session.id_token}`
+          : result.logoutUrl;
+        window.location.href = logoutUrl;
       } else {
         // Fallback to emulate page URL if logout URL not available
         window.location.href =
@@ -249,6 +255,7 @@ export function EmulateProfileModal({
     switchEffectiveProfile,
     onOpenChange,
     normalizedPrefix,
+    session,
   ]);
 
   return (
