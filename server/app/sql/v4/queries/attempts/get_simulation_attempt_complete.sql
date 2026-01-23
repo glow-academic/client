@@ -747,9 +747,7 @@ previous_chat_scenario_root_mapping AS (
               AND sc.completed = true
               AND EXISTS (
                   SELECT 1 FROM grades_entry scg
-                  JOIN runs_entry r ON r.id = scg.run_id
-                  JOIN chats_entry c ON c.group_id = r.group_id
-                  WHERE c.id = sc.id
+                  WHERE scg.chat_id = sc.id
               )
               AND sc.attempt_id != x.attempt_id
         )
@@ -812,17 +810,11 @@ previous_chats_with_grades AS (
       AND sc.completed = true
       AND EXISTS (
           SELECT 1 FROM grades_entry scg
-          JOIN runs_entry r ON r.id = scg.run_id
-          JOIN chats_entry c ON c.group_id = r.group_id
-          WHERE c.id = sc.id
+          WHERE scg.chat_id = sc.id
       )
       AND sc.attempt_id != x.attempt_id
       AND ab.sim_practice_simulation = false
-    LEFT JOIN grades_entry scg ON EXISTS (
-        SELECT 1 FROM runs_entry r_check
-        JOIN chats_entry c_check ON c_check.group_id = r_check.group_id
-        WHERE r_check.id = scg.run_id AND c_check.id = sc.id
-    )
+    LEFT JOIN grades_entry scg ON scg.chat_id = sc.id
     WHERE COALESCE(
             (SELECT pcsrm.root_scenario_id
              FROM previous_chat_scenario_root_mapping pcsrm
@@ -837,11 +829,7 @@ previous_attempt_time_aggregation AS (
         COALESCE(SUM(COALESCE(scg.time_taken, 0)), 0)::integer as total_time_taken
     FROM previous_chats_with_grades pwg
     JOIN chats_entry sc ON sc.attempt_id = pwg.attempt_id
-    JOIN grades_entry scg ON EXISTS (
-        SELECT 1 FROM runs_entry r_check
-        JOIN chats_entry c_check ON c_check.group_id = r_check.group_id
-        WHERE r_check.id = scg.run_id AND c_check.id = sc.id
-    )
+    JOIN grades_entry scg ON scg.chat_id = sc.id
     WHERE sc.completed = true
     GROUP BY sc.attempt_id
 ),
@@ -1142,13 +1130,9 @@ grades_data AS (
         c.id as chat_id,
         (scg.id, scg.created_at, c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.description, scg.passed, scg.score, COALESCE(scg.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
-    JOIN chats_entry c ON EXISTS (
-        SELECT 1 FROM runs_entry r2
-        WHERE c.group_id = r2.group_id
-    )
     CROSS JOIN chat_ids_list cil
-    JOIN runs_entry r ON r.group_id = c.group_id
-    JOIN grades_entry scg ON scg.run_id = r.id
+    JOIN chats_entry c ON c.id = ANY(cil.chat_ids)
+    JOIN grades_entry scg ON scg.chat_id = c.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
     LEFT JOIN attempts_entry sa_sim ON sa_sim.id = c.attempt_id
     LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = sa_sim.simulation_id
@@ -1163,12 +1147,6 @@ grades_data AS (
         ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss_fallback.simulation_id AND spr.scenario_id = ss_fallback.scenario_id LIMIT 1)
         LIMIT 1
     ) sfsr ON srr.rubric_id IS NULL AND srr_fallback.rubric_id IS NULL
-    WHERE EXISTS (
-        SELECT 1 FROM runs_entry r_check
-        JOIN chats_entry c_check ON c_check.group_id = r_check.group_id
-        WHERE r_check.id = scg.run_id AND c_check.id = c.id
-    )
-      AND c.id = ANY(cil.chat_ids)
     ORDER BY c.id, scg.created_at DESC
 ),
 message_feedbacks_data AS (
@@ -1692,11 +1670,7 @@ scenarios_with_completed_chats AS (
           AND f.name = 'scenario_active'
           AND ssf.value = true)
     JOIN chats_entry sc ON sc.attempt_id = ab.id
-    JOIN grades_entry scg ON EXISTS (
-        SELECT 1 FROM runs_entry r_check
-        JOIN chats_entry c_check ON c_check.group_id = r_check.group_id
-        WHERE r_check.id = scg.run_id AND c_check.id = sc.id
-    )
+    JOIN grades_entry scg ON scg.chat_id = sc.id
     WHERE COALESCE(
             (SELECT srm.root_scenario_id 
              FROM scenario_root_mapping srm 

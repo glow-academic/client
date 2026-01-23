@@ -808,20 +808,13 @@ filt AS (
                     sg.created_at,
                     (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = COALESCE(srr.rubric_id, srr_fallback.rubric_id) AND rp.type = 'total'::point_type LIMIT 1), 0)) * 100.0 AS norm
                 FROM grades_entry sg
-                JOIN runs_entry r_stag ON r_stag.id = sg.run_id
-                JOIN groups_entry g_stag ON g_stag.id = r_stag.group_id
-                JOIN chats_entry c_stag ON c_stag.group_id = g_stag.id
+                JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
                 LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id IN (SELECT sa.simulation_id FROM attempts_entry sa WHERE sa.id = c_stag.attempt_id LIMIT 1)
                 LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c_stag.scenario_id
                 LEFT JOIN rubrics_resource r ON r.id = COALESCE(srr.rubric_id, srr_fallback.rubric_id)
-                WHERE EXISTS (
-                    SELECT 1 FROM runs_entry r_check
-                    JOIN groups_entry g_check ON g_check.id = r_check.group_id
-                    JOIN chats_entry c_check ON c_check.group_id = g_check.id
-                    WHERE r_check.id = sg.run_id
-                )
+                WHERE sg.chat_id IS NOT NULL
             ),
             ordered_grades AS (
                 SELECT *,
@@ -1306,7 +1299,7 @@ filt AS (
             filtered_chats AS (
                 SELECT DISTINCT c.id AS chat_id
                 FROM grades_entry scg
-                JOIN chats_entry c ON c.group_id = scg.group_id
+                JOIN chats_entry c ON c.id = scg.chat_id
                 JOIN attempts_entry sa ON sa.id = c.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
                   AND scg.created_at < (SELECT end_date FROM params)
@@ -1362,7 +1355,7 @@ filt AS (
                         sfsr.rubric_id
                     ) AS rubric_id
                 FROM grades_entry scg
-                JOIN chats_entry c ON c.group_id = scg.group_id
+                JOIN chats_entry c ON c.id = scg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
                 LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
@@ -2428,7 +2421,7 @@ filt AS (
                        ) AS rubric_id,
                        scg.created_at
                 FROM grades_entry scg
-                JOIN chats_entry c ON c.group_id = scg.group_id
+                JOIN chats_entry c ON c.id = scg.chat_id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
                 LEFT JOIN chat_scenario_info_skills csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id

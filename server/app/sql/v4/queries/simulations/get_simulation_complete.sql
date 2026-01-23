@@ -607,21 +607,7 @@ scenario_statistics AS (
         )
         OR sc.scenario_id = ss.scenario_id
     )
-    LEFT JOIN grades_entry scg ON EXISTS (
-        SELECT 1 FROM runs_entry r_check
-        JOIN groups_entry g_check ON g_check.id = r_check.group_id
-        JOIN chats_entry c_check ON c_check.group_id = g_check.id
-        WHERE r_check.id = scg.run_id AND c_check.id = sc.id
-    )
-    LEFT JOIN runs_entry r_detail ON r_detail.id = scg.run_id
-    LEFT JOIN LATERAL (
-        SELECT DISTINCT c.id AS chat_id
-        FROM runs_entry r
-        JOIN groups_entry g ON g.id = r.group_id
-        JOIN chats_entry c ON c.group_id = g.id
-        WHERE r.id = r_detail.id AND c.id = sc.id
-        LIMIT 1
-    ) chat_lookup_detail ON true
+    LEFT JOIN grades_entry scg ON scg.chat_id = sc.id
     WHERE x.simulation_id IS NOT NULL
     GROUP BY ss.scenario_id
 ),

@@ -839,7 +839,7 @@ filt AS (
                     sg.created_at,
                     (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0), 0)) * 100.0 AS norm
                 FROM grades_entry sg
-                JOIN chats_entry c_stag ON c_stag.group_id = sg.group_id
+                JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_stag.scenario_id
                 LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
@@ -1374,7 +1374,7 @@ filt AS (
                         sfsr.rubric_id
                     ) AS rubric_id
                 FROM grades_entry scg
-                JOIN chats_entry c ON c.group_id = scg.group_id
+                JOIN chats_entry c ON c.id = scg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
                 LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
@@ -1383,7 +1383,7 @@ filt AS (
                 LEFT JOIN sim_first_scenario_rubric_overview sfsr ON sfsr.simulation_id = csi.simulation_id
                   AND srr.rubric_id IS NULL
                   AND srr_fallback.rubric_id IS NULL
-                WHERE scg.group_id IS NOT NULL
+                WHERE scg.chat_id IS NOT NULL
                   AND COALESCE(
                       srr.rubric_id,
                       srr_fallback.rubric_id,

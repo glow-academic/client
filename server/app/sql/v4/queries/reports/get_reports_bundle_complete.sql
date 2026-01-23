@@ -458,7 +458,7 @@ grade_stream_per_profile AS (
         sg.created_at,
         (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_first.id AND rp.type = 'total' LIMIT 1), 0), 0)) * 100.0 AS norm
     FROM grades_entry sg
-    JOIN chats_entry c_bundle ON c_bundle.group_id = sg.group_id
+    JOIN chats_entry c_bundle ON c_bundle.id = sg.chat_id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c_bundle.scenario_id
     LEFT JOIN chat_scenario_info_bundle csi ON csi.chat_id = c_bundle.id

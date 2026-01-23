@@ -303,21 +303,21 @@ history_chat_rollup AS (
 ),
 -- Get latest grade per chat
 history_chat_grades AS (
-    SELECT DISTINCT ON (c.id)
-        c.id AS chat_id,
+    SELECT DISTINCT ON (scg.chat_id)
+        scg.chat_id AS chat_id,
         scg.score,
         COALESCE(srr.rubric_id, srr_fallback.rubric_id) as rubric_id
     FROM grades_entry scg
-    JOIN chats_entry c ON c.group_id = scg.group_id
+    JOIN chats_entry c ON c.id = scg.chat_id
     LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
     LEFT JOIN attempts_entry sa_fallback ON sa_fallback.id = c.attempt_id
     LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = sa_fallback.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = c.scenario_id AND srr.rubric_id IS NULL
-    WHERE c.id IN (
+    WHERE scg.chat_id IN (
         SELECT sc.id FROM chats_entry sc
         WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
-    ORDER BY c.id, scg.created_at DESC
+    ORDER BY scg.chat_id, scg.created_at DESC
 ),
 -- Get first scenario's rubric per simulation (fallback when chat scenario doesn't match)
 sim_first_scenario_rubric AS (
@@ -375,14 +375,12 @@ history_elapsed_time AS (
                 CASE
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
                         (SELECT COALESCE(scg.time_taken, 0) FROM grades_entry scg
-                         JOIN chats_entry c ON c.group_id = scg.group_id
-                         WHERE c.id = sc.id
+                         WHERE scg.chat_id = sc.id
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
                             (SELECT scg.created_at FROM grades_entry scg
-                             JOIN chats_entry c ON c.group_id = scg.group_id
-                             WHERE c.id = sc.id
+                             WHERE scg.chat_id = sc.id
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
                     ELSE

@@ -118,15 +118,7 @@ scenarios_with_grades AS (
     FROM simulation_scenarios_junction ss
     CROSS JOIN attempt_base ab
     JOIN chats_entry sc ON sc.attempt_id = ab.attempt_id
-    JOIN grades_entry scg ON EXISTS (
-        SELECT 1 FROM runs_entry r_check
-        JOIN groups_entry g_check ON g_check.id = r_check.group_id
-        JOIN chats_entry c_check ON c_check.group_id = g_check.id AND c_check.id = sc.id
-        WHERE r_check.id = scg.run_id
-    )
-    JOIN runs_entry r ON r.id = scg.run_id
-    JOIN groups_entry g ON g.id = r.group_id
-    JOIN chats_entry c ON c.group_id = g.id AND c.id = sc.id
+    JOIN grades_entry scg ON scg.chat_id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
       AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 

@@ -59,9 +59,9 @@ latest_grade AS (
          srr.rubric_id,
          g.created_at
   FROM grades_entry g
-  JOIN chats_entry c ON c.group_id = g.group_id
+  JOIN chats_entry c ON c.id = g.chat_id
   LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-  -- Simulation grades_entry only (derive from relationship via grades_entry.group_id = chats_entry.group_id)
+  -- Simulation grades_entry only (linked via grades_entry.chat_id = chats_entry.id)
   -- Get rubric_id from scenario_rubrics_resource based on chat's scenario_id
   ORDER BY c.id, g.created_at DESC
 ),
