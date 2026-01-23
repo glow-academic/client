@@ -236,7 +236,7 @@ SELECT
   rm.leaf_scenario_id           AS leaf_scenario_id,
 
   sfp.persona_id                AS persona_id,
-  (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
+  (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.persona_id LIMIT 1) AS persona_color,
 
   EXISTS (
     SELECT 1 FROM simulation_flags_junction sf

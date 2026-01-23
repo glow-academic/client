@@ -1243,8 +1243,8 @@ filt AS (
             -- Persona Performance
             persona_agg AS (
                 SELECT f.persona_id,
-                       (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = f.persona_id LIMIT 1) AS name,
-                       COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = f.persona_id LIMIT 1), '#3b82f6') AS color,
+                       (SELECT n.name FROM personas_resource pr JOIN persona_names_junction pn ON pn.persona_id = pr.persona_id JOIN names_resource n ON pn.name_id = n.id WHERE pr.id = f.persona_id LIMIT 1) AS name,
+                       COALESCE((SELECT c.hex_code FROM personas_resource pr JOIN persona_colors_junction pc ON pc.persona_id = pr.persona_id JOIN colors_resource c ON pc.color_id = c.id WHERE pr.id = f.persona_id LIMIT 1), '#3b82f6') AS color,
                        AVG(f.grade_percent)::float AS avg_score,
                        COUNT(DISTINCT f.chat_id)::int AS sessions,
                        ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids,
@@ -1284,8 +1284,8 @@ filt AS (
             ),
             persona_colors_agg_converted AS (
                 SELECT ARRAY_AGG(
-                    ((SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.persona_id LIMIT 1), COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = pa.persona_id LIMIT 1), '#3b82f6'))::types.q_get_dashboard_bundle_v4_persona_color
-                    ORDER BY (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.persona_id LIMIT 1)
+                    ((SELECT n.name FROM personas_resource pr JOIN persona_names_junction pn ON pn.persona_id = pr.persona_id JOIN names_resource n ON pn.name_id = n.id WHERE pr.id = pa.persona_id LIMIT 1), COALESCE((SELECT c.hex_code FROM personas_resource pr JOIN persona_colors_junction pc ON pc.persona_id = pr.persona_id JOIN colors_resource c ON pc.color_id = c.id WHERE pr.id = pa.persona_id LIMIT 1), '#3b82f6'))::types.q_get_dashboard_bundle_v4_persona_color
+                    ORDER BY (SELECT n.name FROM personas_resource pr JOIN persona_names_junction pn ON pn.persona_id = pr.persona_id JOIN names_resource n ON pn.name_id = n.id WHERE pr.id = pa.persona_id LIMIT 1)
                 ) AS colors
                 FROM (SELECT DISTINCT persona_id FROM persona_agg) pa
             ),
