@@ -27,7 +27,7 @@ class TestInsertActivityWebsocket:
         # Arrange
         result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
             params=CreateTestProfileSqlParams(
                 profile_first_name="Test",
                 profile_last_name="User",
@@ -52,7 +52,7 @@ class TestInsertActivityWebsocket:
         # Assert
         activity_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql",
             params=TestGetActivityByMessageAndEndpointSqlParams(
                 p_message="WebSocket event occurred",
                 p_endpoint="/socket/v4/test",
@@ -74,7 +74,7 @@ class TestInsertActivityWebsocket:
         # Arrange
         result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
             params=CreateTestProfileSqlParams(
                 profile_first_name="Test",
                 profile_last_name="User",
@@ -99,7 +99,7 @@ class TestInsertActivityWebsocket:
         # Assert
         activity_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_v4_complete.sql",
             params=TestGetActivityByMessageSqlParams(p_message="WebSocket error"),
         )
         typed_activity = TestGetActivityByMessageSqlRow.model_validate(
@@ -124,7 +124,7 @@ class TestInsertActivityWebsocket:
         # Assert
         activity_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_v4_complete.sql",
             params=TestGetActivityByMessageSqlParams(
                 p_message="Anonymous websocket activity"
             ),

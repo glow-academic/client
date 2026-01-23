@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/fields/Field.tsx`, `client/components/fields/Fields.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/fields_complete.sql` (`api_create_fields_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/fields_complete.sql` (`api_create_fields_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `field` records are referenced by `field_id` (or `field_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

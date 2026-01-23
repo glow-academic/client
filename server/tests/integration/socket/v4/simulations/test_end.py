@@ -42,7 +42,7 @@ async def test_simulation_text_end_success(
 
     attempt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_attempt_v4_complete.sql",
         params=TestCreateTestAttemptV4SqlParams(simulation_id=simulation_id),
     )
     attempt_id = attempt_result.attempt_id

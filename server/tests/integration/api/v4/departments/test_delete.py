@@ -28,7 +28,7 @@ async def test_delete_department(
     # Create a department first using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
         params=CreateTestDepartmentSqlParams(
             title="Test Department", description="Test"
         ),
@@ -52,7 +52,7 @@ async def test_delete_department(
     # Verify department was deleted using SQL file
     deleted_dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=dept_id),
     )
     typed_deleted_dept = GetDepartmentByIdSqlRow.model_validate(
@@ -70,7 +70,7 @@ async def test_delete_department_in_use(
     # Create a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
         params=CreateTestDepartmentSqlParams(
             title="Test Department", description="Test"
         ),
@@ -83,7 +83,7 @@ async def test_delete_department_in_use(
 
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql",
         params=None,
     )
     typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
@@ -93,7 +93,7 @@ async def test_delete_department_in_use(
     # Create a simulation linked to this department using SQL files
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricV4SqlParams(
             rubric_id=rubric_id,
             title="Test Simulation",
@@ -112,7 +112,7 @@ async def test_delete_department_in_use(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_create_simulation_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_create_simulation_department_link_v4_complete.sql",
         params=CreateSimulationDepartmentLinkV4SqlParams(
             input_simulation_id=simulation_id,
             input_department_id=dept_id,

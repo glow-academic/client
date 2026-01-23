@@ -26,7 +26,7 @@ async def test_render_document_template(
     # Create a document using SQL file
     document_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Template Document",
             document_type="homework",
@@ -42,7 +42,7 @@ async def test_render_document_template(
     # Verify document was created using SQL file
     doc_verify_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=document_id),
     )
     typed_doc_verify = GetDocumentByIdSqlRow.model_validate(
@@ -86,7 +86,7 @@ async def test_render_document_template_with_args(
     # Create a document using SQL file
     document_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Template Document With Args",
             document_type="homework",

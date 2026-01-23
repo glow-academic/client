@@ -16,7 +16,7 @@ from app.utils.theme.oklch_to_hex import hex_to_oklch
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/profile/get_profile_context_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profile/get_profile_context_complete.sql"
 
 router = APIRouter()
 

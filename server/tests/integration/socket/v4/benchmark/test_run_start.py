@@ -166,7 +166,7 @@ async def test_benchmark_run_start_run_not_belongs_to_eval(
 
     run_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql",
         params=run_params,
     )
     unrelated_run_id = str(run_result.run_id)

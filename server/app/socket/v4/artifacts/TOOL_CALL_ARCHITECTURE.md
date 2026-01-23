@@ -425,7 +425,7 @@ resources (created records)
 ### Tool Call Progress
 - **File**: `server/app/socket/v4/artifacts/progress.py`
 - **Function**: `_handle_text_tool_progress(data)`
-- **SQL**: `server/app/sql/v4/generate/text/text_tool_progress_update_complete.sql`
+- **SQL**: `server/app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql`
 - **Process**: Updates `calls.arguments_raw` incrementally
 
 ### Tool Call Completion
@@ -449,7 +449,7 @@ resources (created records)
   - Easier maintenance
 
 ### Resource Creation (Legacy SQL Functions)
-- **SQL Functions**: `server/app/sql/v4/resources/{resource}_complete.sql`
+- **SQL Functions**: `server/app/sql/v4/queries/resources/{resource}_complete.sql`
 - **Pattern**: `api_create_{resource}_v4(agent_id, group_id, mcp)`
 - **Process**: Reads `calls.arguments_raw`, renders templates, creates resource with `call_id`
 - **Note**: These functions create NEW call records. For tool calls with existing `call_id`, 
@@ -520,4 +520,4 @@ The artifact generation workflow uses **dynamic discovery** to eliminate hardcod
 - Progress Handler: `server/app/socket/v4/artifacts/progress.py`
 - Complete Handler: `server/app/socket/v4/artifacts/complete.py`
 - Dynamic Discovery: `server/app/infra/v4/artifacts/discovery.py`
-- Resource SQL Functions: `server/app/sql/v4/resources/*_complete.sql`
+- Resource SQL Functions: `server/app/sql/v4/queries/resources/*_complete.sql`

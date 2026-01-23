@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/uploads/get_upload_file_info_complete.sql"
+SQL_PATH = "app/sql/v4/queries/uploads/get_upload_file_info_complete.sql"
 
 router = APIRouter()
 

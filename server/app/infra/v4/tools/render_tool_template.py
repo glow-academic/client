@@ -19,10 +19,10 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-GET_TEMPLATE_ID_SQL_PATH = "app/sql/v4/infrastructure/tools/get_template_id_v4_complete.sql"
-GET_SCHEMA_ID_SQL_PATH = "app/sql/v4/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"
-GET_SCHEMA_FIELDS_SQL_PATH = "app/sql/v4/infrastructure/tools/get_schema_fields_v4_complete.sql"
-GET_TOOL_CALL_RESULT_SQL_PATH = "app/sql/v4/infrastructure/tools/get_tool_call_result_v4_complete.sql"
+GET_TEMPLATE_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql"
+GET_SCHEMA_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"
+GET_SCHEMA_FIELDS_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql"
+GET_TOOL_CALL_RESULT_SQL_PATH = "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
 
 
 def validate_jinja_template(template_expr: str) -> tuple[bool, str | None]:

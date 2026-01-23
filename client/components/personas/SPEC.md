@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/personas/Persona.tsx`, `client/components/personas/Personas.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/personas_complete.sql` (`api_create_personas_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/personas_complete.sql` (`api_create_personas_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `persona` records are referenced by `persona_id` (or `persona_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

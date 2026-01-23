@@ -84,7 +84,7 @@ async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> 
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Get scenario name for chat title
-            sql = load_sql("app/sql/v4/scenario/get_scenario_by_id.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_by_id.sql")
             scenario = await conn.fetchrow(sql, scenario_id_uuid)
             if not scenario:
                 await simulation_advance_error(
@@ -101,7 +101,7 @@ async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> 
             from datetime import UTC, datetime
 
             created_at = datetime.now(UTC)
-            sql = load_sql("app/sql/v4/simulations/create_simulation_chat.sql")
+            sql = load_sql("app/sql/v4/queries/simulations/create_simulation_chat.sql")
             chat_row = await conn.fetchrow(
                 sql,
                 created_at,

@@ -63,7 +63,7 @@ async def disconnect(sid: str) -> None:
                         UpdateProfileToInactiveSqlRow,
                         execute_sql_typed(
                             conn,
-                            "app/sql/v4/profile/update_profile_to_inactive_complete.sql",
+                            "app/sql/v4/queries/profile/update_profile_to_inactive_complete.sql",
                             params=params,
                         ),
                     )

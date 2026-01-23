@@ -28,7 +28,7 @@ async def test_delete_scenario(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioV4SqlParams(
             scenario_name="Scenario to Delete",
             scenario_problem_statement="Test problem",
@@ -55,7 +55,7 @@ async def test_delete_scenario(
     # Verify scenario was deleted using SQL file
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_by_id_v4_complete.sql",
         params=GetScenarioByIdSqlParams(scenario_id=scenario_id),
     )
     typed_scenario = GetScenarioByIdSqlRow.model_validate(scenario_result.model_dump())
@@ -72,7 +72,7 @@ async def test_delete_scenario_in_use(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioV4SqlParams(
             scenario_name="Scenario in Use",
             scenario_problem_statement="Test problem",
@@ -88,7 +88,7 @@ async def test_delete_scenario_in_use(
 
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql",
         params=None,
     )
     typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
@@ -98,7 +98,7 @@ async def test_delete_scenario_in_use(
     # Create a simulation and link it to the scenario using SQL files
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricV4SqlParams(
             rubric_id=rubric_id,
             title="Test Simulation",
@@ -118,7 +118,7 @@ async def test_delete_scenario_in_use(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql",
         params=CreateSimulationScenarioLinkV4SqlParams(
             input_simulation_id=simulation_id,
             input_scenario_id=scenario_id,

@@ -19,7 +19,7 @@ from app.sql.types import (
 )
 
 # Load SQL with types at module level
-SQL_PATH = "app/sql/v4/simulations/duplicate_simulation_complete.sql"
+SQL_PATH = "app/sql/v4/queries/simulations/duplicate_simulation_complete.sql"
 
 
 router = APIRouter()

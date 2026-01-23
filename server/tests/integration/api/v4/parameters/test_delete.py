@@ -28,7 +28,7 @@ async def test_delete_parameter(
     # Create a parameter with items using SQL files
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql",
         params=CreateTestParameterSqlParams(
             parameter_name="Test Parameter",
             parameter_description="Test Description",
@@ -47,7 +47,7 @@ async def test_delete_parameter(
     # Create an item using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql",
         params=CreateTestParameterItemSqlParams(
             input_parameter_id=parameter_id,
             item_name="Test Item",
@@ -71,7 +71,7 @@ async def test_delete_parameter(
     # Verify parameter was deleted using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
     # Should return empty result
@@ -80,7 +80,7 @@ async def test_delete_parameter(
     # Verify items were cascade deleted using SQL file
     items_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql",
         params=GetParameterItemsSqlParams(parameter_id=parameter_id),
     )
     typed_items = GetParameterItemsSqlRow.model_validate(items_result.model_dump())
@@ -96,7 +96,7 @@ async def test_delete_parameter_in_use(
     # Create a parameter using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql",
         params=CreateTestParameterSqlParams(
             parameter_name="In Use Parameter",
             parameter_description="Test Description",
@@ -115,7 +115,7 @@ async def test_delete_parameter_in_use(
     # Create a parameter item using SQL file
     item_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql",
         params=CreateTestParameterItemSqlParams(
             input_parameter_id=parameter_id,
             item_name="Test Item",
@@ -130,7 +130,7 @@ async def test_delete_parameter_in_use(
     # Create a scenario that uses this parameter item using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_scenario_with_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_scenario_with_parameter_item_v4_complete.sql",
         params=CreateTestScenarioWithParameterItemSqlParams(parameter_item_id=item_id),
     )
 

@@ -29,7 +29,7 @@ async def test_create_rubric(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -96,7 +96,7 @@ async def test_create_rubric(
     # Verify rubric was created using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
         params=GetRubricByIdSqlParams(rubric_id=rubric_id),
     )
     typed_rubric = GetRubricByIdSqlRow.model_validate(rubric_result.model_dump())
@@ -110,7 +110,7 @@ async def test_create_rubric(
     # Verify department link was created using SQL file
     dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_link_v4_complete.sql",
         params=GetRubricDepartmentLinkSqlParams(
             rubric_id=rubric_id, department_id=dept_id
         ),
@@ -125,7 +125,7 @@ async def test_create_rubric(
     # Verify standard groups were created using SQL file
     groups_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql",
         params=GetRubricStandardGroupsSqlParams(rubric_id=rubric_id),
     )
     typed_groups = GetRubricStandardGroupsSqlRow.model_validate(
@@ -141,7 +141,7 @@ async def test_create_rubric(
 
     comm_standards_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standards_v4_complete.sql",
         params=GetRubricStandardsSqlParams(standard_group_id=comm_group_id),
     )
     typed_comm_standards = GetRubricStandardsSqlRow.model_validate(
@@ -151,7 +151,7 @@ async def test_create_rubric(
 
     prob_standards_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standards_v4_complete.sql",
         params=GetRubricStandardsSqlParams(standard_group_id=prob_group_id),
     )
     typed_prob_standards = GetRubricStandardsSqlRow.model_validate(
@@ -190,14 +190,14 @@ async def test_create_rubric_without_departments(
     # Check by trying to get any department link (should return empty)
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
     if typed_dept.department_id:
         dept_link_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_link_v4_complete.sql",
             params=GetRubricDepartmentLinkSqlParams(
                 rubric_id=rubric_id, department_id=typed_dept.department_id
             ),
@@ -235,7 +235,7 @@ async def test_create_rubric_without_standard_groups(
     # Verify no standard groups were created using SQL file
     groups_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql",
         params=GetRubricStandardGroupsSqlParams(rubric_id=rubric_id),
     )
     typed_groups = GetRubricStandardGroupsSqlRow.model_validate(
@@ -273,7 +273,7 @@ async def test_create_rubric_minimal(
     # Verify rubric was created using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
         params=GetRubricByIdSqlParams(rubric_id=rubric_id),
     )
     typed_rubric = GetRubricByIdSqlRow.model_validate(rubric_result.model_dump())

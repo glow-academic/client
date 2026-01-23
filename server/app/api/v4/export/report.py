@@ -25,8 +25,8 @@ logger = get_logger(__name__)
 
 router = APIRouter(tags=["reports"])
 
-BUNDLE_SQL_PATH = "app/sql/v4/reports/get_reports_bundle_complete.sql"
-PER_SIM_METRICS_SQL_PATH = "app/sql/v4/reports/get_per_simulation_metrics_complete.sql"
+BUNDLE_SQL_PATH = "app/sql/v4/queries/reports/get_reports_bundle_complete.sql"
+PER_SIM_METRICS_SQL_PATH = "app/sql/v4/queries/reports/get_per_simulation_metrics_complete.sql"
 
 
 # Export request extends auto-generated bundle request with export-specific fields

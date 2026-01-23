@@ -23,7 +23,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/scenarios/get_scenario_complete.sql"
+SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_complete.sql"
 
 # Scenario resource types
 SCENARIO_RESOURCE_TYPES = [

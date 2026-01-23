@@ -22,7 +22,7 @@ async def test_generate_certificate(
 
     superadmin_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_superadmin_alias_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_superadmin_alias_v4_complete.sql",
         params=None,
     )
     typed_superadmin = GetSuperadminAliasSqlRow.model_validate(

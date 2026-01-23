@@ -23,9 +23,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/personas/get_persona_complete.sql"
+SQL_PATH = "app/sql/v4/queries/personas/get_persona_complete.sql"
 GET_GROUP_IDS_BY_RESOURCE_IDS_SQL_PATH = (
-    "app/sql/v4/personas/get_group_ids_by_resource_ids_complete.sql"
+    "app/sql/v4/queries/personas/get_group_ids_by_resource_ids_complete.sql"
 )
 
 # Persona resource types

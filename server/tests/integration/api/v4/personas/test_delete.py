@@ -27,7 +27,7 @@ async def test_delete_persona(
     # Create a persona using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql",
         params=CreateTestPersonaSqlParams(
             persona_name="Persona To Delete",
             description="Description",
@@ -55,7 +55,7 @@ async def test_delete_persona(
     # Verify persona was deleted using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_get_persona_by_id_v4_complete.sql",
         params=GetPersonaByIdSqlParams(persona_id=persona_id),
     )
     typed_persona = GetPersonaByIdSqlRow.model_validate(persona_result.model_dump())
@@ -72,7 +72,7 @@ async def test_delete_persona_in_use(
     # Create a persona using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql",
         params=CreateTestPersonaSqlParams(
             persona_name="Persona In Use",
             description="Description",
@@ -88,7 +88,7 @@ async def test_delete_persona_in_use(
     # Create a scenario using SQL file
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioSqlParams(
             scenario_name="Test Scenario",
             scenario_problem_statement="Test problem statement",
@@ -104,7 +104,7 @@ async def test_delete_persona_in_use(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_persona_link_v4_complete.sql",
         params=CreateScenarioPersonaLinkV4SqlParams(
             input_scenario_id=scenario_id,
             input_persona_id=persona_id,

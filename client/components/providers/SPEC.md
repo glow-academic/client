@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/providers/Provider.tsx`, `client/components/providers/Providers.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/providers_complete.sql` (`api_create_providers_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/providers_complete.sql` (`api_create_providers_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `provider` records are referenced by `provider_id` (or `provider_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

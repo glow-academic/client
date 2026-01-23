@@ -17,9 +17,9 @@ from app.sql.types import (
 
 logger = logging.getLogger(__name__)
 
-MARK_MODEL_RUN_INCOMPLETE_SQL_PATH = "app/sql/v4/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"
-MARK_MODEL_RUN_COMPLETE_SQL_PATH = "app/sql/v4/infrastructure/evals/mark_model_run_complete_v4_complete.sql"
-GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/infrastructure/evals/get_rubric_details_v4_complete.sql"
+MARK_MODEL_RUN_INCOMPLETE_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"
+MARK_MODEL_RUN_COMPLETE_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/mark_model_run_complete_v4_complete.sql"
+GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"
 
 # Global semaphore to limit concurrent eval runs (max 4)
 _eval_semaphore = asyncio.Semaphore(4)
@@ -91,7 +91,7 @@ async def run_single_eval(
 
         # Placeholder: Create a grade with default values
         # In production, this should use actual grading logic
-        grade_sql = load_sql("app/sql/v4/evals/create_eval_grade.sql")
+        grade_sql = load_sql("app/sql/v4/queries/evals/create_eval_grade.sql")
         grade_result = await conn.fetchrow(
             grade_sql,
             model_run_id,

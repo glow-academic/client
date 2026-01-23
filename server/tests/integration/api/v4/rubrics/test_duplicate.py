@@ -35,7 +35,7 @@ async def test_duplicate_rubric(
     # Create a rubric with department links, standard groups, and standards using SQL files
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Original Rubric",
             rubric_description="Original Description",
@@ -51,7 +51,7 @@ async def test_duplicate_rubric(
     # Link to a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -60,7 +60,7 @@ async def test_duplicate_rubric(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_rubric_department_link_v4_complete.sql",
         params=CreateRubricDepartmentLinkSqlParams(
             rubric_id=rubric_id, department_id=dept_id
         ),
@@ -69,7 +69,7 @@ async def test_duplicate_rubric(
     # Create standard groups and standards using SQL files
     group_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_standard_group_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_group_v4_complete.sql",
         params=CreateTestStandardGroupSqlParams(
             input_rubric_id=rubric_id,
             group_name="Test Group",
@@ -87,7 +87,7 @@ async def test_duplicate_rubric(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_standard_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_v4_complete.sql",
         params=CreateTestStandardSqlParams(
             input_standard_group_id=group_id,
             standard_name="Test Standard",
@@ -115,7 +115,7 @@ async def test_duplicate_rubric(
     # Verify new rubric was created with same properties using SQL file
     new_rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
         params=GetRubricByIdSqlParams(rubric_id=new_rubric_id),
     )
     new_typed_rubric = GetRubricByIdSqlRow.model_validate(
@@ -124,7 +124,7 @@ async def test_duplicate_rubric(
 
     original_rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
         params=GetRubricByIdSqlParams(rubric_id=rubric_id),
     )
     original_typed_rubric = GetRubricByIdSqlRow.model_validate(
@@ -143,7 +143,7 @@ async def test_duplicate_rubric(
     # Verify department link was duplicated using SQL file
     new_dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_link_v4_complete.sql",
         params=GetRubricDepartmentLinkSqlParams(
             rubric_id=new_rubric_id, department_id=dept_id
         ),
@@ -156,7 +156,7 @@ async def test_duplicate_rubric(
     # Verify standard groups were duplicated using SQL file
     new_groups_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql",
         params=GetRubricStandardGroupsSqlParams(rubric_id=new_rubric_id),
     )
     typed_new_groups = GetRubricStandardGroupsSqlRow.model_validate(
@@ -168,7 +168,7 @@ async def test_duplicate_rubric(
     # Verify standards were duplicated using SQL file
     new_standards_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standards_v4_complete.sql",
         params=GetRubricStandardsSqlParams(
             standard_group_id=typed_new_groups[0].standard_group_id
         ),
@@ -189,7 +189,7 @@ async def test_duplicate_rubric_without_departments(
     # Create a rubric without department links using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Cross-Dept Rubric",
             rubric_description="Test",
@@ -217,14 +217,14 @@ async def test_duplicate_rubric_without_departments(
     # Verify no department links were created (original had none) using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
     if typed_dept.department_id:
         dept_links_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_department_links_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_links_v4_complete.sql",
             params=None,  # Will need to check what params this function takes
         )
         # Should return empty result

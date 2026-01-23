@@ -28,7 +28,7 @@ async def test_duplicate_cohort(
     # Create a cohort using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql",
         params=CreateTestCohortSqlParams(
             title="Original Cohort",
             description="Original Description",
@@ -42,7 +42,7 @@ async def test_duplicate_cohort(
     # Link to department using inline SQL (no test SQL file for this yet)
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -53,7 +53,7 @@ async def test_duplicate_cohort(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_cohort_department_link_v4_complete.sql",
         params=CreateCohortDepartmentLinkV4SqlParams(
             input_cohort_id=cohort_id,
             input_department_id=dept_id,
@@ -76,7 +76,7 @@ async def test_duplicate_cohort(
     # Verify duplicate was created using SQL file
     duplicate_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
         params=GetCohortByIdSqlParams(cohort_id=UUID(data["cohortId"])),
     )
     typed_duplicate = GetCohortByIdSqlRow.model_validate(duplicate_result.model_dump())

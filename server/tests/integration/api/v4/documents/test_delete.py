@@ -24,7 +24,7 @@ async def test_delete_document(
     # Create a document using SQL file
     document_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document",
             document_type="homework",
@@ -53,7 +53,7 @@ async def test_delete_document(
     # Verify document is deleted using SQL file
     exists_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_exists_v4_complete.sql",
         params=GetDocumentExistsSqlParams(document_id=document_id),
     )
     typed_exists = GetDocumentExistsSqlRow.model_validate(exists_result.model_dump())

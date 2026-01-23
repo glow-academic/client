@@ -75,7 +75,7 @@ async def create_feedback(
             )
 
         # Execute insert query
-        sql_query = load_sql("app/sql/v4/feedback/create_feedback.sql")
+        sql_query = load_sql("app/sql/v4/queries/feedback/create_feedback.sql")
         sql_params = (request.type, request.message, profile_id)
         result = await conn.fetchrow(
             sql_query, request.type, request.message, profile_id

@@ -24,9 +24,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql"
-GET_DOCUMENT_DEPARTMENT_SQL_PATH = "app/sql/v4/document/get_document_department_v4_complete.sql"
-GET_DOCUMENT_AGENT_ID_SQL_PATH = "app/sql/v4/document/get_document_agent_id_v4_complete.sql"
+SQL_PATH = "app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql"
+GET_DOCUMENT_DEPARTMENT_SQL_PATH = "app/sql/v4/queries/document/get_document_department_v4_complete.sql"
+GET_DOCUMENT_AGENT_ID_SQL_PATH = "app/sql/v4/queries/document/get_document_agent_id_v4_complete.sql"
 
 
 class GenerateDocumentPayload(BaseModel):

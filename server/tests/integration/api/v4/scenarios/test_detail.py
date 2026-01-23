@@ -22,7 +22,7 @@ async def test_get_scenario_detail(
     # Create a scenario using SQL file
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioV4SqlParams(
             scenario_name="Test Scenario",
             scenario_problem_statement="Test problem statement",

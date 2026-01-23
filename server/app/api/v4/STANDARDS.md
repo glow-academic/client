@@ -243,7 +243,7 @@ server/app/api/v4/artifacts/agent/
 ├── get.py           # Route handler
 └── draft.py         # Route handler
 
-server/app/sql/v4/agents/
+server/app/sql/v4/queries/agents/
 ├── get_agents_list_complete.sql    # One SQL file per route
 ├── get_agent_complete.sql          # One SQL file per route
 └── patch_agent_draft_complete.sql  # One SQL file per route
@@ -792,11 +792,11 @@ audit_set(
 
 ### Reference Implementation
 
-See `server/app/api/v4/artifacts/persona/draft.py` and `server/app/sql/v4/personas/patch_persona_draft_complete.sql` as the reference implementation.
+See `server/app/api/v4/artifacts/persona/draft.py` and `server/app/sql/v4/queries/personas/patch_persona_draft_complete.sql` as the reference implementation.
 
 ## Reference Implementation
 
-See `server/app/api/v4/artifacts/agent/list.py` and `server/app/sql/v4/agents/get_agents_list_complete.sql` as the reference implementation.
+See `server/app/api/v4/artifacts/agent/list.py` and `server/app/sql/v4/queries/agents/get_agents_list_complete.sql` as the reference implementation.
 
 ## MCP Documentation Pattern
 

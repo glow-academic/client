@@ -76,7 +76,7 @@ async def generate_image_background(
                 GetAgentModelInfoSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/agents/get_agent_model_info_complete.sql",
+                    "app/sql/v4/queries/agents/get_agent_model_info_complete.sql",
                     params=params,
                 ),
             )
@@ -218,7 +218,7 @@ async def generate_image_background(
                 mime_type = "image/gif"
 
             # Create upload record
-            sql_insert_upload = load_sql("app/sql/v4/uploads/insert_upload.sql")
+            sql_insert_upload = load_sql("app/sql/v4/queries/uploads/insert_upload.sql")
             upload_row = await conn.fetchrow(
                 sql_insert_upload,
                 file_path,
@@ -241,7 +241,7 @@ async def generate_image_background(
 
             # Link image to upload via junction table
             sql_insert_image_upload = load_sql(
-                "app/sql/v4/images/insert_image_upload_complete.sql"
+                "app/sql/v4/queries/images/insert_image_upload_complete.sql"
             )
             image_upload_row = await conn.fetchrow(
                 sql_insert_image_upload,
@@ -256,7 +256,7 @@ async def generate_image_background(
                 # Don't fail - upload exists, can be linked later
 
             # Update image record: completed=true
-            sql_update_image = load_sql("app/sql/v4/images/update_image_completed.sql")
+            sql_update_image = load_sql("app/sql/v4/queries/images/update_image_completed.sql")
             await conn.execute(sql_update_image, image_id, True)
 
             logger.info(
@@ -346,7 +346,7 @@ async def _emit_image_error(
         try:
             async with pool.acquire() as conn:
                 sql_update_image = load_sql(
-                    "app/sql/v4/images/update_image_completed.sql"
+                    "app/sql/v4/queries/images/update_image_completed.sql"
                 )
                 await conn.execute(sql_update_image, image_id, True)
         except Exception as e:

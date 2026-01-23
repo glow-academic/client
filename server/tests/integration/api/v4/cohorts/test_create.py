@@ -49,7 +49,7 @@ async def test_create_cohort_minimal(
     # Verify cohort was created using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
         params=GetCohortByIdSqlParams(cohort_id=UUID(data["cohortId"])),
     )
     typed_cohort = GetCohortByIdSqlRow.model_validate(cohort_result.model_dump())
@@ -66,7 +66,7 @@ async def test_create_cohort_with_links(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -76,7 +76,7 @@ async def test_create_cohort_with_links(
     # Create a simulation using SQL file
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_v4_complete.sql",
         params=CreateTestSimulationSqlParams(
             title="Test Simulation",
             description="Test",
@@ -92,7 +92,7 @@ async def test_create_cohort_with_links(
     # Get or create a test profile using SQL file
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
         params=GetOrCreateTestProfileSqlParams(
             email="redacted@purdue.edu",
             role="guest",
@@ -129,7 +129,7 @@ async def test_create_cohort_with_links(
     # Verify cohort was created using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
         params=GetCohortByIdSqlParams(cohort_id=UUID(data["cohortId"])),
     )
     typed_cohort = GetCohortByIdSqlRow.model_validate(cohort_result.model_dump())

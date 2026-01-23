@@ -3670,685 +3670,685 @@ class TestUpdateEvalUseGroupsV4CompleteApiResponse(BaseModel):
 # ============================================================================
 
 _registry: dict[str, tuple[str, str, str, str]] = {
-    "tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql": (
         "CreateAgentDepartmentLinkSqlParams",
         "CreateAgentDepartmentLinkSqlRow",
         "CreateAgentDepartmentLinkApiRequest",
         "CreateAgentDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql": (
         "CreateAgentPromptLinkInactiveSqlParams",
         "CreateAgentPromptLinkInactiveSqlRow",
         "CreateAgentPromptLinkInactiveApiRequest",
         "CreateAgentPromptLinkInactiveApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_v4_complete.sql": (
         "CreateAgentPromptLinkSqlParams",
         "CreateAgentPromptLinkSqlRow",
         "CreateAgentPromptLinkApiRequest",
         "CreateAgentPromptLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql": (
         "CreateTestAgentSqlParams",
         "CreateTestAgentSqlRow",
         "CreateTestAgentApiRequest",
         "CreateTestAgentApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_test_profile_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_create_test_profile_v4_complete.sql": (
         "CreateTestProfileSqlParams",
         "CreateTestProfileSqlRow",
         "CreateTestProfileApiRequest",
         "CreateTestProfileApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql": (
         "CreateTestPromptSqlParams",
         "CreateTestPromptSqlRow",
         "CreateTestPromptApiRequest",
         "CreateTestPromptApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_active_models_count_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_active_models_count_v4_complete.sql": (
         "GetActiveModelsCountSqlParams",
         "GetActiveModelsCountSqlRow",
         "GetActiveModelsCountApiRequest",
         "GetActiveModelsCountApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql": (
         "GetAgentByIdSqlParams",
         "GetAgentByIdSqlRow",
         "GetAgentByIdApiRequest",
         "GetAgentByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_agent_department_link_v4_complete.sql": (
         "GetAgentDepartmentLinkSqlParams",
         "GetAgentDepartmentLinkSqlRow",
         "GetAgentDepartmentLinkApiRequest",
         "GetAgentDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_department_links_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_agent_department_links_v4_complete.sql": (
         "GetAgentDepartmentLinksSqlParams",
         "GetAgentDepartmentLinksSqlRow",
         "GetAgentDepartmentLinksApiRequest",
         "GetAgentDepartmentLinksApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_status_v4_complete.sql": (
         "GetAgentPromptLinkStatusSqlParams",
         "GetAgentPromptLinkStatusSqlRow",
         "GetAgentPromptLinkStatusApiRequest",
         "GetAgentPromptLinkStatusApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_v4_complete.sql": (
         "GetAgentPromptLinkSqlParams",
         "GetAgentPromptLinkSqlRow",
         "GetAgentPromptLinkApiRequest",
         "GetAgentPromptLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql": (
         "GetFirstDepartmentSqlParams",
         "GetFirstDepartmentSqlRow",
         "GetFirstDepartmentApiRequest",
         "GetFirstDepartmentApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql": (
         "GetFirstModelSqlParams",
         "GetFirstModelSqlRow",
         "GetFirstModelApiRequest",
         "GetFirstModelApiResponse",
     ),
-    "tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/cohorts/test_create_cohort_department_link_v4_complete.sql": (
         "CreateCohortDepartmentLinkSqlParams",
         "CreateCohortDepartmentLinkSqlRow",
         "CreateCohortDepartmentLinkApiRequest",
         "CreateCohortDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/cohorts/test_create_cohort_profile_link_v4_complete.sql": (
         "CreateCohortProfileLinkSqlParams",
         "CreateCohortProfileLinkSqlRow",
         "CreateCohortProfileLinkApiRequest",
         "CreateCohortProfileLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/cohorts/test_create_profile_department_link_v4_complete.sql": (
         "CreateProfileDepartmentLinkSqlParams",
         "CreateProfileDepartmentLinkSqlRow",
         "CreateProfileDepartmentLinkApiRequest",
         "CreateProfileDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql": (
         "CreateTestCohortSqlParams",
         "CreateTestCohortSqlRow",
         "CreateTestCohortApiRequest",
         "CreateTestCohortApiResponse",
     ),
-    "tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql": (
         "GetCohortByIdSqlParams",
         "GetCohortByIdSqlRow",
         "GetCohortByIdApiRequest",
         "GetCohortByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql": (
         "CreateTestDepartmentSqlParams",
         "CreateTestDepartmentSqlRow",
         "CreateTestDepartmentApiRequest",
         "CreateTestDepartmentApiResponse",
     ),
-    "tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql": (
         "GetDepartmentByIdSqlParams",
         "GetDepartmentByIdSqlRow",
         "GetDepartmentByIdApiRequest",
         "GetDepartmentByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/departments/test_get_different_department_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/departments/test_get_different_department_v4_complete.sql": (
         "GetDifferentDepartmentSqlParams",
         "GetDifferentDepartmentSqlRow",
         "GetDifferentDepartmentApiRequest",
         "GetDifferentDepartmentApiResponse",
     ),
-    "tests/sql/v4/integration/api/departments/test_get_profile_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/departments/test_get_profile_department_link_v4_complete.sql": (
         "GetProfileDepartmentLinkSqlParams",
         "GetProfileDepartmentLinkSqlRow",
         "GetProfileDepartmentLinkApiRequest",
         "GetProfileDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_create_document_department_link_v4_complete.sql": (
         "CreateDocumentDepartmentLinkSqlParams",
         "CreateDocumentDepartmentLinkSqlRow",
         "CreateDocumentDepartmentLinkApiRequest",
         "CreateDocumentDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_create_document_parameter_item_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_create_document_parameter_item_link_v4_complete.sql": (
         "CreateDocumentParameterItemLinkSqlParams",
         "CreateDocumentParameterItemLinkSqlRow",
         "CreateDocumentParameterItemLinkApiRequest",
         "CreateDocumentParameterItemLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql": (
         "CreateTestDocumentSqlParams",
         "CreateTestDocumentSqlRow",
         "CreateTestDocumentApiRequest",
         "CreateTestDocumentApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql": (
         "GetDocumentByIdSqlParams",
         "GetDocumentByIdSqlRow",
         "GetDocumentByIdApiRequest",
         "GetDocumentByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_get_document_department_link_exists_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_get_document_department_link_exists_v4_complete.sql": (
         "GetDocumentDepartmentLinkExistsSqlParams",
         "GetDocumentDepartmentLinkExistsSqlRow",
         "GetDocumentDepartmentLinkExistsApiRequest",
         "GetDocumentDepartmentLinkExistsApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_get_document_exists_v4_complete.sql": (
         "GetDocumentExistsSqlParams",
         "GetDocumentExistsSqlRow",
         "GetDocumentExistsApiRequest",
         "GetDocumentExistsApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql": (
         "GetDocumentParameterItemLinkExistsSqlParams",
         "GetDocumentParameterItemLinkExistsSqlRow",
         "GetDocumentParameterItemLinkExistsApiRequest",
         "GetDocumentParameterItemLinkExistsApiResponse",
     ),
-    "tests/sql/v4/integration/api/documents/test_get_first_parameter_item_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/documents/test_get_first_parameter_item_v4_complete.sql": (
         "GetFirstParameterItemSqlParams",
         "GetFirstParameterItemSqlRow",
         "GetFirstParameterItemApiRequest",
         "GetFirstParameterItemApiResponse",
     ),
-    "tests/sql/v4/integration/api/keys/test_create_key_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/keys/test_create_key_department_link_v4_complete.sql": (
         "CreateKeyDepartmentLinkSqlParams",
         "CreateKeyDepartmentLinkSqlRow",
         "CreateKeyDepartmentLinkApiRequest",
         "CreateKeyDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/keys/test_create_test_key_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/keys/test_create_test_key_v4_complete.sql": (
         "CreateTestKeySqlParams",
         "CreateTestKeySqlRow",
         "CreateTestKeyApiRequest",
         "CreateTestKeyApiResponse",
     ),
-    "tests/sql/v4/integration/api/keys/test_get_key_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/keys/test_get_key_by_id_v4_complete.sql": (
         "GetKeyByIdSqlParams",
         "GetKeyByIdSqlRow",
         "GetKeyByIdApiRequest",
         "GetKeyByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/keys/test_get_key_department_links_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/keys/test_get_key_department_links_v4_complete.sql": (
         "GetKeyDepartmentLinksSqlParams",
         "GetKeyDepartmentLinksSqlRow",
         "GetKeyDepartmentLinksApiRequest",
         "GetKeyDepartmentLinksApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_create_parameter_item_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_create_parameter_item_department_link_v4_complete.sql": (
         "CreateParameterItemDepartmentLinkSqlParams",
         "CreateParameterItemDepartmentLinkSqlRow",
         "CreateParameterItemDepartmentLinkApiRequest",
         "CreateParameterItemDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql": (
         "CreateTestParameterItemSqlParams",
         "CreateTestParameterItemSqlRow",
         "CreateTestParameterItemApiRequest",
         "CreateTestParameterItemApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql": (
         "CreateTestParameterSqlParams",
         "CreateTestParameterSqlRow",
         "CreateTestParameterApiRequest",
         "CreateTestParameterApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_create_test_scenario_with_parameter_item_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_create_test_scenario_with_parameter_item_v4_complete.sql": (
         "CreateTestScenarioWithParameterItemSqlParams",
         "CreateTestScenarioWithParameterItemSqlRow",
         "CreateTestScenarioWithParameterItemApiRequest",
         "CreateTestScenarioWithParameterItemApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql": (
         "GetParameterByIdSqlParams",
         "GetParameterByIdSqlRow",
         "GetParameterByIdApiRequest",
         "GetParameterByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql": (
         "GetParameterItemDepartmentLinksSqlParams",
         "GetParameterItemDepartmentLinksSqlRow",
         "GetParameterItemDepartmentLinksApiRequest",
         "GetParameterItemDepartmentLinksApiResponse",
     ),
-    "tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql": (
         "GetParameterItemsSqlParams",
         "GetParameterItemsSqlRow",
         "GetParameterItemsApiRequest",
         "GetParameterItemsApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_create_persona_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_create_persona_department_link_v4_complete.sql": (
         "CreatePersonaDepartmentLinkSqlParams",
         "CreatePersonaDepartmentLinkSqlRow",
         "CreatePersonaDepartmentLinkApiRequest",
         "CreatePersonaDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_create_persona_department_prompt_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_create_persona_department_prompt_link_v4_complete.sql": (
         "CreatePersonaDepartmentPromptLinkSqlParams",
         "CreatePersonaDepartmentPromptLinkSqlRow",
         "CreatePersonaDepartmentPromptLinkApiRequest",
         "CreatePersonaDepartmentPromptLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_create_persona_prompt_link_v4_complete.sql": (
         "CreatePersonaPromptLinkSqlParams",
         "CreatePersonaPromptLinkSqlRow",
         "CreatePersonaPromptLinkApiRequest",
         "CreatePersonaPromptLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql": (
         "CreateTestPersonaSqlParams",
         "CreateTestPersonaSqlRow",
         "CreateTestPersonaApiRequest",
         "CreateTestPersonaApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_get_persona_by_id_v4_complete.sql": (
         "GetPersonaByIdSqlParams",
         "GetPersonaByIdSqlRow",
         "GetPersonaByIdApiRequest",
         "GetPersonaByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_get_persona_department_prompt_link_status_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_get_persona_department_prompt_link_status_v4_complete.sql": (
         "GetPersonaDepartmentPromptLinkStatusSqlParams",
         "GetPersonaDepartmentPromptLinkStatusSqlRow",
         "GetPersonaDepartmentPromptLinkStatusApiRequest",
         "GetPersonaDepartmentPromptLinkStatusApiResponse",
     ),
-    "tests/sql/v4/integration/api/personas/test_get_persona_prompt_link_status_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/personas/test_get_persona_prompt_link_status_v4_complete.sql": (
         "GetPersonaPromptLinkStatusSqlParams",
         "GetPersonaPromptLinkStatusSqlRow",
         "GetPersonaPromptLinkStatusApiRequest",
         "GetPersonaPromptLinkStatusApiResponse",
     ),
-    "tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql": (
         "CreateProfileEmailSqlParams",
         "CreateProfileEmailSqlRow",
         "CreateProfileEmailApiRequest",
         "CreateProfileEmailApiResponse",
     ),
-    "tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql": (
         "CreateTestProfileSqlParams",
         "CreateTestProfileSqlRow",
         "CreateTestProfileApiRequest",
         "CreateTestProfileApiResponse",
     ),
-    "tests/sql/v4/integration/api/profile/test_get_profile_activity_latest_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/profile/test_get_profile_activity_latest_v4_complete.sql": (
         "GetProfileActivityLatestSqlParams",
         "GetProfileActivityLatestSqlRow",
         "GetProfileActivityLatestApiRequest",
         "GetProfileActivityLatestApiResponse",
     ),
-    "tests/sql/v4/integration/api/profile/test_get_profile_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/profile/test_get_profile_by_id_v4_complete.sql": (
         "GetProfileByIdSqlParams",
         "GetProfileByIdSqlRow",
         "GetProfileByIdApiRequest",
         "GetProfileByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_create_rubric_department_link_v4_complete.sql": (
         "CreateRubricDepartmentLinkSqlParams",
         "CreateRubricDepartmentLinkSqlRow",
         "CreateRubricDepartmentLinkApiRequest",
         "CreateRubricDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql": (
         "CreateTestRubricSqlParams",
         "CreateTestRubricSqlRow",
         "CreateTestRubricApiRequest",
         "CreateTestRubricApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql": (
         "CreateTestSimulationWithRubricSqlParams",
         "CreateTestSimulationWithRubricSqlRow",
         "CreateTestSimulationWithRubricApiRequest",
         "CreateTestSimulationWithRubricApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_create_test_standard_group_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_group_v4_complete.sql": (
         "CreateTestStandardGroupSqlParams",
         "CreateTestStandardGroupSqlRow",
         "CreateTestStandardGroupApiRequest",
         "CreateTestStandardGroupApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_create_test_standard_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_v4_complete.sql": (
         "CreateTestStandardSqlParams",
         "CreateTestStandardSqlRow",
         "CreateTestStandardApiRequest",
         "CreateTestStandardApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql": (
         "GetRubricByIdSqlParams",
         "GetRubricByIdSqlRow",
         "GetRubricByIdApiRequest",
         "GetRubricByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_link_v4_complete.sql": (
         "GetRubricDepartmentLinkSqlParams",
         "GetRubricDepartmentLinkSqlRow",
         "GetRubricDepartmentLinkApiRequest",
         "GetRubricDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_get_rubric_department_links_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_links_v4_complete.sql": (
         "GetRubricDepartmentLinksSqlParams",
         "GetRubricDepartmentLinksSqlRow",
         "GetRubricDepartmentLinksApiRequest",
         "GetRubricDepartmentLinksApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_get_rubric_simulation_count_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_simulation_count_v4_complete.sql": (
         "GetRubricSimulationCountSqlParams",
         "GetRubricSimulationCountSqlRow",
         "GetRubricSimulationCountApiRequest",
         "GetRubricSimulationCountApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql": (
         "GetRubricStandardGroupsSqlParams",
         "GetRubricStandardGroupsSqlRow",
         "GetRubricStandardGroupsApiRequest",
         "GetRubricStandardGroupsApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standards_v4_complete.sql": (
         "GetRubricStandardsSqlParams",
         "GetRubricStandardsSqlRow",
         "GetRubricStandardsApiRequest",
         "GetRubricStandardsApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_create_scenario_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_department_link_v4_complete.sql": (
         "CreateScenarioDepartmentLinkSqlParams",
         "CreateScenarioDepartmentLinkSqlRow",
         "CreateScenarioDepartmentLinkApiRequest",
         "CreateScenarioDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_persona_link_v4_complete.sql": (
         "CreateScenarioPersonaLinkSqlParams",
         "CreateScenarioPersonaLinkSqlRow",
         "CreateScenarioPersonaLinkApiRequest",
         "CreateScenarioPersonaLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_create_scenario_problem_statement_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_problem_statement_v4_complete.sql": (
         "CreateScenarioProblemStatementSqlParams",
         "CreateScenarioProblemStatementSqlRow",
         "CreateScenarioProblemStatementApiRequest",
         "CreateScenarioProblemStatementApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql": (
         "CreateScenarioTreeEdgeSqlParams",
         "CreateScenarioTreeEdgeSqlRow",
         "CreateScenarioTreeEdgeApiRequest",
         "CreateScenarioTreeEdgeApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql": (
         "CreateSimulationScenarioLinkSqlParams",
         "CreateSimulationScenarioLinkSqlRow",
         "CreateSimulationScenarioLinkApiRequest",
         "CreateSimulationScenarioLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql": (
         "CreateTestScenarioSqlParams",
         "CreateTestScenarioSqlRow",
         "CreateTestScenarioApiRequest",
         "CreateTestScenarioApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_get_scenario_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_by_id_v4_complete.sql": (
         "GetScenarioByIdSqlParams",
         "GetScenarioByIdSqlRow",
         "GetScenarioByIdApiRequest",
         "GetScenarioByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_link_v4_complete.sql": (
         "GetScenarioDepartmentLinkSqlParams",
         "GetScenarioDepartmentLinkSqlRow",
         "GetScenarioDepartmentLinkApiRequest",
         "GetScenarioDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_get_scenario_department_links_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_links_v4_complete.sql": (
         "GetScenarioDepartmentLinksSqlParams",
         "GetScenarioDepartmentLinksSqlRow",
         "GetScenarioDepartmentLinksApiRequest",
         "GetScenarioDepartmentLinksApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql": (
         "GetScenarioProblemStatementSqlParams",
         "GetScenarioProblemStatementSqlRow",
         "GetScenarioProblemStatementApiRequest",
         "GetScenarioProblemStatementApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql": (
         "GetScenarioProblemStatementsSqlParams",
         "GetScenarioProblemStatementsSqlRow",
         "GetScenarioProblemStatementsApiRequest",
         "GetScenarioProblemStatementsApiResponse",
     ),
-    "tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql": (
         "GetScenarioTreeEdgeSqlParams",
         "GetScenarioTreeEdgeSqlRow",
         "GetScenarioTreeEdgeApiRequest",
         "GetScenarioTreeEdgeApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_create_simulation_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_create_simulation_department_link_v4_complete.sql": (
         "CreateSimulationDepartmentLinkSqlParams",
         "CreateSimulationDepartmentLinkSqlRow",
         "CreateSimulationDepartmentLinkApiRequest",
         "CreateSimulationDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_create_simulation_scenario_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_create_simulation_scenario_link_v4_complete.sql": (
         "CreateSimulationScenarioLinkSqlParams",
         "CreateSimulationScenarioLinkSqlRow",
         "CreateSimulationScenarioLinkApiRequest",
         "CreateSimulationScenarioLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_v4_complete.sql": (
         "CreateTestSimulationSqlParams",
         "CreateTestSimulationSqlRow",
         "CreateTestSimulationApiRequest",
         "CreateTestSimulationApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql": (
         "CreateTestSimulationWithRubricSqlParams",
         "CreateTestSimulationWithRubricSqlRow",
         "CreateTestSimulationWithRubricApiRequest",
         "CreateTestSimulationWithRubricApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql": (
         "GetOrCreateRubricSqlParams",
         "GetOrCreateRubricSqlRow",
         "GetOrCreateRubricApiRequest",
         "GetOrCreateRubricApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_get_or_create_scenario_v4_complete.sql": (
         "GetOrCreateScenarioSqlParams",
         "GetOrCreateScenarioSqlRow",
         "GetOrCreateScenarioApiRequest",
         "GetOrCreateScenarioApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_get_simulation_by_id_v4_complete.sql": (
         "GetSimulationByIdSqlParams",
         "GetSimulationByIdSqlRow",
         "GetSimulationByIdApiRequest",
         "GetSimulationByIdApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql": (
         "GetSimulationByIdWithTimeLimitSqlParams",
         "GetSimulationByIdWithTimeLimitSqlRow",
         "GetSimulationByIdWithTimeLimitApiRequest",
         "GetSimulationByIdWithTimeLimitApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_get_simulation_department_link_v4_complete.sql": (
         "GetSimulationDepartmentLinkSqlParams",
         "GetSimulationDepartmentLinkSqlRow",
         "GetSimulationDepartmentLinkApiRequest",
         "GetSimulationDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/simulations/test_get_simulation_scenario_link_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/api/simulations/test_get_simulation_scenario_link_v4_complete.sql": (
         "GetSimulationScenarioLinkSqlParams",
         "GetSimulationScenarioLinkSqlRow",
         "GetSimulationScenarioLinkApiRequest",
         "GetSimulationScenarioLinkApiResponse",
     ),
-    "tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql": (
         "GetCsDeptIdSqlParams",
         "GetCsDeptIdSqlRow",
         "GetCsDeptIdApiRequest",
         "GetCsDeptIdApiResponse",
     ),
-    "tests/sql/v4/integration/helpers/test_get_or_create_test_department_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/helpers/test_get_or_create_test_department_v4_complete.sql": (
         "GetOrCreateTestDepartmentSqlParams",
         "GetOrCreateTestDepartmentSqlRow",
         "GetOrCreateTestDepartmentApiRequest",
         "GetOrCreateTestDepartmentApiResponse",
     ),
-    "tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/helpers/test_get_or_create_test_model_v4_complete.sql": (
         "GetOrCreateTestModelSqlParams",
         "GetOrCreateTestModelSqlRow",
         "GetOrCreateTestModelApiRequest",
         "GetOrCreateTestModelApiResponse",
     ),
-    "tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql": (
         "GetOrCreateTestProfileSqlParams",
         "GetOrCreateTestProfileSqlRow",
         "GetOrCreateTestProfileApiRequest",
         "GetOrCreateTestProfileApiResponse",
     ),
-    "tests/sql/v4/integration/helpers/test_get_superadmin_alias_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/helpers/test_get_superadmin_alias_v4_complete.sql": (
         "GetSuperadminAliasSqlParams",
         "GetSuperadminAliasSqlRow",
         "GetSuperadminAliasApiRequest",
         "GetSuperadminAliasApiResponse",
     ),
-    "tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql": (
         "TestGetActivityByMessageAndEndpointV4CompleteSqlParams",
         "TestGetActivityByMessageAndEndpointV4CompleteSqlRow",
         "TestGetActivityByMessageAndEndpointV4CompleteApiRequest",
         "TestGetActivityByMessageAndEndpointV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_v4_complete.sql": (
         "TestGetActivityByMessageV4CompleteSqlParams",
         "TestGetActivityByMessageV4CompleteSqlRow",
         "TestGetActivityByMessageV4CompleteApiRequest",
         "TestGetActivityByMessageV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_attempt_v4_complete.sql": (
         "TestCreateTestAttemptV4CompleteSqlParams",
         "TestCreateTestAttemptV4CompleteSqlRow",
         "TestCreateTestAttemptV4CompleteApiRequest",
         "TestCreateTestAttemptV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql": (
         "TestCreateTestBenchmarkAttemptV4CompleteSqlParams",
         "TestCreateTestBenchmarkAttemptV4CompleteSqlRow",
         "TestCreateTestBenchmarkAttemptV4CompleteApiRequest",
         "TestCreateTestBenchmarkAttemptV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_chat_v4_complete.sql": (
         "TestCreateTestChatV4CompleteSqlParams",
         "TestCreateTestChatV4CompleteSqlRow",
         "TestCreateTestChatV4CompleteApiRequest",
         "TestCreateTestChatV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_eval_group_v4_complete.sql": (
         "TestCreateTestEvalGroupV4CompleteSqlParams",
         "TestCreateTestEvalGroupV4CompleteSqlRow",
         "TestCreateTestEvalGroupV4CompleteApiRequest",
         "TestCreateTestEvalGroupV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_eval_run_v4_complete.sql": (
         "TestCreateTestEvalRunV4CompleteSqlParams",
         "TestCreateTestEvalRunV4CompleteSqlRow",
         "TestCreateTestEvalRunV4CompleteApiRequest",
         "TestCreateTestEvalRunV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_group_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_group_v4_complete.sql": (
         "TestCreateTestGroupV4CompleteSqlParams",
         "TestCreateTestGroupV4CompleteSqlRow",
         "TestCreateTestGroupV4CompleteApiRequest",
         "TestCreateTestGroupV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_guest_profile_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_guest_profile_v4_complete.sql": (
         "TestCreateTestGuestProfileV4CompleteSqlParams",
         "TestCreateTestGuestProfileV4CompleteSqlRow",
         "TestCreateTestGuestProfileV4CompleteApiRequest",
         "TestCreateTestGuestProfileV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_rubric_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_rubric_v4_complete.sql": (
         "TestCreateTestRubricV4CompleteSqlParams",
         "TestCreateTestRubricV4CompleteSqlRow",
         "TestCreateTestRubricV4CompleteApiRequest",
         "TestCreateTestRubricV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql": (
         "TestCreateTestRunV4CompleteSqlParams",
         "TestCreateTestRunV4CompleteSqlRow",
         "TestCreateTestRunV4CompleteApiRequest",
         "TestCreateTestRunV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_scenario_v4_complete.sql": (
         "TestCreateTestScenarioV4CompleteSqlParams",
         "TestCreateTestScenarioV4CompleteSqlRow",
         "TestCreateTestScenarioV4CompleteApiRequest",
         "TestCreateTestScenarioV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_create_test_test_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_create_test_test_v4_complete.sql": (
         "TestCreateTestTestV4CompleteSqlParams",
         "TestCreateTestTestV4CompleteSqlRow",
         "TestCreateTestTestV4CompleteApiRequest",
         "TestCreateTestTestV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_attempt_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_attempt_by_id_v4_complete.sql": (
         "TestGetAttemptByIdV4CompleteSqlParams",
         "TestGetAttemptByIdV4CompleteSqlRow",
         "TestGetAttemptByIdV4CompleteApiRequest",
         "TestGetAttemptByIdV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_chat_by_id_v4_complete.sql": (
         "TestGetChatByIdV4CompleteSqlParams",
         "TestGetChatByIdV4CompleteSqlRow",
         "TestGetChatByIdV4CompleteApiRequest",
         "TestGetChatByIdV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql": (
         "TestGetDeveloperMessagesByRunV4CompleteSqlParams",
         "TestGetDeveloperMessagesByRunV4CompleteSqlRow",
         "TestGetDeveloperMessagesByRunV4CompleteApiRequest",
         "TestGetDeveloperMessagesByRunV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_eval_by_active_v4_complete.sql": (
         "TestGetEvalByActiveV4CompleteSqlParams",
         "TestGetEvalByActiveV4CompleteSqlRow",
         "TestGetEvalByActiveV4CompleteApiRequest",
         "TestGetEvalByActiveV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_or_create_test_agent_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_or_create_test_agent_v4_complete.sql": (
         "TestGetOrCreateTestAgentV4CompleteSqlParams",
         "TestGetOrCreateTestAgentV4CompleteSqlRow",
         "TestGetOrCreateTestAgentV4CompleteApiRequest",
         "TestGetOrCreateTestAgentV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_profile_activity_v4_complete.sql": (
         "TestGetProfileActivityV4CompleteSqlParams",
         "TestGetProfileActivityV4CompleteSqlRow",
         "TestGetProfileActivityV4CompleteApiRequest",
         "TestGetProfileActivityV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_profile_by_id_v4_complete.sql": (
         "TestGetProfileByIdV4CompleteSqlParams",
         "TestGetProfileByIdV4CompleteSqlRow",
         "TestGetProfileByIdV4CompleteApiRequest",
         "TestGetProfileByIdV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_run_by_id_v4_complete.sql": (
         "TestGetRunByIdV4CompleteSqlParams",
         "TestGetRunByIdV4CompleteSqlRow",
         "TestGetRunByIdV4CompleteApiRequest",
         "TestGetRunByIdV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_get_simulation_by_active_v4_complete.sql": (
         "TestGetSimulationByActiveV4CompleteSqlParams",
         "TestGetSimulationByActiveV4CompleteSqlRow",
         "TestGetSimulationByActiveV4CompleteApiRequest",
         "TestGetSimulationByActiveV4CompleteApiResponse",
     ),
-    "tests/sql/v4/integration/socket/helpers/test_update_eval_use_groups_v4_complete.sql": (
+    "tests/sql/v4/integration/queries/socket/helpers/test_update_eval_use_groups_v4_complete.sql": (
         "TestUpdateEvalUseGroupsV4CompleteSqlParams",
         "TestUpdateEvalUseGroupsV4CompleteSqlRow",
         "TestUpdateEvalUseGroupsV4CompleteApiRequest",
@@ -4365,7 +4365,7 @@ def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get SQL input and output types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (SqlParamsType, SqlRowType)
@@ -4391,7 +4391,7 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get API request and response types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (ApiRequestType, ApiResponseType)
@@ -4418,572 +4418,572 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
 if TYPE_CHECKING:
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_test_profile_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_create_test_profile_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_active_models_count_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_active_models_count_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_agent_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_department_links_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_agent_department_links_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_status_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/cohorts/test_create_cohort_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/cohorts/test_create_cohort_profile_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_profile_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/cohorts/test_create_profile_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/departments/test_get_different_department_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/departments/test_get_different_department_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/departments/test_get_profile_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/departments/test_get_profile_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_create_document_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_create_document_parameter_item_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_create_document_parameter_item_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_document_department_link_exists_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_get_document_department_link_exists_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_get_document_exists_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/documents/test_get_first_parameter_item_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/documents/test_get_first_parameter_item_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/keys/test_create_key_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/keys/test_create_key_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/keys/test_create_test_key_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/keys/test_create_test_key_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/keys/test_get_key_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/keys/test_get_key_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/keys/test_get_key_department_links_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/keys/test_get_key_department_links_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_create_parameter_item_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_create_parameter_item_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_create_test_scenario_with_parameter_item_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_create_test_scenario_with_parameter_item_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_create_persona_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_department_prompt_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_create_persona_department_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_create_persona_prompt_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_get_persona_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_get_persona_department_prompt_link_status_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_get_persona_department_prompt_link_status_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/personas/test_get_persona_prompt_link_status_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/personas/test_get_persona_prompt_link_status_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/profile/test_get_profile_activity_latest_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/profile/test_get_profile_activity_latest_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/profile/test_get_profile_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/profile/test_get_profile_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_create_rubric_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_standard_group_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_group_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_standard_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_department_links_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_department_links_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_simulation_count_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_simulation_count_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standard_groups_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_get_rubric_standards_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_standards_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_persona_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_problem_statement_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_problem_statement_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_department_links_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_links_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_simulation_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_create_simulation_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_simulation_scenario_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_create_simulation_scenario_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_get_or_create_scenario_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_get_simulation_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_get_simulation_department_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_scenario_link_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/api/simulations/test_get_simulation_scenario_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_department_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/helpers/test_get_or_create_test_department_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/helpers/test_get_or_create_test_model_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/helpers/test_get_superadmin_alias_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/helpers/test_get_superadmin_alias_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_and_endpoint_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/infra/activity/test_get_activity_by_message_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/infra/activity/test_get_activity_by_message_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_attempt_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_chat_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_eval_group_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_eval_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_group_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_group_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_guest_profile_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_guest_profile_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_rubric_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_rubric_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_scenario_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_create_test_test_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_create_test_test_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_attempt_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_attempt_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_chat_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_eval_by_active_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_or_create_test_agent_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_or_create_test_agent_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_profile_activity_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_profile_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_run_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_get_simulation_by_active_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_update_eval_use_groups_v4_complete.sql"]
+        file_path: Literal["tests/sql/v4/integration/queries/socket/helpers/test_update_eval_use_groups_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

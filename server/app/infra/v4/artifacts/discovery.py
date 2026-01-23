@@ -35,7 +35,7 @@ async def get_resource_sql_function_name(
     Returns:
         Function name if found, None otherwise
     """
-    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"
+    sql_path = "app/sql/v4/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"
     
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)
@@ -71,7 +71,7 @@ async def get_resource_table_columns(
         - is_nullable: Whether column allows NULL
         - column_default: Default value if any
     """
-    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_table_columns_complete.sql"
+    sql_path = "app/sql/v4/queries/infra/artifacts/discovery/get_resource_table_columns_complete.sql"
     
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)
@@ -116,7 +116,7 @@ async def get_resource_schema_fields(
         - position: Always 0 (outputs don't have position field)
         - template: Always empty string (templates are handled by args_outputs)
     """
-    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"
+    sql_path = "app/sql/v4/queries/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"
     
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)
@@ -157,7 +157,7 @@ async def get_resource_output_schema_fields(
     Returns:
         List of schema field metadata dictionaries
     """
-    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
+    sql_path = "app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
     
     import uuid
 
@@ -287,7 +287,7 @@ async def get_agent_end_event_name(
     Returns:
         Event name string (e.g., "persona_end", "scenario_end", "text_end")
     """
-    sql_path = "app/sql/v4/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
+    sql_path = "app/sql/v4/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
     
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)

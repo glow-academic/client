@@ -76,7 +76,7 @@ async def test_get_profile_detail_with_uuid(
     # Create a guest profile using SQL file
     guest_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
         params=CreateTestProfileSqlParams(
             profile_first_name="Guest",
             profile_last_name="User",
@@ -92,7 +92,7 @@ async def test_get_profile_detail_with_uuid(
     # Insert email into profile_emails using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql",
         params=CreateProfileEmailSqlParams(
             input_profile_id=guest_id,
             email_address="redacted@purdue.edu",

@@ -43,7 +43,7 @@ async def test_create_department(
     # Verify department was created in database using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
     )
     typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())
@@ -56,7 +56,7 @@ async def test_create_department(
 
     profile_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_profile_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_profile_department_link_v4_complete.sql",
         params=GetProfileDepartmentLinkV4SqlParams(
             input_department_id=UUID(data["departmentId"]),
             input_profile_id=UUID(profile_id),
@@ -93,7 +93,7 @@ async def test_create_department_minimal(
     # Verify department was created using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
     )
     typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())

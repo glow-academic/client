@@ -24,7 +24,7 @@ async def test_add_profiles_to_cohort(
     # Create a cohort using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql",
         params=CreateTestCohortSqlParams(
             title="Test Cohort",
             description="Test",
@@ -38,7 +38,7 @@ async def test_add_profiles_to_cohort(
     # Get or create test profiles using SQL file
     profile1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
         params=GetOrCreateTestProfileSqlParams(
             email="redacted@purdue.edu",
             role="guest",

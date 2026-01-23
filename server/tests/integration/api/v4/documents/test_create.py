@@ -42,7 +42,7 @@ async def test_create_document(
     # Verify document was created using SQL file
     document_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=document_id),
     )
     typed_document = GetDocumentByIdSqlRow.model_validate(document_result.model_dump())

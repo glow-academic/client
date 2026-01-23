@@ -48,7 +48,7 @@ async def get_schema_with_fields(
     # Call function directly since it returns multiple rows
     # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
     params = GetSchemaWithFieldsSqlParams(schema_id=schema_id)
-    sql = load_sql("app/sql/v4/schemas/get_schema_with_fields_complete.sql")
+    sql = load_sql("app/sql/v4/queries/schemas/get_schema_with_fields_complete.sql")
     rows = await conn.fetch(sql, schema_id)
 
     # Convert rows to list of dicts
@@ -191,7 +191,7 @@ async def get_template_values(
     """
     # Get all scalar values
     values_params = GetTemplateValuesV4SqlParams(template_id=template_id)
-    values_sql = load_sql("app/sql/v4/utils/get_template_values_v4_complete.sql")
+    values_sql = load_sql("app/sql/v4/queries/utils/get_template_values_v4_complete.sql")
     values_rows_raw = await conn.fetch(values_sql, template_id)
     values_rows = [
         {
@@ -206,7 +206,7 @@ async def get_template_values(
 
     # Get all array items
     array_params = GetTemplateArrayItemsV4SqlParams(template_id=template_id)
-    array_sql = load_sql("app/sql/v4/utils/get_template_array_items_v4_complete.sql")
+    array_sql = load_sql("app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql")
     array_items_rows_raw = await conn.fetch(array_sql, template_id)
     array_items_rows = [
         {
@@ -277,7 +277,7 @@ async def create_template_with_values(
     )
     await execute_sql_typed(
         conn,
-        "app/sql/v4/utils/create_template_v4_complete.sql",
+        "app/sql/v4/queries/utils/create_template_v4_complete.sql",
         params=create_template_params,
     )
 
@@ -319,7 +319,7 @@ async def create_template_with_values(
                             )
                             await execute_sql_typed(
                                 conn,
-                                "app/sql/v4/utils/create_template_array_item_v4_complete.sql",
+                                "app/sql/v4/queries/utils/create_template_array_item_v4_complete.sql",
                                 params=array_item_params,
                             )
         else:
@@ -334,7 +334,7 @@ async def create_template_with_values(
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/utils/create_template_value_v4_complete.sql",
+                    "app/sql/v4/queries/utils/create_template_value_v4_complete.sql",
                     params=value_params,
                 )
             elif field_type == "number":
@@ -347,7 +347,7 @@ async def create_template_with_values(
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/utils/create_template_value_v4_complete.sql",
+                    "app/sql/v4/queries/utils/create_template_value_v4_complete.sql",
                     params=value_params,
                 )
             elif field_type == "boolean":
@@ -360,7 +360,7 @@ async def create_template_with_values(
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/utils/create_template_value_v4_complete.sql",
+                    "app/sql/v4/queries/utils/create_template_value_v4_complete.sql",
                     params=value_params,
                 )
 
@@ -386,7 +386,7 @@ async def link_template_to_schema(
     )
     await execute_sql_typed(
         conn,
-        "app/sql/v4/utils/link_schema_template_v4_complete.sql",
+        "app/sql/v4/queries/utils/link_schema_template_v4_complete.sql",
         params=link_params,
     )
 
@@ -425,7 +425,7 @@ async def create_schema_from_dict(
     create_schema_params = CreateSchemaV4SqlParams(schema_id=schema_id)
     await execute_sql_typed(
         conn,
-        "app/sql/v4/utils/create_schema_v4_complete.sql",
+        "app/sql/v4/queries/utils/create_schema_v4_complete.sql",
         params=create_schema_params,
     )
 
@@ -451,7 +451,7 @@ async def create_schema_from_dict(
         )
         await execute_sql_typed(
             conn,
-            "app/sql/v4/utils/create_schema_field_v4_complete.sql",
+            "app/sql/v4/queries/utils/create_schema_field_v4_complete.sql",
             params=field_params,
         )
 
@@ -464,7 +464,7 @@ async def create_schema_from_dict(
             )
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/utils/create_schema_field_item_v4_complete.sql",
+                "app/sql/v4/queries/utils/create_schema_field_item_v4_complete.sql",
                 params=item_params,
             )
 

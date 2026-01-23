@@ -11,7 +11,7 @@ from app.sql.types import (
     InfrastructureMetricsSnapshotSqlRow,
 )
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_metrics_snapshot_complete.sql"
+SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_metrics_snapshot_complete.sql"
 
 
 async def log_metrics_snapshot(

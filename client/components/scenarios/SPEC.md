@@ -2,9 +2,9 @@
 
 ## Scope
 - **UI components**: `client/components/scenarios/Scenario.tsx`, `client/components/scenarios/Scenarios.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/scenarios_complete.sql` (`api_create_scenarios_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/scenarios_complete.sql` (`api_create_scenarios_v4`)
 - **API endpoints**: `server/app/api/v4/scenario/` (list, detail, create, update, delete, duplicate)
-- **SQL queries**: `server/app/sql/v4/scenario/` (all scenario operations)
+- **SQL queries**: `server/app/sql/v4/queries/scenario/` (all scenario operations)
 
 ## Resource-First Data Model
 - **Artifact identity**: `scenario` records are referenced by `scenario_id` (or `scenario_ids` for multi-select associations). All UI state stores IDs rather than raw strings.
@@ -159,13 +159,13 @@ Based on `ScenarioFormState` type and actual component usage:
 - `GET /api/v4/scenario/list` - Returns paginated list with filters, search, permissions
 - Uses `api_list_scenarios_v4(profile_id)` SQL function
 - Returns: scenarios array, objectives, fields, cohorts, personas, simulations, departments, options
-- SQL file: `server/app/sql/v4/scenario/get_scenarios_list_complete.sql`
+- SQL file: `server/app/sql/v4/queries/scenario/get_scenarios_list_complete.sql`
 
 ### Detail Operations
 - `GET /api/v4/scenario/{scenario_id}` - Returns full scenario detail
 - Uses `api_get_scenario_detail_v4(scenario_id, profile_id, ...filters...)` SQL function
 - Returns: scenario metadata, personas, documents, parameters, fields, departments, agents, simulations, objectives, problem_statements, images, videos, questions, objectives_history, document_details, parameters_detail
-- SQL file: `server/app/sql/v4/scenario/get_scenario_detail_complete.sql`
+- SQL file: `server/app/sql/v4/queries/scenario/get_scenario_detail_complete.sql`
 - Supports filtering by: departments, personas, documents, parameters, fields
 - Supports search: persona_search, document_search, parameter_search
 - Supports show selected filters: persona_show_selected, document_show_selected, parameter_show_selected, field_show_selected_by_param
@@ -173,18 +173,18 @@ Based on `ScenarioFormState` type and actual component usage:
 ### Create/Update Operations
 - `POST /api/v4/scenario/create` - Creates new scenario artifact
 - Uses `api_create_scenario_v4(...)` SQL function
-- SQL file: `server/app/sql/v4/scenario/create_scenario_complete.sql`
+- SQL file: `server/app/sql/v4/queries/scenario/create_scenario_complete.sql`
 - `POST /api/v4/scenario/update` - Updates existing scenario
 - Uses `api_update_scenario_v4(...)` SQL function
-- SQL file: `server/app/sql/v4/scenario/update_scenario_complete.sql`
+- SQL file: `server/app/sql/v4/queries/scenario/update_scenario_complete.sql`
 - `POST /api/v4/scenario/duplicate` - Duplicates scenario with new IDs
 - Uses `api_duplicate_scenario_v4(...)` SQL function
-- SQL file: `server/app/sql/v4/scenario/duplicate_scenario_complete.sql`
+- SQL file: `server/app/sql/v4/queries/scenario/duplicate_scenario_complete.sql`
 
 ### Randomization Operations
 - `POST /api/v4/scenario/randomize` - Creates randomized scenario variant
 - Uses `api_randomize_scenario_v4(...)` SQL function
-- SQL file: `server/app/sql/v4/scenario/randomize_scenario_complete.sql`
+- SQL file: `server/app/sql/v4/queries/scenario/randomize_scenario_complete.sql`
 - Uses range tables: `scenario_persona_ranges`, `scenario_document_ranges`, `scenario_parameter_ranges`, `scenario_field_ranges`
 
 ### Resource Creation Endpoints

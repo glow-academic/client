@@ -21,7 +21,7 @@ from app.sql.types import (
 internal_sio = get_internal_sio()
 logger = get_logger(__name__)
 
-SQL_PATH = "app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql"
+SQL_PATH = "app/sql/v4/queries/benchmark/get_benchmark_runs_start_all_context_complete.sql"
 
 client_router = APIRouter()
 server_router = APIRouter()

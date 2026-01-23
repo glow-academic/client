@@ -94,7 +94,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
 
             # Get rubric_grade_agent_id from junction table
             sql = load_sql(
-                "app/sql/v4/benchmark/get_rubric_grade_agent_for_run_or_group.sql"
+                "app/sql/v4/queries/benchmark/get_rubric_grade_agent_for_run_or_group.sql"
             )
             rubric_row = await conn.fetchrow(
                 sql,
@@ -124,7 +124,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                 GetRubricGradeAgentV4SqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/get_rubric_grade_agent_v4_complete.sql",
                     params=rga_params,
                 ),
             )
@@ -161,7 +161,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                 GetTestRunIdV4SqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/get_test_run_id_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/get_test_run_id_v4_complete.sql",
                     params=test_run_params,
                 ),
             )
@@ -187,7 +187,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
             # 5. Create grade record
 
             # Create grade record (placeholder - will be updated after grading completes)
-            grade_sql = load_sql("app/sql/v4/benchmark/create_eval_grade.sql")
+            grade_sql = load_sql("app/sql/v4/queries/benchmark/create_eval_grade.sql")
             grade_result = await conn.fetchrow(
                 grade_sql,
                 test_run_id,  # run_id
@@ -214,7 +214,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
             mark_test_params = MarkTestCompleteV4SqlParams(test_id=test_id_uuid)
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/benchmark/mark_test_complete_v4_complete.sql",
+                "app/sql/v4/queries/benchmark/mark_test_complete_v4_complete.sql",
                 params=mark_test_params,
             )
 
@@ -226,7 +226,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/mark_eval_group_complete_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/mark_eval_group_complete_v4_complete.sql",
                     params=mark_group_params,
                 )
             elif run_id:
@@ -236,12 +236,12 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/mark_eval_run_complete_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/mark_eval_run_complete_v4_complete.sql",
                     params=mark_run_params,
                 )
             # Check if more runs/groups exist
             sql = load_sql(
-                "app/sql/v4/benchmark/get_next_pending_run_or_group_for_benchmark.sql"
+                "app/sql/v4/queries/benchmark/get_next_pending_run_or_group_for_benchmark.sql"
             )
             next_row = await conn.fetchrow(
                 sql,

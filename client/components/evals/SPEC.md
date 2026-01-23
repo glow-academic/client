@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/evals/Eval.tsx`, `client/components/evals/Evals.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/evals_complete.sql` (`api_create_evals_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/evals_complete.sql` (`api_create_evals_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `eval` records are referenced by `eval_id` (or `eval_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

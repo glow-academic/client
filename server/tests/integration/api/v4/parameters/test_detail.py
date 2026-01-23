@@ -22,7 +22,7 @@ async def test_get_parameter_detail(
     # Create a parameter first using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql",
         params=CreateTestParameterSqlParams(
             parameter_name="Test Parameter",
             parameter_description="Test Description",

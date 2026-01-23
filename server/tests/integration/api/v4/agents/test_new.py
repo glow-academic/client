@@ -76,7 +76,7 @@ async def test_get_agent_new_includes_models(
 
     count_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_active_models_count_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_active_models_count_v4_complete.sql",
         params=None,
     )
     typed_count = GetActiveModelsCountSqlRow.model_validate(count_result.model_dump())

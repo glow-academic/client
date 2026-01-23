@@ -27,7 +27,7 @@ async def test_get_rubric_detail(
     # Get a test rubric ID - create one if none exists
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Test Rubric",
             rubric_description="Test Description",
@@ -99,7 +99,7 @@ async def test_get_rubric_detail_with_department_mapping(
     # Create a rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Test Rubric",
             rubric_description="Test",
@@ -115,7 +115,7 @@ async def test_get_rubric_detail_with_department_mapping(
     # Link to a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -124,7 +124,7 @@ async def test_get_rubric_detail_with_department_mapping(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_rubric_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_rubric_department_link_v4_complete.sql",
         params=CreateRubricDepartmentLinkSqlParams(
             rubric_id=rubric_id, department_id=dept_id
         ),
@@ -158,7 +158,7 @@ async def test_get_rubric_detail_with_standard_groups(
     # Create a rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Test Rubric",
             rubric_description="Test",
@@ -174,7 +174,7 @@ async def test_get_rubric_detail_with_standard_groups(
     # Create a standard group using SQL file
     group_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_standard_group_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_group_v4_complete.sql",
         params=CreateTestStandardGroupSqlParams(
             input_rubric_id=rubric_id,
             group_name="Test Group",
@@ -193,7 +193,7 @@ async def test_get_rubric_detail_with_standard_groups(
     # Create a standard using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_standard_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_standard_v4_complete.sql",
         params=CreateTestStandardSqlParams(
             input_standard_group_id=group_id,
             standard_name="Test Standard",

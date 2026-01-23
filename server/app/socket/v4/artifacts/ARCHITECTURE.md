@@ -61,7 +61,7 @@ adapters/
 # Personas handler gets domain_id from SQL
 result = await execute_sql_typed(
     conn,
-    "app/sql/v4/personas/get_persona_generation_context_complete.sql",
+    "app/sql/v4/queries/personas/get_persona_generation_context_complete.sql",
     params=GetPersonaGenerationContextSqlParams(
         persona_id=persona_id,
         draft_id=draft_id,
@@ -220,9 +220,9 @@ Each modality has a base interface that defines the contract:
 - System prompt (with instructions) inserted as first message to LLM
 
 **Files Changed:**
-- `server/app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql` - Removed developer_message_contentss parameter and all developer message creation CTEs
-- `server/app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql` - Append instructions to system_prompt, removed developer message creation
-- `server/app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql` - Append instructions to system_prompt
+- `server/app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql` - Removed developer_message_contentss parameter and all developer message creation CTEs
+- `server/app/sql/v4/queries/generate/text/get_text_run_context_and_create_run_complete.sql` - Append instructions to system_prompt, removed developer message creation
+- `server/app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql` - Append instructions to system_prompt
 - `server/app/socket/v4/artifacts/generate.py` - Removed developer_message_contents from SQL params
 - All resource handlers (scenario, document, personas, rubric, agent) - Removed developer_message_contents from generate_artifact emits
 
@@ -252,7 +252,7 @@ Each modality has a base interface that defines the contract:
 - Personas handler uses SQL function to get `domain_id`
 
 **Files Changed:**
-- `server/app/sql/v4/personas/get_persona_generation_context_complete.sql` - NEW FILE: Gets domain_id and agent_id for persona generation
+- `server/app/sql/v4/queries/personas/get_persona_generation_context_complete.sql` - NEW FILE: Gets domain_id and agent_id for persona generation
 - `server/app/socket/v4/personas/generate.py` - Calls SQL function to get domain_id, emits with domain_id
 - `server/app/socket/v4/artifacts/generate.py` - Resolves agent_id from domain_id if provided
 
@@ -526,7 +526,7 @@ Each resource folder (e.g., `rubric/`, `personas/`) contains:
 # Get domain_id from SQL function
 result = await execute_sql_typed(
     conn,
-    "app/sql/v4/personas/get_persona_generation_context_complete.sql",
+    "app/sql/v4/queries/personas/get_persona_generation_context_complete.sql",
     params=GetPersonaGenerationContextSqlParams(
         persona_id=persona_id,
         draft_id=draft_id,
@@ -578,7 +578,7 @@ if data["type"] == "tool_call_complete":
         # Fetch from DB using resource-specific SQL function
         result = await execute_sql_typed(
             conn,
-            "app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql",
+            "app/sql/v4/queries/rubric/get_rubric_tool_call_results_complete.sql",
             params=GetRubricToolCallResultsSqlParams(run_id=uuid.UUID(data["run_id"]))
         )
         # Format and emit to client
@@ -854,5 +854,5 @@ Error events include:
 - Main router: `generate.py`
 - Audio endpoints: `audio/start.py`, `audio/events.py`, `audio/stop.py`
 - End handler: `end.py`
-- Personas SQL: `app/sql/v4/personas/get_persona_generation_context_complete.sql`
+- Personas SQL: `app/sql/v4/queries/personas/get_persona_generation_context_complete.sql`
 - **Tool Call Architecture**: `TOOL_CALL_ARCHITECTURE.md` - Complete BEFORE/AFTER inference architecture for tool calls

@@ -17,7 +17,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/profile/get_profile_resource_ids_by_group_id_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profile/get_profile_resource_ids_by_group_id_complete.sql"
 
 
 @internal_sio.on("resource_complete")  # type: ignore

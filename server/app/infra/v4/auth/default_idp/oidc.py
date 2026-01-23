@@ -106,7 +106,7 @@ async def authorize(
 
         if emulation_grant is not None:
             sql_query = load_sql_query(
-                "app/sql/v4/auth/consume_emulation_grant_complete.sql"
+                "app/sql/v4/queries/auth/consume_emulation_grant_complete.sql"
             )
             grant_params = ConsumeEmulationGrantSqlParams(
                 grant_id=emulation_grant,
@@ -115,7 +115,7 @@ async def authorize(
 
             grant_result = await execute_sql_typed(
                 conn,
-                "app/sql/v4/auth/consume_emulation_grant_complete.sql",
+                "app/sql/v4/queries/auth/consume_emulation_grant_complete.sql",
                 params=grant_params,
             )
             if not grant_result:
@@ -141,7 +141,7 @@ async def authorize(
 
         # Resolve profile using new SQL function
         sql_query = load_sql_query(
-            "app/sql/v4/auth/resolve_default_idp_profile_complete.sql"
+            "app/sql/v4/queries/auth/resolve_default_idp_profile_complete.sql"
         )
         profile_params = ResolveDefaultIdpProfileSqlParams(
             profile_id=resolved_profile_id,
@@ -150,7 +150,7 @@ async def authorize(
         
         profile_result = await execute_sql_typed(
             conn,
-            "app/sql/v4/auth/resolve_default_idp_profile_complete.sql",
+            "app/sql/v4/queries/auth/resolve_default_idp_profile_complete.sql",
             params=profile_params,
         )
         

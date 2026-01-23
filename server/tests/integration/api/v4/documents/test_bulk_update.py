@@ -30,7 +30,7 @@ async def test_bulk_update_documents(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql",
         params=None,
     )
     typed_dept = GetCsDeptIdSqlRow.model_validate(dept_result.model_dump())
@@ -40,7 +40,7 @@ async def test_bulk_update_documents(
     # Create documents using SQL files
     doc1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 1",
             document_type="homework",
@@ -53,7 +53,7 @@ async def test_bulk_update_documents(
 
     doc2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 2",
             document_type="homework",
@@ -67,7 +67,7 @@ async def test_bulk_update_documents(
     # Get a parameter item ID if available using SQL file
     param_item_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_first_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_first_parameter_item_v4_complete.sql",
         params=None,
     )
     param_item_id = None
@@ -99,7 +99,7 @@ async def test_bulk_update_documents(
     # Verify documents are updated using SQL files
     doc1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=doc1_id),
     )
     typed_doc1 = GetDocumentByIdSqlRow.model_validate(doc1_result.model_dump())
@@ -107,7 +107,7 @@ async def test_bulk_update_documents(
 
     doc2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=doc2_id),
     )
     typed_doc2 = GetDocumentByIdSqlRow.model_validate(doc2_result.model_dump())
@@ -116,7 +116,7 @@ async def test_bulk_update_documents(
     # Verify department links are created using SQL files
     dept_link1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_department_link_exists_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_department_link_exists_v4_complete.sql",
         params=GetDocumentDepartmentLinkExistsSqlParams(
             document_id=doc1_id, department_id=dept_id
         ),
@@ -128,7 +128,7 @@ async def test_bulk_update_documents(
 
     dept_link2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_department_link_exists_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_department_link_exists_v4_complete.sql",
         params=GetDocumentDepartmentLinkExistsSqlParams(
             document_id=doc2_id, department_id=dept_id
         ),
@@ -142,7 +142,7 @@ async def test_bulk_update_documents(
     if param_item_id:
         param_link1_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql",
             params=GetDocumentParameterItemLinkExistsSqlParams(
                 document_id=doc1_id, parameter_item_id=param_item_id
             ),
@@ -154,7 +154,7 @@ async def test_bulk_update_documents(
 
         param_link2_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_parameter_item_link_exists_v4_complete.sql",
             params=GetDocumentParameterItemLinkExistsSqlParams(
                 document_id=doc2_id, parameter_item_id=param_item_id
             ),
@@ -174,7 +174,7 @@ async def test_bulk_update_documents_minimal(
     # Create documents using SQL files
     doc1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 1",
             document_type="homework",
@@ -187,7 +187,7 @@ async def test_bulk_update_documents_minimal(
 
     doc2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 2",
             document_type="homework",
@@ -218,7 +218,7 @@ async def test_bulk_update_documents_minimal(
     # Verify documents are updated using SQL files
     doc1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=doc1_id),
     )
     typed_doc1 = GetDocumentByIdSqlRow.model_validate(doc1_result.model_dump())
@@ -226,7 +226,7 @@ async def test_bulk_update_documents_minimal(
 
     doc2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=doc2_id),
     )
     typed_doc2 = GetDocumentByIdSqlRow.model_validate(doc2_result.model_dump())

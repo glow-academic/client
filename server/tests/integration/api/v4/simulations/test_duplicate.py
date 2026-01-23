@@ -23,7 +23,7 @@ async def test_duplicate_simulation(
     # Get or create rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql",
         params=None,
     )
     typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
@@ -33,7 +33,7 @@ async def test_duplicate_simulation(
     # Create a simulation using SQL file
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricV4SqlParams(
             rubric_id=rubric_id,
             title="Original Simulation",

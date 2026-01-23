@@ -22,7 +22,7 @@ async def test_get_department_detail(
     # Create a department first using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
         params=CreateTestDepartmentSqlParams(
             title="Test Department", description="Test Description"
         ),

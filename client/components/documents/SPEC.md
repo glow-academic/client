@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/documents/Document.tsx`, `client/components/documents/DocumentNew.tsx`, `client/components/documents/Documents.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/documents_complete.sql` (`api_create_documents_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/documents_complete.sql` (`api_create_documents_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `document` records are referenced by `document_id` (or `document_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

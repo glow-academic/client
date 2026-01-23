@@ -31,7 +31,7 @@ async def test_duplicate_scenario_with_departments(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioV4SqlParams(
             scenario_name="Original Scenario",
             scenario_problem_statement="Test problem",
@@ -47,7 +47,7 @@ async def test_duplicate_scenario_with_departments(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_scenario_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_scenario_department_link_v4_complete.sql",
         params=CreateScenarioDepartmentLinkV4SqlParams(
             input_scenario_id=scenario_id,
             input_department_id=UUID(dept_id),
@@ -72,7 +72,7 @@ async def test_duplicate_scenario_with_departments(
 
     new_dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
         params=GetScenarioDepartmentLinkV4SqlParams(
             input_scenario_id=new_scenario_id,
             input_department_id=UUID(dept_id),
@@ -95,7 +95,7 @@ async def test_duplicate_scenario_without_departments(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioV4SqlParams(
             scenario_name="Cross-Dept Scenario",
             scenario_problem_statement="Test problem",
@@ -123,7 +123,7 @@ async def test_duplicate_scenario_without_departments(
 
     dept_links_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_links_v4_complete.sql",
         params=GetScenarioDepartmentLinksV4SqlParams(input_scenario_id=new_scenario_id),
     )
     # execute_sql_typed returns a single row, so we check if it's None or empty

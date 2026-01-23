@@ -28,9 +28,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_IMAGE_COMPLETE = "app/sql/v4/images/complete_image_generation_complete.sql"
-SQL_PATH_VIDEO_COMPLETE = "app/sql/v4/videos/create_generation_and_link_complete.sql"
-SQL_PATH_LOG_RUN = "app/sql/v4/model_runs/log_run_complete.sql"
+SQL_PATH_IMAGE_COMPLETE = "app/sql/v4/queries/images/complete_image_generation_complete.sql"
+SQL_PATH_VIDEO_COMPLETE = "app/sql/v4/queries/videos/create_generation_and_link_complete.sql"
+SQL_PATH_LOG_RUN = "app/sql/v4/queries/model_runs/log_run_complete.sql"
 
 
 @internal_sio.on("generate_complete")  # type: ignore
@@ -362,7 +362,7 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
             from utils.sql_helper import _detect_function_in_sql, load_sql
 
             # Get calls record by external_call_id
-            sql_path_call = "app/sql/v4/artifacts/complete/get_call_by_external_id_complete.sql"
+            sql_path_call = "app/sql/v4/queries/artifacts/complete/get_call_by_external_id_complete.sql"
             sql_text_call = load_sql(sql_path_call)
             is_function_call, function_name_call, schema_call = _detect_function_in_sql(sql_text_call)
             
@@ -392,7 +392,7 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
             # Store rendered values in template_values table
             if rendered_values and template_id:
                 # Get schema_fields for this tool's output schema
-                sql_path_schema = "app/sql/v4/artifacts/complete/get_schema_fields_by_template_id_complete.sql"
+                sql_path_schema = "app/sql/v4/queries/artifacts/complete/get_schema_fields_by_template_id_complete.sql"
                 sql_text_schema = load_sql(sql_path_schema)
                 is_function_schema, function_name_schema, schema_schema = _detect_function_in_sql(sql_text_schema)
                 
@@ -403,7 +403,7 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
                     schema_fields = await conn.fetch(sql_text_schema, template_id)
 
                 # Upsert template_values using SQL function
-                sql_path_upsert = "app/sql/v4/artifacts/complete/upsert_template_value_complete.sql"
+                sql_path_upsert = "app/sql/v4/queries/artifacts/complete/upsert_template_value_complete.sql"
                 sql_text_upsert = load_sql(sql_path_upsert)
                 is_function_upsert, function_name_upsert, schema_upsert = _detect_function_in_sql(sql_text_upsert)
                 
@@ -458,7 +458,7 @@ async def _execute_tool_call(
         from utils.sql_helper import _detect_function_in_sql, load_sql
 
         # Get calls record
-        sql_path_call = "app/sql/v4/artifacts/complete/get_call_by_external_id_complete.sql"
+        sql_path_call = "app/sql/v4/queries/artifacts/complete/get_call_by_external_id_complete.sql"
         sql_text_call = load_sql(sql_path_call)
         is_function_call, function_name_call, schema_call = _detect_function_in_sql(sql_text_call)
         
@@ -481,7 +481,7 @@ async def _execute_tool_call(
         # The resource_type parameter passed here is authoritative.
 
         # Get rendered template values to use for resource creation
-        sql_path_template = "app/sql/v4/artifacts/complete/get_template_values_by_call_id_complete.sql"
+        sql_path_template = "app/sql/v4/queries/artifacts/complete/get_template_values_by_call_id_complete.sql"
         sql_text_template = load_sql(sql_path_template)
         is_function_template, function_name_template, schema_template = _detect_function_in_sql(sql_text_template)
         
@@ -569,7 +569,7 @@ async def _create_resource_record(
 
         from utils.sql_helper import _detect_function_in_sql, load_sql
         
-        sql_path = "app/sql/v4/artifacts/complete/create_resource_record_complete.sql"
+        sql_path = "app/sql/v4/queries/artifacts/complete/create_resource_record_complete.sql"
         sql_text = load_sql(sql_path)
         is_function, function_name, schema = _detect_function_in_sql(sql_text)
         

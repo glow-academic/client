@@ -18,7 +18,7 @@ async def get_or_create_test_profile(
     params = GetOrCreateTestProfileV4SqlParams(email=email)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
         params=params,
     )
     return str(result.profile_id)
@@ -31,7 +31,7 @@ async def get_or_create_test_department(
     params = GetOrCreateTestDepartmentV4SqlParams(title=title)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_department_v4_complete.sql",
         params=params,
     )
     return str(result.department_id)
@@ -44,7 +44,7 @@ async def get_or_create_test_model(
     params = GetOrCreateTestModelV4SqlParams(name=name)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_model_v4_complete.sql",
         params=params,
     )
     return str(result.model_id)
@@ -59,7 +59,7 @@ async def get_or_create_test_agent(
     params = TestGetOrCreateTestAgentV4SqlParams(name=name, description=description)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_or_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_or_create_test_agent_v4_complete.sql",
         params=params,
     )
     return str(result.agent_id)
@@ -76,7 +76,7 @@ async def create_test_scenario(
     params = TestCreateTestScenarioV4SqlParams(name=name)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_scenario_v4_complete.sql",
         params=params,
     )
     return str(result.scenario_id)
@@ -93,7 +93,7 @@ async def create_test_chat(
     params = TestCreateTestChatV4SqlParams(scenario_id=scenario_id, trace_id=trace_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_chat_v4_complete.sql",
         params=params,
     )
     return str(result.chat_id)
@@ -116,7 +116,7 @@ async def create_test_rubric(
     )
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_rubric_v4_complete.sql",
         params=params,
     )
     return str(result.rubric_id)
@@ -133,7 +133,7 @@ async def create_test_group(
     params = TestCreateTestGroupV4SqlParams(rubric_id=rubric_id, trace_id=trace_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_group_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_group_v4_complete.sql",
         params=params,
     )
     return str(result.group_id)
@@ -144,7 +144,7 @@ async def get_simulation_by_active(db: asyncpg.Connection) -> str | None:
 
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_simulation_by_active_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_simulation_by_active_v4_complete.sql",
         params=None,
     )
     return str(result.id) if result.id else None
@@ -155,7 +155,7 @@ async def get_eval_by_active(db: asyncpg.Connection) -> str | None:
 
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_eval_by_active_v4_complete.sql",
         params=None,
     )
     return str(result.id) if result.id else None
@@ -169,7 +169,7 @@ async def get_chat_by_id(db: asyncpg.Connection, chat_id: str) -> dict[str, any]
 
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_chat_by_id_v4_complete.sql",
         params=TestGetChatByIdV4SqlParams(chat_id=chat_id),
     )
     return (
@@ -192,7 +192,7 @@ async def create_test_attempt(db: asyncpg.Connection, simulation_id: str) -> str
     params = TestCreateTestAttemptV4SqlParams(simulation_id=simulation_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_attempt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_attempt_v4_complete.sql",
         params=params,
     )
     return str(result.attempt_id)
@@ -207,7 +207,7 @@ async def create_test_benchmark_attempt(db: asyncpg.Connection, eval_id: str) ->
     params = TestCreateTestBenchmarkAttemptV4SqlParams(eval_id=eval_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_benchmark_attempt_v4_complete.sql",
         params=params,
     )
     return str(result.attempt_id)
@@ -224,7 +224,7 @@ async def create_test_test(
     params = TestCreateTestTestV4SqlParams(title=title, run_id=run_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_test_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_test_v4_complete.sql",
         params=params,
     )
     return str(result.test_id)
@@ -241,7 +241,7 @@ async def create_test_eval_run(
     params = TestCreateTestEvalRunV4SqlParams(eval_id=eval_id, completed=completed)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_eval_run_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_eval_run_v4_complete.sql",
         params=params,
     )
     return str(result.run_id)
@@ -256,7 +256,7 @@ async def create_test_eval_group(db: asyncpg.Connection, eval_id: str) -> str:
     params = TestCreateTestEvalGroupV4SqlParams(eval_id=eval_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_eval_group_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_eval_group_v4_complete.sql",
         params=params,
     )
     return str(result.group_id)

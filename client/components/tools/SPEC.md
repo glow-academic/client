@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/tools/Tool.tsx`, `client/components/tools/Tools.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/tools_complete.sql` (`api_create_tools_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/tools_complete.sql` (`api_create_tools_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `tool` records are referenced by `tool_id` (or `tool_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

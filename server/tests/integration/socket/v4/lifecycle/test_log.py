@@ -39,7 +39,7 @@ async def test_log_run_success(
     )
     run_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql",
         params=params,
     )
     run_id = str(run_result.run_id)
@@ -67,7 +67,7 @@ async def test_log_run_success(
 
     run_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_run_by_id_v4_complete.sql",
         params=TestGetRunByIdV4SqlParams(run_id=run_id),
     )
     assert run_result.input_tokens == 100
@@ -98,7 +98,7 @@ async def test_log_run_internal_success(
     )
     run_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql",
         params=params,
     )
     run_id = str(run_result.run_id)
@@ -123,7 +123,7 @@ async def test_log_run_internal_success(
 
     run_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_run_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_run_by_id_v4_complete.sql",
         params=TestGetRunByIdV4SqlParams(run_id=run_id),
     )
     assert run_result.input_tokens == 200
@@ -154,7 +154,7 @@ async def test_log_run_with_developer_messages(
     )
     run_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_run_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_run_v4_complete.sql",
         params=params,
     )
     run_id = str(run_result.run_id)
@@ -184,7 +184,7 @@ async def test_log_run_with_developer_messages(
 
     dev_messages_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_developer_messages_count_by_run_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_developer_messages_count_by_run_v4_complete.sql",
         params=TestGetDeveloperMessagesCountByRunV4SqlParams(run_id=run_id),
     )
     assert dev_messages_result.message_count >= 1

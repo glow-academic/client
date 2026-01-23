@@ -28,7 +28,7 @@ async def test_update_agent(
     # Create an agent first using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -39,7 +39,7 @@ async def test_update_agent(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=model_id,
             name="Original Name",
@@ -55,7 +55,7 @@ async def test_update_agent(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -91,7 +91,7 @@ async def test_update_agent(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql",
         params=GetAgentByIdSqlParams(agent_id=agent_id),
     )
     typed_agent = GetAgentByIdSqlRow.model_validate(agent_result.model_dump())
@@ -104,7 +104,7 @@ async def test_update_agent(
     # Verify new prompt was created using SQL file
     prompt_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=agent_id),
     )
     typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
@@ -115,7 +115,7 @@ async def test_update_agent(
     # Verify department link was updated using SQL file
     dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_department_link_v4_complete.sql",
         params=GetAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=dept_id
         ),
@@ -135,7 +135,7 @@ async def test_update_agent_with_existing_prompt(
     # Create agent using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -145,7 +145,7 @@ async def test_update_agent_with_existing_prompt(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",
@@ -161,7 +161,7 @@ async def test_update_agent_with_existing_prompt(
     # Create prompt using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Existing prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -191,7 +191,7 @@ async def test_update_agent_with_existing_prompt(
     # Verify prompt link uses existing prompt using SQL file
     prompt_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=agent_id),
     )
     typed_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
@@ -210,7 +210,7 @@ async def test_update_agent_removes_department_links(
     # Create agent with department link using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -220,7 +220,7 @@ async def test_update_agent_removes_department_links(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",
@@ -235,7 +235,7 @@ async def test_update_agent_removes_department_links(
 
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -249,7 +249,7 @@ async def test_update_agent_removes_department_links(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql",
         params=CreateAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=old_dept_id
         ),
@@ -263,7 +263,7 @@ async def test_update_agent_removes_department_links(
 
     new_dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_different_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_different_department_v4_complete.sql",
         params=GetDifferentDepartmentSqlParams(exclude_department_id=old_dept_id),
     )
     typed_new_dept = GetDifferentDepartmentSqlRow.model_validate(
@@ -295,7 +295,7 @@ async def test_update_agent_removes_department_links(
     # Verify old department link is removed using SQL file
     old_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_department_link_v4_complete.sql",
         params=GetAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=old_dept_id
         ),
@@ -310,7 +310,7 @@ async def test_update_agent_removes_department_links(
     if new_dept_id:
         new_link_result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_department_link_v4_complete.sql",
             params=GetAgentDepartmentLinkSqlParams(
                 agent_id=agent_id, department_id=new_dept_id
             ),
@@ -330,7 +330,7 @@ async def test_update_agent_not_found(
     fake_agent_id = "00000000-0000-0000-0000-000000000000"
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -368,7 +368,7 @@ async def test_update_agent_empty_model_id(
     # Create an agent first using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -378,7 +378,7 @@ async def test_update_agent_empty_model_id(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",

@@ -21,7 +21,7 @@ from fastapi.responses import Response
 logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/documents/get_certificate_data_complete.sql"
+SQL_PATH = "app/sql/v4/queries/documents/get_certificate_data_complete.sql"
 
 
 router = APIRouter()

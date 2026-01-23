@@ -47,7 +47,7 @@ async def test_connect_with_profile_id_success(
 
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_profile_by_id_v4_complete.sql",
         params=TestGetProfileByIdV4SqlParams(profile_id=profile_id),
     )
     assert profile_result.active is True
@@ -55,7 +55,7 @@ async def test_connect_with_profile_id_success(
     # Verify last_active was set in profile_activity table
     activity_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_profile_activity_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_profile_activity_v4_complete.sql",
         params=TestGetProfileActivityV4SqlParams(profile_id=profile_id),
     )
     assert activity_result.last_active is not None
@@ -164,7 +164,7 @@ async def test_connect_invalid_guest_profile_id_string(
 
     guest_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_guest_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_guest_profile_v4_complete.sql",
         params=TestCreateTestGuestProfileV4SqlParams(),
     )
     guest_id = guest_result.guest_id

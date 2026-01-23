@@ -50,7 +50,7 @@ async def test_update_profile(
     # Verify in database using SQL file
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_get_profile_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_get_profile_by_id_v4_complete.sql",
         params=GetProfileByIdSqlParams(profile_id=profile_id),
     )
     typed_profile = GetProfileByIdSqlRow.model_validate(profile_result.model_dump())
@@ -67,7 +67,7 @@ async def test_update_profile_partial(
     # Get original values using SQL file
     original_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_get_profile_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_get_profile_by_id_v4_complete.sql",
         params=GetProfileByIdSqlParams(profile_id=profile_id),
     )
     typed_original = GetProfileByIdSqlRow.model_validate(original_result.model_dump())
@@ -113,7 +113,7 @@ async def test_update_profile_with_uuid(
     # Create a guest profile using SQL file
     guest_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
         params=CreateTestProfileSqlParams(
             profile_first_name="Guest",
             profile_last_name="User",
@@ -128,7 +128,7 @@ async def test_update_profile_with_uuid(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql",
         params=CreateProfileEmailSqlParams(
             input_profile_id=guest_id,
             email_address="redacted@purdue.edu",
@@ -166,7 +166,7 @@ async def test_update_profile_last_active(
     # Verify activity was inserted using SQL file
     activity_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_get_profile_activity_latest_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_get_profile_activity_latest_v4_complete.sql",
         params=GetProfileActivityLatestSqlParams(profile_id=profile_id),
     )
     typed_activity = GetProfileActivityLatestSqlRow.model_validate(

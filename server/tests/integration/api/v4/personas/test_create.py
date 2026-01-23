@@ -47,7 +47,7 @@ async def test_create_persona_minimal(
     # Verify persona was created using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_get_persona_by_id_v4_complete.sql",
         params=GetPersonaByIdSqlParams(persona_id=UUID(data["personaId"])),
     )
     typed_persona = GetPersonaByIdSqlRow.model_validate(persona_result.model_dump())
@@ -65,7 +65,7 @@ async def test_create_persona_with_departments(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -95,7 +95,7 @@ async def test_create_persona_with_departments(
     # Verify persona was created using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_get_persona_by_id_v4_complete.sql",
         params=GetPersonaByIdSqlParams(persona_id=UUID(data["personaId"])),
     )
     typed_persona = GetPersonaByIdSqlRow.model_validate(persona_result.model_dump())

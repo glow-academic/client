@@ -56,7 +56,7 @@ async def test_create_scenario_minimal(
     # Verify scenario was created using SQL file
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_by_id_v4_complete.sql",
         params=GetScenarioByIdSqlParams(scenario_id=UUID(data["scenarioId"])),
     )
     typed_scenario = GetScenarioByIdSqlRow.model_validate(scenario_result.model_dump())
@@ -68,7 +68,7 @@ async def test_create_scenario_minimal(
 
     tree_edge_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql",
         params=GetScenarioTreeEdgeV4SqlParams(
             input_scenario_id=UUID(data["scenarioId"])
         ),
@@ -82,7 +82,7 @@ async def test_create_scenario_minimal(
 
     problem_statement_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
         params=GetScenarioProblemStatementV4SqlParams(
             input_scenario_id=UUID(data["scenarioId"])
         ),
@@ -127,7 +127,7 @@ async def test_create_scenario_with_departments(
 
     dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
         params=GetScenarioDepartmentLinkV4SqlParams(
             input_scenario_id=UUID(data["scenarioId"]),
             input_department_id=UUID(dept_id),

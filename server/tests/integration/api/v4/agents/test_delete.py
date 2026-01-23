@@ -22,7 +22,7 @@ async def test_delete_agent(
     # Create an agent without any usage using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -32,7 +32,7 @@ async def test_delete_agent(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Deletable Agent",
@@ -62,7 +62,7 @@ async def test_delete_agent(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql",
         params=GetAgentByIdSqlParams(agent_id=agent_id),
     )
     typed_agent = GetAgentByIdSqlRow.model_validate(agent_result.model_dump())
@@ -78,7 +78,7 @@ async def test_delete_agent_in_use(
     # Create an agent using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -88,7 +88,7 @@ async def test_delete_agent_in_use(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Used Agent",
@@ -104,7 +104,7 @@ async def test_delete_agent_in_use(
     # Link agent to a department (this makes it "in use") using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -118,7 +118,7 @@ async def test_delete_agent_in_use(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql",
         params=CreateAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=dept_id
         ),
@@ -140,7 +140,7 @@ async def test_delete_agent_in_use(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql",
         params=GetAgentByIdSqlParams(agent_id=agent_id),
     )
     typed_agent = GetAgentByIdSqlRow.model_validate(agent_result.model_dump())

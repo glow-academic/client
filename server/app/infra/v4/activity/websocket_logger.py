@@ -16,7 +16,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-SQL_PATH = "app/sql/v4/infrastructure/activity/get_profile_name_for_logging_complete.sql"
+SQL_PATH = "app/sql/v4/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql"
 
 
 async def log_websocket_activity(

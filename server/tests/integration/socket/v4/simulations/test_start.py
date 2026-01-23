@@ -50,7 +50,7 @@ async def test_start_simulation_success(
     attempt_id = started_events[0]["attempt_id"]
     attempt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_attempt_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_attempt_by_id_v4_complete.sql",
         params=TestGetAttemptByIdV4SqlParams(attempt_id=attempt_id),
     )
     assert attempt_result.id is not None

@@ -25,7 +25,7 @@ async def test_update_cohort(
     # Create a cohort using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql",
         params=CreateTestCohortSqlParams(
             title="Original Title",
             description="Original Description",
@@ -39,7 +39,7 @@ async def test_update_cohort(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -69,7 +69,7 @@ async def test_update_cohort(
     # Verify cohort was updated using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
         params=GetCohortByIdSqlParams(cohort_id=cohort_id),
     )
     typed_cohort = GetCohortByIdSqlRow.model_validate(cohort_result.model_dump())

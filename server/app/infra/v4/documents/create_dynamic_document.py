@@ -25,8 +25,8 @@ from app.sql.types import (
 
 logger = get_logger(__name__)
 
-ACTIVE_SETTINGS_SQL_PATH = "app/sql/v4/settings/get_active_settings_complete.sql"
-GET_DOCUMENT_AGENTS_SQL_PATH = "app/sql/v4/infrastructure/documents/get_document_agents_complete.sql"
+ACTIVE_SETTINGS_SQL_PATH = "app/sql/v4/queries/settings/get_active_settings_complete.sql"
+GET_DOCUMENT_AGENTS_SQL_PATH = "app/sql/v4/queries/infrastructure/documents/get_document_agents_complete.sql"
 
 
 async def create_dynamic_document(
@@ -54,7 +54,7 @@ async def create_dynamic_document(
         ValueError: If parent document not found or has no active template
     """
     # Get parent document template info
-    sql_query = load_sql("app/sql/v4/documents/get_document_template_info.sql")
+    sql_query = load_sql("app/sql/v4/queries/documents/get_document_template_info.sql")
     template_row = await conn.fetchrow(sql_query, str(parent_document_id))
 
     if not template_row:
@@ -164,7 +164,7 @@ async def create_dynamic_document(
     child_name = f"{parent_row['name']} (Dynamic)"
     child_description = parent_row.get("description") or ""
 
-    sql_insert_document = load_sql("app/sql/v4/documents/insert_document_complete.sql")
+    sql_insert_document = load_sql("app/sql/v4/queries/documents/insert_document_complete.sql")
     await conn.execute(
         sql_insert_document,
         str(child_document_id),
@@ -190,7 +190,7 @@ async def create_dynamic_document(
         f.write(rendered_html)
 
     # Create upload record
-    sql_insert_upload = load_sql("app/sql/v4/uploads/insert_upload.sql")
+    sql_insert_upload = load_sql("app/sql/v4/queries/uploads/insert_upload.sql")
     upload_row = await conn.fetchrow(
         sql_insert_upload,
         file_path,
@@ -200,7 +200,7 @@ async def create_dynamic_document(
     upload_id = upload_row["id"]
 
     # Link document to upload (regular upload, not template upload)
-    sql_link_upload = load_sql("app/sql/v4/documents/insert_document_upload.sql")
+    sql_link_upload = load_sql("app/sql/v4/queries/documents/insert_document_upload.sql")
     await conn.execute(
         sql_link_upload,
         str(child_document_id),
@@ -209,7 +209,7 @@ async def create_dynamic_document(
     )
 
     # Link parent→child in document_tree
-    sql_link_tree = load_sql("app/sql/v4/documents/insert_document_tree.sql")
+    sql_link_tree = load_sql("app/sql/v4/queries/documents/insert_document_tree.sql")
     await conn.execute(
         sql_link_tree,
         str(parent_document_id),

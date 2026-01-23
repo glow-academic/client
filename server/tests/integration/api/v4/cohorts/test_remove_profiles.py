@@ -25,7 +25,7 @@ async def test_remove_profiles_from_cohort(
     # Create a cohort using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql",
         params=CreateTestCohortSqlParams(
             title="Test Cohort",
             description="Test",
@@ -39,7 +39,7 @@ async def test_remove_profiles_from_cohort(
     # Get or create test profile using SQL file
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
         params=GetOrCreateTestProfileSqlParams(
             email="redacted@purdue.edu",
             role="guest",
@@ -57,7 +57,7 @@ async def test_remove_profiles_from_cohort(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_cohort_profile_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_cohort_profile_link_v4_complete.sql",
         params=CreateCohortProfileLinkV4SqlParams(
             input_cohort_id=cohort_id,
             input_profile_id=profile_id,

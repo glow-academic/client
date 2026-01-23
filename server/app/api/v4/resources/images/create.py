@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/resources/images_complete.sql"
+SQL_PATH = "app/sql/v4/queries/resources/images_complete.sql"
 
 
 router = APIRouter()

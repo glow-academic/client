@@ -21,7 +21,7 @@ class TestProfileExists:
         # Arrange
         result = await execute_sql_typed(
             conn=db,
-            sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+            sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
             params=CreateTestProfileSqlParams(
                 profile_first_name="Test",
                 profile_last_name="User",

@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/rubrics/Rubric.tsx`, `client/components/rubrics/Rubrics.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/rubrics_complete.sql` (`api_create_rubrics_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/rubrics_complete.sql` (`api_create_rubrics_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `rubric` records are referenced by `rubric_id` (or `rubric_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

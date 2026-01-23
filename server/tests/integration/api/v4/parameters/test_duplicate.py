@@ -32,7 +32,7 @@ async def test_duplicate_parameter(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql",
         params=None,
     )
     typed_dept = GetCsDeptIdSqlRow.model_validate(dept_result.model_dump())
@@ -42,7 +42,7 @@ async def test_duplicate_parameter(
     # Create an original parameter using SQL file
     original_parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql",
         params=CreateTestParameterSqlParams(
             parameter_name="Original Parameter",
             parameter_description="Original Description",
@@ -61,7 +61,7 @@ async def test_duplicate_parameter(
     # Create parameter items with department links using SQL files
     item1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql",
         params=CreateTestParameterItemSqlParams(
             input_parameter_id=original_parameter_id,
             item_name="Item 1",
@@ -77,7 +77,7 @@ async def test_duplicate_parameter(
 
     item2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql",
         params=CreateTestParameterItemSqlParams(
             input_parameter_id=original_parameter_id,
             item_name="Item 2",
@@ -94,7 +94,7 @@ async def test_duplicate_parameter(
     # Link departments to items using SQL files
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_parameter_item_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_parameter_item_department_link_v4_complete.sql",
         params=CreateParameterItemDepartmentLinkSqlParams(
             parameter_item_id=item1_id, department_id=dept_id
         ),
@@ -102,7 +102,7 @@ async def test_duplicate_parameter(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_parameter_item_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_parameter_item_department_link_v4_complete.sql",
         params=CreateParameterItemDepartmentLinkSqlParams(
             parameter_item_id=item2_id, department_id=dept_id
         ),
@@ -127,7 +127,7 @@ async def test_duplicate_parameter(
     # Verify duplicated parameter was created using SQL file
     duplicated_parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=duplicated_parameter_id),
     )
     typed_duplicated_parameter = GetParameterByIdSqlRow.model_validate(
@@ -143,7 +143,7 @@ async def test_duplicate_parameter(
     # Verify items were duplicated using SQL file
     duplicated_items_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql",
         params=GetParameterItemsSqlParams(parameter_id=duplicated_parameter_id),
     )
     typed_duplicated_items = GetParameterItemsSqlRow.model_validate(
@@ -157,7 +157,7 @@ async def test_duplicate_parameter(
     dup_item1_id = typed_duplicated_items[0].parameter_item_id
     dup_dept_links1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
         params=GetParameterItemDepartmentLinksSqlParams(parameter_item_id=dup_item1_id),
     )
     typed_dup_dept_links1 = GetParameterItemDepartmentLinksSqlRow.model_validate(
@@ -169,7 +169,7 @@ async def test_duplicate_parameter(
     dup_item2_id = typed_duplicated_items[1].parameter_item_id
     dup_dept_links2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
         params=GetParameterItemDepartmentLinksSqlParams(parameter_item_id=dup_item2_id),
     )
     typed_dup_dept_links2 = GetParameterItemDepartmentLinksSqlRow.model_validate(
@@ -188,7 +188,7 @@ async def test_duplicate_parameter_without_department_links(
     # Create an original parameter without department links using SQL file
     original_parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql",
         params=CreateTestParameterSqlParams(
             parameter_name="No Dept Parameter",
             parameter_description="Test Description",
@@ -207,7 +207,7 @@ async def test_duplicate_parameter_without_department_links(
     # Create parameter items without department links using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql",
         params=CreateTestParameterItemSqlParams(
             input_parameter_id=original_parameter_id,
             item_name="Item 1",
@@ -231,7 +231,7 @@ async def test_duplicate_parameter_without_department_links(
     # Verify items were duplicated using SQL file
     duplicated_items_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql",
         params=GetParameterItemsSqlParams(parameter_id=duplicated_parameter_id),
     )
     typed_duplicated_items = GetParameterItemsSqlRow.model_validate(
@@ -243,7 +243,7 @@ async def test_duplicate_parameter_without_department_links(
     dup_item_id = typed_duplicated_items[0].parameter_item_id
     dup_dept_links_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
         params=GetParameterItemDepartmentLinksSqlParams(parameter_item_id=dup_item_id),
     )
     typed_dup_dept_links = GetParameterItemDepartmentLinksSqlRow.model_validate(

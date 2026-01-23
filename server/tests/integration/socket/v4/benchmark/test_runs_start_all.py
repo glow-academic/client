@@ -120,7 +120,7 @@ async def test_benchmark_runs_start_all_with_groups(
     )
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_update_eval_use_groups_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_update_eval_use_groups_v4_complete.sql",
         params=update_params,
     )
 

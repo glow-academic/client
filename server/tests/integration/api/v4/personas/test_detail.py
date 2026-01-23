@@ -22,7 +22,7 @@ async def test_get_persona_detail(
     # Create a persona using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql",
         params=CreateTestPersonaSqlParams(
             persona_name="Test Persona",
             description="Test Description",

@@ -24,7 +24,7 @@ async def test_bulk_delete_documents(
     # Create documents using SQL files
     doc1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 1",
             document_type="homework",
@@ -37,7 +37,7 @@ async def test_bulk_delete_documents(
 
     doc2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 2",
             document_type="project",
@@ -65,7 +65,7 @@ async def test_bulk_delete_documents(
     # Verify documents are deleted using SQL files
     exists1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_exists_v4_complete.sql",
         params=GetDocumentExistsSqlParams(document_id=doc1_id),
     )
     typed_exists1 = GetDocumentExistsSqlRow.model_validate(exists1_result.model_dump())
@@ -73,7 +73,7 @@ async def test_bulk_delete_documents(
 
     exists2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_get_document_exists_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_get_document_exists_v4_complete.sql",
         params=GetDocumentExistsSqlParams(document_id=doc2_id),
     )
     typed_exists2 = GetDocumentExistsSqlRow.model_validate(exists2_result.model_dump())

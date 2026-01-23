@@ -22,7 +22,7 @@ async def test_get_cohort_detail(
     # Create a cohort using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql",
         params=CreateTestCohortSqlParams(
             title="Test Cohort",
             description="Test Description",

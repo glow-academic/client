@@ -25,7 +25,7 @@ async def test_list_rubrics(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -90,7 +90,7 @@ async def test_list_rubrics_permissions_superadmin(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -123,7 +123,7 @@ async def test_list_rubrics_can_edit_with_active_simulation(
     # Create a rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Test Rubric",
             rubric_description="Test",
@@ -139,7 +139,7 @@ async def test_list_rubrics_can_edit_with_active_simulation(
     # Create an active simulation linked to this rubric using SQL file
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricSqlParams(
             input_rubric_id=rubric_id,
             simulation_name="Test Sim",
@@ -155,7 +155,7 @@ async def test_list_rubrics_can_edit_with_active_simulation(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -188,7 +188,7 @@ async def test_list_rubrics_can_delete_with_simulation_links(
     # Create a rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Test Rubric",
             rubric_description="Test",
@@ -204,7 +204,7 @@ async def test_list_rubrics_can_delete_with_simulation_links(
     # Create an inactive simulation linked to this rubric using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricSqlParams(
             input_rubric_id=rubric_id,
             simulation_name="Test Sim",
@@ -216,7 +216,7 @@ async def test_list_rubrics_can_delete_with_simulation_links(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -249,7 +249,7 @@ async def test_list_rubrics_can_delete_allowed(
     # Create an unlinked rubric (no simulation links) using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Deletable Rubric",
             rubric_description="Test",
@@ -265,7 +265,7 @@ async def test_list_rubrics_can_delete_allowed(
     # Get a department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())

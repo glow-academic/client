@@ -80,7 +80,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                 GetTestDetailsV4SqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/get_test_details_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/get_test_details_v4_complete.sql",
                     params=test_details_params,
                 ),
             )
@@ -103,7 +103,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/mark_test_complete_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/mark_test_complete_v4_complete.sql",
                     params=mark_params,
                 )
             # Emit stop signal

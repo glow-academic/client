@@ -17,7 +17,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-SQL_PATH = "app/sql/v4/resources/update_templates_complete.sql"
+SQL_PATH = "app/sql/v4/queries/resources/update_templates_complete.sql"
 
 router = APIRouter()
 

@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/staff/Profile.tsx`, `client/components/staff/Profiles.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/profiles_complete.sql` (`api_create_profiles_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/profiles_complete.sql` (`api_create_profiles_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `profile` records are referenced by `profile_id` (or `profile_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

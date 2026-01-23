@@ -21,8 +21,8 @@ from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-OVERVIEW_SQL_PATH = "app/sql/v4/reports/get_reports_overview_complete.sql"
-HISTORY_SQL_PATH = "app/sql/v4/reports/get_reports_history_complete.sql"
+OVERVIEW_SQL_PATH = "app/sql/v4/queries/reports/get_reports_overview_complete.sql"
+HISTORY_SQL_PATH = "app/sql/v4/queries/reports/get_reports_history_complete.sql"
 
 router = APIRouter()
 

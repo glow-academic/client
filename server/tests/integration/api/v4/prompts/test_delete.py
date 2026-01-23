@@ -40,7 +40,7 @@ async def test_delete_agent_prompt_default(
     # Create an agent using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     from tests.sql.types import GetFirstModelSqlRow
@@ -50,7 +50,7 @@ async def test_delete_agent_prompt_default(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",
@@ -66,7 +66,7 @@ async def test_delete_agent_prompt_default(
     # Create two prompts using SQL files
     prompt1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Prompt 1"),
     )
     typed_prompt1 = CreateTestPromptSqlRow.model_validate(prompt1_result.model_dump())
@@ -75,7 +75,7 @@ async def test_delete_agent_prompt_default(
 
     prompt2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Prompt 2"),
     )
     typed_prompt2 = CreateTestPromptSqlRow.model_validate(prompt2_result.model_dump())
@@ -85,14 +85,14 @@ async def test_delete_agent_prompt_default(
     # Link first prompt as active using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_v4_complete.sql",
         params=CreateAgentPromptLinkSqlParams(agent_id=agent_id, prompt_id=prompt1_id),
     )
 
     # Link second prompt as inactive using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_inactive_v4_complete.sql",
         params=CreateAgentPromptLinkInactiveSqlParams(
             agent_id=agent_id, prompt_id=prompt2_id
         ),
@@ -118,7 +118,7 @@ async def test_delete_agent_prompt_default(
     # Verify prompt link was deactivated using SQL file
     link_status_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_status_v4_complete.sql",
         params=GetAgentPromptLinkStatusSqlParams(
             agent_id=agent_id, prompt_id=prompt1_id
         ),
@@ -138,7 +138,7 @@ async def test_delete_agent_prompt_department_specific(
     # Create an agent using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     from tests.sql.types import GetFirstModelSqlRow
@@ -148,7 +148,7 @@ async def test_delete_agent_prompt_department_specific(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",
@@ -164,7 +164,7 @@ async def test_delete_agent_prompt_department_specific(
     # Create a prompt using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Dept Prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -174,7 +174,7 @@ async def test_delete_agent_prompt_department_specific(
     # Get a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -184,7 +184,7 @@ async def test_delete_agent_prompt_department_specific(
     # Create department-specific prompt link using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_department_prompt_link_v4_complete.sql",
         params=CreateAgentDepartmentPromptLinkSqlParams(
             agent_id=agent_id, department_id=dept_id, prompt_id=prompt_id
         ),
@@ -208,7 +208,7 @@ async def test_delete_agent_prompt_department_specific(
     # Verify department-specific prompt link was deactivated using SQL file
     dept_link_status_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_prompt_link_status_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_department_prompt_link_status_v4_complete.sql",
         params=GetAgentDepartmentPromptLinkStatusSqlParams(
             agent_id=agent_id, department_id=dept_id, prompt_id=prompt_id
         ),
@@ -228,7 +228,7 @@ async def test_delete_agent_prompt_last_default(
     # Create an agent using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     from tests.sql.types import GetFirstModelSqlRow
@@ -238,7 +238,7 @@ async def test_delete_agent_prompt_last_default(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",
@@ -254,7 +254,7 @@ async def test_delete_agent_prompt_last_default(
     # Create a prompt using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Only Prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -264,7 +264,7 @@ async def test_delete_agent_prompt_last_default(
     # Link prompt using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_v4_complete.sql",
         params=CreateAgentPromptLinkSqlParams(agent_id=agent_id, prompt_id=prompt_id),
     )
 
@@ -286,7 +286,7 @@ async def test_delete_agent_prompt_last_default(
     # Verify prompt was deactivated using SQL file
     link_status_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_status_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_status_v4_complete.sql",
         params=GetAgentPromptLinkStatusSqlParams(
             agent_id=agent_id, prompt_id=prompt_id
         ),
@@ -306,7 +306,7 @@ async def test_delete_persona_prompt_default(
     # Create a persona using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql",
         params=CreateTestPersonaSqlParams(
             persona_name="Test Persona",
             description="Description",
@@ -322,7 +322,7 @@ async def test_delete_persona_prompt_default(
     # Create a prompt and link it as default using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Test prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -332,7 +332,7 @@ async def test_delete_persona_prompt_default(
     # Link prompt to persona using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_persona_prompt_link_v4_complete.sql",
         params=CreatePersonaPromptLinkSqlParams(
             persona_id=persona_id, prompt_id=prompt_id
         ),
@@ -358,7 +358,7 @@ async def test_delete_persona_prompt_default(
     # Verify prompt link was deactivated using SQL file
     link_status_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_get_persona_prompt_link_status_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_get_persona_prompt_link_status_v4_complete.sql",
         params=GetPersonaPromptLinkStatusSqlParams(
             persona_id=persona_id, prompt_id=prompt_id
         ),
@@ -378,7 +378,7 @@ async def test_delete_persona_prompt_department(
     # Create a persona using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql",
         params=CreateTestPersonaSqlParams(
             persona_name="Test Persona",
             description="Description",
@@ -394,7 +394,7 @@ async def test_delete_persona_prompt_department(
     # Create a prompt using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Dept prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -404,7 +404,7 @@ async def test_delete_persona_prompt_department(
     # Get department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -414,7 +414,7 @@ async def test_delete_persona_prompt_department(
     # Link prompt as department-specific using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_persona_department_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_persona_department_prompt_link_v4_complete.sql",
         params=CreatePersonaDepartmentPromptLinkSqlParams(
             persona_id=persona_id, department_id=dept_id, prompt_id=prompt_id
         ),
@@ -439,7 +439,7 @@ async def test_delete_persona_prompt_department(
     # Verify department prompt link was deactivated using SQL file
     dept_link_status_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_get_persona_department_prompt_link_status_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_get_persona_department_prompt_link_status_v4_complete.sql",
         params=GetPersonaDepartmentPromptLinkStatusSqlParams(
             persona_id=persona_id, department_id=dept_id, prompt_id=prompt_id
         ),

@@ -25,7 +25,7 @@ async def test_delete_rubric(
     # Create a rubric without any usage using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Deletable Rubric",
             rubric_description="Test",
@@ -53,7 +53,7 @@ async def test_delete_rubric(
     # Verify rubric was deleted using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
         params=GetRubricByIdSqlParams(rubric_id=rubric_id),
     )
     # Should return empty result
@@ -69,7 +69,7 @@ async def test_delete_rubric_in_use(
     # Create a rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_rubric_v4_complete.sql",
         params=CreateTestRubricSqlParams(
             rubric_name="Used Rubric",
             rubric_description="Test",
@@ -85,7 +85,7 @@ async def test_delete_rubric_in_use(
     # Link rubric to a simulation (this makes it "in use") using SQL file
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricSqlParams(
             input_rubric_id=rubric_id,
             simulation_name="Test Sim",
@@ -108,7 +108,7 @@ async def test_delete_rubric_in_use(
     # Verify rubric was not deleted using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/rubrics/test_get_rubric_by_id_v4_complete.sql",
         params=GetRubricByIdSqlParams(rubric_id=rubric_id),
     )
     typed_rubric = GetRubricByIdSqlRow.model_validate(rubric_result.model_dump())

@@ -85,7 +85,7 @@ server/tests/sql/v4/integration/
 ### Pattern 1: Simple Test Setup Function
 
 ```sql
--- tests/sql/v4/integration/conftest/test_get_superadmin_alias_v4_complete.sql
+-- tests/sql/v4/integration/queries/conftest/test_get_superadmin_alias_v4_complete.sql
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_get_superadmin_alias_v4();
 
@@ -115,7 +115,7 @@ from app.utils.sql_helper import execute_sql_typed
 async def test_example(db: asyncpg.Connection) -> None:
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/conftest/test_get_superadmin_alias_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/conftest/test_get_superadmin_alias_v4_complete.sql",
         params=None,  # No parameters
     )
     profile_id = result.profile_id
@@ -125,7 +125,7 @@ async def test_example(db: asyncpg.Connection) -> None:
 ### Pattern 2: Test Setup Function with Parameters
 
 ```sql
--- tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql
+-- tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql
 DROP FUNCTION IF EXISTS test_create_test_agent_v4(uuid, text, text, uuid);
 
 CREATE TYPE types.test_create_test_agent_v4_result AS (
@@ -168,7 +168,7 @@ async def test_create_agent(db: asyncpg.Connection) -> None:
     # Get model_id first (using another test function)
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/conftest/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/conftest/test_get_first_model_v4_complete.sql",
         params=None,
     )
     
@@ -181,7 +181,7 @@ async def test_create_agent(db: asyncpg.Connection) -> None:
     )
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=params,
     )
     assert result.agent_id is not None
@@ -191,7 +191,7 @@ async def test_create_agent(db: asyncpg.Connection) -> None:
 ### Pattern 3: Complex Test Setup with Composite Types
 
 ```sql
--- tests/sql/v4/integration/socket/simulations/test_create_simulation_attempt_v4_complete.sql
+-- tests/sql/v4/integration/queries/socket/simulations/test_create_simulation_attempt_v4_complete.sql
 DROP FUNCTION IF EXISTS test_create_simulation_attempt_v4(uuid, uuid, uuid);
 
 CREATE TYPE types.test_create_simulation_attempt_v4_result AS (
@@ -268,12 +268,12 @@ async def test_simulation_setup(db: asyncpg.Connection) -> None:
     # Get test profile and department (using helper functions)
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
         params=None,
     )
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_or_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_or_create_test_department_v4_complete.sql",
         params=None,
     )
     
@@ -285,7 +285,7 @@ async def test_simulation_setup(db: asyncpg.Connection) -> None:
     )
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/simulations/test_create_simulation_attempt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/simulations/test_create_simulation_attempt_v4_complete.sql",
         params=params,
     )
     assert result.attempt_id is not None
@@ -317,7 +317,7 @@ async def test_create_agent(db: asyncpg.Connection) -> None:
     )
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=params,
     )
     assert result.agent_id is not None
@@ -339,7 +339,7 @@ async def test_get_agent(db: asyncpg.Connection) -> None:
     params = TestGetTestAgentV4SqlParams(agent_id=agent_id)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_test_agent_v4_complete.sql",
         params=params,
     )
     assert result.name == "Test Agent"
@@ -362,11 +362,11 @@ from app.sql.types import TestCreateTestAgentV4SqlRow
 
 ```sql
 -- ❌ BAD: Raw SQL query
--- tests/sql/v4/integration/api/agents/test_get_agent.sql
+-- tests/sql/v4/integration/queries/api/agents/test_get_agent.sql
 SELECT id, name FROM agents WHERE id = $1;
 
 -- ✅ GOOD: PostgreSQL function
--- tests/sql/v4/integration/api/agents/test_get_test_agent_v4_complete.sql
+-- tests/sql/v4/integration/queries/api/agents/test_get_test_agent_v4_complete.sql
 DROP FUNCTION IF EXISTS test_get_test_agent_v4(uuid);
 CREATE OR REPLACE FUNCTION test_get_test_agent_v4(agent_id uuid)
 RETURNS TABLE (id uuid, name text)
@@ -381,10 +381,10 @@ $$;
 
 ### Common Helpers Pattern
 
-Create reusable helper functions in `tests/sql/v4/integration/helpers/`:
+Create reusable helper functions in `tests/sql/v4/integration/queries/helpers/`:
 
 ```sql
--- tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql
+-- tests/sql/v4/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql
 DROP FUNCTION IF EXISTS test_get_or_create_test_profile_v4(text);
 
 CREATE OR REPLACE FUNCTION test_get_or_create_test_profile_v4(
@@ -428,7 +428,7 @@ async def superadmin_profile(db: asyncpg.Connection) -> TestGetSuperadminAliasV4
     """Get superadmin profile using typed SQL function."""
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/conftest/test_get_superadmin_alias_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/conftest/test_get_superadmin_alias_v4_complete.sql",
         params=None,
     )
     return result

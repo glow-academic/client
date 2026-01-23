@@ -26,7 +26,7 @@ async def test_update_department(
     # Create a department first using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
         params=CreateTestDepartmentSqlParams(
             title="Original Title", description="Original Description"
         ),
@@ -55,7 +55,7 @@ async def test_update_department(
     # Verify department was updated using SQL file
     updated_dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=dept_id),
     )
     typed_updated_dept = GetDepartmentByIdSqlRow.model_validate(
@@ -89,7 +89,7 @@ async def test_update_department_not_found(
     # But let's verify the department wasn't created using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=UUID(fake_dept_id)),
     )
     typed_dept = GetDepartmentByIdSqlRow.model_validate(dept_result.model_dump())

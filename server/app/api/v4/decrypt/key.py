@@ -15,7 +15,7 @@ from app.utils.sql_helper import execute_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/keys/get_key_for_decrypt_complete.sql"
+SQL_PATH = "app/sql/v4/queries/keys/get_key_for_decrypt_complete.sql"
 
 
 router = APIRouter()

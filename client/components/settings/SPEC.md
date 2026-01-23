@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/settings/Setting.tsx`, `client/components/settings/NewSetting.tsx`, `client/components/settings/Settings.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/settings_complete.sql` (`api_create_settings_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/settings_complete.sql` (`api_create_settings_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `setting` records are referenced by `setting_id` (or `setting_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

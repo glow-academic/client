@@ -20,7 +20,7 @@ from fastapi import APIRouter  # , Depends, HTTPException, Request, Response
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 # TODO: Create SQL file for setting deletion
-# SQL_PATH = "app/sql/v4/settings/delete_setting_complete.sql"
+# SQL_PATH = "app/sql/v4/queries/settings/delete_setting_complete.sql"
 
 router = APIRouter()
 

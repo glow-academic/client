@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/cohorts/Cohort.tsx`, `client/components/cohorts/Cohorts.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/cohorts_complete.sql` (`api_create_cohorts_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/cohorts_complete.sql` (`api_create_cohorts_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `cohort` records are referenced by `cohort_id` (or `cohort_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

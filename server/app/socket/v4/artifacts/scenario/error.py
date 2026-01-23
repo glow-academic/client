@@ -17,7 +17,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql"
+SQL_PATH = "app/sql/v4/queries/scenarios/validate_scenario_resource_error_complete.sql"
 
 
 @internal_sio.on("resource_error")  # type: ignore

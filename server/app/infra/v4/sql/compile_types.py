@@ -42,9 +42,9 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     """Extract route name from SQL file path.
 
     Handles paths of arbitrary depth:
-        f"app/sql/{VERSION}/agents/create_agent_complete.sql" -> "create_agent"
-        f"app/sql/{VERSION}/documents/tools/html/document_tool_html_complete_complete.sql" -> "document_tool_html_complete"
-        f"tests/sql/{VERSION}/integration/infra/activity/insert_test_profile.sql" -> "insert_test_profile"
+        f"app/sql/{VERSION}/queries/agents/create_agent_complete.sql" -> "create_agent"
+        f"app/sql/{VERSION}/queries/documents/tools/html/document_tool_html_complete_complete.sql" -> "document_tool_html_complete"
+        f"tests/sql/{VERSION}/integration/queries/infra/activity/insert_test_profile.sql" -> "insert_test_profile"
 
     Args:
         sql_path: SQL file path relative to server root
@@ -52,12 +52,12 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     Returns:
         Route name or None if pattern doesn't match
     """
-    app_sql_prefix = f"app/sql/{VERSION}/"
-    tests_sql_prefix = f"tests/sql/{VERSION}/integration/"
+    app_sql_prefix = f"app/sql/{VERSION}/queries/"
+    tests_sql_prefix = f"tests/sql/{VERSION}/integration/queries/"
 
-    # Pattern: app/sql/{VERSION}/[resource]/[operation]_complete.sql
-    # Pattern: app/sql/{VERSION}/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
-    # Pattern: app/sql/{VERSION}/[any]/[path]/[operation]_complete.sql (arbitrary depth)
+    # Pattern: app/sql/{VERSION}/queries/[resource]/[operation]_complete.sql
+    # Pattern: app/sql/{VERSION}/queries/infrastructure/infrastructure_[category]_[operation]_complete.sql -> infra_[category]_[operation]
+    # Pattern: app/sql/{VERSION}/queries/[any]/[path]/[operation]_complete.sql (arbitrary depth)
     if sql_path.startswith(app_sql_prefix):
         relative = sql_path[len(app_sql_prefix) :]
         parts = relative.split("/")
@@ -84,7 +84,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
 
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/{VERSION}/integration/infra/[resource]/[operation].sql
+    # Pattern: tests/sql/{VERSION}/integration/queries/infra/[resource]/[operation].sql
     if sql_path.startswith(f"{tests_sql_prefix}infra/"):
         relative = sql_path[len(f"{tests_sql_prefix}infra/") :]
         parts = relative.split("/")
@@ -96,7 +96,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         operation = filename[: -len(".sql")]
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/{VERSION}/integration/socket/[operation].sql (allow nested folders)
+    # Pattern: tests/sql/{VERSION}/integration/queries/socket/[operation].sql (allow nested folders)
     if sql_path.startswith(f"{tests_sql_prefix}socket/"):
         relative = sql_path[len(f"{tests_sql_prefix}socket/") :]
         if not relative.endswith(".sql"):
@@ -104,7 +104,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         operation = Path(relative).stem
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/{VERSION}/integration/api/[resource]/test_[operation]_v4_complete.sql
+    # Pattern: tests/sql/{VERSION}/integration/queries/api/[resource]/test_[operation]_v4_complete.sql
     if sql_path.startswith(f"{tests_sql_prefix}api/"):
         relative = sql_path[len(f"{tests_sql_prefix}api/") :]
         if not relative.endswith("_complete.sql"):
@@ -122,7 +122,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
             operation = operation[: -len(f"_{VERSION}")]
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/{VERSION}/integration/helpers/test_[operation]_v4_complete.sql
+    # Pattern: tests/sql/{VERSION}/integration/queries/helpers/test_[operation]_v4_complete.sql
     if sql_path.startswith(f"{tests_sql_prefix}helpers/"):
         relative = sql_path[len(f"{tests_sql_prefix}helpers/") :]
         if not relative.endswith("_complete.sql"):
@@ -135,7 +135,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
             operation = operation[: -len(f"_{VERSION}")]
         return operation.replace("-", "_")
 
-    # Pattern: tests/sql/{VERSION}/integration/conftest/test_[operation]_v4_complete.sql
+    # Pattern: tests/sql/{VERSION}/integration/queries/conftest/test_[operation]_v4_complete.sql
     if sql_path.startswith(f"{tests_sql_prefix}conftest/"):
         relative = sql_path[len(f"{tests_sql_prefix}conftest/") :]
         if not relative.endswith("_complete.sql"):
@@ -211,39 +211,36 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
     """
     sql_path = str(sql_file.relative_to(server_root))
     
-    # Analytics view creation file must be first
-    if (
-        sql_path
-        == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
-    ):
+    # All files in views/ directory must be first (DDL definitions)
+    if sql_path.startswith(f"app/sql/{VERSION}/views/"):
         return (0, sql_path)
-    
+
     # Other analytics routes come next
-    if sql_path.startswith(f"app/sql/{VERSION}/analytics/"):
+    if sql_path.startswith(f"app/sql/{VERSION}/queries/analytics/"):
         return (1, sql_path)
-    
+
     # Files that depend on analytics view must come after analytics
     analytics_dependent_paths = [
-        f"app/sql/{VERSION}/dashboard/get_dashboard_bundle_complete.sql",
-        f"app/sql/{VERSION}/documents/get_certificate_data_complete.sql",
-        f"app/sql/{VERSION}/home/get_home_overview_complete.sql",
-        f"app/sql/{VERSION}/leaderboard/get_leaderboard_bundle_complete.sql",
-        f"app/sql/{VERSION}/practice/get_practice_overview_complete.sql",
-        f"app/sql/{VERSION}/reports/get_per_simulation_metrics_complete.sql",
-        f"app/sql/{VERSION}/reports/get_reports_bundle_complete.sql",
-        f"app/sql/{VERSION}/reports/get_reports_overview_complete.sql",
+        f"app/sql/{VERSION}/queries/dashboard/get_dashboard_bundle_complete.sql",
+        f"app/sql/{VERSION}/queries/documents/get_certificate_data_complete.sql",
+        f"app/sql/{VERSION}/queries/home/get_home_overview_complete.sql",
+        f"app/sql/{VERSION}/queries/leaderboard/get_leaderboard_bundle_complete.sql",
+        f"app/sql/{VERSION}/queries/practice/get_practice_overview_complete.sql",
+        f"app/sql/{VERSION}/queries/reports/get_per_simulation_metrics_complete.sql",
+        f"app/sql/{VERSION}/queries/reports/get_reports_bundle_complete.sql",
+        f"app/sql/{VERSION}/queries/reports/get_reports_overview_complete.sql",
     ]
     if sql_path in analytics_dependent_paths:
         return (2, sql_path)
-    
+
     # Settings detail must come before active settings (type dependency)
-    if sql_path == f"app/sql/{VERSION}/settings/get_settings_detail_complete.sql":
+    if sql_path == f"app/sql/{VERSION}/queries/settings/get_settings_detail_complete.sql":
         return (
             3,
             "a_" + sql_path,
         )  # 'a_' prefix ensures it sorts before 'get_active_'
-    
-    if sql_path == f"app/sql/{VERSION}/settings/get_active_settings_complete.sql":
+
+    if sql_path == f"app/sql/{VERSION}/queries/settings/get_active_settings_complete.sql":
         return (3, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
     
     # All other routes sorted alphabetically
@@ -270,15 +267,12 @@ async def execute_sql_file(
         # Check if it contains function definitions
         has_function = _detect_function_in_sql(sql_text)
 
-        # Always execute analytics view creation file (DDL only, no function)
-        # This must be executed before other files that depend on the analytics view
-        is_analytics_view = (
-            sql_path
-            == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
-        )
+        # Always execute files in the views/ directory (DDL only, no function)
+        # Views must be executed before other files that depend on them
+        is_view_file = sql_path.startswith(f"app/sql/{VERSION}/views/")
 
-        # Execute if it contains function definitions OR is the analytics view creation file
-        if not has_function and not is_analytics_view:
+        # Execute if it contains function definitions OR is a view file
+        if not has_function and not is_view_file:
             return (
                 True,
                 f"Skipping {sql_path} (no function definition)",
@@ -796,7 +790,7 @@ def write_consolidated_types_file(
     lines.append("    ")
     lines.append("    Args:")
     lines.append(
-        f'        sql_path: SQL file path (e.g., "app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
+        f'        sql_path: SQL file path (e.g., "app/sql/{VERSION}/queries/agents/get_agent_new_complete.sql")'
     )
     lines.append("    ")
     lines.append("    Returns:")
@@ -826,7 +820,7 @@ def write_consolidated_types_file(
     lines.append("    ")
     lines.append("    Args:")
     lines.append(
-        f'        sql_path: SQL file path (e.g., "app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
+        f'        sql_path: SQL file path (e.g., "app/sql/{VERSION}/queries/agents/get_agent_new_complete.sql")'
     )
     lines.append("    ")
     lines.append("    Returns:")
@@ -893,7 +887,7 @@ def write_consolidated_types_file(
     lines.append("    Args:")
     if registry_type == "app":
         lines.append(
-            f'        file_path: Relative path from server root (e.g., "app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
+            f'        file_path: Relative path from server root (e.g., "app/sql/{VERSION}/queries/agents/get_agent_new_complete.sql")'
         )
     else:
         lines.append(
@@ -907,7 +901,7 @@ def write_consolidated_types_file(
     lines.append("        ```python")
     if registry_type == "app":
         lines.append(
-            f'        sql_query = load_sql_query("app/sql/{VERSION}/agents/get_agent_new_complete.sql")'
+            f'        sql_query = load_sql_query("app/sql/{VERSION}/queries/agents/get_agent_new_complete.sql")'
         )
     else:
         lines.append(
@@ -956,14 +950,14 @@ async def generate_types_for_sql_file(
 
         # Skip introspection for DDL-only files (no function definitions)
         # These files are executed but don't need type generation
-        # Exception: analytics view is legitimate DDL and should not show warning
+        # Files in views/ are legitimate DDL and should not show warning
         sql_text = load_sql(sql_path)
         if not _detect_function_in_sql(sql_text):
-            # Analytics view is legitimate DDL - execute it but don't show warning
-            if "analytics/create_analytics_view_complete.sql" in sql_path:
+            # View files are legitimate DDL - execute them but don't show warning
+            if sql_path.startswith(f"app/sql/{VERSION}/views/"):
                 return (
                     True,
-                    f"Executed {sql_path} (materialized view - DDL only)",
+                    f"Executed {sql_path} (view DDL only)",
                     None,
                 )
             return (

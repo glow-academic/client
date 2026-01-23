@@ -61,7 +61,7 @@ async def test_get_profile_context_guest_profile_id(
     # Create a default guest profile using SQL file
     guest_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
         params=CreateTestProfileSqlParams(
             profile_first_name="Guest",
             profile_last_name="User",
@@ -76,7 +76,7 @@ async def test_get_profile_context_guest_profile_id(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql",
         params=CreateProfileEmailSqlParams(
             input_profile_id=guest_id,
             email_address="redacted@purdue.edu",
@@ -110,7 +110,7 @@ async def test_get_profile_context_emulation_authorized(
     # Create a target profile (member role - superadmin can emulate) using SQL file
     target_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
         params=CreateTestProfileSqlParams(
             profile_first_name="Target",
             profile_last_name="User",
@@ -125,7 +125,7 @@ async def test_get_profile_context_emulation_authorized(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql",
         params=CreateProfileEmailSqlParams(
             input_profile_id=target_id,
             email_address="redacted@purdue.edu",
@@ -159,7 +159,7 @@ async def test_get_profile_context_emulation_unauthorized(
     # Create a member profile (cannot emulate) using SQL file
     member_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
         params=CreateTestProfileSqlParams(
             profile_first_name="Member",
             profile_last_name="User",
@@ -174,7 +174,7 @@ async def test_get_profile_context_emulation_unauthorized(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/profile/test_create_profile_email_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/profile/test_create_profile_email_v4_complete.sql",
         params=CreateProfileEmailSqlParams(
             input_profile_id=member_id,
             email_address="redacted@purdue.edu",

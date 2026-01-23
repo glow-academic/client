@@ -23,7 +23,7 @@ async def test_delete_simulation(
     # Get or create rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql",
         params=None,
     )
     typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
@@ -33,7 +33,7 @@ async def test_delete_simulation(
     # Create a simulation without any usage using SQL file
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_create_test_simulation_with_rubric_v4_complete.sql",
         params=CreateTestSimulationWithRubricV4SqlParams(
             rubric_id=rubric_id,
             title="Deletable Simulation",
@@ -65,7 +65,7 @@ async def test_delete_simulation(
 
     deleted_simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_simulation_by_id_v4_complete.sql",
         params=GetSimulationByIdV4SqlParams(input_simulation_id=simulation_id),
     )
     typed_deleted_simulation = GetSimulationByIdV4SqlRow.model_validate(

@@ -37,7 +37,7 @@ from app.sql.types import (
     InfrastructureEvalsMarkTestCompleteSqlParams,
 )
 
-GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/infrastructure/evals/get_rubric_details_v4_complete.sql"
+GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -96,7 +96,7 @@ async def run_eval_single_run(
             InfrastructureEvalsGetEvalRunStatusSqlRow,
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/infrastructure/evals/get_eval_run_status_v4_complete.sql",
+                "app/sql/v4/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql",
                 params=status_params,
             ),
         )
@@ -114,7 +114,7 @@ async def run_eval_single_run(
                 InfrastructureEvalsGetTestByTraceIdSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/infrastructure/evals/get_test_by_trace_id_v4_complete.sql",
+                    "app/sql/v4/queries/infrastructure/evals/get_test_by_trace_id_v4_complete.sql",
                     params=test_params,
                 ),
             )
@@ -135,7 +135,7 @@ async def run_eval_single_run(
             InfrastructureEvalsGetTestStatusSqlRow,
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/infrastructure/evals/get_test_status_v4_complete.sql",
+                "app/sql/v4/queries/infrastructure/evals/get_test_status_v4_complete.sql",
                 params=test_status_params,
             ),
         )
@@ -166,7 +166,7 @@ async def run_eval_single_run(
             )
 
         # 1. Get messages from original run
-        sql_get_messages = load_sql("app/sql/v4/evals/get_run_messages_for_eval.sql")
+        sql_get_messages = load_sql("app/sql/v4/queries/evals/get_run_messages_for_eval.sql")
         messages_row = await conn.fetchrow(sql_get_messages, run_id)
         if not messages_row:
             raise ValueError(f"No messages found for run {run_id}")
@@ -181,7 +181,7 @@ async def run_eval_single_run(
                 raise ValueError("agent_id is required when dynamic is true")
 
             # Get agent being evaluated's context
-            sql_get_agent_context = load_sql("app/sql/v4/evals/get_agent_context.sql")
+            sql_get_agent_context = load_sql("app/sql/v4/queries/evals/get_agent_context.sql")
             agent_context_row = await conn.fetchrow(
                 sql_get_agent_context, agent_id, department_id, profile_id
             )
@@ -206,7 +206,7 @@ async def run_eval_single_run(
                     InfrastructureEvalsGetDepartmentFromRunSqlRow,
                     await execute_sql_typed(
                         conn,
-                        "app/sql/v4/infrastructure/evals/get_department_from_run_v4_complete.sql",
+                        "app/sql/v4/queries/infrastructure/evals/get_department_from_run_v4_complete.sql",
                         params=dept_params,
                     ),
                 )
@@ -215,7 +215,7 @@ async def run_eval_single_run(
 
             # Create new run for agent being evaluated
             sql_create_agent_run = load_sql(
-                "app/sql/v4/model_runs/create_model_run_complete.sql"
+                "app/sql/v4/queries/model_runs/create_model_run_complete.sql"
             )
             agent_run_row = await conn.fetchrow(
                 sql_create_agent_run,
@@ -259,7 +259,7 @@ async def run_eval_single_run(
             agent_run_id_uuid = uuid.UUID(agent_run_id)
             if modified_system_prompt:
                 sql_link_sys_dev = load_sql(
-                    "app/sql/v4/model_runs/link_system_developer_messages_to_run.sql"
+                    "app/sql/v4/queries/model_runs/link_system_developer_messages_to_run.sql"
                 )
                 await conn.fetchrow(
                     sql_link_sys_dev,
@@ -287,7 +287,7 @@ async def run_eval_single_run(
 
             # Link each developer message to the run
             sql_link_dev = load_sql(
-                "app/sql/v4/simulations/link_developer_message_to_run.sql"
+                "app/sql/v4/queries/simulations/link_developer_message_to_run.sql"
             )
             developer_message_ids: list[uuid.UUID] = []
             for content in developer_contents:
@@ -348,7 +348,7 @@ async def run_eval_single_run(
                     # Get system message ID from the run
                     sys_dev_result = await conn.fetchrow(
                         load_sql(
-                            "app/sql/v4/model_runs/link_system_developer_messages_to_run.sql"
+                            "app/sql/v4/queries/model_runs/link_system_developer_messages_to_run.sql"
                         ),
                         str(agent_run_id_uuid),
                         str(uuid.UUID(department_id)) if department_id else None,
@@ -363,7 +363,7 @@ async def run_eval_single_run(
 
                 # Create assistant message with branch
                 sql_create_assistant = load_sql(
-                    "app/sql/v4/messages/create_assistant_message_with_branch.sql"
+                    "app/sql/v4/queries/messages/create_assistant_message_with_branch.sql"
                 )
                 await conn.fetchrow(
                     sql_create_assistant,
@@ -410,7 +410,7 @@ async def run_eval_single_run(
             InfrastructureEvalsGetRubricGradeAgentSqlRow,
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql",
+                "app/sql/v4/queries/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql",
                 params=rga_params,
             ),
         )
@@ -428,7 +428,7 @@ async def run_eval_single_run(
         eval_agent_id = rga_row["eval_agent_id"]
 
         # 4. Get eval_agent context (using eval_id and run_id to query from junction table)
-        sql_get_context = load_sql("app/sql/v4/evals/get_eval_agent_context.sql")
+        sql_get_context = load_sql("app/sql/v4/queries/evals/get_eval_agent_context.sql")
         context_row = await conn.fetchrow(
             sql_get_context, eval_id, run_id, None, department_id, profile_id
         )
@@ -448,7 +448,7 @@ async def run_eval_single_run(
                 InfrastructureEvalsGetDepartmentFromRunSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/infrastructure/evals/get_department_from_run_v4_complete.sql",
+                    "app/sql/v4/queries/infrastructure/evals/get_department_from_run_v4_complete.sql",
                     params=dept_params2,
                 ),
             )
@@ -463,7 +463,7 @@ async def run_eval_single_run(
             test_id = None
 
         # 7. Create run for eval_agent
-        sql_create_run = load_sql("app/sql/v4/model_runs/create_model_run_complete.sql")
+        sql_create_run = load_sql("app/sql/v4/queries/model_runs/create_model_run_complete.sql")
         eval_run_row = await conn.fetchrow(
             sql_create_run,
             department_id,
@@ -492,7 +492,7 @@ async def run_eval_single_run(
                 InfrastructureEvalsCreateTestSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/infrastructure/evals/create_test_v4_complete.sql",
+                    "app/sql/v4/queries/infrastructure/evals/create_test_v4_complete.sql",
                     params=test_params,
                 ),
             )
@@ -508,7 +508,7 @@ async def run_eval_single_run(
             )
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/infrastructure/evals/link_attempt_test_v4_complete.sql",
+                "app/sql/v4/queries/infrastructure/evals/link_attempt_test_v4_complete.sql",
                 params=link_attempt_params,
             )
 
@@ -519,7 +519,7 @@ async def run_eval_single_run(
             )
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/infrastructure/evals/link_test_run_v4_complete.sql",
+                "app/sql/v4/queries/infrastructure/evals/link_test_run_v4_complete.sql",
                 params=link_run_params,
             )
 
@@ -552,7 +552,7 @@ async def run_eval_single_run(
         eval_run_id_uuid = uuid.UUID(eval_run_id)
         if context["system_prompt"]:
             sql_link_sys_dev = load_sql(
-                "app/sql/v4/model_runs/link_system_developer_messages_to_run.sql"
+                "app/sql/v4/queries/model_runs/link_system_developer_messages_to_run.sql"
             )
             await conn.fetchrow(
                 sql_link_sys_dev,
@@ -578,7 +578,7 @@ async def run_eval_single_run(
 
         # Link each developer message to the run
         sql_link_dev = load_sql(
-            "app/sql/v4/simulations/link_developer_message_to_run.sql"
+            "app/sql/v4/queries/simulations/link_developer_message_to_run.sql"
         )
         developer_message_ids_eval: list[uuid.UUID] = []
         for content in developer_contents_eval:
@@ -637,7 +637,7 @@ async def run_eval_single_run(
                 # Get system message ID from the run
                 sys_dev_result = await conn.fetchrow(
                     load_sql(
-                        "app/sql/v4/model_runs/link_system_developer_messages_to_run.sql"
+                        "app/sql/v4/queries/model_runs/link_system_developer_messages_to_run.sql"
                     ),
                     str(eval_run_id_uuid),
                     str(uuid.UUID(department_id)) if department_id else None,
@@ -697,7 +697,7 @@ async def run_eval_single_run(
 
         # Placeholder: Create a grade with default values
         # TODO: Implement actual grading logic using eval_agent's output
-        grade_sql = load_sql("app/sql/v4/evals/create_eval_grade.sql")
+        grade_sql = load_sql("app/sql/v4/queries/evals/create_eval_grade.sql")
         grade_result = await conn.fetchrow(
             grade_sql,
             eval_run_id,  # run_id (the eval_agent's run)
@@ -720,7 +720,7 @@ async def run_eval_single_run(
         )
         await execute_sql_typed(
             conn,
-            "app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql",
+            "app/sql/v4/queries/infrastructure/evals/mark_test_complete_v4_complete.sql",
             params=mark_test_params,
         )
 
@@ -731,7 +731,7 @@ async def run_eval_single_run(
         )
         await execute_sql_typed(
             conn,
-            "app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql",
+            "app/sql/v4/queries/infrastructure/evals/mark_eval_run_complete_v4_complete.sql",
             params=mark_eval_params,
         )
 
@@ -770,7 +770,7 @@ async def run_eval_single_run(
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql",
+                    "app/sql/v4/queries/infrastructure/evals/mark_test_complete_v4_complete.sql",
                     params=error_test_params,
                 )
             except Exception:
@@ -784,7 +784,7 @@ async def run_eval_single_run(
             )
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql",
+                "app/sql/v4/queries/infrastructure/evals/mark_eval_run_complete_v4_complete.sql",
                 params=error_eval_params,
             )
         except Exception:

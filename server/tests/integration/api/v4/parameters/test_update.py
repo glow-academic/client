@@ -29,7 +29,7 @@ async def test_update_parameter(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql",
         params=None,
     )
     typed_dept = GetCsDeptIdSqlRow.model_validate(dept_result.model_dump())
@@ -39,7 +39,7 @@ async def test_update_parameter(
     # Create a parameter first using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_v4_complete.sql",
         params=CreateTestParameterSqlParams(
             parameter_name="Original Parameter",
             parameter_description="Original Description",
@@ -58,7 +58,7 @@ async def test_update_parameter(
     # Create an initial item using SQL file
     item_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_create_test_parameter_item_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_create_test_parameter_item_v4_complete.sql",
         params=CreateTestParameterItemSqlParams(
             input_parameter_id=parameter_id,
             item_name="Original Item",
@@ -108,7 +108,7 @@ async def test_update_parameter(
     # Verify parameter was updated using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
     typed_parameter = GetParameterByIdSqlRow.model_validate(
@@ -125,7 +125,7 @@ async def test_update_parameter(
     # Check if old item still exists
     old_items_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql",
         params=GetParameterItemsSqlParams(parameter_id=parameter_id),
     )
     typed_items = GetParameterItemsSqlRow.model_validate(old_items_result.model_dump())

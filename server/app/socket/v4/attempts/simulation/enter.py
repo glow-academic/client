@@ -89,7 +89,7 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
         async with get_db_connection() as conn:
             # Load and execute SQL query
             sql_query = load_sql(
-                "app/sql/v4/attempts/update_chat_created_at_complete.sql"
+                "app/sql/v4/queries/attempts/update_chat_created_at_complete.sql"
             )
             result = await conn.fetchrow(sql_query, created_at_dt, chat_id)
 

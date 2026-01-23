@@ -85,7 +85,7 @@ async def _member_progress_impl(
 
         async with get_db_connection() as conn:
             # Upsert user message and run via SQL
-            SQL_PATH_UPSERT = "app/sql/v4/member/member_progress_upsert_complete.sql"
+            SQL_PATH_UPSERT = "app/sql/v4/queries/member/member_progress_upsert_complete.sql"
             try:
                 import asyncpg  # type: ignore
 
@@ -147,7 +147,7 @@ async def _member_progress_impl(
 
             # Get created_at for message_sent event
             SQL_PATH_CREATED_AT = (
-                "app/sql/v4/messages/get_message_created_at_complete.sql"
+                "app/sql/v4/queries/messages/get_message_created_at_complete.sql"
             )
             created_at_params = GetMessageCreatedAtSqlParams(
                 message_id=uuid.UUID(message_id)
@@ -210,7 +210,7 @@ async def _member_progress_impl(
                 GetSimulationRunContextSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/simulations/get_simulation_run_context_complete.sql",
+                    "app/sql/v4/queries/simulations/get_simulation_run_context_complete.sql",
                     params=context_params,
                 ),
             )

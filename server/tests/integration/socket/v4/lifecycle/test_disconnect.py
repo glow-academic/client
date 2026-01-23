@@ -39,7 +39,7 @@ async def test_disconnect_with_profile_success(
 
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_get_profile_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_get_profile_by_id_v4_complete.sql",
         params=TestGetProfileByIdV4SqlParams(profile_id=profile_id),
     )
     assert profile_result.active is False

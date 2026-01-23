@@ -16,7 +16,7 @@ from app.sql.types import (
 
 logger = get_logger(__name__)
 
-SQL_PATH = "app/sql/v4/infrastructure/developer_instructions/get_domain_artifact_complete.sql"
+SQL_PATH = "app/sql/v4/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql"
 
 
 async def render_developer_instruction(
@@ -72,7 +72,7 @@ async def render_developer_instruction(
         # But it actually uses agent_role_val to match domains.artifact
         dev_instruction_result = await execute_sql_typed(
             conn,
-            "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+            "app/sql/v4/queries/developer_instructions/get_developer_instruction_complete.sql",
             params=dev_instruction_params,
         )
 
@@ -94,7 +94,7 @@ async def render_developer_instruction(
 
         context_result = await execute_sql_typed(
             conn,
-            "app/sql/v4/developer_instructions/get_developer_instruction_context_complete.sql",
+            "app/sql/v4/queries/developer_instructions/get_developer_instruction_context_complete.sql",
             params=context_params,
         )
 

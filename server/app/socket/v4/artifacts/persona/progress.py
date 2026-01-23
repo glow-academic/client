@@ -17,7 +17,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/personas/validate_persona_resource_progress_complete.sql"
+SQL_PATH = "app/sql/v4/queries/personas/validate_persona_resource_progress_complete.sql"
 
 
 @internal_sio.on("resource_progress")  # type: ignore

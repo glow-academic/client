@@ -80,7 +80,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 GetScenarioByIdSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/scenario/get_scenario_by_id_complete.sql",
+                    "app/sql/v4/queries/scenario/get_scenario_by_id_complete.sql",
                     params=params,
                 ),
             )
@@ -115,7 +115,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 InsertScenarioVariantSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/scenario/insert_scenario_variant_complete.sql",
+                    "app/sql/v4/queries/scenario/insert_scenario_variant_complete.sql",
                     params=variant_params,
                 ),
             )
@@ -133,11 +133,11 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             )
             await execute_sql_typed(
                 conn,
-                "app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql",
+                "app/sql/v4/queries/scenario/insert_scenario_tree_edge_complete.sql",
                 params=edge_params,
             )
             # Check which AI fields need filling
-            sql = load_sql("app/sql/v4/scenario/get_scenario_problem_statement.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_problem_statement.sql")
             problem_statement_row = await conn.fetchrow(sql, child_scenario_id)
             needs_statement = (
                 not problem_statement_row
@@ -145,25 +145,25 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 or problem_statement_row.get("problem_statement") == ""
             )
 
-            sql = load_sql("app/sql/v4/scenario/get_scenario_objectives.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_objectives.sql")
             objectives_rows = await conn.fetch(sql, child_scenario_id)
             needs_objectives = parent_scenario_dict.get(
                 "objectives_enabled", True
             ) and (not objectives_rows or len(objectives_rows) == 0)
 
-            sql = load_sql("app/sql/v4/scenario/get_scenario_videos.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_videos.sql")
             videos_rows = await conn.fetch(sql, child_scenario_id)
             needs_video = parent_scenario_dict.get("video_enabled", False) and (
                 not videos_rows or len(videos_rows) == 0
             )
 
-            sql = load_sql("app/sql/v4/scenario/get_scenario_images.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_images.sql")
             images_rows = await conn.fetch(sql, child_scenario_id)
             needs_images = parent_scenario_dict.get("images_enabled", True) and (
                 not images_rows or len(images_rows) == 0
             )
 
-            sql = load_sql("app/sql/v4/scenario/get_scenario_questions.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_questions.sql")
             questions_rows = await conn.fetch(sql, child_scenario_id)
             needs_questions = parent_scenario_dict.get("questions_enabled", False) and (
                 not questions_rows or len(questions_rows) == 0
@@ -171,19 +171,19 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
 
             # Get department_id for scenario generation (fallback logic)
             department_id: uuid.UUID | None = None
-            sql = load_sql("app/sql/v4/scenario/get_scenario_departments.sql")
+            sql = load_sql("app/sql/v4/queries/scenario/get_scenario_departments.sql")
             scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
             if scenario_dept_rows and len(scenario_dept_rows) > 0:
                 department_id = uuid.UUID(str(scenario_dept_rows[0]["department_id"]))
 
             if not department_id and profile_id_uuid:
-                sql = load_sql("app/sql/v4/profile/get_departments_for_profile.sql")
+                sql = load_sql("app/sql/v4/queries/profile/get_departments_for_profile.sql")
                 profile_dept_rows = await conn.fetch(sql, str(profile_id_uuid))
                 if profile_dept_rows and len(profile_dept_rows) > 0:
                     department_id = uuid.UUID(str(profile_dept_rows[0]["id"]))
 
             if not department_id:
-                sql = load_sql("app/sql/v4/departments/get_all_active_departments.sql")
+                sql = load_sql("app/sql/v4/queries/departments/get_all_active_departments.sql")
                 all_dept_rows = await conn.fetch(sql)
                 if all_dept_rows and len(all_dept_rows) > 0:
                     department_id = uuid.UUID(str(all_dept_rows[0]["id"]))
@@ -201,7 +201,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             # Get scenario domain ID from parent scenario or simulation
             scenario_domain_id = parent_scenario_dict.get("scenario_domain_id")
             if not scenario_domain_id and simulation_id:
-                sql = load_sql("app/sql/v4/simulations/get_simulation_by_id.sql")
+                sql = load_sql("app/sql/v4/queries/simulations/get_simulation_by_id.sql")
                 simulation_row = await conn.fetchrow(sql, uuid.UUID(simulation_id))
                 if simulation_row:
                     scenario_domain_id = simulation_row.get("simulation_text_domain_id")

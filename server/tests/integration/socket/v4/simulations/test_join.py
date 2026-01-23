@@ -24,7 +24,7 @@ async def test_simulation_join_success(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_scenario_v4_complete.sql",
         params=TestCreateTestScenarioV4SqlParams(),
     )
     scenario_id = scenario_result.scenario_id
@@ -32,7 +32,7 @@ async def test_simulation_join_success(
     # Create chat
     chat_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_chat_v4_complete.sql",
         params=TestCreateTestChatV4SqlParams(scenario_id=scenario_id),
     )
     chat_id = chat_result.chat_id
@@ -72,14 +72,14 @@ async def test_simulation_join_custom_chat_type(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_scenario_v4_complete.sql",
         params=TestCreateTestScenarioV4SqlParams(),
     )
     scenario_id = scenario_result.scenario_id
 
     chat_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/socket/helpers/test_create_test_chat_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/socket/helpers/test_create_test_chat_v4_complete.sql",
         params=TestCreateTestChatV4SqlParams(scenario_id=scenario_id),
     )
     chat_id = chat_result.chat_id

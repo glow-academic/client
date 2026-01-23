@@ -347,7 +347,7 @@ sql-compile: check-venv
 sql-compile-incremental: check-venv
 	@if [ -z "$(FILE)" ]; then \
 		echo "❌ FILE variable required for incremental compilation"; \
-		echo "Usage: make sql-compile-incremental FILE=app/sql/v4/personas/patch_persona_draft_complete.sql"; \
+		echo "Usage: make sql-compile-incremental FILE=app/sql/v4/queries/personas/patch_persona_draft_complete.sql"; \
 		exit 1; \
 	fi
 	@echo "Compiling SQL file incrementally: $(FILE)..."

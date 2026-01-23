@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/auth/Auth.tsx`, `client/components/auth/Auths.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/auths_complete.sql` (`api_create_auths_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/auths_complete.sql` (`api_create_auths_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `auth` records are referenced by `auth_id` (or `auth_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

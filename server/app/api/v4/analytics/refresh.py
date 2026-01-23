@@ -15,8 +15,8 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed, load_sql
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/analytics/refresh_analytics_complete.sql"
-VIEW_CREATION_SQL_PATH = "app/sql/v4/analytics/create_analytics_view_complete.sql"
+SQL_PATH = "app/sql/v4/queries/analytics/refresh_analytics_complete.sql"
+VIEW_CREATION_SQL_PATH = "app/sql/v4/views/create_analytics_view_complete.sql"
 
 router = APIRouter()
 

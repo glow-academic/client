@@ -28,7 +28,7 @@ async def test_duplicate_agent(
     # Create an agent with prompt and department links using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -38,7 +38,7 @@ async def test_duplicate_agent(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Original Agent",
@@ -54,7 +54,7 @@ async def test_duplicate_agent(
     # Create a prompt and link it using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Original prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -68,14 +68,14 @@ async def test_duplicate_agent(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_v4_complete.sql",
         params=CreateAgentPromptLinkSqlParams(agent_id=agent_id, prompt_id=prompt_id),
     )
 
     # Link to a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -89,7 +89,7 @@ async def test_duplicate_agent(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql",
         params=CreateAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=dept_id
         ),
@@ -116,14 +116,14 @@ async def test_duplicate_agent(
 
     new_agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql",
         params=GetAgentByIdSqlParams(agent_id=new_agent_id),
     )
     typed_new_agent = GetAgentByIdSqlRow.model_validate(new_agent_result.model_dump())
 
     original_agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_by_id_v4_complete.sql",
         params=GetAgentByIdSqlParams(agent_id=agent_id),
     )
     typed_original_agent = GetAgentByIdSqlRow.model_validate(
@@ -139,7 +139,7 @@ async def test_duplicate_agent(
     # Verify prompt was duplicated using SQL file
     new_prompt_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_prompt_link_v4_complete.sql",
         params=GetAgentPromptLinkSqlParams(agent_id=new_agent_id),
     )
     typed_new_prompt_link = GetAgentPromptLinkSqlRow.model_validate(
@@ -150,7 +150,7 @@ async def test_duplicate_agent(
     # Verify department link was duplicated using SQL file
     new_dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_department_link_v4_complete.sql",
         params=GetAgentDepartmentLinkSqlParams(
             agent_id=new_agent_id, department_id=dept_id
         ),
@@ -171,7 +171,7 @@ async def test_duplicate_agent_without_departments(
     # Create an agent without department links using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -181,7 +181,7 @@ async def test_duplicate_agent_without_departments(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Cross-Dept Agent",
@@ -197,7 +197,7 @@ async def test_duplicate_agent_without_departments(
     # Create a prompt and link it using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Test prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -211,7 +211,7 @@ async def test_duplicate_agent_without_departments(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_prompt_link_v4_complete.sql",
         params=CreateAgentPromptLinkSqlParams(agent_id=agent_id, prompt_id=prompt_id),
     )
 
@@ -235,7 +235,7 @@ async def test_duplicate_agent_without_departments(
 
     dept_links_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_agent_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_agent_department_links_v4_complete.sql",
         params=GetAgentDepartmentLinksSqlParams(agent_id=new_agent_id),
     )
     typed_dept_links = GetAgentDepartmentLinksSqlRow.model_validate(

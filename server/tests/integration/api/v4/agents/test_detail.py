@@ -82,7 +82,7 @@ async def test_get_agent_detail_no_debug_info(
     # Create a new agent without any debug info using SQL file
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -92,7 +92,7 @@ async def test_get_agent_detail_no_debug_info(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Test Agent",
@@ -173,7 +173,7 @@ async def test_get_agent_detail_model_mapping(
 
     count_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_active_models_count_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_active_models_count_v4_complete.sql",
         params=None,
     )
     typed_count = GetActiveModelsCountSqlRow.model_validate(count_result.model_dump())

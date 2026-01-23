@@ -68,7 +68,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 GetEvalAttemptInfiniteModeV4SqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql",
                     params=attempt_params,
                 ),
             )
@@ -90,7 +90,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 GetTestByTraceIdV4SqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/get_test_by_trace_id_v4_complete.sql",
                     params=test_params,
                 ),
             )
@@ -110,7 +110,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/create_test_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/create_test_v4_complete.sql",
                     params=create_test_params,
                 )
                 # Link to attempt
@@ -120,7 +120,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 )
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/link_attempt_test_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/link_attempt_test_v4_complete.sql",
                     params=link_params,
                 )
                 test_id = str(test_id_uuid)
@@ -174,7 +174,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         GetToolNameV4SqlRow,
                         await execute_sql_typed(
                             conn,
-                            "app/sql/v4/benchmark/get_tool_name_v4_complete.sql",
+                            "app/sql/v4/queries/benchmark/get_tool_name_v4_complete.sql",
                             params=tool_name_params,
                         ),
                     )
@@ -216,7 +216,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         GetAgentNameV4SqlRow,
                         await execute_sql_typed(
                             conn,
-                            "app/sql/v4/benchmark/get_agent_name_v4_complete.sql",
+                            "app/sql/v4/queries/benchmark/get_agent_name_v4_complete.sql",
                             params=agent_name_params,
                         ),
                     )

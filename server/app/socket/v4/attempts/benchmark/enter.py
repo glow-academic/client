@@ -89,7 +89,7 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
         async with get_db_connection() as conn:
             # Update test created_at timestamp
             sql_update_test = load_sql(
-                "app/sql/v4/benchmark/update_test_created_at.sql"
+                "app/sql/v4/queries/benchmark/update_test_created_at.sql"
             )
             result = await conn.fetchrow(sql_update_test, created_at_dt, test_id)
 

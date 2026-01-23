@@ -78,7 +78,7 @@ All agent generation handlers dispatch to `generate_start` (`server/app/socket/v
 
 **SQL Function**: `get_generation_run_context_and_create_run_complete.sql`
 
-- **Location**: `server/app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql`
+- **Location**: `server/app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql`
 - **Returns**: `run_id`, `group_id`, `trace_id`, `message_ids` (includes new user message if created, developer messages if created, and context message IDs)
 - **Parameters**: `agent_id`, `resource_id`, `resource_type`, `profile_id`, `message_ids` (optional), `department_id` (optional), `group_id` (optional), `user_instructions` (optional), `developer_message_contents` (optional array of pre-rendered developer message content strings)
 
@@ -109,7 +109,7 @@ try:
     )
     dev_instruction_result = await execute_sql_typed(
         conn,
-        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+        "app/sql/v4/queries/developer_instructions/get_developer_instruction_complete.sql",
         params=dev_instruction_params,
     )
     if dev_instruction_result and dev_instruction_result.template:
@@ -424,7 +424,7 @@ from app.sql.types import (
 )
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/rubrics/get_rubric_run_context_complete.sql"
+SQL_PATH = "app/sql/v4/queries/rubrics/get_rubric_run_context_complete.sql"
 
 @sio.event  # type: ignore
 async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
@@ -483,7 +483,7 @@ from app.sql.types import (
 from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
-SQL_PATH = "app/sql/v4/rubrics/update_standard_descriptions_complete.sql"
+SQL_PATH = "app/sql/v4/queries/rubrics/update_standard_descriptions_complete.sql"
 
 @internal_sio.on("rubric_tool_standard_group_descriptions")
 async def rubric_tool_standard_group_descriptions_internal(

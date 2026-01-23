@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/agents/Agent.tsx`, `client/components/agents/Agents.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/agents_complete.sql` (`api_create_agents_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/agents_complete.sql` (`api_create_agents_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `agent` records are referenced by `agent_id` (or `agent_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

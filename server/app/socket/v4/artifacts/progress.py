@@ -24,14 +24,14 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH_TEXT_TOOL_PROGRESS = (
-    "app/sql/v4/generate/text/text_tool_progress_update_complete.sql"
+    "app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql"
 )
 SQL_PATH_IMAGE = (
-    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
+    "app/sql/v4/queries/images/get_image_generation_context_and_create_upload_complete.sql"
 )
-SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
-GET_GROUP_ID_SQL_PATH = "app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql"
-SQL_PATH_UPLOAD = "app/sql/v4/uploads/insert_upload_complete.sql"
+SQL_PATH_VIDEO = "app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"
+GET_GROUP_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/artifacts/get_group_id_from_run_complete.sql"
+SQL_PATH_UPLOAD = "app/sql/v4/queries/uploads/insert_upload_complete.sql"
 
 
 @internal_sio.on("generate_progress")  # type: ignore
@@ -230,7 +230,7 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
             if sql_progress_type == "tool_call_complete" and result.persisted_call_id:
                 from utils.sql_helper import _detect_function_in_sql, load_sql
                 
-                sql_path = "app/sql/v4/artifacts/progress/mark_call_completed_complete.sql"
+                sql_path = "app/sql/v4/queries/artifacts/progress/mark_call_completed_complete.sql"
                 sql_text = load_sql(sql_path)
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
                 

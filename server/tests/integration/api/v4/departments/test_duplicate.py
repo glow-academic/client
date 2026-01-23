@@ -26,7 +26,7 @@ async def test_duplicate_department(
     # Create a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_create_test_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_create_test_department_v4_complete.sql",
         params=CreateTestDepartmentSqlParams(
             title="Original Department", description="Original Description"
         ),
@@ -52,7 +52,7 @@ async def test_duplicate_department(
     # Verify duplicate was created using SQL file
     duplicate_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_department_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_department_by_id_v4_complete.sql",
         params=GetDepartmentByIdSqlParams(department_id=UUID(data["departmentId"])),
     )
     typed_duplicate = GetDepartmentByIdSqlRow.model_validate(

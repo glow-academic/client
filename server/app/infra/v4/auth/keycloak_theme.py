@@ -38,7 +38,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     
     async with pool.acquire() as conn:
         # Step 1: Get ALL realm-level IdP aliases (for platform fallback)
-        realm_level_sql = load_sql("app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql")
+        realm_level_sql = load_sql("app/sql/v4/queries/keycloak/get_auths_for_realm_level_complete.sql")
         is_function, function_name, schema = _detect_function_in_sql(realm_level_sql)
         
         if is_function and function_name:
@@ -48,7 +48,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
             all_idp_aliases.update(platform_providers)
         
         # Step 2: Get all default-idp profile aliases (per settings)
-        profiles_sql = load_sql("app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql")
+        profiles_sql = load_sql("app/sql/v4/queries/keycloak/get_setting_profiles_for_idp_complete.sql")
         profiles_is_function, profiles_function_name, profiles_schema = _detect_function_in_sql(profiles_sql)
         if profiles_is_function and profiles_function_name:
             profiles_call_sql = f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
@@ -73,7 +73,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
                         platform_profile_aliases.append(alias)
         
         # Step 3: Get ALL departments with titles
-        dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+        dept_sql = load_sql("app/sql/v4/queries/keycloak/get_departments_for_org_sync_complete.sql")
         is_function, function_name, schema = _detect_function_in_sql(dept_sql)
         
         has_departments = False
@@ -95,7 +95,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
                 })
                 
                 # Get auths for this department
-                auths_sql = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                auths_sql = load_sql("app/sql/v4/queries/keycloak/get_auths_for_org_complete.sql")
                 auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql)
                 
                 dept_aliases: list[str] = []

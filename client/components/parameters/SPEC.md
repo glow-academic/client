@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/parameters/Parameter.tsx`, `client/components/parameters/Parameters.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/parameters_complete.sql` (`api_create_parameters_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/parameters_complete.sql` (`api_create_parameters_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `parameter` records are referenced by `parameter_id` (or `parameter_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

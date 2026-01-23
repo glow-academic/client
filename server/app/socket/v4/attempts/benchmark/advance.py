@@ -92,7 +92,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                 GetTestByIdV4SqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/sql/v4/benchmark/get_test_by_id_v4_complete.sql",
+                    "app/sql/v4/queries/benchmark/get_test_by_id_v4_complete.sql",
                     params=test_params,
                 ),
             )

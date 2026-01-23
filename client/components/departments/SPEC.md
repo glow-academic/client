@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/departments/Department.tsx`, `client/components/departments/Departments.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/departments_complete.sql` (`api_create_departments_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/departments_complete.sql` (`api_create_departments_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `department` records are referenced by `department_id` (or `department_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

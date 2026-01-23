@@ -11,7 +11,7 @@ from app.sql.types import (
 )
 
 SQL_PATH = (
-    "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"
+    "app/sql/v4/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql"
 )
 
 

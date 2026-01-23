@@ -24,7 +24,7 @@ async def test_get_document_detail_bulk(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql",
         params=None,
     )
     typed_dept = GetCsDeptIdSqlRow.model_validate(dept_result.model_dump())
@@ -34,7 +34,7 @@ async def test_get_document_detail_bulk(
     # Create documents using SQL files
     doc1_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 1",
             document_type="homework",
@@ -47,7 +47,7 @@ async def test_get_document_detail_bulk(
 
     doc2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_test_document_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_test_document_v4_complete.sql",
         params=CreateTestDocumentSqlParams(
             document_name="Test Document 2",
             document_type="homework",
@@ -61,7 +61,7 @@ async def test_get_document_detail_bulk(
     # Link documents to department using SQL files
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_document_department_link_v4_complete.sql",
         params=CreateDocumentDepartmentLinkSqlParams(
             document_id=doc1_id, department_id=dept_id
         ),
@@ -69,7 +69,7 @@ async def test_get_document_detail_bulk(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/documents/test_create_document_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/documents/test_create_document_department_link_v4_complete.sql",
         params=CreateDocumentDepartmentLinkSqlParams(
             document_id=doc2_id, department_id=dept_id
         ),

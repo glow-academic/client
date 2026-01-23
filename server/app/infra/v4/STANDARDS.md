@@ -25,7 +25,7 @@ Infrastructure utilities are categorized into three types:
 
 **⚠️ CRITICAL: One SQL File Per Function, No Inline SQL**
 
-- **One SQL file per infra function**: Each database operation has exactly one SQL file in `server/app/sql/v4/infrastructure/[category]/[operation]_complete.sql`
+- **One SQL file per infra function**: Each database operation has exactly one SQL file in `server/app/sql/v4/queries/infrastructure/[category]/[operation]_complete.sql`
 - **No inline SQL**: All SQL must be in the `.sql` file, never embedded as strings in Python code
 - **Function-based**: SQL files define PostgreSQL functions, not raw queries
 - **File naming**: Pattern `infrastructure_{category}_{operation}_complete.sql` (e.g., `infrastructure_activity_profile_exists_complete.sql`)
@@ -169,10 +169,10 @@ server/app/infra/v4/activity/
 ├── profile_exists.py          # Python function
 └── insert.py                  # Python function
 
-server/app/sql/v4/infrastructure/activity/
+server/app/sql/v4/queries/infrastructure/activity/
 └── get_profile_name_for_logging_complete.sql    # One SQL file per function
 
-server/app/sql/v4/infrastructure/
+server/app/sql/v4/queries/infrastructure/
 ├── infrastructure_activity_profile_exists_complete.sql    # One SQL file per function
 └── infrastructure_activity_insert_complete.sql            # One SQL file per function
 ```
@@ -240,7 +240,7 @@ from app.sql.types import (
 )
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"
+SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql"
 
 
 async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
@@ -271,7 +271,7 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
 
 ```python
 # ❌ BAD: Raw SQL with load_sql()
-sql = load_sql("app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql")
+sql = load_sql("app/sql/v4/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql")
 result = await conn.fetchval(sql, profile_id)
 
 # ✅ GOOD: PostgreSQL function with execute_sql_typed()
@@ -364,7 +364,7 @@ ARRAY_AGG(
 
 ## Reference Implementation
 
-See `server/app/infra/v4/activity/profile_exists.py` and `server/app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql` as the reference implementation for database operations.
+See `server/app/infra/v4/activity/profile_exists.py` and `server/app/sql/v4/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql` as the reference implementation for database operations.
 
 ## Benefits
 

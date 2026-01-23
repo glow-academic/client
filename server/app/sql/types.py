@@ -20979,2053 +20979,2053 @@ class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
 # ============================================================================
 
 _registry: dict[str, tuple[str, str, str, str]] = {
-    "app/sql/v4/activity/get_activity_bundle_complete.sql": (
+    "app/sql/v4/queries/activity/get_activity_bundle_complete.sql": (
         "GetActivityBundleSqlParams",
         "GetActivityBundleSqlRow",
         "GetActivityBundleApiRequest",
         "GetActivityBundleApiResponse",
     ),
-    "app/sql/v4/activity/get_activity_list_complete.sql": (
+    "app/sql/v4/queries/activity/get_activity_list_complete.sql": (
         "GetActivityListSqlParams",
         "GetActivityListSqlRow",
         "GetActivityListApiRequest",
         "GetActivityListApiResponse",
     ),
-    "app/sql/v4/agents/delete_agent_complete.sql": (
+    "app/sql/v4/queries/agents/delete_agent_complete.sql": (
         "DeleteAgentSqlParams",
         "DeleteAgentSqlRow",
         "DeleteAgentApiRequest",
         "DeleteAgentApiResponse",
     ),
-    "app/sql/v4/agents/duplicate_agent_complete.sql": (
+    "app/sql/v4/queries/agents/duplicate_agent_complete.sql": (
         "DuplicateAgentSqlParams",
         "DuplicateAgentSqlRow",
         "DuplicateAgentApiRequest",
         "DuplicateAgentApiResponse",
     ),
-    "app/sql/v4/agents/get_agent_complete.sql": (
+    "app/sql/v4/queries/agents/get_agent_complete.sql": (
         "GetAgentSqlParams",
         "GetAgentSqlRow",
         "GetAgentApiRequest",
         "GetAgentApiResponse",
     ),
-    "app/sql/v4/agents/get_agent_model_info_complete.sql": (
+    "app/sql/v4/queries/agents/get_agent_model_info_complete.sql": (
         "GetAgentModelInfoSqlParams",
         "GetAgentModelInfoSqlRow",
         "GetAgentModelInfoApiRequest",
         "GetAgentModelInfoApiResponse",
     ),
-    "app/sql/v4/agents/get_agent_resource_ids_by_group_id_complete.sql": (
+    "app/sql/v4/queries/agents/get_agent_resource_ids_by_group_id_complete.sql": (
         "GetAgentResourceIdsByGroupIdSqlParams",
         "GetAgentResourceIdsByGroupIdSqlRow",
         "GetAgentResourceIdsByGroupIdApiRequest",
         "GetAgentResourceIdsByGroupIdApiResponse",
     ),
-    "app/sql/v4/agents/get_agents_list_complete.sql": (
+    "app/sql/v4/queries/agents/get_agents_list_complete.sql": (
         "GetAgentsListSqlParams",
         "GetAgentsListSqlRow",
         "GetAgentsListApiRequest",
         "GetAgentsListApiResponse",
     ),
-    "app/sql/v4/agents/patch_agent_draft_complete.sql": (
+    "app/sql/v4/queries/agents/patch_agent_draft_complete.sql": (
         "PatchAgentDraftSqlParams",
         "PatchAgentDraftSqlRow",
         "PatchAgentDraftApiRequest",
         "PatchAgentDraftApiResponse",
     ),
-    "app/sql/v4/agents/save_agent_complete.sql": (
+    "app/sql/v4/queries/agents/save_agent_complete.sql": (
         "SaveAgentSqlParams",
         "SaveAgentSqlRow",
         "SaveAgentApiRequest",
         "SaveAgentApiResponse",
     ),
-    "app/sql/v4/agents/validate_agent_resource_error_complete.sql": (
+    "app/sql/v4/queries/agents/validate_agent_resource_error_complete.sql": (
         "ValidateAgentResourceErrorSqlParams",
         "ValidateAgentResourceErrorSqlRow",
         "ValidateAgentResourceErrorApiRequest",
         "ValidateAgentResourceErrorApiResponse",
     ),
-    "app/sql/v4/agents/validate_agent_resource_progress_complete.sql": (
+    "app/sql/v4/queries/agents/validate_agent_resource_progress_complete.sql": (
         "ValidateAgentResourceProgressSqlParams",
         "ValidateAgentResourceProgressSqlRow",
         "ValidateAgentResourceProgressApiRequest",
         "ValidateAgentResourceProgressApiResponse",
     ),
-    "app/sql/v4/analytics/refresh_analytics_complete.sql": (
+    "app/sql/v4/queries/analytics/refresh_analytics_complete.sql": (
         "RefreshAnalyticsSqlParams",
         "RefreshAnalyticsSqlRow",
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
-    "app/sql/v4/artifacts/complete/create_resource_record_complete.sql": (
+    "app/sql/v4/queries/artifacts/complete/create_resource_record_complete.sql": (
         "CreateResourceRecordSqlParams",
         "CreateResourceRecordSqlRow",
         "CreateResourceRecordApiRequest",
         "CreateResourceRecordApiResponse",
     ),
-    "app/sql/v4/artifacts/complete/get_call_by_external_id_complete.sql": (
+    "app/sql/v4/queries/artifacts/complete/get_call_by_external_id_complete.sql": (
         "GetCallByExternalIdSqlParams",
         "GetCallByExternalIdSqlRow",
         "GetCallByExternalIdApiRequest",
         "GetCallByExternalIdApiResponse",
     ),
-    "app/sql/v4/artifacts/complete/get_schema_fields_by_template_id_complete.sql": (
+    "app/sql/v4/queries/artifacts/complete/get_schema_fields_by_template_id_complete.sql": (
         "GetSchemaFieldsByTemplateIdSqlParams",
         "GetSchemaFieldsByTemplateIdSqlRow",
         "GetSchemaFieldsByTemplateIdApiRequest",
         "GetSchemaFieldsByTemplateIdApiResponse",
     ),
-    "app/sql/v4/artifacts/complete/get_template_values_by_call_id_complete.sql": (
+    "app/sql/v4/queries/artifacts/complete/get_template_values_by_call_id_complete.sql": (
         "GetTemplateValuesByCallIdSqlParams",
         "GetTemplateValuesByCallIdSqlRow",
         "GetTemplateValuesByCallIdApiRequest",
         "GetTemplateValuesByCallIdApiResponse",
     ),
-    "app/sql/v4/artifacts/complete/upsert_template_value_complete.sql": (
+    "app/sql/v4/queries/artifacts/complete/upsert_template_value_complete.sql": (
         "UpsertTemplateValueSqlParams",
         "UpsertTemplateValueSqlRow",
         "UpsertTemplateValueApiRequest",
         "UpsertTemplateValueApiResponse",
     ),
-    "app/sql/v4/artifacts/progress/mark_call_completed_complete.sql": (
+    "app/sql/v4/queries/artifacts/progress/mark_call_completed_complete.sql": (
         "MarkCallCompletedSqlParams",
         "MarkCallCompletedSqlRow",
         "MarkCallCompletedApiRequest",
         "MarkCallCompletedApiResponse",
     ),
-    "app/sql/v4/attempts/bulk_archive_attempts_complete.sql": (
+    "app/sql/v4/queries/attempts/bulk_archive_attempts_complete.sql": (
         "BulkArchiveAttemptsSqlParams",
         "BulkArchiveAttemptsSqlRow",
         "BulkArchiveAttemptsApiRequest",
         "BulkArchiveAttemptsApiResponse",
     ),
-    "app/sql/v4/attempts/get_eval_attempt_complete.sql": (
+    "app/sql/v4/queries/attempts/get_eval_attempt_complete.sql": (
         "GetEvalAttemptSqlParams",
         "GetEvalAttemptSqlRow",
         "GetEvalAttemptApiRequest",
         "GetEvalAttemptApiResponse",
     ),
-    "app/sql/v4/attempts/get_simulation_attempt_complete.sql": (
+    "app/sql/v4/queries/attempts/get_simulation_attempt_complete.sql": (
         "GetSimulationAttemptSqlParams",
         "GetSimulationAttemptSqlRow",
         "GetSimulationAttemptApiRequest",
         "GetSimulationAttemptApiResponse",
     ),
-    "app/sql/v4/attempts/update_chat_created_at_complete.sql": (
+    "app/sql/v4/queries/attempts/update_chat_created_at_complete.sql": (
         "UpdateChatCreatedAtSqlParams",
         "UpdateChatCreatedAtSqlRow",
         "UpdateChatCreatedAtApiRequest",
         "UpdateChatCreatedAtApiResponse",
     ),
-    "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/queries/audio/get_audio_run_context_and_create_run_complete.sql": (
         "GetAudioRunContextAndCreateRunSqlParams",
         "GetAudioRunContextAndCreateRunSqlRow",
         "GetAudioRunContextAndCreateRunApiRequest",
         "GetAudioRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v4/auth/consume_emulation_grant_complete.sql": (
+    "app/sql/v4/queries/auth/consume_emulation_grant_complete.sql": (
         "ConsumeEmulationGrantSqlParams",
         "ConsumeEmulationGrantSqlRow",
         "ConsumeEmulationGrantApiRequest",
         "ConsumeEmulationGrantApiResponse",
     ),
-    "app/sql/v4/auth/create_emulation_grant_complete.sql": (
+    "app/sql/v4/queries/auth/create_emulation_grant_complete.sql": (
         "CreateEmulationGrantSqlParams",
         "CreateEmulationGrantSqlRow",
         "CreateEmulationGrantApiRequest",
         "CreateEmulationGrantApiResponse",
     ),
-    "app/sql/v4/auth/delete_auth_complete.sql": (
+    "app/sql/v4/queries/auth/delete_auth_complete.sql": (
         "DeleteAuthSqlParams",
         "DeleteAuthSqlRow",
         "DeleteAuthApiRequest",
         "DeleteAuthApiResponse",
     ),
-    "app/sql/v4/auth/duplicate_auth_complete.sql": (
+    "app/sql/v4/queries/auth/duplicate_auth_complete.sql": (
         "DuplicateAuthSqlParams",
         "DuplicateAuthSqlRow",
         "DuplicateAuthApiRequest",
         "DuplicateAuthApiResponse",
     ),
-    "app/sql/v4/auth/get_auth_complete.sql": (
+    "app/sql/v4/queries/auth/get_auth_complete.sql": (
         "GetAuthSqlParams",
         "GetAuthSqlRow",
         "GetAuthApiRequest",
         "GetAuthApiResponse",
     ),
-    "app/sql/v4/auth/get_auth_list_complete.sql": (
+    "app/sql/v4/queries/auth/get_auth_list_complete.sql": (
         "GetAuthListSqlParams",
         "GetAuthListSqlRow",
         "GetAuthListApiRequest",
         "GetAuthListApiResponse",
     ),
-    "app/sql/v4/auth/get_login_data_complete.sql": (
+    "app/sql/v4/queries/auth/get_login_data_complete.sql": (
         "GetLoginDataSqlParams",
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
     ),
-    "app/sql/v4/auth/patch_auth_draft_complete.sql": (
+    "app/sql/v4/queries/auth/patch_auth_draft_complete.sql": (
         "PatchAuthDraftSqlParams",
         "PatchAuthDraftSqlRow",
         "PatchAuthDraftApiRequest",
         "PatchAuthDraftApiResponse",
     ),
-    "app/sql/v4/auth/record_profile_login_complete.sql": (
+    "app/sql/v4/queries/auth/record_profile_login_complete.sql": (
         "RecordProfileLoginSqlParams",
         "RecordProfileLoginSqlRow",
         "RecordProfileLoginApiRequest",
         "RecordProfileLoginApiResponse",
     ),
-    "app/sql/v4/auth/resolve_default_idp_profile_complete.sql": (
+    "app/sql/v4/queries/auth/resolve_default_idp_profile_complete.sql": (
         "ResolveDefaultIdpProfileSqlParams",
         "ResolveDefaultIdpProfileSqlRow",
         "ResolveDefaultIdpProfileApiRequest",
         "ResolveDefaultIdpProfileApiResponse",
     ),
-    "app/sql/v4/auth/save_auth_complete.sql": (
+    "app/sql/v4/queries/auth/save_auth_complete.sql": (
         "SaveAuthSqlParams",
         "SaveAuthSqlRow",
         "SaveAuthApiRequest",
         "SaveAuthApiResponse",
     ),
-    "app/sql/v4/benchmark/benchmark_eval_complete_complete.sql": (
+    "app/sql/v4/queries/benchmark/benchmark_eval_complete_complete.sql": (
         "BenchmarkEvalCompleteSqlParams",
         "BenchmarkEvalCompleteSqlRow",
         "BenchmarkEvalCompleteApiRequest",
         "BenchmarkEvalCompleteApiResponse",
     ),
-    "app/sql/v4/benchmark/create_test_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/create_test_v4_complete.sql": (
         "CreateTestV4SqlParams",
         "CreateTestV4SqlRow",
         "CreateTestV4ApiRequest",
         "CreateTestV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/delete_eval_complete.sql": (
+    "app/sql/v4/queries/benchmark/delete_eval_complete.sql": (
         "DeleteEvalSqlParams",
         "DeleteEvalSqlRow",
         "DeleteEvalApiRequest",
         "DeleteEvalApiResponse",
     ),
-    "app/sql/v4/benchmark/get_agent_name_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_agent_name_v4_complete.sql": (
         "GetAgentNameV4SqlParams",
         "GetAgentNameV4SqlRow",
         "GetAgentNameV4ApiRequest",
         "GetAgentNameV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_benchmark_history_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_benchmark_history_complete.sql": (
         "GetBenchmarkHistorySqlParams",
         "GetBenchmarkHistorySqlRow",
         "GetBenchmarkHistoryApiRequest",
         "GetBenchmarkHistoryApiResponse",
     ),
-    "app/sql/v4/benchmark/get_benchmark_overview_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_benchmark_overview_complete.sql": (
         "GetBenchmarkOverviewSqlParams",
         "GetBenchmarkOverviewSqlRow",
         "GetBenchmarkOverviewApiRequest",
         "GetBenchmarkOverviewApiResponse",
     ),
-    "app/sql/v4/benchmark/get_benchmark_run_start_context_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_benchmark_run_start_context_complete.sql": (
         "GetBenchmarkRunStartContextSqlParams",
         "GetBenchmarkRunStartContextSqlRow",
         "GetBenchmarkRunStartContextApiRequest",
         "GetBenchmarkRunStartContextApiResponse",
     ),
-    "app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_benchmark_runs_start_all_context_complete.sql": (
         "GetBenchmarkRunsStartAllContextSqlParams",
         "GetBenchmarkRunsStartAllContextSqlRow",
         "GetBenchmarkRunsStartAllContextApiRequest",
         "GetBenchmarkRunsStartAllContextApiResponse",
     ),
-    "app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql": (
         "GetEvalAttemptInfiniteModeV4SqlParams",
         "GetEvalAttemptInfiniteModeV4SqlRow",
         "GetEvalAttemptInfiniteModeV4ApiRequest",
         "GetEvalAttemptInfiniteModeV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_evals_list_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_evals_list_complete.sql": (
         "GetEvalsListSqlParams",
         "GetEvalsListSqlRow",
         "GetEvalsListApiRequest",
         "GetEvalsListApiResponse",
     ),
-    "app/sql/v4/benchmark/get_group_order_agents_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_group_order_agents_complete.sql": (
         "GetGroupOrderAgentsSqlParams",
         "GetGroupOrderAgentsSqlRow",
         "GetGroupOrderAgentsApiRequest",
         "GetGroupOrderAgentsApiResponse",
     ),
-    "app/sql/v4/benchmark/get_group_stop_tools_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_group_stop_tools_complete.sql": (
         "GetGroupStopToolsSqlParams",
         "GetGroupStopToolsSqlRow",
         "GetGroupStopToolsApiRequest",
         "GetGroupStopToolsApiResponse",
     ),
-    "app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_rubric_grade_agent_v4_complete.sql": (
         "GetRubricGradeAgentV4SqlParams",
         "GetRubricGradeAgentV4SqlRow",
         "GetRubricGradeAgentV4ApiRequest",
         "GetRubricGradeAgentV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_test_by_id_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_test_by_id_v4_complete.sql": (
         "GetTestByIdV4SqlParams",
         "GetTestByIdV4SqlRow",
         "GetTestByIdV4ApiRequest",
         "GetTestByIdV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_test_by_trace_id_v4_complete.sql": (
         "GetTestByTraceIdV4SqlParams",
         "GetTestByTraceIdV4SqlRow",
         "GetTestByTraceIdV4ApiRequest",
         "GetTestByTraceIdV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_test_details_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_test_details_v4_complete.sql": (
         "GetTestDetailsV4SqlParams",
         "GetTestDetailsV4SqlRow",
         "GetTestDetailsV4ApiRequest",
         "GetTestDetailsV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_test_run_id_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_test_run_id_v4_complete.sql": (
         "GetTestRunIdV4SqlParams",
         "GetTestRunIdV4SqlRow",
         "GetTestRunIdV4ApiRequest",
         "GetTestRunIdV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/get_tool_name_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/get_tool_name_v4_complete.sql": (
         "GetToolNameV4SqlParams",
         "GetToolNameV4SqlRow",
         "GetToolNameV4ApiRequest",
         "GetToolNameV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/link_attempt_test_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/link_attempt_test_v4_complete.sql": (
         "LinkAttemptTestV4SqlParams",
         "LinkAttemptTestV4SqlRow",
         "LinkAttemptTestV4ApiRequest",
         "LinkAttemptTestV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/mark_eval_group_complete_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/mark_eval_group_complete_v4_complete.sql": (
         "MarkEvalGroupCompleteV4SqlParams",
         "MarkEvalGroupCompleteV4SqlRow",
         "MarkEvalGroupCompleteV4ApiRequest",
         "MarkEvalGroupCompleteV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/mark_eval_run_complete_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/mark_eval_run_complete_v4_complete.sql": (
         "MarkEvalRunCompleteV4SqlParams",
         "MarkEvalRunCompleteV4SqlRow",
         "MarkEvalRunCompleteV4ApiRequest",
         "MarkEvalRunCompleteV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/mark_test_complete_v4_complete.sql": (
+    "app/sql/v4/queries/benchmark/mark_test_complete_v4_complete.sql": (
         "MarkTestCompleteV4SqlParams",
         "MarkTestCompleteV4SqlRow",
         "MarkTestCompleteV4ApiRequest",
         "MarkTestCompleteV4ApiResponse",
     ),
-    "app/sql/v4/benchmark/start_benchmark_attempt_complete.sql": (
+    "app/sql/v4/queries/benchmark/start_benchmark_attempt_complete.sql": (
         "StartBenchmarkAttemptSqlParams",
         "StartBenchmarkAttemptSqlRow",
         "StartBenchmarkAttemptApiRequest",
         "StartBenchmarkAttemptApiResponse",
     ),
-    "app/sql/v4/cohorts/delete_cohort_complete.sql": (
+    "app/sql/v4/queries/cohorts/delete_cohort_complete.sql": (
         "DeleteCohortSqlParams",
         "DeleteCohortSqlRow",
         "DeleteCohortApiRequest",
         "DeleteCohortApiResponse",
     ),
-    "app/sql/v4/cohorts/duplicate_cohort_complete.sql": (
+    "app/sql/v4/queries/cohorts/duplicate_cohort_complete.sql": (
         "DuplicateCohortSqlParams",
         "DuplicateCohortSqlRow",
         "DuplicateCohortApiRequest",
         "DuplicateCohortApiResponse",
     ),
-    "app/sql/v4/cohorts/get_cohort_complete.sql": (
+    "app/sql/v4/queries/cohorts/get_cohort_complete.sql": (
         "GetCohortSqlParams",
         "GetCohortSqlRow",
         "GetCohortApiRequest",
         "GetCohortApiResponse",
     ),
-    "app/sql/v4/cohorts/get_cohort_resource_ids_by_group_id_complete.sql": (
+    "app/sql/v4/queries/cohorts/get_cohort_resource_ids_by_group_id_complete.sql": (
         "GetCohortResourceIdsByGroupIdSqlParams",
         "GetCohortResourceIdsByGroupIdSqlRow",
         "GetCohortResourceIdsByGroupIdApiRequest",
         "GetCohortResourceIdsByGroupIdApiResponse",
     ),
-    "app/sql/v4/cohorts/get_cohorts_list_complete.sql": (
+    "app/sql/v4/queries/cohorts/get_cohorts_list_complete.sql": (
         "GetCohortsListSqlParams",
         "GetCohortsListSqlRow",
         "GetCohortsListApiRequest",
         "GetCohortsListApiResponse",
     ),
-    "app/sql/v4/cohorts/patch_cohort_draft_complete.sql": (
+    "app/sql/v4/queries/cohorts/patch_cohort_draft_complete.sql": (
         "PatchCohortDraftSqlParams",
         "PatchCohortDraftSqlRow",
         "PatchCohortDraftApiRequest",
         "PatchCohortDraftApiResponse",
     ),
-    "app/sql/v4/cohorts/save_cohort_complete.sql": (
+    "app/sql/v4/queries/cohorts/save_cohort_complete.sql": (
         "SaveCohortSqlParams",
         "SaveCohortSqlRow",
         "SaveCohortApiRequest",
         "SaveCohortApiResponse",
     ),
-    "app/sql/v4/cohorts/validate_cohort_resource_error_complete.sql": (
+    "app/sql/v4/queries/cohorts/validate_cohort_resource_error_complete.sql": (
         "ValidateCohortResourceErrorSqlParams",
         "ValidateCohortResourceErrorSqlRow",
         "ValidateCohortResourceErrorApiRequest",
         "ValidateCohortResourceErrorApiResponse",
     ),
-    "app/sql/v4/cohorts/validate_cohort_resource_progress_complete.sql": (
+    "app/sql/v4/queries/cohorts/validate_cohort_resource_progress_complete.sql": (
         "ValidateCohortResourceProgressSqlParams",
         "ValidateCohortResourceProgressSqlRow",
         "ValidateCohortResourceProgressApiRequest",
         "ValidateCohortResourceProgressApiResponse",
     ),
-    "app/sql/v4/dashboard/get_dashboard_bundle_complete.sql": (
+    "app/sql/v4/queries/dashboard/get_dashboard_bundle_complete.sql": (
         "GetDashboardBundleSqlParams",
         "GetDashboardBundleSqlRow",
         "GetDashboardBundleApiRequest",
         "GetDashboardBundleApiResponse",
     ),
-    "app/sql/v4/dashboard/get_dashboard_history_complete.sql": (
+    "app/sql/v4/queries/dashboard/get_dashboard_history_complete.sql": (
         "GetDashboardHistorySqlParams",
         "GetDashboardHistorySqlRow",
         "GetDashboardHistoryApiRequest",
         "GetDashboardHistoryApiResponse",
     ),
-    "app/sql/v4/departments/delete_department_complete.sql": (
+    "app/sql/v4/queries/departments/delete_department_complete.sql": (
         "DeleteDepartmentSqlParams",
         "DeleteDepartmentSqlRow",
         "DeleteDepartmentApiRequest",
         "DeleteDepartmentApiResponse",
     ),
-    "app/sql/v4/departments/duplicate_department_complete.sql": (
+    "app/sql/v4/queries/departments/duplicate_department_complete.sql": (
         "DuplicateDepartmentSqlParams",
         "DuplicateDepartmentSqlRow",
         "DuplicateDepartmentApiRequest",
         "DuplicateDepartmentApiResponse",
     ),
-    "app/sql/v4/departments/get_department_complete.sql": (
+    "app/sql/v4/queries/departments/get_department_complete.sql": (
         "GetDepartmentSqlParams",
         "GetDepartmentSqlRow",
         "GetDepartmentApiRequest",
         "GetDepartmentApiResponse",
     ),
-    "app/sql/v4/departments/get_departments_list_complete.sql": (
+    "app/sql/v4/queries/departments/get_departments_list_complete.sql": (
         "GetDepartmentsListSqlParams",
         "GetDepartmentsListSqlRow",
         "GetDepartmentsListApiRequest",
         "GetDepartmentsListApiResponse",
     ),
-    "app/sql/v4/departments/patch_department_draft_complete.sql": (
+    "app/sql/v4/queries/departments/patch_department_draft_complete.sql": (
         "PatchDepartmentDraftSqlParams",
         "PatchDepartmentDraftSqlRow",
         "PatchDepartmentDraftApiRequest",
         "PatchDepartmentDraftApiResponse",
     ),
-    "app/sql/v4/departments/save_department_complete.sql": (
+    "app/sql/v4/queries/departments/save_department_complete.sql": (
         "SaveDepartmentSqlParams",
         "SaveDepartmentSqlRow",
         "SaveDepartmentApiRequest",
         "SaveDepartmentApiResponse",
     ),
-    "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql": (
+    "app/sql/v4/queries/developer_instructions/get_developer_instruction_complete.sql": (
         "GetDeveloperInstructionSqlParams",
         "GetDeveloperInstructionSqlRow",
         "GetDeveloperInstructionApiRequest",
         "GetDeveloperInstructionApiResponse",
     ),
-    "app/sql/v4/developer_instructions/get_developer_instruction_context_complete.sql": (
+    "app/sql/v4/queries/developer_instructions/get_developer_instruction_context_complete.sql": (
         "GetDeveloperInstructionContextSqlParams",
         "GetDeveloperInstructionContextSqlRow",
         "GetDeveloperInstructionContextApiRequest",
         "GetDeveloperInstructionContextApiResponse",
     ),
-    "app/sql/v4/document/get_document_agent_id_v4_complete.sql": (
+    "app/sql/v4/queries/document/get_document_agent_id_v4_complete.sql": (
         "GetDocumentAgentIdV4SqlParams",
         "GetDocumentAgentIdV4SqlRow",
         "GetDocumentAgentIdV4ApiRequest",
         "GetDocumentAgentIdV4ApiResponse",
     ),
-    "app/sql/v4/document/get_document_department_v4_complete.sql": (
+    "app/sql/v4/queries/document/get_document_department_v4_complete.sql": (
         "GetDocumentDepartmentV4SqlParams",
         "GetDocumentDepartmentV4SqlRow",
         "GetDocumentDepartmentV4ApiRequest",
         "GetDocumentDepartmentV4ApiResponse",
     ),
-    "app/sql/v4/documents/delete_document_complete.sql": (
+    "app/sql/v4/queries/documents/delete_document_complete.sql": (
         "DeleteDocumentSqlParams",
         "DeleteDocumentSqlRow",
         "DeleteDocumentApiRequest",
         "DeleteDocumentApiResponse",
     ),
-    "app/sql/v4/documents/duplicate_document_complete.sql": (
+    "app/sql/v4/queries/documents/duplicate_document_complete.sql": (
         "DuplicateDocumentSqlParams",
         "DuplicateDocumentSqlRow",
         "DuplicateDocumentApiRequest",
         "DuplicateDocumentApiResponse",
     ),
-    "app/sql/v4/documents/get_certificate_data_complete.sql": (
+    "app/sql/v4/queries/documents/get_certificate_data_complete.sql": (
         "GetCertificateDataSqlParams",
         "GetCertificateDataSqlRow",
         "GetCertificateDataApiRequest",
         "GetCertificateDataApiResponse",
     ),
-    "app/sql/v4/documents/get_document_complete.sql": (
+    "app/sql/v4/queries/documents/get_document_complete.sql": (
         "GetDocumentSqlParams",
         "GetDocumentSqlRow",
         "GetDocumentApiRequest",
         "GetDocumentApiResponse",
     ),
-    "app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql": (
         "GetDocumentRunContextAndCreateRunSqlParams",
         "GetDocumentRunContextAndCreateRunSqlRow",
         "GetDocumentRunContextAndCreateRunApiRequest",
         "GetDocumentRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v4/documents/get_documents_list_complete.sql": (
+    "app/sql/v4/queries/documents/get_documents_list_complete.sql": (
         "GetDocumentsListSqlParams",
         "GetDocumentsListSqlRow",
         "GetDocumentsListApiRequest",
         "GetDocumentsListApiResponse",
     ),
-    "app/sql/v4/documents/insert_document_complete.sql": (
+    "app/sql/v4/queries/documents/insert_document_complete.sql": (
         "InsertDocumentSqlParams",
         "InsertDocumentSqlRow",
         "InsertDocumentApiRequest",
         "InsertDocumentApiResponse",
     ),
-    "app/sql/v4/documents/patch_document_draft_complete.sql": (
+    "app/sql/v4/queries/documents/patch_document_draft_complete.sql": (
         "PatchDocumentDraftSqlParams",
         "PatchDocumentDraftSqlRow",
         "PatchDocumentDraftApiRequest",
         "PatchDocumentDraftApiResponse",
     ),
-    "app/sql/v4/documents/process_document_csv_complete.sql": (
+    "app/sql/v4/queries/documents/process_document_csv_complete.sql": (
         "ProcessDocumentCsvSqlParams",
         "ProcessDocumentCsvSqlRow",
         "ProcessDocumentCsvApiRequest",
         "ProcessDocumentCsvApiResponse",
     ),
-    "app/sql/v4/documents/save_document_complete.sql": (
+    "app/sql/v4/queries/documents/save_document_complete.sql": (
         "SaveDocumentSqlParams",
         "SaveDocumentSqlRow",
         "SaveDocumentApiRequest",
         "SaveDocumentApiResponse",
     ),
-    "app/sql/v4/evals/duplicate_eval_complete.sql": (
+    "app/sql/v4/queries/evals/duplicate_eval_complete.sql": (
         "DuplicateEvalSqlParams",
         "DuplicateEvalSqlRow",
         "DuplicateEvalApiRequest",
         "DuplicateEvalApiResponse",
     ),
-    "app/sql/v4/evals/get_eval_complete.sql": (
+    "app/sql/v4/queries/evals/get_eval_complete.sql": (
         "GetEvalSqlParams",
         "GetEvalSqlRow",
         "GetEvalApiRequest",
         "GetEvalApiResponse",
     ),
-    "app/sql/v4/evals/patch_eval_draft_complete.sql": (
+    "app/sql/v4/queries/evals/patch_eval_draft_complete.sql": (
         "PatchEvalDraftSqlParams",
         "PatchEvalDraftSqlRow",
         "PatchEvalDraftApiRequest",
         "PatchEvalDraftApiResponse",
     ),
-    "app/sql/v4/evals/save_eval_complete.sql": (
+    "app/sql/v4/queries/evals/save_eval_complete.sql": (
         "SaveEvalSqlParams",
         "SaveEvalSqlRow",
         "SaveEvalApiRequest",
         "SaveEvalApiResponse",
     ),
-    "app/sql/v4/fields/delete_field_complete.sql": (
+    "app/sql/v4/queries/fields/delete_field_complete.sql": (
         "DeleteFieldSqlParams",
         "DeleteFieldSqlRow",
         "DeleteFieldApiRequest",
         "DeleteFieldApiResponse",
     ),
-    "app/sql/v4/fields/duplicate_field_complete.sql": (
+    "app/sql/v4/queries/fields/duplicate_field_complete.sql": (
         "DuplicateFieldSqlParams",
         "DuplicateFieldSqlRow",
         "DuplicateFieldApiRequest",
         "DuplicateFieldApiResponse",
     ),
-    "app/sql/v4/fields/get_field_complete.sql": (
+    "app/sql/v4/queries/fields/get_field_complete.sql": (
         "GetFieldSqlParams",
         "GetFieldSqlRow",
         "GetFieldApiRequest",
         "GetFieldApiResponse",
     ),
-    "app/sql/v4/fields/get_fields_list_complete.sql": (
+    "app/sql/v4/queries/fields/get_fields_list_complete.sql": (
         "GetFieldsListSqlParams",
         "GetFieldsListSqlRow",
         "GetFieldsListApiRequest",
         "GetFieldsListApiResponse",
     ),
-    "app/sql/v4/fields/patch_field_draft_complete.sql": (
+    "app/sql/v4/queries/fields/patch_field_draft_complete.sql": (
         "PatchFieldDraftSqlParams",
         "PatchFieldDraftSqlRow",
         "PatchFieldDraftApiRequest",
         "PatchFieldDraftApiResponse",
     ),
-    "app/sql/v4/fields/save_field_complete.sql": (
+    "app/sql/v4/queries/fields/save_field_complete.sql": (
         "SaveFieldSqlParams",
         "SaveFieldSqlRow",
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
-    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql": (
         "GetGenerationRunContextAndCreateRunSqlParams",
         "GetGenerationRunContextAndCreateRunSqlRow",
         "GetGenerationRunContextAndCreateRunApiRequest",
         "GetGenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql": (
+    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
         "GetTextRunContextForExistingRunSqlParams",
         "GetTextRunContextForExistingRunSqlRow",
         "GetTextRunContextForExistingRunApiRequest",
         "GetTextRunContextForExistingRunApiResponse",
     ),
-    "app/sql/v4/generate/text/text_tool_progress_update_complete.sql": (
+    "app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql": (
         "TextToolProgressUpdateSqlParams",
         "TextToolProgressUpdateSqlRow",
         "TextToolProgressUpdateApiRequest",
         "TextToolProgressUpdateApiResponse",
     ),
-    "app/sql/v4/health/get_health_complete.sql": (
+    "app/sql/v4/queries/health/get_health_complete.sql": (
         "GetHealthSqlParams",
         "GetHealthSqlRow",
         "GetHealthApiRequest",
         "GetHealthApiResponse",
     ),
-    "app/sql/v4/health/get_health_list_complete.sql": (
+    "app/sql/v4/queries/health/get_health_list_complete.sql": (
         "GetHealthListSqlParams",
         "GetHealthListSqlRow",
         "GetHealthListApiRequest",
         "GetHealthListApiResponse",
     ),
-    "app/sql/v4/home/get_home_history_complete.sql": (
+    "app/sql/v4/queries/home/get_home_history_complete.sql": (
         "GetHomeHistorySqlParams",
         "GetHomeHistorySqlRow",
         "GetHomeHistoryApiRequest",
         "GetHomeHistoryApiResponse",
     ),
-    "app/sql/v4/home/get_home_overview_complete.sql": (
+    "app/sql/v4/queries/home/get_home_overview_complete.sql": (
         "GetHomeOverviewSqlParams",
         "GetHomeOverviewSqlRow",
         "GetHomeOverviewApiRequest",
         "GetHomeOverviewApiResponse",
     ),
-    "app/sql/v4/images/complete_image_generation_complete.sql": (
+    "app/sql/v4/queries/images/complete_image_generation_complete.sql": (
         "CompleteImageGenerationSqlParams",
         "CompleteImageGenerationSqlRow",
         "CompleteImageGenerationApiRequest",
         "CompleteImageGenerationApiResponse",
     ),
-    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql": (
+    "app/sql/v4/queries/images/get_image_generation_context_and_create_upload_complete.sql": (
         "GetImageGenerationContextAndCreateUploadSqlParams",
         "GetImageGenerationContextAndCreateUploadSqlRow",
         "GetImageGenerationContextAndCreateUploadApiRequest",
         "GetImageGenerationContextAndCreateUploadApiResponse",
     ),
-    "app/sql/v4/infra/artifacts/discovery/get_agent_end_event_name_complete.sql": (
+    "app/sql/v4/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql": (
         "GetAgentEndEventNameSqlParams",
         "GetAgentEndEventNameSqlRow",
         "GetAgentEndEventNameApiRequest",
         "GetAgentEndEventNameApiResponse",
     ),
-    "app/sql/v4/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql": (
+    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql": (
         "GetResourceOutputSchemaFieldsSqlParams",
         "GetResourceOutputSchemaFieldsSqlRow",
         "GetResourceOutputSchemaFieldsApiRequest",
         "GetResourceOutputSchemaFieldsApiResponse",
     ),
-    "app/sql/v4/infra/artifacts/discovery/get_resource_schema_fields_complete.sql": (
+    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_schema_fields_complete.sql": (
         "GetResourceSchemaFieldsSqlParams",
         "GetResourceSchemaFieldsSqlRow",
         "GetResourceSchemaFieldsApiRequest",
         "GetResourceSchemaFieldsApiResponse",
     ),
-    "app/sql/v4/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql": (
+    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql": (
         "GetResourceSqlFunctionNameSqlParams",
         "GetResourceSqlFunctionNameSqlRow",
         "GetResourceSqlFunctionNameApiRequest",
         "GetResourceSqlFunctionNameApiResponse",
     ),
-    "app/sql/v4/infra/artifacts/discovery/get_resource_table_columns_complete.sql": (
+    "app/sql/v4/queries/infra/artifacts/discovery/get_resource_table_columns_complete.sql": (
         "GetResourceTableColumnsSqlParams",
         "GetResourceTableColumnsSqlRow",
         "GetResourceTableColumnsApiRequest",
         "GetResourceTableColumnsApiResponse",
     ),
-    "app/sql/v4/infrastructure/activity/get_profile_name_for_logging_complete.sql": (
+    "app/sql/v4/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql": (
         "InfraActivityGetProfileNameForLoggingSqlParams",
         "InfraActivityGetProfileNameForLoggingSqlRow",
         "InfraActivityGetProfileNameForLoggingApiRequest",
         "InfraActivityGetProfileNameForLoggingApiResponse",
     ),
-    "app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql": (
+    "app/sql/v4/queries/infrastructure/artifacts/get_group_id_from_run_complete.sql": (
         "InfraArtifactsGetGroupIdFromRunSqlParams",
         "InfraArtifactsGetGroupIdFromRunSqlRow",
         "InfraArtifactsGetGroupIdFromRunApiRequest",
         "InfraArtifactsGetGroupIdFromRunApiResponse",
     ),
-    "app/sql/v4/infrastructure/developer_instructions/get_domain_artifact_complete.sql": (
+    "app/sql/v4/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql": (
         "InfraDeveloperInstructionsGetDomainArtifactSqlParams",
         "InfraDeveloperInstructionsGetDomainArtifactSqlRow",
         "InfraDeveloperInstructionsGetDomainArtifactApiRequest",
         "InfraDeveloperInstructionsGetDomainArtifactApiResponse",
     ),
-    "app/sql/v4/infrastructure/documents/get_document_agents_complete.sql": (
+    "app/sql/v4/queries/infrastructure/documents/get_document_agents_complete.sql": (
         "InfraDocumentsGetDocumentAgentsSqlParams",
         "InfraDocumentsGetDocumentAgentsSqlRow",
         "InfraDocumentsGetDocumentAgentsApiRequest",
         "InfraDocumentsGetDocumentAgentsApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/create_test_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/create_test_v4_complete.sql": (
         "InfraEvalsCreateTestV4SqlParams",
         "InfraEvalsCreateTestV4SqlRow",
         "InfraEvalsCreateTestV4ApiRequest",
         "InfraEvalsCreateTestV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/get_department_from_run_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/get_department_from_run_v4_complete.sql": (
         "InfraEvalsGetDepartmentFromRunV4SqlParams",
         "InfraEvalsGetDepartmentFromRunV4SqlRow",
         "InfraEvalsGetDepartmentFromRunV4ApiRequest",
         "InfraEvalsGetDepartmentFromRunV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/get_eval_run_status_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql": (
         "InfraEvalsGetEvalRunStatusV4SqlParams",
         "InfraEvalsGetEvalRunStatusV4SqlRow",
         "InfraEvalsGetEvalRunStatusV4ApiRequest",
         "InfraEvalsGetEvalRunStatusV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/get_rubric_details_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql": (
         "InfraEvalsGetRubricDetailsV4SqlParams",
         "InfraEvalsGetRubricDetailsV4SqlRow",
         "InfraEvalsGetRubricDetailsV4ApiRequest",
         "InfraEvalsGetRubricDetailsV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql": (
         "InfraEvalsGetRubricGradeAgentV4SqlParams",
         "InfraEvalsGetRubricGradeAgentV4SqlRow",
         "InfraEvalsGetRubricGradeAgentV4ApiRequest",
         "InfraEvalsGetRubricGradeAgentV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/get_test_by_trace_id_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/get_test_by_trace_id_v4_complete.sql": (
         "InfraEvalsGetTestByTraceIdV4SqlParams",
         "InfraEvalsGetTestByTraceIdV4SqlRow",
         "InfraEvalsGetTestByTraceIdV4ApiRequest",
         "InfraEvalsGetTestByTraceIdV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/get_test_status_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/get_test_status_v4_complete.sql": (
         "InfraEvalsGetTestStatusV4SqlParams",
         "InfraEvalsGetTestStatusV4SqlRow",
         "InfraEvalsGetTestStatusV4ApiRequest",
         "InfraEvalsGetTestStatusV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/link_attempt_test_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/link_attempt_test_v4_complete.sql": (
         "InfraEvalsLinkAttemptTestV4SqlParams",
         "InfraEvalsLinkAttemptTestV4SqlRow",
         "InfraEvalsLinkAttemptTestV4ApiRequest",
         "InfraEvalsLinkAttemptTestV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/link_test_run_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/link_test_run_v4_complete.sql": (
         "InfraEvalsLinkTestRunV4SqlParams",
         "InfraEvalsLinkTestRunV4SqlRow",
         "InfraEvalsLinkTestRunV4ApiRequest",
         "InfraEvalsLinkTestRunV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/mark_eval_run_complete_v4_complete.sql": (
         "InfraEvalsMarkEvalRunCompleteV4SqlParams",
         "InfraEvalsMarkEvalRunCompleteV4SqlRow",
         "InfraEvalsMarkEvalRunCompleteV4ApiRequest",
         "InfraEvalsMarkEvalRunCompleteV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/mark_model_run_complete_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/mark_model_run_complete_v4_complete.sql": (
         "InfraEvalsMarkModelRunCompleteV4SqlParams",
         "InfraEvalsMarkModelRunCompleteV4SqlRow",
         "InfraEvalsMarkModelRunCompleteV4ApiRequest",
         "InfraEvalsMarkModelRunCompleteV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql": (
         "InfraEvalsMarkModelRunIncompleteV4SqlParams",
         "InfraEvalsMarkModelRunIncompleteV4SqlRow",
         "InfraEvalsMarkModelRunIncompleteV4ApiRequest",
         "InfraEvalsMarkModelRunIncompleteV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/evals/mark_test_complete_v4_complete.sql": (
         "InfraEvalsMarkTestCompleteV4SqlParams",
         "InfraEvalsMarkTestCompleteV4SqlRow",
         "InfraEvalsMarkTestCompleteV4ApiRequest",
         "InfraEvalsMarkTestCompleteV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_activity_insert_complete.sql": (
         "InfrastructureActivityInsertSqlParams",
         "InfrastructureActivityInsertSqlRow",
         "InfrastructureActivityInsertApiRequest",
         "InfrastructureActivityInsertApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_activity_insert_websocket_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_activity_insert_websocket_complete.sql": (
         "InfrastructureActivityInsertWebsocketSqlParams",
         "InfrastructureActivityInsertWebsocketSqlRow",
         "InfrastructureActivityInsertWebsocketApiRequest",
         "InfrastructureActivityInsertWebsocketApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql": (
         "InfrastructureActivityProfileExistsSqlParams",
         "InfrastructureActivityProfileExistsSqlRow",
         "InfrastructureActivityProfileExistsApiRequest",
         "InfrastructureActivityProfileExistsApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql": (
         "InfrastructureDebugInsertDebugInfoSqlParams",
         "InfrastructureDebugInsertDebugInfoSqlRow",
         "InfrastructureDebugInsertDebugInfoApiRequest",
         "InfrastructureDebugInsertDebugInfoApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_metrics_health_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_metrics_health_complete.sql": (
         "InfrastructureMetricsHealthSqlParams",
         "InfrastructureMetricsHealthSqlRow",
         "InfrastructureMetricsHealthApiRequest",
         "InfrastructureMetricsHealthApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_metrics_snapshot_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_metrics_snapshot_complete.sql": (
         "InfrastructureMetricsSnapshotSqlParams",
         "InfrastructureMetricsSnapshotSqlRow",
         "InfrastructureMetricsSnapshotApiRequest",
         "InfrastructureMetricsSnapshotApiResponse",
     ),
-    "app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql": (
+    "app/sql/v4/queries/infrastructure/infrastructure_profile_resolve_from_department_complete.sql": (
         "InfrastructureProfileResolveFromDepartmentSqlParams",
         "InfrastructureProfileResolveFromDepartmentSqlRow",
         "InfrastructureProfileResolveFromDepartmentApiRequest",
         "InfrastructureProfileResolveFromDepartmentApiResponse",
     ),
-    "app/sql/v4/infrastructure/tools/get_schema_fields_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql": (
         "InfraToolsGetSchemaFieldsV4SqlParams",
         "InfraToolsGetSchemaFieldsV4SqlRow",
         "InfraToolsGetSchemaFieldsV4ApiRequest",
         "InfraToolsGetSchemaFieldsV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/tools/get_schema_id_from_template_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql": (
         "InfraToolsGetSchemaIdFromTemplateV4SqlParams",
         "InfraToolsGetSchemaIdFromTemplateV4SqlRow",
         "InfraToolsGetSchemaIdFromTemplateV4ApiRequest",
         "InfraToolsGetSchemaIdFromTemplateV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/tools/get_template_id_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql": (
         "InfraToolsGetTemplateIdV4SqlParams",
         "InfraToolsGetTemplateIdV4SqlRow",
         "InfraToolsGetTemplateIdV4ApiRequest",
         "InfraToolsGetTemplateIdV4ApiResponse",
     ),
-    "app/sql/v4/infrastructure/tools/get_tool_call_result_v4_complete.sql": (
+    "app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql": (
         "InfraToolsGetToolCallResultV4SqlParams",
         "InfraToolsGetToolCallResultV4SqlRow",
         "InfraToolsGetToolCallResultV4ApiRequest",
         "InfraToolsGetToolCallResultV4ApiResponse",
     ),
-    "app/sql/v4/keycloak/get_auth_items_complete.sql": (
+    "app/sql/v4/queries/keycloak/get_auth_items_complete.sql": (
         "GetAuthItemsSqlParams",
         "GetAuthItemsSqlRow",
         "GetAuthItemsApiRequest",
         "GetAuthItemsApiResponse",
     ),
-    "app/sql/v4/keycloak/get_auths_for_org_complete.sql": (
+    "app/sql/v4/queries/keycloak/get_auths_for_org_complete.sql": (
         "GetAuthsForOrgSqlParams",
         "GetAuthsForOrgSqlRow",
         "GetAuthsForOrgApiRequest",
         "GetAuthsForOrgApiResponse",
     ),
-    "app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql": (
+    "app/sql/v4/queries/keycloak/get_auths_for_realm_level_complete.sql": (
         "GetAuthsForRealmLevelSqlParams",
         "GetAuthsForRealmLevelSqlRow",
         "GetAuthsForRealmLevelApiRequest",
         "GetAuthsForRealmLevelApiResponse",
     ),
-    "app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql": (
+    "app/sql/v4/queries/keycloak/get_departments_for_org_sync_complete.sql": (
         "GetDepartmentsForOrgSyncSqlParams",
         "GetDepartmentsForOrgSyncSqlRow",
         "GetDepartmentsForOrgSyncApiRequest",
         "GetDepartmentsForOrgSyncApiResponse",
     ),
-    "app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql": (
+    "app/sql/v4/queries/keycloak/get_setting_profiles_for_idp_complete.sql": (
         "GetSettingProfilesForIdpSqlParams",
         "GetSettingProfilesForIdpSqlRow",
         "GetSettingProfilesForIdpApiRequest",
         "GetSettingProfilesForIdpApiResponse",
     ),
-    "app/sql/v4/keycloak/update_master_realm_ssl_complete.sql": (
+    "app/sql/v4/queries/keycloak/update_master_realm_ssl_complete.sql": (
         "UpdateMasterRealmSslSqlParams",
         "UpdateMasterRealmSslSqlRow",
         "UpdateMasterRealmSslApiRequest",
         "UpdateMasterRealmSslApiResponse",
     ),
-    "app/sql/v4/keys/get_key_for_decrypt_complete.sql": (
+    "app/sql/v4/queries/keys/get_key_for_decrypt_complete.sql": (
         "GetKeyForDecryptSqlParams",
         "GetKeyForDecryptSqlRow",
         "GetKeyForDecryptApiRequest",
         "GetKeyForDecryptApiResponse",
     ),
-    "app/sql/v4/leaderboard/get_leaderboard_complete.sql": (
+    "app/sql/v4/queries/leaderboard/get_leaderboard_complete.sql": (
         "GetLeaderboardSqlParams",
         "GetLeaderboardSqlRow",
         "GetLeaderboardApiRequest",
         "GetLeaderboardApiResponse",
     ),
-    "app/sql/v4/leaderboard/get_leaderboard_list_complete.sql": (
+    "app/sql/v4/queries/leaderboard/get_leaderboard_list_complete.sql": (
         "GetLeaderboardListSqlParams",
         "GetLeaderboardListSqlRow",
         "GetLeaderboardListApiRequest",
         "GetLeaderboardListApiResponse",
     ),
-    "app/sql/v4/member/member_progress_upsert_complete.sql": (
+    "app/sql/v4/queries/member/member_progress_upsert_complete.sql": (
         "MemberProgressUpsertSqlParams",
         "MemberProgressUpsertSqlRow",
         "MemberProgressUpsertApiRequest",
         "MemberProgressUpsertApiResponse",
     ),
-    "app/sql/v4/messages/create_assistant_message_for_run_complete.sql": (
+    "app/sql/v4/queries/messages/create_assistant_message_for_run_complete.sql": (
         "CreateAssistantMessageForRunSqlParams",
         "CreateAssistantMessageForRunSqlRow",
         "CreateAssistantMessageForRunApiRequest",
         "CreateAssistantMessageForRunApiResponse",
     ),
-    "app/sql/v4/messages/get_message_created_at_complete.sql": (
+    "app/sql/v4/queries/messages/get_message_created_at_complete.sql": (
         "GetMessageCreatedAtSqlParams",
         "GetMessageCreatedAtSqlRow",
         "GetMessageCreatedAtApiRequest",
         "GetMessageCreatedAtApiResponse",
     ),
-    "app/sql/v4/messages/get_messages_by_ids_complete.sql": (
+    "app/sql/v4/queries/messages/get_messages_by_ids_complete.sql": (
         "GetMessagesByIdsSqlParams",
         "GetMessagesByIdsSqlRow",
         "GetMessagesByIdsApiRequest",
         "GetMessagesByIdsApiResponse",
     ),
-    "app/sql/v4/messages/get_messages_by_run_id_complete.sql": (
+    "app/sql/v4/queries/messages/get_messages_by_run_id_complete.sql": (
         "GetMessagesByRunIdSqlParams",
         "GetMessagesByRunIdSqlRow",
         "GetMessagesByRunIdApiRequest",
         "GetMessagesByRunIdApiResponse",
     ),
-    "app/sql/v4/model_runs/create_model_run_complete.sql": (
+    "app/sql/v4/queries/model_runs/create_model_run_complete.sql": (
         "CreateModelRunSqlParams",
         "CreateModelRunSqlRow",
         "CreateModelRunApiRequest",
         "CreateModelRunApiResponse",
     ),
-    "app/sql/v4/model_runs/log_run_complete.sql": (
+    "app/sql/v4/queries/model_runs/log_run_complete.sql": (
         "LogRunSqlParams",
         "LogRunSqlRow",
         "LogRunApiRequest",
         "LogRunApiResponse",
     ),
-    "app/sql/v4/models/delete_model_complete.sql": (
+    "app/sql/v4/queries/models/delete_model_complete.sql": (
         "DeleteModelSqlParams",
         "DeleteModelSqlRow",
         "DeleteModelApiRequest",
         "DeleteModelApiResponse",
     ),
-    "app/sql/v4/models/duplicate_model_complete.sql": (
+    "app/sql/v4/queries/models/duplicate_model_complete.sql": (
         "DuplicateModelSqlParams",
         "DuplicateModelSqlRow",
         "DuplicateModelApiRequest",
         "DuplicateModelApiResponse",
     ),
-    "app/sql/v4/models/get_model_complete.sql": (
+    "app/sql/v4/queries/models/get_model_complete.sql": (
         "GetModelSqlParams",
         "GetModelSqlRow",
         "GetModelApiRequest",
         "GetModelApiResponse",
     ),
-    "app/sql/v4/models/list_models_complete.sql": (
+    "app/sql/v4/queries/models/list_models_complete.sql": (
         "ListModelsSqlParams",
         "ListModelsSqlRow",
         "ListModelsApiRequest",
         "ListModelsApiResponse",
     ),
-    "app/sql/v4/models/patch_model_draft_complete.sql": (
+    "app/sql/v4/queries/models/patch_model_draft_complete.sql": (
         "PatchModelDraftSqlParams",
         "PatchModelDraftSqlRow",
         "PatchModelDraftApiRequest",
         "PatchModelDraftApiResponse",
     ),
-    "app/sql/v4/models/save_model_complete.sql": (
+    "app/sql/v4/queries/models/save_model_complete.sql": (
         "SaveModelSqlParams",
         "SaveModelSqlRow",
         "SaveModelApiRequest",
         "SaveModelApiResponse",
     ),
-    "app/sql/v4/parameters/delete_parameter_complete.sql": (
+    "app/sql/v4/queries/parameters/delete_parameter_complete.sql": (
         "DeleteParameterSqlParams",
         "DeleteParameterSqlRow",
         "DeleteParameterApiRequest",
         "DeleteParameterApiResponse",
     ),
-    "app/sql/v4/parameters/duplicate_parameter_complete.sql": (
+    "app/sql/v4/queries/parameters/duplicate_parameter_complete.sql": (
         "DuplicateParameterSqlParams",
         "DuplicateParameterSqlRow",
         "DuplicateParameterApiRequest",
         "DuplicateParameterApiResponse",
     ),
-    "app/sql/v4/parameters/get_parameter_complete.sql": (
+    "app/sql/v4/queries/parameters/get_parameter_complete.sql": (
         "GetParameterSqlParams",
         "GetParameterSqlRow",
         "GetParameterApiRequest",
         "GetParameterApiResponse",
     ),
-    "app/sql/v4/parameters/get_parameters_list_complete.sql": (
+    "app/sql/v4/queries/parameters/get_parameters_list_complete.sql": (
         "GetParametersListSqlParams",
         "GetParametersListSqlRow",
         "GetParametersListApiRequest",
         "GetParametersListApiResponse",
     ),
-    "app/sql/v4/parameters/patch_parameter_draft_complete.sql": (
+    "app/sql/v4/queries/parameters/patch_parameter_draft_complete.sql": (
         "PatchParameterDraftSqlParams",
         "PatchParameterDraftSqlRow",
         "PatchParameterDraftApiRequest",
         "PatchParameterDraftApiResponse",
     ),
-    "app/sql/v4/parameters/save_parameter_complete.sql": (
+    "app/sql/v4/queries/parameters/save_parameter_complete.sql": (
         "SaveParameterSqlParams",
         "SaveParameterSqlRow",
         "SaveParameterApiRequest",
         "SaveParameterApiResponse",
     ),
-    "app/sql/v4/personas/delete_persona_complete.sql": (
+    "app/sql/v4/queries/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
         "DeletePersonaSqlRow",
         "DeletePersonaApiRequest",
         "DeletePersonaApiResponse",
     ),
-    "app/sql/v4/personas/duplicate_persona_complete.sql": (
+    "app/sql/v4/queries/personas/duplicate_persona_complete.sql": (
         "DuplicatePersonaSqlParams",
         "DuplicatePersonaSqlRow",
         "DuplicatePersonaApiRequest",
         "DuplicatePersonaApiResponse",
     ),
-    "app/sql/v4/personas/get_group_ids_by_resource_ids_complete.sql": (
+    "app/sql/v4/queries/personas/get_group_ids_by_resource_ids_complete.sql": (
         "GetGroupIdsByResourceIdsSqlParams",
         "GetGroupIdsByResourceIdsSqlRow",
         "GetGroupIdsByResourceIdsApiRequest",
         "GetGroupIdsByResourceIdsApiResponse",
     ),
-    "app/sql/v4/personas/get_persona_complete.sql": (
+    "app/sql/v4/queries/personas/get_persona_complete.sql": (
         "GetPersonaSqlParams",
         "GetPersonaSqlRow",
         "GetPersonaApiRequest",
         "GetPersonaApiResponse",
     ),
-    "app/sql/v4/personas/get_persona_generation_context_complete.sql": (
+    "app/sql/v4/queries/personas/get_persona_generation_context_complete.sql": (
         "GetPersonaGenerationContextSqlParams",
         "GetPersonaGenerationContextSqlRow",
         "GetPersonaGenerationContextApiRequest",
         "GetPersonaGenerationContextApiResponse",
     ),
-    "app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql": (
+    "app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql": (
         "GetPersonaResourceIdsByGroupIdSqlParams",
         "GetPersonaResourceIdsByGroupIdSqlRow",
         "GetPersonaResourceIdsByGroupIdApiRequest",
         "GetPersonaResourceIdsByGroupIdApiResponse",
     ),
-    "app/sql/v4/personas/get_personas_list_complete.sql": (
+    "app/sql/v4/queries/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
         "GetPersonasListSqlRow",
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
-    "app/sql/v4/personas/patch_persona_draft_complete.sql": (
+    "app/sql/v4/queries/personas/patch_persona_draft_complete.sql": (
         "PatchPersonaDraftSqlParams",
         "PatchPersonaDraftSqlRow",
         "PatchPersonaDraftApiRequest",
         "PatchPersonaDraftApiResponse",
     ),
-    "app/sql/v4/personas/save_persona_complete.sql": (
+    "app/sql/v4/queries/personas/save_persona_complete.sql": (
         "SavePersonaSqlParams",
         "SavePersonaSqlRow",
         "SavePersonaApiRequest",
         "SavePersonaApiResponse",
     ),
-    "app/sql/v4/personas/validate_persona_resource_error_complete.sql": (
+    "app/sql/v4/queries/personas/validate_persona_resource_error_complete.sql": (
         "ValidatePersonaResourceErrorSqlParams",
         "ValidatePersonaResourceErrorSqlRow",
         "ValidatePersonaResourceErrorApiRequest",
         "ValidatePersonaResourceErrorApiResponse",
     ),
-    "app/sql/v4/personas/validate_persona_resource_progress_complete.sql": (
+    "app/sql/v4/queries/personas/validate_persona_resource_progress_complete.sql": (
         "ValidatePersonaResourceProgressSqlParams",
         "ValidatePersonaResourceProgressSqlRow",
         "ValidatePersonaResourceProgressApiRequest",
         "ValidatePersonaResourceProgressApiResponse",
     ),
-    "app/sql/v4/practice/get_practice_history_complete.sql": (
+    "app/sql/v4/queries/practice/get_practice_history_complete.sql": (
         "GetPracticeHistorySqlParams",
         "GetPracticeHistorySqlRow",
         "GetPracticeHistoryApiRequest",
         "GetPracticeHistoryApiResponse",
     ),
-    "app/sql/v4/practice/get_practice_overview_complete.sql": (
+    "app/sql/v4/queries/practice/get_practice_overview_complete.sql": (
         "GetPracticeOverviewSqlParams",
         "GetPracticeOverviewSqlRow",
         "GetPracticeOverviewApiRequest",
         "GetPracticeOverviewApiResponse",
     ),
-    "app/sql/v4/pricing/get_pricing_analytics_complete.sql": (
+    "app/sql/v4/queries/pricing/get_pricing_analytics_complete.sql": (
         "GetPricingAnalyticsSqlParams",
         "GetPricingAnalyticsSqlRow",
         "GetPricingAnalyticsApiRequest",
         "GetPricingAnalyticsApiResponse",
     ),
-    "app/sql/v4/pricing/get_pricing_group_detail_complete.sql": (
+    "app/sql/v4/queries/pricing/get_pricing_group_detail_complete.sql": (
         "GetPricingGroupDetailSqlParams",
         "GetPricingGroupDetailSqlRow",
         "GetPricingGroupDetailApiRequest",
         "GetPricingGroupDetailApiResponse",
     ),
-    "app/sql/v4/pricing/get_pricing_runs_complete.sql": (
+    "app/sql/v4/queries/pricing/get_pricing_runs_complete.sql": (
         "GetPricingRunsSqlParams",
         "GetPricingRunsSqlRow",
         "GetPricingRunsApiRequest",
         "GetPricingRunsApiResponse",
     ),
-    "app/sql/v4/profile/authorize_emulation_complete.sql": (
+    "app/sql/v4/queries/profile/authorize_emulation_complete.sql": (
         "AuthorizeEmulationSqlParams",
         "AuthorizeEmulationSqlRow",
         "AuthorizeEmulationApiRequest",
         "AuthorizeEmulationApiResponse",
     ),
-    "app/sql/v4/profile/check_login_authorization_complete.sql": (
+    "app/sql/v4/queries/profile/check_login_authorization_complete.sql": (
         "CheckLoginAuthorizationSqlParams",
         "CheckLoginAuthorizationSqlRow",
         "CheckLoginAuthorizationApiRequest",
         "CheckLoginAuthorizationApiResponse",
     ),
-    "app/sql/v4/profile/create_or_update_profile_complete.sql": (
+    "app/sql/v4/queries/profile/create_or_update_profile_complete.sql": (
         "CreateOrUpdateProfileSqlParams",
         "CreateOrUpdateProfileSqlRow",
         "CreateOrUpdateProfileApiRequest",
         "CreateOrUpdateProfileApiResponse",
     ),
-    "app/sql/v4/profile/create_profile_if_not_exists_complete.sql": (
+    "app/sql/v4/queries/profile/create_profile_if_not_exists_complete.sql": (
         "CreateProfileIfNotExistsSqlParams",
         "CreateProfileIfNotExistsSqlRow",
         "CreateProfileIfNotExistsApiRequest",
         "CreateProfileIfNotExistsApiResponse",
     ),
-    "app/sql/v4/profile/delete_profile_complete.sql": (
+    "app/sql/v4/queries/profile/delete_profile_complete.sql": (
         "DeleteProfileSqlParams",
         "DeleteProfileSqlRow",
         "DeleteProfileApiRequest",
         "DeleteProfileApiResponse",
     ),
-    "app/sql/v4/profile/get_profile_by_email_complete.sql": (
+    "app/sql/v4/queries/profile/get_profile_by_email_complete.sql": (
         "GetProfileByEmailSqlParams",
         "GetProfileByEmailSqlRow",
         "GetProfileByEmailApiRequest",
         "GetProfileByEmailApiResponse",
     ),
-    "app/sql/v4/profile/get_profile_complete.sql": (
+    "app/sql/v4/queries/profile/get_profile_complete.sql": (
         "GetProfileSqlParams",
         "GetProfileSqlRow",
         "GetProfileApiRequest",
         "GetProfileApiResponse",
     ),
-    "app/sql/v4/profile/get_profile_context_complete.sql": (
+    "app/sql/v4/queries/profile/get_profile_context_complete.sql": (
         "GetProfileContextSqlParams",
         "GetProfileContextSqlRow",
         "GetProfileContextApiRequest",
         "GetProfileContextApiResponse",
     ),
-    "app/sql/v4/profile/get_profile_resource_ids_by_group_id_complete.sql": (
+    "app/sql/v4/queries/profile/get_profile_resource_ids_by_group_id_complete.sql": (
         "GetProfileResourceIdsByGroupIdSqlParams",
         "GetProfileResourceIdsByGroupIdSqlRow",
         "GetProfileResourceIdsByGroupIdApiRequest",
         "GetProfileResourceIdsByGroupIdApiResponse",
     ),
-    "app/sql/v4/profile/patch_profile_draft_complete.sql": (
+    "app/sql/v4/queries/profile/patch_profile_draft_complete.sql": (
         "PatchProfileDraftSqlParams",
         "PatchProfileDraftSqlRow",
         "PatchProfileDraftApiRequest",
         "PatchProfileDraftApiResponse",
     ),
-    "app/sql/v4/profile/save_profile_complete.sql": (
+    "app/sql/v4/queries/profile/save_profile_complete.sql": (
         "SaveProfileSqlParams",
         "SaveProfileSqlRow",
         "SaveProfileApiRequest",
         "SaveProfileApiResponse",
     ),
-    "app/sql/v4/profile/search_simulatable_profiles_complete.sql": (
+    "app/sql/v4/queries/profile/search_simulatable_profiles_complete.sql": (
         "SearchSimulatableProfilesSqlParams",
         "SearchSimulatableProfilesSqlRow",
         "SearchSimulatableProfilesApiRequest",
         "SearchSimulatableProfilesApiResponse",
     ),
-    "app/sql/v4/profile/update_profile_to_active_complete.sql": (
+    "app/sql/v4/queries/profile/update_profile_to_active_complete.sql": (
         "UpdateProfileToActiveSqlParams",
         "UpdateProfileToActiveSqlRow",
         "UpdateProfileToActiveApiRequest",
         "UpdateProfileToActiveApiResponse",
     ),
-    "app/sql/v4/profile/update_profile_to_inactive_complete.sql": (
+    "app/sql/v4/queries/profile/update_profile_to_inactive_complete.sql": (
         "UpdateProfileToInactiveSqlParams",
         "UpdateProfileToInactiveSqlRow",
         "UpdateProfileToInactiveApiRequest",
         "UpdateProfileToInactiveApiResponse",
     ),
-    "app/sql/v4/profile/validate_profile_resource_error_complete.sql": (
+    "app/sql/v4/queries/profile/validate_profile_resource_error_complete.sql": (
         "ValidateProfileResourceErrorSqlParams",
         "ValidateProfileResourceErrorSqlRow",
         "ValidateProfileResourceErrorApiRequest",
         "ValidateProfileResourceErrorApiResponse",
     ),
-    "app/sql/v4/profile/validate_profile_resource_progress_complete.sql": (
+    "app/sql/v4/queries/profile/validate_profile_resource_progress_complete.sql": (
         "ValidateProfileResourceProgressSqlParams",
         "ValidateProfileResourceProgressSqlRow",
         "ValidateProfileResourceProgressApiRequest",
         "ValidateProfileResourceProgressApiResponse",
     ),
-    "app/sql/v4/providers/delete_provider_complete.sql": (
+    "app/sql/v4/queries/providers/delete_provider_complete.sql": (
         "DeleteProviderSqlParams",
         "DeleteProviderSqlRow",
         "DeleteProviderApiRequest",
         "DeleteProviderApiResponse",
     ),
-    "app/sql/v4/providers/duplicate_provider_complete.sql": (
+    "app/sql/v4/queries/providers/duplicate_provider_complete.sql": (
         "DuplicateProviderSqlParams",
         "DuplicateProviderSqlRow",
         "DuplicateProviderApiRequest",
         "DuplicateProviderApiResponse",
     ),
-    "app/sql/v4/providers/get_provider_complete.sql": (
+    "app/sql/v4/queries/providers/get_provider_complete.sql": (
         "GetProviderSqlParams",
         "GetProviderSqlRow",
         "GetProviderApiRequest",
         "GetProviderApiResponse",
     ),
-    "app/sql/v4/providers/get_providers_list_complete.sql": (
+    "app/sql/v4/queries/providers/get_providers_list_complete.sql": (
         "GetProvidersListSqlParams",
         "GetProvidersListSqlRow",
         "GetProvidersListApiRequest",
         "GetProvidersListApiResponse",
     ),
-    "app/sql/v4/providers/patch_provider_draft_complete.sql": (
+    "app/sql/v4/queries/providers/patch_provider_draft_complete.sql": (
         "PatchProviderDraftSqlParams",
         "PatchProviderDraftSqlRow",
         "PatchProviderDraftApiRequest",
         "PatchProviderDraftApiResponse",
     ),
-    "app/sql/v4/providers/save_provider_complete.sql": (
+    "app/sql/v4/queries/providers/save_provider_complete.sql": (
         "SaveProviderSqlParams",
         "SaveProviderSqlRow",
         "SaveProviderApiRequest",
         "SaveProviderApiResponse",
     ),
-    "app/sql/v4/reports/get_per_simulation_metrics_complete.sql": (
+    "app/sql/v4/queries/reports/get_per_simulation_metrics_complete.sql": (
         "GetPerSimulationMetricsSqlParams",
         "GetPerSimulationMetricsSqlRow",
         "GetPerSimulationMetricsApiRequest",
         "GetPerSimulationMetricsApiResponse",
     ),
-    "app/sql/v4/reports/get_reports_bundle_complete.sql": (
+    "app/sql/v4/queries/reports/get_reports_bundle_complete.sql": (
         "GetReportsBundleSqlParams",
         "GetReportsBundleSqlRow",
         "GetReportsBundleApiRequest",
         "GetReportsBundleApiResponse",
     ),
-    "app/sql/v4/reports/get_reports_history_complete.sql": (
+    "app/sql/v4/queries/reports/get_reports_history_complete.sql": (
         "GetReportsHistorySqlParams",
         "GetReportsHistorySqlRow",
         "GetReportsHistoryApiRequest",
         "GetReportsHistoryApiResponse",
     ),
-    "app/sql/v4/reports/get_reports_overview_complete.sql": (
+    "app/sql/v4/queries/reports/get_reports_overview_complete.sql": (
         "GetReportsOverviewSqlParams",
         "GetReportsOverviewSqlRow",
         "GetReportsOverviewApiRequest",
         "GetReportsOverviewApiResponse",
     ),
-    "app/sql/v4/resources/agents_complete.sql": (
+    "app/sql/v4/queries/resources/agents_complete.sql": (
         "AgentsSqlParams",
         "AgentsSqlRow",
         "AgentsApiRequest",
         "AgentsApiResponse",
     ),
-    "app/sql/v4/resources/args_complete.sql": (
+    "app/sql/v4/queries/resources/args_complete.sql": (
         "ArgsSqlParams",
         "ArgsSqlRow",
         "ArgsApiRequest",
         "ArgsApiResponse",
     ),
-    "app/sql/v4/resources/args_outputs_complete.sql": (
+    "app/sql/v4/queries/resources/args_outputs_complete.sql": (
         "ArgsOutputsSqlParams",
         "ArgsOutputsSqlRow",
         "ArgsOutputsApiRequest",
         "ArgsOutputsApiResponse",
     ),
-    "app/sql/v4/resources/audios_complete.sql": (
+    "app/sql/v4/queries/resources/audios_complete.sql": (
         "AudiosSqlParams",
         "AudiosSqlRow",
         "AudiosApiRequest",
         "AudiosApiResponse",
     ),
-    "app/sql/v4/resources/auths_complete.sql": (
+    "app/sql/v4/queries/resources/auths_complete.sql": (
         "AuthsSqlParams",
         "AuthsSqlRow",
         "AuthsApiRequest",
         "AuthsApiResponse",
     ),
-    "app/sql/v4/resources/cohorts_complete.sql": (
+    "app/sql/v4/queries/resources/cohorts_complete.sql": (
         "CohortsSqlParams",
         "CohortsSqlRow",
         "CohortsApiRequest",
         "CohortsApiResponse",
     ),
-    "app/sql/v4/resources/colors_complete.sql": (
+    "app/sql/v4/queries/resources/colors_complete.sql": (
         "ColorsSqlParams",
         "ColorsSqlRow",
         "ColorsApiRequest",
         "ColorsApiResponse",
     ),
-    "app/sql/v4/resources/departments_complete.sql": (
+    "app/sql/v4/queries/resources/departments_complete.sql": (
         "DepartmentsSqlParams",
         "DepartmentsSqlRow",
         "DepartmentsApiRequest",
         "DepartmentsApiResponse",
     ),
-    "app/sql/v4/resources/descriptions_complete.sql": (
+    "app/sql/v4/queries/resources/descriptions_complete.sql": (
         "DescriptionsSqlParams",
         "DescriptionsSqlRow",
         "DescriptionsApiRequest",
         "DescriptionsApiResponse",
     ),
-    "app/sql/v4/resources/documents_complete.sql": (
+    "app/sql/v4/queries/resources/documents_complete.sql": (
         "DocumentsSqlParams",
         "DocumentsSqlRow",
         "DocumentsApiRequest",
         "DocumentsApiResponse",
     ),
-    "app/sql/v4/resources/emails_complete.sql": (
+    "app/sql/v4/queries/resources/emails_complete.sql": (
         "EmailsSqlParams",
         "EmailsSqlRow",
         "EmailsApiRequest",
         "EmailsApiResponse",
     ),
-    "app/sql/v4/resources/endpoints_complete.sql": (
+    "app/sql/v4/queries/resources/endpoints_complete.sql": (
         "EndpointsSqlParams",
         "EndpointsSqlRow",
         "EndpointsApiRequest",
         "EndpointsApiResponse",
     ),
-    "app/sql/v4/resources/evals_complete.sql": (
+    "app/sql/v4/queries/resources/evals_complete.sql": (
         "EvalsSqlParams",
         "EvalsSqlRow",
         "EvalsApiRequest",
         "EvalsApiResponse",
     ),
-    "app/sql/v4/resources/examples_complete.sql": (
+    "app/sql/v4/queries/resources/examples_complete.sql": (
         "ExamplesSqlParams",
         "ExamplesSqlRow",
         "ExamplesApiRequest",
         "ExamplesApiResponse",
     ),
-    "app/sql/v4/resources/fields_complete.sql": (
+    "app/sql/v4/queries/resources/fields_complete.sql": (
         "FieldsSqlParams",
         "FieldsSqlRow",
         "FieldsApiRequest",
         "FieldsApiResponse",
     ),
-    "app/sql/v4/resources/flags_complete.sql": (
+    "app/sql/v4/queries/resources/flags_complete.sql": (
         "FlagsSqlParams",
         "FlagsSqlRow",
         "FlagsApiRequest",
         "FlagsApiResponse",
     ),
-    "app/sql/v4/resources/group_positions_complete.sql": (
+    "app/sql/v4/queries/resources/group_positions_complete.sql": (
         "GroupPositionsSqlParams",
         "GroupPositionsSqlRow",
         "GroupPositionsApiRequest",
         "GroupPositionsApiResponse",
     ),
-    "app/sql/v4/resources/groups_complete.sql": (
+    "app/sql/v4/queries/resources/groups_complete.sql": (
         "GroupsSqlParams",
         "GroupsSqlRow",
         "GroupsApiRequest",
         "GroupsApiResponse",
     ),
-    "app/sql/v4/resources/icons_complete.sql": (
+    "app/sql/v4/queries/resources/icons_complete.sql": (
         "IconsSqlParams",
         "IconsSqlRow",
         "IconsApiRequest",
         "IconsApiResponse",
     ),
-    "app/sql/v4/resources/images_complete.sql": (
+    "app/sql/v4/queries/resources/images_complete.sql": (
         "ImagesSqlParams",
         "ImagesSqlRow",
         "ImagesApiRequest",
         "ImagesApiResponse",
     ),
-    "app/sql/v4/resources/instructions_complete.sql": (
+    "app/sql/v4/queries/resources/instructions_complete.sql": (
         "InstructionsSqlParams",
         "InstructionsSqlRow",
         "InstructionsApiRequest",
         "InstructionsApiResponse",
     ),
-    "app/sql/v4/resources/items_complete.sql": (
+    "app/sql/v4/queries/resources/items_complete.sql": (
         "ItemsSqlParams",
         "ItemsSqlRow",
         "ItemsApiRequest",
         "ItemsApiResponse",
     ),
-    "app/sql/v4/resources/keys_complete.sql": (
+    "app/sql/v4/queries/resources/keys_complete.sql": (
         "KeysSqlParams",
         "KeysSqlRow",
         "KeysApiRequest",
         "KeysApiResponse",
     ),
-    "app/sql/v4/resources/modalities_complete.sql": (
+    "app/sql/v4/queries/resources/modalities_complete.sql": (
         "ModalitiesSqlParams",
         "ModalitiesSqlRow",
         "ModalitiesApiRequest",
         "ModalitiesApiResponse",
     ),
-    "app/sql/v4/resources/models_complete.sql": (
+    "app/sql/v4/queries/resources/models_complete.sql": (
         "ModelsSqlParams",
         "ModelsSqlRow",
         "ModelsApiRequest",
         "ModelsApiResponse",
     ),
-    "app/sql/v4/resources/names_complete.sql": (
+    "app/sql/v4/queries/resources/names_complete.sql": (
         "NamesSqlParams",
         "NamesSqlRow",
         "NamesApiRequest",
         "NamesApiResponse",
     ),
-    "app/sql/v4/resources/objectives_complete.sql": (
+    "app/sql/v4/queries/resources/objectives_complete.sql": (
         "ObjectivesSqlParams",
         "ObjectivesSqlRow",
         "ObjectivesApiRequest",
         "ObjectivesApiResponse",
     ),
-    "app/sql/v4/resources/options_complete.sql": (
+    "app/sql/v4/queries/resources/options_complete.sql": (
         "OptionsSqlParams",
         "OptionsSqlRow",
         "OptionsApiRequest",
         "OptionsApiResponse",
     ),
-    "app/sql/v4/resources/parameters_complete.sql": (
+    "app/sql/v4/queries/resources/parameters_complete.sql": (
         "ParametersSqlParams",
         "ParametersSqlRow",
         "ParametersApiRequest",
         "ParametersApiResponse",
     ),
-    "app/sql/v4/resources/personas_complete.sql": (
+    "app/sql/v4/queries/resources/personas_complete.sql": (
         "PersonasSqlParams",
         "PersonasSqlRow",
         "PersonasApiRequest",
         "PersonasApiResponse",
     ),
-    "app/sql/v4/resources/points_complete.sql": (
+    "app/sql/v4/queries/resources/points_complete.sql": (
         "PointsSqlParams",
         "PointsSqlRow",
         "PointsApiRequest",
         "PointsApiResponse",
     ),
-    "app/sql/v4/resources/pricing_complete.sql": (
+    "app/sql/v4/queries/resources/pricing_complete.sql": (
         "PricingSqlParams",
         "PricingSqlRow",
         "PricingApiRequest",
         "PricingApiResponse",
     ),
-    "app/sql/v4/resources/problem_statements_complete.sql": (
+    "app/sql/v4/queries/resources/problem_statements_complete.sql": (
         "ProblemStatementsSqlParams",
         "ProblemStatementsSqlRow",
         "ProblemStatementsApiRequest",
         "ProblemStatementsApiResponse",
     ),
-    "app/sql/v4/resources/profiles_complete.sql": (
+    "app/sql/v4/queries/resources/profiles_complete.sql": (
         "ProfilesSqlParams",
         "ProfilesSqlRow",
         "ProfilesApiRequest",
         "ProfilesApiResponse",
     ),
-    "app/sql/v4/resources/prompts_complete.sql": (
+    "app/sql/v4/queries/resources/prompts_complete.sql": (
         "PromptsSqlParams",
         "PromptsSqlRow",
         "PromptsApiRequest",
         "PromptsApiResponse",
     ),
-    "app/sql/v4/resources/protocols_complete.sql": (
+    "app/sql/v4/queries/resources/protocols_complete.sql": (
         "ProtocolsSqlParams",
         "ProtocolsSqlRow",
         "ProtocolsApiRequest",
         "ProtocolsApiResponse",
     ),
-    "app/sql/v4/resources/providers_complete.sql": (
+    "app/sql/v4/queries/resources/providers_complete.sql": (
         "ProvidersSqlParams",
         "ProvidersSqlRow",
         "ProvidersApiRequest",
         "ProvidersApiResponse",
     ),
-    "app/sql/v4/resources/qualities_complete.sql": (
+    "app/sql/v4/queries/resources/qualities_complete.sql": (
         "QualitiesSqlParams",
         "QualitiesSqlRow",
         "QualitiesApiRequest",
         "QualitiesApiResponse",
     ),
-    "app/sql/v4/resources/questions_complete.sql": (
+    "app/sql/v4/queries/resources/questions_complete.sql": (
         "QuestionsSqlParams",
         "QuestionsSqlRow",
         "QuestionsApiRequest",
         "QuestionsApiResponse",
     ),
-    "app/sql/v4/resources/reasoning_levels_complete.sql": (
+    "app/sql/v4/queries/resources/reasoning_levels_complete.sql": (
         "ReasoningLevelsSqlParams",
         "ReasoningLevelsSqlRow",
         "ReasoningLevelsApiRequest",
         "ReasoningLevelsApiResponse",
     ),
-    "app/sql/v4/resources/request_limits_complete.sql": (
+    "app/sql/v4/queries/resources/request_limits_complete.sql": (
         "RequestLimitsSqlParams",
         "RequestLimitsSqlRow",
         "RequestLimitsApiRequest",
         "RequestLimitsApiResponse",
     ),
-    "app/sql/v4/resources/rubrics_complete.sql": (
+    "app/sql/v4/queries/resources/rubrics_complete.sql": (
         "RubricsSqlParams",
         "RubricsSqlRow",
         "RubricsApiRequest",
         "RubricsApiResponse",
     ),
-    "app/sql/v4/resources/run_positions_complete.sql": (
+    "app/sql/v4/queries/resources/run_positions_complete.sql": (
         "RunPositionsSqlParams",
         "RunPositionsSqlRow",
         "RunPositionsApiRequest",
         "RunPositionsApiResponse",
     ),
-    "app/sql/v4/resources/runs_complete.sql": (
+    "app/sql/v4/queries/resources/runs_complete.sql": (
         "RunsSqlParams",
         "RunsSqlRow",
         "RunsApiRequest",
         "RunsApiResponse",
     ),
-    "app/sql/v4/resources/scenario_flags_complete.sql": (
+    "app/sql/v4/queries/resources/scenario_flags_complete.sql": (
         "ScenarioFlagsSqlParams",
         "ScenarioFlagsSqlRow",
         "ScenarioFlagsApiRequest",
         "ScenarioFlagsApiResponse",
     ),
-    "app/sql/v4/resources/scenario_positions_complete.sql": (
+    "app/sql/v4/queries/resources/scenario_positions_complete.sql": (
         "ScenarioPositionsSqlParams",
         "ScenarioPositionsSqlRow",
         "ScenarioPositionsApiRequest",
         "ScenarioPositionsApiResponse",
     ),
-    "app/sql/v4/resources/scenario_rubrics_complete.sql": (
+    "app/sql/v4/queries/resources/scenario_rubrics_complete.sql": (
         "ScenarioRubricsSqlParams",
         "ScenarioRubricsSqlRow",
         "ScenarioRubricsApiRequest",
         "ScenarioRubricsApiResponse",
     ),
-    "app/sql/v4/resources/scenario_time_limits_complete.sql": (
+    "app/sql/v4/queries/resources/scenario_time_limits_complete.sql": (
         "ScenarioTimeLimitsSqlParams",
         "ScenarioTimeLimitsSqlRow",
         "ScenarioTimeLimitsApiRequest",
         "ScenarioTimeLimitsApiResponse",
     ),
-    "app/sql/v4/resources/scenarios_complete.sql": (
+    "app/sql/v4/queries/resources/scenarios_complete.sql": (
         "ScenariosSqlParams",
         "ScenariosSqlRow",
         "ScenariosApiRequest",
         "ScenariosApiResponse",
     ),
-    "app/sql/v4/resources/settings_complete.sql": (
+    "app/sql/v4/queries/resources/settings_complete.sql": (
         "SettingsSqlParams",
         "SettingsSqlRow",
         "SettingsApiRequest",
         "SettingsApiResponse",
     ),
-    "app/sql/v4/resources/simulation_positions_complete.sql": (
+    "app/sql/v4/queries/resources/simulation_positions_complete.sql": (
         "SimulationPositionsSqlParams",
         "SimulationPositionsSqlRow",
         "SimulationPositionsApiRequest",
         "SimulationPositionsApiResponse",
     ),
-    "app/sql/v4/resources/simulations_complete.sql": (
+    "app/sql/v4/queries/resources/simulations_complete.sql": (
         "SimulationsSqlParams",
         "SimulationsSqlRow",
         "SimulationsApiRequest",
         "SimulationsApiResponse",
     ),
-    "app/sql/v4/resources/slugs_complete.sql": (
+    "app/sql/v4/queries/resources/slugs_complete.sql": (
         "SlugsSqlParams",
         "SlugsSqlRow",
         "SlugsApiRequest",
         "SlugsApiResponse",
     ),
-    "app/sql/v4/resources/standard_groups_complete.sql": (
+    "app/sql/v4/queries/resources/standard_groups_complete.sql": (
         "StandardGroupsSqlParams",
         "StandardGroupsSqlRow",
         "StandardGroupsApiRequest",
         "StandardGroupsApiResponse",
     ),
-    "app/sql/v4/resources/standards_complete.sql": (
+    "app/sql/v4/queries/resources/standards_complete.sql": (
         "StandardsSqlParams",
         "StandardsSqlRow",
         "StandardsApiRequest",
         "StandardsApiResponse",
     ),
-    "app/sql/v4/resources/temperature_levels_complete.sql": (
+    "app/sql/v4/queries/resources/temperature_levels_complete.sql": (
         "TemperatureLevelsSqlParams",
         "TemperatureLevelsSqlRow",
         "TemperatureLevelsApiRequest",
         "TemperatureLevelsApiResponse",
     ),
-    "app/sql/v4/resources/templates_complete.sql": (
+    "app/sql/v4/queries/resources/templates_complete.sql": (
         "TemplatesSqlParams",
         "TemplatesSqlRow",
         "TemplatesApiRequest",
         "TemplatesApiResponse",
     ),
-    "app/sql/v4/resources/thresholds_complete.sql": (
+    "app/sql/v4/queries/resources/thresholds_complete.sql": (
         "ThresholdsSqlParams",
         "ThresholdsSqlRow",
         "ThresholdsApiRequest",
         "ThresholdsApiResponse",
     ),
-    "app/sql/v4/resources/tools_complete.sql": (
+    "app/sql/v4/queries/resources/tools_complete.sql": (
         "ToolsSqlParams",
         "ToolsSqlRow",
         "ToolsApiRequest",
         "ToolsApiResponse",
     ),
-    "app/sql/v4/resources/update_templates_complete.sql": (
+    "app/sql/v4/queries/resources/update_templates_complete.sql": (
         "UpdateTemplatesSqlParams",
         "UpdateTemplatesSqlRow",
         "UpdateTemplatesApiRequest",
         "UpdateTemplatesApiResponse",
     ),
-    "app/sql/v4/resources/uploads_complete.sql": (
+    "app/sql/v4/queries/resources/uploads_complete.sql": (
         "UploadsSqlParams",
         "UploadsSqlRow",
         "UploadsApiRequest",
         "UploadsApiResponse",
     ),
-    "app/sql/v4/resources/values_complete.sql": (
+    "app/sql/v4/queries/resources/values_complete.sql": (
         "ValuesSqlParams",
         "ValuesSqlRow",
         "ValuesApiRequest",
         "ValuesApiResponse",
     ),
-    "app/sql/v4/resources/videos_complete.sql": (
+    "app/sql/v4/queries/resources/videos_complete.sql": (
         "VideosSqlParams",
         "VideosSqlRow",
         "VideosApiRequest",
         "VideosApiResponse",
     ),
-    "app/sql/v4/resources/voices_complete.sql": (
+    "app/sql/v4/queries/resources/voices_complete.sql": (
         "VoicesSqlParams",
         "VoicesSqlRow",
         "VoicesApiRequest",
         "VoicesApiResponse",
     ),
-    "app/sql/v4/rubric/delete_rubric_complete.sql": (
+    "app/sql/v4/queries/rubric/delete_rubric_complete.sql": (
         "DeleteRubricSqlParams",
         "DeleteRubricSqlRow",
         "DeleteRubricApiRequest",
         "DeleteRubricApiResponse",
     ),
-    "app/sql/v4/rubric/duplicate_rubric_complete.sql": (
+    "app/sql/v4/queries/rubric/duplicate_rubric_complete.sql": (
         "DuplicateRubricSqlParams",
         "DuplicateRubricSqlRow",
         "DuplicateRubricApiRequest",
         "DuplicateRubricApiResponse",
     ),
-    "app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql": (
+    "app/sql/v4/queries/rubric/get_rubric_tool_call_results_complete.sql": (
         "GetRubricToolCallResultsSqlParams",
         "GetRubricToolCallResultsSqlRow",
         "GetRubricToolCallResultsApiRequest",
         "GetRubricToolCallResultsApiResponse",
     ),
-    "app/sql/v4/rubric/get_rubrics_list_complete.sql": (
+    "app/sql/v4/queries/rubric/get_rubrics_list_complete.sql": (
         "GetRubricsListSqlParams",
         "GetRubricsListSqlRow",
         "GetRubricsListApiRequest",
         "GetRubricsListApiResponse",
     ),
-    "app/sql/v4/rubrics/get_rubric_complete.sql": (
+    "app/sql/v4/queries/rubrics/get_rubric_complete.sql": (
         "GetRubricSqlParams",
         "GetRubricSqlRow",
         "GetRubricApiRequest",
         "GetRubricApiResponse",
     ),
-    "app/sql/v4/rubrics/patch_rubric_draft_complete.sql": (
+    "app/sql/v4/queries/rubrics/patch_rubric_draft_complete.sql": (
         "PatchRubricDraftSqlParams",
         "PatchRubricDraftSqlRow",
         "PatchRubricDraftApiRequest",
         "PatchRubricDraftApiResponse",
     ),
-    "app/sql/v4/rubrics/save_rubric_complete.sql": (
+    "app/sql/v4/queries/rubrics/save_rubric_complete.sql": (
         "SaveRubricSqlParams",
         "SaveRubricSqlRow",
         "SaveRubricApiRequest",
         "SaveRubricApiResponse",
     ),
-    "app/sql/v4/rubrics/update_standard_descriptions_complete.sql": (
+    "app/sql/v4/queries/rubrics/update_standard_descriptions_complete.sql": (
         "UpdateStandardDescriptionsSqlParams",
         "UpdateStandardDescriptionsSqlRow",
         "UpdateStandardDescriptionsApiRequest",
         "UpdateStandardDescriptionsApiResponse",
     ),
-    "app/sql/v4/scenario/delete_scenario_complete.sql": (
+    "app/sql/v4/queries/scenario/delete_scenario_complete.sql": (
         "DeleteScenarioSqlParams",
         "DeleteScenarioSqlRow",
         "DeleteScenarioApiRequest",
         "DeleteScenarioApiResponse",
     ),
-    "app/sql/v4/scenario/duplicate_scenario_complete.sql": (
+    "app/sql/v4/queries/scenario/duplicate_scenario_complete.sql": (
         "DuplicateScenarioSqlParams",
         "DuplicateScenarioSqlRow",
         "DuplicateScenarioApiRequest",
         "DuplicateScenarioApiResponse",
     ),
-    "app/sql/v4/scenario/get_scenario_by_id_complete.sql": (
+    "app/sql/v4/queries/scenario/get_scenario_by_id_complete.sql": (
         "GetScenarioByIdSqlParams",
         "GetScenarioByIdSqlRow",
         "GetScenarioByIdApiRequest",
         "GetScenarioByIdApiResponse",
     ),
-    "app/sql/v4/scenario/get_scenarios_list_complete.sql": (
+    "app/sql/v4/queries/scenario/get_scenarios_list_complete.sql": (
         "GetScenariosListSqlParams",
         "GetScenariosListSqlRow",
         "GetScenariosListApiRequest",
         "GetScenariosListApiResponse",
     ),
-    "app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql": (
+    "app/sql/v4/queries/scenario/insert_scenario_tree_edge_complete.sql": (
         "InsertScenarioTreeEdgeSqlParams",
         "InsertScenarioTreeEdgeSqlRow",
         "InsertScenarioTreeEdgeApiRequest",
         "InsertScenarioTreeEdgeApiResponse",
     ),
-    "app/sql/v4/scenario/insert_scenario_variant_complete.sql": (
+    "app/sql/v4/queries/scenario/insert_scenario_variant_complete.sql": (
         "InsertScenarioVariantSqlParams",
         "InsertScenarioVariantSqlRow",
         "InsertScenarioVariantApiRequest",
         "InsertScenarioVariantApiResponse",
     ),
-    "app/sql/v4/scenarios/get_scenario_complete.sql": (
+    "app/sql/v4/queries/scenarios/get_scenario_complete.sql": (
         "GetScenarioSqlParams",
         "GetScenarioSqlRow",
         "GetScenarioApiRequest",
         "GetScenarioApiResponse",
     ),
-    "app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql": (
+    "app/sql/v4/queries/scenarios/get_scenario_resource_ids_by_group_id_complete.sql": (
         "GetScenarioResourceIdsByGroupIdSqlParams",
         "GetScenarioResourceIdsByGroupIdSqlRow",
         "GetScenarioResourceIdsByGroupIdApiRequest",
         "GetScenarioResourceIdsByGroupIdApiResponse",
     ),
-    "app/sql/v4/scenarios/patch_scenario_draft_complete.sql": (
+    "app/sql/v4/queries/scenarios/patch_scenario_draft_complete.sql": (
         "PatchScenarioDraftSqlParams",
         "PatchScenarioDraftSqlRow",
         "PatchScenarioDraftApiRequest",
         "PatchScenarioDraftApiResponse",
     ),
-    "app/sql/v4/scenarios/save_scenario_complete.sql": (
+    "app/sql/v4/queries/scenarios/save_scenario_complete.sql": (
         "SaveScenarioSqlParams",
         "SaveScenarioSqlRow",
         "SaveScenarioApiRequest",
         "SaveScenarioApiResponse",
     ),
-    "app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql": (
+    "app/sql/v4/queries/scenarios/validate_scenario_resource_error_complete.sql": (
         "ValidateScenarioResourceErrorSqlParams",
         "ValidateScenarioResourceErrorSqlRow",
         "ValidateScenarioResourceErrorApiRequest",
         "ValidateScenarioResourceErrorApiResponse",
     ),
-    "app/sql/v4/scenarios/validate_scenario_resource_progress_complete.sql": (
+    "app/sql/v4/queries/scenarios/validate_scenario_resource_progress_complete.sql": (
         "ValidateScenarioResourceProgressSqlParams",
         "ValidateScenarioResourceProgressSqlRow",
         "ValidateScenarioResourceProgressApiRequest",
         "ValidateScenarioResourceProgressApiResponse",
     ),
-    "app/sql/v4/schemas/get_schema_with_fields_complete.sql": (
+    "app/sql/v4/queries/schemas/get_schema_with_fields_complete.sql": (
         "GetSchemaWithFieldsSqlParams",
         "GetSchemaWithFieldsSqlRow",
         "GetSchemaWithFieldsApiRequest",
         "GetSchemaWithFieldsApiResponse",
     ),
-    "app/sql/v4/settings/duplicate_setting_complete.sql": (
+    "app/sql/v4/queries/settings/duplicate_setting_complete.sql": (
         "DuplicateSettingSqlParams",
         "DuplicateSettingSqlRow",
         "DuplicateSettingApiRequest",
         "DuplicateSettingApiResponse",
     ),
-    "app/sql/v4/settings/get_active_settings_complete.sql": (
+    "app/sql/v4/queries/settings/get_active_settings_complete.sql": (
         "GetActiveSettingsSqlParams",
         "GetActiveSettingsSqlRow",
         "GetActiveSettingsApiRequest",
         "GetActiveSettingsApiResponse",
     ),
-    "app/sql/v4/settings/get_setting_complete.sql": (
+    "app/sql/v4/queries/settings/get_setting_complete.sql": (
         "GetSettingSqlParams",
         "GetSettingSqlRow",
         "GetSettingApiRequest",
         "GetSettingApiResponse",
     ),
-    "app/sql/v4/settings/get_settings_list_complete.sql": (
+    "app/sql/v4/queries/settings/get_settings_list_complete.sql": (
         "GetSettingsListSqlParams",
         "GetSettingsListSqlRow",
         "GetSettingsListApiRequest",
         "GetSettingsListApiResponse",
     ),
-    "app/sql/v4/settings/patch_setting_draft_complete.sql": (
+    "app/sql/v4/queries/settings/patch_setting_draft_complete.sql": (
         "PatchSettingDraftSqlParams",
         "PatchSettingDraftSqlRow",
         "PatchSettingDraftApiRequest",
         "PatchSettingDraftApiResponse",
     ),
-    "app/sql/v4/settings/save_setting_complete.sql": (
+    "app/sql/v4/queries/settings/save_setting_complete.sql": (
         "SaveSettingSqlParams",
         "SaveSettingSqlRow",
         "SaveSettingApiRequest",
         "SaveSettingApiResponse",
     ),
-    "app/sql/v4/simulations/check_next_incomplete_scenario_complete.sql": (
+    "app/sql/v4/queries/simulations/check_next_incomplete_scenario_complete.sql": (
         "CheckNextIncompleteScenarioSqlParams",
         "CheckNextIncompleteScenarioSqlRow",
         "CheckNextIncompleteScenarioApiRequest",
         "CheckNextIncompleteScenarioApiResponse",
     ),
-    "app/sql/v4/simulations/delete_simulation_complete.sql": (
+    "app/sql/v4/queries/simulations/delete_simulation_complete.sql": (
         "DeleteSimulationSqlParams",
         "DeleteSimulationSqlRow",
         "DeleteSimulationApiRequest",
         "DeleteSimulationApiResponse",
     ),
-    "app/sql/v4/simulations/duplicate_simulation_complete.sql": (
+    "app/sql/v4/queries/simulations/duplicate_simulation_complete.sql": (
         "DuplicateSimulationSqlParams",
         "DuplicateSimulationSqlRow",
         "DuplicateSimulationApiRequest",
         "DuplicateSimulationApiResponse",
     ),
-    "app/sql/v4/simulations/get_group_id_from_chat_group_v4_complete.sql": (
+    "app/sql/v4/queries/simulations/get_group_id_from_chat_group_v4_complete.sql": (
         "GetGroupIdFromChatGroupV4SqlParams",
         "GetGroupIdFromChatGroupV4SqlRow",
         "GetGroupIdFromChatGroupV4ApiRequest",
         "GetGroupIdFromChatGroupV4ApiResponse",
     ),
-    "app/sql/v4/simulations/get_name_by_id_complete.sql": (
+    "app/sql/v4/queries/simulations/get_name_by_id_complete.sql": (
         "GetNameByIdSqlParams",
         "GetNameByIdSqlRow",
         "GetNameByIdApiRequest",
         "GetNameByIdApiResponse",
     ),
-    "app/sql/v4/simulations/get_simulation_complete.sql": (
+    "app/sql/v4/queries/simulations/get_simulation_complete.sql": (
         "GetSimulationSqlParams",
         "GetSimulationSqlRow",
         "GetSimulationApiRequest",
         "GetSimulationApiResponse",
     ),
-    "app/sql/v4/simulations/get_simulation_resource_ids_by_group_id_complete.sql": (
+    "app/sql/v4/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql": (
         "GetSimulationResourceIdsByGroupIdSqlParams",
         "GetSimulationResourceIdsByGroupIdSqlRow",
         "GetSimulationResourceIdsByGroupIdApiRequest",
         "GetSimulationResourceIdsByGroupIdApiResponse",
     ),
-    "app/sql/v4/simulations/get_simulation_run_context_complete.sql": (
+    "app/sql/v4/queries/simulations/get_simulation_run_context_complete.sql": (
         "GetSimulationRunContextSqlParams",
         "GetSimulationRunContextSqlRow",
         "GetSimulationRunContextApiRequest",
         "GetSimulationRunContextApiResponse",
     ),
-    "app/sql/v4/simulations/get_simulations_list_complete.sql": (
+    "app/sql/v4/queries/simulations/get_simulations_list_complete.sql": (
         "GetSimulationsListSqlParams",
         "GetSimulationsListSqlRow",
         "GetSimulationsListApiRequest",
         "GetSimulationsListApiResponse",
     ),
-    "app/sql/v4/simulations/patch_simulation_draft_complete.sql": (
+    "app/sql/v4/queries/simulations/patch_simulation_draft_complete.sql": (
         "PatchSimulationDraftSqlParams",
         "PatchSimulationDraftSqlRow",
         "PatchSimulationDraftApiRequest",
         "PatchSimulationDraftApiResponse",
     ),
-    "app/sql/v4/simulations/save_simulation_complete.sql": (
+    "app/sql/v4/queries/simulations/save_simulation_complete.sql": (
         "SaveSimulationSqlParams",
         "SaveSimulationSqlRow",
         "SaveSimulationApiRequest",
         "SaveSimulationApiResponse",
     ),
-    "app/sql/v4/simulations/simulation_text_stop_run_complete.sql": (
+    "app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql": (
         "SimulationTextStopRunSqlParams",
         "SimulationTextStopRunSqlRow",
         "SimulationTextStopRunApiRequest",
         "SimulationTextStopRunApiResponse",
     ),
-    "app/sql/v4/simulations/start_simulation_attempt_complete.sql": (
+    "app/sql/v4/queries/simulations/start_simulation_attempt_complete.sql": (
         "StartSimulationAttemptSqlParams",
         "StartSimulationAttemptSqlRow",
         "StartSimulationAttemptApiRequest",
         "StartSimulationAttemptApiResponse",
     ),
-    "app/sql/v4/simulations/validate_simulation_resource_error_complete.sql": (
+    "app/sql/v4/queries/simulations/validate_simulation_resource_error_complete.sql": (
         "ValidateSimulationResourceErrorSqlParams",
         "ValidateSimulationResourceErrorSqlRow",
         "ValidateSimulationResourceErrorApiRequest",
         "ValidateSimulationResourceErrorApiResponse",
     ),
-    "app/sql/v4/simulations/validate_simulation_resource_progress_complete.sql": (
+    "app/sql/v4/queries/simulations/validate_simulation_resource_progress_complete.sql": (
         "ValidateSimulationResourceProgressSqlParams",
         "ValidateSimulationResourceProgressSqlRow",
         "ValidateSimulationResourceProgressApiRequest",
         "ValidateSimulationResourceProgressApiResponse",
     ),
-    "app/sql/v4/staff/bulk_delete_staff_complete.sql": (
+    "app/sql/v4/queries/staff/bulk_delete_staff_complete.sql": (
         "BulkDeleteStaffSqlParams",
         "BulkDeleteStaffSqlRow",
         "BulkDeleteStaffApiRequest",
         "BulkDeleteStaffApiResponse",
     ),
-    "app/sql/v4/staff/get_staff_list_complete.sql": (
+    "app/sql/v4/queries/staff/get_staff_list_complete.sql": (
         "GetStaffListSqlParams",
         "GetStaffListSqlRow",
         "GetStaffListApiRequest",
         "GetStaffListApiResponse",
     ),
-    "app/sql/v4/staff/get_staff_search_complete.sql": (
+    "app/sql/v4/queries/staff/get_staff_search_complete.sql": (
         "GetStaffSearchSqlParams",
         "GetStaffSearchSqlRow",
         "GetStaffSearchApiRequest",
         "GetStaffSearchApiResponse",
     ),
-    "app/sql/v4/staff/process_csv_complete.sql": (
+    "app/sql/v4/queries/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
         "ProcessCsvSqlRow",
         "ProcessCsvApiRequest",
         "ProcessCsvApiResponse",
     ),
-    "app/sql/v4/staff/upsert_staff_complete.sql": (
+    "app/sql/v4/queries/staff/upsert_staff_complete.sql": (
         "UpsertStaffSqlParams",
         "UpsertStaffSqlRow",
         "UpsertStaffApiRequest",
         "UpsertStaffApiResponse",
     ),
-    "app/sql/v4/tools/delete_tool_complete.sql": (
+    "app/sql/v4/queries/tools/delete_tool_complete.sql": (
         "DeleteToolSqlParams",
         "DeleteToolSqlRow",
         "DeleteToolApiRequest",
         "DeleteToolApiResponse",
     ),
-    "app/sql/v4/tools/duplicate_tool_complete.sql": (
+    "app/sql/v4/queries/tools/duplicate_tool_complete.sql": (
         "DuplicateToolSqlParams",
         "DuplicateToolSqlRow",
         "DuplicateToolApiRequest",
         "DuplicateToolApiResponse",
     ),
-    "app/sql/v4/tools/get_tool_complete.sql": (
+    "app/sql/v4/queries/tools/get_tool_complete.sql": (
         "GetToolSqlParams",
         "GetToolSqlRow",
         "GetToolApiRequest",
         "GetToolApiResponse",
     ),
-    "app/sql/v4/tools/get_tools_list_complete.sql": (
+    "app/sql/v4/queries/tools/get_tools_list_complete.sql": (
         "GetToolsListSqlParams",
         "GetToolsListSqlRow",
         "GetToolsListApiRequest",
         "GetToolsListApiResponse",
     ),
-    "app/sql/v4/tools/patch_tool_draft_complete.sql": (
+    "app/sql/v4/queries/tools/patch_tool_draft_complete.sql": (
         "PatchToolDraftSqlParams",
         "PatchToolDraftSqlRow",
         "PatchToolDraftApiRequest",
         "PatchToolDraftApiResponse",
     ),
-    "app/sql/v4/tools/save_tool_complete.sql": (
+    "app/sql/v4/queries/tools/save_tool_complete.sql": (
         "SaveToolSqlParams",
         "SaveToolSqlRow",
         "SaveToolApiRequest",
         "SaveToolApiResponse",
     ),
-    "app/sql/v4/uploads/finalize_upload_complete.sql": (
+    "app/sql/v4/queries/uploads/finalize_upload_complete.sql": (
         "FinalizeUploadSqlParams",
         "FinalizeUploadSqlRow",
         "FinalizeUploadApiRequest",
         "FinalizeUploadApiResponse",
     ),
-    "app/sql/v4/uploads/get_upload_file_info_complete.sql": (
+    "app/sql/v4/queries/uploads/get_upload_file_info_complete.sql": (
         "GetUploadFileInfoSqlParams",
         "GetUploadFileInfoSqlRow",
         "GetUploadFileInfoApiRequest",
         "GetUploadFileInfoApiResponse",
     ),
-    "app/sql/v4/uploads/insert_upload_complete.sql": (
+    "app/sql/v4/queries/uploads/insert_upload_complete.sql": (
         "InsertUploadSqlParams",
         "InsertUploadSqlRow",
         "InsertUploadApiRequest",
         "InsertUploadApiResponse",
     ),
-    "app/sql/v4/utils/create_schema_field_item_v4_complete.sql": (
+    "app/sql/v4/queries/utils/create_schema_field_item_v4_complete.sql": (
         "CreateSchemaFieldItemV4SqlParams",
         "CreateSchemaFieldItemV4SqlRow",
         "CreateSchemaFieldItemV4ApiRequest",
         "CreateSchemaFieldItemV4ApiResponse",
     ),
-    "app/sql/v4/utils/create_schema_field_v4_complete.sql": (
+    "app/sql/v4/queries/utils/create_schema_field_v4_complete.sql": (
         "CreateSchemaFieldV4SqlParams",
         "CreateSchemaFieldV4SqlRow",
         "CreateSchemaFieldV4ApiRequest",
         "CreateSchemaFieldV4ApiResponse",
     ),
-    "app/sql/v4/utils/create_schema_v4_complete.sql": (
+    "app/sql/v4/queries/utils/create_schema_v4_complete.sql": (
         "CreateSchemaV4SqlParams",
         "CreateSchemaV4SqlRow",
         "CreateSchemaV4ApiRequest",
         "CreateSchemaV4ApiResponse",
     ),
-    "app/sql/v4/utils/create_template_array_item_v4_complete.sql": (
+    "app/sql/v4/queries/utils/create_template_array_item_v4_complete.sql": (
         "CreateTemplateArrayItemV4SqlParams",
         "CreateTemplateArrayItemV4SqlRow",
         "CreateTemplateArrayItemV4ApiRequest",
         "CreateTemplateArrayItemV4ApiResponse",
     ),
-    "app/sql/v4/utils/create_template_v4_complete.sql": (
+    "app/sql/v4/queries/utils/create_template_v4_complete.sql": (
         "CreateTemplateV4SqlParams",
         "CreateTemplateV4SqlRow",
         "CreateTemplateV4ApiRequest",
         "CreateTemplateV4ApiResponse",
     ),
-    "app/sql/v4/utils/create_template_value_v4_complete.sql": (
+    "app/sql/v4/queries/utils/create_template_value_v4_complete.sql": (
         "CreateTemplateValueV4SqlParams",
         "CreateTemplateValueV4SqlRow",
         "CreateTemplateValueV4ApiRequest",
         "CreateTemplateValueV4ApiResponse",
     ),
-    "app/sql/v4/utils/get_template_array_items_v4_complete.sql": (
+    "app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql": (
         "GetTemplateArrayItemsV4SqlParams",
         "GetTemplateArrayItemsV4SqlRow",
         "GetTemplateArrayItemsV4ApiRequest",
         "GetTemplateArrayItemsV4ApiResponse",
     ),
-    "app/sql/v4/utils/get_template_values_v4_complete.sql": (
+    "app/sql/v4/queries/utils/get_template_values_v4_complete.sql": (
         "GetTemplateValuesV4SqlParams",
         "GetTemplateValuesV4SqlRow",
         "GetTemplateValuesV4ApiRequest",
         "GetTemplateValuesV4ApiResponse",
     ),
-    "app/sql/v4/utils/link_schema_template_v4_complete.sql": (
+    "app/sql/v4/queries/utils/link_schema_template_v4_complete.sql": (
         "LinkSchemaTemplateV4SqlParams",
         "LinkSchemaTemplateV4SqlRow",
         "LinkSchemaTemplateV4ApiRequest",
         "LinkSchemaTemplateV4ApiResponse",
     ),
-    "app/sql/v4/videos/create_generation_and_link_complete.sql": (
+    "app/sql/v4/queries/videos/create_generation_and_link_complete.sql": (
         "CreateGenerationAndLinkSqlParams",
         "CreateGenerationAndLinkSqlRow",
         "CreateGenerationAndLinkApiRequest",
         "CreateGenerationAndLinkApiResponse",
     ),
-    "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql": (
+    "app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql": (
         "GetVideoRunContextAndCreateRunSqlParams",
         "GetVideoRunContextAndCreateRunSqlRow",
         "GetVideoRunContextAndCreateRunApiRequest",
@@ -23042,7 +23042,7 @@ def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get SQL input and output types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (SqlParamsType, SqlRowType)
@@ -23068,7 +23068,7 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get API request and response types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (ApiRequestType, ApiResponseType)
@@ -23095,1712 +23095,1712 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
 if TYPE_CHECKING:
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/activity/get_activity_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/activity/get_activity_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/activity/get_activity_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/activity/get_activity_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/delete_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/delete_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/duplicate_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/duplicate_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agent_model_info_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_model_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agent_resource_ids_by_group_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/get_agent_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agents_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/get_agents_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/patch_agent_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/patch_agent_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/save_agent_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/save_agent_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/validate_agent_resource_error_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/validate_agent_resource_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/validate_agent_resource_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/agents/validate_agent_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/analytics/refresh_analytics_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/analytics/refresh_analytics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/artifacts/complete/create_resource_record_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/artifacts/complete/create_resource_record_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/artifacts/complete/get_call_by_external_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/artifacts/complete/get_call_by_external_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/artifacts/complete/get_schema_fields_by_template_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/artifacts/complete/get_schema_fields_by_template_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/artifacts/complete/get_template_values_by_call_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/artifacts/complete/get_template_values_by_call_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/artifacts/complete/upsert_template_value_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/artifacts/complete/upsert_template_value_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/artifacts/progress/mark_call_completed_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/artifacts/progress/mark_call_completed_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/attempts/bulk_archive_attempts_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/attempts/bulk_archive_attempts_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/attempts/get_eval_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/attempts/get_eval_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/attempts/get_simulation_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/attempts/get_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/attempts/update_chat_created_at_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/attempts/update_chat_created_at_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/audio/get_audio_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/consume_emulation_grant_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/consume_emulation_grant_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/create_emulation_grant_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/create_emulation_grant_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/delete_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/delete_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/duplicate_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/duplicate_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/get_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/get_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/get_auth_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/get_auth_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/get_login_data_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/get_login_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/patch_auth_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/patch_auth_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/record_profile_login_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/record_profile_login_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/resolve_default_idp_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/resolve_default_idp_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/save_auth_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/auth/save_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/benchmark_eval_complete_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/benchmark_eval_complete_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/create_test_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/create_test_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/delete_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/delete_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_agent_name_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_agent_name_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_benchmark_history_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_benchmark_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_benchmark_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_benchmark_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_benchmark_run_start_context_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_benchmark_run_start_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_benchmark_runs_start_all_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_evals_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_evals_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_group_order_agents_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_group_order_agents_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_group_stop_tools_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_group_stop_tools_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_rubric_grade_agent_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_test_by_id_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_test_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_test_by_trace_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_test_details_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_test_details_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_test_run_id_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_test_run_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/get_tool_name_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/get_tool_name_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/link_attempt_test_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/link_attempt_test_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/mark_eval_group_complete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/mark_eval_group_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/mark_eval_run_complete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/mark_eval_run_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/mark_test_complete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/mark_test_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/start_benchmark_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/benchmark/start_benchmark_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/delete_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/delete_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/duplicate_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/duplicate_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/get_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/get_cohort_resource_ids_by_group_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/get_cohort_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/get_cohorts_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/get_cohorts_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/patch_cohort_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/patch_cohort_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/save_cohort_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/save_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/validate_cohort_resource_error_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/validate_cohort_resource_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/validate_cohort_resource_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/cohorts/validate_cohort_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/dashboard/get_dashboard_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/dashboard/get_dashboard_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/dashboard/get_dashboard_history_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/dashboard/get_dashboard_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/delete_department_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/departments/delete_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/duplicate_department_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/departments/duplicate_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/get_department_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/departments/get_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/get_departments_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/departments/get_departments_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/patch_department_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/departments/patch_department_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/save_department_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/departments/save_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/developer_instructions/get_developer_instruction_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/developer_instructions/get_developer_instruction_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/developer_instructions/get_developer_instruction_context_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/developer_instructions/get_developer_instruction_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/document/get_document_agent_id_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/document/get_document_agent_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/document/get_document_department_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/document/get_document_department_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/delete_document_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/delete_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/duplicate_document_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/duplicate_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_certificate_data_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/get_certificate_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_document_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/get_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/get_document_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_documents_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/get_documents_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/insert_document_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/insert_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/patch_document_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/patch_document_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/process_document_csv_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/process_document_csv_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/save_document_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/documents/save_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/evals/duplicate_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/evals/duplicate_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/evals/get_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/evals/get_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/evals/patch_eval_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/evals/patch_eval_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/evals/save_eval_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/evals/save_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/delete_field_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/fields/delete_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/duplicate_field_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/fields/duplicate_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/get_field_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/fields/get_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/fields/get_fields_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/patch_field_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/fields/patch_field_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/save_field_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/fields/save_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/text/text_tool_progress_update_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/generate/text/text_tool_progress_update_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/health/get_health_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/health/get_health_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/health/get_health_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/health/get_health_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/home/get_home_history_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/home/get_home_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/home/get_home_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/home/get_home_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/images/complete_image_generation_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/images/complete_image_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/images/get_image_generation_context_and_create_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infra/artifacts/discovery/get_resource_table_columns_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infra/artifacts/discovery/get_resource_table_columns_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/activity/get_profile_name_for_logging_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/artifacts/get_group_id_from_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/developer_instructions/get_domain_artifact_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/documents/get_document_agents_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/documents/get_document_agents_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/create_test_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/create_test_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/get_department_from_run_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_department_from_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/get_eval_run_status_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/get_rubric_details_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/get_test_by_trace_id_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_test_by_trace_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/get_test_status_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/get_test_status_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/link_attempt_test_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/link_attempt_test_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/link_test_run_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/link_test_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/mark_eval_run_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/mark_model_run_complete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/mark_model_run_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/evals/mark_test_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_activity_insert_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_insert_websocket_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_activity_insert_websocket_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_metrics_health_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_metrics_health_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_metrics_snapshot_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_metrics_snapshot_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/tools/get_schema_fields_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_schema_fields_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/tools/get_template_id_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_template_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/infrastructure/tools/get_tool_call_result_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_auth_items_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keycloak/get_auth_items_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_auths_for_org_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keycloak/get_auths_for_org_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keycloak/get_auths_for_realm_level_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keycloak/get_departments_for_org_sync_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keycloak/get_setting_profiles_for_idp_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keycloak/update_master_realm_ssl_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keycloak/update_master_realm_ssl_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keys/get_key_for_decrypt_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/keys/get_key_for_decrypt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/leaderboard/get_leaderboard_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/leaderboard/get_leaderboard_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/leaderboard/get_leaderboard_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/leaderboard/get_leaderboard_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/member/member_progress_upsert_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/member/member_progress_upsert_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/messages/create_assistant_message_for_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/messages/create_assistant_message_for_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/messages/get_message_created_at_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/messages/get_message_created_at_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/messages/get_messages_by_ids_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/messages/get_messages_by_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/messages/get_messages_by_run_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/messages/get_messages_by_run_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/model_runs/create_model_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/model_runs/create_model_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/model_runs/log_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/model_runs/log_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/delete_model_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/models/delete_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/duplicate_model_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/models/duplicate_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/get_model_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/models/get_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/list_models_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/models/list_models_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/patch_model_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/models/patch_model_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/save_model_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/models/save_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/delete_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/parameters/delete_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/duplicate_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/parameters/duplicate_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/get_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/parameters/get_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/get_parameters_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/parameters/get_parameters_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/patch_parameter_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/parameters/patch_parameter_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/save_parameter_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/parameters/save_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/delete_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/delete_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/duplicate_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/duplicate_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_group_ids_by_resource_ids_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/get_group_ids_by_resource_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_generation_context_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_generation_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/get_persona_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_personas_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/get_personas_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/patch_persona_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/patch_persona_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/save_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/save_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/validate_persona_resource_error_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/validate_persona_resource_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/validate_persona_resource_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/personas/validate_persona_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/practice/get_practice_history_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/practice/get_practice_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/practice/get_practice_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/practice/get_practice_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/pricing/get_pricing_analytics_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/pricing/get_pricing_analytics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/pricing/get_pricing_group_detail_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/pricing/get_pricing_group_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/pricing/get_pricing_runs_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/pricing/get_pricing_runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/authorize_emulation_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/authorize_emulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/check_login_authorization_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/check_login_authorization_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/create_or_update_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/create_or_update_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/create_profile_if_not_exists_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/create_profile_if_not_exists_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/delete_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/delete_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/get_profile_by_email_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_by_email_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/get_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/get_profile_context_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/get_profile_resource_ids_by_group_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/get_profile_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/patch_profile_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/patch_profile_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/save_profile_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/save_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/search_simulatable_profiles_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/search_simulatable_profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/update_profile_to_active_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/update_profile_to_active_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/update_profile_to_inactive_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/update_profile_to_inactive_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/validate_profile_resource_error_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/validate_profile_resource_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/profile/validate_profile_resource_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/profile/validate_profile_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/delete_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/providers/delete_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/duplicate_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/providers/duplicate_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/get_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/providers/get_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/get_providers_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/providers/get_providers_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/patch_provider_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/providers/patch_provider_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/save_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/providers/save_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/reports/get_per_simulation_metrics_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/reports/get_per_simulation_metrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/reports/get_reports_bundle_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/reports/get_reports_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/reports/get_reports_history_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/reports/get_reports_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/reports/get_reports_overview_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/reports/get_reports_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/agents_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/agents_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/args_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/args_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/args_outputs_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/args_outputs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/audios_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/audios_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/auths_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/auths_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/cohorts_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/cohorts_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/colors_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/colors_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/departments_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/departments_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/descriptions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/descriptions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/documents_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/documents_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/emails_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/emails_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/endpoints_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/endpoints_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/evals_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/evals_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/examples_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/examples_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/fields_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/flags_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/flags_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/group_positions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/group_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/groups_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/icons_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/icons_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/images_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/images_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/instructions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/instructions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/items_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/items_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/keys_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/keys_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/modalities_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/modalities_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/models_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/models_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/names_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/names_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/objectives_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/objectives_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/options_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/options_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/parameters_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/parameters_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/personas_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/personas_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/points_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/points_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/pricing_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/pricing_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/problem_statements_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/problem_statements_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/profiles_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/prompts_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/prompts_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/protocols_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/protocols_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/providers_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/providers_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/qualities_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/qualities_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/questions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/questions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/reasoning_levels_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/reasoning_levels_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/request_limits_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/request_limits_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/rubrics_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/rubrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/run_positions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/run_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/runs_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/scenario_flags_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/scenario_flags_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/scenario_positions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/scenario_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/scenario_rubrics_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/scenario_rubrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/scenario_time_limits_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/scenario_time_limits_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/scenarios_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/scenarios_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/settings_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/simulation_positions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/simulation_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/simulations_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/simulations_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/slugs_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/slugs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/standard_groups_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/standard_groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/standards_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/standards_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/temperature_levels_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/temperature_levels_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/templates_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/templates_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/thresholds_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/thresholds_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/tools_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/tools_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/update_templates_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/update_templates_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/uploads_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/uploads_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/values_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/values_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/videos_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/videos_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/voices_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/resources/voices_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/delete_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubric/delete_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/duplicate_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubric/duplicate_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubric/get_rubric_tool_call_results_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/get_rubrics_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubric/get_rubrics_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubrics/get_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubrics/get_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubrics/patch_rubric_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubrics/patch_rubric_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubrics/save_rubric_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubrics/save_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubrics/update_standard_descriptions_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/rubrics/update_standard_descriptions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/delete_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenario/delete_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/duplicate_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenario/duplicate_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/get_scenario_by_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenario/get_scenario_by_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/get_scenarios_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenario/get_scenarios_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/insert_scenario_tree_edge_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenario/insert_scenario_tree_edge_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/insert_scenario_variant_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenario/insert_scenario_variant_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/get_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenarios/get_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenarios/get_scenario_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/patch_scenario_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenarios/patch_scenario_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/save_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenarios/save_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/validate_scenario_resource_error_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenarios/validate_scenario_resource_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenarios/validate_scenario_resource_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/scenarios/validate_scenario_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/schemas/get_schema_with_fields_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/schemas/get_schema_with_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/duplicate_setting_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/settings/duplicate_setting_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/get_active_settings_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/settings/get_active_settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/get_setting_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/settings/get_setting_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/get_settings_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/settings/get_settings_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/patch_setting_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/settings/patch_setting_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/save_setting_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/settings/save_setting_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/check_next_incomplete_scenario_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/check_next_incomplete_scenario_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/delete_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/delete_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/duplicate_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/duplicate_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_group_id_from_chat_group_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/get_group_id_from_chat_group_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_name_by_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/get_name_by_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulation_resource_ids_by_group_id_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulation_run_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulations_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/get_simulations_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/patch_simulation_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/patch_simulation_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/save_simulation_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/save_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/simulation_text_stop_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/start_simulation_attempt_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/start_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/validate_simulation_resource_error_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/validate_simulation_resource_error_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/validate_simulation_resource_progress_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/simulations/validate_simulation_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/staff/bulk_delete_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/staff/bulk_delete_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/staff/get_staff_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/staff/get_staff_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/staff/get_staff_search_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/staff/get_staff_search_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/staff/process_csv_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/staff/process_csv_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/staff/upsert_staff_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/staff/upsert_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/tools/delete_tool_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/tools/delete_tool_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/tools/duplicate_tool_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/tools/duplicate_tool_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/tools/get_tool_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/tools/get_tool_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/tools/get_tools_list_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/tools/get_tools_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/tools/patch_tool_draft_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/tools/patch_tool_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/tools/save_tool_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/tools/save_tool_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/uploads/finalize_upload_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/uploads/finalize_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/uploads/get_upload_file_info_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/uploads/insert_upload_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/uploads/insert_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/create_schema_field_item_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/create_schema_field_item_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/create_schema_field_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/create_schema_field_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/create_schema_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/create_schema_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/create_template_array_item_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/create_template_array_item_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/create_template_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/create_template_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/create_template_value_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/create_template_value_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/get_template_array_items_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/get_template_array_items_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/get_template_values_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/get_template_values_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/utils/link_schema_template_v4_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/utils/link_schema_template_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/videos/create_generation_and_link_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/videos/create_generation_and_link_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"]
+        file_path: Literal["app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -24818,14 +24818,14 @@ def load_sql_query(
     Uses Literal overloads to provide strong type hints for file paths.
 
     Args:
-        file_path: Relative path from server root (e.g., "app/sql/v4/agents/get_agent_new_complete.sql")
+        file_path: Relative path from server root (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
 
     Returns:
         SQL string with parameter placeholders ($1, $2, etc.)
 
     Example:
         ```python
-        sql_query = load_sql_query("app/sql/v4/agents/get_agent_new_complete.sql")
+        sql_query = load_sql_query("app/sql/v4/queries/agents/get_agent_new_complete.sql")
         # sql_query is typed as SqlString
         ```
     """

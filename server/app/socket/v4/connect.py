@@ -93,7 +93,7 @@ async def connect(
                             UpdateProfileToInactiveSqlRow,
                             execute_sql_typed(
                                 conn,
-                                "app/sql/v4/profile/update_profile_to_inactive_complete.sql",
+                                "app/sql/v4/queries/profile/update_profile_to_inactive_complete.sql",
                                 params=params,
                             ),
                         )
@@ -124,7 +124,7 @@ async def connect(
                         UpdateProfileToActiveSqlRow,
                         execute_sql_typed(
                             conn,
-                            "app/sql/v4/profile/update_profile_to_active_complete.sql",
+                            "app/sql/v4/queries/profile/update_profile_to_active_complete.sql",
                             params=params,
                         ),
                     )

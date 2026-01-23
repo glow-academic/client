@@ -33,7 +33,7 @@ async def test_update_scenario(
 
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_create_test_scenario_v4_complete.sql",
         params=CreateTestScenarioV4SqlParams(
             scenario_name="Original Scenario",
             scenario_problem_statement="Original problem",
@@ -75,7 +75,7 @@ async def test_update_scenario(
     # Verify scenario was updated using SQL file
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_by_id_v4_complete.sql",
         params=GetScenarioByIdSqlParams(scenario_id=scenario_id),
     )
     typed_scenario = GetScenarioByIdSqlRow.model_validate(scenario_result.model_dump())
@@ -87,7 +87,7 @@ async def test_update_scenario(
 
     problem_statements_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statements_v4_complete.sql",
         params=GetScenarioProblemStatementsV4SqlParams(input_scenario_id=scenario_id),
     )
     # Get all problem statements and check old/new
@@ -98,7 +98,7 @@ async def test_update_scenario(
     # For now, verify the active one exists
     active_ps_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
         params=GetScenarioProblemStatementV4SqlParams(input_scenario_id=scenario_id),
     )
     typed_active_ps = GetScenarioProblemStatementV4SqlRow.model_validate(
@@ -110,7 +110,7 @@ async def test_update_scenario(
 
     dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/scenarios/test_get_scenario_department_link_v4_complete.sql",
         params=GetScenarioDepartmentLinkV4SqlParams(
             input_scenario_id=scenario_id,
             input_department_id=UUID(dept_id),

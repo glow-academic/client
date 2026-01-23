@@ -131,7 +131,7 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
 
             # Stop simulation and mark message complete using SQL
             sql = load_sql(
-                "app/sql/v4/simulations/simulation_text_stop_run_complete.sql"
+                "app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"
             )
             row = await conn.fetchrow(sql, chat_id)
 

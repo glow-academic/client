@@ -24,7 +24,7 @@ async def test_delete_cohort(
     # Create a cohort using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_create_test_cohort_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_create_test_cohort_v4_complete.sql",
         params=CreateTestCohortSqlParams(
             title="Test Cohort",
             description="Test",
@@ -50,7 +50,7 @@ async def test_delete_cohort(
     # Verify cohort was deleted using SQL file
     cohort_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/cohorts/test_get_cohort_by_id_v4_complete.sql",
         params=GetCohortByIdSqlParams(cohort_id=cohort_id),
     )
     typed_cohort = GetCohortByIdSqlRow.model_validate(cohort_result.model_dump())

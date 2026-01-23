@@ -98,7 +98,7 @@ async def test_list_agents_permissions_non_superadmin(
     # Create a non-superadmin profile using SQL file
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_profile_v4_complete.sql",
         params=CreateTestProfileSqlParams(
             first_name="Test",
             last_name="Member",
@@ -167,7 +167,7 @@ async def test_list_agents_can_delete_default(
     # Create an agent and link it to a department (which prevents deletion) using SQL files
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -177,7 +177,7 @@ async def test_list_agents_can_delete_default(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Default Agent",
@@ -193,7 +193,7 @@ async def test_list_agents_can_delete_default(
     # Link it to a department (this prevents deletion) using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -205,7 +205,7 @@ async def test_list_agents_can_delete_default(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql",
         params=CreateAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=typed_dept.department_id
         ),
@@ -244,7 +244,7 @@ async def test_list_agents_can_delete_linked(
 
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -252,7 +252,7 @@ async def test_list_agents_can_delete_linked(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Linked Agent",
@@ -268,7 +268,7 @@ async def test_list_agents_can_delete_linked(
     # Link it to a department using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -280,7 +280,7 @@ async def test_list_agents_can_delete_linked(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_agent_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_agent_department_link_v4_complete.sql",
         params=CreateAgentDepartmentLinkSqlParams(
             agent_id=agent_id, department_id=typed_dept.department_id
         ),
@@ -318,7 +318,7 @@ async def test_list_agents_can_delete_allowed(
 
     model_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_get_first_model_v4_complete.sql",
         params=None,
     )
     typed_model = GetFirstModelSqlRow.model_validate(model_result.model_dump())
@@ -326,7 +326,7 @@ async def test_list_agents_can_delete_allowed(
 
     agent_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_agent_v4_complete.sql",
         params=CreateTestAgentSqlParams(
             model_id=typed_model.model_id,
             name="Deletable Agent",

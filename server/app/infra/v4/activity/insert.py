@@ -11,7 +11,7 @@ from app.sql.types import (
     InfrastructureActivityInsertSqlRow,
 )
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql"
+SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_activity_insert_complete.sql"
 
 
 async def insert_activity(

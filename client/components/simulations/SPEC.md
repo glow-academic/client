@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/simulations/Simulation.tsx`, `client/components/simulations/Simulations.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/simulations_complete.sql` (`api_create_simulations_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/simulations_complete.sql` (`api_create_simulations_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `simulation` records are referenced by `simulation_id` (or `simulation_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

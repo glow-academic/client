@@ -2,7 +2,7 @@
 
 ## Scope
 - **UI components**: `client/components/models/Model.tsx`, `client/components/models/Models.tsx`
-- **Resource SQL**: `server/app/sql/v4/resources/models_complete.sql` (`api_create_models_v4`)
+- **Resource SQL**: `server/app/sql/v4/queries/resources/models_complete.sql` (`api_create_models_v4`)
 
 ## Resource-First Data Model
 - **Artifact identity**: `model` records are referenced by `model_id` (or `model_ids` for multi-select associations). All UI state stores IDs rather than raw strings.

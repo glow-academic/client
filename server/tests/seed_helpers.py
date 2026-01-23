@@ -13,7 +13,7 @@ async def get_cs_dept_id(conn: asyncpg.Connection) -> str:
     """Get CS department ID from seed data using typed SQL function."""
     result = await execute_sql_typed(
         conn=conn,
-        sql_path="tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql",
         params=None,
     )
     typed_result = GetCsDeptIdSqlRow.model_validate(result.model_dump())
@@ -30,7 +30,7 @@ async def get_superadmin_email(
     params = GetSuperadminAliasSqlParams(email=email)
     result = await execute_sql_typed(
         conn=conn,
-        sql_path="tests/sql/v4/integration/helpers/test_get_superadmin_alias_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_superadmin_alias_v4_complete.sql",
         params=params,
     )
     typed_result = GetSuperadminAliasSqlRow.model_validate(result.model_dump())

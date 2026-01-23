@@ -24,7 +24,7 @@ async def test_create_simulation(
     # Get or create rubric using SQL file
     rubric_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_rubric_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_or_create_rubric_v4_complete.sql",
         params=None,
     )
     typed_rubric = GetOrCreateRubricV4SqlRow.model_validate(rubric_result.model_dump())
@@ -34,7 +34,7 @@ async def test_create_simulation(
     # Get or create scenario using SQL file
     scenario_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_or_create_scenario_v4_complete.sql",
         params=None,
     )
     typed_scenario = GetOrCreateScenarioV4SqlRow.model_validate(
@@ -75,7 +75,7 @@ async def test_create_simulation(
 
     simulation_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql",
         params=GetSimulationByIdWithTimeLimitV4SqlParams(
             input_simulation_id=UUID(data["simulationId"])
         ),
@@ -98,7 +98,7 @@ async def test_create_simulation(
 
     dept_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_simulation_department_link_v4_complete.sql",
         params=GetSimulationDepartmentLinkV4SqlParams(
             input_simulation_id=UUID(data["simulationId"]),
             input_department_id=UUID(dept_id),
@@ -117,7 +117,7 @@ async def test_create_simulation(
 
     scenario_link_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_scenario_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/simulations/test_get_simulation_scenario_link_v4_complete.sql",
         params=GetSimulationScenarioLinkV4SqlParams(
             input_simulation_id=UUID(data["simulationId"]),
             input_scenario_id=scenario_id,

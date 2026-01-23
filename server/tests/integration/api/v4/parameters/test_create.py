@@ -27,7 +27,7 @@ async def test_create_parameter(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/helpers/test_get_cs_dept_id_v4_complete.sql",
         params=None,
     )
     typed_dept = GetCsDeptIdSqlRow.model_validate(dept_result.model_dump())
@@ -74,7 +74,7 @@ async def test_create_parameter(
     # Verify parameter was created using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
     typed_parameter = GetParameterByIdSqlRow.model_validate(
@@ -89,7 +89,7 @@ async def test_create_parameter(
     # Verify parameter items were created using SQL file
     items_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql",
         params=GetParameterItemsSqlParams(parameter_id=parameter_id),
     )
     typed_items = GetParameterItemsSqlRow.model_validate(items_result.model_dump())
@@ -101,7 +101,7 @@ async def test_create_parameter(
     item1_id = typed_items[0].parameter_item_id
     dept_links_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
         params=GetParameterItemDepartmentLinksSqlParams(parameter_item_id=item1_id),
     )
     typed_dept_links = GetParameterItemDepartmentLinksSqlRow.model_validate(
@@ -114,7 +114,7 @@ async def test_create_parameter(
     item2_id = typed_items[1].parameter_item_id
     dept_links2_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_item_department_links_v4_complete.sql",
         params=GetParameterItemDepartmentLinksSqlParams(parameter_item_id=item2_id),
     )
     typed_dept_links2 = GetParameterItemDepartmentLinksSqlRow.model_validate(
@@ -155,7 +155,7 @@ async def test_create_parameter_minimal(
     # Verify parameter was created using SQL file
     parameter_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_by_id_v4_complete.sql",
         params=GetParameterByIdSqlParams(parameter_id=parameter_id),
     )
     typed_parameter = GetParameterByIdSqlRow.model_validate(
@@ -167,7 +167,7 @@ async def test_create_parameter_minimal(
     # Verify no items were created using SQL file
     items_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/parameters/test_get_parameter_items_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/parameters/test_get_parameter_items_v4_complete.sql",
         params=GetParameterItemsSqlParams(parameter_id=parameter_id),
     )
     typed_items = GetParameterItemsSqlRow.model_validate(items_result.model_dump())

@@ -31,7 +31,7 @@ async def test_duplicate_persona(
     # Create a persona using SQL file
     persona_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_test_persona_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_test_persona_v4_complete.sql",
         params=CreateTestPersonaSqlParams(
             persona_name="Original Persona",
             description="Original Description",
@@ -47,7 +47,7 @@ async def test_duplicate_persona(
     # Get department ID using SQL file
     dept_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/departments/test_get_first_department_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/departments/test_get_first_department_v4_complete.sql",
         params=None,
     )
     typed_dept = GetFirstDepartmentSqlRow.model_validate(dept_result.model_dump())
@@ -58,7 +58,7 @@ async def test_duplicate_persona(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_persona_department_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_persona_department_link_v4_complete.sql",
         params=CreatePersonaDepartmentLinkV4SqlParams(
             input_persona_id=persona_id,
             input_department_id=dept_id,
@@ -68,7 +68,7 @@ async def test_duplicate_persona(
     # Create a prompt and link it using SQL file
     prompt_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/agents/test_create_test_prompt_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/agents/test_create_test_prompt_v4_complete.sql",
         params=CreateTestPromptSqlParams(system_prompt="Test prompt"),
     )
     typed_prompt = CreateTestPromptSqlRow.model_validate(prompt_result.model_dump())
@@ -79,7 +79,7 @@ async def test_duplicate_persona(
 
     await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_create_persona_prompt_link_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_create_persona_prompt_link_v4_complete.sql",
         params=CreatePersonaPromptLinkV4SqlParams(
             input_persona_id=persona_id,
             input_prompt_id=prompt_id,
@@ -103,7 +103,7 @@ async def test_duplicate_persona(
     # Verify duplicated persona exists using SQL file
     duplicated_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/sql/v4/integration/api/personas/test_get_persona_by_id_v4_complete.sql",
+        sql_path="tests/sql/v4/integration/queries/api/personas/test_get_persona_by_id_v4_complete.sql",
         params=GetPersonaByIdSqlParams(persona_id=UUID(data["personaId"])),
     )
     typed_duplicated = GetPersonaByIdSqlRow.model_validate(

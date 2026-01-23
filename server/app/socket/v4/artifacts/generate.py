@@ -50,22 +50,22 @@ from app.utils.sql_helper import execute_sql_typed, load_sql
 internal_sio = get_internal_sio()
 
 SQL_PATH = (
-    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"
+    "app/sql/v4/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
 )
 SQL_PATH_TEXT = (
-    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"
+    "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 )
-SQL_PATH_MESSAGES_BY_IDS = "app/sql/v4/messages/get_messages_by_ids_complete.sql"
-SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/messages/get_messages_by_run_id_complete.sql"
+SQL_PATH_MESSAGES_BY_IDS = "app/sql/v4/queries/messages/get_messages_by_ids_complete.sql"
+SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/queries/messages/get_messages_by_run_id_complete.sql"
 SQL_PATH_CREATE_ASSISTANT_MESSAGE = (
-    "app/sql/v4/messages/create_assistant_message_for_run_complete.sql"
+    "app/sql/v4/queries/messages/create_assistant_message_for_run_complete.sql"
 )
 SQL_PATH_IMAGE = (
-    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
+    "app/sql/v4/queries/images/get_image_generation_context_and_create_upload_complete.sql"
 )
-SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
-SQL_PATH_AUDIO = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"
-GET_GROUP_ID_SQL_PATH = "app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql"
+SQL_PATH_VIDEO = "app/sql/v4/queries/videos/get_video_run_context_and_create_run_complete.sql"
+SQL_PATH_AUDIO = "app/sql/v4/queries/audio/get_audio_run_context_and_create_run_complete.sql"
+GET_GROUP_ID_SQL_PATH = "app/sql/v4/queries/infrastructure/artifacts/get_group_id_from_run_complete.sql"
 
 # Try to import litellm
 try:
@@ -1368,7 +1368,7 @@ async def _handle_video_generation(
     image_reference_id = data.get("imageReferenceId")
 
     # Create upload record first
-    sql_query = load_sql("app/sql/v4/uploads/insert_upload_complete.sql")
+    sql_query = load_sql("app/sql/v4/queries/uploads/insert_upload_complete.sql")
     upload_params = InsertUploadSqlParams(
         file_path="",  # Will be set during persistence
         mime_type="video/mp4",

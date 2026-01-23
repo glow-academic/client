@@ -1039,7 +1039,7 @@ async def sync_identity_provider_for_realm_level(
         import uuid
         
         async with pool.acquire() as conn:
-            items_sql_text = load_sql("app/sql/v4/keycloak/get_auth_items_complete.sql")
+            items_sql_text = load_sql("app/sql/v4/queries/keycloak/get_auth_items_complete.sql")
             items_is_function, items_function_name, items_schema = _detect_function_in_sql(items_sql_text)
             
             if items_is_function and items_function_name:
@@ -1161,7 +1161,7 @@ async def sync_identity_provider_for_org(
         from app.sql.types import GetAuthItemsSqlParams
         
         async with pool.acquire() as conn:
-            items_sql_text = load_sql("app/sql/v4/keycloak/get_auth_items_complete.sql")
+            items_sql_text = load_sql("app/sql/v4/queries/keycloak/get_auth_items_complete.sql")
             items_is_function, items_function_name, items_schema = _detect_function_in_sql(items_sql_text)
             
             if items_is_function and items_function_name:
@@ -1735,7 +1735,7 @@ async def sync_identity_providers(
         logger.info("Syncing default-idp Identity Provider instances (per profile)...")
         
         async with pool.acquire() as conn:
-            profiles_sql = load_sql("app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql")
+            profiles_sql = load_sql("app/sql/v4/queries/keycloak/get_setting_profiles_for_idp_complete.sql")
             profiles_is_function, profiles_function_name, profiles_schema = _detect_function_in_sql(profiles_sql)
             
             if profiles_is_function and profiles_function_name:
@@ -1758,7 +1758,7 @@ async def sync_identity_providers(
         
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
-            dept_sql = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+            dept_sql = load_sql("app/sql/v4/queries/keycloak/get_departments_for_org_sync_complete.sql")
             dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(dept_sql)
             
             has_departments = False
@@ -1771,7 +1771,7 @@ async def sync_identity_providers(
                 
                 # Collect all auth_ids that are linked to department settings
                 if has_departments:
-                    auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                    auths_sql_text = load_sql("app/sql/v4/queries/keycloak/get_auths_for_org_complete.sql")
                     auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
                     
                     if auths_is_function and auths_function_name:
@@ -1789,7 +1789,7 @@ async def sync_identity_providers(
         # BUT: Skip any that are also linked to department settings (to avoid duplicates)
         logger.info("Syncing realm-level IdPs (platform login)...")
         async with pool.acquire() as conn:
-            sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql")
+            sql_text = load_sql("app/sql/v4/queries/keycloak/get_auths_for_realm_level_complete.sql")
             is_function, function_name, schema = _detect_function_in_sql(sql_text)
             
             if is_function and function_name:
@@ -1841,7 +1841,7 @@ async def sync_identity_providers(
         # Step 3: Collect all unique department-scoped auths (deduplicate by auth_id)
         logger.info("Syncing department-scoped IdPs...")
         async with pool.acquire() as conn:
-            sql_text = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+            sql_text = load_sql("app/sql/v4/queries/keycloak/get_departments_for_org_sync_complete.sql")
             is_function, function_name, schema = _detect_function_in_sql(sql_text)
             
             if is_function and function_name:
@@ -1867,7 +1867,7 @@ async def sync_identity_providers(
                         logger.warning(f"Failed to create department client for {dept_id}, continuing with IdP sync")
                     
                     # Get auths for this department
-                    auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                    auths_sql_text = load_sql("app/sql/v4/queries/keycloak/get_auths_for_org_complete.sql")
                     auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
                     
                     if auths_is_function and auths_function_name:
@@ -1914,7 +1914,7 @@ async def sync_identity_providers(
             # Collect expected default-idp aliases (from Step 0 sync)
             expected_default_idp_aliases: set[str] = set()
             async with pool.acquire() as conn:
-                profiles_sql = load_sql("app/sql/v4/keycloak/get_setting_profiles_for_idp_complete.sql")
+                profiles_sql = load_sql("app/sql/v4/queries/keycloak/get_setting_profiles_for_idp_complete.sql")
                 profiles_is_function, profiles_function_name, profiles_schema = _detect_function_in_sql(profiles_sql)
                 if profiles_is_function and profiles_function_name:
                     profiles_call_sql = f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
@@ -1926,7 +1926,7 @@ async def sync_identity_providers(
             
             # Get expected realm-level slugs
             async with pool.acquire() as conn:
-                sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_realm_level_complete.sql")
+                sql_text = load_sql("app/sql/v4/queries/keycloak/get_auths_for_realm_level_complete.sql")
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
                 if is_function and function_name:
                     function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
@@ -1939,7 +1939,7 @@ async def sync_identity_providers(
             
             # Get expected department-scoped aliases (auth_{slug}_{auth_id} pattern)
             async with pool.acquire() as conn:
-                sql_text = load_sql("app/sql/v4/keycloak/get_departments_for_org_sync_complete.sql")
+                sql_text = load_sql("app/sql/v4/queries/keycloak/get_departments_for_org_sync_complete.sql")
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
                 if is_function and function_name:
                     function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
@@ -1952,7 +1952,7 @@ async def sync_identity_providers(
                         dept = dict(dept_row)
                         dept_id = str(dept["department_id"])
                         
-                        auths_sql_text = load_sql("app/sql/v4/keycloak/get_auths_for_org_complete.sql")
+                        auths_sql_text = load_sql("app/sql/v4/queries/keycloak/get_auths_for_org_complete.sql")
                         auths_is_function, auths_function_name, auths_schema = _detect_function_in_sql(auths_sql_text)
                         if auths_is_function and auths_function_name:
                             import uuid
@@ -2083,7 +2083,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                         UpdateMasterRealmSslSqlRow,
                         await execute_sql_typed(
                             conn,
-                            "app/sql/v4/keycloak/update_master_realm_ssl_complete.sql",
+                            "app/sql/v4/queries/keycloak/update_master_realm_ssl_complete.sql",
                             params=None,
                         ),
                     )

@@ -11,7 +11,7 @@ from app.sql.types import (
     InfrastructureMetricsHealthSqlRow,
 )
 
-SQL_PATH = "app/sql/v4/infrastructure/infrastructure_metrics_health_complete.sql"
+SQL_PATH = "app/sql/v4/queries/infrastructure/infrastructure_metrics_health_complete.sql"
 
 
 async def log_service_health(
