@@ -51,20 +51,20 @@ original_dept AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT od.title || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT od.title || ' Copy', NOW()
     FROM original_dept od
     WHERE od.title IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name as name_value
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT od.description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT od.description, NOW()
     FROM original_dept od
     WHERE od.description IS NOT NULL AND od.description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id
 ),
 get_active_flag AS (
@@ -82,23 +82,23 @@ new_dept AS (
 ),
 link_name AS (
     -- Link name to new department
-    INSERT INTO department_names_junction (department_id, name_id, created_at, updated_at)
-    SELECT nd.id, gocn.name_id, NOW(), NOW()
+    INSERT INTO department_names_junction (department_id, name_id, created_at)
+    SELECT nd.id, gocn.name_id, NOW()
     FROM new_dept nd
     CROSS JOIN get_or_create_name gocn
     WHERE gocn.name_id IS NOT NULL
 ),
 link_description AS (
     -- Link description to new department (if provided)
-    INSERT INTO department_descriptions_junction (department_id, description_id, created_at, updated_at)
-    SELECT nd.id, gocd.description_id, NOW(), NOW()
+    INSERT INTO department_descriptions_junction (department_id, description_id, created_at)
+    SELECT nd.id, gocd.description_id, NOW()
     FROM new_dept nd
     CROSS JOIN get_or_create_description gocd
     WHERE gocd.description_id IS NOT NULL
 ),
 link_active_flag AS (
     -- Link active flag to new department (set to false for duplicate)
-    INSERT INTO department_flags_junction (department_id, flag_id, value, created_at, updated_at) SELECT nd.id, gaf.flag_id, false, NOW(), NOW()
+    INSERT INTO department_flags_junction (department_id, flag_id, value, created_at) SELECT nd.id, gaf.flag_id, false, NOW()
     FROM new_dept nd
     CROSS JOIN get_active_flag gaf
 )

@@ -237,8 +237,8 @@ link_message_to_run AS (
 ),
 -- Create audio record with upload_id if upload_id provided
 create_audio_if_provided AS (
-    INSERT INTO audios_resource (created_at, updated_at, active, generated, call_id, upload_id)
-    SELECT NOW(), NOW(), true, false, utc.tool_call_id, p.upload_id
+    INSERT INTO audios_resource (created_at, active, generated, call_id, upload_id)
+    SELECT NOW(), true, false, utc.tool_call_id, p.upload_id
     FROM params p
     CROSS JOIN user_tool_call_id utc
     WHERE p.upload_id IS NOT NULL

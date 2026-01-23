@@ -112,8 +112,7 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE provider_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, provider_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE provider_flags_junction.provider_id = v_provider_id
           ;
     END IF;
@@ -144,42 +143,38 @@ BEGIN
     ),
     -- Link provider to name
     link_provider_name AS (
-        INSERT INTO provider_names_junction (provider_id, name_id, created_at, updated_at)
+        INSERT INTO provider_names_junction (provider_id, name_id, created_at)
         SELECT 
             x.p_provider_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT provider_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT provider_names_pkey DO NOTHING
     ),
     -- Link provider to description
     link_provider_description AS (
-        INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at, updated_at)
+        INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at)
         SELECT 
             x.p_provider_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT provider_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT provider_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE provider_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_provider_active_flag AS (
-        INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, updated_at) SELECT x.p_provider_id,
+        INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at) SELECT x.p_provider_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'provider_active'
         ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, provider_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     )
     SELECT 
         x.p_provider_id AS provider_id,

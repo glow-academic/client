@@ -164,16 +164,15 @@ BEGIN
         DELETE FROM rubric_points_junction WHERE rubric_id = v_rubric_id;
         DELETE FROM rubric_departments_junction WHERE rubric_id = v_rubric_id;
         -- Deactivate (don't delete) standard_group links
-        UPDATE rubric_standard_groups_junction SET active = false, updated_at = NOW()
+        UPDATE rubric_standard_groups_junction SET active = false
         WHERE rubric_id = v_rubric_id AND active = true;
         -- Deactivate (don't delete) standard links
-        UPDATE rubric_standards_junction SET active = false, updated_at = NOW()
+        UPDATE rubric_standards_junction SET active = false
         WHERE rubric_id = v_rubric_id AND active = true;
         -- Update existing active flag if it exists
         UPDATE rubric_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, rubric_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE rubric_id = v_rubric_id
           ;
     END IF;
@@ -240,84 +239,76 @@ BEGIN
     ),
     -- Link rubric to name
     link_rubric_name AS (
-        INSERT INTO rubric_names_junction (rubric_id, name_id, created_at, updated_at)
+        INSERT INTO rubric_names_junction (rubric_id, name_id, created_at)
         SELECT 
             x.rubric_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT rubric_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT rubric_names_pkey DO NOTHING
     ),
     -- Link rubric to description
     link_rubric_description AS (
-        INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at, updated_at)
+        INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at)
         SELECT 
             x.rubric_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT rubric_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT rubric_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE rubric_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_rubric_active_flag AS (
-        INSERT INTO rubric_flags_junction (rubric_id, flag_id, value, created_at, updated_at) SELECT x.rubric_id,
+        INSERT INTO rubric_flags_junction (rubric_id, flag_id, value, created_at) SELECT x.rubric_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'rubric_active'
         ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link total_points
     link_total_points AS (
-        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at, updated_at)
+        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at)
         SELECT 
             x.rubric_id,
             x.total_points_id,
             'total'::point_type,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.total_points_id IS NOT NULL
-        ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (rubric_id, point_id, type) DO NOTHING
     ),
     -- Link pass_points
     link_pass_points AS (
-        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at, updated_at)
+        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at)
         SELECT 
             x.rubric_id,
             x.pass_points_id,
             'pass'::point_type,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.pass_points_id IS NOT NULL
-        ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (rubric_id, point_id, type) DO NOTHING
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at, updated_at)
+        INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at)
         SELECT 
             x.rubric_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT rubric_departments_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link standard_groups (old ones already deactivated above if update)
     -- Use position from existing links if available, otherwise use array position
@@ -337,36 +328,32 @@ BEGIN
         WHERE COALESCE(array_length(x.standard_group_ids, 1), 0) > 0
     ),
     link_standard_groups AS (
-        INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, position, active, created_at, updated_at)
+        INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, position, active, created_at)
         SELECT 
             x.rubric_id,
             sgwp.sg_id,
             sgwp.position,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN standard_groups_with_position sgwp
         ON CONFLICT ON CONSTRAINT rubric_standard_groups_pkey DO UPDATE SET
             position = EXCLUDED.position,
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link standards (old ones already deactivated above if update)
     link_standards AS (
-        INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at, updated_at)
+        INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at)
         SELECT 
             x.rubric_id,
             std_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.standard_ids) as std_id
         WHERE COALESCE(array_length(x.standard_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT rubric_standards_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.rubric_id AS rubric_id,

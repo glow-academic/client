@@ -14,8 +14,7 @@ RETURNS TABLE (
     model_id uuid,
     active boolean,
     role text,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -27,8 +26,7 @@ AS $$
         (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = a.id LIMIT 1) as model_id,
         EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active'  AND af.value = TRUE) as active,
         NULL::text as role,
-        a.created_at,
-        a.updated_at
+        a.created_at
     FROM agents_resource a
     WHERE a.id = test_get_agent_by_id_v4.input_agent_id;
 $$;

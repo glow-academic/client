@@ -68,20 +68,20 @@ original_flags AS (
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name || ' Copy', NOW()
     FROM original_eval
     WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description, NOW()
     FROM original_eval
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 new_eval AS (
@@ -97,65 +97,58 @@ new_eval AS (
 ),
 -- Link eval to name
 link_eval_name AS (
-    INSERT INTO eval_names_junction (eval_id, name_id, created_at, updated_at)
+    INSERT INTO eval_names_junction (eval_id, name_id, created_at)
     SELECT 
         ne.id,
         nnr.name_id,
-        NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (eval_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (eval_id, name_id) DO NOTHING
 ),
 -- Link eval to description
 link_eval_description AS (
-    INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at, updated_at)
+    INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at)
     SELECT 
         ne.id,
         ndr.description_id,
-        NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (eval_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (eval_id, description_id) DO NOTHING
 ),
 -- Link eval active flag (set to false for duplicate)
 link_eval_active_flag AS (
-    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at, updated_at) SELECT ne.id,
+    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at) SELECT ne.id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN flags_resource f
     WHERE f.name = 'eval_active'
     ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 -- Copy other flags from original eval
 copy_eval_flags AS (
-    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at, updated_at)
+    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at)
     SELECT 
         ne.id,
         of.flag_id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN original_flags of
     ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 copy_departments AS (
     -- Copy department links from original eval
-    INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at, updated_at)
+    INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at)
     SELECT 
         ne.id,
         od.department_id,
         true,
-        NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN original_departments od
@@ -163,11 +156,10 @@ copy_departments AS (
 ),
 copy_agents AS (
     -- Copy agent links from original eval
-    INSERT INTO eval_agents_junction (eval_id, agent_id, created_at, updated_at)
+    INSERT INTO eval_agents_junction (eval_id, agent_id, created_at)
     SELECT 
         ne.id,
         oa.agent_id,
-        NOW(),
         NOW()
     FROM new_eval ne
     CROSS JOIN original_agents oa

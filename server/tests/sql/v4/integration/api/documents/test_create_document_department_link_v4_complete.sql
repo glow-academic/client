@@ -12,19 +12,17 @@ RETURNS TABLE (
     document_id uuid,
     department_id uuid,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO document_departments_junction(document_id, department_id, active, created_at, updated_at)
+    INSERT INTO document_departments_junction(document_id, department_id, active, created_at)
     VALUES (
         test_create_document_department_link_v4.document_id,
         test_create_document_department_link_v4.department_id,
         true,
-        NOW(),
         NOW()
     )
-    RETURNING document_id, department_id, active, created_at, updated_at;
+    RETURNING document_id, department_id, active, created_at;
 $$;

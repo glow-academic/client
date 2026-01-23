@@ -89,24 +89,21 @@ BEGIN
                 INSERT INTO names_draft (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF description_id IS NOT NULL THEN
                 INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             -- Handle array resources (departments)
@@ -116,8 +113,7 @@ BEGIN
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
@@ -141,24 +137,21 @@ BEGIN
         INSERT INTO names_draft (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF description_id IS NOT NULL THEN
         INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF active_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     -- Handle array resources
@@ -167,8 +160,7 @@ BEGIN
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     RETURN QUERY SELECT v_draft_id, v_new_version, false;

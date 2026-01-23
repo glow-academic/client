@@ -20,10 +20,6 @@ import { toast } from "sonner";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
 
-import type {
-  PatchPracticeDraftIn,
-  PatchPracticeDraftOut,
-} from "@/app/(main)/practice/custom/page";
 import type { ProfileItem } from "@/app/(main)/layout-server";
 import type { PracticeOut } from "@/app/(main)/practice/page";
 import {
@@ -50,10 +46,6 @@ export interface PracticeCustomizeProps {
   effectiveProfile: ProfileItem | null;
   activeProfile: ProfileItem | null;
   isGuest?: boolean;
-  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
-  patchPracticeDraftAction?: (
-    input: PatchPracticeDraftIn
-  ) => Promise<PatchPracticeDraftOut>;
 }
 
 function PracticeCustomizeComponent({
@@ -61,7 +53,6 @@ function PracticeCustomizeComponent({
   effectiveProfile,
   activeProfile,
   isGuest: _isGuest = false,
-  patchPracticeDraftAction,
 }: PracticeCustomizeProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -364,24 +355,7 @@ function PracticeCustomizeComponent({
   } = useDraftAutosave({
     draftId,
     draftState,
-    patchDraftAction: patchPracticeDraftAction
-      ? async (input) => {
-          // Transform hook API → backend API
-          const result = await patchPracticeDraftAction({
-            body: {
-              input_draft_id: input.body.draft_id || null,
-              patch: input.body.patch as Record<string, unknown>,
-              expected_version: input.body.expected_version,
-            } as PatchPracticeDraftIn["body"],
-          });
-          // Transform backend API → hook API
-          return {
-            draftId: result.draft_id || "",
-            newVersion: result.new_version || 0,
-            draftExists: result.draft_exists || false,
-          };
-        }
-      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
+    patchDraftAction: async () => ({ draftId: "", newVersion: 0, draftExists: false }),
     debounceMs: 1000,
     onDraftCreated: useCallback(
       (newDraftId: string) => {

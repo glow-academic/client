@@ -38,8 +38,7 @@ WITH upload_row AS (
 update_image AS (
     UPDATE images_resource
     SET completed = TRUE,
-        upload_id = (SELECT id FROM upload_row),
-        updated_at = NOW()
+        upload_id = (SELECT id FROM upload_row)
     WHERE id = image_id
     RETURNING id
 )

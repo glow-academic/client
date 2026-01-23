@@ -102,14 +102,13 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE agent_flags_junction SET
             flag_id = COALESCE(api_save_agent_v4.active_flag_id, agent_flags_junction.flag_id),
-            value = CASE WHEN api_save_agent_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN api_save_agent_v4.active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE agent_id = v_agent_id
           ;
         -- Deactivate existing temperature/reasoning/voice links
-        UPDATE agent_temperature_levels_junction SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
-        UPDATE agent_reasoning_levels_junction SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
-        UPDATE agent_voices_junction SET active = false, updated_at = NOW() WHERE agent_id = v_agent_id;
+        UPDATE agent_temperature_levels_junction SET active = false WHERE agent_id = v_agent_id;
+        UPDATE agent_reasoning_levels_junction SET active = false WHERE agent_id = v_agent_id;
+        UPDATE agent_voices_junction SET active = false WHERE agent_id = v_agent_id;
     END IF;
     
     -- Continue with agent save using SQL (agent already created/updated above)
@@ -134,20 +133,20 @@ BEGIN
     ),
     -- Insert/update name in names table
     name_resource AS (
-        INSERT INTO names_resource (name, created_at, updated_at)
-        SELECT name, NOW(), NOW()
+        INSERT INTO names_resource (name, created_at)
+        SELECT name, NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as name_id
     ),
     -- Insert/update description in descriptions table
     description_resource AS (
-        INSERT INTO descriptions_resource (description, created_at, updated_at)
-        SELECT description, NOW(), NOW()
+        INSERT INTO descriptions_resource (description, created_at)
+        SELECT description, NOW()
         FROM params
         WHERE description IS NOT NULL AND description != ''
-        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as description_id
     ),
     user_profile AS (
@@ -200,28 +199,26 @@ BEGIN
     ),
     -- Link agent to name
     link_agent_name AS (
-        INSERT INTO agent_names_junction (agent_id, name_id, created_at, updated_at)
+        INSERT INTO agent_names_junction (agent_id, name_id, created_at)
         SELECT 
             x.agent_id,
             nr.name_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN name_resource nr
-        ON CONFLICT (agent_id, name_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (agent_id, name_id) DO NOTHING
     ),
     -- Link agent to description
     link_agent_description AS (
-        INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at, updated_at)
+        INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at)
         SELECT 
             x.agent_id,
             dr.description_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN description_resource dr
         WHERE dr.description_id IS NOT NULL
-        ON CONFLICT (agent_id, description_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (agent_id, description_id) DO NOTHING
     ),
     -- Link agent to model (remove old links first for update)
     remove_old_model AS (
@@ -230,21 +227,20 @@ BEGIN
           AND model_id != (SELECT model_id FROM params)
     ),
     link_agent_model AS (
-        INSERT INTO agent_models_junction (agent_id, model_id, created_at, updated_at)
+        INSERT INTO agent_models_junction (agent_id, model_id, created_at)
         SELECT 
             x.agent_id,
             x.model_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.model_id IS NOT NULL
-        ON CONFLICT (agent_id, model_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (agent_id, model_id) DO NOTHING
     ),
     -- Handle prompt (create new if system_prompt provided and prompt_id not provided)
     new_prompt AS (
         -- Create prompt only if system_prompt provided and prompt_id not provided
-        INSERT INTO prompts_resource (system_prompt, created_at, updated_at)
-        SELECT x.system_prompt, NOW(), NOW()
+        INSERT INTO prompts_resource (system_prompt, created_at)
+        SELECT x.system_prompt, NOW()
         FROM params x
         WHERE x.prompt_id IS NULL AND x.system_prompt IS NOT NULL AND x.system_prompt != ''
         RETURNING id::uuid as prompt_id
@@ -265,125 +261,110 @@ BEGIN
     ),
     link_prompt AS (
         -- Link agent to prompt if prompt_id exists
-        INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at, updated_at)
+        INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at)
         SELECT 
             x.agent_id,
             sp.prompt_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN selected_prompt_id sp
         WHERE sp.prompt_id IS NOT NULL
         ON CONFLICT (agent_id, prompt_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link agent to instructions
     link_agent_instructions AS (
-        INSERT INTO agent_instructions_junction (agent_id, instruction_id, created_at, updated_at)
+        INSERT INTO agent_instructions_junction (agent_id, instruction_id, created_at)
         SELECT 
             x.agent_id,
             x.instructions_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.instructions_id IS NOT NULL
-        ON CONFLICT (agent_id, instruction_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (agent_id, instruction_id) DO NOTHING
     ),
     -- Insert or UPDATE agent_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_agent_active_flag AS (
-        INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at, updated_at) SELECT x.agent_id,
+        INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at) SELECT x.agent_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'agent_active'
         ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, agent_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at, updated_at)
+        INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)
         SELECT 
             x.agent_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT (agent_id, department_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link temperature level if provided
     link_temperature_level AS (
-        INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, updated_at)
+        INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at)
         SELECT 
             x.agent_id,
             x.temperature_level_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.temperature_level_id IS NOT NULL
         ON CONFLICT (agent_id, temperature_level_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link reasoning level if provided
     link_reasoning_level AS (
-        INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, updated_at)
+        INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at)
         SELECT 
             x.agent_id,
             x.reasoning_level_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.reasoning_level_id IS NOT NULL
         ON CONFLICT (agent_id, reasoning_level_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link voices if provided
     link_voices AS (
-        INSERT INTO agent_voices_junction (agent_id, voice_id, active, created_at, updated_at)
+        INSERT INTO agent_voices_junction (agent_id, voice_id, active, created_at)
         SELECT 
             x.agent_id,
             voice_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.voice_ids) as voice_id
         WHERE COALESCE(array_length(x.voice_ids, 1), 0) > 0
         ON CONFLICT (agent_id, voice_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link tools if provided
     link_tools AS (
-        INSERT INTO agent_tools_junction (agent_id, tool_id, active, created_at, updated_at)
+        INSERT INTO agent_tools_junction (agent_id, tool_id, active, created_at)
         SELECT 
             x.agent_id,
             tool_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.tool_ids) as tool_id
         WHERE COALESCE(array_length(x.tool_ids, 1), 0) > 0
           AND EXISTS (SELECT 1 FROM tool_artifact t WHERE t.id = tool_id)
         ON CONFLICT (agent_id, tool_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.agent_id AS agent_id,

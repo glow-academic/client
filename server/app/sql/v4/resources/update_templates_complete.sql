@@ -37,8 +37,7 @@ update_template AS (
     UPDATE templates_resource
     SET html = COALESCE(api_update_templates_v4.html, templates_resource.html),
         name = COALESCE(api_update_templates_v4.name, templates_resource.name),
-        description = COALESCE(api_update_templates_v4.description, templates_resource.description),
-        updated_at = NOW()
+        description = COALESCE(api_update_templates_v4.description, templates_resource.description)
     WHERE id IN (SELECT id FROM template_exists)
     RETURNING id as template_id
 )

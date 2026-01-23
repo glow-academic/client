@@ -62,42 +62,41 @@ BEGIN
 
     -- Handle name (insert/update via tool_names_junction junction)
     IF name IS NOT NULL AND name != '' THEN
-        INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
-        VALUES (name, NOW(), NOW(), true, false, false, NULL)
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        INSERT INTO names_resource (name, created_at, active, generated, mcp, call_id)
+        VALUES (name, NOW(), true, false, false, NULL)
+        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id INTO v_name_id;
         
         -- Delete existing name links and insert new one
         DELETE FROM tool_names_junction WHERE tool_id = v_tool_id;
-        INSERT INTO tool_names_junction (tool_id, name_id, created_at, updated_at, generated, mcp)
-        VALUES (v_tool_id, v_name_id, NOW(), NOW(), false, false);
+        INSERT INTO tool_names_junction (tool_id, name_id, created_at, generated, mcp)
+        VALUES (v_tool_id, v_name_id, NOW(), false, false);
     END IF;
 
     -- Handle description (insert/update via tool_descriptions_junction junction)
     IF description IS NOT NULL AND description != '' THEN
-        INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
-        VALUES (description, NOW(), NOW(), true, false, false, NULL)
-        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        INSERT INTO descriptions_resource (description, created_at, active, generated, mcp, call_id)
+        VALUES (description, NOW(), true, false, false, NULL)
+        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id INTO v_description_id;
         
         -- Delete existing description links and insert new one
         DELETE FROM tool_descriptions_junction WHERE tool_id = v_tool_id;
-        INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, updated_at, generated, mcp)
-        VALUES (v_tool_id, v_description_id, NOW(), NOW(), false, false);
+        INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp)
+        VALUES (v_tool_id, v_description_id, NOW(), false, false);
     END IF;
 
     -- Handle active flag (insert/update via tool_flags_junction junction)
     IF active IS NOT NULL THEN
-        INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT v_tool_id,
+        INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp) SELECT v_tool_id,
             f.id,
             active,
-            NOW(),
             NOW(),
             false,
             false
         FROM flags_resource f
         WHERE f.name = 'tool_active'
-        ON CONFLICT (tool_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+        ON CONFLICT (tool_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value;
     END IF;
     
     -- Validate args IDs exist
@@ -151,35 +150,31 @@ BEGIN
     ),
     -- Link tool to args (old ones already deleted above if update)
     link_args AS (
-        INSERT INTO tool_args_junction (tool_id, args_id, created_at, updated_at, generated, mcp)
+        INSERT INTO tool_args_junction (tool_id, args_id, created_at, generated, mcp)
         SELECT 
             x.tool_id,
             args_id,
-            NOW(),
             NOW(),
             false,
             false
         FROM params x
         CROSS JOIN UNNEST(x.args_ids) as args_id
         WHERE COALESCE(array_length(x.args_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT tool_args_pkey DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT tool_args_pkey DO NOTHING
     ),
     -- Link tool to args_outputs (old ones already deleted above if update)
     link_args_outputs AS (
-        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, updated_at, generated, mcp)
+        INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp)
         SELECT 
             x.tool_id,
             args_outputs_id,
-            NOW(),
             NOW(),
             false,
             false
         FROM params x
         CROSS JOIN UNNEST(x.args_outputs_ids) as args_outputs_id
         WHERE COALESCE(array_length(x.args_outputs_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT tool_args_outputs_pkey DO NOTHING
     )
     SELECT 
         x.tool_id AS tool_id,

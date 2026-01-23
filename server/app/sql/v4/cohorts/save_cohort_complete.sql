@@ -154,8 +154,7 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE cohort_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, cohort_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE cohort_flags_junction.cohort_id = v_cohort_id;
     END IF;
 
@@ -252,58 +251,52 @@ BEGIN
     ),
     -- Link cohort to name
     link_cohort_name AS (
-        INSERT INTO cohort_names_junction (cohort_id, name_id, created_at, updated_at)
+        INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
         SELECT 
             x.cohort_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params_with_departments x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT cohort_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT cohort_names_pkey DO NOTHING
     ),
     -- Link cohort to description
     link_cohort_description AS (
-        INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at, updated_at)
+        INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at)
         SELECT 
             x.cohort_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params_with_departments x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT cohort_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT cohort_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE cohort_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_cohort_active_flag AS (
-        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at, updated_at) SELECT x.cohort_id,
+        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at) SELECT x.cohort_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params_with_departments x
         CROSS JOIN flags_resource f
         WHERE f.name = 'cohort_active'
         ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at, updated_at)
+        INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
         SELECT 
             x.cohort_id,
             dri.department_resource_id,
             true,
-            NOW(),
             NOW()
         FROM params_with_departments x
         JOIN department_resource_ids dri ON dri.department_resource_id IS NOT NULL
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT cohort_departments_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     simulation_positions_draft_data AS (
         SELECT
@@ -343,7 +336,6 @@ BEGIN
             simulation_id,
             value,
             created_at,
-            updated_at,
             generated,
             mcp,
             call_id
@@ -352,14 +344,12 @@ BEGIN
             swo.sim_id,
             swo.position,
             NOW(),
-            NOW(),
             false,
             false,
             x.default_call_id
         FROM params_with_departments x
         CROSS JOIN simulations_with_order swo
-        ON CONFLICT (simulation_id, value) DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT (simulation_id, value) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id, simulation_id, value
     ),
     link_simulation_positions AS (
@@ -368,7 +358,6 @@ BEGIN
             simulation_position_id,
             active,
             created_at,
-            updated_at,
             generated,
             mcp
         )
@@ -377,14 +366,12 @@ BEGIN
             usp.id,
             true,
             NOW(),
-            NOW(),
             false,
             false
         FROM params_with_departments x
         CROSS JOIN upsert_simulation_positions usp
         ON CONFLICT ON CONSTRAINT cohort_simulation_positions_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.cohort_id AS cohort_id,

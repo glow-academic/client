@@ -279,86 +279,78 @@ BEGIN
     ),
     -- Link simulation name (resource ID already validated)
     link_simulation_name AS (
-        INSERT INTO simulation_names_junction (simulation_id, name_id, created_at, updated_at)
+        INSERT INTO simulation_names_junction (simulation_id, name_id, created_at)
         SELECT 
             x.simulation_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT simulation_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT simulation_names_pkey DO NOTHING
     ),
     -- Link simulation description (resource ID already validated)
     link_simulation_description AS (
-        INSERT INTO simulation_descriptions_junction (simulation_id, description_id, created_at, updated_at)
+        INSERT INTO simulation_descriptions_junction (simulation_id, description_id, created_at)
         SELECT 
             x.simulation_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT simulation_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT simulation_descriptions_pkey DO NOTHING
     ),
     -- Link simulation flags (resource ID already validated)
     link_simulation_active_flag AS (
-        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
+        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp)
         SELECT 
             x.simulation_id,
             x.active_flag_id,
             true,
             NOW(),
-            NOW(),
             false,
             false
         FROM params x
         WHERE x.active_flag_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value
     ),
     link_simulation_practice_flag AS (
-        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, updated_at, generated, mcp)
+        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp)
         SELECT 
             x.simulation_id,
             x.practice_flag_id,
             true,
             NOW(),
-            NOW(),
             false,
             false
         FROM params x
         WHERE x.practice_flag_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = EXCLUDED.value
     ),
     link_departments AS (
-        INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at, updated_at)
+        INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at)
         SELECT 
             x.simulation_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_departments_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     link_scenarios AS (
-        INSERT INTO simulation_scenarios_junction (simulation_id, scenario_id, active, created_at, updated_at)
+        INSERT INTO simulation_scenarios_junction (simulation_id, scenario_id, active, created_at)
         SELECT 
             x.simulation_id,
             scenario_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.scenario_ids) as scenario_id
         WHERE COALESCE(array_length(x.scenario_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenarios_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     link_scenario_flags AS (
         INSERT INTO simulation_scenario_flags_junction (
@@ -366,7 +358,6 @@ BEGIN
             scenario_flag_id,
             value,
             created_at,
-            updated_at,
             generated,
             mcp,
             active
@@ -375,7 +366,6 @@ BEGIN
             x.simulation_id,
             scenario_flag_id,
             true,
-            NOW(),
             NOW(),
             false,
             false,
@@ -384,15 +374,13 @@ BEGIN
         CROSS JOIN UNNEST(x.scenario_flag_ids) as scenario_flag_id
         WHERE COALESCE(array_length(x.scenario_flag_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenario_flags_new_pkey DO UPDATE SET
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     link_scenario_positions AS (
         INSERT INTO simulation_scenario_positions_junction (
             simulation_id,
             scenario_position_id,
             created_at,
-            updated_at,
             generated,
             mcp,
             active
@@ -400,7 +388,6 @@ BEGIN
         SELECT
             x.simulation_id,
             scenario_position_id,
-            NOW(),
             NOW(),
             false,
             false,
@@ -409,15 +396,13 @@ BEGIN
         CROSS JOIN UNNEST(x.scenario_position_ids) as scenario_position_id
         WHERE COALESCE(array_length(x.scenario_position_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenario_positions_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     link_scenario_rubrics AS (
-        INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, created_at, generated, mcp, active)
         SELECT 
             x.simulation_id,
             scenario_rubric_id,
-            NOW(),
             NOW(),
             false,
             false,
@@ -426,15 +411,13 @@ BEGIN
         CROSS JOIN UNNEST(x.scenario_rubric_ids) as scenario_rubric_id
         WHERE COALESCE(array_length(x.scenario_rubric_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenario_rubrics_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     link_scenario_time_limits AS (
         INSERT INTO simulation_scenario_time_limits_junction (
             simulation_id,
             scenario_time_limit_id,
             created_at,
-            updated_at,
             generated,
             mcp,
             active
@@ -443,7 +426,6 @@ BEGIN
             x.simulation_id,
             scenario_time_limit_id,
             NOW(),
-            NOW(),
             false,
             false,
             true
@@ -451,8 +433,7 @@ BEGIN
         CROSS JOIN UNNEST(x.scenario_time_limit_ids) as scenario_time_limit_id
         WHERE COALESCE(array_length(x.scenario_time_limit_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT simulation_scenario_time_limits_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.simulation_id AS simulation_id,

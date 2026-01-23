@@ -535,7 +535,7 @@ attempt_base AS (
          ORDER BY (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as sim_rubric_id,
         s.created_at as sim_created_at,
-        s.updated_at as sim_updated_at
+        s.created_at as sim_updated_at
     FROM params x
     JOIN attempts_entry sa ON sa.id = x.attempt_id
     JOIN simulation_artifact s ON s.id = sa.simulation_id
@@ -914,7 +914,7 @@ all_simulation_scenarios_with_previous_chats AS (
          (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
          (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1),
          s.created_at,
-         s.updated_at,
+         s.created_at,
          false,
          false,
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 
@@ -979,7 +979,7 @@ scenarios_data AS (
          (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
          (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1),
          s.created_at,
-         s.updated_at,
+         s.created_at,
          false,
          false,
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id 

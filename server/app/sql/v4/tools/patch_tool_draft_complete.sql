@@ -93,8 +93,7 @@ BEGIN
                 SELECT v_draft_id, args_id, v_new_version, false, false
                 FROM UNNEST(args_ids) as args_id
                 ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
@@ -102,8 +101,7 @@ BEGIN
                 SELECT v_draft_id, args_outputs_id, v_new_version, false, false
                 FROM UNNEST(args_outputs_ids) as args_outputs_id
                 ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
@@ -128,8 +126,7 @@ BEGIN
         SELECT v_draft_id, args_id, v_new_version, false, false
         FROM UNNEST(args_ids) as args_id
         ON CONFLICT ON CONSTRAINT args_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF args_outputs_ids IS NOT NULL AND COALESCE(array_length(args_outputs_ids, 1), 0) > 0 THEN
@@ -137,8 +134,7 @@ BEGIN
         SELECT v_draft_id, args_outputs_id, v_new_version, false, false
         FROM UNNEST(args_outputs_ids) as args_outputs_id
         ON CONFLICT ON CONSTRAINT args_outputs_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     RETURN QUERY SELECT v_draft_id, v_new_version, false;

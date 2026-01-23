@@ -170,8 +170,7 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE persona_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, persona_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE persona_id = v_persona_id
           ;
     END IF;
@@ -239,111 +238,100 @@ BEGIN
     ),
     -- Link persona to name
     link_persona_name AS (
-        INSERT INTO persona_names_junction (persona_id, name_id, created_at, updated_at)
+        INSERT INTO persona_names_junction (persona_id, name_id, created_at)
         SELECT 
             x.persona_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_names_pkey DO NOTHING
     ),
     -- Link persona to description
     link_persona_description AS (
-        INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at, updated_at)
+        INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at)
         SELECT 
             x.persona_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_descriptions_pkey DO NOTHING
     ),
     -- Link persona to color
     link_persona_color AS (
-        INSERT INTO persona_colors_junction (persona_id, color_id, created_at, updated_at)
+        INSERT INTO persona_colors_junction (persona_id, color_id, created_at)
         SELECT 
             x.persona_id,
             x.color_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.color_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_colors_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_colors_pkey DO NOTHING
     ),
     -- Link persona to icon
     link_persona_icon AS (
-        INSERT INTO persona_icons_junction (persona_id, icon_id, created_at, updated_at)
+        INSERT INTO persona_icons_junction (persona_id, icon_id, created_at)
         SELECT 
             x.persona_id,
             x.icon_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.icon_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_icons_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_icons_pkey DO NOTHING
     ),
     -- Link persona to instructions
     link_persona_instruction AS (
-        INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at, updated_at)
+        INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at)
         SELECT 
             x.persona_id,
             x.instructions_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.instructions_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_instructions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_instructions_pkey DO NOTHING
     ),
     -- Insert or UPDATE persona_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_persona_active_flag AS (
-        INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at, updated_at) SELECT x.persona_id,
+        INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at) SELECT x.persona_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_persona_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'persona_active'
         ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, persona_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at, updated_at)
+        INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
         SELECT 
             x.persona_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT persona_departments_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link fields (old ones already deleted above if update)
     link_fields AS (
-        INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at, updated_at)
+        INSERT INTO persona_fields_junction (persona_id, field_id, active, created_at)
         SELECT 
             x.persona_id,
             field_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.field_ids) as field_id
         WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT persona_fields_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Examples with index (old ones already deleted above if update)
     examples_with_index AS (

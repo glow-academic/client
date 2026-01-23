@@ -13,8 +13,7 @@ RETURNS TABLE (
     name text,
     description text,
     points integer,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -25,8 +24,7 @@ AS $$
         name,
         description,
         points,
-        created_at,
-        created_at AS updated_at
+        created_at
     FROM standards_resource
     WHERE standard_group_id = input_standard_group_id
     ORDER BY name;

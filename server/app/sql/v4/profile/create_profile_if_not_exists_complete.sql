@@ -70,8 +70,8 @@ placeholder_call_id AS (
 ),
 -- Insert name in names table (only if creating)
 name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at, call_id)
-    SELECT (SELECT name FROM params), NOW(), NOW(), (SELECT id FROM placeholder_call_id)
+    INSERT INTO names_resource (name, created_at, call_id)
+    SELECT (SELECT name FROM params), NOW(), (SELECT id FROM placeholder_call_id)
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
       AND (SELECT name FROM params) IS NOT NULL
       AND (SELECT name FROM params) != ''
@@ -98,8 +98,8 @@ profile_insert AS (
 ),
 -- Insert role (only if creating)
 role_resource AS (
-    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT (SELECT role FROM params)::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
+    SELECT (SELECT role FROM params)::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     WHERE EXISTS (SELECT 1 FROM profile_insert)
     ON CONFLICT (role) DO NOTHING
     RETURNING id as role_id
@@ -111,8 +111,8 @@ role_id_lookup AS (
     ) as role_id
 ),
 profile_type_insert AS (
-    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, updated_at, generated, mcp)
-    SELECT pi.id, rl.role_id, NOW(), NOW(), false, false
+    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
+    SELECT pi.id, rl.role_id, NOW(), false, false
     FROM profile_insert pi
     CROSS JOIN role_id_lookup rl
     WHERE rl.role_id IS NOT NULL
@@ -121,8 +121,8 @@ profile_type_insert AS (
 ),
 -- Link profile to name (only if creating)
 link_profile_name AS (
-    INSERT INTO profile_names_junction (profile_id, name_id, created_at, updated_at)
-    SELECT pi.id, nl.name_id, NOW(), NOW()
+    INSERT INTO profile_names_junction (profile_id, name_id, created_at)
+    SELECT pi.id, nl.name_id, NOW()
     FROM profile_insert pi
     CROSS JOIN name_id_lookup nl
     WHERE nl.name_id IS NOT NULL
@@ -130,8 +130,8 @@ link_profile_name AS (
 ),
 -- Set profile active flag (only if creating)
 set_profile_active AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at, updated_at)
-    SELECT pi.id, f.id, true, NOW(), NOW()
+    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at)
+    SELECT pi.id, f.id, true, NOW()
     FROM profile_insert pi
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
@@ -139,8 +139,8 @@ set_profile_active AS (
 ),
 -- Insert email resource (only if creating)
 email_resource AS (
-    INSERT INTO emails_resource (email, call_id, created_at, updated_at)
-    SELECT (SELECT email FROM params), (SELECT id FROM placeholder_call_id), NOW(), NOW()
+    INSERT INTO emails_resource (email, call_id, created_at)
+    SELECT (SELECT email FROM params), (SELECT id FROM placeholder_call_id), NOW()
     WHERE EXISTS (SELECT 1 FROM profile_insert)
     ON CONFLICT (email) DO NOTHING
     RETURNING id as email_id, email

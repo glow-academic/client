@@ -131,24 +131,21 @@ BEGIN
                 INSERT INTO names_draft (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF description_id IS NOT NULL THEN
                 INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             -- Handle array resources
@@ -158,8 +155,7 @@ BEGIN
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF scenario_ids IS NOT NULL THEN
@@ -168,8 +164,7 @@ BEGIN
                 SELECT v_draft_id, scenario_id, v_new_version
                 FROM UNNEST(scenario_ids) as scenario_id
                 ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF scenario_flag_ids IS NOT NULL THEN
@@ -178,8 +173,7 @@ BEGIN
                 SELECT v_draft_id, scenario_flag_id, v_new_version
                 FROM UNNEST(scenario_flag_ids) as scenario_flag_id
                 ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF scenario_position_ids IS NOT NULL THEN
@@ -188,8 +182,7 @@ BEGIN
                 SELECT v_draft_id, scenario_position_id, v_new_version
                 FROM UNNEST(scenario_position_ids) as scenario_position_id
                 ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF scenario_rubric_ids IS NOT NULL THEN
@@ -198,8 +191,7 @@ BEGIN
                 SELECT v_draft_id, scenario_rubric_id, v_new_version
                 FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
                 ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF scenario_time_limit_ids IS NOT NULL THEN
@@ -208,8 +200,7 @@ BEGIN
                 SELECT v_draft_id, scenario_time_limit_id, v_new_version
                 FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
                 ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
@@ -233,24 +224,21 @@ BEGIN
         INSERT INTO names_draft (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF description_id IS NOT NULL THEN
         INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF active_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     -- Handle array resources
@@ -259,8 +247,7 @@ BEGIN
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF scenario_ids IS NOT NULL THEN
@@ -268,8 +255,7 @@ BEGIN
         SELECT v_draft_id, scenario_id, v_new_version
         FROM UNNEST(scenario_ids) as scenario_id
         ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF scenario_flag_ids IS NOT NULL THEN
@@ -277,8 +263,7 @@ BEGIN
         SELECT v_draft_id, scenario_flag_id, v_new_version
         FROM UNNEST(scenario_flag_ids) as scenario_flag_id
         ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF scenario_position_ids IS NOT NULL THEN
@@ -286,8 +271,7 @@ BEGIN
         SELECT v_draft_id, scenario_position_id, v_new_version
         FROM UNNEST(scenario_position_ids) as scenario_position_id
         ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF scenario_rubric_ids IS NOT NULL THEN
@@ -295,8 +279,7 @@ BEGIN
         SELECT v_draft_id, scenario_rubric_id, v_new_version
         FROM UNNEST(scenario_rubric_ids) as scenario_rubric_id
         ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF scenario_time_limit_ids IS NOT NULL THEN
@@ -304,8 +287,7 @@ BEGIN
         SELECT v_draft_id, scenario_time_limit_id, v_new_version
         FROM UNNEST(scenario_time_limit_ids) as scenario_time_limit_id
         ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     RETURN QUERY SELECT v_draft_id, v_new_version, false;

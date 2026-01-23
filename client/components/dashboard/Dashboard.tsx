@@ -340,7 +340,7 @@ export default function Dashboard({
           time_limit: s.time_limit ?? null,
         }))}
         validSimulationIds={personaPerformance.valid_simulation_ids || []}
-        personaColors={(personaPerformance.persona_colors || []).reduce((acc, p) => {
+        personaColors={(personaPerformance.persona_colors_junction || []).reduce((acc: Record<string, string>, p: { persona_name?: string | null; color?: string | null }) => {
           if (p.persona_name) {
             acc[p.persona_name] = p.color || "";
           }

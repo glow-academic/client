@@ -91,8 +91,8 @@ BEGIN
     );
     
     -- INSERT INTO audios_resource table (always insert, never update)
-    INSERT INTO audios_resource(active, generated, mcp, call_id, created_at, updated_at)
-    VALUES (true, true, mcp, v_call_id, NOW(), NOW())
+    INSERT INTO audios_resource(active, generated, mcp, call_id, created_at)
+    VALUES (true, true, mcp, v_call_id, NOW())
     RETURNING id INTO v_audio_id;
     
     -- Create message record (assistant role, not completed)

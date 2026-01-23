@@ -12,8 +12,7 @@ RETURNS TABLE (
     name text,
     description text,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -23,8 +22,7 @@ AS $$
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1) AS name,
         (SELECT d2.description FROM document_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.document_id = d.id LIMIT 1) AS description,
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active'  AND df.value = TRUE) AS active,
-        d.created_at,
-        d.updated_at
+        d.created_at
     FROM documents_resource d
     WHERE d.id = input_document_id;
 $$;

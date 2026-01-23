@@ -72,7 +72,7 @@ BEGIN
         FROM information_schema.columns
         WHERE table_schema = 'public'
           AND table_name = v_table_name
-          AND column_name NOT IN ('id', 'created_at', 'updated_at')
+          AND column_name NOT IN ('id', 'created_at')
         ORDER BY ordinal_position
     LOOP
         -- Handle system columns

@@ -136,8 +136,7 @@ BEGIN
         generated, 
         mcp, 
         call_id, 
-        created_at, 
-        updated_at
+        created_at
     )
     VALUES (
         api_create_scenario_positions_v4.scenario_id,
@@ -145,7 +144,6 @@ BEGIN
         true,
         mcp,
         v_call_id,
-        NOW(),
         NOW()
     )
     ON CONFLICT (scenario_id, value) 
@@ -153,8 +151,7 @@ BEGIN
         value = EXCLUDED.value,
         generated = EXCLUDED.generated,
         mcp = EXCLUDED.mcp,
-        call_id = EXCLUDED.call_id,
-        updated_at = NOW()
+        call_id = EXCLUDED.call_id
     RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)

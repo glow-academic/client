@@ -262,11 +262,11 @@ BEGIN
     ),
     -- Insert/update name in names table if provided
     name_resource AS (
-        INSERT INTO names_resource (name, created_at, updated_at, call_id)
-        SELECT name, NOW(), NOW(), (SELECT id FROM placeholder_call_id)
+        INSERT INTO names_resource (name, created_at, call_id)
+        SELECT name, NOW(), (SELECT id FROM placeholder_call_id)
         FROM params
         WHERE name IS NOT NULL AND name != ''
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as name_id, name
     ),
     -- Delete old name links if updating
@@ -278,26 +278,24 @@ BEGIN
     ),
     -- Link profile to name
     link_profile_name AS (
-        INSERT INTO profile_names_junction (profile_id, name_id, created_at, updated_at)
+        INSERT INTO profile_names_junction (profile_id, name_id, created_at)
         SELECT 
             x.target_profile_id,
             nr.name_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN name_resource nr
         WHERE x.name IS NOT NULL AND x.name != ''
         ON CONFLICT (profile_id) DO UPDATE SET
-            name_id = EXCLUDED.name_id,
-            updated_at = NOW()
+            name_id = EXCLUDED.name_id
     ),
     -- Insert/update role via profile_roles_junction junction if provided
 role_resource AS (
-    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT x.role::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
+    SELECT x.role::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     FROM params x
     WHERE x.role IS NOT NULL
-    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (role) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as role_id
 ),
     profile_type_upsert AS (
@@ -309,16 +307,16 @@ role_resource AS (
         RETURNING profile_id
     ),
     profile_type_insert AS (
-        INSERT INTO profile_roles_junction (profile_id, role_id, created_at, updated_at, generated, mcp)
-        SELECT x.target_profile_id, rr.role_id, NOW(), NOW(), false, false
+        INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
+        SELECT x.target_profile_id, rr.role_id, NOW(), false, false
         FROM params x
         CROSS JOIN role_resource rr
         WHERE x.role IS NOT NULL
-        ON CONFLICT (profile_id, role_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (profile_id, role_id) DO NOTHING
     ),
     -- Link/update profile active flag
     link_profile_active_flag AS (
-        INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at, updated_at)
+        INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at)
         SELECT x.target_profile_id,
             f.id,
             x.active,
@@ -329,8 +327,7 @@ role_resource AS (
         WHERE f.name = 'profile_active'
           AND x.active IS NOT NULL
         ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET 
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Handle emails if provided
     all_emails_data AS (
@@ -344,22 +341,20 @@ role_resource AS (
         -- Deactivate all existing emails if updating
         UPDATE profile_emails_junction SET
             active = false,
-            is_primary = false,
-            updated_at = NOW()
+            is_primary = false
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND array_length((SELECT emails FROM params), 1) > 0
     ),
     email_resources AS (
-        INSERT INTO emails_resource (email, call_id, created_at, updated_at)
+        INSERT INTO emails_resource (email, call_id, created_at)
         SELECT DISTINCT
             aed.email,
             (SELECT id FROM placeholder_call_id),
-            NOW(),
             NOW()
         FROM all_emails_data aed
         WHERE array_length((SELECT emails FROM params), 1) > 0
-        ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (email) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as email_id, email
     ),
     email_insert AS (
@@ -377,14 +372,12 @@ role_resource AS (
         ON CONFLICT (profile_id, email_id) DO UPDATE SET 
             email = EXCLUDED.email,
             is_primary = EXCLUDED.is_primary,
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Handle cohorts if provided
     cohort_deactivate AS (
         UPDATE profile_cohorts_junction SET
-            active = false,
-            updated_at = NOW()
+            active = false
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND array_length((SELECT cohort_ids FROM params), 1) >= 0
@@ -403,15 +396,13 @@ role_resource AS (
         CROSS JOIN unnest(x.cohort_ids) as cohort_id
         WHERE array_length(x.cohort_ids, 1) > 0
         ON CONFLICT (profile_id, cohort_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Handle departments if provided
     department_deactivate AS (
         UPDATE profile_departments_junction SET
             active = false,
-            is_primary = false,
-            updated_at = NOW()
+            is_primary = false
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND array_length((SELECT department_ids FROM params), 1) >= 0
@@ -432,8 +423,7 @@ role_resource AS (
         WHERE array_length(x.department_ids, 1) > 0
         ON CONFLICT (profile_id, department_id) DO UPDATE SET
             is_primary = EXCLUDED.is_primary,
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     route_delete AS (
         DELETE FROM profile_routes_junction
@@ -441,12 +431,11 @@ role_resource AS (
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create AND route_ids IS NOT NULL)
     ),
     route_insert AS (
-        INSERT INTO profile_routes_junction (profile_id, route_id, active, created_at, updated_at, generated, mcp)
+        INSERT INTO profile_routes_junction (profile_id, route_id, active, created_at, generated, mcp)
         SELECT 
             x.target_profile_id,
             route_id,
             true,
-            NOW(),
             NOW(),
             false,
             false
@@ -456,16 +445,14 @@ role_resource AS (
         WHERE (x.is_create OR x.route_ids IS NOT NULL)
           AND COALESCE(array_length(rri.route_ids, 1), 0) > 0
         ON CONFLICT (profile_id, route_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Handle requests_per_day if provided
     request_limit_resource AS (
-        INSERT INTO request_limits_resource (requests_per_day, call_id, created_at, updated_at)
+        INSERT INTO request_limits_resource (requests_per_day, call_id, created_at)
         SELECT 
             x.requests_per_day,
             (SELECT id FROM placeholder_call_id),
-            NOW(),
             NOW()
         FROM params x
         WHERE x.requests_per_day IS NOT NULL
@@ -483,15 +470,13 @@ role_resource AS (
             request_limit_id,
             requests_per_day,
             active,
-            created_at,
-            updated_at
+            created_at
         )
         SELECT 
             x.target_profile_id,
             rlr.request_limit_id,
             rlr.requests_per_day,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN request_limit_resource rlr

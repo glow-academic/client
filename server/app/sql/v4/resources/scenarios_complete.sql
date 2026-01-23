@@ -113,8 +113,8 @@ BEGIN
     
     -- INSERT INTO scenarios_resource table (always insert, never update)
     -- Create resource with new unique id and scenario_id FK
-    INSERT INTO scenarios_resource(id, scenario_id, active, generated, mcp, call_id, created_at, updated_at)
-    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, NOW(), NOW())
+    INSERT INTO scenarios_resource(id, scenario_id, active, generated, mcp, call_id, created_at)
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, NOW())
     RETURNING scenarios_resource.id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)

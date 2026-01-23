@@ -16,8 +16,7 @@ RETURNS TABLE (
     key text,
     description text,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
@@ -37,7 +36,7 @@ AS $$
         RETURNING id as call_id
     ),
     new_key AS (
-        INSERT INTO keys_resource(key_id, key, name, description, active, created_at, updated_at, call_id, generated, mcp)
+        INSERT INTO keys_resource(key_id, key, name, description, active, created_at, call_id, generated, mcp)
         SELECT
             uuidv7(),
             key_value,
@@ -45,12 +44,11 @@ AS $$
             COALESCE(key_description, 'Test key description'),
             COALESCE(key_active, true),
             NOW(),
-            NOW(),
             cr.call_id,
             false,
             false
         FROM call_record cr
-        RETURNING id, name, key, description, active, created_at, updated_at
+        RETURNING id, name, key, description, active, created_at
     )
     SELECT
         nk.id AS key_id,
@@ -58,7 +56,6 @@ AS $$
         nk.key,
         nk.description,
         nk.active,
-        nk.created_at,
-        nk.updated_at
+        nk.created_at
     FROM new_key nk;
 $$;

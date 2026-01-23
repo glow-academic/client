@@ -14,8 +14,7 @@ RETURNS TABLE (
     active boolean,
     document_parameter boolean,
     simulation_parameter boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -27,8 +26,7 @@ AS $$
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter'  AND pf.value = TRUE) AS document_parameter,
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter'  AND pf.value = TRUE) AS simulation_parameter,
-        p.created_at,
-        p.updated_at
+        p.created_at
     FROM parameters_resource p
     WHERE p.id = input_parameter_id;
 $$;

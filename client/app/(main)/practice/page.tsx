@@ -325,7 +325,7 @@ async function PracticeHistorySection({
       };
     }
   );
-  const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
+  const scenarioOptions = (historyData.scenario_options_junction || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
       value: String(opt["value"] || ""),

@@ -150,96 +150,84 @@ BEGIN
                 INSERT INTO names_draft (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF description_id IS NOT NULL THEN
                 INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF modalities_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, modalities_enabled_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF temperature_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, temperature_enabled_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF pricing_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, pricing_enabled_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF voices_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, voices_enabled_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF reasoning_levels_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, reasoning_levels_enabled_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF qualities_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO flags_draft (draft_id, flags_id, version)
                 VALUES (v_draft_id, qualities_enabled_flag_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             IF provider_id IS NOT NULL THEN
                 INSERT INTO providers_draft (draft_id, providers_id, version)
                 VALUES (v_draft_id, provider_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF value_id IS NOT NULL THEN
                 INSERT INTO values_draft (draft_id, values_id, version)
                 VALUES (v_draft_id, value_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT values_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF endpoint_id IS NOT NULL THEN
                 INSERT INTO endpoints_draft (draft_id, endpoints_id, version)
                 VALUES (v_draft_id, endpoint_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT endpoints_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF department_ids IS NOT NULL THEN
@@ -248,8 +236,7 @@ BEGIN
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF input_modality_ids IS NOT NULL OR output_modality_ids IS NOT NULL THEN
@@ -263,8 +250,7 @@ BEGIN
                     ) as mod_id
                 ) as merged
                 ON CONFLICT ON CONSTRAINT modalities_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF temperature_level_ids IS NOT NULL THEN
@@ -273,8 +259,7 @@ BEGIN
                 SELECT v_draft_id, temp_id, v_new_version
                 FROM UNNEST(temperature_level_ids) as temp_id
                 ON CONFLICT ON CONSTRAINT temperature_levels_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF reasoning_level_ids IS NOT NULL THEN
@@ -283,8 +268,7 @@ BEGIN
                 SELECT v_draft_id, reasoning_id, v_new_version
                 FROM UNNEST(reasoning_level_ids) as reasoning_id
                 ON CONFLICT ON CONSTRAINT reasoning_levels_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF quality_ids IS NOT NULL THEN
@@ -293,8 +277,7 @@ BEGIN
                 SELECT v_draft_id, quality_id, v_new_version
                 FROM UNNEST(quality_ids) as quality_id
                 ON CONFLICT ON CONSTRAINT qualities_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF pricing_ids IS NOT NULL THEN
@@ -303,8 +286,7 @@ BEGIN
                 SELECT v_draft_id, pricing_id, v_new_version
                 FROM UNNEST(pricing_ids) as pricing_id
                 ON CONFLICT ON CONSTRAINT pricing_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
 
             IF voice_ids IS NOT NULL THEN
@@ -313,8 +295,7 @@ BEGIN
                 SELECT v_draft_id, voice_id, v_new_version
                 FROM UNNEST(voice_ids) as voice_id
                 ON CONFLICT ON CONSTRAINT voices_draft_pkey DO UPDATE
-                SET version = v_new_version,
-                    updated_at = now();
+                SET version = v_new_version;
             END IF;
             
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
@@ -338,96 +319,84 @@ BEGIN
         INSERT INTO names_draft (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF description_id IS NOT NULL THEN
         INSERT INTO descriptions_draft (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     IF active_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF modalities_enabled_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, modalities_enabled_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF temperature_enabled_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, temperature_enabled_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF pricing_enabled_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, pricing_enabled_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF voices_enabled_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, voices_enabled_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF reasoning_levels_enabled_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, reasoning_levels_enabled_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF qualities_enabled_flag_id IS NOT NULL THEN
         INSERT INTO flags_draft (draft_id, flags_id, version)
         VALUES (v_draft_id, qualities_enabled_flag_id, v_new_version)
         ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF provider_id IS NOT NULL THEN
         INSERT INTO providers_draft (draft_id, providers_id, version)
         VALUES (v_draft_id, provider_id, v_new_version)
         ON CONFLICT ON CONSTRAINT providers_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF value_id IS NOT NULL THEN
         INSERT INTO values_draft (draft_id, values_id, version)
         VALUES (v_draft_id, value_id, v_new_version)
         ON CONFLICT ON CONSTRAINT values_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF endpoint_id IS NOT NULL THEN
         INSERT INTO endpoints_draft (draft_id, endpoints_id, version)
         VALUES (v_draft_id, endpoint_id, v_new_version)
         ON CONFLICT ON CONSTRAINT endpoints_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF department_ids IS NOT NULL THEN
@@ -435,8 +404,7 @@ BEGIN
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF input_modality_ids IS NOT NULL OR output_modality_ids IS NOT NULL THEN
@@ -449,8 +417,7 @@ BEGIN
             ) as mod_id
         ) as merged
         ON CONFLICT ON CONSTRAINT modalities_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF temperature_level_ids IS NOT NULL THEN
@@ -458,8 +425,7 @@ BEGIN
         SELECT v_draft_id, temp_id, v_new_version
         FROM UNNEST(temperature_level_ids) as temp_id
         ON CONFLICT ON CONSTRAINT temperature_levels_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF reasoning_level_ids IS NOT NULL THEN
@@ -467,8 +433,7 @@ BEGIN
         SELECT v_draft_id, reasoning_id, v_new_version
         FROM UNNEST(reasoning_level_ids) as reasoning_id
         ON CONFLICT ON CONSTRAINT reasoning_levels_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF quality_ids IS NOT NULL THEN
@@ -476,8 +441,7 @@ BEGIN
         SELECT v_draft_id, quality_id, v_new_version
         FROM UNNEST(quality_ids) as quality_id
         ON CONFLICT ON CONSTRAINT qualities_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF pricing_ids IS NOT NULL THEN
@@ -485,8 +449,7 @@ BEGIN
         SELECT v_draft_id, pricing_id, v_new_version
         FROM UNNEST(pricing_ids) as pricing_id
         ON CONFLICT ON CONSTRAINT pricing_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
 
     IF voice_ids IS NOT NULL THEN
@@ -494,8 +457,7 @@ BEGIN
         SELECT v_draft_id, voice_id, v_new_version
         FROM UNNEST(voice_ids) as voice_id
         ON CONFLICT ON CONSTRAINT voices_draft_pkey DO UPDATE
-        SET version = v_new_version,
-            updated_at = now();
+        SET version = v_new_version;
     END IF;
     
     RETURN QUERY SELECT v_draft_id, v_new_version, false;

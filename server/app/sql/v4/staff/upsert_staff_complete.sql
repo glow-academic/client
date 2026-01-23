@@ -154,11 +154,11 @@ placeholder_call_id AS (
 ),
 -- Insert all unique names INTO names_resource table
 names_resources AS (
-    INSERT INTO names_resource (name, created_at, updated_at, call_id)
-    SELECT DISTINCT pwi.name, NOW(), NOW(), (SELECT id FROM placeholder_call_id)
+    INSERT INTO names_resource (name, created_at, call_id)
+    SELECT DISTINCT pwi.name, NOW(), (SELECT id FROM placeholder_call_id)
     FROM profile_upsert_with_idx pwi
     WHERE pwi.name IS NOT NULL AND pwi.name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 new_groups AS (
@@ -193,11 +193,11 @@ profile_upsert AS (
 ),
 -- Insert/update role via profile_roles_junction junction
 role_resource_upsert AS (
-    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
-    SELECT DISTINCT pwi.role::profile_type, NOW(), NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
+    INSERT INTO roles_resource (role, created_at, active, generated, mcp, call_id)
+    SELECT DISTINCT pwi.role::profile_type, NOW(), true, false, false, (SELECT id FROM placeholder_call_id)
     FROM profile_upsert_with_idx pwi
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
-    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (role) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as role_id, role
 ),
 profile_type_delete_upsert AS (
@@ -205,8 +205,8 @@ profile_type_delete_upsert AS (
     RETURNING profile_id
 ),
 profile_type_insert_upsert AS (
-    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, updated_at, generated, mcp)
-    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false
+    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
+    SELECT pu.id, rru.role_id, NOW(), false, false
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     JOIN role_resource_upsert rru ON rru.role = pwi.role::profile_type
@@ -220,34 +220,30 @@ delete_old_names AS (
 ),
 -- Link profiles to names
 link_profile_names AS (
-    INSERT INTO profile_names_junction (profile_id, name_id, created_at, updated_at)
+    INSERT INTO profile_names_junction (profile_id, name_id, created_at)
     SELECT 
         pu.id,
         nr.name_id,
-        NOW(),
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     JOIN names_resources nr ON nr.name = pwi.name
     WHERE pwi.name IS NOT NULL AND pwi.name != ''
     ON CONFLICT (profile_id) DO UPDATE SET
-        name_id = EXCLUDED.name_id,
-        updated_at = NOW()
+        name_id = EXCLUDED.name_id
 ),
 -- Link profile active flags
 link_profile_active_flags AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at, updated_at) SELECT pu.id,
+    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at) SELECT pu.id,
         f.id,
         pwi.active,
-        NOW(),
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
     ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value,
-        updated_at = NOW()
+        value = EXCLUDED.value
 ),
 profile_upsert_with_created AS (
     -- Join back to get created status
@@ -260,8 +256,7 @@ profile_upsert_with_created AS (
 email_deactivate_all AS (
     -- Deactivate all existing emails for all profiles being upserted
     UPDATE profile_emails_junction SET
-        active = false,
-        updated_at = NOW()
+        active = false
     WHERE profile_id IN (SELECT id FROM profile_upsert)
 ),
 email_upsert AS (
@@ -279,8 +274,7 @@ email_upsert AS (
     ORDER BY aee.profile_idx, aee.email_index
     ON CONFLICT (profile_id, email) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
-        active = true,
-        updated_at = NOW()
+        active = true
 ),
 dept_cleanup AS (
     -- Delete existing department relationships for all profiles
@@ -289,13 +283,12 @@ dept_cleanup AS (
 ),
 dept_insert AS (
     -- Insert department relationships (first one as primary) for all profiles
-    INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at, updated_at)
+    INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at)
     SELECT 
         pu.id,
         dept_id,
         (ROW_NUMBER() OVER (PARTITION BY pu.id ORDER BY dept_id) = 1) as is_primary,
         true,
-        NOW(),
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
@@ -304,8 +297,7 @@ dept_insert AS (
     WHERE cardinality(pe.department_ids) > 0
     ON CONFLICT (profile_id, department_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
-        active = true,
-        updated_at = NOW()
+        active = true
 ),
 cohort_insert AS (
     -- Insert cohort relationships for all profiles

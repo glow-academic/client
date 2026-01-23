@@ -345,8 +345,8 @@ export default function Home({ homeData }: HomeProps) {
                         : ViewMode.INSTRUCTIONAL
                     }
                     {...(item.cohort_name && { cohortName: item.cohort_name })}
-                    {...(item.cohort_names &&
-                      !item.cohort_name && { cohortName: item.cohort_names })}
+                    {...(item.cohort_names_junction &&
+                      !item.cohort_name && { cohortName: item.cohort_names_junction })}
                     simulationName={item.simulation_name || ""}
                     status={
                       (item.status || "not-started") as

@@ -104,14 +104,14 @@ SELECT
     up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.auth_id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.auth_id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.auth_id AND f.name = 'auth_active' AND af.value = TRUE), a.updated_at,
+            (a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.auth_id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.auth_id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.auth_id AND f.name = 'auth_active' AND af.value = TRUE), a.created_at,
              COALESCE(aic.num_items, 0),
              COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]),
              CASE WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true ELSE false END,
              CASE WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true ELSE false END,
              CASE WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true ELSE false END
             )::types.q_get_auth_list_v4_auth
-            ORDER BY a.updated_at DESC NULLS LAST
+            ORDER BY a.created_at DESC NULLS LAST
         ),
         '{}'::types.q_get_auth_list_v4_auth[]
     ) as auths

@@ -12,19 +12,17 @@ RETURNS TABLE (
     scenario_id uuid,
     persona_id uuid,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO scenario_personas_junction(scenario_id, persona_id, active, created_at, updated_at)
+    INSERT INTO scenario_personas_junction(scenario_id, persona_id, active, created_at)
     VALUES (
         test_create_scenario_persona_link_v4.input_scenario_id,
         test_create_scenario_persona_link_v4.input_persona_id,
         true,
-        NOW(),
         NOW()
     )
-    RETURNING scenario_id, persona_id, active, created_at, updated_at;
+    RETURNING scenario_id, persona_id, active, created_at;
 $$;

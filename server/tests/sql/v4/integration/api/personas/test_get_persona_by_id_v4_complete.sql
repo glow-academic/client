@@ -15,8 +15,7 @@ RETURNS TABLE (
     icon text,
     active boolean,
     instructions text,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -29,8 +28,7 @@ AS $$
         (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
         EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active'  AND pf.value = TRUE) as active,
         (SELECT i.template FROM persona_instructions_junction pi JOIN instructions_resource i ON pi.instruction_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as instructions,
-        p.created_at,
-        p.updated_at
+        p.created_at
     FROM personas_resource p
     WHERE p.id = test_get_persona_by_id_v4.input_persona_id;
 $$;

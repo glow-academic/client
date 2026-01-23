@@ -14,8 +14,7 @@ RETURNS TABLE (
     active boolean,
     practice_simulation boolean,
     time_limit integer,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -46,8 +45,7 @@ AS $$
             ),
             0
         ) as time_limit,
-        s.created_at,
-        s.updated_at
+        s.created_at
     FROM simulations_resource s
     WHERE s.id = test_get_simulation_by_id_with_time_limit_v4.input_simulation_id;
 $$;

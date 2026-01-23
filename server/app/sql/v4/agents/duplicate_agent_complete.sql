@@ -53,12 +53,11 @@ source_agent AS (
     LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
 ),
 new_prompt AS (
-    INSERT INTO prompts_resource (name, description, system_prompt, created_at, updated_at)
+    INSERT INTO prompts_resource (name, description, system_prompt, created_at)
     SELECT 
         COALESCE(pr.name, 'Agent Prompt') || ' Copy',
         COALESCE(pr.description, ''),
         sa.system_prompt, 
-        NOW(), 
         NOW()
     FROM source_agent sa
     LEFT JOIN prompts_resource pr ON pr.id = sa.prompt_id
@@ -66,20 +65,20 @@ new_prompt AS (
 ),
 -- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT sa.name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT sa.name || ' Copy', NOW()
     FROM source_agent sa
     WHERE sa.name IS NOT NULL AND sa.name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
 ),
 -- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT sa.description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT sa.description, NOW()
     FROM source_agent sa
     WHERE sa.description IS NOT NULL AND sa.description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id
 ),
 new_agent AS (
@@ -93,92 +92,84 @@ new_agent AS (
 ),
 -- Link agent to name
 link_agent_name AS (
-    INSERT INTO agent_names_junction (agent_id, name_id, created_at, updated_at)
+    INSERT INTO agent_names_junction (agent_id, name_id, created_at)
     SELECT 
         na.agent_id::uuid,
         nr.name_id,
-        NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN name_resource nr
-    ON CONFLICT (agent_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (agent_id, name_id) DO NOTHING
 ),
 -- Link agent to description
 link_agent_description AS (
-    INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at, updated_at)
+    INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at)
     SELECT 
         na.agent_id::uuid,
         dr.description_id,
-        NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN description_resource dr
-    ON CONFLICT (agent_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (agent_id, description_id) DO NOTHING
 ),
 -- Link agent to model
 link_agent_model AS (
-    INSERT INTO agent_models_junction (agent_id, model_id, created_at, updated_at)
+    INSERT INTO agent_models_junction (agent_id, model_id, created_at)
     SELECT 
         na.agent_id::uuid,
         sa.model_id,
-        NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN source_agent sa
     WHERE sa.model_id IS NOT NULL
-    ON CONFLICT (agent_id, model_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (agent_id, model_id) DO NOTHING
 ),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (
-    INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at, updated_at) SELECT na.agent_id::uuid,
+    INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at) SELECT na.agent_id::uuid,
         f.id,
         false,
-        NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN flags_resource f
     WHERE f.name = 'agent_active'
     ON CONFLICT (agent_id, flag_id) DO UPDATE SET 
-        value = false,
-        updated_at = NOW()
+        value = false
 ),
 copy_temperature AS (
-    INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, updated_at)
+    INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at)
     SELECT 
         na.agent_id::uuid,
         sa.temperature_level_id,
         true,
-        NOW(),
         NOW()
     FROM source_agent sa
     CROSS JOIN new_agent na
     WHERE sa.temperature_level_id IS NOT NULL
 ),
 copy_reasoning AS (
-    INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, updated_at)
+    INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at)
     SELECT 
         na.agent_id::uuid,
         sa.reasoning_level_id,
         true,
-        NOW(),
         NOW()
     FROM source_agent sa
     CROSS JOIN new_agent na
     WHERE sa.reasoning_level_id IS NOT NULL
 ),
 link_prompt AS (
-    INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at, updated_at)
-    SELECT na.agent_id::uuid, np.prompt_id, true, NOW(), NOW()
+    INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at)
+    SELECT na.agent_id::uuid, np.prompt_id, true, NOW()
     FROM new_agent na
     CROSS JOIN new_prompt np
 ),
 copy_departments AS (
-    INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at, updated_at)
+    INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)
     SELECT 
         na.agent_id::uuid,
         ad.department_id,
         ad.active,
-        NOW(),
         NOW()
     FROM source_agent sa
     JOIN agent_departments_junction ad ON NULL::uuid = sa.source_id AND ad.active = true

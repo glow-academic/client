@@ -85,15 +85,13 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE document_flags_junction SET
             flag_id = COALESCE(api_save_document_v4.active_flag_id, document_flags_junction.flag_id),
-            value = CASE WHEN api_save_document_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN api_save_document_v4.active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE document_id = v_document_id
           ;
         -- Update existing template flag if it exists
         UPDATE document_flags_junction SET
             flag_id = COALESCE(api_save_document_v4.template_flag_id, document_flags_junction.flag_id),
-            value = CASE WHEN api_save_document_v4.template_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN api_save_document_v4.template_flag_id IS NOT NULL THEN true ELSE false END
         WHERE document_id = v_document_id
           ;
     END IF;
@@ -164,46 +162,42 @@ BEGIN
     ),
     -- Link document to name
     link_document_name AS (
-        INSERT INTO document_names_junction (document_id, name_id, created_at, updated_at)
+        INSERT INTO document_names_junction (document_id, name_id, created_at)
         SELECT 
             x.document_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT document_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT document_names_pkey DO NOTHING
     ),
     -- Link document to description
     link_document_description AS (
-        INSERT INTO document_descriptions_junction (document_id, description_id, created_at, updated_at)
+        INSERT INTO document_descriptions_junction (document_id, description_id, created_at)
         SELECT 
             x.document_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT document_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT document_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE document_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_document_active_flag AS (
-        INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at) SELECT x.document_id,
+        INSERT INTO document_flags_junction (document_id, flag_id, value, created_at) SELECT x.document_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'document_active'
         ON CONFLICT ON CONSTRAINT document_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, document_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Insert or UPDATE document_artifact template flag
     insert_document_template_flag AS (
-        INSERT INTO document_flags_junction (document_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO document_flags_junction (document_id, flag_id, type, value, created_at)
         SELECT 
             x.document_id,
             COALESCE(x.template_flag_id, f.id),
@@ -215,56 +209,49 @@ BEGIN
         WHERE f.name = 'template'
         ON CONFLICT ON CONSTRAINT document_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, document_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO document_departments_junction (document_id, department_id, active, created_at, updated_at)
+        INSERT INTO document_departments_junction (document_id, department_id, active, created_at)
         SELECT 
             x.document_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT document_departments_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link fields (old ones already deleted above if update)
     link_fields AS (
-        INSERT INTO document_fields_junction (document_id, field_id, active, created_at, updated_at)
+        INSERT INTO document_fields_junction (document_id, field_id, active, created_at)
         SELECT 
             x.document_id,
             field_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.field_ids) as field_id
         WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT document_fields_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link uploads_entry (old ones already deleted above if update)
     link_uploads AS (
-        INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
+        INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at)
         SELECT 
             x.document_id,
             uploads_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.upload_ids) as uploads_id
         WHERE COALESCE(array_length(x.upload_ids, 1), 0) > 0
         ON CONFLICT (document_id, uploads_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Update document_agent_domains if document_domain_id provided
     -- Domain-based agent assignment removed - no longer needed

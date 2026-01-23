@@ -72,25 +72,23 @@ new_tool AS (
 ),
 -- Insert name for new tool
 new_tool_name AS (
-    INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
+    INSERT INTO names_resource (name, created_at, active, generated, mcp, call_id)
     SELECT 
         ot.name || ' Copy',
-        NOW(),
         NOW(),
         true,
         false,
         false,
         NULL
     FROM original_tool ot
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
 ),
 link_new_tool_name AS (
-    INSERT INTO tool_names_junction (tool_id, name_id, created_at, updated_at, generated, mcp)
+    INSERT INTO tool_names_junction (tool_id, name_id, created_at, generated, mcp)
     SELECT 
         nt.id,
         ntn.name_id,
-        NOW(),
         NOW(),
         false,
         false
@@ -100,10 +98,9 @@ link_new_tool_name AS (
 ),
 -- Insert description for new tool
 new_tool_description AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
+    INSERT INTO descriptions_resource (description, created_at, active, generated, mcp, call_id)
     SELECT 
         ot.description,
-        NOW(),
         NOW(),
         true,
         false,
@@ -111,15 +108,14 @@ new_tool_description AS (
         NULL
     FROM original_tool ot
     WHERE ot.description IS NOT NULL
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id
 ),
 link_new_tool_description AS (
-    INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, updated_at, generated, mcp)
+    INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp)
     SELECT 
         nt.id,
         ntd.description_id,
-        NOW(),
         NOW(),
         false,
         false
@@ -129,10 +125,9 @@ link_new_tool_description AS (
 ),
 -- Insert active flag for new tool
 new_tool_active_flag AS (
-    INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, updated_at, generated, mcp) SELECT nt.id,
+    INSERT INTO tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp) SELECT nt.id,
         f.id,
         ot.active,
-        NOW(),
         NOW(),
         false,
         false
@@ -144,11 +139,10 @@ new_tool_active_flag AS (
 ),
 -- Copy args links from original tool
 copy_args AS (
-    INSERT INTO tool_args_junction (tool_id, args_id, created_at, updated_at)
+    INSERT INTO tool_args_junction (tool_id, args_id, created_at)
     SELECT 
         nt.id,
         oa.args_id,
-        NOW(),
         NOW()
     FROM new_tool nt
     CROSS JOIN original_args oa
@@ -156,11 +150,10 @@ copy_args AS (
 ),
 -- Copy args_outputs links from original tool
 copy_args_outputs AS (
-    INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at, updated_at)
+    INSERT INTO tool_args_outputs_junction (tool_id, args_outputs_id, created_at)
     SELECT 
         nt.id,
         oao.args_outputs_id,
-        NOW(),
         NOW()
     FROM new_tool nt
     CROSS JOIN original_args_outputs oao

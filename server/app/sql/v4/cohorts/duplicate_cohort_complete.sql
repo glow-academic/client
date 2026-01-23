@@ -57,12 +57,12 @@ default_call AS (
 ),
 -- Insert title INTO names_resource table
 new_title_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at, call_id)
-    SELECT title || ' Copy', NOW(), NOW(), dc.call_id
+    INSERT INTO names_resource (name, created_at, call_id)
+    SELECT title || ' Copy', NOW(), dc.call_id
     FROM original_cohort
     CROSS JOIN default_call dc
     WHERE title IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
@@ -74,8 +74,8 @@ existing_description_resource AS (
     LIMIT 1
 ),
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at, call_id)
-    SELECT description, NOW(), NOW(), dc.call_id
+    INSERT INTO descriptions_resource (description, created_at, call_id)
+    SELECT description, NOW(), dc.call_id
     FROM original_cohort
     CROSS JOIN default_call dc
     WHERE description IS NOT NULL AND description != ''
@@ -102,41 +102,37 @@ new_cohort AS (
 ),
 -- Link cohort to title
 link_cohort_title AS (
-    INSERT INTO cohort_names_junction (cohort_id, name_id, created_at, updated_at)
+    INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
     SELECT 
         nc.id,
         ntr.name_id,
-        NOW(),
         NOW()
     FROM new_cohort nc
     CROSS JOIN new_title_resource ntr
-    ON CONFLICT (cohort_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (cohort_id, name_id) DO NOTHING
 ),
 -- Link cohort to description
 link_cohort_description AS (
-    INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at, updated_at)
+    INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at)
     SELECT 
         nc.id,
         dr.description_id,
-        NOW(),
         NOW()
     FROM new_cohort nc
     CROSS JOIN description_resource dr
-    ON CONFLICT (cohort_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (cohort_id, description_id) DO NOTHING
 ),
 -- Link cohort active flag (set to false for duplicate)
 link_cohort_active_flag AS (
-    INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at, updated_at) SELECT nc.id,
+    INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at) SELECT nc.id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_cohort nc
     CROSS JOIN flags_resource f
     WHERE f.name = 'cohort_active'
     ON CONFLICT (cohort_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 cohort_with_title AS (
     -- Get cohort with title for return
@@ -174,7 +170,6 @@ copy_simulation_positions AS (
         simulation_position_id,
         active,
         created_at,
-        updated_at,
         generated,
         mcp
     )
@@ -183,24 +178,21 @@ copy_simulation_positions AS (
         csp.simulation_position_id,
         csp.active,
         NOW(),
-        NOW(),
         csp.generated,
         csp.mcp
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
     JOIN cohort_simulation_positions_junction csp ON csp.cohort_id = oc.id
     ON CONFLICT (cohort_id, simulation_position_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        updated_at = NOW()
+        active = EXCLUDED.active
 ),
 copy_departments AS (
     -- Copy department relationships
-    INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at, updated_at)
+    INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
     SELECT 
         nc.id,
         cd.department_id,
         cd.active,
-        NOW(),
         NOW()
     FROM new_cohort nc
     CROSS JOIN original_cohort oc

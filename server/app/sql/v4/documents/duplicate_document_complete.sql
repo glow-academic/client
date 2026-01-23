@@ -66,20 +66,20 @@ original_flags AS (
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name || ' Copy', NOW()
     FROM original_document
     WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description, NOW()
     FROM original_document
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 new_document AS (
@@ -95,65 +95,58 @@ new_document AS (
 ),
 -- Link document to name
 link_document_name AS (
-    INSERT INTO document_names_junction (document_id, name_id, created_at, updated_at)
+    INSERT INTO document_names_junction (document_id, name_id, created_at)
     SELECT 
         nd.id,
         nnr.name_id,
-        NOW(),
         NOW()
     FROM new_document nd
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (document_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (document_id, name_id) DO NOTHING
 ),
 -- Link document to description
 link_document_description AS (
-    INSERT INTO document_descriptions_junction (document_id, description_id, created_at, updated_at)
+    INSERT INTO document_descriptions_junction (document_id, description_id, created_at)
     SELECT 
         nd.id,
         ndr.description_id,
-        NOW(),
         NOW()
     FROM new_document nd
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (document_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (document_id, description_id) DO NOTHING
 ),
 -- Link document active flag (set to false for duplicate)
 link_document_active_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at) SELECT nd.id,
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at) SELECT nd.id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_document nd
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_active'
     ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 -- Copy other flags from original document
 copy_document_flags AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at)
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at)
     SELECT 
         nd.id,
         of.flag_id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_document nd
     CROSS JOIN original_flags of
     ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 copy_departments AS (
     -- Copy department links from original document
-    INSERT INTO document_departments_junction (document_id, department_id, active, created_at, updated_at)
+    INSERT INTO document_departments_junction (document_id, department_id, active, created_at)
     SELECT 
         nd.id,
         od.department_id,
         true,
-        NOW(),
         NOW()
     FROM new_document nd
     CROSS JOIN original_departments od
@@ -161,12 +154,11 @@ copy_departments AS (
 ),
 copy_fields AS (
     -- Copy field links from original document
-    INSERT INTO document_fields_junction (document_id, field_id, active, created_at, updated_at)
+    INSERT INTO document_fields_junction (document_id, field_id, active, created_at)
     SELECT 
         nd.id,
         of.field_id,
         true,
-        NOW(),
         NOW()
     FROM new_document nd
     CROSS JOIN original_fields of

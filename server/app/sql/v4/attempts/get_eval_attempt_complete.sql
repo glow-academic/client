@@ -206,7 +206,7 @@ eval_runs_data AS (
         er.run_id,
         er.completed as eval_run_completed,
         er.created_at as eval_run_assigned_at,
-        er.updated_at as eval_run_updated_at
+        er.created_at as eval_run_updated_at
     FROM attempt_data ad
     JOIN eval_runs_junction er ON er.eval_id = ad.eval_id
 ),

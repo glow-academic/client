@@ -83,8 +83,7 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE setting_flags_junction SET
             flag_id = COALESCE(api_save_setting_v4.active_flag_id, setting_flags_junction.flag_id),
-            value = CASE WHEN api_save_setting_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN api_save_setting_v4.active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE setting_id = v_setting_id
           ;
     END IF;
@@ -152,120 +151,107 @@ BEGIN
     ),
     -- Link setting to name
     link_setting_name AS (
-        INSERT INTO setting_names_junction (setting_id, name_id, created_at, updated_at)
+        INSERT INTO setting_names_junction (setting_id, name_id, created_at)
         SELECT 
             x.setting_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT setting_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT setting_names_pkey DO NOTHING
     ),
     -- Link setting to description
     link_setting_description AS (
-        INSERT INTO setting_descriptions_junction (setting_id, description_id, created_at, updated_at)
+        INSERT INTO setting_descriptions_junction (setting_id, description_id, created_at)
         SELECT 
             x.setting_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT setting_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT setting_descriptions_pkey DO NOTHING
     ),
     -- Link colors (multi-select, old ones already deleted above if update)
     link_colors AS (
-        INSERT INTO setting_colors_junction (setting_id, color_id, type, created_at, updated_at)
+        INSERT INTO setting_colors_junction (setting_id, color_id, type, created_at)
         SELECT 
             x.setting_id,
             color_id,
             'primary'::color_type,  -- Default to primary, can be extended later
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.color_ids) as color_id
         WHERE COALESCE(array_length(x.color_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT setting_colors_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT setting_colors_pkey DO NOTHING
     ),
     -- Insert or UPDATE setting_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_setting_active_flag AS (
-        INSERT INTO setting_flags_junction (setting_id, flag_id, value, created_at, updated_at) SELECT x.setting_id,
+        INSERT INTO setting_flags_junction (setting_id, flag_id, value, created_at) SELECT x.setting_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'setting_active'
         ON CONFLICT ON CONSTRAINT setting_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, setting_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     -- Use department_settings_junction table (reverse direction: settings_id -> department_id)
     link_departments AS (
-        INSERT INTO department_settings_junction (settings_id, department_id, active, created_at, updated_at)
+        INSERT INTO department_settings_junction (settings_id, department_id, active, created_at)
         SELECT 
             x.setting_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT department_settings_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     link_profiles AS (
-        INSERT INTO setting_profiles_junction (setting_id, profile_id, active, created_at, updated_at)
+        INSERT INTO setting_profiles_junction (setting_id, profile_id, active, created_at)
         SELECT 
             x.setting_id,
             profile_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.profile_ids) as profile_id
         WHERE COALESCE(array_length(x.profile_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_profiles_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link auths (old ones already deleted above if update)
     link_auths AS (
-        INSERT INTO setting_auths_junction (settings_id, auth_id, active, created_at, updated_at)
+        INSERT INTO setting_auths_junction (settings_id, auth_id, active, created_at)
         SELECT 
             x.setting_id,
             auth_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.auth_ids) as auth_id
         WHERE COALESCE(array_length(x.auth_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_auths_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link providers (old ones already deleted above if update)
     link_providers AS (
-        INSERT INTO setting_providers_junction (settings_id, providers_id, active, created_at, updated_at)
+        INSERT INTO setting_providers_junction (settings_id, providers_id, active, created_at)
         SELECT 
             x.setting_id,
             provider_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.provider_ids) as provider_id
         WHERE COALESCE(array_length(x.provider_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_providers_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     -- Note: Keys are handled separately via setting_provider_keys_junction (ternary relationship with providers)
     -- Keys require both setting_id and providers_id, so they're managed in a separate endpoint

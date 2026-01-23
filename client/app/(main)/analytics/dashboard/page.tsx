@@ -406,7 +406,7 @@ async function DashboardHistorySection({
       };
     }
   );
-  const scenarioOptions = (historyData.scenario_options || []).map(
+  const scenarioOptions = (historyData.scenario_options_junction || []).map(
     (opt: {
       value?: string | null;
       label?: string | null;

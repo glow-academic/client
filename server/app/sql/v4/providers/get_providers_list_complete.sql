@@ -88,7 +88,7 @@ provider_data AS (
         n.name as value,
         EXISTS (SELECT 1 FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND pf.value = TRUE) as active,
         p.created_at,
-        p.updated_at,
+        p.created_at as updated_at,
         ''::text as base_url,
         CASE 
             WHEN up.role IN ('admin'::profile_type, 'superadmin'::profile_type) THEN true

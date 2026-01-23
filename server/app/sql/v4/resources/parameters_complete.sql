@@ -114,8 +114,8 @@ BEGIN
     
     -- INSERT INTO parameters_resource table (always insert, never update)
     -- Create resource with new unique id and parameter_id FK
-    INSERT INTO parameters_resource(id, parameter_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
-    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_parameters_v4.group_id, NOW(), NOW())
+    INSERT INTO parameters_resource(id, parameter_id, active, generated, mcp, call_id, group_id, created_at)
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_parameters_v4.group_id, NOW())
     RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)

@@ -16,8 +16,7 @@ RETURNS TABLE (
     name text,
     description text,
     points integer,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
@@ -52,5 +51,5 @@ AS $$
         false,
         false
     FROM call_record cr
-    RETURNING id AS standard_id, standard_group_id, name, description, points, created_at, updated_at;
+    RETURNING id AS standard_id, standard_group_id, name, description, points, created_at;
 $$;

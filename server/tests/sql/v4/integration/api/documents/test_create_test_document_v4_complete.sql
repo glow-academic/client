@@ -2,6 +2,7 @@
 -- Returns document data for assertions
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_document_v4(text, text, boolean, text, text);
+DROP FUNCTION IF EXISTS test_create_test_document_v4(text, text, boolean);
 
 -- Create function
 CREATE OR REPLACE FUNCTION test_create_test_document_v4(
@@ -14,15 +15,14 @@ RETURNS TABLE (
     name text,
     description text,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_document AS (
         INSERT INTO documents_resource DEFAULT VALUES
-        RETURNING id, created_at, updated_at
+        RETURNING id, created_at
     ),
     name_resource AS (
         INSERT INTO names_resource(name)
@@ -60,7 +60,6 @@ AS $$
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = nd.id LIMIT 1) AS name,
         (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = nd.id LIMIT 1) AS description,
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource fl ON df.flag_id = fl.id WHERE df.document_id = nd.id AND fl.name = 'active'  AND df.value = TRUE) AS active,
-        nd.created_at,
-        nd.updated_at
+        nd.created_at
     FROM new_document nd;
 $$;

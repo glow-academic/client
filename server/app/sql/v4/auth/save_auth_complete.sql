@@ -124,7 +124,7 @@ BEGIN
         -- UPDATE path
         v_auth_id := v_input_auth_id;
         UPDATE auths_resource
-        SET updated_at = NOW(),
+        SET 
             group_id = v_group_id
         WHERE id = v_auth_id;
     END IF;
@@ -170,8 +170,7 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE auth_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, auth_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE auth_id = v_auth_id
           ;
     END IF;
@@ -208,70 +207,62 @@ BEGIN
     ),
     -- Link auth to name
     link_auth_name AS (
-        INSERT INTO auth_names_junction (auth_id, name_id, created_at, updated_at)
+        INSERT INTO auth_names_junction (auth_id, name_id, created_at)
         SELECT 
             x.auth_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT auth_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT auth_names_pkey DO NOTHING
     ),
     -- Link auth to description
     link_auth_description AS (
-        INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at, updated_at)
+        INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at)
         SELECT 
             x.auth_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT auth_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT auth_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE auth_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_auth_active_flag AS (
-        INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at, updated_at) SELECT x.auth_id,
+        INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at) SELECT x.auth_id,
             COALESCE(x.active_flag_id, f.id),
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'auth_active'
         ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, auth_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link protocols (old ones already deleted above if update)
     link_protocols AS (
-        INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at, updated_at)
+        INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at)
         SELECT 
             x.auth_id,
             protocol_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.protocol_ids) as protocol_id
         WHERE COALESCE(array_length(x.protocol_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT auth_protocols_pkey DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT auth_protocols_pkey DO NOTHING
     ),
     -- Link slugs (old ones already deleted above if update)
     link_slugs AS (
-        INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at, updated_at)
+        INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at)
         SELECT 
             x.auth_id,
             slug_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.slug_ids) as slug_id
         WHERE COALESCE(array_length(x.slug_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT auth_slugs_pkey DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT auth_slugs_pkey DO NOTHING
     ),
     -- Handle auth_items_junction (special handling - not a standard resource)
     items_expanded AS (
@@ -295,8 +286,7 @@ BEGIN
             encrypted,
             position,
             active,
-            created_at,
-            updated_at
+            created_at
         )
         SELECT 
             ie.item_name,
@@ -304,7 +294,6 @@ BEGIN
             ie.item_encrypted,
             ie.item_position,
             ie.item_active,
-            NOW(),
             NOW()
         FROM items_expanded ie
         RETURNING id as item_id
@@ -318,17 +307,16 @@ BEGIN
     ),
     -- Link auth to items via junction table
     link_auth_items AS (
-        INSERT INTO auth_items_junction (auth_id, item_id, created_at, updated_at)
+        INSERT INTO auth_items_junction (auth_id, item_id, created_at)
         SELECT 
             x.auth_id,
             iwi.item_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN items_expanded ie
         JOIN items_with_idx iwi ON iwi.item_idx = ie.item_idx
         WHERE COALESCE(array_length(x.auth_items_junction, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT auth_items_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT auth_items_pkey DO NOTHING
     )
     SELECT 
         x.auth_id AS auth_id,

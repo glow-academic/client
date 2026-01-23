@@ -101,7 +101,7 @@ BEGIN
 
     -- Update the existing resource with the new call_id and mark as generated
     UPDATE departments_resource
-    SET call_id = v_call_id, generated = true, mcp = api_create_departments_v4.mcp, updated_at = NOW()
+    SET call_id = v_call_id, generated = true, mcp = api_create_departments_v4.mcp
     WHERE departments_resource.id = v_resource_id;
 
     -- Create message record (assistant role, not completed)

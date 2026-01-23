@@ -20,8 +20,7 @@ RETURNS TABLE (
     description text,
     points integer,
     pass_points integer,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
@@ -37,7 +36,7 @@ AS $$
             group_description,
             group_points,
             group_pass_points
-        RETURNING id AS standard_group_id, name, short_name, description, points, pass_points, created_at, created_at AS updated_at
+        RETURNING id AS standard_group_id, name, short_name, description, points, pass_points, created_at
     )
     SELECT 
         standard_group_id,
@@ -47,7 +46,6 @@ AS $$
         description,
         points,
         pass_points,
-        created_at,
-        updated_at
+        created_at
     FROM new_group;
 $$;

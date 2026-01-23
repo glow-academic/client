@@ -14,8 +14,7 @@ RETURNS TABLE (
     role text,
     active boolean,
     last_login timestamptz,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -27,8 +26,7 @@ AS $$
         p.role::text,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         p.last_login,
-        p.created_at,
-        p.updated_at
+        p.created_at
     FROM profiles_resource p
     WHERE p.id = input_profile_id;
 $$;

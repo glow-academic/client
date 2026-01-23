@@ -118,8 +118,7 @@ BEGIN
         -- Update existing active flag if it exists
         UPDATE department_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, department_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
-            updated_at = NOW()
+            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
         WHERE department_id = v_department_id
           ;
     END IF;
@@ -158,43 +157,39 @@ BEGIN
     ),
     -- Link department to name
     link_department_name AS (
-        INSERT INTO department_names_junction (department_id, name_id, created_at, updated_at)
+        INSERT INTO department_names_junction (department_id, name_id, created_at)
         SELECT 
             x.department_id,
             x.name_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT department_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT department_names_pkey DO NOTHING
     ),
     -- Link department to description
     link_department_description AS (
-        INSERT INTO department_descriptions_junction (department_id, description_id, created_at, updated_at)
+        INSERT INTO department_descriptions_junction (department_id, description_id, created_at)
         SELECT 
             x.department_id,
             x.description_id,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT department_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT department_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE department_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_department_active_flag AS (
-        INSERT INTO department_flags_junction (department_id, flag_id, value, created_at, updated_at) SELECT x.department_id,
+        INSERT INTO department_flags_junction (department_id, flag_id, value, created_at) SELECT x.department_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_department_flags,
             CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'department_active'
         ON CONFLICT ON CONSTRAINT department_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, department_flags_junction.flag_id),
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Remove existing settings link if settings_id is null or different (for update case)
     remove_existing_settings AS (
@@ -207,18 +202,16 @@ BEGIN
     ),
     -- Link settings if provided
     link_settings AS (
-        INSERT INTO department_settings_junction (settings_id, department_id, active, created_at, updated_at)
+        INSERT INTO department_settings_junction (settings_id, department_id, active, created_at)
         SELECT 
             x.settings_id,
             x.department_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         WHERE x.settings_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT department_settings_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.department_id,

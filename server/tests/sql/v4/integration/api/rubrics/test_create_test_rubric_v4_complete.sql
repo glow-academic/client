@@ -18,16 +18,15 @@ RETURNS TABLE (
     points integer,
     pass_points integer,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_rubric AS (
-        INSERT INTO rubrics_resource(created_at, updated_at)
-        VALUES (NOW(), NOW())
-        RETURNING id, created_at, updated_at
+        INSERT INTO rubrics_resource(created_at)
+        VALUES (NOW())
+        RETURNING id, created_at
     ),
     name_resource AS (
         INSERT INTO names_resource(name)
@@ -89,7 +88,6 @@ AS $$
         (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'total'::point_type LIMIT 1) AS points,
         (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'pass'::point_type LIMIT 1) AS pass_points,
         EXISTS (SELECT 1 FROM rubric_flags_junction rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = nr.id AND fl.name = 'active'  AND rf.value = TRUE) AS active,
-        nr.created_at,
-        nr.updated_at
+        nr.created_at
     FROM new_rubric nr;
 $$;

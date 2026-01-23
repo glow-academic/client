@@ -117,7 +117,7 @@ BEGIN
     -- INSERT INTO args_outputs_resource table (always insert, never update)
     INSERT INTO args_outputs_resource(
         id, args_id, name, template,
-        active, generated, mcp, call_id, created_at, updated_at
+        active, generated, mcp, call_id, created_at
     )
     VALUES (
         uuidv7(), 
@@ -128,7 +128,6 @@ BEGIN
         true, 
         mcp, 
         v_call_id, 
-        NOW(), 
         NOW()
     )
     RETURNING id INTO v_resource_id;

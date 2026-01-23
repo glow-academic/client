@@ -350,7 +350,7 @@ scenario_data AS (
              FROM scenario_problem_statements_junction sps 
              JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id 
              WHERE sps.scenario_id = sc.id AND sps.active = true 
-             ORDER BY sps.created_at DESC, sps.updated_at DESC 
+             ORDER BY sps.created_at DESC 
              LIMIT 1),
             ''
         ) as description

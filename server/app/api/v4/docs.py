@@ -108,7 +108,6 @@ def get_glow_docs() -> dict[str, Any]:
                     "strengths - Strength resources",
                     "feedbacks - Feedback resources",
                     "conversations - Conversation resources",
-                    "debug_info - Debug info resources",
                     "schemas - Schema resources",
                     "schema_fields - Schema field resources",
                     "schema_field_items - Schema field item resources",

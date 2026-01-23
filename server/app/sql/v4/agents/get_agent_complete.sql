@@ -575,7 +575,7 @@ agent_active_prompt AS (
         ap.prompt_id::uuid as prompt_id,
         pr.system_prompt,
         pr.created_at as prompt_created_at,
-        pr.updated_at as prompt_updated_at
+        pr.created_at as prompt_updated_at
     FROM params x
     JOIN agent_prompts_junction ap ON ap.agent_id = x.agent_id AND ap.active = true
     JOIN prompts_resource pr ON pr.id = ap.prompt_id
@@ -1152,7 +1152,7 @@ agent_all_prompts AS (
         pr.name as prompt_name,
         pr.description as prompt_description,
         pr.created_at as prompt_created_at,
-        pr.updated_at as prompt_updated_at,
+        pr.created_at as prompt_updated_at,
         COALESCE(pr.generated, false) as generated
     FROM params x
     JOIN agent_prompts_junction ap ON ap.agent_id = x.agent_id

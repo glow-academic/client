@@ -52,8 +52,7 @@ final_upload_id AS (
 mark_video AS (
     UPDATE videos_resource
     SET completed = TRUE,
-        upload_id = (SELECT upload_id FROM final_upload_id),
-        updated_at = NOW()
+        upload_id = (SELECT upload_id FROM final_upload_id)
     WHERE id = (SELECT video_id FROM params)
 )
 SELECT fi.upload_id as generation_id

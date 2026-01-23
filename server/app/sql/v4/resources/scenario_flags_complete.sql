@@ -127,8 +127,7 @@ BEGIN
         generated,
         mcp,
         call_id,
-        created_at,
-        updated_at
+        created_at
     )
     VALUES (
         api_create_scenario_flags_v4.scenario_id,
@@ -137,7 +136,6 @@ BEGIN
         true,
         mcp,
         v_call_id,
-        NOW(),
         NOW()
     )
     ON CONFLICT (scenario_id, flag_id)

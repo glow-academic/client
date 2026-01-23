@@ -55,12 +55,12 @@ default_call AS (
     LIMIT 1
 ),
 get_or_create_name AS (
-    INSERT INTO names_resource (name, created_at, updated_at, call_id)
-    SELECT p.name, NOW(), NOW(), dc.call_id
+    INSERT INTO names_resource (name, created_at, call_id)
+    SELECT p.name, NOW(), dc.call_id
     FROM params p
     CROSS JOIN default_call dc
     WHERE p.name IS NOT NULL AND p.name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name as name_value
 ),
 get_flag_ids AS (
@@ -85,26 +85,26 @@ new_scenario AS (
     RETURNING id
 ),
 link_name AS (
-    INSERT INTO scenario_names_junction (scenario_id, name_id, created_at, updated_at)
-    SELECT ns.id, gocn.name_id, NOW(), NOW()
+    INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)
+    SELECT ns.id, gocn.name_id, NOW()
     FROM new_scenario ns
     CROSS JOIN get_or_create_name gocn
     WHERE gocn.name_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at, updated_at) SELECT ns.id, gfi.active_flag_id, p.active, NOW(), NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at) SELECT ns.id, gfi.active_flag_id, p.active, NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.active IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.objectives_enabled_flag_id, p.objectives_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.objectives_enabled_flag_id, p.objectives_enabled, NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi
     WHERE p.objectives_enabled IS NOT NULL
     UNION ALL
-    SELECT ns.id, gfi.images_enabled_flag_id, p.images_enabled, NOW(), NOW()
+    SELECT ns.id, gfi.images_enabled_flag_id, p.images_enabled, NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi

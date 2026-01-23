@@ -43,20 +43,20 @@ original_parameter AS (
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name || ' Copy', NOW()
     FROM original_parameter
     WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description, NOW()
     FROM original_parameter
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id
 ),
 new_parameter AS (
@@ -68,114 +68,102 @@ new_parameter AS (
 ),
 -- Link parameter to name
 link_parameter_name AS (
-    INSERT INTO parameter_names_junction (parameter_id, name_id, created_at, updated_at)
-    SELECT np.parameter_id, nnr.name_id, NOW(), NOW()
+    INSERT INTO parameter_names_junction (parameter_id, name_id, created_at)
+    SELECT np.parameter_id, nnr.name_id, NOW()
     FROM new_parameter np
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (parameter_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (parameter_id, name_id) DO NOTHING
 ),
 -- Link parameter to description
 link_parameter_description AS (
-    INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at, updated_at)
-    SELECT np.parameter_id, ndr.description_id, NOW(), NOW()
+    INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at)
+    SELECT np.parameter_id, ndr.description_id, NOW()
     FROM new_parameter np
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (parameter_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (parameter_id, description_id) DO NOTHING
 ),
 -- Link parameter active flag (set to false for duplicate)
 link_parameter_active_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at) SELECT np.parameter_id,
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at) SELECT np.parameter_id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_active'
     ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 -- Link parameter type flags (simulation_parameter, document_parameter, etc.)
 link_parameter_type_flags AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
     SELECT 
         np.parameter_id,
         f.id,
         op.simulation_parameter,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'simulation_parameter' AND op.simulation_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value,
-        updated_at = NOW()
+        value = EXCLUDED.value
 ),
 link_parameter_document_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
     SELECT 
         np.parameter_id,
         f.id,
         op.document_parameter,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_parameter' AND op.document_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value,
-        updated_at = NOW()
+        value = EXCLUDED.value
 ),
 link_parameter_persona_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
     SELECT 
         np.parameter_id,
         f.id,
         op.persona_parameter,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'persona_parameter' AND op.persona_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value,
-        updated_at = NOW()
+        value = EXCLUDED.value
 ),
 link_parameter_scenario_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
     SELECT 
         np.parameter_id,
         f.id,
         op.scenario_parameter,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'scenario_parameter' AND op.scenario_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value,
-        updated_at = NOW()
+        value = EXCLUDED.value
 ),
 link_parameter_video_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at, updated_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
     SELECT 
         np.parameter_id,
         f.id,
         op.video_parameter,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'video_parameter' AND op.video_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value,
-        updated_at = NOW()
+        value = EXCLUDED.value
 ),
 original_fields AS (
     SELECT 
@@ -195,20 +183,20 @@ original_field_departments AS (
 ),
 -- Insert field names INTO names_resource table
 field_names_resources AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT of.name, NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT of.name, NOW()
     FROM original_fields of
     WHERE of.name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert field descriptions INTO descriptions_resource table
 field_descriptions_resources AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT of.description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT of.description, NOW()
     FROM original_fields of
     WHERE of.description IS NOT NULL AND of.description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 new_fields AS (
@@ -221,41 +209,38 @@ new_fields AS (
 ),
 -- Link fields to names
 link_field_names AS (
-    INSERT INTO field_names_junction (field_id, name_id, created_at, updated_at)
+    INSERT INTO field_names_junction (field_id, name_id, created_at)
     SELECT 
         nf.field_id,
         fnr.name_id,
-        NOW(),
         NOW()
     FROM new_fields nf
     CROSS JOIN original_fields of
     JOIN field_names_resources fnr ON fnr.name = of.name
-    ON CONFLICT (field_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (field_id, name_id) DO NOTHING
 ),
 -- Link fields to descriptions
 link_field_descriptions AS (
-    INSERT INTO field_descriptions_junction (field_id, description_id, created_at, updated_at)
+    INSERT INTO field_descriptions_junction (field_id, description_id, created_at)
     SELECT 
         nf.field_id,
         fdr.description_id,
-        NOW(),
         NOW()
     FROM new_fields nf
     CROSS JOIN original_fields of
     JOIN field_descriptions_resources fdr ON fdr.description = of.description
-    ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (field_id, description_id) DO NOTHING
 ),
 -- Link fields to parameter via parameter_fields_junction junction table
 link_fields_to_parameter AS (
-    INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at, updated_at)
+    INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at)
     SELECT 
         np.parameter_id,
         nf.field_id,
-        NOW(),
         NOW()
     FROM new_parameter np
     CROSS JOIN new_fields nf
-    ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (parameter_id, field_id) DO NOTHING
 ),
 -- Get field names for return (matching by order)
 new_fields_with_names AS (
@@ -296,19 +281,17 @@ fields_with_depts AS (
 -- Fields are already linked via parameter_id in new_fields CTE above
 link_departments AS (
     -- Link departments to fields if they existed on original (only if dept_ids exist)
-    INSERT INTO field_departments_junction (field_id, department_id, active, created_at, updated_at)
+    INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
     SELECT 
         fwd.field_id,
         dept_id::uuid,
         true,
-        NOW(),
         NOW()
     FROM fields_with_depts fwd
     CROSS JOIN UNNEST(fwd.department_ids) as dept_id
     WHERE fwd.department_ids IS NOT NULL AND array_length(fwd.department_ids, 1) > 0
     ON CONFLICT (field_id, department_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+        active = true
 )
 SELECT 
     np.parameter_id,

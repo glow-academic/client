@@ -28,15 +28,8 @@ router.include_router(cohorts_router)
 from app.api.v4.resources.colors.create import router as colors_router
 
 router.include_router(colors_router)
-from app.api.v4.resources.conditional_parameters.create import \
-    router as conditional_parameters_router
-
-router.include_router(conditional_parameters_router)
 # NOTE: contents removed - converted to entry table (migration 305)
 # NOTE: conversations removed - converted to entry table (migration 305)
-from app.api.v4.resources.debug_info.create import router as debug_info_router
-
-router.include_router(debug_info_router)
 from app.api.v4.resources.departments.create import \
     router as departments_router
 
@@ -75,9 +68,6 @@ from app.api.v4.resources.groups.create import router as groups_router
 
 router.include_router(groups_router)
 # NOTE: hints removed - converted to entry table (migration 305)
-from app.api.v4.resources.html.create import router as html_router
-
-router.include_router(html_router)
 from app.api.v4.resources.icons.create import router as icons_router
 
 router.include_router(icons_router)
@@ -186,10 +176,6 @@ router.include_router(scenarios_router)
 from app.api.v4.resources.settings.create import router as settings_router
 
 router.include_router(settings_router)
-from app.api.v4.resources.simulation_scenario_flags.create import \
-    router as simulation_scenario_flags_router
-
-router.include_router(simulation_scenario_flags_router)
 from app.api.v4.resources.simulation_positions.create import \
     router as simulation_positions_router
 
@@ -218,9 +204,6 @@ from app.api.v4.resources.templates.update import router as templates_update_rou
 
 router.include_router(templates_router)
 router.include_router(templates_update_router)
-from app.api.v4.resources.texts.create import router as texts_router
-
-router.include_router(texts_router)
 from app.api.v4.resources.thresholds.create import router as thresholds_router
 
 router.include_router(thresholds_router)

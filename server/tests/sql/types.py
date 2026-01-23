@@ -180,17 +180,17 @@ class CreateTestAgentApiResponse(BaseModel):
 
 class CreateTestProfileSqlParams(BaseModel):
 
-    first_name: str | None = None
-    last_name: str | None = None
-    role: str | None = None
-    email: str | None = None
+    profile_first_name: str
+    profile_last_name: str
+    profile_role: str | None = None
+    profile_active: bool | None = True
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.first_name,
-            self.last_name,
-            self.role,
-            self.email,
+            self.profile_first_name,
+            self.profile_last_name,
+            self.profile_role,
+            self.profile_active,
         )
 
 class CreateTestProfileSqlRow(BaseModel):
@@ -201,14 +201,13 @@ class CreateTestProfileSqlRow(BaseModel):
     role: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestProfileApiRequest(BaseModel):
 
-    first_name: str | None = None
-    last_name: str | None = None
-    role: str | None = None
-    email: str | None = None
+    profile_first_name: str
+    profile_last_name: str
+    profile_role: str | None = None
+    profile_active: bool | None = True
 
 class CreateTestProfileApiResponse(BaseModel):
 
@@ -218,7 +217,6 @@ class CreateTestProfileApiResponse(BaseModel):
     role: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -291,7 +289,6 @@ class GetAgentByIdSqlRow(BaseModel):
     active: bool | None = None
     role: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetAgentByIdApiRequest(BaseModel):
 
@@ -306,7 +303,6 @@ class GetAgentByIdApiResponse(BaseModel):
     active: bool | None = None
     role: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -632,7 +628,6 @@ class GetCohortByIdSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetCohortByIdApiRequest(BaseModel):
 
@@ -645,7 +640,6 @@ class GetCohortByIdApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -700,7 +694,6 @@ class GetDepartmentByIdSqlRow(BaseModel):
     title: str | None = None
     description: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetDepartmentByIdApiRequest(BaseModel):
 
@@ -712,7 +705,6 @@ class GetDepartmentByIdApiResponse(BaseModel):
     title: str | None = None
     description: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -796,7 +788,6 @@ class CreateDocumentDepartmentLinkSqlRow(BaseModel):
     department_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateDocumentDepartmentLinkApiRequest(BaseModel):
 
@@ -809,7 +800,6 @@ class CreateDocumentDepartmentLinkApiResponse(BaseModel):
     department_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -832,7 +822,6 @@ class CreateDocumentParameterItemLinkSqlRow(BaseModel):
     parameter_item_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateDocumentParameterItemLinkApiRequest(BaseModel):
 
@@ -845,7 +834,6 @@ class CreateDocumentParameterItemLinkApiResponse(BaseModel):
     parameter_item_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -871,7 +859,6 @@ class CreateTestDocumentSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestDocumentApiRequest(BaseModel):
 
@@ -886,7 +873,6 @@ class CreateTestDocumentApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -908,7 +894,6 @@ class GetDocumentByIdSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetDocumentByIdApiRequest(BaseModel):
 
@@ -921,7 +906,6 @@ class GetDocumentByIdApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1085,7 +1069,6 @@ class CreateTestKeySqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestKeyApiRequest(BaseModel):
 
@@ -1102,7 +1085,6 @@ class CreateTestKeyApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1125,7 +1107,6 @@ class GetKeyByIdSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetKeyByIdApiRequest(BaseModel):
 
@@ -1139,7 +1120,6 @@ class GetKeyByIdApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1233,7 +1213,6 @@ class CreateTestParameterItemSqlRow(BaseModel):
     description: str | None = None
     value: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestParameterItemApiRequest(BaseModel):
 
@@ -1250,7 +1229,6 @@ class CreateTestParameterItemApiResponse(BaseModel):
     description: str | None = None
     value: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1282,7 +1260,6 @@ class CreateTestParameterSqlRow(BaseModel):
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestParameterApiRequest(BaseModel):
 
@@ -1301,7 +1278,6 @@ class CreateTestParameterApiResponse(BaseModel):
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1360,7 +1336,6 @@ class GetParameterByIdSqlRow(BaseModel):
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetParameterByIdApiRequest(BaseModel):
 
@@ -1375,7 +1350,6 @@ class GetParameterByIdApiResponse(BaseModel):
     document_parameter: bool | None = None
     simulation_parameter: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1429,7 +1403,6 @@ class GetParameterItemsSqlRow(BaseModel):
     description: str | None = None
     value: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetParameterItemsApiRequest(BaseModel):
 
@@ -1443,7 +1416,6 @@ class GetParameterItemsApiResponse(BaseModel):
     description: str | None = None
     value: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1466,7 +1438,6 @@ class CreatePersonaDepartmentLinkSqlRow(BaseModel):
     department_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreatePersonaDepartmentLinkApiRequest(BaseModel):
 
@@ -1479,7 +1450,6 @@ class CreatePersonaDepartmentLinkApiResponse(BaseModel):
     department_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1505,7 +1475,6 @@ class CreatePersonaDepartmentPromptLinkSqlRow(BaseModel):
     prompt_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreatePersonaDepartmentPromptLinkApiRequest(BaseModel):
 
@@ -1520,7 +1489,6 @@ class CreatePersonaDepartmentPromptLinkApiResponse(BaseModel):
     prompt_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1543,7 +1511,6 @@ class CreatePersonaPromptLinkSqlRow(BaseModel):
     prompt_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreatePersonaPromptLinkApiRequest(BaseModel):
 
@@ -1556,7 +1523,6 @@ class CreatePersonaPromptLinkApiResponse(BaseModel):
     prompt_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1635,7 +1601,6 @@ class GetPersonaByIdSqlRow(BaseModel):
     active: bool | None = None
     instructions: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetPersonaByIdApiRequest(BaseModel):
 
@@ -1651,7 +1616,6 @@ class GetPersonaByIdApiResponse(BaseModel):
     active: bool | None = None
     instructions: str | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1738,7 +1702,6 @@ class CreateProfileEmailSqlRow(BaseModel):
     is_primary: bool | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateProfileEmailApiRequest(BaseModel):
 
@@ -1754,7 +1717,6 @@ class CreateProfileEmailApiResponse(BaseModel):
     is_primary: bool | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -1967,7 +1929,6 @@ class CreateTestStandardGroupSqlRow(BaseModel):
     points: int | None = None
     pass_points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestStandardGroupApiRequest(BaseModel):
 
@@ -1988,7 +1949,6 @@ class CreateTestStandardGroupApiResponse(BaseModel):
     points: int | None = None
     pass_points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2017,7 +1977,6 @@ class CreateTestStandardSqlRow(BaseModel):
     description: str | None = None
     points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateTestStandardApiRequest(BaseModel):
 
@@ -2034,7 +1993,6 @@ class CreateTestStandardApiResponse(BaseModel):
     description: str | None = None
     points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2058,7 +2016,6 @@ class GetRubricByIdSqlRow(BaseModel):
     pass_points: int | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetRubricByIdApiRequest(BaseModel):
 
@@ -2073,7 +2030,6 @@ class GetRubricByIdApiResponse(BaseModel):
     pass_points: int | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2188,7 +2144,6 @@ class GetRubricStandardGroupsSqlRow(BaseModel):
     points: int | None = None
     pass_points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetRubricStandardGroupsApiRequest(BaseModel):
 
@@ -2204,7 +2159,6 @@ class GetRubricStandardGroupsApiResponse(BaseModel):
     points: int | None = None
     pass_points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2227,7 +2181,6 @@ class GetRubricStandardsSqlRow(BaseModel):
     description: str | None = None
     points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetRubricStandardsApiRequest(BaseModel):
 
@@ -2241,7 +2194,6 @@ class GetRubricStandardsApiResponse(BaseModel):
     description: str | None = None
     points: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2298,7 +2250,6 @@ class CreateScenarioPersonaLinkSqlRow(BaseModel):
     persona_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class CreateScenarioPersonaLinkApiRequest(BaseModel):
 
@@ -2311,7 +2262,6 @@ class CreateScenarioPersonaLinkApiResponse(BaseModel):
     persona_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2459,7 +2409,6 @@ class GetScenarioByIdSqlRow(BaseModel):
     name: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetScenarioByIdApiRequest(BaseModel):
 
@@ -2471,7 +2420,6 @@ class GetScenarioByIdApiResponse(BaseModel):
     name: str | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2785,7 +2733,6 @@ class GetSimulationByIdSqlRow(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetSimulationByIdApiRequest(BaseModel):
 
@@ -2799,7 +2746,6 @@ class GetSimulationByIdApiResponse(BaseModel):
     active: bool | None = None
     practice_simulation: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -2823,7 +2769,6 @@ class GetSimulationByIdWithTimeLimitSqlRow(BaseModel):
     practice_simulation: bool | None = None
     time_limit: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class GetSimulationByIdWithTimeLimitApiRequest(BaseModel):
 
@@ -2838,7 +2783,6 @@ class GetSimulationByIdWithTimeLimitApiResponse(BaseModel):
     practice_simulation: bool | None = None
     time_limit: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 

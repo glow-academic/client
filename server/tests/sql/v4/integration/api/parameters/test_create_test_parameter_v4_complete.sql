@@ -2,6 +2,7 @@
 -- Returns parameter data for assertions
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_parameter_v4(text, text, boolean, boolean, boolean, boolean);
+DROP FUNCTION IF EXISTS test_create_test_parameter_v4(text, text, boolean, boolean, boolean);
 
 -- Create function
 CREATE OR REPLACE FUNCTION test_create_test_parameter_v4(
@@ -18,15 +19,14 @@ RETURNS TABLE (
     active boolean,
     document_parameter boolean,
     simulation_parameter boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_parameter AS (
         INSERT INTO parameters_resource DEFAULT VALUES
-        RETURNING id, created_at, updated_at
+        RETURNING id, created_at
     ),
     name_resource AS (
         INSERT INTO names_resource(name)
@@ -86,7 +86,6 @@ AS $$
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'document_parameter'  AND pf.value = TRUE) AS document_parameter,
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'simulation_parameter'  AND pf.value = TRUE) AS simulation_parameter,
-        np.created_at,
-        np.updated_at
+        np.created_at
     FROM new_parameter np;
 $$;

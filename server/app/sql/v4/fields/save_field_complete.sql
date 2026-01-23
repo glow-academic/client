@@ -114,20 +114,20 @@ BEGIN
     ),
     -- Insert/update name in names table
     name_resource AS (
-        INSERT INTO names_resource (name, created_at, updated_at)
-        SELECT name, NOW(), NOW()
+        INSERT INTO names_resource (name, created_at)
+        SELECT name, NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as name_id
     ),
     -- Insert/update description in descriptions table
     description_resource AS (
-        INSERT INTO descriptions_resource (description, created_at, updated_at)
-        SELECT description, NOW(), NOW()
+        INSERT INTO descriptions_resource (description, created_at)
+        SELECT description, NOW()
         FROM params
         WHERE description IS NOT NULL AND description != ''
-        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as description_id
     ),
     -- Conditional: Remove old name links (only for update)
@@ -139,15 +139,14 @@ BEGIN
     ),
     -- Link field to name
     link_field_name AS (
-        INSERT INTO field_names_junction (field_id, name_id, created_at, updated_at)
+        INSERT INTO field_names_junction (field_id, name_id, created_at)
         SELECT 
             x.field_id,
             nr.name_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN name_resource nr
-        ON CONFLICT (field_id, name_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (field_id, name_id) DO NOTHING
     ),
     -- Conditional: Remove old description links (only for update)
     remove_old_description AS (
@@ -158,32 +157,29 @@ BEGIN
     ),
     -- Link field to description
     link_field_description AS (
-        INSERT INTO field_descriptions_junction (field_id, description_id, created_at, updated_at)
+        INSERT INTO field_descriptions_junction (field_id, description_id, created_at)
         SELECT 
             x.field_id,
             dr.description_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN description_resource dr
-        ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (field_id, description_id) DO NOTHING
     ),
     -- UPDATE field_artifact active flag
     update_field_active_flag AS (
         UPDATE field_flags_junction SET
-            value = (SELECT active FROM params),
-            updated_at = NOW()
+            value = (SELECT active FROM params)
         WHERE field_id = (SELECT field_id FROM params)
           
           AND NOT (SELECT is_create FROM params)
     ),
     -- Insert field active flag (for create or if doesn't exist in update)
     insert_field_active_flag AS (
-        INSERT INTO field_flags_junction (field_id, flag_id, value, created_at, updated_at) SELECT x.field_id,
+        INSERT INTO field_flags_junction (field_id, flag_id, value, created_at) SELECT x.field_id,
             f.id,
             'active'::type_field_flags,
             x.active,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
@@ -193,33 +189,30 @@ BEGIN
               OR NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active')
           )
         ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Conditional: Delete existing conditional parameters (only for update)
     delete_existing_conditional_parameters AS (
         UPDATE field_parameters_junction 
-        SET active = false, updated_at = NOW()
+        SET active = false
         WHERE field_id = (SELECT field_id FROM params)
           AND type = 'conditional'::parameter_type
           AND NOT (SELECT is_create FROM params)
     ),
     -- Link conditional parameters
     link_conditional_parameters AS (
-        INSERT INTO field_parameters_junction (field_id, parameter_id, type, active, created_at, updated_at)
+        INSERT INTO field_parameters_junction (field_id, parameter_id, type, active, created_at)
         SELECT 
             x.field_id,
             cond_param_id::uuid,
             'conditional'::parameter_type,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.conditional_parameter_ids) as cond_param_id
         WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
         ON CONFLICT (field_id, parameter_id, type) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Conditional: Delete existing departments (only for update)
     delete_existing_departments AS (
@@ -229,19 +222,17 @@ BEGIN
     ),
     -- Link departments
     link_departments AS (
-        INSERT INTO field_departments_junction (field_id, department_id, active, created_at, updated_at)
+        INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
         SELECT 
             x.field_id,
             dept_id::uuid,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT (field_id, department_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.field_id AS field_id,

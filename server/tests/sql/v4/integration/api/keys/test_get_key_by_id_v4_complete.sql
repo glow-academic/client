@@ -13,8 +13,7 @@ RETURNS TABLE (
     key text,
     description text,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -25,8 +24,7 @@ AS $$
         kr.key,
         kr.description,
         kr.active,
-        kr.created_at,
-        kr.updated_at
+        kr.created_at
     FROM keys_resource kr
     WHERE kr.id = input_key_id;
 $$;

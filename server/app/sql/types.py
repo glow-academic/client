@@ -14447,71 +14447,6 @@ class ColorsApiResponse(BaseModel):
 
 
 
-# Generated from: conditional_parameters
-
-class ConditionalParametersSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.mcp,
-        )
-
-class ConditionalParametersSqlRow(BaseModel):
-
-    conditional_parameters_id: UUID | None = None
-
-class ConditionalParametersApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-class ConditionalParametersApiResponse(BaseModel):
-
-    conditional_parameters_id: UUID | None = None
-
-
-
-# Generated from: debug_info
-
-class DebugInfoSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    content: str
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.content,
-            self.mcp,
-        )
-
-class DebugInfoSqlRow(BaseModel):
-
-    debug_info_id: UUID | None = None
-
-class DebugInfoApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    content: str
-    mcp: bool | None = False
-
-class DebugInfoApiResponse(BaseModel):
-
-    debug_info_id: UUID | None = None
-
-
-
 # Generated from: departments
 
 class DepartmentsSqlParams(BaseModel):
@@ -14883,43 +14818,6 @@ class GroupsApiRequest(BaseModel):
 class GroupsApiResponse(BaseModel):
 
     groups_id: UUID | None = None
-
-
-
-# Generated from: html
-
-class HtmlSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    name: str
-    description: str
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.name,
-            self.description,
-            self.mcp,
-        )
-
-class HtmlSqlRow(BaseModel):
-
-    html_id: UUID | None = None
-
-class HtmlApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    name: str
-    description: str
-    mcp: bool | None = False
-
-class HtmlApiResponse(BaseModel):
-
-    html_id: UUID | None = None
 
 
 
@@ -16062,43 +15960,6 @@ class SimulationPositionsApiResponse(BaseModel):
 
 
 
-# Generated from: simulation_scenario_flags
-
-class SimulationScenarioFlagsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    scenario_id: UUID
-    flag_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.scenario_id,
-            self.flag_id,
-            self.mcp,
-        )
-
-class SimulationScenarioFlagsSqlRow(BaseModel):
-
-    id: UUID | None = None
-
-class SimulationScenarioFlagsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    scenario_id: UUID
-    flag_id: UUID
-    mcp: bool | None = False
-
-class SimulationScenarioFlagsApiResponse(BaseModel):
-
-    id: UUID | None = None
-
-
-
 # Generated from: simulations
 
 class SimulationsSqlParams(BaseModel):
@@ -16315,37 +16176,6 @@ class TemplatesApiRequest(BaseModel):
 class TemplatesApiResponse(BaseModel):
 
     template_id: UUID | None = None
-
-
-
-# Generated from: texts
-
-class TextsSqlParams(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.group_id,
-            self.mcp,
-        )
-
-class TextsSqlRow(BaseModel):
-
-    texts_id: UUID | None = None
-
-class TextsApiRequest(BaseModel):
-
-    agent_id: UUID
-    group_id: UUID
-    mcp: bool | None = False
-
-class TextsApiResponse(BaseModel):
-
-    texts_id: UUID | None = None
 
 
 
@@ -22457,18 +22287,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ColorsApiRequest",
         "ColorsApiResponse",
     ),
-    "app/sql/v4/resources/conditional_parameters_complete.sql": (
-        "ConditionalParametersSqlParams",
-        "ConditionalParametersSqlRow",
-        "ConditionalParametersApiRequest",
-        "ConditionalParametersApiResponse",
-    ),
-    "app/sql/v4/resources/debug_info_complete.sql": (
-        "DebugInfoSqlParams",
-        "DebugInfoSqlRow",
-        "DebugInfoApiRequest",
-        "DebugInfoApiResponse",
-    ),
     "app/sql/v4/resources/departments_complete.sql": (
         "DepartmentsSqlParams",
         "DepartmentsSqlRow",
@@ -22534,12 +22352,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GroupsSqlRow",
         "GroupsApiRequest",
         "GroupsApiResponse",
-    ),
-    "app/sql/v4/resources/html_complete.sql": (
-        "HtmlSqlParams",
-        "HtmlSqlRow",
-        "HtmlApiRequest",
-        "HtmlApiResponse",
     ),
     "app/sql/v4/resources/icons_complete.sql": (
         "IconsSqlParams",
@@ -22739,12 +22551,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SimulationPositionsApiRequest",
         "SimulationPositionsApiResponse",
     ),
-    "app/sql/v4/resources/simulation_scenario_flags_complete.sql": (
-        "SimulationScenarioFlagsSqlParams",
-        "SimulationScenarioFlagsSqlRow",
-        "SimulationScenarioFlagsApiRequest",
-        "SimulationScenarioFlagsApiResponse",
-    ),
     "app/sql/v4/resources/simulations_complete.sql": (
         "SimulationsSqlParams",
         "SimulationsSqlRow",
@@ -22780,12 +22586,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TemplatesSqlRow",
         "TemplatesApiRequest",
         "TemplatesApiResponse",
-    ),
-    "app/sql/v4/resources/texts_complete.sql": (
-        "TextsSqlParams",
-        "TextsSqlRow",
-        "TextsApiRequest",
-        "TextsApiResponse",
     ),
     "app/sql/v4/resources/thresholds_complete.sql": (
         "ThresholdsSqlParams",
@@ -24385,16 +24185,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/conditional_parameters_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/debug_info_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/departments_complete.sql"]
     ) -> SqlString: ...
 
@@ -24446,11 +24236,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/groups_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/html_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -24620,11 +24405,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/simulation_scenario_flags_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/simulations_complete.sql"]
     ) -> SqlString: ...
 
@@ -24651,11 +24431,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/templates_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/texts_complete.sql"]
     ) -> SqlString: ...
 
     @overload

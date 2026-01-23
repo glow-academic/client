@@ -2,6 +2,7 @@
 -- Returns profile data for assertions
 -- Drop function if exists
 DROP FUNCTION IF EXISTS test_create_test_profile_v4(text, text, text, boolean, boolean);
+DROP FUNCTION IF EXISTS test_create_test_profile_v4(text, text, text, boolean);
 
 -- Create function
 CREATE OR REPLACE FUNCTION test_create_test_profile_v4(
@@ -16,8 +17,7 @@ RETURNS TABLE (
     last_name text,
     role text,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
@@ -33,7 +33,7 @@ AS $$
     new_profile AS (
         INSERT INTO profiles_resource(role)
         VALUES (profile_role::profile_type)
-        RETURNING id, created_at, updated_at
+        RETURNING id, created_at
     ),
     profile_name_link AS (
         INSERT INTO profile_names_junction(profile_id, name_id)
@@ -53,7 +53,6 @@ AS $$
         profile_last_name AS last_name,
         (SELECT role::text FROM profiles_resource p WHERE p.id = np.id) AS role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active'  AND pf.value = TRUE) AS active,
-        np.created_at,
-        np.updated_at
+        np.created_at
     FROM new_profile np;
 $$;

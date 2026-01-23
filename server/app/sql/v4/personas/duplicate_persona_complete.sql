@@ -56,38 +56,38 @@ original_departments AS (
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name || ' Copy', NOW()
     FROM original_persona
     WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description, NOW()
     FROM original_persona
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 -- Insert color INTO colors_resource table (if exists)
 new_color_resource AS (
-    INSERT INTO colors_resource (name, description, hex_code, created_at, updated_at)
-    SELECT 'persona_color', 'Persona color', color, NOW(), NOW()
+    INSERT INTO colors_resource (name, description, hex_code, created_at)
+    SELECT 'persona_color', 'Persona color', color, NOW()
     FROM original_persona
     WHERE color IS NOT NULL AND color != ''
-    ON CONFLICT (hex_code) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (hex_code) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as color_id, hex_code
 ),
 -- Insert icon INTO icons_resource table (if exists)
 new_icon_resource AS (
-    INSERT INTO icons_resource (name, description, value, created_at, updated_at)
-    SELECT 'persona_icon', 'Persona icon', icon, NOW(), NOW()
+    INSERT INTO icons_resource (name, description, value, created_at)
+    SELECT 'persona_icon', 'Persona icon', icon, NOW()
     FROM original_persona
     WHERE icon IS NOT NULL AND icon != ''
-    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (value) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as icon_id, value
 ),
 new_persona AS (
@@ -103,11 +103,10 @@ new_persona AS (
 ),
 -- Copy instruction if original persona has one
 copy_persona_instruction AS (
-    INSERT INTO instructions_resource (template, active, created_at, updated_at)
+    INSERT INTO instructions_resource (template, active, created_at)
     SELECT 
         COALESCE(pi_orig.template, ''),
         true,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN original_persona op
@@ -117,86 +116,78 @@ copy_persona_instruction AS (
     RETURNING id as instruction_id
 ),
 link_persona_instruction AS (
-    INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at, updated_at)
+    INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at)
     SELECT 
         np.id,
         cpi.instruction_id,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN copy_persona_instruction cpi
-    ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (persona_id, instruction_id) DO NOTHING
 ),
 -- Link persona to name
 link_persona_name AS (
-    INSERT INTO persona_names_junction (persona_id, name_id, created_at, updated_at)
+    INSERT INTO persona_names_junction (persona_id, name_id, created_at)
     SELECT 
         np.id,
         nnr.name_id,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (persona_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (persona_id, name_id) DO NOTHING
 ),
 -- Link persona to description
 link_persona_description AS (
-    INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at, updated_at)
+    INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at)
     SELECT 
         np.id,
         ndr.description_id,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (persona_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (persona_id, description_id) DO NOTHING
 ),
 -- Link persona to color
 link_persona_color AS (
-    INSERT INTO persona_colors_junction (persona_id, color_id, created_at, updated_at)
+    INSERT INTO persona_colors_junction (persona_id, color_id, created_at)
     SELECT 
         np.id,
         ncr.color_id,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN new_color_resource ncr
-    ON CONFLICT (persona_id, color_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (persona_id, color_id) DO NOTHING
 ),
 -- Link persona to icon
 link_persona_icon AS (
-    INSERT INTO persona_icons_junction (persona_id, icon_id, created_at, updated_at)
+    INSERT INTO persona_icons_junction (persona_id, icon_id, created_at)
     SELECT 
         np.id,
         nir.icon_id,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN new_icon_resource nir
-    ON CONFLICT (persona_id, icon_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (persona_id, icon_id) DO NOTHING
 ),
 -- Link persona active flag (set to false for duplicate)
 link_persona_active_flag AS (
-    INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at, updated_at) SELECT np.id,
+    INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at) SELECT np.id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN flags_resource f
     WHERE f.name = 'persona_active'
     ON CONFLICT (persona_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 copy_departments AS (
     -- Copy department links from original persona
-    INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at, updated_at)
+    INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
     SELECT 
         np.id,
         od.department_id,
         true,
-        NOW(),
         NOW()
     FROM new_persona np
     CROSS JOIN original_departments od

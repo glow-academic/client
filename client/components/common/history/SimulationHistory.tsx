@@ -753,7 +753,7 @@ export default function SimulationHistory({
 
           // Search in persona names
           if (
-            item.persona_names?.some((name: string) =>
+            item.persona_names_junction?.some((name: string) =>
               name.toLowerCase().includes(searchValue),
             )
           ) {
@@ -964,8 +964,8 @@ export default function SimulationHistory({
           const completedCount = row.original.num_scenarios_completed || 0;
           const totalCount = row.original.num_scenarios || 0;
           const isInfinite = row.original.infinite_mode;
-          const personaNames = row.original.persona_names || [];
-          const personaColors = row.original.persona_colors || [];
+          const personaNames = row.original.persona_names_junction || [];
+          const personaColors = row.original.persona_colors_junction || [];
 
           return (
             <div className="text-center">
@@ -1032,7 +1032,7 @@ export default function SimulationHistory({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: HistoryDataItem) => row.persona_names ?? [],
+        accessorFn: (row: HistoryDataItem) => row.persona_names_junction ?? [],
         filterFn: (row, id, value) => {
           const personaNames = row.getValue(id) as string[];
           if (!value || !Array.isArray(value) || value.length === 0)

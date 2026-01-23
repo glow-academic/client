@@ -26,23 +26,22 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_persona AS (
-        INSERT INTO personas_resource(created_at, updated_at)
-        VALUES (NOW(), NOW())
+        INSERT INTO personas_resource(created_at)
+        VALUES (NOW())
         RETURNING id, created_at
     ),
     new_instruction AS (
-        INSERT INTO instructions_resource(template, active, created_at, updated_at)
+        INSERT INTO instructions_resource(template, active, created_at)
         SELECT 
             COALESCE(test_create_test_persona_v4.instructions, ''),
             true,
-            NOW(),
             NOW()
         WHERE test_create_test_persona_v4.instructions IS NOT NULL
         RETURNING id
     ),
     persona_instruction_link AS (
-        INSERT INTO persona_instructions_junction(persona_id, instruction_id, created_at, updated_at)
-        SELECT np.id, ni.id, NOW(), NOW()
+        INSERT INTO persona_instructions_junction(persona_id, instruction_id, created_at)
+        SELECT np.id, ni.id, NOW()
         FROM new_persona np
         CROSS JOIN new_instruction ni
         WHERE ni.id IS NOT NULL

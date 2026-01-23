@@ -29,11 +29,10 @@ AS $$
     ),
     inserted_flag_resource AS (
         -- First ensure scenario_flags_resource exists for this scenario
-        INSERT INTO scenario_flags_resource (scenario_id, flag_id, created_at, updated_at, generated, mcp, active, call_id)
+        INSERT INTO scenario_flags_resource (scenario_id, flag_id, created_at, generated, mcp, active, call_id)
         SELECT DISTINCT
             il.scenario_id,
             sf.id,
-            NOW(),
             NOW(),
             false,
             false,
@@ -47,12 +46,11 @@ AS $$
     ),
     inserted_flag AS (
         -- Then link simulation to scenario_flag via simulation_scenario_flags_junction
-        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, value, created_at, updated_at, generated, mcp, active)
+        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, value, created_at, generated, mcp, active)
         SELECT 
             il.simulation_id,
             ifr.id,
             true,
-            NOW(),
             NOW(),
             false,
             false,
@@ -62,11 +60,10 @@ AS $$
     ),
     inserted_position_resource AS (
         -- First ensure scenario_positions_resource exists for this scenario+position
-        INSERT INTO scenario_positions_resource(scenario_id, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO scenario_positions_resource(scenario_id, value, created_at, generated, mcp, call_id)
         SELECT 
             il.scenario_id,
             COALESCE(test_create_simulation_scenario_link_v4.input_position, 1),
-            NOW(),
             NOW(),
             false,
             false,
@@ -77,11 +74,10 @@ AS $$
     ),
     inserted_position AS (
         -- Then link simulation to scenario_position via simulation_scenario_positions_junction
-        INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_position_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_position_id, created_at, generated, mcp, active)
         SELECT 
             il.simulation_id,
             ipr.id,
-            NOW(),
             NOW(),
             false,
             false,

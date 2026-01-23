@@ -54,20 +54,20 @@ original_flags AS (
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name || ' Copy', NOW()
     FROM original_provider
     WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description, NOW()
     FROM original_provider
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 new_provider AS (
@@ -83,56 +83,50 @@ new_provider AS (
 ),
 -- Link provider to name
 link_provider_name AS (
-    INSERT INTO provider_names_junction (provider_id, name_id, created_at, updated_at)
+    INSERT INTO provider_names_junction (provider_id, name_id, created_at)
     SELECT 
         np.id,
         nnr.name_id,
-        NOW(),
         NOW()
     FROM new_provider np
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (provider_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (provider_id, name_id) DO NOTHING
 ),
 -- Link provider to description
 link_provider_description AS (
-    INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at, updated_at)
+    INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at)
     SELECT 
         np.id,
         ndr.description_id,
-        NOW(),
         NOW()
     FROM new_provider np
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (provider_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (provider_id, description_id) DO NOTHING
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
-    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, updated_at) SELECT np.id,
+    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at) SELECT np.id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_provider np
     CROSS JOIN flags_resource f
     WHERE f.name = 'provider_active'
     ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 -- Copy other flags from original provider
 copy_provider_flags AS (
-    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, updated_at)
+    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at)
     SELECT 
         np.id,
         of.flag_id,
         FALSE,
-        NOW(),
         NOW()
     FROM new_provider np
     CROSS JOIN original_flags of
     ON CONFLICT (provider_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 )
 SELECT 
     (SELECT id FROM new_provider LIMIT 1) as new_provider_id,

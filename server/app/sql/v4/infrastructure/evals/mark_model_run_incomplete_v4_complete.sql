@@ -24,6 +24,6 @@ LANGUAGE sql
 VOLATILE
 AS $$
     UPDATE eval_runs_junction 
-    SET completed = false, updated_at = NOW()
+    SET completed = false
     WHERE eval_runs_junction.eval_id = $1 AND eval_runs_junction.run_id = $2
 $$;

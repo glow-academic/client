@@ -41,18 +41,18 @@ WITH user_profile AS (
 ),
 -- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name, NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name, NOW()
     WHERE name IS NOT NULL AND name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id
 ),
 -- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT COALESCE(description, ''), NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT COALESCE(description, ''), NOW()
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id
 ),
 insert_doc AS (
@@ -76,45 +76,40 @@ link_document_agent_domain AS (
 ),
 -- Link document to description
 link_document_description AS (
-    INSERT INTO document_descriptions_junction (document_id, description_id, created_at, updated_at)
+    INSERT INTO document_descriptions_junction (document_id, description_id, created_at)
     SELECT 
         id.document_id,
         dr.description_id,
-        NOW(),
         NOW()
     FROM insert_doc id
     CROSS JOIN description_resource dr
-    ON CONFLICT (document_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (document_id, description_id) DO NOTHING
 ),
 -- Link document active flag
 link_document_active_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at) SELECT id.document_id,
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at) SELECT id.document_id,
         f.id,
         true,
-        NOW(),
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_active'
     ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = true,
-        updated_at = NOW()
+        value = true
 ),
 -- Link document template flag (defaults to false)
 link_document_template_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at, updated_at)
+    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at)
     SELECT 
         id.document_id,
         f.id,
         false,
-        NOW(),
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'template'
     ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = false,
-        updated_at = NOW()
+        value = false
 ),
 get_uploads_resource_id AS (
     -- Look up uploads_resource.id from upload_id
@@ -126,24 +121,23 @@ get_uploads_resource_id AS (
 ),
 insert_upload AS (
     -- Link regular upload if provided
-    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at, updated_at)
-    SELECT id.document_id, gur.uploads_id, true, NOW(), NOW()
+    INSERT INTO document_uploads_resource (document_id, uploads_id, active, created_at)
+    SELECT id.document_id, gur.uploads_id, true, NOW()
     FROM insert_doc id
     CROSS JOIN get_uploads_resource_id gur
     ON CONFLICT (document_id, uploads_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+        active = true
 ),
 insert_depts AS (
-    INSERT INTO document_departments_junction (document_id, department_id, active, created_at, updated_at)
-    SELECT document_id, dept_id, true, NOW(), NOW()
+    INSERT INTO document_departments_junction (document_id, department_id, active, created_at)
+    SELECT document_id, dept_id, true, NOW()
     FROM unnest(department_ids) as dept_id
     WHERE cardinality(department_ids) > 0
     RETURNING document_id
 ),
 insert_fields AS (
-    INSERT INTO document_fields_junction (document_id, field_id, active, created_at, updated_at)
-    SELECT document_id, field_id, true, NOW(), NOW()
+    INSERT INTO document_fields_junction (document_id, field_id, active, created_at)
+    SELECT document_id, field_id, true, NOW()
     FROM unnest(field_ids) as field_id
     WHERE cardinality(field_ids) > 0
     RETURNING document_id

@@ -117,7 +117,6 @@ BEGIN
         mcp,
         call_id,
         created_at,
-        updated_at,
         active
     )
     VALUES (
@@ -127,15 +126,13 @@ BEGIN
         mcp,
         v_call_id,
         NOW(),
-        NOW(),
         true
     )
     ON CONFLICT (scenario_id, time_limit_seconds)
     DO UPDATE SET
         generated = EXCLUDED.generated,
         mcp = EXCLUDED.mcp,
-        call_id = EXCLUDED.call_id,
-        updated_at = NOW()
+        call_id = EXCLUDED.call_id
     RETURNING scenario_time_limits_resource.id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)

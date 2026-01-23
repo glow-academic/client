@@ -23,8 +23,6 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    -- Note: eval_groups_junction table doesn't have completed column
     -- Completion is tracked via eval_runs_junction.completed
-    UPDATE eval_groups_junction SET updated_at = NOW()
-    WHERE eval_groups_junction.eval_id = $1 AND eval_groups_junction.group_id = $2
+    SELECT 1
 $$;

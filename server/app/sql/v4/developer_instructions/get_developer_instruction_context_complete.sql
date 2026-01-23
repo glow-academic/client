@@ -57,7 +57,7 @@ scenario_parameters_data AS (
                             'video_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'video_parameter' AND pf.value = TRUE),
                             'simulation_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'simulation_parameter' AND pf.value = TRUE),
                             'created_at', p.created_at::text,
-                            'updated_at', p.updated_at::text
+                            'updated_at', p.created_at::text
                         )
                         ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
                     ),
@@ -87,7 +87,7 @@ scenario_fields_data AS (
                             'parameter_id', (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)::text,
                             'active', EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = f.id AND f.name = 'field_active' AND ff.value = TRUE),
                             'created_at', f.created_at::text,
-                            'updated_at', f.updated_at::text
+                            'updated_at', f.created_at::text
                         )
                         ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
                     ),
@@ -117,7 +117,7 @@ scenario_documents_data AS (
                             'content', '',  -- document_content table was removed, content now accessed via message_documents → message_contents
                             'active', EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
                             'created_at', d.created_at::text,
-                            'updated_at', d.updated_at::text
+                            'updated_at', d.created_at::text
                         )
                         ORDER BY (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
                     ),

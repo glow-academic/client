@@ -56,20 +56,20 @@ source_model AS (
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names_resource (name, created_at, updated_at)
-    SELECT name || ' Copy', NOW(), NOW()
+    INSERT INTO names_resource (name, created_at)
+    SELECT name || ' Copy', NOW()
     FROM source_model
     WHERE name IS NOT NULL
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as name_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions_resource (description, created_at, updated_at)
-    SELECT description || ' Copy', NOW(), NOW()
+    INSERT INTO descriptions_resource (description, created_at)
+    SELECT description || ' Copy', NOW()
     FROM source_model
     WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
 duplicated_model AS (
@@ -83,10 +83,9 @@ duplicated_model AS (
 ),
 -- Insert value for duplicated model
 duplicated_model_value AS (
-    INSERT INTO values_resource (value, created_at, updated_at, active, generated, mcp, call_id)
+    INSERT INTO values_resource (value, created_at, active, generated, mcp, call_id)
     SELECT 
         sm.value,
-        NOW(),
         NOW(),
         true,
         false,
@@ -95,15 +94,14 @@ duplicated_model_value AS (
     FROM source_model sm
     CROSS JOIN duplicated_model dm
     WHERE sm.value IS NOT NULL AND sm.value != ''
-    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (value) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as value_id
 ),
 link_duplicated_model_value AS (
-    INSERT INTO model_values_junction (model_id, value_id, created_at, updated_at, generated, mcp)
+    INSERT INTO model_values_junction (model_id, value_id, created_at, generated, mcp)
     SELECT 
         dm.id,
         dmv.value_id,
-        NOW(),
         NOW(),
         false,
         false
@@ -113,67 +111,61 @@ link_duplicated_model_value AS (
 ),
 -- Create models resource entry for duplicated model artifact
 duplicated_model_resource AS (
-    INSERT INTO models_resource (model_id, active, generated, mcp, created_at, updated_at)
+    INSERT INTO models_resource (model_id, active, generated, mcp, created_at)
     SELECT 
         dm.id,
         false,  -- Set to inactive (duplicate)
         false,
         false,
-        NOW(),
         NOW()
     FROM duplicated_model dm
     RETURNING id, model_id
 ),
 -- Link model to name
 link_model_name AS (
-    INSERT INTO model_names_junction (model_id, name_id, created_at, updated_at)
+    INSERT INTO model_names_junction (model_id, name_id, created_at)
     SELECT 
         dm.id,
         nnr.name_id,
-        NOW(),
         NOW()
     FROM duplicated_model dm
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (model_id, name_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (model_id, name_id) DO NOTHING
 ),
 -- Link model to description
 link_model_description AS (
-    INSERT INTO model_descriptions_junction (model_id, description_id, created_at, updated_at)
+    INSERT INTO model_descriptions_junction (model_id, description_id, created_at)
     SELECT 
         dm.id,
         ndr.description_id,
-        NOW(),
         NOW()
     FROM duplicated_model dm
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (model_id, description_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (model_id, description_id) DO NOTHING
 ),
 -- Link model to provider (via model_providers_junction)
 link_model_provider AS (
-    INSERT INTO model_providers_junction (model_id, providers_id, created_at, updated_at)
+    INSERT INTO model_providers_junction (model_id, providers_id, created_at)
     SELECT 
         dmr.id,  -- Use models.id (resource) from duplicated model resource
         sm.providers_id,
-        NOW(),
         NOW()
     FROM duplicated_model_resource dmr
     CROSS JOIN source_model sm
     WHERE sm.providers_id IS NOT NULL
-    ON CONFLICT (model_id, providers_id) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (model_id, providers_id) DO NOTHING
 ),
 -- Link model active flag (set to false for duplicate)
 link_model_active_flag AS (
-    INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, updated_at) SELECT dm.id,
+    INSERT INTO model_flags_junction (model_id, flag_id, value, created_at) SELECT dm.id,
         f.id,
         FALSE,
-        NOW(),
         NOW()
     FROM duplicated_model dm
     CROSS JOIN flags_resource f
     WHERE f.name = 'model_active'
     ON CONFLICT (model_id, flag_id) DO UPDATE SET 
-        value = FALSE,
-        updated_at = NOW()
+        value = FALSE
 ),
 model_with_name AS (
     -- Get model with name for return

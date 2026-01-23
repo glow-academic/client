@@ -110,20 +110,20 @@ BEGIN
     ),
     -- Insert name INTO names_resource table and get ID
     name_resource AS (
-        INSERT INTO names_resource (name, created_at, updated_at)
-        SELECT name, NOW(), NOW()
+        INSERT INTO names_resource (name, created_at)
+        SELECT name, NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as name_id
     ),
     -- Insert description INTO descriptions_resource table and get ID
     description_resource AS (
-        INSERT INTO descriptions_resource (description, created_at, updated_at)
-        SELECT description, NOW(), NOW()
+        INSERT INTO descriptions_resource (description, created_at)
+        SELECT description, NOW()
         FROM params
         WHERE description IS NOT NULL AND description != ''
-        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
         RETURNING id as description_id
     ),
     user_profile AS (
@@ -173,47 +173,43 @@ BEGIN
     ),
     -- Link eval to name
     link_eval_name AS (
-        INSERT INTO eval_names_junction (eval_id, name_id, created_at, updated_at)
+        INSERT INTO eval_names_junction (eval_id, name_id, created_at)
         SELECT 
             x.eval_id,
             nr.name_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN name_resource nr
         WHERE nr.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT eval_names_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT eval_names_pkey DO NOTHING
     ),
     -- Link eval to description
     link_eval_description AS (
-        INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at, updated_at)
+        INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at)
         SELECT 
             x.eval_id,
             dr.description_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN description_resource dr
         WHERE dr.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT eval_descriptions_pkey DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT eval_descriptions_pkey DO NOTHING
     ),
     -- Insert or UPDATE eval_artifact active flag
     insert_eval_active_flag AS (
-        INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at, updated_at) SELECT x.eval_id,
+        INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at) SELECT x.eval_id,
             f.id,
             x.active,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'eval_active'
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Insert or UPDATE eval_artifact dynamic flag
     insert_eval_dynamic_flag AS (
-        INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at)
         SELECT 
             x.eval_id,
             f.id,
@@ -224,12 +220,11 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'dynamic'
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Insert or UPDATE eval_artifact groups_entry flag
     insert_eval_groups_flag AS (
-        INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at, updated_at)
+        INSERT INTO eval_flags_junction (eval_id, flag_id, type, value, created_at)
         SELECT 
             x.eval_id,
             f.id,
@@ -240,79 +235,69 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'groups_entry'
         ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE SET 
-            value = EXCLUDED.value,
-            updated_at = NOW()
+            value = EXCLUDED.value
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at, updated_at)
+        INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at)
         SELECT 
             x.eval_id,
             dept_id,
             true,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_departments_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link agents (old ones already deleted above if update)
     link_agents AS (
-        INSERT INTO eval_agents_junction (eval_id, agent_id, created_at, updated_at)
+        INSERT INTO eval_agents_junction (eval_id, agent_id, created_at)
         SELECT 
             x.eval_id,
             agent_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.agent_ids) as agent_id
         WHERE COALESCE(array_length(x.agent_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT eval_agents_pkey DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT eval_agents_pkey DO NOTHING
     ),
     -- Link model runs_entry (old ones already deleted above if update)
     link_runs AS (
-        INSERT INTO eval_runs_junction (eval_id, run_id, completed, created_at, updated_at)
+        INSERT INTO eval_runs_junction (eval_id, run_id, completed, created_at)
         SELECT 
             x.eval_id,
             run_id,
             false,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.model_run_ids) as run_id
         WHERE x.use_groups = false
           AND COALESCE(array_length(x.model_run_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_runs_pkey DO UPDATE SET
-            completed = false,
-            updated_at = NOW()
+            completed = false
     ),
     -- Link groups_entry when using groups_entry
     link_groups AS (
-        INSERT INTO eval_groups_junction (eval_id, group_id, created_at, updated_at)
+        INSERT INTO eval_groups_junction (eval_id, group_id, created_at)
         SELECT
             x.eval_id,
             group_id,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.group_ids) as group_id
         WHERE x.use_groups = true
           AND COALESCE(array_length(x.group_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT eval_groups_pkey DO UPDATE SET
-            updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT eval_groups_pkey DO NOTHING
     ),
     -- Link rubrics to runs_entry
     link_run_rubrics AS (
-        INSERT INTO eval_runs_rubrics_junction (eval_id, run_id, rubric_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO eval_runs_rubrics_junction (eval_id, run_id, rubric_id, created_at, generated, mcp, active)
         SELECT
             x.eval_id,
             rr.run_id,
             rubric_id,
-            NOW(),
             NOW(),
             false,
             false,
@@ -323,17 +308,15 @@ BEGIN
         WHERE x.use_groups = false
           AND COALESCE(array_length(rr.rubric_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_runs_rubrics_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     ),
     -- Link rubrics to groups_entry
     link_group_rubrics AS (
-        INSERT INTO eval_groups_rubrics_junction (eval_id, group_id, rubric_id, created_at, updated_at, generated, mcp, active)
+        INSERT INTO eval_groups_rubrics_junction (eval_id, group_id, rubric_id, created_at, generated, mcp, active)
         SELECT
             x.eval_id,
             gr.group_id,
             rubric_id,
-            NOW(),
             NOW(),
             false,
             false,
@@ -344,8 +327,7 @@ BEGIN
         WHERE x.use_groups = true
           AND COALESCE(array_length(gr.rubric_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_groups_rubrics_pkey DO UPDATE SET
-            active = true,
-            updated_at = NOW()
+            active = true
     )
     SELECT 
         x.eval_id AS eval_id,

@@ -16,9 +16,6 @@ import { getLayoutContext, type ProfileItem } from "../../layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type PracticeIn = InputOf<"/api/v4/analytics/practice/get", "post">;
 type PracticeOut = OutputOf<"/api/v4/analytics/practice/get", "post">;
-type PatchPracticeDraftIn = InputOf<"/api/v4/practice/draft", "patch">;
-type PatchPracticeDraftOut = OutputOf<"/api/v4/practice/draft", "patch">;
-
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice overview responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -37,16 +34,6 @@ const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   });
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
-async function patchPracticeDraft(
-  input: PatchPracticeDraftIn
-): Promise<PatchPracticeDraftOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts). We need to add a practice draft endpoint.
-  // No revalidateTag needed - Redis cache handles invalidation
-  throw new Error("practice/draft endpoint doesn't exist on server");
-  // return api.patch("/practice/draft", input);
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -177,7 +164,6 @@ export default async function PracticeCustomPage({
         effectiveProfile={effectiveProfile}
         activeProfile={actualProfile}
         isGuest={isGuest}
-        patchPracticeDraftAction={patchPracticeDraft}
       />
     </div>
   );
@@ -185,8 +171,6 @@ export default async function PracticeCustomPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  PatchPracticeDraftIn,
-  PatchPracticeDraftOut,
   PracticeIn,
   PracticeOut,
 };

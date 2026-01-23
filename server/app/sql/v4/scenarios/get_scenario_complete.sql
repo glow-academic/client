@@ -465,7 +465,7 @@ scenario_active_problem_statement AS (
         ps.name,
         ps.problem_statement,
         ps.created_at as problem_statement_created_at,
-        ps.updated_at as problem_statement_updated_at
+        ps.created_at as problem_statement_updated_at
     FROM scenario_problem_statements_junction sps
     JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE sps.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND sps.active = true
@@ -479,7 +479,7 @@ scenario_all_problem_statements AS (
         ps.name,
         ps.problem_statement,
         ps.created_at as problem_statement_created_at,
-        ps.updated_at as problem_statement_updated_at
+        ps.created_at as problem_statement_updated_at
     FROM scenario_problem_statements_junction sps
     JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE sps.scenario_id = (SELECT scenario_id FROM params)
@@ -501,7 +501,7 @@ problem_statements_array AS (
         ps.name,
         ps.problem_statement,
         ps.created_at,
-        ps.updated_at,
+        ps.created_at,
         1 as sort_order
     FROM problem_statements_resource ps
     WHERE NOT EXISTS (
@@ -1373,7 +1373,7 @@ scenario_images_array AS (
         u.mime_type,
         i.active,
         i.created_at,
-        i.updated_at,
+        i.created_at as updated_at,
         CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END as sort_order
     FROM images_resource i
     LEFT JOIN uploads_entry u ON u.id = i.upload_id

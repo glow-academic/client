@@ -13,13 +13,12 @@ RETURNS TABLE (
     persona_id uuid,
     prompt_id uuid,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
     -- Table persona_prompts does not exist - personas link to prompts via agents
     -- This function is disabled
-    SELECT NULL::uuid, NULL::uuid, false, NOW(), NOW() WHERE false;
+    SELECT NULL::uuid, NULL::uuid, false, NOW() WHERE false;
 $$;
