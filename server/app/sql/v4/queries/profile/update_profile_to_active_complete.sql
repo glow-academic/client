@@ -55,11 +55,17 @@ update_profile AS (
 ),
 insert_activity AS (
     -- Insert activity_entry record
-    INSERT INTO activity_entry (profile_id, last_active)
-    SELECT 
-        up.profile_id,
-        last_active
+    INSERT INTO activity_entry (last_active)
+    SELECT last_active
     FROM update_profile up
+    RETURNING id as activity_id
+),
+link_activity_to_profile AS (
+    -- Link activity to profile via junction table
+    INSERT INTO profile_activity_junction (profile_id, activity_id)
+    SELECT up.profile_id, ia.activity_id
+    FROM update_profile up
+    CROSS JOIN insert_activity ia
 )
 SELECT 
     EXISTS(SELECT 1 FROM update_profile)::boolean as profile_exists,

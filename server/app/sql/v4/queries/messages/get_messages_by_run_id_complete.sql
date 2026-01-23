@@ -42,7 +42,7 @@ messages_data AS (
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
     LEFT JOIN contents_entry ce ON ce.message_id = m.id AND ce.idx = 0
-    LEFT JOIN calls_entry c_audio ON c_audio.message_id = m.id
+    LEFT JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
     LEFT JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time

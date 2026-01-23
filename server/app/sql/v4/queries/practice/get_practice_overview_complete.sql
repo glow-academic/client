@@ -157,14 +157,14 @@ WITH params AS (
         draft_id AS draft_id
 ),
 draft_payload_data AS (
-    SELECT 
+    SELECT
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
-    
+
     LIMIT 1
 ),
 resolve_profile_id AS (

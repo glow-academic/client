@@ -50,19 +50,11 @@ get_tool_info AS (
     JOIN tools_resource tr_res ON tr_res.tool_id = t.id
     JOIN agent_tools_junction at ON at.tool_id = tr_res.id
     JOIN runs_entry r_run ON r_run.id = p.run_id
+    JOIN agent_runs_junction arj ON arj.run_id = r_run.id
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
-    WHERE at.agent_id = r_run.agent_id
+    WHERE at.agent_id = arj.agent_id
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-    LIMIT 1
-),
--- Get assistant message_id for this run (used when creating call)
-assistant_message AS (
-    SELECT m.id as message_id
-    FROM params p
-    JOIN messages_entry m ON m.run_id = p.run_id
-    WHERE m.role = 'assistant'
-    ORDER BY m.created_at
     LIMIT 1
 ),
 -- Get or create tool_call (by call_id or tool_call_id)
@@ -76,21 +68,27 @@ existing_tool_call AS (
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, message_id, created_at, updated_at)
+    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, run_id, created_at, updated_at)
     SELECT
         COALESCE(p.call_id, 'text_' || p.tool_call_id),
-        gt.tool_id,
         (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gt.tool_id LIMIT 1),
         '',
         false,
-        am.message_id,
+        p.run_id,
         NOW(),
         NOW()
     FROM params p
     CROSS JOIN get_tool_info gt
-    LEFT JOIN assistant_message am ON true
     WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
     RETURNING id as tool_call_id, external_call_id
+),
+-- Insert into tool_calls_junction to link call to tool
+create_tool_call_junction AS (
+    INSERT INTO tool_calls_junction (call_id, tool_id)
+    SELECT ctc.tool_call_id, gt.tool_id
+    FROM create_tool_call ctc
+    CROSS JOIN get_tool_info gt
+    RETURNING call_id
 ),
 selected_tool_call AS (
     SELECT tool_call_id::text, external_call_id FROM existing_tool_call

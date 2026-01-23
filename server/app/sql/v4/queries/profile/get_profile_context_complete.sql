@@ -314,7 +314,7 @@ actual_profile_data AS (
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        (SELECT le.last_login FROM logins_entry le WHERE le.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
+        (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
         pa.last_active,
         p.created_at,
         p.updated_at,
@@ -326,15 +326,16 @@ actual_profile_data AS (
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
-        SELECT last_active 
-        FROM activity_entry 
-        WHERE profile_id = p.id 
-        ORDER BY created_at DESC 
+        SELECT ae.last_active
+        FROM profile_activity_junction pactj
+        JOIN activity_entry ae ON ae.id = pactj.activity_id
+        WHERE pactj.profile_id = p.id
+        ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
     GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
-             rl.requests_per_day, (SELECT le.last_login FROM logins_entry le WHERE le.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
+             rl.requests_per_day, (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
@@ -367,7 +368,7 @@ effective_profile_data AS (
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        (SELECT le.last_login FROM logins_entry le WHERE le.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
+        (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
         pa.last_active,
         p.created_at,
         p.updated_at,
@@ -379,15 +380,16 @@ effective_profile_data AS (
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
-        SELECT last_active 
-        FROM activity_entry 
-        WHERE profile_id = p.id 
-        ORDER BY created_at DESC 
+        SELECT ae.last_active
+        FROM profile_activity_junction pactj
+        JOIN activity_entry ae ON ae.id = pactj.activity_id
+        WHERE pactj.profile_id = p.id
+        ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
     GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE), 
-             rl.requests_per_day, (SELECT le.last_login FROM logins_entry le WHERE le.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
+             rl.requests_per_day, (SELECT le.last_login FROM profile_logins_junction plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
@@ -517,8 +519,9 @@ earliest_attempt AS (
     -- Get all profiles in those departments
     JOIN profile_departments_junction pd_all ON pd_all.department_id = pd_effective.department_id
         AND pd_all.active = true
-    -- Get attempts for those profiles (using attempts_entry.profile_id directly)
-    JOIN attempts_entry sa ON sa.profile_id = pd_all.profile_id
+    -- Get attempts for those profiles (via profile_attempts_junction)
+    JOIN profile_attempts_junction patj ON patj.profile_id = pd_all.profile_id
+    JOIN attempts_entry sa ON sa.id = patj.attempt_id
     WHERE pd_effective.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd_effective.active = true
 ),
@@ -757,14 +760,15 @@ simulation_ids_computed AS (
 drafts_data AS (
     -- Get all drafts for effective profile
     -- Draft data is now stored in draft_* junction tables, not in payload
-    SELECT 
+    SELECT
         d.id,
         d.artifact::text as artifact_type,
         NULL::jsonb as payload,
         d.version,
         d.updated_at
-    FROM drafts_entry d
-    WHERE d.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+    FROM profile_drafts_junction pdj
+    JOIN drafts_entry d ON d.id = pdj.draft_id
+    WHERE pdj.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
 ),
 drafts_aggregated AS (
     -- Aggregate drafts as array of composite types

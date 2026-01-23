@@ -214,7 +214,7 @@ scenario_data AS (
     JOIN scenario_artifact sa ON sa.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = sa.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN scenario_tree_entry st ON st.parent_id = sa.id AND st.child_id = sa.id
+    LEFT JOIN scenario_tree_junction st ON st.parent_id = sa.id AND st.child_id = sa.id
     WHERE st.parent_id IS NOT NULL
 ),
 field_data AS (

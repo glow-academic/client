@@ -16,7 +16,15 @@ VOLATILE
 AS $$
     -- NOTE: chat table doesn't have trace_id column
     -- trace_id is stored in groups_entry table, not chat
-    INSERT INTO chats_entry(title, scenario_id, completed) 
-    VALUES ('Test Chat', test_create_test_chat_v4.scenario_id, false) 
-    RETURNING id as chat_id;
+    WITH new_chat AS (
+        INSERT INTO chats_entry(title, completed)
+        VALUES ('Test Chat', false)
+        RETURNING id
+    ),
+    junction_insert AS (
+        INSERT INTO scenario_chats_junction(scenario_id, chat_id)
+        SELECT test_create_test_chat_v4.scenario_id, new_chat.id
+        FROM new_chat
+    )
+    SELECT id AS chat_id FROM new_chat;
 $$;

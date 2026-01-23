@@ -14,7 +14,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id, simulation_id 
-    FROM attempts_entry 
-    WHERE id = test_get_attempt_by_id_v4.attempt_id;
+    SELECT ae.id, saj.simulation_id
+    FROM attempts_entry ae
+    LEFT JOIN simulation_attempts_junction saj ON saj.attempt_id = ae.id
+    WHERE ae.id = test_get_attempt_by_id_v4.attempt_id;
 $$;

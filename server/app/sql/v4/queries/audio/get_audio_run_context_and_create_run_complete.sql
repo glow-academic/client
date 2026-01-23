@@ -107,7 +107,8 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM params p
-    LEFT JOIN runs_entry mr ON mr.profile_id = p.profile_id
+    LEFT JOIN profile_runs_junction prj ON prj.profile_id = p.profile_id
+    LEFT JOIN runs_entry mr ON mr.id = prj.run_id
     WHERE p.profile_id IS NOT NULL
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -253,11 +254,26 @@ context_data AS (
     WHERE (p.profile_id IS NULL OR validate_rate_limit(COALESCE(prl.req_per_day, 0), COALESCE(rt.runs_today_count, 0)) = TRUE)
 ),
 create_run AS (
-    -- Create run record with profile_id (atomic with context query)
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id, profile_id)
-    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid
+    -- Create run record (atomic with context query)
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id)
+    SELECT 0, 0, NULL
     FROM context_data cd
     RETURNING id
+),
+link_run_agent AS (
+    -- Link run to agent via junction table
+    INSERT INTO agent_runs_junction (agent_id, run_id)
+    SELECT cd.agent_id::uuid, cr.id
+    FROM context_data cd
+    CROSS JOIN create_run cr
+),
+link_run_to_profile AS (
+    -- Link run to profile via junction table
+    INSERT INTO profile_runs_junction (profile_id, run_id)
+    SELECT cd.profile_id::uuid, cr.id
+    FROM context_data cd
+    CROSS JOIN create_run cr
+    WHERE cd.profile_id IS NOT NULL
 )
 SELECT
     -- Context data

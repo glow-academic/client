@@ -16,9 +16,15 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH new_attempt AS (
-    INSERT INTO eval_attempts (eval_id, created_at, infinite_mode)
-    VALUES (api_start_benchmark_attempt_v4.eval_id, NOW(), COALESCE(api_start_benchmark_attempt_v4.infinite_mode, false))
+    INSERT INTO eval_attempts (created_at, infinite_mode)
+    VALUES (NOW(), COALESCE(api_start_benchmark_attempt_v4.infinite_mode, false))
     RETURNING id as attempt_id, infinite_mode
+),
+new_attempt_junction AS (
+    INSERT INTO eval_attempts_junction (eval_id, attempt_id)
+    SELECT api_start_benchmark_attempt_v4.eval_id, na.attempt_id
+    FROM new_attempt na
+    RETURNING eval_id, attempt_id
 ),
 eval_data AS (
     SELECT 
@@ -40,10 +46,10 @@ pending_runs AS (
     WHERE er.eval_id = api_start_benchmark_attempt_v4.eval_id AND er.completed = false
 ),
 pending_groups AS (
-    SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM grades_entry gr WHERE gr.group_id = eg.group_id)) as pending_group_ids
+    SELECT ARRAY_AGG(eg.group_id::uuid) FILTER (WHERE NOT EXISTS (SELECT 1 FROM grades_entry gr JOIN runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id)) as pending_group_ids
     FROM eval_groups_junction eg
     WHERE eg.eval_id = api_start_benchmark_attempt_v4.eval_id
-      AND NOT EXISTS (SELECT 1 FROM grades_entry gr WHERE gr.group_id = eg.group_id)
+      AND NOT EXISTS (SELECT 1 FROM grades_entry gr JOIN runs_entry r ON r.id = gr.run_id WHERE r.group_id = eg.group_id)
 )
 SELECT 
     na.attempt_id::text,

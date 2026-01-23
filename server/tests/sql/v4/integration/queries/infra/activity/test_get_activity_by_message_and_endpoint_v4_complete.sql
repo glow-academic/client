@@ -19,9 +19,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id, message, endpoint, profile_id, error, created_at
-    FROM audits_entry
-    WHERE message = p_message AND endpoint = p_endpoint
-    ORDER BY created_at DESC
+    SELECT ae.id, ae.message, ae.endpoint, paj.profile_id, ae.error, ae.created_at
+    FROM audits_entry ae
+    LEFT JOIN profile_audits_junction paj ON paj.audit_id = ae.id
+    WHERE ae.message = p_message AND ae.endpoint = p_endpoint
+    ORDER BY ae.created_at DESC
     LIMIT 1;
 $$;

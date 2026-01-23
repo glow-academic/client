@@ -118,17 +118,18 @@ draft_payload_data AS (
     WHERE x.draft_id IS NOT NULL
     LIMIT 1
 ),
--- Get group_id from draft or provider
+-- Get group_id from draft or provider (via junction tables)
 draft_group_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             d.group_id,
-            p.group_id,
+            pgj.group_id,
             (SELECT id FROM groups_entry ORDER BY created_at DESC LIMIT 1)
         ) as group_id
     FROM params x
     LEFT JOIN drafts_entry d ON d.id = x.draft_id
     LEFT JOIN provider_artifact p ON p.id = x.provider_id
+    LEFT JOIN provider_groups_junction pgj ON pgj.provider_id = p.id
     -- Always return at least one row (use COALESCE to handle NULL draft_id/provider_id case)
     WHERE TRUE
     LIMIT 1
@@ -208,8 +209,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -248,8 +248,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -422,8 +421,7 @@ descriptions_data AS (
                     d.generated = true
                     AND EXISTS (
                         SELECT 1 FROM calls_entry c
-                        JOIN messages_entry m ON m.id = c.message_id
-                        JOIN runs_entry r ON r.id = m.run_id
+                        JOIN runs_entry r ON r.id = c.run_id
                         WHERE c.id = d.call_id
                           AND r.group_id = dgd.group_id
                     )

@@ -15,12 +15,13 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT 
-        profile_id,
-        last_active,
-        created_at
-    FROM activity_entry
-    WHERE profile_id = input_profile_id
-    ORDER BY created_at DESC
+    SELECT
+        paj.profile_id,
+        ae.last_active,
+        ae.created_at
+    FROM activity_entry ae
+    JOIN profile_activity_junction paj ON paj.activity_id = ae.id
+    WHERE paj.profile_id = input_profile_id
+    ORDER BY ae.created_at DESC
     LIMIT 1;
 $$;

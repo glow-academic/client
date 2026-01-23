@@ -38,23 +38,23 @@ chat_context AS (
     SELECT
         c.id as chat_id,
         (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as chat_title,
-        c.scenario_id,
-        g.trace_id,
+        (SELECT scj.scenario_id FROM scenario_chats_junction scj WHERE scj.chat_id = c.id LIMIT 1) as scenario_id,
+        NULL::uuid as trace_id,
         sa.id as attempt_id,
-        sa.simulation_id,
-        sa.profile_id
+        (SELECT saj.simulation_id FROM simulation_attempts_junction saj WHERE saj.attempt_id = sa.id LIMIT 1) as simulation_id,
+        (SELECT paj.profile_id FROM profile_attempts_junction paj WHERE paj.attempt_id = sa.id LIMIT 1) as profile_id
     FROM params p
     JOIN chats_entry c ON c.id = p.chat_id
     JOIN attempts_entry sa ON sa.id = c.attempt_id
-    LEFT JOIN groups_entry g ON g.id = c.group_id
     LIMIT 1
 ),
--- Get or create group for chat (chats_entry now have direct group_id column)
+-- Get or create group for chat (find existing group via runs linked to this chat's messages)
 chat_group AS (
-    SELECT c.group_id
+    SELECT r.group_id
     FROM params p
-    JOIN chats_entry c ON c.id = p.chat_id
-    WHERE c.group_id IS NOT NULL
+    JOIN messages_entry m ON m.chat_id = p.chat_id
+    JOIN runs_entry r ON r.id = m.run_id
+    WHERE r.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
@@ -64,21 +64,10 @@ create_group_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM chat_group)
     RETURNING id AS group_id
 ),
-update_chat_group_if_needed AS (
-    UPDATE chats_entry
-    SET group_id = cg.group_id, updated_at = NOW()
-    FROM params p
-    CROSS JOIN create_group_if_needed cg
-    WHERE chats_entry.id = p.chat_id
-      AND chats_entry.group_id IS NULL
-    RETURNING chats_entry.group_id
-),
 selected_group AS (
     SELECT group_id FROM chat_group
     UNION ALL
     SELECT group_id FROM create_group_if_needed
-    UNION ALL
-    SELECT group_id FROM update_chat_group_if_needed
 ),
 target_group AS (
     SELECT group_id
@@ -91,18 +80,29 @@ latest_run AS (
     FROM params p
     JOIN target_group tg ON true
     JOIN runs_entry r ON r.group_id = tg.group_id
-    JOIN chat_context cc ON cc.profile_id = r.profile_id
-    WHERE r.agent_id = (SELECT agent_id FROM member_agent)
+    JOIN chat_context cc ON true
+    LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    WHERE (cc.profile_id IS NULL OR prj.profile_id = cc.profile_id)
+      AND arj.agent_id = (SELECT agent_id FROM member_agent)
     ORDER BY r.created_at DESC
     LIMIT 1
 ),
 -- Upsert run (create if doesn't exist)
 create_run_if_needed AS (
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id)
-    SELECT 0, 0, NULL, ma.agent_id
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id)
+    SELECT 0, 0, NULL
     FROM member_agent ma
     WHERE NOT EXISTS (SELECT 1 FROM latest_run)
     RETURNING id as run_id
+),
+-- Link new run to agent via junction
+link_run_to_agent AS (
+    INSERT INTO agent_runs_junction (agent_id, run_id)
+    SELECT ma.agent_id, cr.run_id
+    FROM member_agent ma
+    CROSS JOIN create_run_if_needed cr
+    RETURNING run_id
 ),
 upserted_run AS (
     SELECT run_id FROM latest_run
@@ -119,16 +119,19 @@ link_run_to_group AS (
       AND runs_entry.group_id IS NULL
     RETURNING runs_entry.id as run_id
 ),
--- Update run with profile_id (if not already set)
+-- Link run to profile via junction (if not already linked)
 link_profile_to_run AS (
-    UPDATE runs_entry r
-    SET profile_id = cc.profile_id
+    INSERT INTO profile_runs_junction (profile_id, run_id)
+    SELECT cc.profile_id, ur.run_id
     FROM upserted_run ur
     CROSS JOIN chat_context cc
-    WHERE r.id = ur.run_id
-      AND cc.profile_id IS NOT NULL
-      AND r.profile_id IS NULL
-    RETURNING r.id as run_id
+    WHERE cc.profile_id IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM profile_runs_junction prj
+          WHERE prj.run_id = ur.run_id AND prj.profile_id = cc.profile_id
+      )
+    ON CONFLICT DO NOTHING
+    RETURNING run_id
 ),
 -- Get speak tool_id for member agent (find by name only since 'contents' is now an entry type)
 get_speak_tool_id AS (
@@ -156,14 +159,14 @@ create_message_if_needed AS (
 ),
 -- Create synthetic tool call for new user messages_entry
 user_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
-    SELECT 
-        'member_progress_user_' || cm.message_id::text, 
-        gst.tool_id, 
+    INSERT INTO calls_entry (external_call_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    SELECT
+        'member_progress_user_' || cm.message_id::text,
+        ur.run_id,
         (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gst.tool_id LIMIT 1),
         '',
-        true, 
-        cm.created_at, 
+        true,
+        cm.created_at,
         cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN get_speak_tool_id gst
@@ -171,21 +174,22 @@ user_tool_call AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
-link_user_tool_call_to_message AS (
-    UPDATE calls_entry
-    SET message_id = cm.message_id
-    FROM create_message_if_needed cm
+-- Link tool call to tool via junction
+link_user_tool_call_to_tool AS (
+    INSERT INTO tool_calls_junction (tool_id, call_id)
+    SELECT gst.tool_id, utc.tool_call_id
+    FROM get_speak_tool_id gst
     CROSS JOIN user_tool_call utc
-    WHERE calls_entry.id = utc.tool_call_id
-      AND NOT EXISTS (SELECT 1 FROM latest_user_message)
-    RETURNING calls_entry.id as call_id
+    WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
+    RETURNING call_id
 ),
--- Get existing tool_call_id for existing user messages_entry (via calls_entry.message_id)
+-- Get existing tool_call_id for existing user messages_entry (via calls_entry.run_id)
 existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
     JOIN contents_entry ce ON ce.message_id = lum.message_id AND ce.idx = 0
-    JOIN calls_entry tc ON tc.message_id = lum.message_id
+    JOIN messages_entry m ON m.id = lum.message_id
+    JOIN calls_entry tc ON tc.run_id = m.run_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls_entry
@@ -244,7 +248,7 @@ create_audio_if_provided AS (
     WHERE p.upload_id IS NOT NULL
     RETURNING id as audio_id
 ),
--- Audio is now linked via audios_resource.call_id -> calls_entry.message_id (no junction table needed)
+-- Audio is now linked via audios_resource.call_id -> calls_entry.run_id (no junction table needed)
 link_audio_placeholder AS (
     SELECT 1 WHERE false  -- Placeholder CTE to maintain structure
 ),
@@ -252,9 +256,7 @@ link_audio_placeholder AS (
 latest_message_for_branch AS (
     SELECT m.id as parent_id
     FROM params p
-    JOIN chats_entry c ON c.id = p.chat_id
-    JOIN runs_entry r ON r.group_id = c.group_id
-    JOIN messages_entry m ON m.run_id = r.id
+    JOIN messages_entry m ON m.chat_id = p.chat_id
     WHERE m.role IN ('user'::message_type, 'assistant'::message_type, 'system'::message_type, 'developer'::message_type)
     ORDER BY m.created_at DESC
     LIMIT 1
@@ -304,10 +306,11 @@ agent_system_prompt AS (
         pr_default.system_prompt as system_prompt
     FROM run_info ri
     JOIN runs_entry r ON r.id = ri.run_id
-    JOIN agents_resource a ON a.id = r.agent_id
+    JOIN agent_runs_junction arj ON arj.run_id = r.id
+    JOIN agents_resource a ON a.id = arj.agent_id
     LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
-    WHERE ri.agent_id IS NOT NULL
+    WHERE arj.agent_id IS NOT NULL
     AND pr_default.system_prompt IS NOT NULL
     AND pr_default.system_prompt != ''
 ),
@@ -360,9 +363,9 @@ scenario_developer_content AS (
         'The following is the scenario for the chat: ' || ps.problem_statement as content
     FROM run_info ri
     JOIN upserted_run ur ON ur.run_id = ri.run_id
-    JOIN target_group tg ON true
-    JOIN chats_entry c ON c.group_id = tg.group_id
-    JOIN scenario_problem_statements_junction sps ON sps.scenario_id = c.scenario_id AND sps.active = true
+    JOIN params p ON true
+    JOIN scenario_chats_junction scj ON scj.chat_id = p.chat_id
+    JOIN scenario_problem_statements_junction sps ON sps.scenario_id = scj.scenario_id AND sps.active = true
     JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE ps.problem_statement IS NOT NULL
     AND ps.problem_statement != ''

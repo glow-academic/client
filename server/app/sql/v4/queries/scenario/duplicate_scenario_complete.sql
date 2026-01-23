@@ -121,11 +121,18 @@ group_target AS (
     LIMIT 1
 ),
 new_scenario AS (
-    INSERT INTO scenario_artifact (group_id, created_at, updated_at)
-    SELECT gt.group_id, NOW(), NOW()
+    INSERT INTO scenario_artifact (created_at, updated_at)
+    SELECT NOW(), NOW()
     FROM source_scenario ss
     CROSS JOIN group_target gt
     RETURNING id
+),
+link_scenario_group AS (
+    INSERT INTO scenario_groups_junction (scenario_id, group_id)
+    SELECT ns.id, gt.group_id
+    FROM new_scenario ns
+    CROSS JOIN group_target gt
+    ON CONFLICT (scenario_id, group_id) DO NOTHING
 ),
 link_name AS (
     -- Link name to new scenario
@@ -160,8 +167,8 @@ link_images_enabled_flag AS (
     WHERE ss.images_enabled = true
 ),
 insert_tree_edge AS (
-    INSERT INTO scenario_tree_entry (parent_id, child_id, active, created_at, updated_at)
-    SELECT ns.id, ns.id, true, NOW(), NOW()
+    INSERT INTO scenario_tree_junction (parent_id, child_id, active, created_at)
+    SELECT ns.id, ns.id, true, NOW()
     FROM new_scenario ns
 ),
 create_problem_statements AS (

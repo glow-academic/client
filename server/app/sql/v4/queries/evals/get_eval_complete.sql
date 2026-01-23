@@ -395,8 +395,7 @@ name_suggestions_data AS (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -453,8 +452,7 @@ description_suggestions_data AS (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -612,8 +610,7 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1394,13 +1391,15 @@ runs_base AS (
         r.id as run_id,
         r.created_at,
         NULL::uuid as model_id,
-        r.profile_id,
-        r.agent_id,
+        prj.profile_id,
+        arj.agent_id,
         NULL::uuid as persona_id
     FROM runs_entry r
+    LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
     WHERE
         (SELECT effective_profile_id FROM profile_type_check) IS NULL
-        OR r.profile_id = (SELECT effective_profile_id FROM profile_type_check)
+        OR prj.profile_id = (SELECT effective_profile_id FROM profile_type_check)
 ),
 runs_with_names AS (
     SELECT

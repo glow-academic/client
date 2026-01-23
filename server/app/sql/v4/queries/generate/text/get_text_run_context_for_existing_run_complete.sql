@@ -80,11 +80,12 @@ WITH params AS (
 existing_run AS (
     SELECT
         r.id as run_id,
-        r.agent_id,
+        arj.agent_id,
         gd.group_id,
         gd.trace_id
     FROM runs_entry r
     CROSS JOIN params p
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
     LEFT JOIN groups_entry g ON g.id = r.group_id
     LEFT JOIN LATERAL (
         SELECT
@@ -112,8 +113,9 @@ selected_agent AS (
 ),
 -- Get profile FROM runs_entry
 run_profile AS (
-    SELECT r.profile_id
+    SELECT prj.profile_id
     FROM runs_entry r
+    JOIN profile_runs_junction prj ON prj.run_id = r.id
     CROSS JOIN params p
     WHERE r.id = p.run_id
     LIMIT 1
@@ -131,8 +133,9 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs_entry mr
+    JOIN profile_runs_junction prj2 ON prj2.run_id = mr.id
     CROSS JOIN run_profile rp
-    WHERE mr.profile_id = rp.profile_id
+    WHERE prj2.profile_id = rp.profile_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys_junction)
@@ -512,7 +515,7 @@ upload_info AS (
         u.mime_type
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
-    JOIN calls_entry c_audio ON c_audio.message_id = m.id
+    JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
     JOIN audios_resource ar ON ar.call_id = c_audio.id AND ar.active = true
     JOIN uploads_entry u ON u.id = ar.upload_id
     LIMIT 1

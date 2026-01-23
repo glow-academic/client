@@ -93,10 +93,11 @@ primary_email AS (
 ),
 existing_profile AS (
     -- Find existing profile by primary email in profile_emails_junction table
-    SELECT pe.profile_id as id, p.group_id
+    SELECT pe.profile_id as id, pgj.group_id
     FROM profile_emails_junction pe
     JOIN emails_resource e ON pe.email_id = e.id
     JOIN profile_artifact p ON p.id = pe.profile_id
+    LEFT JOIN profile_groups_junction pgj ON pgj.profile_id = p.id
     WHERE e.email = (SELECT email FROM primary_email)
       AND pe.active = true
     LIMIT 1
@@ -123,16 +124,25 @@ name_resource AS (
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, group_id, updated_at
+        id, updated_at
     )
     SELECT
         COALESCE((SELECT id FROM existing_profile LIMIT 1), (SELECT profile_id_new FROM params)),  -- Use existing ID if found, else new UUID
-        COALESCE((SELECT group_id FROM existing_profile LIMIT 1), (SELECT id FROM new_group)),
         NOW()
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (id) DO UPDATE SET
         updated_at = NOW()
     RETURNING id, NOT EXISTS(SELECT 1 FROM existing_profile) as created
+),
+-- Link profile to group via junction table
+link_profile_group AS (
+    INSERT INTO profile_groups_junction (profile_id, group_id)
+    SELECT
+        pu.id,
+        COALESCE((SELECT group_id FROM existing_profile LIMIT 1), (SELECT id FROM new_group))
+    FROM profile_upsert pu
+    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
 -- Insert/update role via profile_roles_junction junction
 role_resource AS (

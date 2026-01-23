@@ -150,11 +150,12 @@ simulation_scenarios_data AS (
     GROUP BY ss.simulation_id
 ),
 attempts_entry AS (
-    SELECT 
-        sa.simulation_id,
+    SELECT
+        saj.simulation_id,
         COUNT(*) as attempt_count
     FROM attempts_entry sa
-    GROUP BY sa.simulation_id
+    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
+    GROUP BY saj.simulation_id
 ),
 simulation_active_cohort_links AS (
     SELECT 
@@ -307,7 +308,7 @@ scenario_base_data AS (
     LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
-    LEFT JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
+    LEFT JOIN scenario_tree_junction st ON st.parent_id = s.id AND st.child_id = s.id
     WHERE st.parent_id IS NOT NULL
 ),
 scenario_persona_mapping AS (

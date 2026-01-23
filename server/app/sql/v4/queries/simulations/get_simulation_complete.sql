@@ -358,14 +358,14 @@ draft_scenario_ids_data AS (
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
 draft_payload_data AS (
-    SELECT 
+    SELECT
         NULL::jsonb as payload,
         d.version as draft_version,
         (SELECT scenario_ids FROM draft_scenario_ids_data) as draft_scenario_ids
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
     LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
@@ -575,7 +575,7 @@ scenario_statistics AS (
         ss.scenario_id,
         COALESCE(
             (SELECT st.parent_id 
-             FROM scenario_tree_entry st 
+             FROM scenario_tree_junction st 
              WHERE st.child_id = ss.scenario_id 
                AND st.parent_id = st.child_id 
              LIMIT 1),
@@ -593,20 +593,21 @@ scenario_statistics AS (
         MAX(sc.created_at) as last_used_date
     FROM params x
     JOIN simulation_scenarios_junction ss ON ss.simulation_id = x.simulation_id
-    LEFT JOIN chats_entry sc ON (
-        sc.scenario_id IN (
-            SELECT st2.child_id 
-            FROM scenario_tree_entry st2 
+    LEFT JOIN scenario_chats_junction scj_sc ON (
+        scj_sc.scenario_id IN (
+            SELECT st2.child_id
+            FROM scenario_tree_junction st2
             WHERE st2.parent_id = COALESCE(
-                (SELECT st3.parent_id 
-                 FROM scenario_tree_entry st3 
-                 WHERE st3.child_id = ss.scenario_id 
+                (SELECT st3.parent_id
+                 FROM scenario_tree_junction st3
+                 WHERE st3.child_id = ss.scenario_id
                    AND st3.parent_id = st3.child_id),
                 ss.scenario_id
             )
         )
-        OR sc.scenario_id = ss.scenario_id
+        OR scj_sc.scenario_id = ss.scenario_id
     )
+    LEFT JOIN chats_entry sc ON sc.id = scj_sc.chat_id
     LEFT JOIN grades_entry scg ON scg.chat_id = sc.id
     WHERE x.simulation_id IS NOT NULL
     GROUP BY ss.scenario_id
@@ -643,7 +644,7 @@ valid_scenarios_list AS (
         COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description
     FROM scenario_artifact s
     CROSS JOIN user_department_ids udi
-    JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
+    JOIN scenario_tree_junction st ON st.parent_id = s.id AND st.child_id = s.id
     LEFT JOIN scenario_departments_junction sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
       AND (
@@ -654,7 +655,7 @@ valid_scenarios_list AS (
     SELECT DISTINCT
         COALESCE(
             (SELECT st2.parent_id 
-             FROM scenario_tree_entry st2 
+             FROM scenario_tree_junction st2 
              WHERE st2.child_id = ssb.scenario_id 
                AND st2.parent_id = st2.child_id 
              LIMIT 1),
@@ -666,7 +667,7 @@ valid_scenarios_list AS (
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
     JOIN scenarios_resource s2 ON s2.id = COALESCE(
         (SELECT st3.parent_id 
-         FROM scenario_tree_entry st3 
+         FROM scenario_tree_junction st3 
          WHERE st3.child_id = ssb.scenario_id 
            AND st3.parent_id = st3.child_id 
          LIMIT 1),
@@ -953,7 +954,7 @@ department_scenario_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT s.id ORDER BY s.id) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::uuid[]) as scenario_ids
     FROM user_departments_for_mapping ud
     LEFT JOIN scenarios_resource s ON EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
-    INNER JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
+    INNER JOIN scenario_tree_junction st ON st.parent_id = s.id AND st.child_id = s.id
     LEFT JOIN scenario_departments_junction sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE (sd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
     GROUP BY ud.id
@@ -1233,8 +1234,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1272,8 +1272,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1310,8 +1309,7 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -2142,8 +2140,7 @@ scenario_suggestions_data AS (
                            s.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = s.call_id
                                  AND r.group_id = dgd.group_id
                            )

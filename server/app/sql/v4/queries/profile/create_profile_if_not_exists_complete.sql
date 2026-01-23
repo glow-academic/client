@@ -87,14 +87,20 @@ name_id_lookup AS (
 ),
 -- Insert profile (only if creating)
 profile_insert AS (
-    INSERT INTO profile_artifact (id, group_id, updated_at)
+    INSERT INTO profile_artifact (id, updated_at)
     SELECT
         (SELECT profile_id_new FROM params),
-        (SELECT id FROM new_group),
         NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
       AND EXISTS (SELECT 1 FROM new_group)
     RETURNING id, true as created
+),
+-- Link profile to group via junction table
+link_profile_group AS (
+    INSERT INTO profile_groups_junction (profile_id, group_id)
+    SELECT pi.id, (SELECT id FROM new_group)
+    FROM profile_insert pi
+    ON CONFLICT (profile_id, group_id) DO NOTHING
 ),
 -- Insert role (only if creating)
 role_resource AS (

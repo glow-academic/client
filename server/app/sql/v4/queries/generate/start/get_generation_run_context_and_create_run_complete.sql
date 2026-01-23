@@ -101,8 +101,9 @@ runs_today AS (
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs_entry mr
-    WHERE mr.profile_id = (SELECT profile_id FROM params)
+    FROM profile_runs_junction prj
+    JOIN runs_entry mr ON mr.id = prj.run_id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get or create group (for trace_id and group_id)
@@ -147,13 +148,28 @@ rate_limit_check AS (
 ),
 -- Create run with group_id directly
 create_run AS (
-    INSERT INTO runs_entry (input_tokens, output_tokens, agent_id, profile_id, group_id)
-    SELECT 0, 0, sa.agent_id, p.profile_id, gd.group_id
+    INSERT INTO runs_entry (input_tokens, output_tokens, group_id)
+    SELECT 0, 0, gd.group_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
     CROSS JOIN params p
     CROSS JOIN group_data gd
     RETURNING id as run_id
+),
+link_run_agent AS (
+    -- Link run to agent via junction table
+    INSERT INTO agent_runs_junction (agent_id, run_id)
+    SELECT sa.agent_id, cr.run_id
+    FROM selected_agent sa
+    CROSS JOIN create_run cr
+),
+link_run_to_profile AS (
+    -- Link run to profile via junction table
+    INSERT INTO profile_runs_junction (profile_id, run_id)
+    SELECT p.profile_id, cr.run_id
+    FROM params p
+    CROSS JOIN create_run cr
+    WHERE p.profile_id IS NOT NULL
 ),
 -- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)
 link_group AS (

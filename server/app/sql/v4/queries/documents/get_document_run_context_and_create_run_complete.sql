@@ -159,8 +159,9 @@ runs_today AS (
     SELECT
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs_entry mr
-    WHERE mr.profile_id = (SELECT profile_id FROM params)
+    FROM profile_runs_junction prj
+    JOIN runs_entry mr ON mr.id = prj.run_id
+    WHERE prj.profile_id = (SELECT profile_id FROM params)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys_junction)
@@ -445,12 +446,27 @@ context_data AS (
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
 create_run AS (
-    -- Create run record with profile_id and group_id directly
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id, profile_id, group_id)
-    SELECT 0, 0, NULL, cd.agent_id::uuid, cd.profile_id::uuid, gd.group_id
+    -- Create run record with group_id directly
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, group_id)
+    SELECT 0, 0, NULL, gd.group_id
     FROM context_data cd
     CROSS JOIN group_data gd
     RETURNING id
+),
+link_run_agent AS (
+    -- Link run to agent via junction table
+    INSERT INTO agent_runs_junction (agent_id, run_id)
+    SELECT cd.agent_id::uuid, cr.id
+    FROM context_data cd
+    CROSS JOIN create_run cr
+),
+link_run_to_profile AS (
+    -- Link run to profile via junction table
+    INSERT INTO profile_runs_junction (profile_id, run_id)
+    SELECT cd.profile_id::uuid, cr.id
+    FROM context_data cd
+    CROSS JOIN create_run cr
+    WHERE cd.profile_id IS NOT NULL
 ),
 link_group AS (
     -- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)

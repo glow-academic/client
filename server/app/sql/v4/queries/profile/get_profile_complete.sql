@@ -364,11 +364,11 @@ routes_data AS (
 ),
 -- Get group_id from target profile or current profile
 group_id_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT d.group_id FROM drafts_entry d WHERE d.id = (SELECT draft_id FROM params)),
-            (SELECT p.group_id FROM profile_artifact p WHERE p.id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)),
-            (SELECT p.group_id FROM profile_artifact p WHERE p.id = (SELECT resolved_profile_id FROM resolve_current_profile_id))
+            (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) LIMIT 1),
+            (SELECT pgj.group_id FROM profile_groups_junction pgj WHERE pgj.profile_id = (SELECT resolved_profile_id FROM resolve_current_profile_id) LIMIT 1)
         ) as group_id
     FROM params
     LIMIT 1
@@ -423,8 +423,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = gid.group_id
                            )
@@ -513,8 +512,7 @@ email_suggestions_data AS (
                            AND e.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = e.call_id
                                  AND r.group_id = gid.group_id
                            )
@@ -609,8 +607,7 @@ request_limit_suggestions_data AS (
                      rl.generated = true
                      AND EXISTS (
                          SELECT 1 FROM calls_entry c
-                         JOIN messages_entry m ON m.id = c.message_id
-                         JOIN runs_entry r ON r.id = m.run_id
+                         JOIN runs_entry r ON r.id = c.run_id
                          WHERE c.id = rl.call_id
                            AND r.group_id = gid.group_id
                      )
@@ -747,8 +744,7 @@ department_suggestions_data AS (
                        d.generated = true
                        AND EXISTS (
                            SELECT 1 FROM calls_entry c
-                           JOIN messages_entry m ON m.id = c.message_id
-                           JOIN runs_entry r ON r.id = m.run_id
+                           JOIN runs_entry r ON r.id = c.run_id
                            WHERE c.id = d.call_id
                              AND r.group_id = gid.group_id
                        )

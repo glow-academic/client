@@ -15,6 +15,8 @@ BEGIN
 END $$;
 
 -- 2) Recreate function
+-- chats_entry no longer has group_id directly.
+-- Path: chat.id -> messages_entry.chat_id -> messages_entry.run_id -> runs_entry.group_id
 CREATE OR REPLACE FUNCTION socket_get_group_id_from_chat_group_v4(
     chat_id uuid
 )
@@ -24,8 +26,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT c.group_id
+    SELECT r.group_id
     FROM chats_entry c
+    JOIN messages_entry m ON m.chat_id = c.id
+    JOIN runs_entry r ON r.id = m.run_id
     WHERE c.id = $1
     LIMIT 1
 $$;

@@ -68,10 +68,10 @@ usage_check AS (
                 AND ssf.value = true
           )
     ) + (
-        SELECT COUNT(*) FROM chats_entry c WHERE c.scenario_id = x.scenario_id
+        SELECT COUNT(*) FROM scenario_chats_junction scj WHERE scj.scenario_id = x.scenario_id
     ) + (
         SELECT COUNT(*)
-        FROM scenario_tree_entry st
+        FROM scenario_tree_junction st
         WHERE st.parent_id = x.scenario_id OR st.child_id = x.scenario_id
     ) as usage_count
     FROM params x

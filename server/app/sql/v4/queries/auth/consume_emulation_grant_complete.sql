@@ -61,12 +61,12 @@ grant_consumed AS (
         updated_at = NOW()
     WHERE id = (SELECT grant_id FROM params)
       AND (SELECT ok FROM validity) = true
-    RETURNING actor_profile_id, target_profile_id, full_emulation
+    RETURNING id, full_emulation
 )
 SELECT
     (SELECT ok FROM validity) as ok,
     (SELECT reason FROM reason_computed) as reason,
-    (SELECT actor_profile_id FROM grant_consumed) as actor_profile_id,
-    (SELECT target_profile_id FROM grant_consumed) as target_profile_id,
+    (SELECT pga.profile_id FROM profile_grants_actor_junction pga WHERE pga.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as actor_profile_id,
+    (SELECT pgt.profile_id FROM profile_grants_target_junction pgt WHERE pgt.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id,
     (SELECT full_emulation FROM grant_consumed) as full_emulation
 $$;

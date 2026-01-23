@@ -494,8 +494,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -538,8 +537,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -577,8 +575,7 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -615,8 +612,7 @@ points_suggestions_data AS (
                            AND p.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = p.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -658,8 +654,7 @@ standard_group_suggestions_data AS (
                            AND sg.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = sg.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -698,8 +693,7 @@ standard_suggestions_data AS (
                            AND s.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = s.call_id
                                  AND r.group_id = dgd.group_id
                            )

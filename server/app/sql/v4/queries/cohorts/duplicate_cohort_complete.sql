@@ -94,11 +94,17 @@ new_group AS (
     RETURNING id
 ),
 new_cohort AS (
-    -- Create duplicate cohort with new group_id
-    INSERT INTO cohort_artifact (group_id, created_at, updated_at)
-    SELECT ng.id, NOW(), NOW()
-    FROM new_group ng
+    -- Create duplicate cohort
+    INSERT INTO cohort_artifact (created_at, updated_at)
+    VALUES (NOW(), NOW())
     RETURNING id
+),
+-- Link cohort to group via junction table
+link_cohort_group AS (
+    INSERT INTO cohort_groups_junction (cohort_id, group_id, created_at)
+    SELECT nc.id, ng.id, NOW()
+    FROM new_cohort nc
+    CROSS JOIN new_group ng
 ),
 -- Link cohort to title
 link_cohort_title AS (

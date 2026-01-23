@@ -25,16 +25,14 @@ RETURNS TABLE (
     parent_id uuid,
     child_id uuid,
     active boolean,
-    created_at timestamptz,
-    updated_at timestamptz
+    created_at timestamptz
 )
 LANGUAGE sql
 VOLATILE
 AS $$
-INSERT INTO scenario_tree_entry (parent_id, child_id, active, created_at, updated_at)
-VALUES (api_insert_scenario_tree_edge_v4.parent_id, api_insert_scenario_tree_edge_v4.child_id, api_insert_scenario_tree_edge_v4.active, NOW(), NOW())
+INSERT INTO scenario_tree_junction (parent_id, child_id, active)
+VALUES (api_insert_scenario_tree_edge_v4.parent_id, api_insert_scenario_tree_edge_v4.child_id, api_insert_scenario_tree_edge_v4.active)
 ON CONFLICT (parent_id, child_id) DO UPDATE SET
-    active = EXCLUDED.active,
-    updated_at = NOW()
-RETURNING parent_id, child_id, active, created_at, updated_at
+    active = EXCLUDED.active
+RETURNING parent_id, child_id, active, created_at
 $$;

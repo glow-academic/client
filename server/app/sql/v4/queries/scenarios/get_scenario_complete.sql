@@ -384,14 +384,14 @@ WITH params AS (
         draft_id AS draft_id
 ),
 draft_payload_data AS (
-    SELECT 
+    SELECT
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
-    
+
     LIMIT 1
 ),
 -- Conditional: Only check scenario existence if scenario_id provided
@@ -675,7 +675,7 @@ scenario_core AS (
         END as use_templates
     FROM params x
     LEFT JOIN scenario_artifact s ON s.id = x.scenario_id
-    LEFT JOIN scenario_tree_entry st ON st.child_id = s.id AND st.parent_id != st.parent_id
+    LEFT JOIN scenario_tree_junction st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     LEFT JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id
@@ -1117,8 +1117,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1160,8 +1159,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -1204,8 +1202,7 @@ problem_statement_suggestions_data AS (
                            AND ps.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = ps.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -2890,8 +2887,7 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )

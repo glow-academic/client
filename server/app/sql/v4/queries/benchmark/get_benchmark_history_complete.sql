@@ -113,15 +113,15 @@ user_profile AS (
 ),
 -- Get eval attempts with eval info
 attempts_with_eval AS (
-    SELECT 
+    SELECT
         ea.id as attempt_id,
         ea.created_at as attempt_created_at,
-        ea.eval_id,
+        eaj.eval_id,
         ea.archived,
         (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
         (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
         -- Get first rubric from junction table (runs_entry or groups_entry based on use_groups)
-        (SELECT combined.rubric_id 
+        (SELECT combined.rubric_id
          FROM (
              SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
@@ -133,9 +133,9 @@ attempts_with_eval AS (
              JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
-         ORDER BY combined.created_at 
+         ORDER BY combined.created_at
          LIMIT 1) as rubric_id,
-        (SELECT (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
          FROM (
              SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
@@ -148,10 +148,11 @@ attempts_with_eval AS (
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
-         ORDER BY combined.created_at 
+         ORDER BY combined.created_at
          LIMIT 1) as rubric_name
     FROM eval_attempts ea
-    JOIN evals_resource e ON e.id = ea.eval_id
+    JOIN eval_attempts_junction eaj ON eaj.attempt_id = ea.id
+    JOIN evals_resource e ON e.id = eaj.eval_id
 ),
 -- Get eval departments for access control
 attempt_eval_departments AS (

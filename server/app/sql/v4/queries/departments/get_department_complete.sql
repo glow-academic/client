@@ -206,13 +206,13 @@ department_exists_check AS (
 ),
 -- Draft data
 draft_payload_data AS (
-    SELECT 
+    SELECT
         NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
     JOIN drafts_entry d ON d.id = x.draft_id
+    JOIN profile_drafts_junction pdj ON pdj.draft_id = d.id AND pdj.profile_id = x.profile_id
     WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
     LIMIT 1
 ),
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
@@ -339,8 +339,7 @@ name_suggestions_data AS (
                            COALESCE(n.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -394,8 +393,7 @@ description_suggestions_data AS (
                            COALESCE(d.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -895,14 +893,16 @@ model_key_associations AS (
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
     FROM runs_entry mr
-    JOIN agent_departments_junction ad ON NULL::uuid = mr.agent_id AND ad.active = true
-    WHERE ad.department_id = (SELECT department_id FROM params) AND mr.agent_id IS NOT NULL
+    JOIN agent_runs_junction arj ON arj.run_id = mr.id
+    JOIN agent_departments_junction ad ON ad.agent_id = arj.agent_id AND ad.active = true
+    WHERE ad.department_id = (SELECT department_id FROM params) AND arj.agent_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs_entry mr
-    JOIN profile_departments_junction pd ON pd.profile_id = mr.profile_id AND pd.active = true
+    FROM profile_runs_junction prj
+    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
@@ -920,7 +920,8 @@ model_run_costs AS (
     FROM run_pricing_entry rpu
     JOIN runs_for_department rfd ON rfd.run_id = rpu.run_id
     JOIN runs_entry r ON r.id = rpu.run_id
-    JOIN agent_models_junction am ON am.agent_id = r.agent_id AND am.active = true
+    JOIN agent_runs_junction arj2 ON arj2.run_id = r.id
+    JOIN agent_models_junction am ON am.agent_id = arj2.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type

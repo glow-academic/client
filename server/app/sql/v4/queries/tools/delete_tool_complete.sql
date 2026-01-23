@@ -42,7 +42,7 @@ usage_check AS (
     SELECT COUNT(*)::bigint as usage_count
     FROM params x
     WHERE EXISTS (
-        SELECT 1 FROM calls_entry c WHERE c.tool_id = x.tool_id
+        SELECT 1 FROM tool_calls_junction tcj WHERE tcj.tool_id = x.tool_id
         UNION ALL
         SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr ON tr.id = at.tool_id WHERE tr.tool_id = x.tool_id AND at.active = true
         UNION ALL

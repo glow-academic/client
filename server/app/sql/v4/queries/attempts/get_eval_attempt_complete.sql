@@ -118,14 +118,15 @@ attempt_exists_check AS (
     )::boolean as attempt_exists
 ),
 attempt_data AS (
-    SELECT 
+    SELECT
         ea.id,
         ea.created_at,
-        ea.eval_id,
+        eaj.eval_id,
         ea.archived,
         ea.infinite_mode
     FROM params x
     JOIN eval_attempts ea ON ea.id = x.attempt_id
+    JOIN eval_attempts_junction eaj ON eaj.attempt_id = ea.id
 ),
 -- Get eval agents for system prompt (use first agent)
 eval_agents_data AS (
@@ -297,15 +298,15 @@ runs_with_details AS (
         -- Run details
         r.created_at as run_created_at,
         -- Model info (via agent_models_junction)
-        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) as model_id,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) LIMIT 1) as model_name,
+        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj.agent_id AND am.active = true LIMIT 1) as model_id,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj.agent_id AND am.active = true LIMIT 1) LIMIT 1) as model_name,
         -- Agent/persona info
-        r.agent_id,
+        arj.agent_id,
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         NULL::uuid as persona_id,
         NULL::text as persona_name,
         -- Profile info
-        r.profile_id,
+        prj.profile_id,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as profile_name,
         -- Grade info (from eval_agent's run, not original run)
         -- Grade is on the eval_agent run via tests_entry.group_id -> runs_entry.group_id -> grades_entry.run_id
@@ -338,8 +339,10 @@ runs_with_details AS (
         ) as grade_created_at
     FROM runs_with_status rws
     JOIN runs_entry r ON r.id = rws.run_id
-    LEFT JOIN agents_resource a ON a.id = r.agent_id
-    LEFT JOIN profile_artifact p ON p.id = r.profile_id
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    LEFT JOIN agents_resource a ON a.id = arj.agent_id
+    LEFT JOIN profile_runs_junction prj ON prj.run_id = r.id
+    LEFT JOIN profile_artifact p ON p.id = prj.profile_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),
 -- Calculate status summary

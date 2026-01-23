@@ -121,20 +121,20 @@ profile_departments_agg AS (
 ),
 recent_runs AS (
     SELECT
-        r.profile_id,
+        prj.profile_id,
         COUNT(*) as run_count
-    FROM runs_entry r
+    FROM profile_runs_junction prj
+    JOIN runs_entry r ON r.id = prj.run_id
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
-      AND r.profile_id IS NOT NULL
-    GROUP BY r.profile_id
+    GROUP BY prj.profile_id
 ),
 profile_total_runs AS (
     SELECT
-        r.profile_id,
+        prj.profile_id,
         COUNT(*) as total_requests
-    FROM runs_entry r
-    WHERE r.profile_id IS NOT NULL
-    GROUP BY r.profile_id
+    FROM profile_runs_junction prj
+    JOIN runs_entry r ON r.id = prj.run_id
+    GROUP BY prj.profile_id
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
@@ -209,10 +209,11 @@ staff_rows AS (
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
-        SELECT last_active
-        FROM activity_entry
-        WHERE profile_id = p.id
-        ORDER BY created_at DESC
+        SELECT ae.last_active
+        FROM profile_activity_junction pactj
+        JOIN activity_entry ae ON ae.id = pactj.activity_id
+        WHERE pactj.profile_id = p.id
+        ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true
     CROSS JOIN user_profile up

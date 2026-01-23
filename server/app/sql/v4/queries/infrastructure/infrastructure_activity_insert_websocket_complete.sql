@@ -23,7 +23,16 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO audits_entry (message, endpoint, profile_id, error, session_id, created_at)
-    VALUES (message, endpoint, profile_id, error, session_id, now());
+    WITH new_audit AS (
+        INSERT INTO audits_entry (message, endpoint, error, session_id, created_at)
+        VALUES (message, endpoint, error, session_id, now())
+        RETURNING id
+    ),
+    link_profile AS (
+        INSERT INTO profile_audits_junction (profile_id, audit_id)
+        SELECT profile_id, na.id
+        FROM new_audit na
+        WHERE profile_id IS NOT NULL
+    )
     SELECT true as success;
 $$;

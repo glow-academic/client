@@ -245,8 +245,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -331,8 +330,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -455,8 +453,7 @@ args_suggestions_data AS (
                            AND a.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = a.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -489,8 +486,7 @@ args_mapping_data AS (
     JOIN args_resource a ON a.active = true
     LEFT JOIN tool_args_junction ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
     LEFT JOIN calls_entry c ON c.id = a.call_id
-    LEFT JOIN messages_entry m ON m.id = c.message_id
-    LEFT JOIN runs_entry r ON r.id = m.run_id
+    LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
 -- Args outputs IDs (selected args_outputs IDs for tool)
@@ -537,8 +533,7 @@ args_outputs_suggestions_data AS (
                            AND ao.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = ao.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -568,8 +563,7 @@ args_outputs_mapping_data AS (
     JOIN args_outputs_resource ao ON ao.active = true
     LEFT JOIN tool_args_outputs_junction tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
     LEFT JOIN calls_entry c ON c.id = ao.call_id
-    LEFT JOIN messages_entry m ON m.id = c.message_id
-    LEFT JOIN runs_entry r ON r.id = m.run_id
+    LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),
 -- Input args fields detail (for Args component - fields from selected args_ids)

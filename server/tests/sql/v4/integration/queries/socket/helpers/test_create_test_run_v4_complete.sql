@@ -21,7 +21,21 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO runs_entry (input_tokens, output_tokens, agent_id)
-    VALUES (0, 0, test_create_test_run_v4.agent_id)
-    RETURNING id, test_create_test_run_v4.department_id, test_create_test_run_v4.model_id, test_create_test_run_v4.agent_id;
+    WITH new_run AS (
+        INSERT INTO runs_entry (input_tokens, output_tokens)
+        VALUES (0, 0)
+        RETURNING id
+    ),
+    junction_insert AS (
+        INSERT INTO agent_runs_junction(agent_id, run_id)
+        SELECT test_create_test_run_v4.agent_id, new_run.id
+        FROM new_run
+        WHERE test_create_test_run_v4.agent_id IS NOT NULL
+    )
+    SELECT
+        new_run.id,
+        test_create_test_run_v4.department_id,
+        test_create_test_run_v4.model_id,
+        test_create_test_run_v4.agent_id
+    FROM new_run;
 $$;

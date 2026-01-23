@@ -75,8 +75,9 @@ WITH scenario_dept AS (
         (SELECT sd.department_id FROM scenario_departments_junction sd
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
     FROM chats_entry sc
+    INNER JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
     INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = scj.scenario_id
     WHERE sc.id = chat_id
 ),
 profile_dept AS (
@@ -86,8 +87,9 @@ profile_dept AS (
     JOIN department_artifact d ON d.id = dr.department_id
     JOIN profile_departments_junction pd ON pd.department_id = dr.id
     JOIN chats_entry sc ON sc.id = chat_id
-    JOIN attempts_entry sa ON sa.id = sc.attempt_id AND sa.profile_id = pd.profile_id
-    WHERE sa.profile_id IS NOT NULL
+    JOIN attempts_entry sa ON sa.id = sc.attempt_id
+    JOIN profile_attempts_junction paj ON paj.attempt_id = sa.id AND paj.profile_id = pd.profile_id
+    WHERE paj.profile_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     LIMIT 1
 ),
@@ -112,9 +114,10 @@ profile_rate_limit AS (
         rl.requests_per_day as req_per_day
     FROM chats_entry sc
     JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = sa.profile_id AND prl.active = true
+    JOIN profile_attempts_junction paj2 ON paj2.attempt_id = sa.id
+    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = paj2.profile_id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    WHERE sc.id = chat_id AND sa.profile_id IS NOT NULL
+    WHERE sc.id = chat_id AND paj2.profile_id IS NOT NULL
     LIMIT 1
 ),
 runs_today AS (
@@ -123,17 +126,20 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs_entry mr
-    WHERE mr.profile_id = (SELECT sa.profile_id FROM chats_entry sc
+    JOIN profile_runs_junction prj ON prj.run_id = mr.id
+    WHERE prj.profile_id = (SELECT paj3.profile_id FROM chats_entry sc
                             JOIN attempts_entry sa ON sa.id = sc.attempt_id
-                            WHERE sc.id = chat_id AND sa.profile_id IS NOT NULL LIMIT 1)
+                            JOIN profile_attempts_junction paj3 ON paj3.attempt_id = sa.id
+                            WHERE sc.id = chat_id AND paj3.profile_id IS NOT NULL LIMIT 1)
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 profile_from_attempt AS (
     -- Get profile_id from attempts_entry for settings resolution
-    SELECT sa.profile_id
+    SELECT paj4.profile_id
     FROM chats_entry sc
     JOIN attempts_entry sa ON sa.id = sc.attempt_id
-    WHERE sc.id = chat_id AND sa.profile_id IS NOT NULL
+    JOIN profile_attempts_junction paj4 ON paj4.attempt_id = sa.id
+    WHERE sc.id = chat_id AND paj4.profile_id IS NOT NULL
     LIMIT 1
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys_junction)
@@ -213,11 +219,11 @@ SELECT
     -- Chat data
     sc.id::text as chat_id,
     sc.title as chat_title,
-    (SELECT g.trace_id FROM groups_entry g JOIN chats_entry c ON c.group_id = g.id WHERE c.id = sc.id LIMIT 1) as trace_id,
+    (SELECT g.trace_id FROM messages_entry m_t JOIN runs_entry r_t ON r_t.id = m_t.run_id JOIN groups_entry g ON g.id = r_t.group_id WHERE m_t.chat_id = sc.id LIMIT 1) as trace_id,
     
     -- Attempt data
     sa.id::text as attempt_id,
-    sa.simulation_id::text,
+    saj_main.simulation_id::text,
     
     -- Scenario data
     s.id::text as scenario_id,
@@ -262,7 +268,7 @@ SELECT
         AND f.name = 'copy_paste_allowed'), false) as copy_paste_allowed,
 
     -- Profile data (via attempts_entry)
-    sa.profile_id::text as profile_id,
+    paj_main.profile_id::text as profile_id,
     
     -- Rate limit data
     prl.req_per_day,
@@ -284,12 +290,15 @@ SELECT
     ) as documents
 
 FROM chats_entry sc
+INNER JOIN scenario_chats_junction scj_main ON scj_main.chat_id = sc.id
 INNER JOIN attempts_entry sa ON sa.id = sc.attempt_id
-INNER JOIN scenarios_resource s ON s.scenario_id = sc.scenario_id
-LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
+INNER JOIN simulation_attempts_junction saj_main ON saj_main.attempt_id = sa.id
+INNER JOIN profile_attempts_junction paj_main ON paj_main.attempt_id = sa.id
+INNER JOIN scenarios_resource s ON s.scenario_id = scj_main.scenario_id
+LEFT JOIN simulation_scenarios_junction ss ON ss.simulation_id = saj_main.simulation_id AND ss.scenario_id = s.id
 LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-INNER JOIN simulation_artifact sim ON sim.id = sa.simulation_id
+INNER JOIN simulation_artifact sim ON sim.id = saj_main.simulation_id
 -- Get first persona for orchestrator (ensures single row for orchestrator config)
 LEFT JOIN (
     SELECT DISTINCT ON (sp.scenario_id) 
@@ -364,7 +373,7 @@ CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept
 WHERE sc.id = chat_id
 GROUP BY sc.id, sc.title,
-         sa.id, sa.simulation_id,
+         sa.id, saj_main.simulation_id,
          s.id, ps.problem_statement,
          first_persona.persona_id, first_persona.persona_name,
          n_prov.name,
@@ -379,6 +388,6 @@ GROUP BY sc.id, sc.title,
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id
              AND sfr.scenario_id = ss.scenario_id
              AND f.name = 'copy_paste_allowed'), false),
-         sa.profile_id,
+         paj_main.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 $$;

@@ -16,7 +16,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO scenario_tree_entry(parent_id, child_id, active)
+    INSERT INTO scenario_tree_junction(parent_id, child_id, active)
     VALUES (
         test_create_scenario_tree_edge_v4.input_scenario_id,
         test_create_scenario_tree_edge_v4.input_scenario_id,

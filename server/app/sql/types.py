@@ -17285,7 +17285,6 @@ class InsertScenarioTreeEdgeSqlRow(BaseModel):
     child_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 class InsertScenarioTreeEdgeApiRequest(BaseModel):
 
@@ -17299,7 +17298,6 @@ class InsertScenarioTreeEdgeApiResponse(BaseModel):
     child_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
-    updated_at: str | None = None
 
 
 

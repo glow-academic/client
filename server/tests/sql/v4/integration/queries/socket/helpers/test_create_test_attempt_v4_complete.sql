@@ -13,7 +13,15 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO attempts_entry(simulation_id, archived) 
-    VALUES (test_create_test_attempt_v4.simulation_id, false) 
-    RETURNING id as attempt_id;
+    WITH new_attempt AS (
+        INSERT INTO attempts_entry(archived)
+        VALUES (false)
+        RETURNING id
+    ),
+    junction_insert AS (
+        INSERT INTO simulation_attempts_junction(simulation_id, attempt_id)
+        SELECT test_create_test_attempt_v4.simulation_id, new_attempt.id
+        FROM new_attempt
+    )
+    SELECT id AS attempt_id FROM new_attempt;
 $$;

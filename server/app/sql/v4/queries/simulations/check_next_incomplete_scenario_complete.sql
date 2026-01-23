@@ -28,11 +28,12 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH RECURSIVE attempt_base AS (
-    SELECT 
+    SELECT
         sa.id as attempt_id,
-        sa.simulation_id,
+        saj.simulation_id,
         sa.infinite_mode
     FROM attempts_entry sa
+    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
     WHERE sa.id = attempt_id
 ),
 simulation_scenarios_list AS (
@@ -52,9 +53,10 @@ simulation_scenarios_list AS (
 existing_chats AS (
     SELECT
         sc.id as chat_id,
-        sc.scenario_id as child_scenario_id,
+        scj.scenario_id as child_scenario_id,
         sc.completed
     FROM chats_entry sc
+    JOIN scenario_chats_junction scj ON scj.chat_id = sc.id
     CROSS JOIN attempt_base ab
     WHERE sc.attempt_id = ab.attempt_id
 ),
@@ -72,7 +74,7 @@ scenario_ancestors AS (
         sa.child_scenario_id,
         COALESCE(
             (SELECT st.parent_id 
-             FROM scenario_tree_entry st 
+             FROM scenario_tree_junction st 
              WHERE st.child_id = sa.ancestor_id 
                AND st.parent_id != st.child_id 
              LIMIT 1),
@@ -82,7 +84,7 @@ scenario_ancestors AS (
     FROM scenario_ancestors sa
     WHERE sa.depth < 100
       AND EXISTS (
-          SELECT 1 FROM scenario_tree_entry st 
+          SELECT 1 FROM scenario_tree_junction st 
           WHERE st.child_id = sa.ancestor_id 
             AND st.parent_id != st.child_id
       )
@@ -118,17 +120,18 @@ scenarios_with_grades AS (
     FROM simulation_scenarios_junction ss
     CROSS JOIN attempt_base ab
     JOIN chats_entry sc ON sc.attempt_id = ab.attempt_id
+    JOIN scenario_chats_junction scj2 ON scj2.chat_id = sc.id
     JOIN grades_entry scg ON scg.chat_id = sc.id
-    LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
+    LEFT JOIN root_scenarios rs ON rs.child_scenario_id = scj2.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
-      AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id 
-        WHERE ssf.simulation_id = ss.simulation_id 
-          AND sfr.scenario_id = ss.scenario_id 
-          AND f.name = 'scenario_active' 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id
+        WHERE ssf.simulation_id = ss.simulation_id
+          AND sfr.scenario_id = ss.scenario_id
+          AND f.name = 'scenario_active'
           AND ssf.value = true)
       AND (
-        COALESCE(rs.root_scenario_id, sc.scenario_id) = ss.scenario_id
-        OR sc.scenario_id = ss.scenario_id
+        COALESCE(rs.root_scenario_id, scj2.scenario_id) = ss.scenario_id
+        OR scj2.scenario_id = ss.scenario_id
       )
 ),
 -- Find next scenario that doesn't have a graded chat and doesn't already have a chat

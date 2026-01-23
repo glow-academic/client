@@ -619,8 +619,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -659,8 +658,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -700,8 +698,7 @@ instructions_suggestions_data AS (
                            AND i.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = i.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -741,8 +738,7 @@ department_suggestions_data AS (
                            AND d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -760,16 +756,17 @@ department_suggestions_data AS (
 ),
 -- Tool mapping data (selected tools for agent)
 tool_mapping_data AS (
-    SELECT 
+    SELECT
         t.id as tool_id,
         (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), '') as description,
         COALESCE(at.generated, false) as generated,
-        COALESCE(t.group_id, NULL) as group_id
+        tgj.group_id as group_id
     FROM params x
     LEFT JOIN agent_tools_junction at ON at.agent_id = x.agent_id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
     LEFT JOIN tool_artifact t ON t.id = tr.tool_id
+    LEFT JOIN tool_groups_junction tgj ON tgj.tool_id = t.id
     WHERE x.agent_id IS NOT NULL
       AND t.id IS NOT NULL
       AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
@@ -796,7 +793,7 @@ tool_ids_data AS (
 ),
 -- Tool suggestions: linked to agents via agent_tools_junction OR same group with generated=true
 tool_suggestions_data AS (
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT ARRAY_AGG(at.tool_id ORDER BY at.created_at DESC)
              FROM (
@@ -804,6 +801,7 @@ tool_suggestions_data AS (
                  FROM agent_tools_junction at
                  JOIN tools_resource tr ON tr.id = at.tool_id
                  JOIN tool_artifact t ON t.id = tr.tool_id
+                 LEFT JOIN tool_groups_junction tgj ON tgj.tool_id = t.id
                  CROSS JOIN draft_group_data dgd
                  WHERE at.tool_id IS NOT NULL
                    AND at.active = true
@@ -816,7 +814,7 @@ tool_suggestions_data AS (
                        (
                            at.generated = true
                            AND t.generated = true
-                           AND t.group_id = dgd.group_id
+                           AND tgj.group_id = dgd.group_id
                        )
                    )
                  GROUP BY tr.tool_id
@@ -831,14 +829,15 @@ tool_suggestions_data AS (
 ),
 -- All available tools (filtered by active flag)
 tools_data AS (
-    SELECT 
+    SELECT
         t.id as tool_id,
         (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), '') as description,
         COALESCE(t.generated, false) as generated,
-        COALESCE(t.group_id, NULL) as group_id
+        tgj.group_id as group_id
     FROM params x
     JOIN tool_artifact t ON EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    LEFT JOIN tool_groups_junction tgj ON tgj.tool_id = t.id
     ORDER BY t.created_at DESC
 ),
 -- Suggested resource objects CTEs - fetch full resource objects for suggestions
@@ -924,8 +923,7 @@ names_data AS (
                     n.generated = true
                     AND EXISTS (
                         SELECT 1 FROM calls_entry c
-                        JOIN messages_entry m ON m.id = c.message_id
-                        JOIN runs_entry r ON r.id = m.run_id
+                        JOIN runs_entry r ON r.id = c.run_id
                         WHERE c.id = n.call_id
                           AND r.group_id = dgd.group_id
                     )
@@ -961,8 +959,7 @@ descriptions_data AS (
                     d.generated = true
                     AND EXISTS (
                         SELECT 1 FROM calls_entry c
-                        JOIN messages_entry m ON m.id = c.message_id
-                        JOIN runs_entry r ON r.id = m.run_id
+                        JOIN runs_entry r ON r.id = c.run_id
                         WHERE c.id = d.call_id
                           AND r.group_id = dgd.group_id
                     )
@@ -1003,8 +1000,7 @@ instructions_data AS (
                         i.generated = true
                         AND EXISTS (
                             SELECT 1 FROM calls_entry c
-                            JOIN messages_entry m ON m.id = c.message_id
-                            JOIN runs_entry r ON r.id = m.run_id
+                            JOIN runs_entry r ON r.id = c.run_id
                             WHERE c.id = i.call_id
                               AND r.group_id = dgd.group_id
                         )
@@ -2170,8 +2166,7 @@ reasoning_level_suggestions_data AS (
                            AND rl.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = rl.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -2210,8 +2205,7 @@ temperature_level_suggestions_data AS (
                            AND tl.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = tl.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -2251,8 +2245,7 @@ voice_suggestions_data AS (
                            AND v.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = v.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -2454,7 +2447,7 @@ debug_data AS (
             ARRAY_AGG(
                 jsonb_build_object(
                     'created_at', di.created_at::text,
-                    'model_id', (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = mr.agent_id AND am.active = true LIMIT 1)::text,
+                    'model_id', (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj_debug.agent_id AND am.active = true LIMIT 1)::text,
                     'content', di.content
                 )
                 ORDER BY di.created_at DESC
@@ -2462,7 +2455,8 @@ debug_data AS (
             ARRAY[]::jsonb[]
         ) as debug_info_entry
     FROM params x
-    LEFT JOIN runs_entry mr ON mr.agent_id = x.agent_id
+    LEFT JOIN agent_runs_junction arj_debug ON arj_debug.agent_id = x.agent_id
+    LEFT JOIN runs_entry mr ON mr.id = arj_debug.run_id
     LEFT JOIN debug_info_entry di ON di.run_id = mr.id
     WHERE x.agent_id IS NOT NULL
     LIMIT 1

@@ -35,25 +35,28 @@ WITH params AS (
 run_info AS (
     SELECT
         r.id as run_id,
-        r.agent_id,
+        arj.agent_id,
         NULL::uuid as persona_id,
         COALESCE(
             x.department_id,
             -- Try to get department FROM chats_entry (chats_entry now have direct group_id column)
             (SELECT sd.department_id FROM runs_entry r2
-             JOIN groups_entry g ON g.id = r2.group_id
-             JOIN chats_entry c ON c.group_id = g.id
-             JOIN scenario_departments_junction sd ON sd.scenario_id = c.scenario_id AND sd.active = true
+             JOIN messages_entry m2 ON m2.run_id = r2.id
+             JOIN chats_entry c ON c.id = m2.chat_id
+             JOIN scenario_chats_junction scj ON scj.chat_id = c.id
+             JOIN scenario_departments_junction sd ON sd.scenario_id = scj.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department FROM profile_artifact
             (SELECT pd.department_id FROM runs_entry r2_prof
-             JOIN profile_departments_junction pd ON pd.profile_id = r2_prof.profile_id AND pd.active = true
+             JOIN profile_runs_junction prj ON prj.run_id = r2_prof.id
+             JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
              WHERE r2_prof.id = x.run_id LIMIT 1),
             -- Fallback to any active department
             (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) LIMIT 1)
         ) as department_id
     FROM params x
     JOIN runs_entry r ON r.id = x.run_id
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
 ),
 -- Token update: handle both text-only and audio/image/text scenarios
 has_audio_or_image AS (
@@ -292,34 +295,33 @@ get_prompt_tool_id AS (
     LIMIT 1
 ),
 system_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
-    SELECT 
-        'log_run_system_' || nsm.system_message_id::text, 
-        gpt.tool_id, 
+    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, created_at, updated_at, run_id)
+    SELECT
+        'log_run_system_' || nsm.system_message_id::text,
         (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = gpt.tool_id LIMIT 1),
         '',
-        true, 
-        nsm.created_at, 
-        nsm.updated_at
+        true,
+        nsm.created_at,
+        nsm.updated_at,
+        x.run_id
     FROM new_system_message nsm
     CROSS JOIN get_prompt_tool_id gpt
+    CROSS JOIN params x
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
-link_system_tool_call AS (
-    UPDATE calls_entry
-    SET message_id = nsm.system_message_id
-    FROM new_system_message nsm
-    CROSS JOIN system_tool_call stc
-    WHERE calls_entry.id = stc.tool_call_id
-      AND NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING calls_entry.id as call_id
+link_system_tool_to_junction AS (
+    INSERT INTO tool_calls_junction (tool_id, call_id)
+    SELECT gpt.tool_id, stc.tool_call_id
+    FROM system_tool_call stc
+    CROSS JOIN get_prompt_tool_id gpt
 ),
 existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
     JOIN contents_entry ce ON ce.message_id = esm.system_message_id AND ce.idx = 0
-    JOIN calls_entry tc ON tc.message_id = esm.system_message_id
+    JOIN messages_entry m_sys ON m_sys.id = esm.system_message_id
+    JOIN calls_entry tc ON tc.run_id = m_sys.run_id
     LIMIT 1
 ),
 system_tool_call_id AS (
@@ -416,26 +418,25 @@ get_instruct_tool_id AS (
     LIMIT 1
 ),
 developer_calls_with_rn AS (
-    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
-    SELECT 
-        'log_run_developer_' || ndm.message_id::text, 
-        git.tool_id, 
+    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, created_at, updated_at, run_id)
+    SELECT
+        'log_run_developer_' || ndm.message_id::text,
         (SELECT tao.args_outputs_id FROM tool_args_outputs_junction tao WHERE tao.tool_id = git.tool_id LIMIT 1),
         '',
-        true, 
-        ndm.created_at, 
-        ndm.updated_at
+        true,
+        ndm.created_at,
+        ndm.updated_at,
+        x.run_id
     FROM new_developer_messages ndm
     CROSS JOIN get_instruct_tool_id git
+    CROSS JOIN params x
     RETURNING id as tool_call_id, created_at, updated_at
 ),
-link_developer_tool_calls AS (
-    UPDATE calls_entry
-    SET message_id = ndm.message_id
-    FROM new_developer_messages ndm
-    CROSS JOIN developer_calls_with_rn dtc
-    WHERE calls_entry.id = dtc.tool_call_id
-    RETURNING calls_entry.id as call_id
+link_developer_tool_to_junction AS (
+    INSERT INTO tool_calls_junction (tool_id, call_id)
+    SELECT git.tool_id, dtc.tool_call_id
+    FROM developer_calls_with_rn dtc
+    CROSS JOIN get_instruct_tool_id git
 ),
 developer_calls_ordered AS (
     SELECT 
@@ -465,7 +466,8 @@ existing_developer_calls AS (
     SELECT edm.message_id, tc.id as tool_call_id
     FROM existing_developer_messages edm
     JOIN contents_entry ce ON ce.message_id = edm.message_id AND ce.idx = 0
-    JOIN calls_entry tc ON tc.message_id = edm.message_id
+    JOIN messages_entry m_dev ON m_dev.id = edm.message_id
+    JOIN calls_entry tc ON tc.run_id = m_dev.run_id
 ),
 all_developer_calls AS (
     SELECT message_id, tool_call_id FROM developer_message_with_tool_call
@@ -562,27 +564,19 @@ assistant_message AS (
     SELECT assistant_message_id, created_at, updated_at FROM new_assistant_message
 ),
 assistant_tool_call AS (
-    INSERT INTO calls_entry (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
-    SELECT 
-        'log_run_assistant_' || am.assistant_message_id::text, 
-        NULL, 
+    INSERT INTO calls_entry (external_call_id, template_id, arguments_raw, completed, created_at, updated_at, run_id)
+    SELECT
+        'log_run_assistant_' || am.assistant_message_id::text,
         NULL,
         '',
-        true, 
-        am.created_at, 
-        am.updated_at
+        true,
+        am.created_at,
+        am.updated_at,
+        x.run_id
     FROM params x
     CROSS JOIN assistant_message am
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
     RETURNING id as tool_call_id, created_at, updated_at
-),
-link_assistant_tool_call AS (
-    UPDATE calls_entry
-    SET message_id = am.assistant_message_id
-    FROM assistant_message am
-    CROSS JOIN assistant_tool_call atc
-    WHERE calls_entry.id = atc.tool_call_id
-    RETURNING calls_entry.id as call_id
 ),
 existing_assistant_content AS (
     SELECT ce.id as content_id

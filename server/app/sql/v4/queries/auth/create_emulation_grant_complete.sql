@@ -139,8 +139,6 @@ actor_name_computed AS (
 grant_insert AS (
     INSERT INTO grants_entry (
         id,
-        actor_profile_id,
-        target_profile_id,
         full_emulation,
         expires_at,
         created_at,
@@ -148,14 +146,30 @@ grant_insert AS (
     )
     SELECT
         uuidv7(),
-        (SELECT requester_profile_id FROM params),
-        (SELECT target_profile_id FROM params),
         (SELECT full_emulation FROM params),
         NOW() + ((SELECT ttl_minutes FROM params) || ' minutes')::interval,
         NOW(),
         NOW()
     WHERE (SELECT allowed FROM allowed_check) = true
     RETURNING id, expires_at
+),
+-- Link actor profile to grant via junction table
+link_grant_actor AS (
+    INSERT INTO profile_grants_actor_junction (profile_id, grant_id, created_at)
+    SELECT
+        (SELECT requester_profile_id FROM params),
+        gi.id,
+        NOW()
+    FROM grant_insert gi
+),
+-- Link target profile to grant via junction table
+link_grant_target AS (
+    INSERT INTO profile_grants_target_junction (profile_id, grant_id, created_at)
+    SELECT
+        (SELECT target_profile_id FROM params),
+        gi.id,
+        NOW()
+    FROM grant_insert gi
 )
 SELECT
     (SELECT allowed FROM allowed_check) as allowed,

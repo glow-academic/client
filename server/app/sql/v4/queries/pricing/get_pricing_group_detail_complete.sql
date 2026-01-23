@@ -158,12 +158,14 @@ runs_metadata AS (
         r.output_tokens,
         r.cached_input_tokens,
         r.key_id,
-        r.agent_id,
-        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = r.agent_id AND am.active = true LIMIT 1) as model_id,
-        r.profile_id,
+        arj.agent_id,
+        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = arj.agent_id AND am.active = true LIMIT 1) as model_id,
+        prj_rm.profile_id,
         NULL::uuid as persona_id
     FROM group_runs_list grl
     JOIN runs_entry r ON r.id = grl.run_id
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    LEFT JOIN profile_runs_junction prj_rm ON prj_rm.run_id = r.id
 ),
 -- Get department IDs FROM runs_entry (via agent or profile)
 runs_departments AS (
@@ -200,7 +202,8 @@ run_costs AS (
         ), 0) as run_cost
     FROM run_pricing_entry rpu
     JOIN runs_entry r ON r.id = rpu.run_id
-    JOIN agent_models_junction am ON am.agent_id = r.agent_id AND am.active = true
+    LEFT JOIN agent_runs_junction arj ON arj.run_id = r.id
+    JOIN agent_models_junction am ON am.agent_id = arj.agent_id AND am.active = true
     JOIN model_pricing_junction mp ON mp.model_id = am.model_id AND mp.active = true
     JOIN pricing_resource pr ON pr.id = mp.pricing_id
         AND pr.pricing_type = rpu.pricing_type
@@ -230,12 +233,13 @@ run_idx_map AS (
     WHERE group_id = (SELECT group_id FROM params)
 ),
 run_chats_map AS (
-    -- Map each run to all chats_entry in its group (chats_entry now have direct group_id column)
+    -- Map each run to all chats_entry in its group (via messages linking runs to chats)
     SELECT DISTINCT
         rg.run_id,
-        c.id as chat_id
+        m_chat.chat_id as chat_id
     FROM run_groups_map rg
-    JOIN chats_entry c ON c.group_id = rg.group_id
+    JOIN runs_entry r_chat ON r_chat.group_id = rg.group_id
+    JOIN messages_entry m_chat ON m_chat.run_id = r_chat.id
 ),
 -- Find first run (idx = 0) for each group
 first_runs_map AS (
@@ -280,7 +284,7 @@ messages_with_tree AS (
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN run_idx_map rim ON rim.run_id = r.id
         JOIN messages_entry m ON m.run_id = r.id
-        JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
+        JOIN chats_entry c ON c.id = rcm.chat_id
 
         UNION ALL
 
@@ -331,7 +335,7 @@ messages_with_tree AS (
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN run_idx_map rim ON rim.run_id = r.id
         JOIN messages_entry m ON m.run_id = r.id
-        JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
+        JOIN chats_entry c ON c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_tree_entry mt
             WHERE mt.child_id = m.id AND mt.active = true
@@ -360,7 +364,7 @@ messages_with_tree AS (
         JOIN runs_entry r ON r.group_id = g.id AND r.id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
         JOIN messages_entry m ON m.run_id = frm.first_run_id AND m.role IN ('system'::message_type, 'developer'::message_type)
-        JOIN chats_entry c ON c.group_id = g.id AND c.id = rcm.chat_id
+        JOIN chats_entry c ON c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_path mp
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id

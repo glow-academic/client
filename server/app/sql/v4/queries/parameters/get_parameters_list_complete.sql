@@ -116,7 +116,7 @@ scenario_parameters_data AS (
         COUNT(DISTINCT st.parent_id) as num_scenarios
     FROM scenario_parameters_junction sp
     JOIN scenarios_resource s ON s.id = sp.scenario_id
-    JOIN scenario_tree_entry st ON st.child_id = s.id AND st.parent_id = st.child_id
+    JOIN scenario_tree_junction st ON st.child_id = s.id AND st.parent_id = st.child_id
     WHERE sp.active = true AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
     GROUP BY sp.parameter_id
 ),

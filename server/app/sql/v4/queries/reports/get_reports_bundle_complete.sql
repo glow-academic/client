@@ -430,10 +430,12 @@ profile_chats AS (
 chat_scenario_info_bundle AS (
     SELECT DISTINCT
         c.id AS chat_id,
-        c.scenario_id,
-        sa.simulation_id
+        scj.scenario_id,
+        saj.simulation_id
     FROM chats_entry c
+    JOIN scenario_chats_junction scj ON scj.chat_id = c.id
     JOIN attempts_entry sa ON sa.id = c.attempt_id
+    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
     WHERE c.id IN (SELECT chat_id FROM profile_chats)
 ),
 -- Score normalization: each grade has 5 feedbacks scored 1-5, max = 25
@@ -443,9 +445,10 @@ grade_stream_per_profile AS (
         sg.id,
         c_bundle.id AS simulation_chat_id,
         sg.created_at,
-        TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_bundle.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
+        TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj_bundle.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
     FROM grades_entry sg
     JOIN chats_entry c_bundle ON c_bundle.id = sg.chat_id
+    JOIN scenario_chats_junction scj_bundle ON scj_bundle.chat_id = c_bundle.id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
 ),
 ordered_grades_per_profile AS (
@@ -689,7 +692,7 @@ scenario_root_mapping AS (
             sa.child_scenario_id,
             COALESCE(
                 (SELECT st.parent_id 
-                 FROM scenario_tree_entry st 
+                 FROM scenario_tree_junction st 
                  WHERE st.child_id = sa.ancestor_id 
                    AND st.parent_id != st.child_id 
                  LIMIT 1),
@@ -699,7 +702,7 @@ scenario_root_mapping AS (
         FROM scenario_ancestors sa
         WHERE sa.depth < 100
           AND EXISTS (
-              SELECT 1 FROM scenario_tree_entry st 
+              SELECT 1 FROM scenario_tree_junction st 
               WHERE st.child_id = sa.ancestor_id 
                 AND st.parent_id != st.child_id
           )
@@ -1339,14 +1342,14 @@ scenarios_final AS (
             ARRAY[]::types.q_reports_bundle_v4_scenario[]
         ) AS scenarios_array
     FROM scenario_artifact s
-    JOIN scenario_tree_entry st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
+    JOIN scenario_tree_junction st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
     WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
       AND EXISTS (
           SELECT 1 FROM filt f
           WHERE f.scenario_id IS NOT NULL
             AND (
                 EXISTS (
-                    SELECT 1 FROM scenario_tree_entry st
+                    SELECT 1 FROM scenario_tree_junction st
                     WHERE st.child_id = f.scenario_id
                       AND st.parent_id = s.id
                 )

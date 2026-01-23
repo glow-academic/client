@@ -72,14 +72,28 @@ new_description_resource AS (
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
     RETURNING id as description_id, description
 ),
-duplicated_model AS (
-    INSERT INTO model_artifact (group_id)
-    SELECT 
-        uuidv7()  -- Generate new group_id for duplicated model
+new_model_group AS (
+    INSERT INTO groups_entry (id, created_at, updated_at)
+    SELECT uuidv7(), NOW(), NOW()
     FROM source_model sm
     CROSS JOIN model_exists_check mec
     WHERE mec.model_exists = true
     RETURNING id
+),
+duplicated_model AS (
+    INSERT INTO model_artifact (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM source_model sm
+    CROSS JOIN model_exists_check mec
+    WHERE mec.model_exists = true
+    RETURNING id
+),
+link_model_group AS (
+    INSERT INTO model_groups_junction (model_id, group_id)
+    SELECT dm.id, nmg.id
+    FROM duplicated_model dm
+    CROSS JOIN new_model_group nmg
+    ON CONFLICT (model_id, group_id) DO NOTHING
 ),
 -- Insert value for duplicated model
 duplicated_model_value AS (

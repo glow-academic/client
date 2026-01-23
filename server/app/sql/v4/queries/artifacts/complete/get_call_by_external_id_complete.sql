@@ -28,12 +28,13 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT 
+    SELECT
         c.id,
-        c.tool_id,
+        tcj.tool_id,
         c.template_id,
         c.arguments_raw
     FROM calls_entry c
+    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
     WHERE c.external_call_id = external_call_id
     LIMIT 1;
 $$;

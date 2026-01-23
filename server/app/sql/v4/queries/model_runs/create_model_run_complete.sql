@@ -43,15 +43,27 @@ WITH params AS (
         agent_id AS agent_id
 ),
 create_run AS (
-    -- 1. Create run record with key_id, agent_id, and profile_id directly
-    INSERT INTO runs_entry (input_tokens, output_tokens, key_id, agent_id, profile_id)
-    SELECT 0, 0, p.key_id, p.agent_id, p.profile_id
+    -- 1. Create run record with key_id
+    INSERT INTO runs_entry (input_tokens, output_tokens, key_id)
+    SELECT 0, 0, p.key_id
     FROM params p
     RETURNING id
 ),
--- Persona linking removed (run_personas table dropped)
-dummy_for_persona AS (
-    SELECT 1 WHERE false
+link_run_agent AS (
+    -- Link run to agent via junction table
+    INSERT INTO agent_runs_junction (agent_id, run_id)
+    SELECT p.agent_id, cr.id
+    FROM params p
+    CROSS JOIN create_run cr
+    WHERE p.agent_id IS NOT NULL
+),
+link_run_profile AS (
+    -- Link run to profile via junction table
+    INSERT INTO profile_runs_junction (profile_id, run_id)
+    SELECT p.profile_id, cr.id
+    FROM params p
+    CROSS JOIN create_run cr
+    WHERE p.profile_id IS NOT NULL
 )
 SELECT id::text as run_id
 FROM create_run

@@ -108,12 +108,29 @@ WITH params AS (
         profile_id::uuid as profile_id,
         scenario_id_override::uuid as scenario_id_override
 ),
--- Create the attempt first with profile_id directly
+-- Create the attempt first
 new_attempt AS (
-    INSERT INTO attempts_entry (simulation_id, infinite_mode, profile_id, created_at)
-    SELECT p.simulation_id, p.infinite_mode, p.profile_id, now()
+    INSERT INTO attempts_entry (infinite_mode, created_at)
+    SELECT p.infinite_mode, now()
     FROM params p
     RETURNING id as attempt_id
+),
+-- Link attempt to simulation via junction
+link_attempt_simulation AS (
+    INSERT INTO simulation_attempts_junction (simulation_id, attempt_id)
+    SELECT p.simulation_id, na.attempt_id
+    FROM params p
+    CROSS JOIN new_attempt na
+    RETURNING attempt_id
+),
+-- Link attempt to profile via junction (if profile_id provided)
+link_attempt_profile AS (
+    INSERT INTO profile_attempts_junction (profile_id, attempt_id)
+    SELECT p.profile_id, na.attempt_id
+    FROM params p
+    CROSS JOIN new_attempt na
+    WHERE p.profile_id IS NOT NULL
+    RETURNING attempt_id
 ),
 -- Get simulation data
 simulation_data AS (
@@ -366,23 +383,29 @@ new_group AS (
     WHERE ctc.content_type = 'scenario'
     RETURNING id as group_id, trace_id, created_at, updated_at
 ),
--- Create simulation chat with group_id and attempt_id directly (only for scenarios, not videos)
+-- Create simulation chat with attempt_id directly (only for scenarios, not videos)
 new_chat AS (
     INSERT INTO chats_entry (
-        created_at, title, scenario_id, completed, updated_at, group_id, attempt_id
+        created_at, title, completed, updated_at, attempt_id
     )
     SELECT
         ng.created_at,
         COALESCE(sfd.scenario_name, 'New Simulation'),
-        sfd.scenario_id,
         false,
         ng.updated_at,
-        ng.group_id,
         na.attempt_id
     FROM new_group ng
     CROSS JOIN scenario_full_data sfd
     CROSS JOIN new_attempt na
-    RETURNING id as chat_id, title as chat_title, created_at, updated_at, group_id, attempt_id
+    RETURNING id as chat_id, title as chat_title, created_at, updated_at, attempt_id
+),
+-- Link chat to scenario via junction
+link_chat_scenario AS (
+    INSERT INTO scenario_chats_junction (scenario_id, chat_id)
+    SELECT sfd.scenario_id::uuid, nc.chat_id
+    FROM scenario_full_data sfd
+    CROSS JOIN new_chat nc
+    RETURNING chat_id
 )
 -- Return all data in single row
 SELECT 
@@ -438,6 +461,6 @@ FROM new_attempt na
 CROSS JOIN content_type_check ctc
 CROSS JOIN simulation_data sd
 LEFT JOIN new_chat nc ON ctc.content_type = 'scenario' AND nc.attempt_id = na.attempt_id
-LEFT JOIN new_group ng ON ng.group_id = nc.group_id AND ctc.content_type = 'scenario'
+LEFT JOIN new_group ng ON ctc.content_type = 'scenario'
 LEFT JOIN scenario_full_data sfd ON ctc.content_type = 'scenario' AND sfd.scenario_id = (SELECT scenario_id FROM chosen_scenario_id)
 $$;

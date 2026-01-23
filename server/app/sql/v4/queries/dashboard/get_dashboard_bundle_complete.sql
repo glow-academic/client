@@ -807,9 +807,10 @@ filt AS (
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_stag.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
+                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj_stag.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
                 FROM grades_entry sg
                 JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
+                JOIN scenario_chats_junction scj_stag ON scj_stag.chat_id = c_stag.id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
             ),
             ordered_grades AS (

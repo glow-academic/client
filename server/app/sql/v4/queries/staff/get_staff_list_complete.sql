@@ -148,20 +148,20 @@ valid_department_ids_data AS (
 ),
 recent_runs AS (
     SELECT
-        mr.profile_id,
+        prj.profile_id,
         COUNT(*) as run_count
-    FROM runs_entry mr
+    FROM profile_runs_junction prj
+    JOIN runs_entry mr ON mr.id = prj.run_id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
-      AND mr.profile_id IS NOT NULL
-    GROUP BY mr.profile_id
+    GROUP BY prj.profile_id
 ),
 profile_total_runs AS (
     SELECT
-        mr.profile_id,
+        prj.profile_id,
         COUNT(*) as total_requests
-    FROM runs_entry mr
-    WHERE mr.profile_id IS NOT NULL
-    GROUP BY mr.profile_id
+    FROM profile_runs_junction prj
+    JOIN runs_entry mr ON mr.id = prj.run_id
+    GROUP BY prj.profile_id
 ),
 user_profile AS (
     SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
@@ -255,10 +255,10 @@ total_requests_by_date AS (
     SELECT
         DATE(mr.created_at) as date,
         COUNT(*) as count
-    FROM runs_entry mr
-    JOIN profile_departments_junction pd ON pd.profile_id = mr.profile_id AND pd.active = true
+    FROM profile_runs_junction prj
+    JOIN runs_entry mr ON mr.id = prj.run_id
+    JOIN profile_departments_junction pd ON pd.profile_id = prj.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
-      AND mr.profile_id IS NOT NULL
     GROUP BY DATE(mr.created_at)
 ),
 total_requests_cumulative AS (
@@ -329,10 +329,11 @@ staff_rows AS (
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
-        SELECT last_active 
-        FROM activity_entry 
-        WHERE profile_id = p.id 
-        ORDER BY created_at DESC 
+        SELECT ae.last_active
+        FROM profile_activity_junction pactj
+        JOIN activity_entry ae ON ae.id = pactj.activity_id
+        WHERE pactj.profile_id = p.id
+        ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true
     CROSS JOIN user_profile up

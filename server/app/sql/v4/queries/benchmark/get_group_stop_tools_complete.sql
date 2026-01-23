@@ -66,12 +66,12 @@ AS $$
     ordered_tool_calls AS (
         SELECT
             r.group_id,
-            c.tool_id,
+            tcj.tool_id,
             ROW_NUMBER() OVER (PARTITION BY r.group_id ORDER BY r.created_at, c.created_at) as position_idx
         FROM runs_entry r
-        JOIN messages_entry m ON m.run_id = r.id
-        JOIN calls_entry c ON c.message_id = m.id
-        JOIN stop_tool_ids sti ON sti.tool_id = c.tool_id
+        JOIN calls_entry c ON c.run_id = r.id
+        JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+        JOIN stop_tool_ids sti ON sti.tool_id = tcj.tool_id
         WHERE r.group_id = $1
     )
     SELECT

@@ -127,7 +127,7 @@ persona_scenarios AS (
         ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
     FROM scenario_personas_junction sp
-    JOIN scenario_tree_entry st ON st.child_id = sp.scenario_id
+    JOIN scenario_tree_junction st ON st.child_id = sp.scenario_id
     WHERE sp.active = true AND st.parent_id = st.child_id
     GROUP BY sp.persona_id
 ),
@@ -223,7 +223,7 @@ scenario_mapping_data AS (
     JOIN scenarios_resource s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
+    LEFT JOIN scenario_tree_junction st ON st.parent_id = s.id AND st.child_id = s.id
 ),
 department_mapping_data AS (
     SELECT

@@ -44,19 +44,24 @@ placeholder_call_id AS (
 ),
 -- Insert login entry
 login_insert AS (
-    INSERT INTO logins_entry (profile_id, last_login, call_id, created_at, updated_at)
+    INSERT INTO logins_entry (last_login, call_id, created_at, updated_at)
     SELECT
-        (SELECT profile_id FROM params),
         NOW(),
         (SELECT id FROM placeholder_call_id),
         NOW(),
         NOW()
     WHERE EXISTS (SELECT 1 FROM profile_exists)
-    RETURNING id, profile_id, last_login
+    RETURNING id, last_login
+),
+-- Link login to profile via junction table
+login_profile_link AS (
+    INSERT INTO profile_logins_junction (profile_id, login_id)
+    SELECT (SELECT profile_id FROM params), li.id
+    FROM login_insert li
 )
 SELECT
     li.id as login_id,
-    li.profile_id,
+    (SELECT profile_id FROM params) as profile_id,
     li.last_login,
     true as ok
 FROM login_insert li

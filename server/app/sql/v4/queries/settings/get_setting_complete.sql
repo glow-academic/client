@@ -508,8 +508,7 @@ name_suggestions_data AS (
                            AND COALESCE(n.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = n.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -548,8 +547,7 @@ description_suggestions_data AS (
                            AND COALESCE(d.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -586,8 +584,7 @@ color_suggestions_data AS (
                            AND COALESCE(c.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c2
-                               JOIN messages_entry m ON m.id = c2.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c2.run_id
                                WHERE c2.id = c.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -740,8 +737,7 @@ department_suggestions_data AS (
                            d.generated = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = d.call_id
                                  AND r.group_id = dgd.group_id
                            )
@@ -820,8 +816,7 @@ auth_suggestions_data AS (
                            AND COALESCE(a.generated, false) = true
                            AND EXISTS (
                                SELECT 1 FROM calls_entry c
-                               JOIN messages_entry m ON m.id = c.message_id
-                               JOIN runs_entry r ON r.id = m.run_id
+                               JOIN runs_entry r ON r.id = c.run_id
                                WHERE c.id = a.call_id
                                  AND r.group_id = dgd.group_id
                            )

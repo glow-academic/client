@@ -261,20 +261,23 @@ groups_mapping AS (
     ORDER BY og.id, ngwo.id
 ),
 standard_call_context AS (
-    SELECT c.tool_id, c.template_id, 1 as priority
+    SELECT tcj.tool_id, c.template_id, 1 as priority
     FROM calls_entry c
-    JOIN tool_names_junction tn ON tn.tool_id = c.tool_id
+    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+    JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_standard_group'
     UNION ALL
-    SELECT c.tool_id, c.template_id, 2 as priority
+    SELECT tcj.tool_id, c.template_id, 2 as priority
     FROM calls_entry c
-    JOIN tool_names_junction tn ON tn.tool_id = c.tool_id
+    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
+    JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_rubrics'
     UNION ALL
-    SELECT c.tool_id, c.template_id, 3 as priority
+    SELECT tcj.tool_id, c.template_id, 3 as priority
     FROM calls_entry c
+    JOIN tool_calls_junction tcj ON tcj.call_id = c.id
 ),
 standard_call_params AS (
     SELECT tool_id, template_id
@@ -295,7 +298,6 @@ insert_standard_calls AS (
     INSERT INTO calls_entry (
         id,
         external_call_id,
-        tool_id,
         template_id,
         arguments_raw,
         completed,
@@ -305,7 +307,6 @@ insert_standard_calls AS (
     SELECT
         sc.call_id,
         'standard_resource_' || sc.standard_id::text || '_' || sc.call_id::text,
-        sc.tool_id,
         sc.template_id,
         jsonb_build_object(
             'standard_id', sc.standard_id::text,
@@ -317,6 +318,12 @@ insert_standard_calls AS (
     FROM standard_calls sc
     JOIN original_standards os ON os.id = sc.standard_id
     RETURNING id
+),
+insert_standard_call_tool_junctions AS (
+    INSERT INTO tool_calls_junction (tool_id, call_id)
+    SELECT sc.tool_id, sc.call_id
+    FROM standard_calls sc
+    JOIN insert_standard_calls isc ON isc.id = sc.call_id
 ),
 new_standards AS (
     INSERT INTO standards_resource (

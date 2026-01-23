@@ -7,6 +7,8 @@
 -- 2. Rubric resolution (scenario rubric -> simulation fallback rubric -> first scenario rubric)
 -- 3. Feedback aggregation per standard group (SUM of feedback totals)
 -- 4. Score percentage calculation (total_score / max_group_points * 100)
+--
+-- Uses junction tables: scenario_chats_junction, simulation_attempts_junction
 
 DROP VIEW IF EXISTS view_grade_per_standard_group;
 
@@ -14,10 +16,12 @@ CREATE OR REPLACE VIEW view_grade_per_standard_group AS
 WITH chat_scenario_info AS (
     SELECT DISTINCT
         c.id AS chat_id,
-        c.scenario_id,
-        sa.simulation_id
+        scj.scenario_id,
+        saj.simulation_id
     FROM chats_entry c
+    JOIN scenario_chats_junction scj ON scj.chat_id = c.id
     JOIN attempts_entry sa ON sa.id = c.attempt_id
+    JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
 ),
 -- Get first scenario's rubric per simulation (fallback when no direct scenario rubric exists)
 sim_first_scenario_rubric AS (
@@ -56,8 +60,8 @@ latest_grade AS (
         scg.created_at
     FROM grades_entry scg
     JOIN chats_entry c ON c.id = scg.chat_id
-    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
     LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
+    LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = csi.scenario_id
     LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id
     LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id
         AND srr_fallback.scenario_id = csi.scenario_id

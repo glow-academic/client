@@ -148,7 +148,8 @@ cohort_simulations_agg AS (
 cohort_usage AS (
     SELECT DISTINCT cp.cohort_id, COUNT(DISTINCT sa.id) as usage_count
     FROM profile_cohorts_junction cp
-    JOIN attempts_entry sa ON sa.profile_id = cp.profile_id
+    JOIN profile_attempts_junction paj ON paj.profile_id = cp.profile_id
+    JOIN attempts_entry sa ON sa.id = paj.attempt_id
     WHERE cp.active = true
     GROUP BY cp.cohort_id
 ),
@@ -231,7 +232,7 @@ scenario_mapping_data AS (
     LEFT JOIN scenario_problem_statements_junction sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
-    LEFT JOIN scenario_tree_entry st ON st.parent_id = s.id AND st.child_id = s.id
+    LEFT JOIN scenario_tree_junction st ON st.parent_id = s.id AND st.child_id = s.id
     CROSS JOIN persona_mapping_data pm
     WHERE s.id IS NOT NULL AND st.parent_id IS NOT NULL
 ),

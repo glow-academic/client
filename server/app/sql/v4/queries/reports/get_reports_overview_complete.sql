@@ -817,10 +817,12 @@ filt AS (
             chat_scenario_info_stagnation AS (
                 SELECT DISTINCT
                     c.id AS chat_id,
-                    c.scenario_id,
-                    sa.simulation_id
+                    scj.scenario_id,
+                    saj.simulation_id
                 FROM chats_entry c
+                JOIN scenario_chats_junction scj ON scj.chat_id = c.id
                 JOIN attempts_entry sa ON sa.id = c.attempt_id
+                JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats_for_stagnation)
             ),
             -- Score normalization: each grade has 5 feedbacks scored 1-5, max = 25
@@ -829,9 +831,10 @@ filt AS (
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_stag.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
+                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = scj_stag.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
                 FROM grades_entry sg
                 JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
+                JOIN scenario_chats_junction scj_stag ON scj_stag.chat_id = c_stag.id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
             ),
             ordered_grades AS (
@@ -1324,10 +1327,12 @@ filt AS (
             chat_scenario_info_overview AS (
                 SELECT DISTINCT
                     c.id AS chat_id,
-                    c.scenario_id,
-                    sa.simulation_id
+                    scj.scenario_id,
+                    saj.simulation_id
                 FROM chats_entry c
+                JOIN scenario_chats_junction scj ON scj.chat_id = c.id
                 JOIN attempts_entry sa ON sa.id = c.attempt_id
+                JOIN simulation_attempts_junction saj ON saj.attempt_id = sa.id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
             ),
             -- Get first scenario's rubric per simulation (fallback)
@@ -1354,7 +1359,8 @@ filt AS (
                 FROM grades_entry scg
                 JOIN chats_entry c ON c.id = scg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
+                LEFT JOIN scenario_chats_junction scj_grade ON scj_grade.chat_id = c.id
+                LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = scj_grade.scenario_id
                 LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id
                 LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = csi.scenario_id AND srr.rubric_id IS NULL
