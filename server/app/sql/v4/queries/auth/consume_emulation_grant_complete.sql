@@ -66,7 +66,7 @@ grant_consumed AS (
 SELECT
     (SELECT ok FROM validity) as ok,
     (SELECT reason FROM reason_computed) as reason,
-    (SELECT pga.profile_id FROM profile_grants_actor_junction pga WHERE pga.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as actor_profile_id,
-    (SELECT pgt.profile_id FROM profile_grants_target_junction pgt WHERE pgt.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id,
+    (SELECT pgj.profile_id FROM profile_grants_junction pgj WHERE pgj.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as actor_profile_id,
+    (SELECT pej.profile_id FROM emulations_entry em JOIN profile_emulations_junction pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id,
     (SELECT full_emulation FROM grant_consumed) as full_emulation
 $$;

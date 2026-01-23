@@ -155,21 +155,31 @@ grant_insert AS (
 ),
 -- Link actor profile to grant via junction table
 link_grant_actor AS (
-    INSERT INTO profile_grants_actor_junction (profile_id, grant_id, created_at)
+    INSERT INTO profile_grants_junction (profile_id, grant_id, created_at)
     SELECT
         (SELECT requester_profile_id FROM params),
         gi.id,
         NOW()
     FROM grant_insert gi
 ),
--- Link target profile to grant via junction table
-link_grant_target AS (
-    INSERT INTO profile_grants_target_junction (profile_id, grant_id, created_at)
+-- Create emulation entry linked to grant
+emulation_insert AS (
+    INSERT INTO emulations_entry (grant_id, created_at, updated_at)
     SELECT
-        (SELECT target_profile_id FROM params),
         gi.id,
+        NOW(),
         NOW()
     FROM grant_insert gi
+    RETURNING id
+),
+-- Link target profile to emulation via junction table
+link_emulation_target AS (
+    INSERT INTO profile_emulations_junction (profile_id, emulation_id, created_at)
+    SELECT
+        (SELECT target_profile_id FROM params),
+        ei.id,
+        NOW()
+    FROM emulation_insert ei
 )
 SELECT
     (SELECT allowed FROM allowed_check) as allowed,
