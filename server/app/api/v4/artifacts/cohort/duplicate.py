@@ -29,12 +29,6 @@ router = APIRouter()
 @router.post(
     "/duplicate",
     response_model=DuplicateCohortApiResponse,
-    dependencies=[
-        audit_activity(
-            "cohort.duplicated",
-            "{{ actor.name }} duplicated cohort '{{ cohort.name }}'",
-        )
-    ],
 )
 async def duplicate_cohort(
     request: DuplicateCohortApiRequest,

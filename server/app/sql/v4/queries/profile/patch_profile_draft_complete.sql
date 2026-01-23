@@ -131,8 +131,8 @@ BEGIN
 
         -- Create group if draft doesn't have one (safety check)
         IF v_group_id IS NULL THEN
-            INSERT INTO groups_entry (created_at, updated_at)
-            VALUES (NOW(), NOW())
+            INSERT INTO groups_entry (created_at, updated_at, session_id)
+            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -225,8 +225,8 @@ BEGIN
     END IF;
 
     -- Create new draft with group
-    INSERT INTO groups_entry (created_at, updated_at)
-    VALUES (NOW(), NOW())
+    INSERT INTO groups_entry (created_at, updated_at, session_id)
+    VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
     RETURNING id INTO v_group_id;
 
     INSERT INTO drafts_entry (artifact, profile_id, group_id)

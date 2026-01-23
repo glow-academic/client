@@ -22,12 +22,6 @@ router = APIRouter()
 @router.post(
     "/personas",
     response_model=PersonasApiResponse,
-    dependencies=[
-        audit_activity(
-            "personas.created",
-            "{{ actor.name }} created personas",
-        )
-    ],
 )
 async def create_personas(
     request: PersonasApiRequest,

@@ -5,6 +5,7 @@
 DO $$
 BEGIN
     DROP FUNCTION IF EXISTS infra_insert_activity_v4(text, text, uuid, boolean);
+    DROP FUNCTION IF EXISTS infra_insert_activity_v4(text, text, uuid, boolean, uuid);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
@@ -13,7 +14,8 @@ CREATE OR REPLACE FUNCTION infra_insert_activity_v4(
     message text,
     endpoint text,
     profile_id uuid,
-    error boolean
+    error boolean,
+    session_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     success boolean
@@ -21,7 +23,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO audits_entry (message, endpoint, profile_id, error, created_at)
-    VALUES (message, endpoint, profile_id, error, now());
+    INSERT INTO audits_entry (message, endpoint, profile_id, error, session_id, created_at)
+    VALUES (message, endpoint, profile_id, error, session_id, now());
     SELECT true as success;
 $$;

@@ -114,8 +114,8 @@ BEGIN
         
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
-            INSERT INTO groups_entry (created_at, updated_at)
-            VALUES (NOW(), NOW())
+            INSERT INTO groups_entry (created_at, updated_at, session_id)
+            VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
         
@@ -303,8 +303,8 @@ BEGIN
     -- Create new draft if update failed or input_draft_id was NULL
     IF v_draft_id IS NULL THEN
         -- Create new group for draft
-        INSERT INTO groups_entry (created_at, updated_at)
-        VALUES (NOW(), NOW())
+        INSERT INTO groups_entry (created_at, updated_at, session_id)
+        VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = profile_id AND active = true ORDER BY created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
         -- Create draft

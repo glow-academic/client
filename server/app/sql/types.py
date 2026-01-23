@@ -8103,6 +8103,7 @@ class InfrastructureActivityInsertSqlParams(BaseModel):
     endpoint: str
     profile_id: UUID
     error: bool
+    session_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -8110,6 +8111,7 @@ class InfrastructureActivityInsertSqlParams(BaseModel):
             self.endpoint,
             self.profile_id,
             self.error,
+            self.session_id,
         )
 
 class InfrastructureActivityInsertSqlRow(BaseModel):
@@ -8121,6 +8123,7 @@ class InfrastructureActivityInsertApiRequest(BaseModel):
     message: str
     endpoint: str
     error: bool
+    session_id: UUID | None = None
 
 class InfrastructureActivityInsertApiResponse(BaseModel):
 
@@ -8136,6 +8139,7 @@ class InfrastructureActivityInsertWebsocketSqlParams(BaseModel):
     endpoint: str
     profile_id: UUID
     error: bool
+    session_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -8143,6 +8147,7 @@ class InfrastructureActivityInsertWebsocketSqlParams(BaseModel):
             self.endpoint,
             self.profile_id,
             self.error,
+            self.session_id,
         )
 
 class InfrastructureActivityInsertWebsocketSqlRow(BaseModel):
@@ -8154,6 +8159,7 @@ class InfrastructureActivityInsertWebsocketApiRequest(BaseModel):
     message: str
     endpoint: str
     error: bool
+    session_id: UUID | None = None
 
 class InfrastructureActivityInsertWebsocketApiResponse(BaseModel):
 
@@ -11912,6 +11918,7 @@ class CreateOrUpdateProfileSqlRow(BaseModel):
     profile_id: UUID | None = None
     created: bool | None = None
     actor_name: str | None = None
+    session_id: UUID | None = None
 
 class CreateOrUpdateProfileApiRequest(BaseModel):
 
@@ -11930,6 +11937,7 @@ class CreateOrUpdateProfileApiResponse(BaseModel):
     profile_id: UUID | None = None
     created: bool | None = None
     actor_name: str | None = None
+    session_id: UUID | None = None
 
 
 
@@ -12483,6 +12491,7 @@ class GetProfileContextSqlRow(BaseModel):
     drafts: list[QGetProfileContextV4Draft] | None = None
     settings_tokens: QGetProfileContextV4ThemeTokens | None = None
     actor_name: str | None = None
+    session_id: UUID | None = None
 
 class GetProfileContextApiRequest(BaseModel):
 
@@ -12559,6 +12568,7 @@ class GetProfileContextApiResponse(BaseModel):
     drafts: list[QGetProfileContextV4Draft] | None = None
     settings_tokens: QGetProfileContextV4ThemeTokens | None = None
     actor_name: str | None = None
+    session_id: UUID | None = None
 
 
 

@@ -47,6 +47,18 @@ async def log_websocket_activity(
             )
             return
 
+        # Resolve session_id from Redis
+        session_id: str | None = None
+        try:
+            from app.main import get_redis_client
+            redis_client = get_redis_client()
+            if redis_client:
+                session_id_bytes = await redis_client.get(f"socket_session:{sid}")
+                if session_id_bytes:
+                    session_id = session_id_bytes.decode("utf-8")
+        except Exception:
+            pass
+
         # Get database pool
         pool = get_pool()
         if not pool:
@@ -94,11 +106,11 @@ async def log_websocket_activity(
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     asyncio.create_task(
-                        _insert_activity(message, endpoint, profile_id, is_error, pool)
+                        _insert_activity(message, endpoint, profile_id, is_error, pool, session_id)
                     )
                 else:
                     asyncio.run(
-                        _insert_activity(message, endpoint, profile_id, is_error, pool)
+                        _insert_activity(message, endpoint, profile_id, is_error, pool, session_id)
                     )
             except RuntimeError:
                 # No event loop, skip DB write
@@ -112,7 +124,7 @@ async def log_websocket_activity(
 
 
 async def _insert_activity(
-    message: str, endpoint: str, profile_id: str, error: bool, pool: Any
+    message: str, endpoint: str, profile_id: str, error: bool, pool: Any, session_id: str | None = None
 ) -> None:
     """Insert activity record into database.
 
@@ -122,6 +134,7 @@ async def _insert_activity(
         profile_id: Profile UUID (can be None if profile doesn't exist)
         error: Whether this activity represents an error
         pool: Database connection pool
+        session_id: Session UUID (can be None)
     """
     if pool is None:
         return
@@ -131,7 +144,7 @@ async def _insert_activity(
             from app.infra.v4.activity.insert_websocket import \
                 insert_activity_websocket
 
-            await insert_activity_websocket(message, endpoint, profile_id, error, conn)
+            await insert_activity_websocket(message, endpoint, profile_id, error, conn, session_id)
     except Exception:
         # Never break logging if DB write fails
         pass

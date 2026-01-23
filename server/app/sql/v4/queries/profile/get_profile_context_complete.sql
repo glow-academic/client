@@ -225,7 +225,8 @@ RETURNS TABLE (
     simulation_ids text[],
     drafts types.q_get_profile_context_v4_draft[],
     settings_tokens types.q_get_profile_context_v4_theme_tokens,
-    actor_name text
+    actor_name text,
+    session_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -767,7 +768,7 @@ drafts_data AS (
 ),
 drafts_aggregated AS (
     -- Aggregate drafts as array of composite types
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
                 (dd.id, dd.artifact_type, dd.payload, dd.version, dd.updated_at)::types.q_get_profile_context_v4_draft
@@ -776,6 +777,14 @@ drafts_aggregated AS (
             '{}'::types.q_get_profile_context_v4_draft[]
         ) as drafts
     FROM drafts_data dd
+),
+session_resolution AS (
+    SELECT id as session_id
+    FROM sessions_entry
+    WHERE profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
+      AND active = true
+    ORDER BY created_at DESC
+    LIMIT 1
 )
 SELECT 
     -- Emulation authorization flag
@@ -852,7 +861,8 @@ SELECT
     -- Return empty theme tokens struct for type introspection (Python will override with computed values)
     -- 37 fields: background, foreground, card, card_foreground, popover, popover_foreground, primary_color, primary_foreground, secondary, secondary_foreground, muted, muted_foreground, accent, accent_foreground, destructive, border, input, ring, success, success_foreground, warning, warning_foreground, info, info_foreground, chart1, chart2, chart3, chart4, chart5, sidebar, sidebar_foreground, sidebar_primary, sidebar_primary_foreground, sidebar_accent, sidebar_accent_foreground, sidebar_border, sidebar_ring
     ('', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '')::types.q_get_profile_context_v4_theme_tokens as settings_tokens,
-    (SELECT actor_name FROM actor_name_computed) as actor_name
+    (SELECT actor_name FROM actor_name_computed) as actor_name,
+    (SELECT session_id FROM session_resolution) as session_id
 FROM params
 CROSS JOIN emulation_validation ev
 CROSS JOIN resolved_profile_ids rpi

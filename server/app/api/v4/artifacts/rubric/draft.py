@@ -25,12 +25,6 @@ router = APIRouter()
 @router.patch(
     "/draft",
     response_model=PatchRubricDraftApiResponse,
-    dependencies=[
-        audit_activity(
-            "rubric.draft.patched",
-            "{{ actor.name }} patched rubric draft",
-        )
-    ],
 )
 async def patch_rubric_draft(
     request: PatchRubricDraftApiRequest,

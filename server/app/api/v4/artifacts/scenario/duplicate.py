@@ -28,12 +28,6 @@ router = APIRouter()
 @router.post(
     "/duplicate",
     response_model=DuplicateScenarioApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario.duplicated",
-            "{{ actor.name }} duplicated scenario '{{ scenario.name }}'",
-        )
-    ],
 )
 async def duplicate_scenario(
     request: DuplicateScenarioApiRequest,

@@ -22,12 +22,6 @@ router = APIRouter()
 @router.post(
     "/scenarios",
     response_model=ScenariosApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenarios.created",
-            "{{ actor.name }} created scenarios",
-        )
-    ],
 )
 async def create_scenarios(
     request: ScenariosApiRequest,

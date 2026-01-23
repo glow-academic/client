@@ -1,5 +1,5 @@
 // lib/api/request-core.ts
-import { getValidatedProfileId } from "@/app/(main)/layout-server";
+import { getValidatedProfileId, getValidatedSessionId } from "@/app/(main)/layout-server";
 
 // Guard against circular calls - if we're already fetching profile context, skip header injection
 let isFetchingProfileContext = false;
@@ -50,8 +50,8 @@ export async function doRequest<T>(
   let body: BodyInit | null = null;
   let headers: HeadersInit = init?.headers ?? {};
 
-  // Automatically inject X-Profile-Id header when running server-side
-  // This header is read by the backend instead of requiring profile IDs in request body
+  // Automatically inject X-Profile-Id and X-Session-Id headers when running server-side
+  // These headers are read by the backend instead of requiring IDs in request body
   if (typeof window === "undefined" && !isFetchingProfileContext) {
     try {
       isFetchingProfileContext = true;
@@ -63,10 +63,18 @@ export async function doRequest<T>(
           "X-Profile-Id": profileId,
         };
       }
+      // Inject session ID (uses cached context, no extra fetch)
+      const { sessionId } = await getValidatedSessionId();
+      if (sessionId) {
+        headers = {
+          ...headers,
+          "X-Session-Id": sessionId,
+        };
+      }
     } catch {
       isFetchingProfileContext = false;
-      // If profile ID resolution fails, continue without headers
-      // Endpoints can handle missing profile IDs appropriately (cookie-based auth)
+      // If profile/session ID resolution fails, continue without headers
+      // Endpoints can handle missing IDs appropriately (cookie-based auth)
     }
   }
 

@@ -76,6 +76,7 @@ from fastapi import APIRouter, Depends
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_effective_profile_id import get_effective_profile_id
 from app.utils.profile.get_profile_id import get_profile_id
+from app.utils.session.get_session_id import get_session_id
 
 # ============================================================================
 # Main Router Configuration
@@ -89,6 +90,7 @@ router: APIRouter = APIRouter(
     dependencies=[
         Depends(get_profile_id),
         Depends(get_effective_profile_id),
+        Depends(get_session_id),
         Depends(get_mcp),
     ],
 )

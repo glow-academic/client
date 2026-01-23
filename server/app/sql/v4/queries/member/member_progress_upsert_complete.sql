@@ -58,8 +58,8 @@ chat_group AS (
     LIMIT 1
 ),
 create_group_if_needed AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    SELECT NOW(), NOW()
+    INSERT INTO groups_entry (created_at, updated_at, session_id)
+    SELECT NOW(), NOW(), (SELECT id FROM sessions_entry WHERE profile_id = (SELECT profile_id FROM chat_context) AND active = true ORDER BY created_at DESC LIMIT 1)
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM chat_group)
     RETURNING id AS group_id

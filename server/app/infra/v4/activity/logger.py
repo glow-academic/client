@@ -70,19 +70,22 @@ async def log_activity(
     # Error if HTTP status >= 400 OR template rendering failed
     is_error = response_status_code >= 400 or template_error
 
+    # Read session_id from request state (set by get_session_id dependency)
+    session_id: str | None = getattr(request.state, "session_id", None)
+
     # Insert into activity table (async, fire-and-forget)
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.create_task(
                 _insert_activity(
-                    message, str(request.url.path), resolved_profile_id, is_error
+                    message, str(request.url.path), resolved_profile_id, is_error, session_id
                 )
             )
         else:
             asyncio.run(
                 _insert_activity(
-                    message, str(request.url.path), resolved_profile_id, is_error
+                    message, str(request.url.path), resolved_profile_id, is_error, session_id
                 )
             )
     except RuntimeError:
@@ -91,7 +94,7 @@ async def log_activity(
 
 
 async def _insert_activity(
-    message: str, endpoint: str, profile_id: str, error: bool = False
+    message: str, endpoint: str, profile_id: str, error: bool = False, session_id: str | None = None
 ) -> None:
     """Insert activity record into database.
 
@@ -100,6 +103,7 @@ async def _insert_activity(
         endpoint: Route path
         profile_id: Profile UUID (can be None if profile doesn't exist)
         error: Whether this activity represents an error (HTTP status >= 400 or template rendering failed)
+        session_id: Session UUID (can be None)
     """
     if _db_pool is None:
         return
@@ -108,7 +112,7 @@ async def _insert_activity(
         async with _db_pool.acquire() as conn:
             from app.infra.v4.activity.insert import insert_activity
 
-            await insert_activity(message, endpoint, profile_id, error, conn)
+            await insert_activity(message, endpoint, profile_id, error, conn, session_id)
     except Exception:
         # Never break logging if DB write fails
         pass

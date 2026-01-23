@@ -200,8 +200,9 @@ export function ProfileProviderClient({
   const maxConnectionAttempts = 5;
   const currentRoomsRef = useRef<Set<string>>(new Set());
 
-  // Get profile ID for socket connection
+  // Get profile ID and session ID for socket connection
   const profileId = effectiveProfile?.id ?? null;
+  const sessionId = initial?.session_id ?? null;
 
   // Initialize WebSocket connection when profileId is resolved
   // Note: profileId may be null for legitimate guest connections (e.g., practice page with guest role)
@@ -230,6 +231,9 @@ export function ProfileProviderClient({
       };
       if (profileId) {
         query["profileId"] = profileId;
+      }
+      if (sessionId) {
+        query["sessionId"] = sessionId;
       }
 
       const socket = await createSocketClient(query);

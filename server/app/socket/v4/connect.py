@@ -52,11 +52,14 @@ async def connect(
     profile_id: str | None = None
     guest_id: str | None = None
 
+    session_id: str | None = None
+
     # Parse query string using urllib.parse for proper URL decoding
     try:
         params = parse_qs(query_string)
         profile_id = params.get("profileId", [None])[0]
         guest_id = params.get("guestId", [None])[0]
+        session_id = params.get("sessionId", [None])[0]
     except Exception:  # defensive; ignore malformed
         pass
 
@@ -109,6 +112,16 @@ async def connect(
         # Store socket ownership
         await set_socket_owner(profile_id, sid)
         await sio.enter_room(sid, profile_id)
+
+        # Store session_id in Redis for WebSocket activity logging
+        if session_id:
+            try:
+                from app.main import get_redis_client
+                redis_client = get_redis_client()
+                if redis_client:
+                    await redis_client.setex(f"socket_session:{sid}", 86400, session_id)
+            except Exception:
+                pass
 
         # Update database to mark profile as active
         try:

@@ -20,6 +20,7 @@ async def insert_activity(
     profile_id: str | None,
     error: bool,
     conn: asyncpg.Connection,
+    session_id: str | None = None,
 ) -> None:
     """Insert activity record into database.
 
@@ -29,6 +30,7 @@ async def insert_activity(
         profile_id: Profile UUID string (can be None)
         error: Whether this activity represents an error
         conn: Database connection
+        session_id: Session UUID string (can be None)
     """
     # Check if profile exists, set profile_id to NULL if it doesn't
     # This prevents foreign key violations for test profiles that don't exist in production
@@ -44,6 +46,7 @@ async def insert_activity(
         endpoint=endpoint,
         profile_id=profile_id_uuid,
         error=error,
+        session_id=session_id,
     )
     cast(
         InfrastructureActivityInsertSqlRow,

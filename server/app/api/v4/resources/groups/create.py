@@ -27,12 +27,6 @@ router = APIRouter()
 @router.post(
     "/groups",
     response_model=GroupsApiResponse,
-    dependencies=[
-        audit_activity(
-            "groups.created",
-            "{{ actor.name }} created groups",
-        )
-    ],
 )
 async def create_groups(
     request: GroupsApiRequest,
