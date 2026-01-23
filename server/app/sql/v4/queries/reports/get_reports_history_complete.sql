@@ -136,7 +136,7 @@ WITH params AS (
 user_profile AS (
     SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
     FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    WHERE profile_id = (SELECT actor_profile_id FROM params)
 ),
 -- Expanded cohort list: union of provided cohortIds + profileId cohorts (reports always filters by profile)
 expanded_history_cohort_ids AS (
