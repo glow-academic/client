@@ -158,24 +158,28 @@ eval_info AS (
         -- Get first rubric FROM runs_entry (when use_groups = false) or groups_entry (when use_groups = true)
         (SELECT combined.rubric_id 
          FROM (
-             SELECT err.rubric_id, err.created_at
+             SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
+             JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
              WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
-             SELECT egr.rubric_id, egr.created_at
+             SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
+             JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
         (SELECT (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
-             SELECT err.rubric_id, err.created_at
+             SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
+             JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
              WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
-             SELECT egr.rubric_id, egr.created_at
+             SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
+             JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
@@ -183,12 +187,14 @@ eval_info AS (
          LIMIT 1) as rubric_name,
         (SELECT (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
          FROM (
-             SELECT err.rubric_id, err.created_at
+             SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
+             JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
              WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
-             SELECT egr.rubric_id, egr.created_at
+             SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
+             JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id

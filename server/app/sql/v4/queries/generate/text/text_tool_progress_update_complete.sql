@@ -47,7 +47,8 @@ get_tool_info AS (
     SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as tool_name
     FROM params p
     JOIN tool_artifact t ON (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name
-    JOIN agent_tools_junction at ON at.tool_id = t.id
+    JOIN tools_resource tr_res ON tr_res.tool_id = t.id
+    JOIN agent_tools_junction at ON at.tool_id = tr_res.id
     JOIN runs_entry r_run ON r_run.id = p.run_id
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = r_run.agent_id

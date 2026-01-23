@@ -14790,6 +14790,43 @@ class GroupPositionsApiResponse(BaseModel):
 
 
 
+# Generated from: group_rubrics
+
+class GroupRubricsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    target_group_id: UUID
+    rubric_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.target_group_id,
+            self.rubric_id,
+            self.mcp,
+        )
+
+class GroupRubricsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class GroupRubricsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    target_group_id: UUID
+    rubric_id: UUID
+    mcp: bool | None = False
+
+class GroupRubricsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: groups
 
 class GroupsSqlParams(BaseModel):
@@ -15673,6 +15710,43 @@ class RunPositionsApiResponse(BaseModel):
 
 
 
+# Generated from: run_rubrics
+
+class RunRubricsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    run_id: UUID
+    rubric_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.run_id,
+            self.rubric_id,
+            self.mcp,
+        )
+
+class RunRubricsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class RunRubricsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    run_id: UUID
+    rubric_id: UUID
+    mcp: bool | None = False
+
+class RunRubricsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: runs
 
 class RunsSqlParams(BaseModel):
@@ -16241,40 +16315,6 @@ class ToolsApiRequest(BaseModel):
 class ToolsApiResponse(BaseModel):
 
     tools_id: UUID | None = None
-
-
-
-# Generated from: update_templates
-
-class UpdateTemplatesSqlParams(BaseModel):
-
-    template_id: UUID
-    html: str
-    name: str | None = None
-    description: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.template_id,
-            self.html,
-            self.name,
-            self.description,
-        )
-
-class UpdateTemplatesSqlRow(BaseModel):
-
-    template_id: UUID | None = None
-
-class UpdateTemplatesApiRequest(BaseModel):
-
-    template_id: UUID
-    html: str
-    name: str | None = None
-    description: str | None = None
-
-class UpdateTemplatesApiResponse(BaseModel):
-
-    template_id: UUID | None = None
 
 
 
@@ -22347,6 +22387,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GroupPositionsApiRequest",
         "GroupPositionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/group_rubrics_complete.sql": (
+        "GroupRubricsSqlParams",
+        "GroupRubricsSqlRow",
+        "GroupRubricsApiRequest",
+        "GroupRubricsApiResponse",
+    ),
     "app/sql/v4/queries/resources/groups_complete.sql": (
         "GroupsSqlParams",
         "GroupsSqlRow",
@@ -22503,6 +22549,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RunPositionsApiRequest",
         "RunPositionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/run_rubrics_complete.sql": (
+        "RunRubricsSqlParams",
+        "RunRubricsSqlRow",
+        "RunRubricsApiRequest",
+        "RunRubricsApiResponse",
+    ),
     "app/sql/v4/queries/resources/runs_complete.sql": (
         "RunsSqlParams",
         "RunsSqlRow",
@@ -22598,12 +22650,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ToolsSqlRow",
         "ToolsApiRequest",
         "ToolsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/update_templates_complete.sql": (
-        "UpdateTemplatesSqlParams",
-        "UpdateTemplatesSqlRow",
-        "UpdateTemplatesApiRequest",
-        "UpdateTemplatesApiResponse",
     ),
     "app/sql/v4/queries/resources/uploads_complete.sql": (
         "UploadsSqlParams",
@@ -24235,6 +24281,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/group_rubrics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/groups_complete.sql"]
     ) -> SqlString: ...
 
@@ -24365,6 +24416,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/run_rubrics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/runs_complete.sql"]
     ) -> SqlString: ...
 
@@ -24441,11 +24497,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/tools_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/update_templates_complete.sql"]
     ) -> SqlString: ...
 
     @overload

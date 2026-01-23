@@ -310,7 +310,8 @@ agent_tools_data AS (
         ) as tools
     FROM best_agent ba
     LEFT JOIN agent_tools_junction at ON at.agent_id = ba.agent_id AND at.active = true
-    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+    LEFT JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LEFT JOIN resource_tools_relation rt ON rt.tool_id = t.id
     
     

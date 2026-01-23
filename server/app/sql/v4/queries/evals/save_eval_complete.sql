@@ -291,11 +291,10 @@ BEGIN
           AND COALESCE(array_length(x.group_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT eval_groups_pkey DO NOTHING
     ),
-    -- Link rubrics to runs_entry
-    link_run_rubrics AS (
-        INSERT INTO eval_runs_rubrics_junction (eval_id, run_id, rubric_id, created_at, generated, mcp, active)
-        SELECT
-            x.eval_id,
+    -- Create run_rubrics_resource entries
+    create_run_rubrics AS (
+        INSERT INTO run_rubrics_resource (run_id, rubric_id, created_at, generated, mcp, active)
+        SELECT DISTINCT
             rr.run_id,
             rubric_id,
             NOW(),
@@ -307,14 +306,29 @@ BEGIN
         CROSS JOIN LATERAL UNNEST(rr.rubric_ids) AS rubric_id
         WHERE x.use_groups = false
           AND COALESCE(array_length(rr.rubric_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT eval_runs_rubrics_pkey DO UPDATE SET
-            active = true
+        ON CONFLICT (run_id, rubric_id) DO UPDATE SET active = EXCLUDED.active
+        RETURNING id
     ),
-    -- Link rubrics to groups_entry
-    link_group_rubrics AS (
-        INSERT INTO eval_groups_rubrics_junction (eval_id, group_id, rubric_id, created_at, generated, mcp, active)
+    -- Link run_rubrics to eval
+    link_run_rubrics AS (
+        INSERT INTO eval_runs_rubrics_junction (eval_id, run_rubric_id, created_at, generated, mcp, active)
         SELECT
             x.eval_id,
+            crr.id,
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN create_run_rubrics crr
+        WHERE x.use_groups = false
+        ON CONFLICT (eval_id, run_rubric_id) DO UPDATE SET
+            active = true
+    ),
+    -- Create group_rubrics_resource entries
+    create_group_rubrics AS (
+        INSERT INTO group_rubrics_resource (group_id, rubric_id, created_at, generated, mcp, active)
+        SELECT DISTINCT
             gr.group_id,
             rubric_id,
             NOW(),
@@ -326,7 +340,23 @@ BEGIN
         CROSS JOIN LATERAL UNNEST(gr.rubric_ids) AS rubric_id
         WHERE x.use_groups = true
           AND COALESCE(array_length(gr.rubric_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT eval_groups_rubrics_pkey DO UPDATE SET
+        ON CONFLICT (group_id, rubric_id) DO UPDATE SET active = EXCLUDED.active
+        RETURNING id
+    ),
+    -- Link group_rubrics to eval
+    link_group_rubrics AS (
+        INSERT INTO eval_groups_rubrics_junction (eval_id, group_rubric_id, created_at, generated, mcp, active)
+        SELECT
+            x.eval_id,
+            cgr.id,
+            NOW(),
+            false,
+            false,
+            true
+        FROM params x
+        CROSS JOIN create_group_rubrics cgr
+        WHERE x.use_groups = true
+        ON CONFLICT (eval_id, group_rubric_id) DO UPDATE SET
             active = true
     )
     SELECT 

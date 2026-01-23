@@ -45,7 +45,8 @@ BEGIN
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools_junction at
-    JOIN tool_artifact t ON t.id = at.tool_id
+    JOIN tools_resource tr ON tr.id = at.tool_id
+    JOIN tool_artifact t ON t.id = tr.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_tools_v4.agent_id
       AND rt.resource = 'tools'::resource_type
@@ -90,13 +91,11 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO tools table (always insert, never update)
-    -- Use ON CONFLICT to handle unique constraint on tool_id
-    INSERT INTO tools(tool_id, active, call_id, mcp, group_id, generated)
-    VALUES (v_tool_id, true, v_call_id, mcp, api_create_tools_v4.group_id, false)
+    -- INSERT INTO tools_resource table (get or create by tool_id)
+    INSERT INTO tools_resource(tool_id, active, call_id, mcp, generated)
+    VALUES (v_tool_id, true, v_call_id, mcp, false)
     ON CONFLICT (tool_id) DO UPDATE SET
-        call_id = EXCLUDED.call_id,
-        updated_at = NOW()
+        call_id = EXCLUDED.call_id
     RETURNING id INTO v_tools_id;
     
     -- Create message record (assistant role, not completed)

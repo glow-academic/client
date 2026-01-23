@@ -665,7 +665,8 @@ agent_artifact_tool_counts AS (
         COUNT(DISTINCT CASE WHEN ar.resource IS NULL THEN rt.resource::text END) as extra_outside_count
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
-    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (
+    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+    LEFT JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (
         SELECT 1 FROM tool_flags_junction tf
         JOIN flags_resource f ON tf.flag_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
@@ -687,7 +688,8 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -706,7 +708,8 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resource_type
@@ -767,7 +770,8 @@ description_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -786,7 +790,8 @@ description_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resource_type
@@ -847,7 +852,8 @@ active_flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -866,7 +872,8 @@ active_flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resource_type
@@ -933,7 +940,8 @@ departments_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -952,7 +960,8 @@ departments_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
+            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tool_artifact t ON t.id = tr.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
             JOIN resource_tools_relation rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'departments'::resource_type
@@ -1010,7 +1019,8 @@ valid_agents_for_eval_list AS (
         COALESCE(
             (SELECT ARRAY_AGG(DISTINCT ar.artifact::text)
              FROM agent_tools_junction at
-             JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
              JOIN artifact_resources_relation ar ON ar.resource = rt.resource
              WHERE at.agent_id = a.id
                AND at.active = TRUE),
@@ -1022,7 +1032,8 @@ valid_agents_for_eval_list AS (
     WHERE 
         EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN resource_tools_relation rt ON rt.tool_id = tr_rt.tool_id
             JOIN artifact_resources_relation ar ON ar.resource = rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
@@ -1171,18 +1182,20 @@ eval_group_ids_data AS (
 ),
 -- Eval rubric IDs (selected rubric IDs for eval)
 eval_rubric_ids_data AS (
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(DISTINCT rubric_id)
                  FROM (
-                     SELECT err.rubric_id, err.created_at
+                     SELECT rr.rubric_id, err.created_at
                      FROM eval_runs_rubrics_junction err
+                     JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
                      WHERE err.eval_id = (SELECT eval_id FROM params) AND err.active = true
                      UNION
-                     SELECT egr.rubric_id, egr.created_at
+                     SELECT gr.rubric_id, egr.created_at
                      FROM eval_groups_rubrics_junction egr
+                     JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
                      WHERE egr.eval_id = (SELECT eval_id FROM params) AND egr.active = true
                      ORDER BY created_at
                  ) combined),
@@ -1196,32 +1209,34 @@ eval_rubric_ids_data AS (
 eval_run_rubrics_data AS (
     SELECT
         COALESCE(
-            ARRAY_AGG((err.run_id, err.rubric_ids)::types.q_get_eval_v4_run_rubrics),
+            ARRAY_AGG((sub.run_id, sub.rubric_ids)::types.q_get_eval_v4_run_rubrics),
             '{}'::types.q_get_eval_v4_run_rubrics[]
         ) as run_rubrics
     FROM (
         SELECT
-            err.run_id,
-            ARRAY_AGG(err.rubric_id ORDER BY err.created_at) as rubric_ids
+            rr.run_id,
+            ARRAY_AGG(rr.rubric_id ORDER BY err.created_at) as rubric_ids
         FROM eval_runs_rubrics_junction err
+        JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
         WHERE err.eval_id = (SELECT eval_id FROM params) AND err.active = true
-        GROUP BY err.run_id
-    ) err
+        GROUP BY rr.run_id
+    ) sub
 ),
 eval_group_rubrics_data AS (
     SELECT
         COALESCE(
-            ARRAY_AGG((egr.group_id, egr.rubric_ids)::types.q_get_eval_v4_group_rubrics),
+            ARRAY_AGG((sub.group_id, sub.rubric_ids)::types.q_get_eval_v4_group_rubrics),
             '{}'::types.q_get_eval_v4_group_rubrics[]
         ) as group_rubrics
     FROM (
         SELECT
-            egr.group_id,
-            ARRAY_AGG(egr.rubric_id ORDER BY egr.created_at) as rubric_ids
+            gr.group_id,
+            ARRAY_AGG(gr.rubric_id ORDER BY egr.created_at) as rubric_ids
         FROM eval_groups_rubrics_junction egr
+        JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
         WHERE egr.eval_id = (SELECT eval_id FROM params) AND egr.active = true
-        GROUP BY egr.group_id
-    ) egr
+        GROUP BY gr.group_id
+    ) sub
 ),
 -- Check for missing tools on required resources
 -- IMPORTANT: We check for TOOLS existence (not agents). Tools are required, agents are optional.

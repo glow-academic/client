@@ -351,18 +351,28 @@ BEGIN
         ON CONFLICT (agent_id, voice_id) DO UPDATE SET
             active = true
     ),
-    -- Link tools if provided
-    link_tools AS (
-        INSERT INTO agent_tools_junction (agent_id, tool_id, active, created_at)
-        SELECT 
-            x.agent_id,
-            tool_id,
-            true,
-            NOW()
+    -- Create tools_resource entries for provided tool_ids
+    create_tool_resources AS (
+        INSERT INTO tools_resource (tool_id, active, created_at)
+        SELECT DISTINCT tool_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.tool_ids) as tool_id
         WHERE COALESCE(array_length(x.tool_ids, 1), 0) > 0
           AND EXISTS (SELECT 1 FROM tool_artifact t WHERE t.id = tool_id)
+        ON CONFLICT (tool_id) DO UPDATE SET active = EXCLUDED.active
+        RETURNING id, tool_id
+    ),
+    -- Link tools if provided
+    link_tools AS (
+        INSERT INTO agent_tools_junction (agent_id, tool_id, active, created_at)
+        SELECT
+            x.agent_id,
+            ctr.id,
+            true,
+            NOW()
+        FROM params x
+        CROSS JOIN create_tool_resources ctr
+        WHERE COALESCE(array_length(x.tool_ids, 1), 0) > 0
         ON CONFLICT (agent_id, tool_id) DO UPDATE SET
             active = true
     )

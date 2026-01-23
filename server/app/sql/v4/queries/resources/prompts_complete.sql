@@ -48,7 +48,8 @@ BEGIN
     SELECT t.id, t.id as template_id, NULL::uuid as schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools_junction at
-    JOIN tool_artifact t ON t.id = at.tool_id
+    JOIN tools_resource tr ON tr.id = at.tool_id
+    JOIN tool_artifact t ON t.id = tr.tool_id
     JOIN resource_tools_relation rt ON rt.tool_id = t.id
     WHERE at.agent_id = api_create_prompts_v4.agent_id
       AND rt.resource = 'prompts'::resource_type

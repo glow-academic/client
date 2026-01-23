@@ -64,6 +64,10 @@ from app.api.v4.resources.group_positions.create import \
     router as group_positions_router
 
 router.include_router(group_positions_router)
+from app.api.v4.resources.group_rubrics.create import \
+    router as group_rubrics_router
+
+router.include_router(group_rubrics_router)
 from app.api.v4.resources.groups.create import router as groups_router
 
 router.include_router(groups_router)
@@ -150,6 +154,10 @@ from app.api.v4.resources.run_positions.create import \
     router as run_positions_router
 
 router.include_router(run_positions_router)
+from app.api.v4.resources.run_rubrics.create import \
+    router as run_rubrics_router
+
+router.include_router(run_rubrics_router)
 from app.api.v4.resources.runs.create import router as runs_router
 
 router.include_router(runs_router)
@@ -200,10 +208,8 @@ from app.api.v4.resources.temperature_levels.create import \
 
 router.include_router(temperature_levels_router)
 from app.api.v4.resources.templates.create import router as templates_router
-from app.api.v4.resources.templates.update import router as templates_update_router
 
 router.include_router(templates_router)
-router.include_router(templates_update_router)
 from app.api.v4.resources.thresholds.create import router as thresholds_router
 
 router.include_router(thresholds_router)

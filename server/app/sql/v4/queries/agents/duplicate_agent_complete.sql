@@ -42,7 +42,8 @@ source_agent AS (
     LEFT JOIN LATERAL (
         SELECT DISTINCT ar.artifact::text
         FROM agent_tools_junction at
-        JOIN resource_tools_relation rt ON rt.tool_id = at.tool_id
+        JOIN tools_resource tr ON tr.id = at.tool_id
+        JOIN resource_tools_relation rt ON rt.tool_id = tr.tool_id
         JOIN artifact_resources_relation ar ON ar.resource = rt.resource
         WHERE at.agent_id = a.id AND at.active = TRUE
         LIMIT 1

@@ -161,24 +161,28 @@ eval_data AS (
         -- Get first rubric from direct rubric links (FROM runs_entry or groups_entry based on use_groups)
         (SELECT combined.rubric_id 
          FROM (
-             SELECT err.rubric_id, err.created_at
+             SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
+             JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
              WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
-             SELECT egr.rubric_id, egr.created_at
+             SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
+             JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
         (SELECT (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
-             SELECT err.rubric_id, err.created_at
+             SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
+             JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
              WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
-             SELECT egr.rubric_id, egr.created_at
+             SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
+             JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
@@ -186,12 +190,14 @@ eval_data AS (
          LIMIT 1) as rubric_name,
         (SELECT (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
          FROM (
-             SELECT err.rubric_id, err.created_at
+             SELECT rr.rubric_id, err.created_at
              FROM eval_runs_rubrics_junction err
+             JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
              WHERE err.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = false)
              UNION ALL
-             SELECT egr.rubric_id, egr.created_at
+             SELECT gr.rubric_id, egr.created_at
              FROM eval_groups_rubrics_junction egr
+             JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
              WHERE egr.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = e.id AND f.name = 'groups_entry' AND ef.value = true)
          ) combined
          JOIN rubrics_resource r ON r.id = combined.rubric_id
@@ -267,11 +273,13 @@ evals_aggregated AS (
     LEFT JOIN eval_agents_aggregated eaa ON eaa.eval_id = fe.eval_id
 ),
 all_rubric_ids AS (
-    SELECT DISTINCT COALESCE(err.rubric_id, egr.rubric_id) as rubric_id
+    SELECT DISTINCT COALESCE(rr.rubric_id, gr.rubric_id) as rubric_id
     FROM filtered_evals fe
     LEFT JOIN eval_runs_rubrics_junction err ON err.eval_id = fe.eval_id AND fe.use_groups = false
+    LEFT JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
     LEFT JOIN eval_groups_rubrics_junction egr ON egr.eval_id = fe.eval_id AND fe.use_groups = true
-    WHERE COALESCE(err.rubric_id, egr.rubric_id) IS NOT NULL
+    LEFT JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
+    WHERE COALESCE(rr.rubric_id, gr.rubric_id) IS NOT NULL
 ),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids) as department_id

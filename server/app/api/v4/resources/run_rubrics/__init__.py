@@ -1,0 +1,1 @@
+"""Run rubrics resource endpoints."""
