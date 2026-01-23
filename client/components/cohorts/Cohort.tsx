@@ -67,6 +67,22 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
+type CreateDraftSimulationsIn = InputOf<
+  "/api/v4/resources/simulations",
+  "post"
+>;
+type CreateDraftSimulationsOut = OutputOf<
+  "/api/v4/resources/simulations",
+  "post"
+>;
+type CreateDraftSimulationPositionsIn = InputOf<
+  "/api/v4/resources/simulation_positions",
+  "post"
+>;
+type CreateDraftSimulationPositionsOut = OutputOf<
+  "/api/v4/resources/simulation_positions",
+  "post"
+>;
 type PatchCohortDraftIn = InputOf<"/api/v4/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
 
@@ -94,6 +110,12 @@ export interface CohortProps {
   createDepartmentsAction?: (
     input: CreateDraftDepartmentsIn
   ) => Promise<CreateDraftDepartmentsOut>;
+  createSimulationsAction?: (
+    input: CreateDraftSimulationsIn
+  ) => Promise<CreateDraftSimulationsOut>;
+  createSimulationPositionsAction?: (
+    input: CreateDraftSimulationPositionsIn
+  ) => Promise<CreateDraftSimulationPositionsOut>;
 }
 
 function CohortComponent({
@@ -105,6 +127,8 @@ function CohortComponent({
   createDescriptionsAction,
   createFlagsAction,
   createDepartmentsAction,
+  createSimulationsAction,
+  createSimulationPositionsAction,
 }: CohortProps) {
   const router = useRouter();
   const isEditMode = !!cohortId;
@@ -1567,6 +1591,7 @@ function CohortComponent({
                 agent_id={currentCohortData?.simulations_agent_id ?? null}
                 searchTerm={simulationSearchTerm}
                 showSelectedFilter={simulationShowSelected}
+                createSimulationsAction={createSimulationsAction}
               />
               <SimulationPositions
                 simulation_ids={formState.simulation_ids ?? []}
@@ -1603,6 +1628,7 @@ function CohortComponent({
                   isEditMode ? handleGenerateSimulationPositions : undefined
                 }
                 isGenerating={isGenerating("simulation_positions")}
+                createSimulationPositionsAction={createSimulationPositionsAction}
               />
             </StepCard>
           );
@@ -1639,6 +1665,8 @@ function CohortComponent({
       createDescriptionsAction,
       createFlagsAction,
       createDepartmentsAction,
+      createSimulationsAction,
+      createSimulationPositionsAction,
       canRegenerate,
       handleOpenStepCardModal,
     ]
@@ -1731,7 +1759,9 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
     prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
+    prevProps.createSimulationsAction !== nextProps.createSimulationsAction ||
+    prevProps.createSimulationPositionsAction !== nextProps.createSimulationPositionsAction
   ) {
     return false; // Function props changed, re-render
   }

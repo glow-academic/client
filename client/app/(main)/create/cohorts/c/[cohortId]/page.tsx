@@ -39,6 +39,22 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
+type CreateDraftSimulationsIn = InputOf<
+  "/api/v4/resources/simulations",
+  "post"
+>;
+type CreateDraftSimulationsOut = OutputOf<
+  "/api/v4/resources/simulations",
+  "post"
+>;
+type CreateDraftSimulationPositionsIn = InputOf<
+  "/api/v4/resources/simulation_positions",
+  "post"
+>;
+type CreateDraftSimulationPositionsOut = OutputOf<
+  "/api/v4/resources/simulation_positions",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -137,6 +153,20 @@ async function createDraftDepartments(
   return api.post("/resources/departments", input);
 }
 
+async function createDraftSimulations(
+  input: CreateDraftSimulationsIn
+): Promise<CreateDraftSimulationsOut> {
+  "use server";
+  return api.post("/resources/simulations", input);
+}
+
+async function createDraftSimulationPositions(
+  input: CreateDraftSimulationPositionsIn
+): Promise<CreateDraftSimulationPositionsOut> {
+  "use server";
+  return api.post("/resources/simulation_positions", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function CohortEditPage({
   params,
@@ -222,6 +252,8 @@ export default async function CohortEditPage({
         createDescriptionsAction={createDraftDescriptions}
         createFlagsAction={createDraftFlags}
         createDepartmentsAction={createDraftDepartments}
+        createSimulationsAction={createDraftSimulations}
+        createSimulationPositionsAction={createDraftSimulationPositions}
       />
     </div>
   );

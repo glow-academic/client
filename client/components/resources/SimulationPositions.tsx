@@ -47,8 +47,13 @@ export interface SimulationPositionsProps {
   description?: string;
   group_id?: string | null;
   agent_id?: string | null;
-  onGenerate?: () => void | Promise<void>;
+  onGenerate?: (() => void | Promise<void>) | undefined;
   isGenerating?: boolean;
+  createSimulationPositionsAction?:
+    | ((input: {
+        body: { agent_id: string; group_id: string; simulation_id: string; value: number; mcp: boolean };
+      }) => Promise<unknown>)
+    | undefined;
 }
 
 export function SimulationPositions({
@@ -62,9 +67,11 @@ export function SimulationPositions({
   id = "simulation_positions",
   required = false,
   description,
+  group_id,
   agent_id,
   onGenerate,
   isGenerating = false,
+  createSimulationPositionsAction,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(
@@ -142,8 +149,29 @@ export function SimulationPositions({
         generated: false,
       }));
       onChange(positionsArray);
+
+      // Create resource entries for each position
+      if (createSimulationPositionsAction && agent_id && group_id) {
+        for (const pos of positionsArray) {
+          createSimulationPositionsAction({
+            body: {
+              agent_id: agent_id,
+              group_id: group_id,
+              simulation_id: pos.simulation_id,
+              value: pos.value,
+              mcp: false,
+            },
+          }).catch((error) => {
+            // eslint-disable-next-line no-console
+            console.error(
+              `Failed to create simulation position resource for ${pos.simulation_id}:`,
+              error
+            );
+          });
+        }
+      }
     },
-    [onChange]
+    [onChange, createSimulationPositionsAction, agent_id, group_id]
   );
 
   const updatePositions = useCallback(

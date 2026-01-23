@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 export interface SimulationItem {
   id: string;
@@ -58,6 +58,11 @@ export interface SimulationsProps {
   isGenerating?: boolean;
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
+  createSimulationsAction?:
+    | ((input: {
+        body: { agent_id: string; group_id: string; simulation_id: string; mcp: boolean };
+      }) => Promise<unknown>)
+    | undefined;
   // Legacy props for backward compatibility
   simulationIds?: string[];
 }
@@ -81,9 +86,13 @@ export function Simulations({
   isGenerating = false,
   searchTerm = "",
   showSelectedFilter = false,
+  createSimulationsAction,
   // Legacy props for backward compatibility
   simulationIds,
 }: SimulationsProps) {
+  // Track which simulation IDs have already had resources created (prevent duplicates)
+  const createdSimulationIdsRef = useRef<Set<string>>(new Set());
+
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
     () => simulation_ids ?? simulationIds ?? [],
@@ -156,15 +165,42 @@ export function Simulations({
   );
 
   const handleSelect = useCallback(
-    (simulationId: string) => {
+    async (simulationId: string) => {
       const isSelected = ids.includes(simulationId);
       const newIds = isSelected
         ? ids.filter((id) => id !== simulationId)
         : [...ids, simulationId];
-      // Update parent state (simulations don't need resource creation)
+
+      // Create resource for newly selected simulation
+      if (
+        !isSelected &&
+        createSimulationsAction &&
+        agent_id &&
+        group_id &&
+        !createdSimulationIdsRef.current.has(simulationId)
+      ) {
+        try {
+          await createSimulationsAction({
+            body: {
+              agent_id: agent_id,
+              group_id: group_id,
+              simulation_id: simulationId,
+              mcp: false,
+            },
+          });
+          createdSimulationIdsRef.current.add(simulationId);
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(
+            `Failed to create simulation resource for ${simulationId}:`,
+            error
+          );
+        }
+      }
+
       onChange(newIds);
     },
-    [ids, onChange]
+    [ids, onChange, createSimulationsAction, agent_id, group_id]
   );
 
   // Check if any simulation resource is generated (must be before early return)
