@@ -60,15 +60,9 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_profile AS (
-    SELECT 
-        (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM params x
-    JOIN profile_artifact p ON p.id = x.profile_id
+    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 tool_args_counts AS (
     SELECT 

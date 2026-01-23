@@ -2238,46 +2238,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/conditional_parameters": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Conditional Parameters
-         * @description Create conditional_parameters resource (always INSERT).
-         */
-        post: operations["create_conditional_parameters_api_v4_resources_conditional_parameters_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/debug_info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Debug Info
-         * @description Create debug_info resource (always INSERT).
-         */
-        post: operations["create_debug_info_api_v4_resources_debug_info_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/departments": {
         parameters: {
             query?: never;
@@ -2478,6 +2438,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/group_rubrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Group Rubrics
+         * @description Create group_rubrics resource (always INSERT).
+         */
+        post: operations["create_group_rubrics_api_v4_resources_group_rubrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/groups": {
         parameters: {
             query?: never;
@@ -2492,26 +2472,6 @@ export interface paths {
          * @description Create groups resource (always INSERT).
          */
         post: operations["create_groups_api_v4_resources_groups_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/html": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Html
-         * @description Create html resource (always INSERT).
-         */
-        post: operations["create_html_api_v4_resources_html_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3018,6 +2978,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/run_rubrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Run Rubrics
+         * @description Create run_rubrics resource (always INSERT).
+         */
+        post: operations["create_run_rubrics_api_v4_resources_run_rubrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/runs": {
         parameters: {
             query?: never;
@@ -3158,26 +3138,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_scenario_flags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Simulation Scenario Flags
-         * @description Create simulation_scenario_flags resource (always INSERT).
-         */
-        post: operations["create_simulation_scenario_flags_api_v4_resources_simulation_scenario_flags_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/simulation_positions": {
         parameters: {
             query?: never;
@@ -3312,46 +3272,6 @@ export interface paths {
          * @description Create templates resource (always INSERT).
          */
         post: operations["create_templates_api_v4_resources_templates_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/templates/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Templates
-         * @description Update templates resource (HTML, name, description).
-         */
-        post: operations["update_templates_api_v4_resources_templates_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/texts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Texts
-         * @description Create texts resource (always INSERT).
-         */
-        post: operations["create_texts_api_v4_resources_texts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6377,29 +6297,6 @@ export interface components {
             /** Color Id */
             color_id?: string | null;
         };
-        /** ConditionalParametersApiRequest */
-        ConditionalParametersApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** ConditionalParametersApiResponse */
-        ConditionalParametersApiResponse: {
-            /** Conditional Parameters Id */
-            conditional_parameters_id?: string | null;
-        };
         /**
          * ConnectionConfirmedPayload
          * @description Response indicating WebSocket connection was confirmed.
@@ -6525,31 +6422,6 @@ export interface components {
             created?: boolean | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /** DebugInfoApiRequest */
-        DebugInfoApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Content */
-            content: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** DebugInfoApiResponse */
-        DebugInfoApiResponse: {
-            /** Debug Info Id */
-            debug_info_id?: string | null;
         };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
@@ -11382,6 +11254,39 @@ export interface components {
             /** Group Positions Id */
             group_positions_id?: string | null;
         };
+        /** GroupRubricsApiRequest */
+        GroupRubricsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Target Group Id
+             * Format: uuid
+             */
+            target_group_id: string;
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GroupRubricsApiResponse */
+        GroupRubricsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** GroupsApiRequest */
         GroupsApiRequest: {
             /**
@@ -11409,33 +11314,6 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
-        };
-        /** HtmlApiRequest */
-        HtmlApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** HtmlApiResponse */
-        HtmlApiResponse: {
-            /** Html Id */
-            html_id?: string | null;
         };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
@@ -19337,6 +19215,39 @@ export interface components {
             /** Run Positions Id */
             run_positions_id?: string | null;
         };
+        /** RunRubricsApiRequest */
+        RunRubricsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** RunRubricsApiResponse */
+        RunRubricsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
         /** RunsApiRequest */
         RunsApiRequest: {
             /**
@@ -20216,39 +20127,6 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** SimulationScenarioFlagsApiRequest */
-        SimulationScenarioFlagsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Scenario Id
-             * Format: uuid
-             */
-            scenario_id: string;
-            /**
-             * Flag Id
-             * Format: uuid
-             */
-            flag_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** SimulationScenarioFlagsApiResponse */
-        SimulationScenarioFlagsApiResponse: {
-            /** Id */
-            id?: string | null;
-        };
         /**
          * SimulationStartedPayload
          * @description Response indicating simulation started successfully.
@@ -20524,29 +20402,6 @@ export interface components {
             /** Template Id */
             template_id?: string | null;
         };
-        /** TextsApiRequest */
-        TextsApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-        };
-        /** TextsApiResponse */
-        TextsApiResponse: {
-            /** Texts Id */
-            texts_id?: string | null;
-        };
         /** ThresholdsApiRequest */
         ThresholdsApiRequest: {
             /**
@@ -20594,25 +20449,6 @@ export interface components {
         ToolsApiResponse: {
             /** Tools Id */
             tools_id?: string | null;
-        };
-        /** UpdateTemplatesApiRequest */
-        UpdateTemplatesApiRequest: {
-            /**
-             * Template Id
-             * Format: uuid
-             */
-            template_id: string;
-            /** Html */
-            html: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-        };
-        /** UpdateTemplatesApiResponse */
-        UpdateTemplatesApiResponse: {
-            /** Template Id */
-            template_id?: string | null;
         };
         /** UploadsApiRequest */
         UploadsApiRequest: {
@@ -24752,80 +24588,6 @@ export interface operations {
             };
         };
     };
-    create_conditional_parameters_api_v4_resources_conditional_parameters_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConditionalParametersApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConditionalParametersApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_debug_info_api_v4_resources_debug_info_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DebugInfoApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DebugInfoApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_departments_api_v4_resources_departments_post: {
         parameters: {
             query?: never;
@@ -25196,6 +24958,43 @@ export interface operations {
             };
         };
     };
+    create_group_rubrics_api_v4_resources_group_rubrics_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_groups_api_v4_resources_groups_post: {
         parameters: {
             query?: never;
@@ -25220,43 +25019,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_html_api_v4_resources_html_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HtmlApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HtmlApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26195,6 +25957,43 @@ export interface operations {
             };
         };
     };
+    create_run_rubrics_api_v4_resources_run_rubrics_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_runs_api_v4_resources_runs_post: {
         parameters: {
             query?: never;
@@ -26454,43 +26253,6 @@ export interface operations {
             };
         };
     };
-    create_simulation_scenario_flags_api_v4_resources_simulation_scenario_flags_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationScenarioFlagsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimulationScenarioFlagsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_simulation_positions_api_v4_resources_simulation_positions_post: {
         parameters: {
             query?: never;
@@ -26737,80 +26499,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemplatesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_templates_api_v4_resources_templates_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTemplatesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateTemplatesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_texts_api_v4_resources_texts_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TextsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TextsApiResponse"];
                 };
             };
             /** @description Validation Error */

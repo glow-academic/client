@@ -86,12 +86,9 @@ user_departments AS (
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
 user_profile AS (
-    SELECT (SELECT r.role FROM profile_roles_junction pr_j 
-            JOIN roles_resource r ON pr_j.role_id = r.id 
-            WHERE pr_j.profile_id = profile_artifact.id 
-            LIMIT 1) as role
-    FROM params x
-    JOIN profile_artifact ON profile_artifact.id = x.profile_id
+    SELECT role
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get department_ids via setting_provider_keys_junction -> settings -> department_settings_junction
 key_departments_data AS (

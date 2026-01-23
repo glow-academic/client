@@ -33,10 +33,9 @@ WITH params AS (
            profile_id AS profile_id
 ),
 user_profile AS (
-    SELECT 
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
-    FROM params x
-    JOIN profile_artifact p ON p.id = x.profile_id
+    SELECT actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 original_setting AS (
     SELECT 

@@ -92,14 +92,9 @@ WITH params AS (
         COALESCE(limit_count, 200) AS limit_count
 ),
 user_profile AS (
-    SELECT 
-        COALESCE((SELECT r.role FROM profile_roles_junction pr_j 
-                  JOIN roles_resource r ON pr_j.role_id = r.id 
-                  WHERE pr_j.profile_id = (SELECT profile_id FROM params) 
-                  LIMIT 1), 'guest') as role,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
-    FROM params x
-    JOIN profile_artifact p ON p.id = x.profile_id
+    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 user_departments AS (
     SELECT department_id

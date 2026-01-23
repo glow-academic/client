@@ -67,15 +67,9 @@ WITH params AS (
         (page * page_size) AS offset_value
 ),
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1) || ' ' || 
-            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id LIMIT 1), 
-            'System'
-        ) as actor_name
-    FROM params x
-    LEFT JOIN profile_artifact ON profile_artifact.id = x.profile_id
-    LIMIT 1
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- App metrics_entry time series (last 7 days, aggregated by hour)
 metrics_trend AS (

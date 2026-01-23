@@ -71,10 +71,9 @@ WITH params AS (
         (page * page_size) AS offset_value
 ),
 user_profile AS (
-    SELECT 
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name
-    FROM params x
-    JOIN profile_artifact ON profile_artifact.id = x.profile_id
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 filtered_activities AS (
     SELECT

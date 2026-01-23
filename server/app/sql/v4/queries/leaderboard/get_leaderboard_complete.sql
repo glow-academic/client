@@ -142,13 +142,9 @@ settings_colors AS (
 ),
 -- Get actor name FROM profile_artifact
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM params x
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 filt AS (
     SELECT * FROM analytics a 

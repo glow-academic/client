@@ -127,18 +127,9 @@ user_departments AS (
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
 user_profile AS (
-    SELECT 
-        (SELECT r.role FROM profile_roles_junction pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
-         WHERE pr_j.profile_id = profile_artifact.id 
-         LIMIT 1) as role,
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM params x
-    JOIN profile_artifact ON profile_artifact.id = x.profile_id
+    SELECT role, COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 eval_status_summary AS (
     SELECT 

@@ -593,13 +593,9 @@ simulation_array AS (
     WHERE sim.id IN (SELECT DISTINCT simulation_id FROM cohort_sim)
 ),
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = rpi.resolved_profile_id LIMIT 1),
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = rpi.resolved_profile_id LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM resolve_profile_id rpi
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
 ),
 -- Aggregate ta items
 ta_items_agg AS (

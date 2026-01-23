@@ -34,10 +34,9 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH user_profile AS (
-    SELECT 
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
-    FROM profile_artifact p
-    WHERE p.id = profile_id
+    SELECT actor_name
+    FROM view_user_profile_context vpc
+    WHERE vpc.profile_id = profile_id
 ),
 -- Insert name INTO names_resource table and get ID
 name_resource AS (

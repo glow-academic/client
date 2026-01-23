@@ -39,14 +39,9 @@ WITH params AS (
         profile_id AS profile_id
 ),
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM params x
-    JOIN profile_artifact p ON p.id = x.profile_id
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 deletable_profiles AS (
     -- Get list of profiles that can be deleted

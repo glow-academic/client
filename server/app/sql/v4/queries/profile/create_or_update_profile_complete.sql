@@ -53,11 +53,9 @@ WITH params AS (
         current_profile_id AS current_profile_id
 ),
 user_profile AS (
-    SELECT 
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
-    FROM params x
-    LEFT JOIN profile_artifact p ON p.id = x.current_profile_id
-    WHERE x.current_profile_id IS NOT NULL
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT current_profile_id FROM params)
 ),
 current_user_role AS (
     -- Get current user's role for validation (if provided)

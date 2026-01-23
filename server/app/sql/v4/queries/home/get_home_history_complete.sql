@@ -778,13 +778,9 @@ scenario_options_agg AS (
     FROM scenario_options_cte scoc
 ),
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profile_artifact ON profile_artifact.id = rpi.resolved_profile_id
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
 ),
 -- Calculate page info
 page_info AS (

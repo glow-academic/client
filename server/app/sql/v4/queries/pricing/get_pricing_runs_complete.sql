@@ -184,15 +184,9 @@ profile_type_check AS (
         END as effective_profile_id
 ),
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM params x
-    JOIN profile_artifact ON profile_artifact.id = x.profile_id
-    WHERE x.profile_id IS NOT NULL
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 runs_base AS (
     SELECT

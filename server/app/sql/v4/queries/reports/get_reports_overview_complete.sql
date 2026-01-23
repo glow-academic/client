@@ -588,14 +588,9 @@ WITH params AS (
 ),
 -- Get actor name FROM profile_artifact
 user_profile AS (
-    SELECT 
-        COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id LIMIT 1),
-            'System'
-        ) as actor_name
-    FROM profile_artifact
-    WHERE id = (SELECT actor_profile_id FROM params)
+    SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
+    FROM view_user_profile_context
+    WHERE profile_id = (SELECT profile_id FROM params)
 ),
 -- Get profile data (name, emails, role) for the target profile
 profile_data AS (
