@@ -204,14 +204,18 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
--- Conditional: Get cohort department data only if cohort_id provided
-cohort_departments_data AS (
-    SELECT 
-        CASE 
-            WHEN (SELECT cohort_id FROM params) IS NULL THEN NULL::uuid
-            ELSE (SELECT cohort_id FROM params)
-        END as cohort_id,
-        CASE 
+-- Draft departments (from departments_draft table)
+draft_departments_data AS (
+    SELECT
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
+    FROM params x
+    LEFT JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    LIMIT 1
+),
+-- Cohort departments (from cohort_departments_junction)
+cohort_departments_junction_data AS (
+    SELECT
+        CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(cd.department_id ORDER BY cd.created_at)
@@ -222,7 +226,20 @@ cohort_departments_data AS (
             )
         END as department_ids
     FROM params
-    -- Always return at least one row
+    LIMIT 1
+),
+-- Combined: prefer draft if available, otherwise use cohort junction
+cohort_departments_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT department_ids FROM draft_departments_data), 1), 0) > 0
+                THEN (SELECT department_ids FROM draft_departments_data)
+            WHEN COALESCE(array_length((SELECT department_ids FROM cohort_departments_junction_data), 1), 0) > 0
+                THEN (SELECT department_ids FROM cohort_departments_junction_data)
+            ELSE ARRAY[]::uuid[]
+        END as department_ids
+    FROM params
     LIMIT 1
 ),
 cohort_department_access_check AS (
