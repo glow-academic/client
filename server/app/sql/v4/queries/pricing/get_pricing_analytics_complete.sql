@@ -59,7 +59,6 @@ CREATE TYPE types.q_get_pricing_analytics_v4_model_run AS (
     model_id uuid,
     profile_id uuid,
     agent_id uuid,
-    persona_id uuid,
     run_cost numeric,
     debug_info_entry types.q_get_pricing_analytics_v4_debug_info[]
 );
@@ -82,11 +81,6 @@ CREATE TYPE types.q_get_pricing_analytics_v4_agent AS (
     name text
 );
 
-CREATE TYPE types.q_get_pricing_analytics_v4_persona AS (
-    persona_id uuid,
-    name text
-);
-
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_pricing_analytics_v4(
     start_date text,
@@ -102,8 +96,7 @@ RETURNS TABLE (
     model_runs types.q_get_pricing_analytics_v4_model_run[],
     models types.q_get_pricing_analytics_v4_model[],
     profiles types.q_get_pricing_analytics_v4_profile[],
-    agents types.q_get_pricing_analytics_v4_agent[],
-    personas types.q_get_pricing_analytics_v4_persona[]
+    agents types.q_get_pricing_analytics_v4_agent[]
 )
 LANGUAGE sql
 STABLE
@@ -133,26 +126,39 @@ user_profile AS (
     FROM view_user_profile_context
     WHERE profile_id = (SELECT profile_id FROM params)
 ),
+-- Pre-aggregate token counts from run_pricing_entry (avoids correlated subqueries)
+run_token_agg AS (
+    SELECT
+        rpu.run_id,
+        SUM(CASE WHEN rpu.pricing_type = 'input'::pricing_type THEN rpu.count END)::int as input_tokens,
+        SUM(CASE WHEN rpu.pricing_type = 'output'::pricing_type THEN rpu.count END)::int as output_tokens
+    FROM run_pricing_entry rpu
+    JOIN runs_entry r ON r.id = rpu.run_id
+    WHERE r.created_at >= (SELECT start_date FROM params)
+      AND r.created_at <= (SELECT end_date FROM params)
+    GROUP BY rpu.run_id
+),
 runs_base AS (
     SELECT
         mr.id as run_id,
         mr.created_at,
-        mr.input_tokens,
-        mr.output_tokens,
-        (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = mr.agent_id AND am.active = true LIMIT 1) as model_id,
+        COALESCE(rta.input_tokens, mr.input_tokens) as input_tokens,
+        COALESCE(rta.output_tokens, mr.output_tokens) as output_tokens,
+        am.model_id,
         mr.profile_id,
         mr.agent_id,
-        NULL::uuid as persona_id,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = sim.id AND f.name = 'practice' AND sf.value = TRUE) as practice_simulation,
         sa.archived
     FROM runs_entry mr
+    LEFT JOIN run_token_agg rta ON rta.run_id = mr.id
+    LEFT JOIN agent_models_junction am ON am.agent_id = mr.agent_id AND am.active = true
     -- Join to simulations via runs_entry.group_id → groups_entry → chats_entry (direct group_id) → attempts_entry → simulations
     LEFT JOIN groups_entry g ON g.id = mr.group_id
     LEFT JOIN chats_entry c ON c.group_id = g.id
     LEFT JOIN attempts_entry sa ON sa.id = c.attempt_id
     LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
-    WHERE 
+    WHERE
         -- Date filters (always required)
         mr.created_at >= p.start_date
         AND mr.created_at <= p.end_date
@@ -214,7 +220,7 @@ runs_base AS (
             OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
--- Calculate run costs using run_pricing_entry (source of truth for pricing)
+-- Calculate run costs using run_pricing_entry (source of truth for pricing, date-filtered)
 run_costs AS (
     SELECT
         rpu.run_id,
@@ -230,6 +236,8 @@ run_costs AS (
         AND pr.unit_id = rpu.unit_id
         AND pr.active = true
     JOIN artifact_units_relation u ON u.id = rpu.unit_id
+    WHERE r.created_at >= (SELECT start_date FROM params)
+      AND r.created_at <= (SELECT end_date FROM params)
     GROUP BY rpu.run_id
 ),
 runs_with_debug AS (
@@ -241,7 +249,6 @@ runs_with_debug AS (
         mrb.model_id,
         mrb.profile_id,
         mrb.agent_id,
-        mrb.persona_id,
         COALESCE(rc.run_cost, 0) as run_cost,
         COALESCE(
             ARRAY_AGG(
@@ -253,7 +260,7 @@ runs_with_debug AS (
     FROM runs_base mrb
     LEFT JOIN run_costs rc ON rc.run_id = mrb.run_id
     LEFT JOIN debug_info_entry di ON di.run_id = mrb.run_id
-    GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, rc.run_cost
+    GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, rc.run_cost
 ),
 model_pricing_aggregated AS (
     -- Aggregate pricing per model: sum all input/output prices normalized to per-million tokens
@@ -267,11 +274,11 @@ model_pricing_aggregated AS (
     LEFT JOIN artifact_units_relation u ON u.id = pr.unit_id
     GROUP BY mrb.model_id
 )
-SELECT 
+SELECT
     COALESCE((SELECT actor_name FROM user_profile LIMIT 1), 'System')::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.run_cost, mrb.debug_info_entry)::types.q_get_pricing_analytics_v4_model_run
+            (mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.run_cost, mrb.debug_info_entry)::types.q_get_pricing_analytics_v4_model_run
             ORDER BY mrb.created_at DESC
         ),
         '{}'::types.q_get_pricing_analytics_v4_model_run[]
@@ -293,18 +300,11 @@ SELECT
             DISTINCT (a.id, (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_analytics_v4_agent
         ) FILTER (WHERE a.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_agent[]
-    ) as agents,
-    COALESCE(
-        ARRAY_AGG(
-            DISTINCT (per.id, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))::types.q_get_pricing_analytics_v4_persona
-        ) FILTER (WHERE per.id IS NOT NULL),
-        '{}'::types.q_get_pricing_analytics_v4_persona[]
-    ) as personas
+    ) as agents
 FROM runs_with_debug mrb
-LEFT JOIN models_resource m ON m.id = mrb.model_id
+LEFT JOIN model_artifact m ON m.id = mrb.model_id
 LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id
 LEFT JOIN profile_artifact p ON p.id = mrb.profile_id
 LEFT JOIN agents_resource a ON a.id = mrb.agent_id
-LEFT JOIN personas_resource per ON per.id = mrb.persona_id
 GROUP BY (SELECT actor_name FROM user_profile LIMIT 1)
 $$;

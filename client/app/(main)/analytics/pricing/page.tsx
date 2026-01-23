@@ -230,7 +230,6 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     models: [],
     profiles: [],
     agents: [],
-    personas: [],
   };
 
   return (

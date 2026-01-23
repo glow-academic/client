@@ -35,7 +35,7 @@ export function PricingRunsClient({
           totalInputTokens: group.total_input_tokens ?? 0,
           totalOutputTokens: group.total_output_tokens ?? 0,
           totalCost: group.total_cost ?? 0,
-          runs: (group.runs || [])
+          runs: (group.runs_entry || [])
             .filter((run): run is typeof run & { run_id: string; created_at: string } =>
               run.run_id !== null && run.created_at !== null
             )
@@ -44,13 +44,12 @@ export function PricingRunsClient({
               createdAt: run.created_at,
               modelId: run.model_id ?? null,
               agentId: run.agent_id ?? null,
-              personaId: run.persona_id ?? null,
               profileId: run.profile_id ?? null,
               inputTokens: run.input_tokens ?? 0,
               outputTokens: run.output_tokens ?? 0,
               cost: run.cost ?? 0,
-              ...(run.debug_info && run.debug_info.length > 0 ? {
-                debugInfo: run.debug_info
+              ...(run.debug_info_entry && run.debug_info_entry.length > 0 ? {
+                debugInfo: run.debug_info_entry
                   .filter((d): d is typeof d & { id: string; created_at: string; content: string } =>
                     d.id !== null && d.created_at !== null && d.content !== null
                   )
@@ -97,14 +96,6 @@ export function PricingRunsClient({
           .map((a) => ({
             agent_id: a.agent_id!,
             name: a.name!,
-          }))}
-        personas={(runsData?.personas || [])
-          .filter((p): p is typeof p & { persona_id: string; name: string } => 
-            p.persona_id !== null && p.name !== null
-          )
-          .map((p) => ({
-            persona_id: p.persona_id!,
-            name: p.name!,
           }))}
         isLoading={isLoading}
         modelOptions={(runsData?.model_options || [])

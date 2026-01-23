@@ -11519,17 +11519,8 @@ class QGetPricingAnalyticsV4ModelRun(BaseModel):
     model_id: UUID | None
     profile_id: UUID | None
     agent_id: UUID | None
-    persona_id: UUID | None
     run_cost: float | None
     debug_info_entry: list[QGetPricingAnalyticsV4DebugInfo] | None
-
-
-
-
-class QGetPricingAnalyticsV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
 
 
 
@@ -11546,7 +11537,6 @@ class GetPricingAnalyticsSqlRow(BaseModel):
     models: list[QGetPricingAnalyticsV4Model] | None = None
     profiles: list[QGetPricingAnalyticsV4Profile] | None = None
     agents: list[QGetPricingAnalyticsV4Agent] | None = None
-    personas: list[QGetPricingAnalyticsV4Persona] | None = None
 
 class GetPricingAnalyticsApiRequest(BaseModel):
 
@@ -11564,7 +11554,6 @@ class GetPricingAnalyticsApiResponse(BaseModel):
     models: list[QGetPricingAnalyticsV4Model] | None = None
     profiles: list[QGetPricingAnalyticsV4Profile] | None = None
     agents: list[QGetPricingAnalyticsV4Agent] | None = None
-    personas: list[QGetPricingAnalyticsV4Persona] | None = None
 
 
 
@@ -11744,7 +11733,6 @@ class QGetPricingRunsV4RunSummary(BaseModel):
     model_id: UUID | None
     profile_id: UUID | None
     agent_id: UUID | None
-    persona_id: UUID | None
     debug_info_entry: list[QGetPricingRunsV4DebugInfo] | None
 
 class QGetPricingRunsV4GroupRun(BaseModel):
@@ -11771,14 +11759,6 @@ class QGetPricingRunsV4Model(BaseModel):
 
 
 
-class QGetPricingRunsV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-
-
-
-
 class QGetPricingRunsV4Profile(BaseModel):
 
     profile_id: UUID | None
@@ -11798,7 +11778,6 @@ class GetPricingRunsSqlRow(BaseModel):
     models: list[QGetPricingRunsV4Model] | None = None
     profiles: list[QGetPricingRunsV4Profile] | None = None
     agents: list[QGetPricingRunsV4Agent] | None = None
-    personas: list[QGetPricingRunsV4Persona] | None = None
 
 class GetPricingRunsApiRequest(BaseModel):
 
@@ -11831,7 +11810,6 @@ class GetPricingRunsApiResponse(BaseModel):
     models: list[QGetPricingRunsV4Model] | None = None
     profiles: list[QGetPricingRunsV4Profile] | None = None
     agents: list[QGetPricingRunsV4Agent] | None = None
-    personas: list[QGetPricingRunsV4Persona] | None = None
 
 
 

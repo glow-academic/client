@@ -49,11 +49,6 @@ type AgentItem = {
   name: string;
 };
 
-type PersonaItem = {
-  persona_id: string;
-  name: string;
-};
-
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
     style: "currency",
@@ -68,8 +63,6 @@ export interface ModelRunRow {
   modelName: string;
   agentId: string | null;
   agentName: string;
-  personaId: string | null;
-  personaName: string;
   profileId: string | null;
   profileName: string;
   inputTokens: number;
@@ -90,7 +83,6 @@ export interface GroupRunRow {
     createdAt: string;
     modelId: string | null;
     agentId?: string | null;
-    personaId?: string | null;
     profileId?: string | null;
     inputTokens: number;
     outputTokens: number;
@@ -104,7 +96,6 @@ export interface RunsDataTableProps {
   models: ModelWithPricing[];
   profiles: ProfileItem[];
   agents: AgentItem[];
-  personas: PersonaItem[];
   isLoading?: boolean;
   modelOptions: Array<{ value: string; label: string; count?: number }>;
   profileOptions: Array<{ value: string; label: string; count?: number }>;
@@ -118,7 +109,6 @@ export function RunsDataTable({
   models: _models,
   profiles: _profiles,
   agents: _agents,
-  personas: _personas,
   isLoading = false,
   modelOptions,
   profileOptions,
@@ -406,7 +396,7 @@ export function RunsDataTable({
           return Array.from(profileIds);
         },
       },
-      // Hidden faceting column for Actor (Agent/Persona IDs)
+      // Hidden faceting column for Actor (Agent IDs)
       {
         id: "actorIdFilter",
         header: () => null,
@@ -418,9 +408,6 @@ export function RunsDataTable({
           row.runs.forEach((run) => {
             if (run.agentId) {
               actorIds.add(run.agentId);
-            }
-            if (run.personaId) {
-              actorIds.add(run.personaId);
             }
           });
           return Array.from(actorIds);
@@ -589,7 +576,7 @@ export function RunsDataTable({
           <div className="w-full md:w-auto">
             <Input
               ref={searchInputRef}
-              placeholder="Search by model, persona, agent, name, debug info..."
+              placeholder="Search by model, agent, name, debug info..."
               value={searchTerm}
               onChange={(event) => {
                 handleSearchChange(event.target.value);
@@ -640,11 +627,11 @@ export function RunsDataTable({
                 />
               )}
 
-              {/* Agent/Persona filter - merged */}
+              {/* Agent filter */}
               {actorIdFilterColumn && actorOptions.length > 0 && (
                 <DataTableFacetedFilter
                   column={actorIdFilterColumn}
-                  title="Agent/Persona"
+                  title="Agent"
                   options={actorOptions}
                   isServerDriven={true}
                 />

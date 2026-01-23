@@ -613,7 +613,7 @@ SELECT
         '{}'::types.q_get_pricing_group_detail_v4_profile[]
     ) as profiles
 FROM runs_detail rd
-LEFT JOIN models_resource m ON m.id = rd.model_id
+LEFT JOIN model_artifact m ON m.id = rd.model_id
 LEFT JOIN agents_resource a ON a.id = rd.agent_id
 LEFT JOIN profile_artifact p ON p.id = rd.profile_id
 CROSS JOIN group_exists_check gec

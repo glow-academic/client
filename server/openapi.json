@@ -41694,20 +41694,6 @@
               }
             ],
             "title": "Agents"
-          },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPricingAnalyticsV4Persona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
           }
         },
         "type": "object",
@@ -42081,20 +42067,6 @@
               }
             ],
             "title": "Agents"
-          },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPricingRunsV4Persona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
           }
         },
         "type": "object",
@@ -70877,18 +70849,6 @@
             ],
             "title": "Agent Id"
           },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
           "run_cost": {
             "anyOf": [
               {
@@ -70924,44 +70884,10 @@
           "model_id",
           "profile_id",
           "agent_id",
-          "persona_id",
           "run_cost",
           "debug_info_entry"
         ],
         "title": "QGetPricingAnalyticsV4ModelRun"
-      },
-      "QGetPricingAnalyticsV4Persona": {
-        "properties": {
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona_id",
-          "name"
-        ],
-        "title": "QGetPricingAnalyticsV4Persona"
       },
       "QGetPricingAnalyticsV4Profile": {
         "properties": {
@@ -71737,39 +71663,6 @@
         ],
         "title": "QGetPricingRunsV4Model"
       },
-      "QGetPricingRunsV4Persona": {
-        "properties": {
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona_id",
-          "name"
-        ],
-        "title": "QGetPricingRunsV4Persona"
-      },
       "QGetPricingRunsV4Profile": {
         "properties": {
           "profile_id": {
@@ -71897,18 +71790,6 @@
             ],
             "title": "Agent Id"
           },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
           "debug_info_entry": {
             "anyOf": [
               {
@@ -71934,7 +71815,6 @@
           "model_id",
           "profile_id",
           "agent_id",
-          "persona_id",
           "debug_info_entry"
         ],
         "title": "QGetPricingRunsV4RunSummary"

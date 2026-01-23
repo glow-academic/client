@@ -9594,8 +9594,6 @@ export interface components {
             profiles?: components["schemas"]["QGetPricingAnalyticsV4Profile"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetPricingAnalyticsV4Agent"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetPricingAnalyticsV4Persona"][] | null;
         };
         /** GetPricingGroupDetailApiRequest */
         GetPricingGroupDetailApiRequest: {
@@ -9679,8 +9677,6 @@ export interface components {
             profiles?: components["schemas"]["QGetPricingRunsV4Profile"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetPricingRunsV4Agent"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetPricingRunsV4Persona"][] | null;
         };
         /** GetProfileApiRequest */
         GetProfileApiRequest: {
@@ -15244,19 +15240,10 @@ export interface components {
             profile_id: string | null;
             /** Agent Id */
             agent_id: string | null;
-            /** Persona Id */
-            persona_id: string | null;
             /** Run Cost */
             run_cost: number | null;
             /** Debug Info Entry */
             debug_info_entry: components["schemas"]["QGetPricingAnalyticsV4DebugInfo"][] | null;
-        };
-        /** QGetPricingAnalyticsV4Persona */
-        QGetPricingAnalyticsV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
-            /** Name */
-            name: string | null;
         };
         /** QGetPricingAnalyticsV4Profile */
         QGetPricingAnalyticsV4Profile: {
@@ -15404,13 +15391,6 @@ export interface components {
             /** Output Ppm */
             output_ppm: number | null;
         };
-        /** QGetPricingRunsV4Persona */
-        QGetPricingRunsV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
-            /** Name */
-            name: string | null;
-        };
         /** QGetPricingRunsV4Profile */
         QGetPricingRunsV4Profile: {
             /** Profile Id */
@@ -15436,8 +15416,6 @@ export interface components {
             profile_id: string | null;
             /** Agent Id */
             agent_id: string | null;
-            /** Persona Id */
-            persona_id: string | null;
             /** Debug Info Entry */
             debug_info_entry: components["schemas"]["QGetPricingRunsV4DebugInfo"][] | null;
         };
