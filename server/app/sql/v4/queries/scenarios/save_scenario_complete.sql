@@ -46,6 +46,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_scenario_id uuid;
     v_actor_name text;

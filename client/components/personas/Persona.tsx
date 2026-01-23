@@ -1162,19 +1162,16 @@ function PersonaComponent({
         throw new Error("Required fields are missing");
       }
 
+      if (!draftId) {
+        toast.error("Draft not found. Please try again.");
+        throw new Error("Draft ID is required for save");
+      }
+
       try {
         await savePersonaAction({
           body: {
+            draft_id: draftId,
             input_persona_id: isEditMode && personaId ? personaId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id || null,
-            color_id: formState.color_id,
-            icon_id: formState.icon_id,
-            instructions_id: formState.instructions_id,
-            active_flag_id: formState.active_flag_id || null,
-            department_ids: formState.department_ids || [],
-            field_ids: formState.field_ids || [],
-            example_ids: formState.example_ids || [],
           },
         });
         toast.success(
@@ -1194,6 +1191,7 @@ function PersonaComponent({
       personaId,
       effectiveProfile?.id,
       savePersonaAction,
+      draftId,
       router,
       personaData?.name_required,
       personaData?.color_required,

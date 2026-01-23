@@ -1271,6 +1271,11 @@ function SimulationComponent({
         throw new Error("Save action not available");
       }
 
+      if (!draftId) {
+        toast.error("Draft not found. Please try again.");
+        throw new Error("Draft ID is required for save");
+      }
+
       // Ensure required fields are present (TypeScript guard)
       if (!formState.name_id) {
         toast.error("Required fields are missing");
@@ -1280,27 +1285,9 @@ function SimulationComponent({
       try {
         await saveSimulationAction({
           body: {
+            draft_id: draftId,
             input_simulation_id:
               isEditMode && simulationId ? simulationId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id || null,
-            active_flag_id: formState.active_flag_id || null,
-            department_ids: formState.department_ids || [],
-            // Note: practice_simulation is handled separately (boolean, not a flag resource)
-            practice_simulation: false, // Default value - can be updated later if needed
-            // Complex resources (scenarios, videos, etc.) are handled separately
-            // Convert scenario resource IDs to artifact IDs for save endpoint
-            scenario_ids: formState.scenario_ids, // These are resource IDs, SQL will convert to artifact IDs
-            scenario_active_flags: [],
-            scenario_hints_enabled: [],
-            scenario_time_limit_seconds: [],
-            scenario_audio_enabled: [],
-            scenario_text_enabled: [],
-            scenario_flag_ids: formState.scenario_flag_ids || [],
-            scenario_position_ids: formState.scenario_position_ids || [],
-            scenario_rubric_ids:
-              formState.scenario_rubric_ids || [],
-            scenario_time_limit_ids: formState.scenario_time_limit_ids || [],
           },
         });
         toast.success(
@@ -1320,6 +1307,7 @@ function SimulationComponent({
       simulationId,
       effectiveProfile?.id,
       saveSimulationAction,
+      draftId,
       router,
       simulationData?.name_required,
       simulationData?.description_required,

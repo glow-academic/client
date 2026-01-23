@@ -50,45 +50,6 @@ async def save_scenario(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Server-side validation: enforce fixed limits (server is source of truth)
-        # Only validate for create mode (input_scenario_id = NULL)
-        if request.input_scenario_id is None:
-            # Personas: 1-3 (must have at least 1)
-            persona_count = len(request.persona_ids or [])
-            if persona_count < 1 or persona_count > 3:
-                raise ValueError(
-                    f"Personas must be between 1 and 3. Received {persona_count}."
-                )
-
-            # Documents: 0-3
-            document_count = len(request.document_ids or [])
-            if document_count > 3:
-                raise ValueError(
-                    f"Documents must be between 0 and 3. Received {document_count}."
-                )
-
-            # Parameters: 0-3
-            parameter_count = len(request.parameter_ids or [])
-            if parameter_count > 3:
-                raise ValueError(
-                    f"Parameters must be between 0 and 3. Received {parameter_count}."
-                )
-
-            # Fields: 1-3 when parameters are present
-            field_count = len(request.field_ids or [])
-            if parameter_count > 0 and (field_count < 1 or field_count > 3):
-                raise ValueError(
-                    f"Fields must be between 1 and 3 when parameters are selected. "
-                    f"Received {field_count}."
-                )
-
-            # Objectives: 0-3
-            objective_count = len(request.objective_ids or [])
-            if objective_count > 3:
-                raise ValueError(
-                    f"Objectives must be between 0 and 3. Received {objective_count}."
-                )
-
         # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:

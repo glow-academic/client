@@ -2027,6 +2027,11 @@ function ScenarioComponent({
         throw new Error("Save action not available");
       }
 
+      if (!draftId) {
+        toast.error("Draft not found. Please try again.");
+        throw new Error("Draft ID is required for save");
+      }
+
       if (!formState.name_id) {
         toast.error("Scenario name is required");
         throw new Error("Scenario name is required");
@@ -2035,28 +2040,8 @@ function ScenarioComponent({
       try {
         await saveScenarioAction({
           body: {
+            draft_id: draftId,
             input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            problem_statement_id: formState.problem_statement_id,
-            active_flag_id: formState.active_flag_id,
-            objectives_enabled_flag_id: formState.objectives_enabled_flag_id,
-            images_enabled_flag_id: formState.images_enabled_flag_id,
-            video_enabled_flag_id: formState.video_enabled_flag_id,
-            questions_enabled_flag_id: formState.questions_enabled_flag_id,
-            problem_statement_enabled_flag_id:
-              formState.problem_statement_enabled_flag_id,
-            use_templates_flag_id: formState.use_templates_flag_id,
-            department_ids: formState.department_ids,
-            persona_ids: formState.persona_ids,
-            document_ids: formState.document_ids,
-            template_document_ids: formState.template_ids,
-            parameter_ids: formState.parameter_ids,
-            field_ids: formState.field_ids,
-            image_ids: formState.image_ids,
-            objective_ids: formState.objective_ids,
-            video_ids: formState.video_ids,
-            question_ids: formState.question_ids,
           },
         });
 
@@ -2088,6 +2073,7 @@ function ScenarioComponent({
       scenarioData?.questions_required,
       effectiveProfile?.id,
       saveScenarioAction,
+      draftId,
       isEditMode,
       scenarioId,
       router,

@@ -28,6 +28,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_cohort_id uuid;
     v_default_call_id uuid;

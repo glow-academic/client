@@ -80,6 +80,24 @@ BEGIN
         END IF;
     END IF;
 
+    IF field_ids IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(field_ids) as fid
+            WHERE NOT EXISTS (SELECT 1 FROM fields_resource WHERE id = fid)
+        ) THEN
+            RAISE EXCEPTION 'One or more field resource IDs not found in fields_resource';
+        END IF;
+    END IF;
+
+    IF example_ids IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(example_ids) as eid
+            WHERE NOT EXISTS (SELECT 1 FROM examples_resource WHERE id = eid)
+        ) THEN
+            RAISE EXCEPTION 'One or more example resource IDs not found in examples_resource';
+        END IF;
+    END IF;
+
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id

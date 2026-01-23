@@ -28,9 +28,12 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_persona_id uuid;
     v_actor_name text;
+    v_group_id uuid;
+    v_draft_profile_id uuid;
     v_draft_id uuid;
     v_profile_id uuid;
     v_input_persona_id uuid;
@@ -51,6 +54,23 @@ BEGIN
 
     IF v_draft_id IS NULL THEN
         RAISE EXCEPTION 'Draft ID is required';
+    END IF;
+
+    SELECT d.profile_id, d.group_id
+    INTO v_draft_profile_id, v_group_id
+    FROM drafts_entry d
+    WHERE d.id = v_draft_id;
+
+    IF v_draft_profile_id IS NULL THEN
+        RAISE EXCEPTION 'Draft not found: %', v_draft_id;
+    END IF;
+
+    IF v_draft_profile_id <> v_profile_id THEN
+        RAISE EXCEPTION 'Draft does not belong to profile';
+    END IF;
+
+    IF v_group_id IS NULL THEN
+        RAISE EXCEPTION 'Draft group_id not found: %', v_draft_id;
     END IF;
 
     -- Load draft resources
@@ -105,14 +125,15 @@ BEGIN
     -- Create or UPDATE persona_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO persona_artifact (created_at, updated_at)
-        VALUES (NOW(), NOW())
+        INSERT INTO persona_artifact (group_id, created_at, updated_at)
+        VALUES (v_group_id, NOW(), NOW())
         RETURNING id INTO v_persona_id;
     ELSE
         -- UPDATE path
         v_persona_id := v_input_persona_id;
         UPDATE persona_artifact
-        SET updated_at = NOW()
+        SET updated_at = NOW(),
+            group_id = v_group_id
         WHERE id = v_persona_id;
     END IF;
     
