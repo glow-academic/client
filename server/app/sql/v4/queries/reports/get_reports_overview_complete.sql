@@ -1621,19 +1621,19 @@ filt AS (
             fields_converted AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
-                        (f.id::text, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''), 
-                         (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)::text, (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
+                        (f.id::text, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), COALESCE((SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''),
+                         pf_link.parameter_id::text, (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pf_link.parameter_id LIMIT 1)
                         )::types.q_reports_overview_v4_field
                         ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
                     ),
                     '{}'::types.q_reports_overview_v4_field[]
                 ) AS fields_array
                 FROM field_artifact f
-                JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)
+                JOIN parameter_fields_junction pf_link ON pf_link.field_id = f.id
                 LEFT JOIN field_departments_junction fd ON fd.field_id = f.id AND fd.active = true
-                WHERE EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'persona_active' AND pf.value = true)
+                WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = pf_link.parameter_id AND fl.name = 'parameter_active' AND pf.value = true)
                   AND (
-                      cardinality((SELECT department_ids FROM params)::uuid[]) = 0 
+                      cardinality((SELECT department_ids FROM params)::uuid[]) = 0
                       OR fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
                       OR NOT EXISTS (SELECT 1 FROM field_departments_junction fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
                   )

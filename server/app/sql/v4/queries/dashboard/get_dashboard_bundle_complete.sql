@@ -1665,10 +1665,9 @@ filt AS (
                     '{}'::types.q_get_dashboard_bundle_v4_field[]
                 ) AS fields_array
                 FROM field_artifact f
-                LEFT JOIN parameter_fields_junction pf_link ON pf_link.field_id = f.id
-                LEFT JOIN parameters_resource p ON p.id = pf_link.parameter_id
+                JOIN parameter_fields_junction pf_link ON pf_link.field_id = f.id
                 LEFT JOIN field_departments_junction fd ON fd.field_id = f.id AND fd.active = true
-                WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active'
+                WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = pf_link.parameter_id AND fl.name = 'parameter_active'
                       AND pf.value = TRUE
                 )
                   AND (
@@ -2639,9 +2638,34 @@ filt AS (
                 )::types.q_get_dashboard_bundle_v4_scenario_performance_response as scenario_performance
             ),
             
-            -- Scenario Stats (NUMERICAL PARAMETERS - mostly empty as functionality disabled)
-            nums AS (SELECT id FROM parameter_artifact WHERE false),
-            num_map AS (SELECT NULL::uuid AS scenario_id, NULL::uuid AS parameter_id, NULL::numeric AS level WHERE false),
+            -- Scenario Stats (Document/Persona parameters displayed as bar chart)
+            nums AS (
+                SELECT p.id FROM parameter_artifact p
+                WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'parameter_active' AND pf.value = TRUE)
+                  AND (
+                      EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.value = TRUE)
+                      OR EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.value = TRUE)
+                  )
+            ),
+            num_field_levels AS (
+                SELECT
+                    pfj.parameter_id,
+                    pfj.field_id,
+                    pfj.field_resource_id,
+                    ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY pfj.field_id) AS level
+                FROM parameter_fields_junction pfj
+                JOIN nums n ON n.id = pfj.parameter_id
+            ),
+            num_map AS (
+                SELECT
+                    sf.scenario_id,
+                    nfl.parameter_id,
+                    nfl.level::numeric AS level,
+                    nfl.field_id
+                FROM num_field_levels nfl
+                JOIN scenario_fields_junction sf ON sf.field_id = nfl.field_resource_id
+                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = sf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
+            ),
             num_map_seen AS (
                 SELECT nm.*
                 FROM num_map nm
@@ -2651,6 +2675,7 @@ filt AS (
                 SELECT
                     nms.parameter_id,
                     nms.level,
+                    nms.field_id,
                     f.grade_percent::float AS score
                 FROM filt f
                 JOIN num_map_seen nms ON nms.scenario_id = f.scenario_id
@@ -2659,16 +2684,13 @@ filt AS (
             numeric_levels AS (
                 SELECT
                     parameter_id,
-                    CASE 
-                        WHEN level = floor(level) THEN level::int::text 
-                        ELSE to_char(level, 'FM999D0') 
-                    END AS level_label,
-                    CASE 
-                        WHEN level = floor(level) THEN level::numeric 
-                        ELSE round(level::numeric, 1) 
-                    END AS level_value,
+                    COALESCE(
+                        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = na.field_id LIMIT 1),
+                        level::int::text
+                    ) AS level_label,
+                    level::numeric AS level_value,
                     score
-                FROM numeric_attempts
+                FROM numeric_attempts na
             ),
             numeric_agg AS (
                 SELECT 
@@ -2693,15 +2715,13 @@ filt AS (
             scenario_stats_numeric_scenario_facts_agg AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
-                        (nms.parameter_id::text, nms.scenario_id::text, 
-                         CASE 
-                             WHEN nms.level = floor(nms.level) THEN nms.level::int::text 
-                             ELSE to_char(nms.level, 'FM999D0') 
-                         END,
-                         CASE 
-                             WHEN nms.level = floor(nms.level) THEN nms.level::numeric 
-                             ELSE round(nms.level::numeric, 1) 
-                         END)::types.q_get_dashboard_bundle_v4_numeric_scenario_fact
+                        (nms.parameter_id::text, nms.scenario_id::text,
+                         COALESCE(
+                             (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = nms.field_id LIMIT 1),
+                             nms.level::int::text
+                         ),
+                         nms.level::numeric
+                        )::types.q_get_dashboard_bundle_v4_numeric_scenario_fact
                         ORDER BY nms.parameter_id, nms.scenario_id, nms.level
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_numeric_scenario_fact[]
