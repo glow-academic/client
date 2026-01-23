@@ -89,7 +89,7 @@ health_trends AS (
     SELECT 
         service,
         date_trunc('hour', ts) as date_hour,
-        COUNT(*) FILTER (WHERE ok = true)::float / NULLIF(COUNT(*), 0) * 100.0 as uptime_percent,
+        TRUNC((COUNT(*) FILTER (WHERE ok = true)::numeric / NULLIF(COUNT(*), 0)) * 100.0, 2) as uptime_percent,
         AVG(latency_ms) as avg_latency_ms,
         COUNT(*) as check_count
     FROM health_entry

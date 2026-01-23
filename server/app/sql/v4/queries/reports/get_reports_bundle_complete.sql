@@ -385,7 +385,7 @@ first_attempts AS (
 first_attempt_per_profile AS (
     SELECT
         profile_id,
-        (100.0 * COUNT(*) FILTER (WHERE passed) / NULLIF(COUNT(*), 0))::float AS pass_rate
+        TRUNC((100.0 * COUNT(*) FILTER (WHERE passed) / NULLIF(COUNT(*), 0))::numeric, 2)::float AS pass_rate
     FROM first_attempts
     GROUP BY profile_id
 ),
@@ -443,7 +443,7 @@ grade_stream_per_profile AS (
         sg.id,
         c_bundle.id AS simulation_chat_id,
         sg.created_at,
-        (sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_bundle.scenario_id LIMIT 1), 0)) * 100.0 AS norm
+        TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_bundle.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
     FROM grades_entry sg
     JOIN chats_entry c_bundle ON c_bundle.id = sg.chat_id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id

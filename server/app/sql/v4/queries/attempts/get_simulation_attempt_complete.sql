@@ -859,7 +859,7 @@ previous_chats_for_scenarios AS (
                  COALESCE(parp.total_points, 0)::float,
                  CASE 
                      WHEN pwg.score IS NOT NULL AND parp.total_points > 0 THEN
-                         ROUND((pwg.score::numeric / parp.total_points::numeric) * 100.0)::float
+                         TRUNC((pwg.score::numeric / parp.total_points::numeric) * 100.0, 2)::float
                      ELSE NULL::float
                  END
                 )::types.q_get_simulation_attempt_v4_previous_chat
@@ -1577,10 +1577,10 @@ aggregated_results_data AS (
                  CASE 
                      WHEN (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::point_type LIMIT 1) > 0 
                         AND COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
-                         ROUND(
-                             (SUM((grade).score::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL)::numeric / 
+                         TRUNC(
+                             (SUM((grade).score::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL)::numeric /
                               ((SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id JOIN attempt_base ab ON rp.rubric_id = ab.sim_rubric_id WHERE rp.type = 'total'::point_type LIMIT 1) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL))::numeric) * 100.0,
-                             1
+                             2
                          )::float
                      ELSE 0.0
                  END,

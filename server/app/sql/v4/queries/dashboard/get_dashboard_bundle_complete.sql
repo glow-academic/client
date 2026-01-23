@@ -807,7 +807,7 @@ filt AS (
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    (sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_stag.scenario_id LIMIT 1), 0)) * 100.0 AS norm
+                    TRUNC((sg.score::numeric / NULLIF((SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = c_stag.scenario_id LIMIT 1), 0)) * 100.0, 2) AS norm
                 FROM grades_entry sg
                 JOIN chats_entry c_stag ON c_stag.id = sg.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
@@ -1144,27 +1144,27 @@ filt AS (
             ),
             growth_avg_score AS (
                 SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                       AVG(grade_percent)::float AS value
+                       TRUNC(AVG(grade_percent)::numeric, 2)::float AS value
                 FROM filt WHERE grade_percent IS NOT NULL
                 GROUP BY date
             ),
             growth_pass_rate AS (
                 SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                       (100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points_junction, 0))) 
-                        / NULLIF(COUNT(*), 0))::float AS value
+                       TRUNC((100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points_junction, 0)))
+                        / NULLIF(COUNT(*), 0))::numeric, 2)::float AS value
                 FROM first_attempts
                 GROUP BY date
             ),
             growth_completion_rate AS (
                 SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                       AVG(CASE WHEN expected > 0 THEN (100.0 * completed_chats / expected) ELSE 0 END)::float AS value
+                       TRUNC(AVG(CASE WHEN expected > 0 THEN (100.0 * completed_chats / expected) ELSE 0 END)::numeric, 2)::float AS value
                 FROM attempt_norm
                 GROUP BY date
             ),
             growth_first_attempt_pass_rate AS (
                 SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                       (100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points_junction, 0))) 
-                        / NULLIF(COUNT(*), 0))::float AS value
+                       TRUNC((100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points_junction, 0)))
+                        / NULLIF(COUNT(*), 0))::numeric, 2)::float AS value
                 FROM first_attempts
                 GROUP BY date
             ),
@@ -1197,7 +1197,7 @@ filt AS (
             ),
             growth_stagnation AS (
                 SELECT to_char(created_at, 'YYYY-MM-DD') AS date,
-                       (100.0 * AVG(stagnated))::float AS value
+                       TRUNC((100.0 * AVG(stagnated))::numeric, 2)::float AS value
                 FROM stagnation_flags
                 GROUP BY date
             ),
@@ -1245,7 +1245,7 @@ filt AS (
                 SELECT f.persona_id,
                        (SELECT n.name FROM personas_resource pr JOIN persona_names_junction pn ON pn.persona_id = pr.persona_id JOIN names_resource n ON pn.name_id = n.id WHERE pr.id = f.persona_id LIMIT 1) AS name,
                        COALESCE((SELECT c.hex_code FROM personas_resource pr JOIN persona_colors_junction pc ON pc.persona_id = pr.persona_id JOIN colors_resource c ON pc.color_id = c.id WHERE pr.id = f.persona_id LIMIT 1), '#3b82f6') AS color,
-                       AVG(f.grade_percent)::float AS avg_score,
+                       TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score,
                        COUNT(DISTINCT f.chat_id)::int AS sessions,
                        ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids,
                        CASE
@@ -1264,7 +1264,7 @@ filt AS (
                     to_char(date_trunc('day', f.chat_created_at), 'YYYY-MM-DD') AS date,
                     EXTRACT(epoch FROM date_trunc('day', f.chat_created_at))::bigint AS timestamp,
                     f.simulation_id,
-                    AVG(f.grade_percent)::float AS avg_score
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score
                 FROM filt f
                 WHERE f.persona_id IS NOT NULL AND f.grade_percent IS NOT NULL
                 GROUP BY f.persona_id, date_trunc('day', f.chat_created_at), f.simulation_id
@@ -2108,7 +2108,7 @@ filt AS (
                     ao.simulation_id,
                     ao.attempt_id,
                     ao.attempt_no,
-                    AVG(f.grade_percent)::float AS avg_grade,
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_grade,
                     AVG(f.time_taken_seconds / 60.0)::float AS avg_time_minutes,
                     MAX((f.passed)::int)::int AS passed_any
                 FROM attempt_ord ao
@@ -2120,9 +2120,9 @@ filt AS (
                 SELECT
                     simulation_id,
                     attempt_no,
-                    AVG(avg_grade)::float AS avg_grade,
+                    TRUNC(AVG(avg_grade)::numeric, 2)::float AS avg_grade,
                     AVG(avg_time_minutes)::float AS avg_time_minutes,
-                    (100.0 * AVG(passed_any))::float AS pass_rate
+                    TRUNC((100.0 * AVG(passed_any))::numeric, 2)::float AS pass_rate
                 FROM attempt_stats
                 WHERE avg_grade IS NOT NULL
                 GROUP BY simulation_id, attempt_no
@@ -2130,9 +2130,9 @@ filt AS (
             attempt_rows AS (
                 SELECT
                     attempt_no,
-                    AVG(avg_grade)::float AS avg_grade,
+                    TRUNC(AVG(avg_grade)::numeric, 2)::float AS avg_grade,
                     AVG(avg_time_minutes)::float AS avg_time_minutes,
-                    AVG(pass_rate)::float AS pass_rate
+                    TRUNC(AVG(pass_rate)::numeric, 2)::float AS pass_rate
                 FROM multiple_users_attempt_data
                 WHERE attempt_no <= 5
                 GROUP BY attempt_no
@@ -2227,7 +2227,7 @@ filt AS (
                     fc.c_id AS cohort_id,
                     fc.attempt_id,
                     MAX((fc.passed)::int)::int AS passed_any,
-                    AVG(fc.grade_percent)::float AS avg_grade_attempt
+                    TRUNC(AVG(fc.grade_percent)::numeric, 2)::float AS avg_grade_attempt
                 FROM filt_with_cohorts fc
                 GROUP BY fc.c_id, fc.attempt_id
             ),
@@ -2239,8 +2239,8 @@ filt AS (
                     cardinality(cl.profile_ids) AS total_students_seen,
                     COUNT(DISTINCT ca.attempt_id) AS total_attempts,
                     SUM(ca.passed_any)::int AS passed_attempts,
-                    (100.0 * AVG(ca.passed_any))::float AS pass_rate_attempts,
-                    AVG(ca.avg_grade_attempt)::float AS avg_percentage_score,
+                    TRUNC((100.0 * AVG(ca.passed_any))::numeric, 2)::float AS pass_rate_attempts,
+                    TRUNC(AVG(ca.avg_grade_attempt)::numeric, 2)::float AS avg_percentage_score,
                     (SELECT COUNT(*) FROM (
                         SELECT profile_id
                         FROM filt_with_cohorts fc2
@@ -2306,7 +2306,7 @@ filt AS (
             cohort_daily_data AS (
                 SELECT
                     to_char(date_trunc('day', fc.attempt_created_at), 'YYYY-MM-DD') AS date,
-                    AVG(fc.grade_percent)::float AS avg_score,
+                    TRUNC(AVG(fc.grade_percent)::numeric, 2)::float AS avg_score,
                     fc.c_id::text AS cohort_id
                 FROM filt_with_cohorts fc
                 WHERE fc.grade_percent IS NOT NULL
@@ -2586,7 +2586,7 @@ filt AS (
                     cm.parameter_item_id,
                     to_char(date_trunc('day', f.attempt_created_at), 'YYYY-MM-DD') AS date,
                     EXTRACT(EPOCH FROM date_trunc('day', f.attempt_created_at))::bigint AS timestamp,
-                    AVG(f.grade_percent)::float AS avg_score,
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score,
                     COUNT(*)::int AS attempts,
                     SUM((f.passed)::int)::int AS passed_attempts
                 FROM filt f
@@ -2676,7 +2676,7 @@ filt AS (
                     nms.parameter_id,
                     nms.level,
                     nms.field_id,
-                    f.grade_percent::float AS score
+                    TRUNC(f.grade_percent::numeric, 2)::float AS score
                 FROM filt f
                 JOIN num_map_seen nms ON nms.scenario_id = f.scenario_id
                 WHERE f.grade_percent IS NOT NULL
@@ -2697,7 +2697,7 @@ filt AS (
                     parameter_id, 
                     level_label, 
                     level_value,
-                    AVG(score)::float AS avg_score,
+                    TRUNC(AVG(score)::numeric, 2)::float AS avg_score,
                     COUNT(*)::int AS attempts
                 FROM numeric_levels
                 GROUP BY parameter_id, level_label, level_value
@@ -2757,8 +2757,8 @@ filt AS (
                 SELECT f.simulation_id,
                        f.scenario_id,
                        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1) AS scenario_name,
-                       COALESCE(AVG(f.grade_percent), 0)::float AS avg_score,
-                       COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::float AS success_rate,
+                       TRUNC(COALESCE(AVG(f.grade_percent), 0)::numeric, 2)::float AS avg_score,
+                       TRUNC(COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::numeric, 2)::float AS success_rate,
                        COUNT(*)::int AS total_attempts,
                        SUM((f.completed OR f.grade_percent IS NOT NULL)::int)::int AS completed_attempts
                 FROM filt f
@@ -2813,9 +2813,9 @@ filt AS (
             sim_summary AS (
                 SELECT
                     f.simulation_id,
-                    AVG(f.grade_percent)::float AS avg_score,
-                    (100.0 * AVG((f.passed)::int))::float AS pass_rate,
-                    (100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int))::float AS completion_rate,
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score,
+                    TRUNC((100.0 * AVG((f.passed)::int))::numeric, 2)::float AS pass_rate,
+                    TRUNC((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int))::numeric, 2)::float AS completion_rate,
                     COUNT(*)::int AS attempts
                 FROM filt f
                 WHERE f.grade_percent IS NOT NULL

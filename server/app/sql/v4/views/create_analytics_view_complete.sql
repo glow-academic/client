@@ -272,7 +272,7 @@ SELECT
   CASE
     WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1) IS NULL
          OR (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1) = 0 THEN NULL
-    ELSE (lg.score / (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0
+    ELSE TRUNC((lg.score / (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.rubric_id AND rp.type = 'total'::point_type LIMIT 1)::numeric) * 100.0, 2)
   END                           AS grade_percent,
   CASE
     WHEN lg.score IS NULL

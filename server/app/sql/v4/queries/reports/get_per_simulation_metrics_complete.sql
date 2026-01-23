@@ -148,7 +148,7 @@ simulation_metrics_per_profile AS (
         f.simulation_id,
         AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS avg_score,
         MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
-        (100.0 * AVG((f.completed)::int))::float AS completion_pct,
+        TRUNC((100.0 * AVG((f.completed)::int))::numeric, 2)::float AS completion_pct,
         COUNT(f.attempt_id)::int AS total_attempts,
         AVG(f.num_messages_total) AS avg_messages,
         AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
@@ -191,7 +191,7 @@ first_attempt_per_sim_profile AS (
     SELECT
         profile_id,
         simulation_id,
-        (100.0 * COUNT(*) FILTER (WHERE passed) / NULLIF(COUNT(*), 0))::float AS pass_rate
+        TRUNC((100.0 * COUNT(*) FILTER (WHERE passed) / NULLIF(COUNT(*), 0))::numeric, 2)::float AS pass_rate
     FROM first_attempts_per_sim
     GROUP BY profile_id, simulation_id
 )

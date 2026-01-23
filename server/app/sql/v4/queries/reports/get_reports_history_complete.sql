@@ -322,7 +322,7 @@ history_grade_rollup AS (
         sc.attempt_id,
         COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
         SUM(CASE WHEN hcg.score IS NOT NULL AND (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1) > 0
-            THEN (hcg.score / (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1)::numeric * 100.0)
+            THEN TRUNC(hcg.score / (SELECT p.value FROM scenario_rubrics_resource srr JOIN rubric_points_junction rp ON rp.rubric_id = srr.rubric_id AND rp.type = 'total'::point_type JOIN points_resource p ON p.id = rp.point_id WHERE srr.scenario_id = sc.scenario_id LIMIT 1)::numeric * 100.0, 2)
             ELSE 0 END) AS sum_grade_percent
     FROM chats_entry sc
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
