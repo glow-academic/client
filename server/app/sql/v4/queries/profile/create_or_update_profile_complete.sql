@@ -35,7 +35,8 @@ CREATE OR REPLACE FUNCTION api_create_or_update_profile_v4(
 RETURNS TABLE (
     profile_id uuid,
     created boolean,
-    actor_name text
+    actor_name text,
+    session_id uuid
 )
 LANGUAGE sql
 VOLATILE
@@ -256,7 +257,7 @@ cohort_cleanup AS (
 cohort_insert AS (
     -- Insert cohort relationships
     INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-    SELECT 
+    SELECT
         pu.id,
         cohort_id,
         true
@@ -266,11 +267,24 @@ cohort_insert AS (
       AND EXISTS (SELECT 1 FROM profile_upsert)
     ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
         active = true
+),
+deactivate_old_sessions AS (
+    UPDATE sessions_entry
+    SET active = false
+    WHERE profile_id = (SELECT id FROM profile_upsert)
+      AND active = true
+),
+new_session AS (
+    INSERT INTO sessions_entry (profile_id, active)
+    SELECT id, true
+    FROM profile_upsert
+    RETURNING id AS session_id
 )
-SELECT 
+SELECT
     pu.id as profile_id,
     pu.created,
-    COALESCE(up.actor_name, 'System')::text as actor_name
+    COALESCE(up.actor_name, 'System')::text as actor_name,
+    (SELECT session_id FROM new_session) as session_id
 FROM profile_upsert pu
 CROSS JOIN user_profile up
 LIMIT 1

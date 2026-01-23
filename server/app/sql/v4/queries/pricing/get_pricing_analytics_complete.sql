@@ -305,6 +305,6 @@ FROM runs_with_debug mrb
 LEFT JOIN model_artifact m ON m.id = mrb.model_id
 LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id
 LEFT JOIN profile_artifact p ON p.id = mrb.profile_id
-LEFT JOIN agents_resource a ON a.id = mrb.agent_id
+LEFT JOIN agent_artifact a ON a.id = mrb.agent_id
 GROUP BY (SELECT actor_name FROM user_profile LIMIT 1)
 $$;

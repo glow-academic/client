@@ -475,7 +475,7 @@ actor_options_cte AS (
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) AS actor_name,
         COUNT(DISTINCT mrf.run_id) AS count
     FROM runs_filtered mrf
-    JOIN agents_resource a ON a.id = mrf.agent_id
+    JOIN agent_artifact a ON a.id = mrf.agent_id
     WHERE mrf.agent_id IS NOT NULL
     GROUP BY a.id, (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
     ORDER BY actor_name
@@ -593,7 +593,7 @@ SELECT
             DISTINCT (a.id, (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_runs_v4_agent
         )
         FROM (SELECT DISTINCT agent_id FROM runs_filtered WHERE agent_id IS NOT NULL) agt
-        JOIN agents_resource a ON a.id = agt.agent_id),
+        JOIN agent_artifact a ON a.id = agt.agent_id),
         '{}'::types.q_get_pricing_runs_v4_agent[]
     ) as agents
 FROM params

@@ -170,7 +170,7 @@ runs_departments AS (
     SELECT DISTINCT
         d.id as department_id
     FROM runs_metadata rm
-    LEFT JOIN agents_resource a ON a.id = rm.agent_id
+    LEFT JOIN agent_artifact a ON a.id = rm.agent_id
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
     LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
     WHERE d.id IS NOT NULL
@@ -614,7 +614,7 @@ SELECT
     ) as profiles
 FROM runs_detail rd
 LEFT JOIN model_artifact m ON m.id = rd.model_id
-LEFT JOIN agents_resource a ON a.id = rd.agent_id
+LEFT JOIN agent_artifact a ON a.id = rd.agent_id
 LEFT JOIN profile_artifact p ON p.id = rd.profile_id
 CROSS JOIN group_exists_check gec
 CROSS JOIN group_access_check gac
