@@ -2172,8 +2172,15 @@ scenario_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
+draft_departments_data AS (
+    SELECT
+        ARRAY_AGG(dd.departments_id) as department_ids
+    FROM params x
+    JOIN departments_draft dd ON dd.draft_id = x.draft_id
+    WHERE x.draft_id IS NOT NULL
+),
 draft_scenario_flag_ids_data AS (
-    SELECT 
+    SELECT
         ARRAY_AGG(dsf.scenario_flags_id) as scenario_flag_ids
     FROM params x
     JOIN scenario_flags_draft dsf ON dsf.draft_id = x.draft_id
@@ -2203,20 +2210,12 @@ draft_scenario_time_limit_ids_data AS (
 scenario_ids_data AS (
     SELECT
         COALESCE(
+            NULLIF(ARRAY_REMOVE((SELECT scenario_ids FROM draft_scenario_ids_data), NULL), ARRAY[]::uuid[]),
             (SELECT ARRAY_AGG(s.id)
              FROM scenarios_resource s
              JOIN simulation_scenarios_junction ss ON ss.scenario_id = s.scenario_id
              WHERE ss.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
                AND s.active = true),
-            (SELECT
-                CASE
-                    WHEN payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(payload->'scenarioIds') = 'array' THEN
-                        ARRAY(SELECT jsonb_array_elements_text(payload->'scenarioIds'))::uuid[]
-                    WHEN payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(payload->'scenario_ids') = 'array' THEN
-                        ARRAY(SELECT jsonb_array_elements_text(payload->'scenario_ids'))::uuid[]
-                    ELSE NULL
-                END
-             FROM draft_payload_data),
             ARRAY[]::uuid[]
         ) as scenario_ids
     FROM params
@@ -2666,17 +2665,9 @@ SELECT
     COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_simulation_v4_description_option[]) as descriptions,
     -- Multi-select resources: departments
     COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
-                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
+        (SELECT department_ids FROM draft_departments_data),
         sb.department_ids,
-        CASE 
+        CASE
             WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN NULL::uuid[]
             ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
         END,
@@ -2691,17 +2682,9 @@ SELECT
         FROM department_mapping_data dmd
         WHERE dmd.department_id = ANY(
             COALESCE(
-                (SELECT 
-                    CASE 
-                        WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
-                        WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                            ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                        ELSE NULL
-                    END
-                FROM draft_payload_data),
+                (SELECT department_ids FROM draft_departments_data),
                 sb.department_ids,
-                CASE 
+                CASE
                     WHEN COALESCE(uc.role, 'guest'::profile_type) = 'superadmin'::profile_type THEN NULL::uuid[]
                     ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
                 END,
