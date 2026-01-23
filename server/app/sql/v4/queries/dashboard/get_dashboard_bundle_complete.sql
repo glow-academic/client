@@ -1319,68 +1319,16 @@ filt AS (
                         )
                   )
             ),
-            -- Get chat scenario and simulation info for fallback
-            chat_scenario_info AS (
-                SELECT DISTINCT
-                    c.id AS chat_id,
-                    c.scenario_id,
-                    sa.simulation_id
-                FROM chats_entry c
-                JOIN attempts_entry sa ON sa.id = c.attempt_id
-                WHERE c.id IN (SELECT chat_id FROM filtered_chats)
-            ),
-            -- Get first scenario's rubric per simulation (fallback)
-            sim_first_scenario_rubric_heatmap AS (
-                SELECT DISTINCT ON (ss.simulation_id)
-                    ss.simulation_id,
-                    srr.rubric_id
-                FROM simulation_scenarios_junction ss
-                LEFT JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
-                  AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info)
-                ORDER BY ss.simulation_id, (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
-            ),
-            latest_grade_per_chat AS (
-                SELECT DISTINCT ON (c.id)
-                    scg.id,
-                    c.id AS chat_id,
-                    COALESCE(
-                        srr.rubric_id,
-                        srr_fallback.rubric_id,
-                        sfsr.rubric_id
-                    ) AS rubric_id
-                FROM grades_entry scg
-                JOIN chats_entry c ON c.id = scg.chat_id
-                JOIN filtered_chats fc ON fc.chat_id = c.id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-                LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
-                LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id
-                LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = csi.scenario_id AND srr.rubric_id IS NULL
-                LEFT JOIN sim_first_scenario_rubric_heatmap sfsr ON sfsr.simulation_id = csi.simulation_id
-                  AND srr.rubric_id IS NULL
-                  AND srr_fallback.rubric_id IS NULL
-                WHERE TRUE
-                  AND COALESCE(
-                      srr.rubric_id,
-                      srr_fallback.rubric_id,
-                      sfsr.rubric_id
-                  ) IS NOT NULL
-                ORDER BY c.id, scg.created_at DESC
-            ),
+            -- Per-grade group scores using shared view (rubric heatmap)
             per_grade_group AS (
                 SELECT
-                    lg.chat_id,
-                    rsg.rubric_id,
-                    sg.id AS group_id,
-                    sg.name AS group_name,
-                    (100.0 * SUM(fe.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
-                FROM latest_grade_per_chat lg
-                JOIN feedbacks_entry fe ON fe.grade_id = lg.id
-                JOIN standards_resource s ON s.id = fe.standard_id
-                JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
-                JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
-                GROUP BY lg.chat_id, rsg.rubric_id, sg.id, sg.name, sg.points
+                    vg.chat_id,
+                    vg.rubric_id,
+                    vg.standard_group_id AS group_id,
+                    vg.group_name,
+                    vg.score_percent AS pct
+                FROM view_grade_per_standard_group vg
+                WHERE vg.chat_id IN (SELECT chat_id FROM filtered_chats)
             ),
             corrs_upper AS (
                 SELECT
@@ -2383,76 +2331,18 @@ filt AS (
                         'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
                     )
             ),
-            -- Get chat scenario and simulation info for skills fallback
-            chat_scenario_info_skills AS (
-                SELECT DISTINCT
-                    c.id AS chat_id,
-                    c.scenario_id,
-                    sa.simulation_id
-                FROM chats_entry c
-                JOIN attempts_entry sa ON sa.id = c.attempt_id
-                WHERE c.id IN (SELECT chat_id FROM filt_for_skills)
-            ),
-            -- Get first scenario's rubric per simulation for skills (fallback)
-            sim_first_scenario_rubric_skills AS (
-                SELECT DISTINCT ON (ss.simulation_id)
-                    ss.simulation_id,
-                    srr.rubric_id
-                FROM simulation_scenarios_junction ss
-                LEFT JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
-                  AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_skills)
-                ORDER BY ss.simulation_id, (SELECT spr.value FROM simulation_scenario_positions_junction ssp JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id WHERE ssp.simulation_id = ss.simulation_id AND spr.scenario_id = ss.scenario_id LIMIT 1)
-            ),
-            latest_grade_for_skills AS (
-                SELECT DISTINCT ON (c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id))
-                       scg.id AS grade_id,
-                       c.id AS chat_id,
-                       COALESCE(
-                           srr.rubric_id,
-                           srr_fallback.rubric_id,
-                           sfsr.rubric_id
-                       ) AS rubric_id,
-                       scg.created_at
-                FROM grades_entry scg
-                JOIN chats_entry c ON c.id = scg.chat_id
-                LEFT JOIN scenario_rubrics_resource srr ON srr.scenario_id = c.scenario_id
-                LEFT JOIN chat_scenario_info_skills csi ON csi.chat_id = c.id
-                LEFT JOIN simulation_scenario_rubrics_junction ssr_fallback ON ssr_fallback.simulation_id = csi.simulation_id
-                LEFT JOIN scenario_rubrics_resource srr_fallback ON srr_fallback.id = ssr_fallback.scenario_rubric_id AND srr_fallback.scenario_id = csi.scenario_id AND srr.rubric_id IS NULL
-                LEFT JOIN sim_first_scenario_rubric_skills sfsr ON sfsr.simulation_id = csi.simulation_id
-                  AND srr.rubric_id IS NULL
-                  AND srr_fallback.rubric_id IS NULL
-                WHERE TRUE
-                  AND c.id IN (SELECT chat_id FROM filt_for_skills)
-                  AND COALESCE(
-                      srr.rubric_id,
-                      srr_fallback.rubric_id,
-                      sfsr.rubric_id
-                  ) IS NOT NULL
-                ORDER BY c.id, COALESCE(srr.rubric_id, srr_fallback.rubric_id, sfsr.rubric_id), scg.created_at DESC
-            ),
+            -- Per-grade group scores using shared view (skill performance)
             per_grade_group_skills AS (
                 SELECT
-                    lg.rubric_id,
-                    sg.id AS group_id,
-                    sg.name AS group_name,
+                    vg.rubric_id,
+                    vg.standard_group_id AS group_id,
+                    vg.group_name,
                     f.simulation_id,
-                    lg.grade_id AS grade_id,
-                    SUM(fe.total)::float8 AS score,
-                    SUM(s.points)::float8 AS points,
-                    CASE WHEN sg.points > 0
-                         THEN 100.0 * SUM(fe.total)::float8 / sg.points::float8
-                         ELSE NULL
-                    END AS pct
-                FROM latest_grade_for_skills lg
-                JOIN filt_for_skills f ON f.chat_id = lg.chat_id
-                JOIN feedbacks_entry fe ON fe.grade_id = lg.grade_id
-                JOIN standards_resource s ON s.id = fe.standard_id
-                JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
-                JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
-                GROUP BY lg.rubric_id, sg.id, sg.name, f.simulation_id, lg.grade_id, sg.points
+                    vg.total_score AS score,
+                    vg.max_group_points AS points,
+                    vg.score_percent AS pct
+                FROM view_grade_per_standard_group vg
+                JOIN filt_for_skills f ON f.chat_id = vg.chat_id
             ),
             radar_rows AS (
                 SELECT 

@@ -2053,13 +2053,817 @@ filt AS (
                     (SELECT rubric_heatmap FROM rubric_heatmap_combined LIMIT 1)
                 )::types.q_reports_overview_v4_primary_metrics as primary_metrics
             ),
-            -- Secondary metrics_entry - placeholder for now (needs full conversion)
-            secondary_metrics_combined AS (
-                SELECT NULL::types.q_reports_overview_v4_secondary_metrics as secondary_metrics
+            -- =====================================================
+            -- SECONDARY METRICS
+            -- =====================================================
+
+            -- Attempt Improvement (single-profile version)
+            attempt_first AS (
+                SELECT simulation_id, attempt_id,
+                       MIN(attempt_created_at) AS first_ts
+                FROM filt
+                GROUP BY simulation_id, attempt_id
             ),
-            -- Footer metrics_entry - placeholder for now (needs full conversion)
+            attempt_ord AS (
+                SELECT af.*,
+                       ROW_NUMBER() OVER (PARTITION BY af.simulation_id ORDER BY af.first_ts) AS attempt_no
+                FROM attempt_first af
+            ),
+            attempt_stats AS (
+                SELECT
+                    ao.simulation_id,
+                    ao.attempt_id,
+                    ao.attempt_no,
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_grade,
+                    AVG(f.time_taken_seconds / 60.0)::float AS avg_time_minutes,
+                    MAX((f.passed)::int)::int AS passed_any
+                FROM attempt_ord ao
+                JOIN filt f ON f.attempt_id = ao.attempt_id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY ao.simulation_id, ao.attempt_id, ao.attempt_no
+            ),
+            attempt_data AS (
+                SELECT
+                    simulation_id,
+                    attempt_no,
+                    TRUNC(AVG(avg_grade)::numeric, 2)::float AS avg_grade,
+                    AVG(avg_time_minutes)::float AS avg_time_minutes,
+                    TRUNC((100.0 * AVG(passed_any))::numeric, 2)::float AS pass_rate
+                FROM attempt_stats
+                WHERE avg_grade IS NOT NULL
+                GROUP BY simulation_id, attempt_no
+            ),
+            attempt_rows AS (
+                SELECT
+                    attempt_no,
+                    TRUNC(AVG(avg_grade)::numeric, 2)::float AS avg_grade,
+                    AVG(avg_time_minutes)::float AS avg_time_minutes,
+                    TRUNC(AVG(pass_rate)::numeric, 2)::float AS pass_rate
+                FROM attempt_data
+                WHERE attempt_no <= 5
+                GROUP BY attempt_no
+            ),
+            attempt_improvement_chart_data_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        ('Attempt ' || attempt_no, ROUND(COALESCE(avg_grade, 0))::float, ROUND(COALESCE(avg_time_minutes, 0))::float, ROUND(COALESCE(pass_rate, 0))::float)::types.q_reports_overview_v4_attempt_improvement_data
+                        ORDER BY attempt_no
+                    ),
+                    '{}'::types.q_reports_overview_v4_attempt_improvement_data[]
+                ) as chart_data
+                FROM attempt_rows
+            ),
+            attempt_facts AS (
+                SELECT
+                    simulation_id::text,
+                    attempt_no::int,
+                    ROUND(COALESCE(avg_grade, 0))::int AS avg_grade,
+                    ROUND(COALESCE(avg_time_minutes, 0))::int AS avg_minutes,
+                    ROUND(COALESCE(pass_rate, 0))::int AS pass_rate
+                FROM attempt_data
+            ),
+            attempt_improvement_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (simulation_id, attempt_no, avg_grade::float, avg_minutes::float, pass_rate::float)::types.q_reports_overview_v4_attempt_improvement_fact
+                        ORDER BY simulation_id, attempt_no
+                    ),
+                    '{}'::types.q_reports_overview_v4_attempt_improvement_fact[]
+                ) as facts
+                FROM attempt_facts
+            ),
+            attempt_improvement_valid_sims AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT simulation_id::text ORDER BY simulation_id::text),
+                    ARRAY[]::text[]
+                ) as valid_simulation_ids
+                FROM filt
+                WHERE simulation_id IS NOT NULL
+            ),
+            attempt_improvement_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM attempt_rows) < 2 THEN 'neutral'::text
+                    WHEN (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MAX(attempt_no) FROM attempt_rows)) IS NULL
+                         OR (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MIN(attempt_no) FROM attempt_rows)) IS NULL THEN 'neutral'::text
+                    WHEN (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MAX(attempt_no) FROM attempt_rows)) -
+                         (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MIN(attempt_no) FROM attempt_rows)) >=
+                         (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'::text
+                    WHEN (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MAX(attempt_no) FROM attempt_rows)) -
+                         (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MIN(attempt_no) FROM attempt_rows)) >=
+                         (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'::text
+                    ELSE 'danger'::text
+                END as status
+            ),
+            attempt_improvement_combined AS (
+                SELECT (
+                    (SELECT chart_data FROM attempt_improvement_chart_data_agg LIMIT 1),
+                    (SELECT facts FROM attempt_improvement_facts_agg LIMIT 1),
+                    (SELECT valid_simulation_ids FROM attempt_improvement_valid_sims LIMIT 1),
+                    (SELECT status FROM attempt_improvement_status LIMIT 1)
+                )::types.q_reports_overview_v4_attempt_improvement_response as attempt_improvement
+            ),
+
+            -- Cohort Performance (target profile vs cohort averages)
+            target_profile_cohorts AS (
+                SELECT DISTINCT pc.cohort_id
+                FROM profile_cohorts_junction pc
+                WHERE pc.profile_id = (SELECT target_profile_id FROM params)
+                  AND pc.active = true
+            ),
+            cohort_all_data AS (
+                SELECT a.*, pc.cohort_id AS c_id
+                FROM analytics a
+                JOIN profile_cohorts_junction pc ON pc.profile_id = a.profile_id AND pc.active = true
+                JOIN target_profile_cohorts tpc ON tpc.cohort_id = pc.cohort_id
+                WHERE a.attempt_created_at >= (SELECT start_date FROM params)
+                  AND a.attempt_created_at < (SELECT end_date FROM params)
+                  AND ((SELECT simulation_filters FROM params)::text[] IS NULL OR cardinality((SELECT simulation_filters FROM params)::text[]) > 0)
+                  AND (
+                      (SELECT simulation_filters FROM params)::text[] IS NULL OR (
+                          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_general = TRUE) OR
+                          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_practice = TRUE) OR
+                          ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND a.is_archived = TRUE)
+                      )
+                  )
+                  AND (
+                      'archived' = ANY((SELECT simulation_filters FROM params)::text[]) OR a.is_archived = FALSE
+                  )
+                  AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                  AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
+            ),
+            cohort_list AS (
+                SELECT DISTINCT
+                    c.id,
+                    (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS title,
+                    ARRAY(
+                        SELECT cp.profile_id
+                        FROM profile_cohorts_junction cp
+                        JOIN profile_artifact p ON p.id = cp.profile_id
+                        WHERE cp.cohort_id = c.id
+                            AND cp.active = true
+                    ) AS profile_ids,
+                    ARRAY(SELECT cs.simulation_id FROM cohort_simulations_junction cs WHERE cs.cohort_id = c.id AND cs.active = true) AS simulation_ids
+                FROM cohort_artifact c
+                JOIN target_profile_cohorts tpc ON tpc.cohort_id = c.id
+            ),
+            cohort_attempts AS (
+                SELECT
+                    cad.c_id AS cohort_id,
+                    cad.attempt_id,
+                    MAX((cad.passed)::int)::int AS passed_any,
+                    TRUNC(AVG(cad.grade_percent)::numeric, 2)::float AS avg_grade_attempt
+                FROM cohort_all_data cad
+                GROUP BY cad.c_id, cad.attempt_id
+            ),
+            cohort_agg AS (
+                SELECT
+                    cl.id AS cohort_id,
+                    (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = cl.id LIMIT 1) AS cohort_name,
+                    COALESCE(cardinality(cl.profile_ids), 0) AS total_students_declared,
+                    cardinality(cl.profile_ids) AS total_students_seen,
+                    COUNT(DISTINCT ca.attempt_id) AS total_attempts,
+                    SUM(ca.passed_any)::int AS passed_attempts,
+                    TRUNC((100.0 * AVG(ca.passed_any))::numeric, 2)::float AS pass_rate_attempts,
+                    TRUNC(AVG(ca.avg_grade_attempt)::numeric, 2)::float AS avg_percentage_score,
+                    (SELECT COUNT(*) FROM (
+                        SELECT profile_id
+                        FROM cohort_all_data cad2
+                        WHERE cad2.c_id = cl.id
+                        GROUP BY profile_id
+                        HAVING
+                            COUNT(DISTINCT simulation_id) = cardinality(cl.simulation_ids)
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM (
+                                    SELECT
+                                        simulation_id,
+                                        MAX(CASE WHEN grade_percent IS NULL THEN 0 ELSE grade_percent END) as best_score
+                                    FROM cohort_all_data cad3
+                                    WHERE cad3.c_id = cl.id
+                                        AND cad3.profile_id = cad2.profile_id
+                                    GROUP BY simulation_id
+                                ) sim_bests
+                                WHERE sim_bests.best_score < 80.0
+                            )
+                    ) s) AS passed_students,
+                    (SELECT COUNT(*) FROM (
+                        SELECT 1
+                        FROM cohort_all_data cad2
+                        WHERE cad2.c_id = cl.id
+                        GROUP BY cad2.profile_id
+                        HAVING MAX((cad2.passed)::int) = 1
+                    ) s) AS passed_at_least_once,
+                    cardinality(cl.simulation_ids) AS simulation_count,
+                    cardinality(cl.simulation_ids) AS required_simulations
+                FROM cohort_list cl
+                LEFT JOIN cohort_attempts ca ON ca.cohort_id = cl.id
+                GROUP BY cl.id, (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = cl.id LIMIT 1), cl.profile_ids, cl.simulation_ids
+            ),
+            cohort_performance_cohort_data_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (cohort_id::text, cohort_name,
+                         ROUND(CASE
+                             WHEN total_students_seen > 0 THEN
+                                 (100.0 * passed_students / total_students_seen)::numeric
+                             ELSE 0
+                         END, 2)::float,
+                         ROUND(COALESCE(avg_percentage_score, 0))::int,
+                         GREATEST(total_students_declared, total_students_seen),
+                         COALESCE(passed_at_least_once, 0),
+                         COALESCE(total_attempts, 0),
+                         COALESCE(passed_attempts, 0),
+                         COALESCE(simulation_count, 0),
+                         COALESCE(required_simulations, 0),
+                         CASE
+                             WHEN total_students_seen = 0 THEN 'neutral'::text
+                             WHEN (100.0 * passed_students / NULLIF(total_students_seen, 0)) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'::text
+                             WHEN (100.0 * passed_students / NULLIF(total_students_seen, 0)) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'::text
+                             ELSE 'danger'::text
+                         END)::types.q_reports_overview_v4_cohort_data
+                        ORDER BY cohort_name
+                    ),
+                    '{}'::types.q_reports_overview_v4_cohort_data[]
+                ) as cohort_data
+                FROM cohort_agg
+            ),
+            cohort_daily_data AS (
+                SELECT
+                    to_char(date_trunc('day', cad.attempt_created_at), 'YYYY-MM-DD') AS date,
+                    TRUNC(AVG(cad.grade_percent)::numeric, 2)::float AS avg_score,
+                    cad.c_id::text AS cohort_id
+                FROM cohort_all_data cad
+                WHERE cad.grade_percent IS NOT NULL
+                GROUP BY cad.c_id, date_trunc('day', cad.attempt_created_at)
+            ),
+            cohort_performance_daily_data_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (date, ROUND(COALESCE(avg_score, 0))::int, cohort_id)::types.q_reports_overview_v4_daily_data
+                        ORDER BY cohort_id, date
+                    ),
+                    '{}'::types.q_reports_overview_v4_daily_data[]
+                ) as daily_data
+                FROM cohort_daily_data
+            ),
+            cohort_performance_valid_sims AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT simulation_id::text ORDER BY simulation_id::text),
+                    ARRAY[]::text[]
+                ) as valid_simulation_ids
+                FROM filt
+                WHERE simulation_id IS NOT NULL
+            ),
+            cohort_performance_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM cohort_agg) = 0 THEN 'neutral'::text
+                    WHEN (SELECT AVG(
+                        CASE
+                            WHEN total_students_seen > 0 THEN
+                                (100.0 * passed_students / total_students_seen)::numeric
+                            ELSE 0
+                        END
+                    ) FROM cohort_agg) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'::text
+                    WHEN (SELECT AVG(
+                        CASE
+                            WHEN total_students_seen > 0 THEN
+                                (100.0 * passed_students / total_students_seen)::numeric
+                            ELSE 0
+                        END
+                    ) FROM cohort_agg) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'::text
+                    ELSE 'danger'::text
+                END as status
+            ),
+            cohort_performance_combined AS (
+                SELECT (
+                    (SELECT cohort_data FROM cohort_performance_cohort_data_agg LIMIT 1),
+                    (SELECT daily_data FROM cohort_performance_daily_data_agg LIMIT 1),
+                    ARRAY[]::types.q_reports_overview_v4_cohort_fact[],
+                    ARRAY[]::types.q_reports_overview_v4_cohort_daily_fact[],
+                    (SELECT valid_simulation_ids FROM cohort_performance_valid_sims LIMIT 1),
+                    (SELECT status FROM cohort_performance_status LIMIT 1)
+                )::types.q_reports_overview_v4_cohort_performance_response as cohort_performance
+            ),
+
+            -- Skill Performance (using view_grade_per_standard_group)
+            per_grade_group_skills AS (
+                SELECT
+                    vg.rubric_id,
+                    vg.standard_group_id AS group_id,
+                    vg.group_name,
+                    f.simulation_id,
+                    vg.total_score AS score,
+                    vg.max_group_points AS points,
+                    vg.score_percent AS pct
+                FROM view_grade_per_standard_group vg
+                JOIN filt f ON f.chat_id = vg.chat_id
+            ),
+            radar_rows AS (
+                SELECT
+                    pgg.rubric_id,
+                    sg.short_name AS group_name,
+                    sg.description AS group_description,
+                    AVG(pgg.pct)::float8 AS avg_pct
+                FROM per_grade_group_skills pgg
+                JOIN standard_groups_resource sg ON sg.id = pgg.group_id
+                GROUP BY pgg.rubric_id, sg.short_name, sg.description
+            ),
+            skill_group_stats AS (
+                SELECT
+                    pgg.rubric_id,
+                    sg.id AS group_id,
+                    sg.name AS group_name,
+                    sg.description AS group_description,
+                    pgg.simulation_id,
+                    SUM(pgg.score) AS score_sum,
+                    SUM(pgg.points) AS points_sum,
+                    ROUND(AVG(pgg.pct))::int AS avg_pct
+                FROM per_grade_group_skills pgg
+                JOIN standard_groups_resource sg ON sg.id = pgg.group_id
+                GROUP BY pgg.rubric_id, sg.id, sg.name, sg.description, pgg.simulation_id
+            ),
+            radar_data_per_rubric AS (
+                SELECT
+                    rubric_id,
+                    COALESCE(
+                        ARRAY_AGG(
+                            (group_name, group_description, GREATEST(0, LEAST(1, COALESCE(avg_pct, 0) / 100.0))::float, 1.0::float)::types.q_reports_overview_v4_skill_radar_data
+                            ORDER BY group_name
+                        ),
+                        '{}'::types.q_reports_overview_v4_skill_radar_data[]
+                    ) as radar_data
+                FROM radar_rows
+                GROUP BY rubric_id
+            ),
+            group_facts_per_rubric AS (
+                SELECT
+                    rubric_id,
+                    COALESCE(
+                        ARRAY_AGG(
+                            (group_id::text, group_name, group_description, simulation_id::text, COALESCE(score_sum, 0)::float, COALESCE(points_sum, 0)::float, COALESCE(avg_pct, 0)::float)::types.q_reports_overview_v4_skill_standard_fact
+                            ORDER BY group_name, simulation_id
+                        ),
+                        '{}'::types.q_reports_overview_v4_skill_standard_fact[]
+                    ) as group_facts
+                FROM skill_group_stats
+                GROUP BY rubric_id
+            ),
+            skill_performance_packages_agg AS (
+                SELECT
+                    COALESCE(rd.rubric_id, gf.rubric_id) AS rubric_id,
+                    COALESCE(rd.radar_data, '{}'::types.q_reports_overview_v4_skill_radar_data[]) AS radar_data,
+                    COALESCE(gf.group_facts, '{}'::types.q_reports_overview_v4_skill_standard_fact[]) AS group_facts
+                FROM radar_data_per_rubric rd
+                FULL OUTER JOIN group_facts_per_rubric gf ON gf.rubric_id = rd.rubric_id
+            ),
+            skill_performance_packages_combined AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (rubric_id::text, radar_data, group_facts)::types.q_reports_overview_v4_skill_package
+                        ORDER BY rubric_id::text
+                    ),
+                    '{}'::types.q_reports_overview_v4_skill_package[]
+                ) as packages
+                FROM skill_performance_packages_agg
+            ),
+            skill_performance_valid_rubrics AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT rubric_id::text ORDER BY rubric_id::text),
+                    ARRAY[]::text[]
+                ) as valid_rubric_ids
+                FROM per_grade_group_skills
+            ),
+            skill_performance_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM skill_performance_packages_combined) = 0 THEN 'neutral'::text
+                    ELSE 'success'::text
+                END as status
+            ),
+            skill_performance_combined AS (
+                SELECT (
+                    (SELECT packages FROM skill_performance_packages_combined LIMIT 1),
+                    (SELECT valid_rubric_ids FROM skill_performance_valid_rubrics LIMIT 1),
+                    (SELECT status FROM skill_performance_status LIMIT 1)
+                )::types.q_reports_overview_v4_skill_performance_response as skill_performance
+            ),
+            secondary_metrics_combined AS (
+                SELECT (
+                    (SELECT attempt_improvement FROM attempt_improvement_combined LIMIT 1),
+                    (SELECT cohort_performance FROM cohort_performance_combined LIMIT 1),
+                    (SELECT skill_performance FROM skill_performance_combined LIMIT 1)
+                )::types.q_reports_overview_v4_secondary_metrics as secondary_metrics
+            ),
+
+            -- =====================================================
+            -- FOOTER METRICS
+            -- =====================================================
+
+            -- Scenario Performance (categorical parameters)
+            param_ids_categorical AS (
+                SELECT id
+                FROM parameter_artifact p
+                WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE)
+            ),
+            cat_map AS (
+                SELECT
+                    f.id AS parameter_item_id,
+                    pfj.parameter_id AS parameter_id,
+                    sf.scenario_id AS scenario_id
+                FROM field_artifact f
+                JOIN parameter_fields_junction pfj ON pfj.field_id = f.id
+                JOIN param_ids_categorical p ON p.id = pfj.parameter_id
+                JOIN scenario_fields_junction sf ON sf.field_id = pfj.field_resource_id
+                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = sf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
+            ),
+            scenario_seen AS (
+                SELECT DISTINCT f.scenario_id
+                FROM filt f
+                WHERE f.scenario_id IS NOT NULL
+            ),
+            cat_map_seen AS (
+                SELECT cm.parameter_id, cm.parameter_item_id, cm.scenario_id
+                FROM cat_map cm
+                JOIN scenario_seen ss ON ss.scenario_id = cm.scenario_id
+            ),
+            attempt_daily_categorical AS (
+                SELECT
+                    cm.parameter_id,
+                    cm.parameter_item_id,
+                    to_char(date_trunc('day', f.attempt_created_at), 'YYYY-MM-DD') AS date,
+                    EXTRACT(EPOCH FROM date_trunc('day', f.attempt_created_at))::bigint AS timestamp,
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score,
+                    COUNT(*)::int AS attempts,
+                    SUM((f.passed)::int)::int AS passed_attempts
+                FROM filt f
+                JOIN cat_map_seen cm ON cm.scenario_id = f.scenario_id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY cm.parameter_id, cm.parameter_item_id, date_trunc('day', f.attempt_created_at)
+            ),
+            scenario_performance_attribute_attempt_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (parameter_id::text, parameter_item_id::text, date, timestamp, avg_score, attempts, passed_attempts)::types.q_reports_overview_v4_scenario_attribute_attempt_fact
+                        ORDER BY parameter_id, parameter_item_id, date
+                    ),
+                    '{}'::types.q_reports_overview_v4_scenario_attribute_attempt_fact[]
+                ) as attribute_attempt_facts
+                FROM attempt_daily_categorical
+            ),
+            scenario_performance_attribute_scenario_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (parameter_id::text, parameter_item_id::text, scenario_id::text)::types.q_reports_overview_v4_scenario_attribute_scenario_fact
+                        ORDER BY parameter_id, parameter_item_id, scenario_id
+                    ),
+                    '{}'::types.q_reports_overview_v4_scenario_attribute_scenario_fact[]
+                ) as attribute_scenario_facts
+                FROM cat_map_seen
+            ),
+            scenario_performance_valid_params AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT parameter_id::text ORDER BY parameter_id::text),
+                    ARRAY[]::text[]
+                ) as valid_parameter_ids
+                FROM cat_map_seen
+            ),
+            scenario_performance_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM attempt_daily_categorical) = 0 THEN 'neutral'::text
+                    WHEN (SELECT AVG(avg_score) FROM attempt_daily_categorical) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'::text
+                    WHEN (SELECT AVG(avg_score) FROM attempt_daily_categorical) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'::text
+                    ELSE 'danger'::text
+                END as status
+            ),
+            scenario_performance_combined AS (
+                SELECT (
+                    (SELECT valid_parameter_ids FROM scenario_performance_valid_params LIMIT 1),
+                    (SELECT attribute_attempt_facts FROM scenario_performance_attribute_attempt_facts_agg LIMIT 1),
+                    (SELECT attribute_scenario_facts FROM scenario_performance_attribute_scenario_facts_agg LIMIT 1),
+                    (SELECT status FROM scenario_performance_status LIMIT 1)
+                )::types.q_reports_overview_v4_scenario_performance_response as scenario_performance
+            ),
+
+            -- Scenario Stats (Document/Persona parameters displayed as bar chart)
+            nums AS (
+                SELECT p.id FROM parameter_artifact p
+                WHERE EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'parameter_active' AND pf.value = TRUE)
+                  AND (
+                      EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.value = TRUE)
+                      OR EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.value = TRUE)
+                  )
+            ),
+            num_field_levels AS (
+                SELECT
+                    pfj.parameter_id,
+                    pfj.field_id,
+                    pfj.field_resource_id,
+                    ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY pfj.field_id) AS level
+                FROM parameter_fields_junction pfj
+                JOIN nums n ON n.id = pfj.parameter_id
+            ),
+            num_map AS (
+                SELECT
+                    sf.scenario_id,
+                    nfl.parameter_id,
+                    nfl.level::numeric AS level,
+                    nfl.field_id
+                FROM num_field_levels nfl
+                JOIN scenario_fields_junction sf ON sf.field_id = nfl.field_resource_id
+                WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = sf.scenario_id AND fl.name = 'scenario_active' AND sf2.value = TRUE)
+            ),
+            num_map_seen AS (
+                SELECT nm.*
+                FROM num_map nm
+                JOIN scenario_seen ss ON ss.scenario_id = nm.scenario_id
+            ),
+            numeric_attempts AS (
+                SELECT
+                    nms.parameter_id,
+                    nms.level,
+                    nms.field_id,
+                    TRUNC(f.grade_percent::numeric, 2)::float AS score
+                FROM filt f
+                JOIN num_map_seen nms ON nms.scenario_id = f.scenario_id
+                WHERE f.grade_percent IS NOT NULL
+            ),
+            numeric_levels AS (
+                SELECT
+                    parameter_id,
+                    COALESCE(
+                        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = na.field_id LIMIT 1),
+                        level::int::text
+                    ) AS level_label,
+                    level::numeric AS level_value,
+                    score
+                FROM numeric_attempts na
+            ),
+            numeric_agg AS (
+                SELECT
+                    parameter_id,
+                    level_label,
+                    level_value,
+                    TRUNC(AVG(score)::numeric, 2)::float AS avg_score,
+                    COUNT(*)::int AS attempts
+                FROM numeric_levels
+                GROUP BY parameter_id, level_label, level_value
+            ),
+            scenario_stats_numeric_attempt_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (parameter_id::text, level_label, level_value, avg_score, attempts)::types.q_reports_overview_v4_numeric_attempt_fact
+                        ORDER BY parameter_id, level_value
+                    ),
+                    '{}'::types.q_reports_overview_v4_numeric_attempt_fact[]
+                ) as numeric_attempt_facts
+                FROM numeric_agg
+            ),
+            scenario_stats_numeric_scenario_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (nms.parameter_id::text, nms.scenario_id::text,
+                         COALESCE(
+                             (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = nms.field_id LIMIT 1),
+                             nms.level::int::text
+                         ),
+                         nms.level::numeric
+                        )::types.q_reports_overview_v4_numeric_scenario_fact
+                        ORDER BY nms.parameter_id, nms.scenario_id, nms.level
+                    ),
+                    '{}'::types.q_reports_overview_v4_numeric_scenario_fact[]
+                ) as numeric_scenario_facts
+                FROM num_map_seen nms
+            ),
+            scenario_stats_valid_params AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT parameter_id::text ORDER BY parameter_id::text),
+                    ARRAY[]::text[]
+                ) as valid_numeric_parameter_ids
+                FROM numeric_levels
+            ),
+            scenario_stats_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM numeric_agg) = 0 THEN 'neutral'::text
+                    WHEN (SELECT AVG(avg_score) FROM numeric_agg) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'::text
+                    WHEN (SELECT AVG(avg_score) FROM numeric_agg) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'::text
+                    ELSE 'danger'::text
+                END as status
+            ),
+            scenario_stats_combined AS (
+                SELECT (
+                    (SELECT valid_numeric_parameter_ids FROM scenario_stats_valid_params LIMIT 1),
+                    (SELECT numeric_attempt_facts FROM scenario_stats_numeric_attempt_facts_agg LIMIT 1),
+                    (SELECT numeric_scenario_facts FROM scenario_stats_numeric_scenario_facts_agg LIMIT 1),
+                    (SELECT status FROM scenario_stats_status LIMIT 1)
+                )::types.q_reports_overview_v4_scenario_stats_response as scenario_stats
+            ),
+
+            -- Simulation Performance (per-scenario breakdown)
+            sim_perf AS (
+                SELECT f.simulation_id,
+                       f.scenario_id,
+                       (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1) AS scenario_name,
+                       TRUNC(COALESCE(AVG(f.grade_percent), 0)::numeric, 2)::float AS avg_score,
+                       TRUNC(COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::numeric, 2)::float AS success_rate,
+                       COUNT(*)::int AS total_attempts,
+                       SUM((f.completed OR f.grade_percent IS NOT NULL)::int)::int AS completed_attempts
+                FROM filt f
+                JOIN scenarios_resource sc ON sc.scenario_id = f.scenario_id
+                WHERE f.simulation_id IS NOT NULL AND f.scenario_id IS NOT NULL
+                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.scenario_id LIMIT 1)
+            ),
+            simulation_performance_scenario_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (simulation_id::text, scenario_id::text, scenario_name, avg_score, success_rate, total_attempts, completed_attempts)::types.q_reports_overview_v4_scenario_fact
+                        ORDER BY simulation_id, scenario_id
+                    ),
+                    '{}'::types.q_reports_overview_v4_scenario_fact[]
+                ) as scenario_facts
+                FROM sim_perf
+            ),
+            simulation_performance_valid_sims AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT simulation_id::text ORDER BY simulation_id::text),
+                    ARRAY[]::text[]
+                ) as valid_simulation_ids
+                FROM sim_perf
+            ),
+            simulation_performance_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM sim_perf) = 0 THEN 'neutral'::text
+                    WHEN (SELECT (0.7 * AVG(avg_score) + 0.3 * AVG(success_rate)) FROM sim_perf) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'::text
+                    WHEN (SELECT (0.7 * AVG(avg_score) + 0.3 * AVG(success_rate)) FROM sim_perf) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'::text
+                    ELSE 'danger'::text
+                END as status
+            ),
+            simulation_performance_combined AS (
+                SELECT (
+                    (SELECT valid_simulation_ids FROM simulation_performance_valid_sims LIMIT 1),
+                    (SELECT scenario_facts FROM simulation_performance_scenario_facts_agg LIMIT 1),
+                    (SELECT status FROM simulation_performance_status LIMIT 1)
+                )::types.q_reports_overview_v4_simulation_performance_response as simulation_performance
+            ),
+
+            -- Simulation Composition (parameter composition analysis)
+            sim_seen AS (
+                SELECT DISTINCT f.simulation_id
+                FROM filt f
+                WHERE f.simulation_id IS NOT NULL
+            ),
+            scen_seen AS (
+                SELECT DISTINCT f.scenario_id
+                FROM filt f
+                WHERE f.scenario_id IS NOT NULL
+            ),
+            sim_summary AS (
+                SELECT
+                    f.simulation_id,
+                    TRUNC(AVG(f.grade_percent)::numeric, 2)::float AS avg_score,
+                    TRUNC((100.0 * AVG((f.passed)::int))::numeric, 2)::float AS pass_rate,
+                    TRUNC((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int))::numeric, 2)::float AS completion_rate,
+                    COUNT(*)::int AS attempts
+                FROM filt f
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY f.simulation_id
+            ),
+            sim_scenarios_seen AS (
+                SELECT
+                    s.id AS simulation_id,
+                    COUNT(DISTINCT sc.scenario_id)::int AS scenario_count
+                FROM simulation_artifact s
+                JOIN simulation_scenarios_junction ss_link ON ss_link.simulation_id = s.id
+                JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
+                JOIN scen_seen ss ON ss.scenario_id = sc.scenario_id
+                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'simulation_active' AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = sc.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
+                GROUP BY s.id
+            ),
+            sim_param_items_seen AS (
+                SELECT
+                    s.id AS simulation_id,
+                    pfj.parameter_id AS parameter_id,
+                    pfj.field_id AS parameter_item_id,
+                    COUNT(a.chat_id)::int AS cnt
+                FROM simulation_artifact s
+                JOIN simulation_scenarios_junction ss_link ON ss_link.simulation_id = s.id
+                JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
+                JOIN scen_seen ss ON ss.scenario_id = sc.scenario_id
+                JOIN scenario_fields_junction sf ON sf.scenario_id = sc.scenario_id
+                JOIN fields_resource f ON f.id = sf.field_id
+                JOIN parameter_fields_junction pfj ON pfj.field_resource_id = f.id
+                JOIN param_ids_categorical pic ON pic.id = pfj.parameter_id
+                JOIN analytics a ON a.scenario_id = sc.scenario_id AND a.profile_id = (SELECT target_profile_id FROM params)
+                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf3 JOIN flags_resource fl ON sf3.flag_id = fl.id WHERE sf3.simulation_id = s.id AND fl.name = 'simulation_active' AND sf3.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf2 JOIN flags_resource fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = sc.scenario_id AND fl2.name = 'scenario_active' AND sf2.value = TRUE)
+                GROUP BY s.id, pfj.parameter_id, pfj.field_id
+            ),
+            simulation_facts AS (
+                SELECT
+                    s.id AS simulation_id,
+                    (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
+                    COALESCE(ROUND(ss.avg_score), 0)::int AS avg_score,
+                    COALESCE(ROUND(ss.pass_rate), 0)::int AS pass_rate,
+                    COALESCE(ROUND(ss.completion_rate), 0)::int AS completion_rate,
+                    COALESCE(ss.attempts, 0) AS total_attempts,
+                    COALESCE(sc_seen.scenario_count, 0) AS scenario_count
+                FROM simulation_artifact s
+                LEFT JOIN sim_summary ss ON ss.simulation_id = s.id
+                LEFT JOIN sim_scenarios_seen sc_seen ON sc_seen.simulation_id = s.id
+                WHERE EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND sf.value = TRUE)
+                  AND s.id IN (SELECT simulation_id FROM sim_seen)
+            ),
+            simulation_composition_simulation_facts_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (simulation_id::text, simulation_title, avg_score::float, completion_rate::float, total_attempts, scenario_count)::types.q_reports_overview_v4_simulation_fact
+                        ORDER BY simulation_id
+                    ),
+                    '{}'::types.q_reports_overview_v4_simulation_fact[]
+                ) as simulation_facts
+                FROM simulation_facts
+            ),
+            param_facts_cat AS (
+                SELECT
+                    simulation_id,
+                    parameter_id,
+                    parameter_item_id,
+                    cnt AS scenario_count
+                FROM sim_param_items_seen
+            ),
+            simulation_composition_param_facts_cat_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (simulation_id::text, parameter_id::text, parameter_item_id::text, scenario_count)::types.q_reports_overview_v4_simulation_parameter_fact_categorical
+                        ORDER BY simulation_id, parameter_id, parameter_item_id
+                    ),
+                    '{}'::types.q_reports_overview_v4_simulation_parameter_fact_categorical[]
+                ) as simulation_parameter_facts_categorical
+                FROM param_facts_cat
+            ),
+            sim_param_nums_seen AS (
+                SELECT
+                    NULL::uuid AS simulation_id,
+                    NULL::uuid AS parameter_id,
+                    NULL::numeric AS most_common_level,
+                    0::int AS chat_count
+                WHERE false
+            ),
+            sim_param_nums_most_common AS (
+                SELECT
+                    simulation_id,
+                    parameter_id,
+                    most_common_level AS avg_level,
+                    CASE
+                        WHEN most_common_level = floor(most_common_level)
+                        THEN (most_common_level::int)::text
+                        ELSE to_char(most_common_level, 'FM999D0')
+                    END AS level_label,
+                    chat_count AS scenario_count
+                FROM sim_param_nums_seen
+            ),
+            simulation_composition_param_facts_num_agg AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(
+                        (simulation_id::text, parameter_id::text, avg_level, level_label, scenario_count)::types.q_reports_overview_v4_simulation_parameter_fact_numeric
+                        ORDER BY simulation_id, parameter_id
+                    ),
+                    '{}'::types.q_reports_overview_v4_simulation_parameter_fact_numeric[]
+                ) as simulation_parameter_facts_numeric
+                FROM sim_param_nums_most_common
+            ),
+            simulation_composition_valid_sims AS (
+                SELECT COALESCE(
+                    ARRAY_AGG(DISTINCT simulation_id::text ORDER BY simulation_id::text),
+                    ARRAY[]::text[]
+                ) as valid_simulation_ids
+                FROM filt
+                WHERE simulation_id IS NOT NULL
+            ),
+            simulation_composition_has_data AS (
+                SELECT COUNT(*) > 0 as has_data
+                FROM simulation_facts
+            ),
+            simulation_composition_status AS (
+                SELECT CASE
+                    WHEN (SELECT COUNT(*) FROM simulation_facts) = 0 THEN 'neutral'::text
+                    ELSE 'success'::text
+                END as status
+            ),
+            simulation_composition_combined AS (
+                SELECT (
+                    (SELECT valid_simulation_ids FROM simulation_composition_valid_sims LIMIT 1),
+                    (SELECT simulation_facts FROM simulation_composition_simulation_facts_agg LIMIT 1),
+                    (SELECT simulation_parameter_facts_categorical FROM simulation_composition_param_facts_cat_agg LIMIT 1),
+                    (SELECT simulation_parameter_facts_numeric FROM simulation_composition_param_facts_num_agg LIMIT 1),
+                    (SELECT has_data FROM simulation_composition_has_data LIMIT 1),
+                    (SELECT status FROM simulation_composition_status LIMIT 1)
+                )::types.q_reports_overview_v4_simulation_composition_response as simulation_composition
+            ),
             footer_metrics_combined AS (
-                SELECT NULL::types.q_reports_overview_v4_footer_metrics as footer_metrics
+                SELECT (
+                    (SELECT scenario_performance FROM scenario_performance_combined LIMIT 1),
+                    (SELECT scenario_stats FROM scenario_stats_combined LIMIT 1),
+                    (SELECT simulation_performance FROM simulation_performance_combined LIMIT 1),
+                    (SELECT simulation_composition FROM simulation_composition_combined LIMIT 1)
+                )::types.q_reports_overview_v4_footer_metrics as footer_metrics
             ),
             -- History - placeholder for now (needs conversion from attempt history CTEs)
             history_combined AS (
