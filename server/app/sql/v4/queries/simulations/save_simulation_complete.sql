@@ -175,8 +175,8 @@ BEGIN
 
     IF array_length(v_scenario_ids, 1) > 0 THEN
         IF EXISTS (
-            SELECT 1 FROM UNNEST(v_scenario_ids) AS scenario_id
-            WHERE NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = scenario_id)
+            SELECT 1 FROM UNNEST(v_scenario_ids) AS sid
+            WHERE NOT EXISTS (SELECT 1 FROM scenarios_resource WHERE id = sid)
         ) THEN
             RAISE EXCEPTION 'One or more scenario_ids not found';
         END IF;

@@ -59,8 +59,8 @@ async def authorize_emulation(
         idp_alias = "default-idp"
 
         # Get Keycloak config for URL construction
-        # Default includes /auth for legacy Keycloak (pre-17) compatibility
-        keycloak_public_url = os.getenv("KEYCLOAK_PUBLIC_URL", "http://localhost:8080/auth")
+        # Default derives from ORIGIN + prefix (matching nginx routing: ${APP_PREFIX}/auth/)
+        keycloak_public_url = os.getenv("KEYCLOAK_PUBLIC_URL", f"{origin}{prefix}/auth")
         keycloak_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
 
         # URL-encode return_url if provided (for use in query string)

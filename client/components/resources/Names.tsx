@@ -184,10 +184,10 @@ export function Names({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (internalValue.trim() && agent_id && group_id) {
+        if (internalValue.trim() && group_id) {
           const result = await createNamesAction({
             body: {
-              agent_id: agent_id,
+              agent_id: agent_id ?? null,
               group_id: group_id,
               name: internalValue,
               mcp: false,
@@ -196,8 +196,8 @@ export function Names({
           if (result.name_id) {
             onNameIdChange(result.name_id);
           }
-        } else {
-          // Clear resource ID if value is empty
+        } else if (!internalValue.trim()) {
+          // Clear resource ID only if value is empty
           onNameIdChange(null);
         }
         lastSavedValueRef.current = internalValue;

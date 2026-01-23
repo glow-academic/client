@@ -11584,7 +11584,7 @@ export interface components {
              * Agent Id
              * Format: uuid
              */
-            agent_id: string;
+            agent_id?: string | null;
             /**
              * Group Id
              * Format: uuid

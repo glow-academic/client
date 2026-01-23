@@ -15103,7 +15103,7 @@ class ModelsApiResponse(BaseModel):
 
 class NamesSqlParams(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     name: str
     mcp: bool | None = False
@@ -15122,7 +15122,7 @@ class NamesSqlRow(BaseModel):
 
 class NamesApiRequest(BaseModel):
 
-    agent_id: UUID
+    agent_id: UUID | None = None
     group_id: UUID
     name: str
     mcp: bool | None = False
