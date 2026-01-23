@@ -286,7 +286,9 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
 
         # Post-logout redirect URIs for emulation flow (logout then re-auth as different user)
         emulate_redirect_uri = f"{base_url}{app_prefix}/api/auth/emulate-redirect*"
-        post_logout_uris = f"{base_url}{app_prefix}/*"
+        # Use "+" to inherit from redirectUris - ensures post-logout redirects
+        # are validated against the same patterns as standard OAuth redirects
+        post_logout_uris = "+"
 
         client_payload: dict[str, Any] = {
             "clientId": target_client_id,

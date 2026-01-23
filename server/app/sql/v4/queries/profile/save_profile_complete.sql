@@ -320,7 +320,6 @@ role_resource AS (
         SELECT x.target_profile_id,
             f.id,
             x.active,
-            NOW(),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
