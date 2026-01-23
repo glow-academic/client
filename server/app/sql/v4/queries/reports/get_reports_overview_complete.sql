@@ -188,6 +188,11 @@ CREATE TYPE types.q_reports_overview_v4_rubric_heatmap_cell AS (
     data_points int
 );
 
+-- Rubric heatmap row (wraps 1D cell array to avoid 2D array)
+CREATE TYPE types.q_reports_overview_v4_rubric_heatmap_row AS (
+    cells types.q_reports_overview_v4_rubric_heatmap_cell[]
+);
+
 -- Standard group
 CREATE TYPE types.q_reports_overview_v4_standard_group AS (
     id text,
@@ -200,7 +205,7 @@ CREATE TYPE types.q_reports_overview_v4_standard_group AS (
 CREATE TYPE types.q_reports_overview_v4_rubric_matrix_package AS (
     rubric_id text,
     standard_groups types.q_reports_overview_v4_standard_group[],
-    matrix types.q_reports_overview_v4_rubric_heatmap_cell[][],
+    matrix types.q_reports_overview_v4_rubric_heatmap_row[],
     insights text,
     has_data boolean
 );
@@ -590,7 +595,7 @@ WITH params AS (
 user_profile AS (
     SELECT COALESCE(NULLIF(actor_name, ''), 'System') as actor_name
     FROM view_user_profile_context
-    WHERE profile_id = (SELECT profile_id FROM params)
+    WHERE profile_id = (SELECT actor_profile_id FROM params)
 ),
 -- Get profile data (name, emails, role) for the target profile
 profile_data AS (
@@ -1487,7 +1492,7 @@ filt AS (
                 GROUP BY g1.rubric_id, g1.id, g1.name
             ),
             matrix_converted AS (
-                SELECT rubric_id, ARRAY_AGG(row_array ORDER BY row_idx) AS matrix
+                SELECT rubric_id, ARRAY_AGG(ROW(row_array)::types.q_reports_overview_v4_rubric_heatmap_row ORDER BY row_idx) AS matrix
                 FROM per_rubric_matrix_converted
                 GROUP BY rubric_id
             ),
@@ -1500,7 +1505,7 @@ filt AS (
             per_rubric_heatmap_converted AS (
                 SELECT
                     r.rubric_id,
-                    COALESCE(m.matrix, ARRAY[]::types.q_reports_overview_v4_rubric_heatmap_cell[][]) AS matrix,
+                    COALESCE(m.matrix, ARRAY[]::types.q_reports_overview_v4_rubric_heatmap_row[]) AS matrix,
                     COALESCE(sg.standard_groups, ARRAY[]::types.q_reports_overview_v4_standard_group[]) AS standard_groups,
                     (SELECT txt FROM rubric_insights i WHERE i.rubric_id = r.rubric_id LIMIT 1) AS insights,
                     COALESCE((SELECT h.has_data FROM rubric_has_data h WHERE h.rubric_id = r.rubric_id LIMIT 1), FALSE) AS has_data

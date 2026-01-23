@@ -13952,6 +13952,10 @@ class QReportsOverviewV4RubricHeatmapCell(BaseModel):
     strength: str | None
     data_points: int | None
 
+class QReportsOverviewV4RubricHeatmapRow(BaseModel):
+
+    cells: list[QReportsOverviewV4RubricHeatmapCell] | None
+
 
 
 
@@ -13966,7 +13970,7 @@ class QReportsOverviewV4RubricMatrixPackage(BaseModel):
 
     rubric_id: str | None
     standard_groups: list[QReportsOverviewV4StandardGroup] | None
-    matrix: list[QReportsOverviewV4RubricHeatmapCell] | None
+    matrix: list[QReportsOverviewV4RubricHeatmapRow] | None
     insights: str | None
     has_data: bool | None
 

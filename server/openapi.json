@@ -90121,6 +90121,29 @@
         ],
         "title": "QReportsOverviewV4RubricHeatmapResponse"
       },
+      "QReportsOverviewV4RubricHeatmapRow": {
+        "properties": {
+          "cells": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QReportsOverviewV4RubricHeatmapCell"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cells"
+        ],
+        "title": "QReportsOverviewV4RubricHeatmapRow"
+      },
       "QReportsOverviewV4RubricMatrixPackage": {
         "properties": {
           "rubric_id": {
@@ -90152,7 +90175,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QReportsOverviewV4RubricHeatmapCell"
+                  "$ref": "#/components/schemas/QReportsOverviewV4RubricHeatmapRow"
                 },
                 "type": "array"
               },

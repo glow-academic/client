@@ -18716,6 +18716,11 @@ export interface components {
             /** Status */
             status: string | null;
         };
+        /** QReportsOverviewV4RubricHeatmapRow */
+        QReportsOverviewV4RubricHeatmapRow: {
+            /** Cells */
+            cells: components["schemas"]["QReportsOverviewV4RubricHeatmapCell"][] | null;
+        };
         /** QReportsOverviewV4RubricMatrixPackage */
         QReportsOverviewV4RubricMatrixPackage: {
             /** Rubric Id */
@@ -18723,7 +18728,7 @@ export interface components {
             /** Standard Groups */
             standard_groups: components["schemas"]["QReportsOverviewV4StandardGroup"][] | null;
             /** Matrix */
-            matrix: components["schemas"]["QReportsOverviewV4RubricHeatmapCell"][] | null;
+            matrix: components["schemas"]["QReportsOverviewV4RubricHeatmapRow"][] | null;
             /** Insights */
             insights: string | null;
             /** Has Data */
